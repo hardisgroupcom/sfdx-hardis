@@ -47,9 +47,14 @@
   "oclif": {
     "commands": "./lib/commands",
     "bin": "sfdx",
+    "hooks": {
+      "prerun": [
+        "./lib/hooks/prerun/auth"
+      ]
+    },
     "topics": {
-      "hello": {
-        "description": "Commands to say hello."
+      "hardis": {
+        "description": "Hardis tools"
       }
     },
     "devPlugins": [

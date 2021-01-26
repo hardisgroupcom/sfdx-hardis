@@ -13,20 +13,22 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class Org extends SfdxCommand {
 
+  public static title = "Purge Flow versions"
+
   public static description = messages.getMessage('orgPurgeFlow');
 
   public static examples = [
   `$ bin/run hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
   Found 1 records:
-  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS  
+  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   Are you sure you want to delete this list of records (y/n)?: y
   Successfully deleted record: 30109000000kX7uAAE.
   Deleted the following list of records:
-  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS  
-  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete 
+  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
+  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   `,
-  `$ bin/run hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft"
+  `$ bin/run hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
   Found 4 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -59,15 +61,9 @@ export default class Org extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const prompt = this.flags.noprompt || true;
-    const statusFilter = (this.flags.status) ? this.flags.status.split(','): ['Obsolete'];
+    const statusFilter = (this.flags.status) ? this.flags.status.split(',') : ['Obsolete'];
     const nameFilter = this.flags.name || null;
     const debug = this.flags.debug || false ;
-
-    // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
-    const conn = this.org.getConnection();
-    if (!conn) {
-      throw new SfdxError('You shoud connect to an org to use this script');
-    }
 
     // Check we don't delete active Flows
     if (statusFilter.includes('Active')) {
@@ -114,7 +110,7 @@ export default class Org extends SfdxCommand {
     const deleteErrors = [];
     if (
       !prompt ||
-      await this.ux.confirm('Are you sure you want to delete this list of records (y/n)?')
+      await this.ux.confirm(`Are you sure you want to delete this list of records in ${this.org.getUsername} (y/n)?`)
       ) {
         for (const record of records) {
           const deleteResult = await sfdx.data.recordDelete({
@@ -137,7 +133,7 @@ export default class Org extends SfdxCommand {
       throw new SfdxError(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`);
     }
 
-    const summary = (deleted.length > 0)?`Deleted the following list of records:\n${columnify(deleted)}`:"No record deleted";
+    const summary = (deleted.length > 0) ? `Deleted the following list of records:\n${columnify(deleted)}` : 'No record deleted';
     this.ux.log(summary);
     // Return an object to be displayed with --json
     return { orgId: this.org.getOrgId(), outputString: summary };
