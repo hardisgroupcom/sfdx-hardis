@@ -1,4 +1,7 @@
 {
+  "debugMode": "Activate debug mode (more logs)",
   "orgPurgeFlow": "Purge obsolete flows in an org",
-  "noPrompt": "Do not prompt for confirmation"
+  "nameFilter": "Filter according to Name criteria",
+  "statusFilter": "Filter according to Status criteria",
+  "prompt": "Prompt for confirmation (true by default, use --no-prompt to skip)"
 }
