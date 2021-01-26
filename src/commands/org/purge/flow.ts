@@ -1,5 +1,5 @@
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages, SfdxError } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 
 // Initialize Messages with the current plugin directory
@@ -27,7 +27,7 @@ export default class Org extends SfdxCommand {
 
   protected static flagsConfig = {
     // flag with a value (-n, --name=VALUE)
-    noprompt: flags.string({char: 'z', description: messages.getMessage('noPrompt')})
+    noprompt: flags.boolean({char: 'z', description: messages.getMessage('noPrompt')})
   };
 
   // Comment this out if your command does not require an org username
@@ -40,7 +40,7 @@ export default class Org extends SfdxCommand {
   protected static requiresProject = false;
 
   public async run(): Promise<AnyJson> {
-    const noPrompt = this.flags.noprompt || 'world';
+    const prompt = (this.flags.noprompt === true)?false:true;
 
     // this.org is guaranteed because requiresUsername=true, as opposed to supportsUsername
     const conn = this.org.getConnection();
@@ -55,33 +55,18 @@ export default class Org extends SfdxCommand {
     // Query the org
     const flowQueryResult = await conn.query<Flow>(query);
 
-    // Organization will always return one result, but this is an example of throwing an error
-    // The output and --json will automatically be handled for you.
+    // No records has been found
     if (!flowQueryResult.records || flowQueryResult.records.length <= 0) {
-        const outputString = "No matching Flow records found";
+        const outputString = `No matching Flow records found with query "${query}"` ;
         this.ux.log(outputString);
-        return { purged: [] , outputString}
+        return { deleted: [] , outputString}
     }
 
-    // Organization always only returns one result
-    const orgName = result.records[0].Name;
-    const trialExpirationDate = result.records[0].TrialExpirationDate;
+    // Prompt
+    if (prompt === false || await this.ux.confirm("Are you sure you want to permanently delete the following records ?")) {
+        for (const flow of flowQueryResult.records) {
 
-    let outputString = `Hello ${name}! This is org: ${orgName}`;
-    if (trialExpirationDate) {
-      const date = new Date(trialExpirationDate).toDateString();
-      outputString = `${outputString} and I will be around until ${date}!`;
-    }
-    this.ux.log(outputString);
-
-    // this.hubOrg is NOT guaranteed because supportsHubOrgUsername=true, as opposed to requiresHubOrgUsername.
-    if (this.hubOrg) {
-      const hubOrgId = this.hubOrg.getOrgId();
-      this.ux.log(`My hub org id is: ${hubOrgId}`);
-    }
-
-    if (this.flags.force && this.args.file) {
-      this.ux.log(`You input --force and a file: ${this.args.file}`);
+        }
     }
 
     // Return an object to be displayed with --json
