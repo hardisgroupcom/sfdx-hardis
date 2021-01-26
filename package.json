@@ -10,6 +10,7 @@
     "@oclif/errors": "^1",
     "@salesforce/command": "^2",
     "@salesforce/core": "^2",
+    "@salesforce/ts-sinon": "^1.2.4",
     "columnify": "^1.5.4",
     "sfdx-node": "^2.2.0",
     "tslib": "^1"

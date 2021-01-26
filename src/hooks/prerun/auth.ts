@@ -1,6 +1,11 @@
 import * as sfdx from 'sfdx-node';
 
 export const hook = async (options: any) => {
+    // skip if during mocha tests
+    if (typeof global.it === 'function') {
+        return;
+    }
+    // Manage authentication if org is required but current user is disconnected
     if (options.Command && options.Command.requiresUsername === true) {
         const orgInfoResult = await sfdx.org.display();
         if (!(orgInfoResult && orgInfoResult.connectedStatus && orgInfoResult.connectedStatus.includes('Connected'))) {

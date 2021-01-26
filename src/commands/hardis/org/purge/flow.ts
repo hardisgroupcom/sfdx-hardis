@@ -13,7 +13,7 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class Org extends SfdxCommand {
 
-  public static title = "Purge Flow versions"
+  public static title = 'Purge Flow versions';
 
   public static description = messages.getMessage('orgPurgeFlow');
 

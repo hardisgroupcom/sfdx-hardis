@@ -11,7 +11,7 @@ Toolbox for Salesforce DX, by by [Hardis-Group](https://www.hardis-group.com/)
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/nvuillam/sfdx-hardis/blob/master/package.json)
 
 <!-- toc -->
-* [Debugging your plugin](#debugging-your-plugin)
+
 <!-- tocstop -->
 <!-- install -->
 <!-- usage -->
