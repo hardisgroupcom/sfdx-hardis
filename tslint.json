@@ -1,0 +1,7 @@
+{
+    "extends": "@salesforce/dev-config/tslint",
+    "rules": {
+      "no-any": false
+    }
+}
+  

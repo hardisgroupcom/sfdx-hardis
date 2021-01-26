@@ -1,0 +1,7 @@
+{
+  "debugMode": "Activate debug mode (more logs)",
+  "orgPurgeFlow": "Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name",
+  "nameFilter": "Filter according to Name criteria",
+  "statusFilter": "Filter according to Status criteria",
+  "prompt": "Prompt for confirmation (true by default, use --no-prompt to skip)"
+}
