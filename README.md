@@ -15,8 +15,6 @@ Toolbox for Salesforce DX, by by [Hardis-Group](https://www.hardis-group.com/)
 
 <!-- tocstop -->
 
-<!-- tocstop -->
-
 <!-- install -->
 ## Installation
 
@@ -30,7 +28,7 @@ $ npm install -g sfdx-hardis
 $ sfdx COMMAND
 running command...
 $ sfdx (-v|--version|version)
-sfdx-hardis/0.1.4 win32-x64 node-v12.11.1
+sfdx-hardis/0.1.5 win32-x64 node-v12.11.1
 $ sfdx --help [COMMAND]
 USAGE
   $ sfdx COMMAND
@@ -108,7 +106,7 @@ EXAMPLES
      No record deleted
 ```
 
-_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.1.4/lib/commands/hardis/org/purge/flow.js)_
+_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.1.5/lib/commands/hardis/org/purge/flow.js)_
 
 ## `sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -155,5 +153,5 @@ EXAMPLE
   $ bin/run hardis:org:retrieve:dx --targetusername nicolas.vuillamy@gmail.com
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.1.4/lib/commands/hardis/org/retrieve/sources/dx.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.1.5/lib/commands/hardis/org/retrieve/sources/dx.js)_
 <!-- commandsstop -->
