@@ -3,6 +3,7 @@
   "filteredMetadatas": "Comma separated list of Metadatas keys to remove from PackageXml file",
   "folder": "Folder",
   "instanceUrl": "URL of org instance",
+  "loginToOrg": "Login to salesforce org",
   "orgPurgeFlow": "Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name",
   "nameFilter": "Filter according to Name criteria",
   "packageXml": "Path to package.xml manifest file",

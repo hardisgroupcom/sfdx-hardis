@@ -21,8 +21,8 @@
     public static description = messages.getMessage('retrieveDx');
 
     public static examples = [
-    '$ bin/run hardis:org:retrieve:sources:dx',
-    '$ bin/run hardis:org:retrieve:sources:dx --sandbox'
+    '$ sfdx hardis:org:retrieve:sources:dx',
+    '$ sfdx hardis:org:retrieve:sources:dx --sandbox'
     ];
 
     protected static flagsConfig = {
@@ -30,7 +30,7 @@
       packagexml: flags.string({char: 'p', description: messages.getMessage('packageXml')}),
       prompt: flags.boolean({char: 'z', default: true, allowNo: true,  description: messages.getMessage('prompt')}),
       sandbox: flags.boolean({ char: 's', default: false, description: messages.getMessage('sandboxLogin')}),
-      instanceurl: flags.string({char: 'r', default: 'https://login.saleforce.com',  description: messages.getMessage('instanceUrl')}),
+      instanceurl: flags.string({char: 'r', description: messages.getMessage('instanceUrl')}),
       debug: flags.boolean({char: 'd', default: false, description: messages.getMessage('debugMode')})
     };
 
@@ -62,6 +62,8 @@
       // Remove temporary files
       await fs.rmdir(path.join(folder, 'unpackaged'), { recursive: true });
 
-      return { orgId: this.org.getOrgId(), outputString: `Retrieved metadatas from ${this.org.getUsername()} in ${folder}` };
+      const message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
+      this.ux.log(message);
+      return { orgId: this.org.getOrgId(), outputString: message };
     }
   }

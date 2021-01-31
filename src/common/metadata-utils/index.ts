@@ -159,7 +159,7 @@ class MetadataUtils {
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      commandThis.ux.log(`[sfdx-hardis] Retrieving metadatas from ${commandThis.org.username} in ${metadataFolder}...`);
+      commandThis.ux.log(`[sfdx-hardis] Retrieving metadatas in ${metadataFolder}...`);
       const retrieveRes = await sfdx.mdapi.retrieve({
         retrievetargetdir : metadataFolder,
         unpackaged: packageXml,
