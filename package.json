@@ -1,5 +1,5 @@
 {
-  "name": "@hardis-group/sfdx-hardis",
+  "name": "sfdx-hardis",
   "description": "Hardis-Group Toolbox for Salesforce DX",
   "version": "0.1.1",
   "author": "NicolasVuillamy @nvuillam",
