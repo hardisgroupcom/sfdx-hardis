@@ -10,7 +10,16 @@ export const hook = async (options: any) => {
         const orgInfoResult = await sfdx.org.display();
         if (!(orgInfoResult && orgInfoResult.connectedStatus && orgInfoResult.connectedStatus.includes('Connected'))) {
             console.log('You must be connected to an org to perform this command. Please login in the open web browser');
-            const loginResult = await sfdx.auth.webLogin({setdefaultusername: true});
+            const loginResult = await sfdx.auth.webLogin({
+                setdefaultusername: true,
+                    instanceurl: (options.Command.flags?.instanceurl === '') ?
+                    options.Command.flags?.instanceurl :
+                    (options.Command.flags.sandbox === true) ?
+                    'https://test.salesforce.com' :
+                    'https://login.salesforce.com',
+                    _quiet: !options.Command.flags.debug === true,
+                    _rejectOnError: true
+            });
             if (loginResult?.instanceUrl != null) {
                 console.log(`Successfully logged to ${loginResult.instanceUrl} with username ${loginResult.username}\nYou have have to run again the command`);
             } else {
