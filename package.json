@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
   "description": "Hardis-Group Toolbox for Salesforce DX",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/nvuillam/sfdx-hardis/issues",
   "dependencies": {
