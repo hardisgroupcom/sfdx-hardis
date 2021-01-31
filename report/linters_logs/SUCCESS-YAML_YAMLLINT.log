@@ -1,0 +1,9 @@
+Results of yamllint linter (version 1.25.0)
+See documentation on https://nvuillam.github.io/mega-linter/descriptors/yaml_yamllint/
+-----------------------------------------------
+
+✅ [SUCCESS] .github/workflows/deploy-PROD.yml
+✅ [SUCCESS] .github/workflows/deploy-RELEASE.yml
+✅ [SUCCESS] .github/workflows/mega-linter.yml
+✅ [SUCCESS] .github/workflows/test.yml
+✅ [SUCCESS] .mega-linter.yml
