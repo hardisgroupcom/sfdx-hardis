@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+## [0.3.0] 2021-01-31
+
 - Build and upload nvuillam/sfdx-hardis docker image when releasing a new version
 - New command force:auth:login + manage login using JWT for CI
 
