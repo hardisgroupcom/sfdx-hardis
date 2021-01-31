@@ -19,7 +19,7 @@ Toolbox for Salesforce DX, by by [Hardis-Group](https://www.hardis-group.com/)
 ## Installation
 
 ```sh-session
-$ npm install -g sfdx-hardis
+npm install -g sfdx-hardis
 ```
 
 <!-- usage -->
@@ -28,7 +28,7 @@ $ npm install -g sfdx-hardis
 $ sfdx COMMAND
 running command...
 $ sfdx (-v|--version|version)
-sfdx-hardis/0.1.5 win32-x64 node-v12.11.1
+sfdx-hardis/0.2.0 win32-x64 node-v12.11.1
 $ sfdx --help [COMMAND]
 USAGE
   $ sfdx COMMAND
@@ -37,13 +37,14 @@ USAGE
 <!-- usagestop -->
 ## Usage
 ```sh-session
-$ sfdx hardis:<COMMAND> <OPTIONS>
+sfdx hardis:<COMMAND> <OPTIONS>
 ```
 ## Commands
 
 <!-- commands -->
 * [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string---sandbox--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesdx--f-string--t-string--m-string--z--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesmetadata--f-string--p-string--z--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 
 ## `sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -106,7 +107,7 @@ EXAMPLES
      No record deleted
 ```
 
-_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.1.5/lib/commands/hardis/org/purge/flow.js)_
+_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.2.0/lib/commands/hardis/org/purge/flow.js)_
 
 ## `sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -133,7 +134,7 @@ OPTIONS
 
   -s, --sandbox                                                                     Use if the environment is a sandbox
 
-  -t, --tempfolder=tempfolder                                                       [default: /tmp] Temporary folder
+  -t, --tempfolder=tempfolder                                                       [default: ./tmp] Temporary folder
 
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
@@ -149,9 +150,53 @@ OPTIONS
   --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
                                                                                     this command invocation
 
-EXAMPLE
-  $ bin/run hardis:org:retrieve:dx --targetusername nicolas.vuillamy@gmail.com
+EXAMPLES
+  $ bin/run hardis:org:retrieve:sources:dx --sandbox
+  $ bin/run hardis:org:retrieve:sources:dx --sandbox
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.1.5/lib/commands/hardis/org/retrieve/sources/dx.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.2.0/lib/commands/hardis/org/retrieve/sources/dx.js)_
+
+## `sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Retrieve Salesforce DX project from org
+
+```
+Retrieve Salesforce DX project from org
+
+USAGE
+  $ sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] 
+  [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+  -f, --folder=folder                                                               [default: .] Folder
+  -p, --packagexml=packagexml                                                       Path to package.xml manifest file
+
+  -r, --instanceurl=instanceurl                                                     [default:
+                                                                                    https://login.saleforce.com] URL of
+                                                                                    org instance
+
+  -s, --sandbox                                                                     Use if the environment is a sandbox
+
+  -u, --targetusername=targetusername                                               username or alias for the target
+                                                                                    org; overrides default target org
+
+  -z, --[no-]prompt                                                                 Prompt for confirmation (true by
+                                                                                    default, use --no-prompt to skip)
+
+  --apiversion=apiversion                                                           override the api version used for
+                                                                                    api requests made by this command
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+EXAMPLES
+  $ bin/run hardis:org:retrieve:sources:dx
+  $ bin/run hardis:org:retrieve:sources:dx --sandbox
+```
+
+_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.2.0/lib/commands/hardis/org/retrieve/sources/metadata.js)_
 <!-- commandsstop -->
