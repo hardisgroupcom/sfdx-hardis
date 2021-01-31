@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+- Build and upload nvuillam/sfdx-hardis docker image when releasing a new version
+
 ## [0.2.0] 2021-01-31
 
 - New command **sfdx hardis:org:retrieve:sources:metadata** : Retrieve all metadata from an org
