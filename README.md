@@ -1,7 +1,7 @@
 sfdx-hardis
 ===========
 
-** (IN CONSTRUCTION) **
+**(IN CONSTRUCTION)**
 
 Toolbox for Salesforce DX, by by [Hardis-Group](https://www.hardis-group.com/)
 
