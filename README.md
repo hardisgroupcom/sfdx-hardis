@@ -6,7 +6,7 @@ sfdx-hardis
 Toolbox for Salesforce DX, by by [Hardis-Group](https://www.hardis-group.com/)
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Mega-Linter](https://github.com/nvuillam/sfdx-hardis/workflows/Mega-Linter/badge.svg?branch=main)](https://github.com/nvuillam/sfdx-hardis/actions?query=workflow%3AMega-Linter+branch%main)
+[![Mega-Linter](https://github.com/nvuillam/sfdx-hardis/workflows/Mega-Linter/badge.svg?branch=main)](https://github.com/nvuillam/sfdx-hardis/actions?query=workflow%3AMega-Linter+branch%3Amain)
 [![Codecov](https://codecov.io/gh/nvuillam/sfdx-hardis/branch/main/graph/badge.svg)](https://codecov.io/gh/nvuillam/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/nvuillam/sfdx-hardis/blob/main/package.json)
