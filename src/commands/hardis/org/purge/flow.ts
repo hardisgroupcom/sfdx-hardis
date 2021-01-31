@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -11,7 +12,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class Org extends SfdxCommand {
+export default class OrgPurgeFlow extends SfdxCommand {
 
   public static title = 'Purge Flow versions';
 
@@ -47,6 +48,8 @@ export default class Org extends SfdxCommand {
     prompt: flags.boolean({char: 'z', default: true, allowNo: true,  description: messages.getMessage('prompt')}),
     name: flags.string({char: 'n', description: messages.getMessage('nameFilter')}),
     status: flags.string({char: 's', default: 'Obsolete', description: messages.getMessage('statusFilter')}),
+    sandbox: flags.boolean({ default: false, description: messages.getMessage('sandboxLogin')}),
+    instanceurl: flags.string({char: 'r', default: 'https://login.saleforce.com',  description: messages.getMessage('instanceUrl')}),
     debug: flags.boolean({char: 'd', default: false, description: messages.getMessage('debugMode')})
   };
 
@@ -58,6 +61,8 @@ export default class Org extends SfdxCommand {
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
+
+  /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const prompt = this.flags.noprompt || true;
@@ -110,7 +115,7 @@ export default class Org extends SfdxCommand {
     const deleteErrors = [];
     if (
       !prompt ||
-      await this.ux.confirm(`Are you sure you want to delete this list of records in ${this.org.getUsername} (y/n)?`)
+      await this.ux.confirm(`Are you sure you want to delete this list of records in ${this.org.getUsername()} (y/n)?`)
       ) {
         for (const record of records) {
           const deleteResult = await sfdx.data.recordDelete({
