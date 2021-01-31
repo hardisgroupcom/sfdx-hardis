@@ -15,32 +15,24 @@ Toolbox for Salesforce DX, by by [Hardis-Group](https://www.hardis-group.com/)
 
 <!-- tocstop -->
 
-<!-- install -->
 ## Installation
 
+### Npm package
+
 ```sh-session
-npm install -g sfdx-hardis
+sfdx plugins:link sfdx-hardis
 ```
 
-<!-- usage -->
-```sh-session
-$ npm install -g sfdx-hardis
-$ sfdx COMMAND
-running command...
-$ sfdx (-v|--version|version)
-sfdx-hardis/0.2.0 win32-x64 node-v12.11.1
-$ sfdx --help [COMMAND]
-USAGE
-  $ sfdx COMMAND
-...
-```
-<!-- usagestop -->
+### Docker
+
+You can use docker image **nvuillam/sfdx-hardis**
+
 ## Usage
 ```sh-session
 sfdx hardis:<COMMAND> <OPTIONS>
 ```
-## Commands
 
+## Commands
 <!-- commands -->
 * [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string---sandbox--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesdx--f-string--t-string--m-string--z--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
