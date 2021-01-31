@@ -29,7 +29,7 @@ export async function checkSfdxPlugin(pluginName: string): Promise<{installed: b
 export async function filterPackageXml(packageXmlFile: string, packageXmlFileOut: string, removeMetadatas: string[]):
                                         Promise<{updated: boolean, message: string}> {
     let updated = false ;
-    let message = `${packageXmlFileOut} not updated`;
+    let message = `[sfdx-hardis] ${packageXmlFileOut} not updated`;
     const initialFileContent = fs.readFileSync(packageXmlFile);
     const manifest = await xml2js.parseStringPromise(initialFileContent);
     manifest.Package.types = manifest.Package.types.filter((type: any) => !removeMetadatas.includes(type.name[0]));
@@ -38,7 +38,7 @@ export async function filterPackageXml(packageXmlFile: string, packageXmlFileOut
     if (updatedFileContent !== initialFileContent) {
         fs.writeFileSync(packageXmlFileOut, updatedFileContent);
         updated = true;
-        message = `${packageXmlFile} has been filtered to ${packageXmlFileOut}`;
+        message = `[sfdx-hardis] ${packageXmlFile} has been filtered to ${packageXmlFileOut}`;
     }
     return {
         updated,

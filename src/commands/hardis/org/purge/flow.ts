@@ -19,7 +19,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
   public static description = messages.getMessage('orgPurgeFlow');
 
   public static examples = [
-  `$ bin/run hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
+  `$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
   Found 1 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -29,7 +29,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   `,
-  `$ bin/run hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
+  `$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
   Found 4 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete

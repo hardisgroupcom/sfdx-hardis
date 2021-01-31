@@ -24,8 +24,8 @@ export default class DxSources extends SfdxCommand {
   public static description = messages.getMessage('retrieveDx');
 
   public static examples = [
-  '$ bin/run hardis:org:retrieve:sources:dx --sandbox',
-  '$ bin/run hardis:org:retrieve:sources:dx --sandbox'
+  '$ sfdx hardis:org:retrieve:sources:dx',
+  '$ sfdx hardis:org:retrieve:sources:dx --sandbox'
   ];
 
   protected static flagsConfig = {
@@ -34,7 +34,7 @@ export default class DxSources extends SfdxCommand {
     filteredmetadatas: flags.string({char: 'm', description: messages.getMessage('filteredMetadatas')}),
     prompt: flags.boolean({char: 'z', default: true, allowNo: true,  description: messages.getMessage('prompt')}),
     sandbox: flags.boolean({ char: 's', default: false, description: messages.getMessage('sandboxLogin')}),
-    instanceurl: flags.string({char: 'r', default: 'https://login.saleforce.com',  description: messages.getMessage('instanceUrl')}),
+    instanceurl: flags.string({char: 'r',  description: messages.getMessage('instanceUrl')}),
     debug: flags.boolean({char: 'd', default: false, description: messages.getMessage('debugMode')})
   };
 
@@ -105,7 +105,8 @@ export default class DxSources extends SfdxCommand {
     await fs.rmdir(tempFolder, { recursive: true });
 
     // Set bac initial cwd
-
-    return { orgId: this.org.getOrgId(), outputString: '' };
+    const message = `[sfdx-hardis] Successfully retrieved sfdx project in ${folder}`;
+    this.ux.log(message);
+    return { orgId: this.org.getOrgId(), outputString: message };
   }
 }
