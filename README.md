@@ -1,6 +1,8 @@
 sfdx-hardis
 ===========
 
+** (IN CONSTRUCTION) **
+
 Toolbox for Salesforce DX, by by [Hardis-Group](https://www.hardis-group.com/)
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
