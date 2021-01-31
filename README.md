@@ -15,8 +15,22 @@ Toolbox for Salesforce DX, by by [Hardis-Group](https://www.hardis-group.com/)
 <!-- toc -->
 
 <!-- tocstop -->
+
+<!-- tocstop -->
 <!-- install -->
 <!-- usage -->
+```sh-session
+$ npm install -g @hardis-group/sfdx-hardis
+$ sfdx COMMAND
+running command...
+$ sfdx (-v|--version|version)
+@hardis-group/sfdx-hardis/0.1.0 win32-x64 node-v12.11.1
+$ sfdx --help [COMMAND]
+USAGE
+  $ sfdx COMMAND
+...
+```
+<!-- usagestop -->
 ```sh-session
 $ npm install -g sfdx-hardis
 $ sfdx COMMAND
@@ -30,6 +44,8 @@ USAGE
 ```
 <!-- usagestop -->
 <!-- commands -->
+
+<!-- commandsstop -->
 * [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string---sandbox--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesdx--f-string--t-string--m-string--z--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 
