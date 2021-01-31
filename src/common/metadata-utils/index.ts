@@ -145,12 +145,10 @@ class MetadataUtils {
                                         filteredMetadatas: string[], commandThis: any, debug: boolean) {
 
     // Build package.xml for all org
-    if (!fs.existsSync(packageXml)) {
-      commandThis.ux.log(`[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
-      const manifestRes = await exec('sfdx sfpowerkit:org:manifest:build -o package.xml');
-      if (debug) {
-        commandThis.ux.log(manifestRes.stdout + manifestRes.stderr);
-      }
+    commandThis.ux.log(`[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
+    const manifestRes = await exec('sfdx sfpowerkit:org:manifest:build -o package.xml');
+    if (debug) {
+      commandThis.ux.log(manifestRes.stdout + manifestRes.stderr);
     }
 
     // Filter package XML

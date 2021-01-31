@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+## [0.3.1] 2021-01-31
+
+- Always regenerate full package.xml before retrieving metadatas
+
 ## [0.3.0] 2021-01-31
 
 - Build and upload nvuillam/sfdx-hardis docker image when releasing a new version
