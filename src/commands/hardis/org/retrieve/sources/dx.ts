@@ -3,14 +3,12 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as child from 'child_process';
-import * as extractZip from 'extract-zip';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as sfdx from 'sfdx-node';
 import * as util from 'util';
 const exec = util.promisify(child.exec);
 import { MetadataUtils } from '../../../../../common/metadata-utils';
-import { checkSfdxPlugin, filterPackageXml } from '../../../../../common/utils';
+import { checkSfdxPlugin } from '../../../../../common/utils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -26,13 +24,13 @@ export default class DxSources extends SfdxCommand {
   public static description = messages.getMessage('retrieveDx');
 
   public static examples = [
-  `$ bin/run hardis:org:retrieve:dx --targetusername nicolas.vuillamy@gmail.com
-  `
+  '$ bin/run hardis:org:retrieve:sources:dx --sandbox',
+  '$ bin/run hardis:org:retrieve:sources:dx --sandbox'
   ];
 
   protected static flagsConfig = {
     folder: flags.string({char: 'f', default: '.',  description: messages.getMessage('folder')}),
-    tempfolder: flags.string({char: 't', default: '/tmp',  description: messages.getMessage('tempFolder')}),
+    tempfolder: flags.string({char: 't', default: './tmp',  description: messages.getMessage('tempFolder')}),
     filteredmetadatas: flags.string({char: 'm', description: messages.getMessage('filteredMetadatas')}),
     prompt: flags.boolean({char: 'z', default: true, allowNo: true,  description: messages.getMessage('prompt')}),
     sandbox: flags.boolean({ char: 's', default: false, description: messages.getMessage('sandboxLogin')}),
@@ -58,7 +56,6 @@ export default class DxSources extends SfdxCommand {
                                   this.flags.filteredmetadatas.split(',') :
                                   MetadataUtils.listMetadatasNotManagedBySfdx();
     const debug = this.flags.debug || false ;
-    const username = this.org.getUsername();
 
     // Check required plugins
     const powerkitRes = await checkSfdxPlugin('sfpowerkit');
@@ -75,40 +72,9 @@ export default class DxSources extends SfdxCommand {
     const sfdxFolder = path.join(tempFolder, 'sfdx-project');
     await fs.ensureDir(sfdxFolder);
 
-    // Build package.xml for all org
-    const packageXml = path.join(tempFolder, 'package.xml');
-    if (!fs.existsSync(packageXml)) {
-      this.ux.log(`[sfdx-hardis] Generating full package.xml from ${username}...`);
-      const manifestRes = await exec('sfdx sfpowerkit:org:manifest:build -o package.xml');
-      if (debug) {
-        this.ux.log(manifestRes.stdout + manifestRes.stderr);
-      }
-    }
-
-    // Filter package XML
-    const filterRes = await filterPackageXml(packageXml, packageXml, filteredMetadatas);
-    this.ux.log(filterRes.message);
-
     // Retrieve metadatas
-    if (fs.readdirSync(metadataFolder).length === 0) {
-      this.ux.log(`[sfdx-hardis] Retrieving metadatas from ${username} in ${metadataFolder}...`);
-      const retrieveRes = await sfdx.mdapi.retrieve({
-        retrievetargetdir : metadataFolder,
-        unpackaged: './package.xml',
-        wait: 60,
-        verbose: debug,
-        _quiet: !debug,
-        _rejectOnError: true
-      });
-      if (debug) {
-        this.ux.log(retrieveRes);
-      }
-      // Unzip metadatas
-      this.ux.log('[sfdx-hardis] Unzipping metadatas...');
-      await extractZip('./mdapipkg/unpackaged.zip', { dir: metadataFolder });
-      await fs.unlink('./mdapipkg/unpackaged.zip');
-      await fs.unlink('./package.xml');
-    }
+    const packageXml = path.resolve(path.join(tempFolder, 'package.xml')) ;
+    await MetadataUtils.retrieveMetadatas(packageXml, metadataFolder, true, filteredMetadatas, this, debug);
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
@@ -123,7 +89,7 @@ export default class DxSources extends SfdxCommand {
     this.ux.log(`[sfdx-hardis] Converting metadatas into SFDX sources in ${sfdxFolder}...`);
     process.chdir(sfdxFolder);
     try {
-      const convertRes = await exec(`sfdx force:mdapi:convert --rootdir ${metadataFolder} ${(debug) ? '--verbose' : ''}`);
+      const convertRes = await exec(`sfdx force:mdapi:convert --rootdir ${path.join(metadataFolder, 'unpackaged')} ${(debug) ? '--verbose' : ''}`);
       if (debug) {
         this.ux.log(convertRes.stdout + convertRes.stderr);
       }

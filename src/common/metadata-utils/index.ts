@@ -1,3 +1,12 @@
+import * as child from 'child_process';
+import * as extractZip from 'extract-zip';
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import * as sfdx from 'sfdx-node';
+import * as util from 'util';
+import { filterPackageXml } from '../../common/utils';
+const exec = util.promisify(child.exec);
+
 class MetadataUtils {
 
   // Describe packageXml <=> metadata folder correspondance
@@ -129,6 +138,44 @@ class MetadataUtils {
       'ManagedContentType',
       'NotificationTypeConfig'
     ];
+  }
+
+  // Retrieve metadatas from a package.xml
+  public static async retrieveMetadatas(packageXml: string, metadataFolder: string, checkEmpty: boolean,
+                                        filteredMetadatas: string[], commandThis: any, debug: boolean) {
+
+    // Build package.xml for all org
+    if (!fs.existsSync(packageXml)) {
+      commandThis.ux.log(`[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
+      const manifestRes = await exec('sfdx sfpowerkit:org:manifest:build -o package.xml');
+      if (debug) {
+        commandThis.ux.log(manifestRes.stdout + manifestRes.stderr);
+      }
+    }
+
+    // Filter package XML
+    const filterRes = await filterPackageXml(packageXml, packageXml, filteredMetadatas);
+    commandThis.ux.log(filterRes.message);
+
+    // Retrieve metadatas
+    if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
+      commandThis.ux.log(`[sfdx-hardis] Retrieving metadatas from ${commandThis.org.username} in ${metadataFolder}...`);
+      const retrieveRes = await sfdx.mdapi.retrieve({
+        retrievetargetdir : metadataFolder,
+        unpackaged: packageXml,
+        wait: 60,
+        verbose: debug,
+        _quiet: !debug,
+        _rejectOnError: true
+      });
+      if (debug) {
+        commandThis.ux.log(retrieveRes);
+      }
+      // Unzip metadatas
+      commandThis.ux.log('[sfdx-hardis] Unzipping metadatas...');
+      await extractZip(path.join(metadataFolder, 'unpackaged.zip'), { dir: metadataFolder });
+      await fs.unlink(path.join(metadataFolder, 'unpackaged.zip'));
+    }
   }
 
 }

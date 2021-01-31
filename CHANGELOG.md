@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
-## [0.1.1] 2021-01-26
+## [0.2.0] 2021-01-31
+
+- New command **sfdx hardis:org:retrieve:sources:metadata** : Retrieve all metadata from an org
+
+## [0.1.1] 2021-01-31
 
 - New command **sfdx hardis:org:retrieve:sources:dx** : Create SFDX project from remote org
 
