@@ -60,6 +60,7 @@
         "passin",
         "passout",
         "postpack",
+        "postrun",
         "posttest",
         "prerun",
         "rbenv",

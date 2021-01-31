@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+## [0.4.0] 2021-02-01
+
+- Send MS Teams notifications if set environment variable MS_TEAMS_WEBHOOK_URL or msTeamsWebhookUrl in .sfdx-hardis.yml
+
 ## [0.3.1] 2021-01-31
 
 - Always regenerate full package.xml before retrieving metadatas
