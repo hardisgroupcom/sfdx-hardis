@@ -1130,6 +1130,11 @@ chalk@^4.1.0:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
 
+changed-git-files@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/changed-git-files/-/changed-git-files-0.0.1.tgz#7b0ba5fb0dbcf104dd2884ea65b1bf24f034be44"
+  integrity sha1-ewul+w288QTdKITqZbG/JPA0vkQ=
+
 chardet@^0.4.0:
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/chardet/-/chardet-0.4.2.tgz#b5473b33dc97c424e5d98dc87d55d4d8a29c8bf2"
@@ -3812,6 +3817,13 @@ moment@^2.10.6:
   version "2.29.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.1.tgz#b2be769fa31940be9eeea6469c075e35006fa3d3"
   integrity sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==
+
+ms-teams-webhook@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/ms-teams-webhook/-/ms-teams-webhook-1.0.4.tgz#ed412de82269b1663d840b3e02a34cccb7213bbc"
+  integrity sha512-QyKoAq9FNwRSyw4Ww5h8OaOx+YQUsRyMOQu/jKsHFS9ITe4URXDF9rAbnndmTfy61CdzLsUCRzsPDlkzrecqcQ==
+  dependencies:
+    axios "^0.21.1"
 
 ms@2.0.0:
   version "2.0.0"

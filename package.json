@@ -12,10 +12,12 @@
     "@salesforce/command": "^2",
     "@salesforce/core": "^2",
     "@salesforce/ts-sinon": "^1.2.4",
+    "changed-git-files": "^0.0.1",
     "columnify": "^1.5.4",
     "cosmiconfig": "^7.0.0",
     "extract-zip": "^2.0.1",
     "fs-extra": "^9.1.0",
+    "ms-teams-webhook": "^1.0.4",
     "sfdx-node": "^2.2.0",
     "tslib": "^1",
     "xml2js": "^0.4.23"
@@ -62,6 +64,9 @@
       ],
       "auth": [
         "./lib/hooks/prerun/auth"
+      ],
+      "postrun": [
+        "./lib/hooks/postrun/notify"
       ]
     },
     "topics": {
