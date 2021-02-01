@@ -4,7 +4,9 @@ import os = require('os');
 import path = require('path');
 const debug = Debug('sfdx-essentials');
 
-const AMPLITUDE_TOKEN = 'ec70987c2fddff910b2f53d14f556b59';
+/* analytics not implemented yet */
+
+const AMPLITUDE_TOKEN = ''; // 'ec70987c2fddff910b2f53d14f556b59';
 const STATS_VERSION = globalThis.SFDX_ESSENTIALS_TEST === true ? -1 : 2;
 
 let amplitudeClient;

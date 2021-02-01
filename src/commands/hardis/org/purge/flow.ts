@@ -98,7 +98,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
 
     // Check empty result
     if (!flowQueryResult.records || flowQueryResult.records.length <= 0) {
-      const outputString = `No matching Flow records found with query ${query}`;
+      const outputString = `[sfdx-hardis] No matching Flow records found with query ${query}`;
       this.ux.log(outputString);
       return { deleted: [] , outputString};
     }
@@ -108,14 +108,14 @@ export default class OrgPurgeFlow extends SfdxCommand {
       return { Id: record.Id, MasterLabel: record.MasterLabel, VersionNumber: record.VersionNumber,
          Description: record.Description, Status: record.Status };
     });
-    this.ux.log(`Found ${records.length} records:\n${columnify(records)}`);
+    this.ux.log(`[sfdx-hardis] Found ${records.length} records:\n${columnify(records)}`);
 
     // Perform deletion
     const deleted = [];
     const deleteErrors = [];
     if (
       !prompt ||
-      await this.ux.confirm(`Are you sure you want to delete this list of records in ${this.org.getUsername()} (y/n)?`)
+      await this.ux.confirm(`[sfdx-hardis] Are you sure you want to delete this list of records in ${this.org.getUsername()} (y/n)?`)
       ) {
         for (const record of records) {
           const deleteResult = await sfdx.data.recordDelete({
@@ -127,7 +127,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
             _rejectOnError: true
           });
           if (deleteResult.success !== true) {
-            this.ux.error(`Unable to perform deletion request: ${JSON.stringify(deleteResult)}`);
+            this.ux.error(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteResult)}`);
             deleteErrors.push(deleteResult);
           }
           deleted.push(record);
@@ -138,7 +138,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
       throw new SfdxError(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`);
     }
 
-    const summary = (deleted.length > 0) ? `Deleted the following list of records:\n${columnify(deleted)}` : 'No record deleted';
+    const summary = (deleted.length > 0) ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : '[sfdx-hardis] No record deleted';
     this.ux.log(summary);
     // Return an object to be displayed with --json
     return { orgId: this.org.getOrgId(), outputString: summary };

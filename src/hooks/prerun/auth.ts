@@ -8,6 +8,11 @@ import { getConfig } from '../../config';
 const exec = util.promisify(child.exec);
 
 export const hook = async (options: any) => {
+    // Skip hooks from other commands than hardis commands
+    const commandId = options?.Command?.id || '';
+    if (!commandId.startsWith('hardis')) {
+        return;
+    }
     // skip if during mocha tests
     if (typeof global.it === 'function') {
         return;
@@ -54,7 +59,7 @@ export const hook = async (options: any) => {
                 logged = jwtAuthRes?.stdout.includes(`Successfully authorized ${username}`) ;
             } else {
                 // Login with web auth
-                console.warn('You must be connected to an org to perform this command. Please login in the open web browser');
+                console.warn('[sfdx-hardis] You must be connected to an org to perform this command. Please login in the open web browser');
                 if (process.env.CI === 'true') {
                     throw new SfdxError(
                     `In CI context, you may define:
@@ -73,12 +78,14 @@ export const hook = async (options: any) => {
                 username = loginResult?.username ;
             }
             if (logged) {
-                console.log(`Successfully logged to ${instanceUrl} with username ${username}`);
+                console.log(`[sfdx-hardis] Successfully logged to ${instanceUrl} with username ${username}`);
                 if (!options.checkAuth) {
+                    console.warn('***************************************');
                     console.warn('*** PLEASE RUN AGAIN THE COMMAND :) ***');
+                    console.warn('***************************************');
                 }
             } else {
-                console.error('You must be logged to an org to perform this action');
+                console.error('[sfdx-hardis] You must be logged to an org to perform this action');
             }
         }
     }

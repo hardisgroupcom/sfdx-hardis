@@ -20,8 +20,8 @@ export async function checkSfdxPlugin(pluginName: string): Promise<{installed: b
     return {
         installed,
         message: (installed) ?
-            `Installed sfdx plugin ${pluginName}` :
-            `sfdx plugin ${pluginName} is already installed`
+            `[sfdx-hardis] Installed sfdx plugin ${pluginName}` :
+            `[sfdx-hardis] sfdx plugin ${pluginName} is already installed`
     };
 }
 
