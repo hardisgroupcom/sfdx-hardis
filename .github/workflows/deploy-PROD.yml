@@ -11,7 +11,7 @@ name: "Build & Deploy - PROD"
 on:
   push:
     branches:
-      - "master"
+      - "main"
 
 
 ###############

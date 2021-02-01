@@ -3,11 +3,22 @@
 # sfdx-hardis
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Mega-Linter](https://github.com/hardisgroupcom/sfdx-hardis/workflows/Mega-Linter/badge.svg?branch=main)](https://github.com/nvuillam/sfdx-hardis/actions?query=workflow%3AMega-Linter+branch%3Amain)
+[![Mega-Linter](https://github.com/hardisgroupcom/sfdx-hardis/workflows/Mega-Linter/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions?query=workflow%3AMega-Linter+branch%3Amain)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/nvuillam/sfdx-hardis/blob/main/package.json)
+[![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 Toolbox for Salesforce DX, by [Hardis-Group](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
+
+This toolbox contains commands than can be run locally or from CI.
+For the moment, it can :
+
+- BackUp / Monitoring tools
+  - Retrieve all metadatas of an org
+  - Retrieve all metadatas of an org and convert them into a Salesforce DX Project
+- Help tools
+  - Purge obsolete flows versions
+
 
 <!-- toc -->
 
@@ -15,7 +26,7 @@ Toolbox for Salesforce DX, by [Hardis-Group](https://www.hardis-group.com/en/ser
 
 ## Installation
 
-### Npm package
+### SFDX Plugin
 
 ```sh-session
 sfdx plugins:link sfdx-hardis
@@ -23,7 +34,7 @@ sfdx plugins:link sfdx-hardis
 
 ### Docker
 
-You can use docker image **nvuillam/sfdx-hardis**
+You can use docker image **hardisgroupcom/sfdx-hardis**
 
 ## Usage
 ```sh-session
@@ -133,7 +144,7 @@ EXAMPLE
   $ sfdx hardis:auth:login
 ```
 
-_See code: [lib/commands/hardis/auth/login.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/auth/login.js)_
+_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/auth/login.js)_
 
 ## `sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -196,7 +207,7 @@ EXAMPLES
      No record deleted
 ```
 
-_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/purge/flow.js)_
+_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/purge/flow.js)_
 
 ## `sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -242,7 +253,7 @@ EXAMPLES
   $ sfdx hardis:org:retrieve:sources:dx --sandbox
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/retrieve/sources/dx.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/retrieve/sources/dx.js)_
 
 ## `sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -281,5 +292,5 @@ EXAMPLES
   $ sfdx hardis:org:retrieve:sources:dx --sandbox
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/nvuillam/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/retrieve/sources/metadata.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/retrieve/sources/metadata.js)_
 <!-- commandsstop -->
