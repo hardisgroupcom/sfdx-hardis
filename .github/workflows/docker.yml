@@ -13,14 +13,14 @@ jobs:
       - name: Publish version to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
-          name: nvuillam/sfdx-hardis
+          name: hardisgroupcom/sfdx-hardis
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           tag_semver: true
       - name: Publish latest to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
-          name: nvuillam/sfdx-hardis
+          name: hardisgroupcom/sfdx-hardis
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: "latest"
