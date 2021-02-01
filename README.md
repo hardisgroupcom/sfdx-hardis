@@ -3,7 +3,7 @@
 # sfdx-hardis
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Mega-Linter](https://github.com/nvuillam/sfdx-hardis/workflows/Mega-Linter/badge.svg?branch=main)](https://github.com/nvuillam/sfdx-hardis/actions?query=workflow%3AMega-Linter+branch%3Amain)
+[![Mega-Linter](https://github.com/hardisgroupcom/sfdx-hardis/workflows/Mega-Linter/badge.svg?branch=main)](https://github.com/nvuillam/sfdx-hardis/actions?query=workflow%3AMega-Linter+branch%3Amain)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/nvuillam/sfdx-hardis/blob/main/package.json)
 
