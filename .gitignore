@@ -1,6 +1,7 @@
 *-debug.log
 *-error.log
-/.nyc_output
+/.
+/.sfdx
 /dist
 /lib
 /package-lock.json
