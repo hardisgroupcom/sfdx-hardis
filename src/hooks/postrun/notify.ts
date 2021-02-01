@@ -3,8 +3,12 @@ import { IncomingWebhook } from 'ms-teams-webhook';
 import { getConfig } from '../../config';
 
 export const hook = async (options: any) => {
-
-    // Send hook to microsoft teams if MS_TEAMS_WEBHOOK_URL env var is set, or msTeamsWebhookUrl in config
+    // Skip hooks from other commands than hardis commands
+    const commandId = options?.Command?.id || '';
+    if (!commandId.startsWith('hardis')) {
+        return;
+    }
+    // Send hook to microsoft ?teams if MS_TEAMS_WEBHOOK_URL env var is set, or msTeamsWebhookUrl in config
     const config = await getConfig();
     const msTeamsWebhookUrl = process.env.MS_TEAMS_WEBHOOK_URL || config.msTeamsWebhookUrl ;
     if (msTeamsWebhookUrl) {
