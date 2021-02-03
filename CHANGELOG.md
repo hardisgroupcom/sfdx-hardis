@@ -4,7 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
-- New command `hardis:project:audit:callincallout`: Audit sfdx project sources to list all CallIns and CallOuts from Apex / Triggers code parsing
+- New command `hardis:project:audit:callincallout`: Audit sfdx project (or metadatas) sources to list all CallIns and CallOuts from Apex / Triggers code parsing
+- New command `hardis:project:audit:remotesites`: Audit sfdx project (or metadatas) sources to list all remote site settings of an org
 
 ## [0.4.1] 2021-02-01
 
