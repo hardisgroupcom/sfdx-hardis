@@ -16,12 +16,14 @@ For the moment, it can :
 - BackUp / Monitoring tools
   - Retrieve all metadatas of an org
   - Retrieve all metadatas of an org and convert them into a Salesforce DX Project
+- Audit tools
+  - Extract all CallIns and CallOuts from a SFDX project (or metadata) folder. Sort by SOAP, REST, HTTP
+  - Extract all remote sites connected to an org. Sort by HTTP / HTTPS and domain
 - Help tools
   - Purge obsolete flows versions
 
-
 <!-- toc -->
-
+* [sfdx-hardis](#sfdx-hardis)
 <!-- tocstop -->
 
 ## Installation
@@ -120,6 +122,8 @@ Example: `SFDX_CLIENT_ID: 3MVG9SOw8KERNN0.1kPOtqFc1ekdNpUho5WvGMn5n5IVMAFbcSvmY3
 * [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string---sandbox--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesdx--f-string--t-string--m-string--z--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesmetadata--f-string--p-string--z--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:project:audit:callincallout [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectauditcallincallout--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:project:audit:remotesites [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectauditremotesites--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 
 ## `sfdx hardis:auth:login [-r <string>] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -144,7 +148,7 @@ EXAMPLE
   $ sfdx hardis:auth:login
 ```
 
-_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/auth/login.js)_
+_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.3/lib/commands/hardis/auth/login.js)_
 
 ## `sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -207,7 +211,7 @@ EXAMPLES
      No record deleted
 ```
 
-_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/purge/flow.js)_
+_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.3/lib/commands/hardis/org/purge/flow.js)_
 
 ## `sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -253,7 +257,7 @@ EXAMPLES
   $ sfdx hardis:org:retrieve:sources:dx --sandbox
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/retrieve/sources/dx.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.3/lib/commands/hardis/org/retrieve/sources/dx.js)_
 
 ## `sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -292,5 +296,53 @@ EXAMPLES
   $ sfdx hardis:org:retrieve:sources:dx --sandbox
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/retrieve/sources/metadata.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.3/lib/commands/hardis/org/retrieve/sources/metadata.js)_
+
+## `sfdx hardis:project:audit:callincallout [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Generate list of callIn and callouts from sfdx project
+
+```
+Generate list of callIn and callouts from sfdx project
+
+USAGE
+  $ sfdx hardis:project:audit:callincallout [-d] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+EXAMPLE
+  $ sfdx hardis:project:audit:callouts
+```
+
+_See code: [lib/commands/hardis/project/audit/callincallout.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.3/lib/commands/hardis/project/audit/callincallout.js)_
+
+## `sfdx hardis:project:audit:remotesites [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Generate list of remote sites
+
+```
+Generate list of remote sites
+
+USAGE
+  $ sfdx hardis:project:audit:remotesites [-d] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+EXAMPLE
+  $ sfdx hardis:project:audit:remotesites
+```
+
+_See code: [lib/commands/hardis/project/audit/remotesites.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.3/lib/commands/hardis/project/audit/remotesites.js)_
 <!-- commandsstop -->

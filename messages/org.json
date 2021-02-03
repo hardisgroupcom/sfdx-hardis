@@ -1,4 +1,6 @@
 {
+  "auditCallInCallOut": "Generate list of callIn and callouts from sfdx project",
+  "auditRemoteSites": "Generate list of remote sites",
   "debugMode": "Activate debug mode (more logs)",
   "filteredMetadatas": "Comma separated list of Metadatas keys to remove from PackageXml file",
   "folder": "Folder",
