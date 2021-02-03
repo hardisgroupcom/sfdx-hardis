@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+- New command `hardis:project:audit:callincallout`: Audit sfdx project sources to list all CallIns and CallOuts from Apex / Triggers code parsing
+
 ## [0.4.1] 2021-02-01
 
 - Fix: Manage Hooks only from hardis namespace commands

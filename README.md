@@ -21,7 +21,7 @@ For the moment, it can :
 
 
 <!-- toc -->
-
+* [sfdx-hardis](#sfdx-hardis)
 <!-- tocstop -->
 
 ## Installation
@@ -116,37 +116,9 @@ Example: `SFDX_CLIENT_ID: 3MVG9SOw8KERNN0.1kPOtqFc1ekdNpUho5WvGMn5n5IVMAFbcSvmY3
 
 ## Commands
 <!-- commands -->
-* [`sfdx hardis:auth:login [-r <string>] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisauthlogin--r-string--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string---sandbox--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesdx--f-string--t-string--m-string--z--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesmetadata--f-string--p-string--z--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 
-## `sfdx hardis:auth:login [-r <string>] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
-
-Login to salesforce org
-
-```
-Login to salesforce org
-
-USAGE
-  $ sfdx hardis:auth:login [-r <string>] [-d] [--json] [--loglevel 
-  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
-
-OPTIONS
-  -d, --debug                                                                       Activate debug mode (more logs)
-  -r, --instanceurl=instanceurl                                                     URL of org instance
-  --json                                                                            format output as json
-
-  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
-                                                                                    this command invocation
-
-EXAMPLE
-  $ sfdx hardis:auth:login
-```
-
-_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/auth/login.js)_
-
-## `sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+## `sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name
 
@@ -154,16 +126,12 @@ Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Stat
 Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name
 
 USAGE
-  $ sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [--sandbox] [-r <string>] [-d] [-u <string>] 
-  [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+  $ sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-d] [-u <string>] [--apiversion <string>] [--json] 
+  [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
   -n, --name=name                                                                   Filter according to Name criteria
-
-  -r, --instanceurl=instanceurl                                                     [default:
-                                                                                    https://login.saleforce.com] URL of
-                                                                                    org instance
 
   -s, --status=status                                                               [default: Obsolete] Filter according
                                                                                     to Status criteria
@@ -182,10 +150,8 @@ OPTIONS
   --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
                                                                                     this command invocation
 
-  --sandbox                                                                         Use if the environment is a sandbox
-
 EXAMPLES
-  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
+  $ bin/run hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
      Found 1 records:
      ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
      30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -195,8 +161,8 @@ EXAMPLES
      ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
      30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   
-  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name 
-  TestFlow"
+  $ bin/run hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft 
+  --name TestFlow"
      Found 4 records:
      ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
      30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -207,90 +173,5 @@ EXAMPLES
      No record deleted
 ```
 
-_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/purge/flow.js)_
-
-## `sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
-
-Retrieve Salesforce DX project from org
-
-```
-Retrieve Salesforce DX project from org
-
-USAGE
-  $ sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-z] [-s] [-r <string>] [-d] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
-  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
-
-OPTIONS
-  -d, --debug                                                                       Activate debug mode (more logs)
-  -f, --folder=folder                                                               [default: .] Folder
-
-  -m, --filteredmetadatas=filteredmetadatas                                         Comma separated list of Metadatas
-                                                                                    keys to remove from PackageXml file
-
-  -r, --instanceurl=instanceurl                                                     URL of org instance
-
-  -s, --sandbox                                                                     Use if the environment is a sandbox
-
-  -t, --tempfolder=tempfolder                                                       [default: ./tmp] Temporary folder
-
-  -u, --targetusername=targetusername                                               username or alias for the target
-                                                                                    org; overrides default target org
-
-  -z, --[no-]prompt                                                                 Prompt for confirmation (true by
-                                                                                    default, use --no-prompt to skip)
-
-  --apiversion=apiversion                                                           override the api version used for
-                                                                                    api requests made by this command
-
-  --json                                                                            format output as json
-
-  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
-                                                                                    this command invocation
-
-EXAMPLES
-  $ sfdx hardis:org:retrieve:sources:dx
-  $ sfdx hardis:org:retrieve:sources:dx --sandbox
-```
-
-_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/retrieve/sources/dx.js)_
-
-## `sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
-
-Retrieve Salesforce DX project from org
-
-```
-Retrieve Salesforce DX project from org
-
-USAGE
-  $ sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-z] [-s] [-r <string>] [-d] [-u <string>] 
-  [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
-
-OPTIONS
-  -d, --debug                                                                       Activate debug mode (more logs)
-  -f, --folder=folder                                                               [default: .] Folder
-  -p, --packagexml=packagexml                                                       Path to package.xml manifest file
-  -r, --instanceurl=instanceurl                                                     URL of org instance
-  -s, --sandbox                                                                     Use if the environment is a sandbox
-
-  -u, --targetusername=targetusername                                               username or alias for the target
-                                                                                    org; overrides default target org
-
-  -z, --[no-]prompt                                                                 Prompt for confirmation (true by
-                                                                                    default, use --no-prompt to skip)
-
-  --apiversion=apiversion                                                           override the api version used for
-                                                                                    api requests made by this command
-
-  --json                                                                            format output as json
-
-  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
-                                                                                    this command invocation
-
-EXAMPLES
-  $ sfdx hardis:org:retrieve:sources:dx
-  $ sfdx hardis:org:retrieve:sources:dx --sandbox
-```
-
-_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.1/lib/commands/hardis/org/retrieve/sources/metadata.js)_
+_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v0.4.3/lib/commands/hardis/org/purge/flow.js)_
 <!-- commandsstop -->

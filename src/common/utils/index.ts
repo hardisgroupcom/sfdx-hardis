@@ -45,3 +45,15 @@ export async function filterPackageXml(packageXmlFile: string, packageXmlFileOut
         message
       };
 }
+
+// Count matches of a regex
+export async function countRegexMatches(regex: RegExp, text: string): Promise<number> {
+    return ((text || '').match(regex) || []).length;
+}
+
+// Get all captured groups of a regex in a string
+export async function extractRegexGroups(regex: RegExp, text: string): Promise<string[]> {
+    const matches = ((text || '').match(regex) || []).map(e => e.replace(regex, '$1').trim());
+    return matches;
+    // return ((text || '').matchAll(regex) || []).map(item => item.trim());
+}
