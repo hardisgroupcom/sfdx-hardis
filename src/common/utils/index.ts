@@ -18,7 +18,7 @@ export async function checkSfdxPlugin(
     pluginsStdout = pluginsRes.stdout;
   }
   if (!pluginsStdout.includes(pluginName)) {
-    await exec(`sfdx plugins:install ${pluginName}`);
+    await exec(`echo y|sfdx plugins:install ${pluginName}`);
     installed = true;
   }
   return {

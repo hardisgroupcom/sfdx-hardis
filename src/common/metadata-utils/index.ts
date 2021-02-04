@@ -134,6 +134,8 @@ class MetadataUtils {
     return [
       'ApexEmailNotifications',
       'AppointmentSchedulingPolicy',
+      'Audience',
+      'BlacklistedConsumer',
       'IframeWhiteListUrlSettings',
       'ManagedContentType',
       'NotificationTypeConfig'
