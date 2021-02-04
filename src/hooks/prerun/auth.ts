@@ -42,7 +42,7 @@ export const hook = async (options: any) => {
                 process.env.INSTANCE_URL :
                 (config.instanceUrl) ?
                 config.instanceUrl :
-                (options.Command.flags.sandbox === true) ?
+                ( options.argv && options.argv.includes('--sandbox') || options.Command.flags.sandbox === true) ?
                 'https://test.salesforce.com' :
                 'https://login.salesforce.com' ;
             const sfdxClientId = process.env.SFDX_CLIENT_ID || config.sfdxClientId || null ;
