@@ -23,7 +23,6 @@ For the moment, it can :
   - Purge obsolete flows versions
 
 <!-- toc -->
-* [sfdx-hardis](#sfdx-hardis)
 <!-- tocstop -->
 
 ## Installation
@@ -47,7 +46,7 @@ sfdx hardis:<COMMAND> <OPTIONS>
 
 ### Create a self-signed certificate
 
-Run the following commands
+Run the following commands (in [Git Bash](https://git-scm.com/downloads) if you are on Windows)
 
 ```sh-session
 mkdir ssh
