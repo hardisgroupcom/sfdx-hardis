@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+## [0.5.2] 2021-02-07
+
+- Fixes:
+  - `--no-prompt` argument is ignored
+
 ## [0.5.1] 2021-02-04
 
 - Fixes:

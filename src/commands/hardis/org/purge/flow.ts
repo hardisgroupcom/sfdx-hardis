@@ -65,7 +65,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const prompt = this.flags.noprompt || true;
+    const prompt = (this.flags.prompt === false) ? false : true;
     const statusFilter = (this.flags.status) ? this.flags.status.split(',') : ['Obsolete'];
     const nameFilter = this.flags.name || null;
     const debug = this.flags.debug || false ;
