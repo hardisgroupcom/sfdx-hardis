@@ -43,12 +43,6 @@ export default class DxSources extends SfdxCommand {
       char: 'm',
       description: messages.getMessage('filteredMetadatas')
     }),
-    prompt: flags.boolean({
-      char: 'z',
-      default: true,
-      allowNo: true,
-      description: messages.getMessage('prompt')
-    }),
     sandbox: flags.boolean({
       char: 's',
       default: false,

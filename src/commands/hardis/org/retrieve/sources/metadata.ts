@@ -28,7 +28,6 @@
     protected static flagsConfig = {
       folder: flags.string({char: 'f', default: '.',  description: messages.getMessage('folder')}),
       packagexml: flags.string({char: 'p', description: messages.getMessage('packageXml')}),
-      prompt: flags.boolean({char: 'z', default: true, allowNo: true,  description: messages.getMessage('prompt')}),
       sandbox: flags.boolean({ char: 's', default: false, description: messages.getMessage('sandboxLogin')}),
       instanceurl: flags.string({char: 'r', description: messages.getMessage('instanceUrl')}),
       debug: flags.boolean({char: 'd', default: false, description: messages.getMessage('debugMode')})
