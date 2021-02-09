@@ -49,11 +49,14 @@ sfdx hardis:<COMMAND> <OPTIONS>
 
 Run the following commands (in [Git Bash](https://git-scm.com/downloads) if you are on Windows)
 
+**Change the password in the script before running**
+
 ```sh-session
+export PASSWORD=dfgdlf999s2jlsfgd7
 mkdir ssh
 cd ssh
-openssl genrsa -des3 -passout pass:x -out server.pass.key 2048
-openssl rsa -passin pass:x -in server.pass.key -out server.key
+openssl genrsa -des3 -passout "pass:$PASSWORD" -out server.pass.key 2048
+openssl rsa -passin "pass:$PASSWORD" -in server.pass.key -out server.key
 rm server.pass.key
 openssl req -new -key server.key -out server.csr
 openssl x509 -req -sha256 -days 365 -in server.csr -signkey server.key -out server.crt
