@@ -123,8 +123,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
             sobjectid: record.Id,
             targetusername: username,
             usetoolingapi: true,
-            _quiet: debug,
-            _rejectOnError: true
+            _quiet: debug
           });
           if (deleteResult.success !== true) {
             this.ux.error(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteResult)}`);
