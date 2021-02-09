@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
-## [0.5.3] 2021-02-07
+## [0.5.4] 2021-02-09
 
 - Fixes:
   - `hardis:org:purge:flow`: Do not crash in case the Flow is not deletable
