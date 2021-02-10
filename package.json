@@ -20,10 +20,12 @@
     "fs-extra": "^9.1.0",
     "glob-promise": "^3.4.0",
     "ms-teams-webhook": "^1.0.4",
+    "read-pkg-up": "^7.0.1",
     "psl": "^1.8.0",
     "sfdx-node": "^2.2.0",
     "sort-array": "^4.1.3",
     "tslib": "^1",
+    "update-notifier": "^5.1.0",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
@@ -63,6 +65,9 @@
     "commands": "./lib/commands",
     "bin": "sfdx",
     "hooks": {
+      "init": [
+        "./lib/hooks/init/check-upgrade"
+      ],
       "prerun": [
         "./lib/hooks/prerun/auth"
       ],

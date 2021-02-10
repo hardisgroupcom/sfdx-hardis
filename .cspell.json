@@ -87,6 +87,7 @@
         "tocstop",
         "usagestop",
         "usetoolingapi",
-        "venv"
+        "venv",
+        "yamllint"
     ]
 }
