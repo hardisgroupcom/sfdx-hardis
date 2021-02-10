@@ -30,6 +30,7 @@ jobs:
           # Defaults to the user or organization that owns the workflow file
           scope: "hardisgroupcom"
       - run: yarn install --frozen-lockfile
+      - run: yarn config set version-git-tag false
       - run: yarn version --prerelease
       - run: yarn publish --tag beta
         env:
