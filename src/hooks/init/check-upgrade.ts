@@ -10,12 +10,13 @@ export const hook = async (options: any) => {
 
     // Check if an upgrade of sfdx-hardis is required
     // Use promise + then to not block plugin execution during that
-    const pkg = await readPkgUp();
+    let pkg = await readPkgUp();
+    pkg = pkg || require("./package.json");
     const notifier = updateNotifier({
         pkg: pkg.packageJson,
         updateCheckInterval: 900 // check every 15 mn
     });
-    if (notifier.update) {
+    if (notifier && notifier.update) {
         console.warn('***********************************************************************************************************************');
         console.warn(`WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to ${notifier.update.latest} by running "sfdx plugins:install sfdx-hardis"`);
         console.warn('***********************************************************************************************************************');
