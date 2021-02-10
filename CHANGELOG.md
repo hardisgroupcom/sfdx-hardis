@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+## [0.5.5] 2021-02-10
+
+- Check if installed sfdx-hardis is the latest version, else display a message to advise the user to upgrade to latest
+
 ## [0.5.4] 2021-02-09
 
 - Fixes:

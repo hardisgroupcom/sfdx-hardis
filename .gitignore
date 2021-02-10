@@ -9,3 +9,5 @@
 node_modules
 report
 sfdx-hardis-*.tgz
+
+.nyc_output/
