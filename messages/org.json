@@ -1,4 +1,5 @@
 {
+  "allowPurgeFailure": "Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable",
   "auditCallInCallOut": "Generate list of callIn and callouts from sfdx project",
   "auditRemoteSites": "Generate list of remote sites",
   "debugMode": "Activate debug mode (more logs)",
