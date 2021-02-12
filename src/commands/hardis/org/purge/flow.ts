@@ -48,6 +48,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     prompt: flags.boolean({char: 'z', default: true, allowNo: true,  description: messages.getMessage('prompt')}),
     name: flags.string({char: 'n', description: messages.getMessage('nameFilter')}),
     status: flags.string({char: 's', default: 'Obsolete', description: messages.getMessage('statusFilter')}),
+    allowpurgefailure: flags.boolean({char: 'f', default: true, allowNo: true,  description: messages.getMessage('allowPurgeFailure')}),
     sandbox: flags.boolean({ default: false, description: messages.getMessage('sandboxLogin')}),
     instanceurl: flags.string({char: 'r', default: 'https://login.saleforce.com',  description: messages.getMessage('instanceUrl')}),
     debug: flags.boolean({char: 'd', default: false, description: messages.getMessage('debugMode')})
@@ -68,6 +69,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const prompt = (this.flags.prompt === false) ? false : true;
     const statusFilter = (this.flags.status) ? this.flags.status.split(',') : ['Obsolete'];
     const nameFilter = this.flags.name || null;
+    const allowPurgeFailure = (this.flags.allowpurgefailure === false) ? false : true;
     const debug = this.flags.debug || false ;
 
     // Check we don't delete active Flows
@@ -134,7 +136,12 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }
 
     if (deleteErrors.length > 0) {
-      throw new SfdxError(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`);
+      const errMsg = `[sfdx-hardis] There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`;
+      if (allowPurgeFailure) {
+        console.warn(errMsg);
+      } else {
+        throw new SfdxError(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`);
+      }
     }
 
     const summary = (deleted.length > 0) ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : '[sfdx-hardis] No record deleted';
