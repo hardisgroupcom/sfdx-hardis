@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+- New command **hardis:scratch:create**
+- Advanced project initialization using `--shape` argument for `sfdx hardis:org:retrieve:sources:dx`
+- Automatic generation of .sfdx-hardis*.yml configuration files
+- Automatic update of project package.json to add sfdx-hardis utilities
+
 ## [0.5.10] 2021-02-12
 
 - Allow purges to fail without making sfdx command fail

@@ -1,0 +1,248 @@
+/* jscpd:ignore-start */
+import { flags, SfdxCommand } from '@salesforce/command';
+import { Messages, SfdxError } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import * as EmailValidator from 'email-validator';
+import * as fs from 'fs-extra';
+import * as glob from 'glob-promise';
+import * as os from 'os';
+import * as path from 'path';
+import * as prompts from 'prompts';
+import simpleGit, { SimpleGit } from 'simple-git';
+import { execJson } from '../../../common/utils';
+import { getConfig, setConfig } from '../../../config';
+const git: SimpleGit = simpleGit();
+
+// Initialize Messages with the current plugin directory
+Messages.importMessagesDirectory(__dirname);
+
+// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
+// or any library that is using the messages framework can also be loaded this way.
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+export default class ScratchCreate extends SfdxCommand {
+    public static title = 'Create and initialize scratch org';
+
+    public static description = messages.getMessage('scratchCreate');
+
+    public static examples = ['$ sfdx hardis:scratch:create'];
+
+    // public static args = [{name: 'file'}];
+
+    protected static flagsConfig = {
+        // flag with a value (-n, --name=VALUE)
+        debug: flags.boolean({
+            char: 'd',
+            default: false,
+            description: messages.getMessage('debugMode')
+        })
+    };
+
+    // Comment this out if your command does not require an org username
+    protected static requiresUsername = false;
+
+    // Comment this out if your command does not support a hub org username
+    protected static supportsDevhubUsername = true;
+
+    // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
+    protected static requiresProject = true;
+
+    /* jscpd:ignore-end */
+
+    protected configInfo: any;
+    protected devHubAlias: string;
+    protected scratchOrgAlias: string;
+    protected scratchOrgDuration: number;
+    protected userEmail: string;
+
+    protected gitBranch: string;
+    protected scratchOrgInfo: any;
+    protected scratchOrgUsername: string;
+    protected projectName: string;
+
+    public async run(): Promise<AnyJson> {
+        this.debug = this.flags.debug || false;
+
+        await this.initConfig();
+        await this.createScratchOrg();
+        await this.installPackages();
+        await this.initOrgMetadatas();
+        await this.initPermissionSetAssignments();
+        await this.initApexScripts();
+        await this.initOrgData();
+
+        // Return an object to be displayed with --json
+        return {
+            outputString: 'Created and initialized scratch org'
+        };
+    }
+
+    // Initialize configuration from .sfdx-hardis.yml + .gitbranch.sfdx-hardis.yml + .username.sfdx-hardis.yml
+    public async initConfig() {
+        this.configInfo = await getConfig('branch');
+        this.gitBranch = (await git.branchLocal()).current;
+        this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || this.configInfo.scratchOrgAlias || os.userInfo().username + '-' + this.gitBranch.replace('/', '-');
+        if (process.env.CI && !this.scratchOrgAlias.startsWith('CI-')) {
+            this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
+        }
+        this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;
+        // If not found, prompt user project name and store it in user config file
+        if (this.projectName == null) {
+            const promptResponse = await prompts({
+                type: 'text',
+                name: 'value',
+                message: '[sfdx-hardis] Please input your project name (ex: MonClient)',
+                validate: (value: string) => !value.match(/^[0-9a-z]+$/) // check only alphanumeric
+            });
+            this.projectName = promptResponse.value;
+            await setConfig('project', {
+                projectName: this.projectName,
+                devHubAlias: 'DevHub-' + this.projectName
+            });
+        }
+        this.devHubAlias = process.env.DEVHUB_ALIAS || this.configInfo.devHubAlias || 'DevHub-' + this.projectName;
+
+        this.scratchOrgDuration = process.env.SCRATCH_ORG_DURATION || (process.env.CI) ? 1 : 30;
+        this.userEmail = process.env.USER_EMAIL || process.env.GITLAB_USER_EMAIL || this.configInfo.userEmail;
+
+        // If not found, prompt user email and store it in user config file
+        if (this.userEmail == null) {
+            const promptResponse = await prompts({
+                type: 'text',
+                name: 'value',
+                message: '[sfdx-hardis] Please input your email address',
+                validate: (value: string) => EmailValidator.validate(value)
+            });
+            this.userEmail = promptResponse.value;
+            await setConfig('user', {
+                userEmail: this.userEmail
+            });
+        }
+    }
+
+    // Create a new scratch org or reuse existing one
+    public async createScratchOrg() {
+        const orgListResult = await execJson('sfdx force:org:list', this);
+        const matchingScratchOrgs = orgListResult?.result?.scratchOrgs.filter((org: any) => org.alias === this.scratchOrgAlias);
+        // Reuse existing scratch org
+        if (matchingScratchOrgs.length > 0) {
+            this.scratchOrgInfo = matchingScratchOrgs[0];
+            this.scratchOrgUsername = this.scratchOrgInfo.username;
+            this.ux.log(`[sfdx-hardis] Reusing org ${this.scratchOrgAlias} with user ${this.scratchOrgUsername}`);
+            return;
+        }
+
+        // Build project-scratch-def-branch-user.json
+        this.ux.log('[sfdx-hardis] Building custom project-scratch-def.json...');
+        const projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json'));
+        projectScratchDef.orgName = this.scratchOrgAlias;
+        projectScratchDef.adminEmail = this.userEmail;
+        projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
+        const projectScratchDefLocal = `./config/project-scratch-def-${this.scratchOrgAlias}.json`;
+        await fs.writeFile(projectScratchDefLocal, JSON.stringify(projectScratchDef, null, 2));
+
+        // Create new scratch org
+        this.ux.log('[sfdx-hardis] Creating new scratch org...');
+        const createCommand = 'sfdx force:org:create --setdefaultusername ' +
+            `--definitionfile ${projectScratchDefLocal} ` +
+            `--setalias ${this.scratchOrgAlias} ` +
+            `--targetdevhubusername ${this.devHubAlias} ` +
+            `-d ${this.scratchOrgDuration}`;
+        const createResult = await execJson(createCommand, this);
+        this.scratchOrgInfo = createResult.result;
+        this.scratchOrgUsername = this.scratchOrgInfo.username;
+        await setConfig('branch', {
+            scratchOrgAlias: this.scratchOrgAlias,
+            scratchOrgUsername: this.scratchOrgUsername
+        });
+        if (!process.env.CI) {
+            await execJson('sfdx force:org:open', this);
+        }
+        this.ux.log(`[sfdx-hardis] Created scratch org ${this.scratchOrgAlias} with user ${this.scratchOrgUsername}`);
+    }
+
+    // Install managed packages
+    public async installPackages() {
+        const packages = process.env.SFDX_INSTALL_PACKAGES || this.configInfo.installedPackages || [];
+        const alreadyInstalled = await execJson('sfdx force:package:installed:list', this);
+        for (const packageInfo of packages) {
+            if (!alreadyInstalled.result?.records ||
+                alreadyInstalled.result.records.filter((installedPackage: any) =>
+                    installedPackage.NamespacePrefix === packageInfo.NamespacePrefix).length === 0) {
+                this.ux.log(`[sfdx-hardis] Installing package ${packageInfo.PackageInstallId} - ${packageInfo.Name} - ${packageInfo.NamespacePrefix}`);
+                if (packageInfo.PackageInstallId == null) {
+                    throw new SfdxError('[sfdx-hardis] You must define PackageInstallId in .sfdx-hardis.yml');
+                }
+                const packageInstallCommand = `sfdx force:package:install --package ${packageInfo.PackageInstallId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
+                await execJson(packageInstallCommand, this);
+            } else {
+                this.ux.log(`[sfdx-hardis] Skip installation of ${packageInfo.Name} as it is already installed`);
+
+            }
+        }
+    }
+
+    // Push or deploy metadatas to the scratch org
+    public async initOrgMetadatas() {
+        if (process.env.CI) {
+            // if CI, use force:source:deploy to make sure package.xml is consistent
+            this.ux.log('[sfdx-hardis] Deploying project sources to scratch org...');
+            const deployCommand = `sfdx force:source:deploy -x ./config/package.xml -u ${this.scratchOrgAlias}`;
+            await execJson(deployCommand, this);
+        } else {
+            // Use push for local scratch orgs
+            this.ux.log('[sfdx-hardis] Pushing project sources to scratch org... (You can see progress in Setup -> Deployment Status)');
+            const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${this.scratchOrgAlias}`;
+            await execJson(pushCommand, this);
+        }
+    }
+
+    // Assign permission sets to user
+    public async initPermissionSetAssignments() {
+        const permSets = this.configInfo.assignPermissionSets || [];
+        for (const permSetName of permSets) {
+            const assignCommand = `sfdx force:user:permset:assign -n ${permSetName} -u ${this.scratchOrgUsername}`;
+            await execJson(assignCommand, this);
+        }
+    }
+
+    // Run initialization apex scripts
+    public async initApexScripts() {
+        const allApexScripts = await glob('**/scripts/**/*.apex');
+        const scratchOrgInitApexScripts = this.configInfo.scratchOrgInitApexScripts || [];
+        // Build ordered list of apex scripts
+        const initApexScripts = scratchOrgInitApexScripts.map((scriptName: string) => {
+            const matchingScripts = allApexScripts.filter((apexScript: string) => path.basename(apexScript) === scriptName);
+            if (matchingScripts.length === 0) {
+                throw new SfdxError(`Unable to find script ${scriptName}.apex`);
+            }
+            return matchingScripts[0];
+        });
+        // Process apex scripts
+        for (const apexScript of initApexScripts) {
+            const apexScriptCommand = `sfdx force:apex:execute -f "${apexScript}" -u ${this.scratchOrgAlias}`;
+            await execJson(apexScriptCommand, this);
+        }
+    }
+
+    // Loads data in the org
+    public async initOrgData() {
+        const allDataFiles = await glob('**/data/**/*-plan.json');
+        const scratchOrgInitData = this.configInfo.scratchOrgInitData || [];
+        // Build ordered list of data files
+        const initDataFiles = scratchOrgInitData.map((name: string) => {
+            const matchingDataFiles = allDataFiles.filter((dataFile: string) =>
+                path.basename(dataFile).replace('-plan.json', '') === name);
+            if (matchingDataFiles.length === 0) {
+                throw new SfdxError(`Unable to find data file ${name}-plan.json`);
+            }
+            return matchingDataFiles[0];
+        });
+        // Import data files
+        for (const dataFile of initDataFiles) {
+            const dataLoadCommand = `sfdx force:data:tree:import -f "${dataFile}" -u ${this.scratchOrgAlias}`;
+            await execJson(dataLoadCommand, this);
+        }
+    }
+
+}
