@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+## [1.0.0] 2021-02-15
+
 - New command **hardis:scratch:create**
 - Advanced project initialization using `--shape` argument for `sfdx hardis:org:retrieve:sources:dx`
 - Automatic generation of .sfdx-hardis*.yml configuration files
