@@ -2,6 +2,7 @@
   "allowPurgeFailure": "Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable",
   "auditCallInCallOut": "Generate list of callIn and callouts from sfdx project",
   "auditRemoteSites": "Generate list of remote sites",
+  "createOrgShape": "Updates project-scratch-def.json from org shape",
   "debugMode": "Activate debug mode (more logs)",
   "filteredMetadatas": "Comma separated list of Metadatas keys to remove from PackageXml file",
   "folder": "Folder",
@@ -14,6 +15,7 @@
   "retrieveDx": "Retrieve Salesforce DX project from org",
   "retrieveMetadatas": "Retrieve metadatas from an org with package.xml manifest",
   "sandboxLogin": "Use if the environment is a sandbox",
+  "scratchCreate": "Create and initialize a scratch org so it is ready to use",
   "statusFilter": "Filter according to Status criteria",
   "tempFolder": "Temporary folder"
 }

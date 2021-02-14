@@ -29,25 +29,94 @@ export async function checkSfdxPlugin(
   };
 }
 
+// Execute command and parse result as json
+export async function execJson(command: string, commandThis: any): Promise<any> {
+  commandThis.ux.log(`[sfdx-hardis][command] ${command}`);
+  if (!command.includes('--json')) {
+    command += ' --json';
+  }
+  const commandResult = await exec(command);
+  try {
+    return JSON.parse(commandResult.stdout);
+  } catch (e) {
+    return { status: 1, errorMessage: `[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(commandResult)}` };
+  }
+
+}
+
 // Filter package XML
 export async function filterPackageXml(
   packageXmlFile: string,
   packageXmlFileOut: string,
-  removeMetadatas: string[]
+  options: any = {
+    removeNamespaces: [],
+    removeMetadatas: [],
+    removeStandard: false,
+    removeFromPackageXmlFile: null,
+    updateApiVersion: null
+  }
 ): Promise<{ updated: boolean; message: string }> {
   let updated = false;
   let message = `[sfdx-hardis] ${packageXmlFileOut} not updated`;
-  const initialFileContent = fs.readFileSync(packageXmlFile);
+  const initialFileContent = await fs.readFile(packageXmlFile);
   const manifest = await xml2js.parseStringPromise(initialFileContent);
-  manifest.Package.types = manifest.Package.types.filter(
-    (type: any) => !removeMetadatas.includes(type.name[0])
+  // Remove namespaces
+  if ((options.removeNamespaces || []).length > 0) {
+    manifest.Package.types = manifest.Package.types.map((type: any) => {
+      type.members = type.members.filter((member: string) => {
+        return options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length === 0;
+      });
+      return type;
+    });
+  }
+  // Remove from other packageXml file
+  if (options.removeFromPackageXmlFile) {
+    const destructiveFileContent = await fs.readFile(options.removeFromPackageXmlFile);
+    const destructiveManifest = await xml2js.parseStringPromise(destructiveFileContent);
+    manifest.Package.types = manifest.Package.types.map((type: any) => {
+      const destructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
+        return destructiveType.name[0] === type.name[0];
+      });
+      if (destructiveTypes.length > 0) {
+        type.members = type.members.filter((member: string) => {
+          return destructiveTypes[0].members.filter((destructiveMember: string) => destructiveMember === member).length === 0;
+        });
+      }
+      return type;
+    });
+  }
+  // Remove standard objects
+  if (options.removeStandard) {
+    manifest.Package.types = manifest.Package.types.map((type: any) => {
+      if (['CustomObject'].includes(type.name[0])) {
+        type.members = type.members.filter((member: string) => {
+          return member.endsWith('__c');
+        });
+      }
+      type.members = type.members.filter((member: string) => {
+        return !member.startsWith('standard__');
+      });
+      return type;
+    });
+  }
+  // Update API version
+  if (options.updateApiVersion) {
+    manifest.Package.version[0] = options.updateApiVersion;
+  }
+  // Remove metadata types (named, and empty ones)
+  manifest.Package.types = manifest.Package.types.filter((type: any) =>
+    !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0
   );
   const builder = new xml2js.Builder();
   const updatedFileContent = builder.buildObject(manifest);
   if (updatedFileContent !== initialFileContent) {
     fs.writeFileSync(packageXmlFileOut, updatedFileContent);
     updated = true;
-    message = `[sfdx-hardis] ${packageXmlFile} has been filtered to ${packageXmlFileOut}`;
+    if (packageXmlFile !== packageXmlFileOut) {
+      message = `[sfdx-hardis] ${packageXmlFile} has been filtered to ${packageXmlFileOut}`;
+    } else {
+      message = `[sfdx-hardis] ${packageXmlFile} has been updated`;
+    }
   }
   return {
     updated,

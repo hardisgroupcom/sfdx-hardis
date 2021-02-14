@@ -4,7 +4,8 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as sfdx from 'sfdx-node';
 import * as util from 'util';
-import { filterPackageXml } from '../../common/utils';
+import { execJson, filterPackageXml } from '../../common/utils';
+import { CONSTANTS } from '../../config';
 const exec = util.promisify(child.exec);
 
 class MetadataUtils {
@@ -133,18 +134,29 @@ class MetadataUtils {
   public static listMetadatasNotManagedBySfdx() {
     return [
       'ApexEmailNotifications',
+      'AppMenu',
       'AppointmentSchedulingPolicy',
       'Audience',
       'BlacklistedConsumer',
+      'ConnectedApp',
       'IframeWhiteListUrlSettings',
       'ManagedContentType',
-      'NotificationTypeConfig'
+      'NotificationTypeConfig',
+      'Settings',
+      'TopicsForObjects'
     ];
+  }
+
+  // List installed packages on a org
+  public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
+    const listPackagesCommand = 'sfdx force:data:soql:query -q "SELECT DurableId,IsSalesforce,MajorVersion,MinorVersion,Name,NamespacePrefix FROM Publisher WHERE MajorVersion > 0 AND MinorVersion > 0"';
+    const installedListResult = await execJson(listPackagesCommand, commandThis);
+    return installedListResult.result?.records || [];
   }
 
   // Retrieve metadatas from a package.xml
   public static async retrieveMetadatas(packageXml: string, metadataFolder: string, checkEmpty: boolean,
-                                        filteredMetadatas: string[], commandThis: any, debug: boolean) {
+                                        filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
 
     // Build package.xml for all org
     commandThis.ux.log(`[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
@@ -153,15 +165,40 @@ class MetadataUtils {
       commandThis.ux.log(manifestRes.stdout + manifestRes.stderr);
     }
 
-    // Filter package XML
-    const filterRes = await filterPackageXml(packageXml, packageXml, filteredMetadatas);
+    // Filter managed items if requested
+    if (options.filterManagedItems) {
+      commandThis.ux.log('[sfdx-hardis] Filtering managed items from package.Xml manifest');
+      // List installed packages & collect managed namespaces
+      const installedPackages = await this.listInstalledPackages(null, commandThis);
+      const namespaces = [];
+      for (const installedPackage of installedPackages) {
+        if (installedPackage?.NamespacePrefix !== '') {
+          namespaces.push(installedPackage.NamespacePrefix);
+        }
+      }
+
+      // Filter package XML to remove identified metadatas
+      const packageXmlToRemove = (fs.existsSync('./remove-items-package.xml')) ?
+        path.resolve('./remove-items-package.xml') :
+        path.resolve(__dirname + '/../../../defaults/remove-items-package.xml');
+      const filterNamespaceRes = await filterPackageXml(packageXml, packageXml, {
+        removeNamespaces: namespaces,
+        removeStandard: true,
+        removeFromPackageXmlFile: packageXmlToRemove,
+        updateApiVersion: CONSTANTS.API_VERSION
+      });
+      commandThis.ux.log(filterNamespaceRes.message);
+    }
+
+    // Filter package XML to remove identified metadatas
+    const filterRes = await filterPackageXml(packageXml, packageXml, { removeMetadatas: filteredMetadatas });
     commandThis.ux.log(filterRes.message);
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
       commandThis.ux.log(`[sfdx-hardis] Retrieving metadatas in ${metadataFolder}...`);
       const retrieveRes = await sfdx.mdapi.retrieve({
-        retrievetargetdir : metadataFolder,
+        retrievetargetdir: metadataFolder,
         unpackaged: packageXml,
         wait: 60,
         verbose: debug,

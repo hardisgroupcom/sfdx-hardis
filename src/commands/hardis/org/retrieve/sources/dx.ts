@@ -4,12 +4,14 @@ import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as child from 'child_process';
 import * as fs from 'fs-extra';
+import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 const exec = util.promisify(child.exec);
 
 import { MetadataUtils } from '../../../../../common/metadata-utils';
 import { checkSfdxPlugin } from '../../../../../common/utils';
+import { setConfig } from '../../../../../config';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -42,6 +44,11 @@ export default class DxSources extends SfdxCommand {
     filteredmetadatas: flags.string({
       char: 'm',
       description: messages.getMessage('filteredMetadatas')
+    }),
+    shape: flags.boolean({
+      char: 'o',
+      default: false,
+      description: messages.getMessage('createOrgShape')
     }),
     sandbox: flags.boolean({
       char: 's',
@@ -76,6 +83,7 @@ export default class DxSources extends SfdxCommand {
     const filteredMetadatas = this.flags.filteredmetadatas
       ? this.flags.filteredmetadatas.split(',')
       : MetadataUtils.listMetadatasNotManagedBySfdx();
+    const shapeFlag = this.flags.shape || false;
     const debug = this.flags.debug || false;
 
     // Check required plugins
@@ -100,6 +108,7 @@ export default class DxSources extends SfdxCommand {
       metadataFolder,
       true,
       filteredMetadatas,
+      {filterManagedItems: true},
       this,
       debug
     );
@@ -144,6 +153,39 @@ export default class DxSources extends SfdxCommand {
     );
     process.chdir(prevCwd);
     await fs.copy(sfdxFolder, path.resolve(folder));
+
+    // Manage org shape if requested
+    if (shapeFlag === true) {
+      // Copy package.xml
+      const packageXmlInConfig = path.resolve(folder) + '/config/package.xml';
+      if (!fs.existsSync(packageXmlInConfig)) {
+        this.ux.log(`[sfdx-hardis] Copying package.xml manifest ${packageXmlInConfig}...`);
+        await fs.copy(packageXml, packageXmlInConfig);
+      }
+      // Store list of installed packages
+      const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+      await setConfig('project', {
+        installedPackages
+      });
+      // Try to get org shape
+      const projectScratchDefFile = './config/project-scratch-def.json';
+      this.ux.log(`[sfdx-hardis] Getting org shape in ${path.resolve(projectScratchDefFile)}...`);
+      const shapeFile = `${os.tmpdir()}/project-scratch-def.json`;
+      try {
+        await exec(
+          `sfdx force:org:shape:create -f "${shapeFile} -u `
+        );
+        const orgShape = await fs.readFile(shapeFile, 'utf-8');
+        const projectScratchDef = await fs.readFile(projectScratchDefFile, 'utf-8');
+        const newShape = Object.assign(projectScratchDef, orgShape);
+        await fs.writeFile(projectScratchDefFile, JSON.stringify(newShape, null, 2));
+      } catch (e) {
+        this.ux.log('[sfdx-hardis][ERROR] Unable to create org shape');
+        this.ux.log('[sfdx-hardis] You need to manually update config/project-scratch-def.json');
+        this.ux.log('[sfdx-hardis] See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm');
+      }
+    }
+
     // Remove temporary files
     await fs.rmdir(tempFolder, { recursive: true });
 

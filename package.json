@@ -16,13 +16,17 @@
     "columnify": "^1.5.4",
     "cosmiconfig": "^7.0.0",
     "csv-stringify": "^5.6.1",
+    "email-validator": "^2.0.4",
     "extract-zip": "^2.0.1",
     "fs-extra": "^9.1.0",
     "glob-promise": "^3.4.0",
+    "js-yaml": "^4.0.0",
     "ms-teams-webhook": "^1.0.4",
+    "prompts": "^2.4.0",
     "psl": "^1.8.0",
     "read-pkg-up": "^7.0.1",
     "sfdx-node": "^2.2.0",
+    "simple-git": "^2.34.2",
     "sort-array": "^4.1.3",
     "tslib": "^1",
     "update-notifier": "^5.1.0",
@@ -53,6 +57,7 @@
   "files": [
     "/lib",
     "/messages",
+    "/defaults",
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
@@ -66,7 +71,8 @@
     "bin": "sfdx",
     "hooks": {
       "init": [
-        "./lib/hooks/init/check-upgrade"
+        "./lib/hooks/init/check-upgrade",
+        "./lib/hooks/init/upgrade-package-json"
       ],
       "prerun": [
         "./lib/hooks/prerun/auth"
