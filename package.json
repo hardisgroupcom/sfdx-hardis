@@ -78,7 +78,6 @@
         "./lib/hooks/prerun/auth"
       ],
       "auth": [
-        "./lib/hooks/prerun/check-config",
         "./lib/hooks/prerun/auth"
       ],
       "postrun": [

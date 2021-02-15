@@ -1,11 +1,10 @@
 import { SfdxError } from "@salesforce/core";
 import * as child from "child_process";
 import * as fs from "fs-extra";
-import * as path from "path";
 import * as sfdx from "sfdx-node";
 import * as util from "util";
 import { getCurrentGitBranch } from "../../common/utils";
-import { getConfig } from "../../config";
+import { checkConfig, getConfig } from "../../config";
 const exec = util.promisify(child.exec);
 
 export const hook = async (options: any) => {
@@ -18,14 +17,18 @@ export const hook = async (options: any) => {
   if (typeof global.it === "function") {
     return;
   }
-  const configInfo = await getConfig("branch");
+  let configInfo = await getConfig("branch");
   // Manage authentication if DevHub is required but current user is disconnected
   if (
     options.Command &&
     (options.Command.supportsDevhubUsername === true || options.devHub === true)
   ) {
-    const devHubAlias =
-      configInfo.devHubAlias || "DevHub-" + path.basename(process.cwd());
+    let devHubAlias = configInfo.devHubAlias || process.env.DEVHUB_ALIAS;
+    if (devHubAlias == null) {
+        await checkConfig(options);
+        configInfo = await getConfig("branch");
+        devHubAlias = configInfo.devHubAlias;
+    }
     await authOrg(devHubAlias, options);
   }
   // Manage authentication if org is required but current user is disconnected
