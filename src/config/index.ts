@@ -121,7 +121,7 @@ export  const checkConfig = async (options: any) => {
             projectName = promptResponse.value;
             await setConfig('project', {
                 projectName: projectName,
-                devHubAlias: `DevHub-${projectName}`
+                devHubAlias: `DevHub_${projectName}`
             });
             devHubAliasOk = true;
         }
@@ -133,7 +133,7 @@ export  const checkConfig = async (options: any) => {
         const devHubAlias = process.env.DEVHUB_ALIAS || configProject.devHubAlias;
         if (devHubAlias == null) {
             await setConfig('project', {
-                devHubAlias: `DevHub-${configProject.projectName}`
+                devHubAlias: `DevHub_${configProject.projectName}`
             });            
         }
     }
