@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+- New command **hardis:project:deploy:sources:dx**
+
 ## [1.0.1] 2021-02-15
 
 - Fix auth:login to avoid DevHub auth when not necessary

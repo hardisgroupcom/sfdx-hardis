@@ -8,10 +8,8 @@ import * as glob from 'glob-promise';
 import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
-import simpleGit, { SimpleGit } from 'simple-git';
-import { execJson } from '../../../common/utils';
+import { execJson, getCurrentGitBranch } from '../../../common/utils';
 import { getConfig, setConfig } from '../../../config';
-const git: SimpleGit = simpleGit();
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -79,8 +77,8 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Initialize configuration from .sfdx-hardis.yml + .gitbranch.sfdx-hardis.yml + .username.sfdx-hardis.yml
     public async initConfig() {
-        this.configInfo = await getConfig('branch');
-        this.gitBranch = (await git.branchLocal()).current;
+        this.configInfo = await getConfig('user');
+        this.gitBranch = await getCurrentGitBranch({formatted: true});
         this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || this.configInfo.scratchOrgAlias || os.userInfo().username + '-' + this.gitBranch.replace('/', '-');
         if (process.env.CI && !this.scratchOrgAlias.startsWith('CI-')) {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
