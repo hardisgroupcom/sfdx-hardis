@@ -20,8 +20,7 @@ export const hook = async (options: any) => {
     let configInfo = await getConfig("branch");
     // Manage authentication if DevHub is required but current user is disconnected
     if (
-        options.Command &&
-        (options.Command.supportsDevhubUsername === true || options.devHub === true)
+        (options.Command && options.Command.supportsDevhubUsername === true) || options.devHub === true
     ) {
         let devHubAlias = configInfo.devHubAlias || process.env.DEVHUB_ALIAS;
         if (devHubAlias == null) {
@@ -29,12 +28,11 @@ export const hook = async (options: any) => {
             configInfo = await getConfig("branch");
             devHubAlias = configInfo.devHubAlias;
         }
-        await authOrg(devHubAlias, options, this);
+        await authOrg(devHubAlias, options);
     }
     // Manage authentication if org is required but current user is disconnected
     if (
-        options.Command &&
-        (options.Command.requiresUsername === true || options.checkAuth === true)
+        (options.Command &&   options.Command.requiresUsername === true) || options.checkAuth === true
     ) {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
@@ -43,12 +41,12 @@ export const hook = async (options: any) => {
                     : commandId === "hardis:auth:login"
                         ? configInfo.orgAlias
                         : null; // Can be null and it's ok if we're not in scratch org context
-        await authOrg(orgAlias, options, this);
+        await authOrg(orgAlias, options);
     }
 };
 
 // Authorize an org manually or with JWT
-async function authOrg(orgAlias: string, options: any, hookThis: any) {
+async function authOrg(orgAlias: string, options: any) {
     let doConnect = true;
     if (!options.checkAuth) {
         // Check if we are already authenticated
@@ -165,7 +163,7 @@ async function authOrg(orgAlias: string, options: any, hookThis: any) {
             console.error(
                 "[sfdx-hardis] You must be logged to an org to perform this action"
             );
-            hookThis.error(); // Exit because we should succeed to connect
+            process.exit(1); // Exit because we should succeed to connect
         }
     }
 }
@@ -187,10 +185,11 @@ async function getSfdxClientId(orgAlias: string, config: any) {
         return process.env.SFDX_CLIENT_ID;
     }
     if (process.env.CI) {
-        throw new SfdxError(
-            `[sfdx-hardis] You must set env variable ${sfdxClientIdVarNameUpper} with clientId defined on SFDX Connected app`
+        console.error(
+            `[sfdx-hardis] You must set env variable ${sfdxClientIdVarNameUpper} with the Consumer Key value defined on SFDX Connected app`
         );
     }
+    return null;
 }
 
 // Try to find certificate key file for sfdx connected app in different locations
@@ -205,6 +204,11 @@ async function getCertificateKeyFile(orgAlias: string) {
         if (fs.existsSync(file)) {
             return file;
         }
+    }
+    if (process.env.CI) {
+        console.error(
+            `[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join('\n  -')}`
+        );
     }
     return null;
 }

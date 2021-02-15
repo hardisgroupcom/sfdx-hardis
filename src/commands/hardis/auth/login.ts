@@ -43,7 +43,7 @@ export default class Login extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.devHub = this.flags.debug || false;
+    this.devHub = this.flags.devhub || false;
     await this.config.runHook('auth', {checkAuth: !this.devHub, Command: this, devHub: this.devHub});
 
     // Return an object to be displayed with --json
