@@ -20,7 +20,7 @@ async function managePackageJson(commandId: string) {
             const packageJson = JSON.parse(text);
             const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
             packageJson['scripts'] = Object.assign(hardisPackageJsonContent['scripts'], packageJson['scripts']);
-            if (JSON.stringify(packageJson) !== text) {
+            if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text))) {
                 await fs.writeFile(packageJsonFile, JSON.stringify(packageJson, null, 2));
                 console.log('[sfdx-hardis] Updated package.json with sfdx-hardis content');
             }

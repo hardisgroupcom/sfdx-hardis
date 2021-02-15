@@ -96,7 +96,7 @@ async function setInConfigFile(searchPlaces: string[], propValues: any) {
 // Check configuration of project so it works with sfdx-hardis
 export  const checkConfig = async (options: any) => {
     // Skip hooks from other commands than hardis:scratch commands
-    const commandId = options?.id || '';
+    const commandId = options?.Command?.id || options?.id ||  '';
     if (!commandId.startsWith('hardis')) {
         return;
     }
