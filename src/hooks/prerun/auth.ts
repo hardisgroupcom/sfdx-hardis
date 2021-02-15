@@ -19,13 +19,13 @@ export const hook = async (options: any) => {
     }
     const configInfo = await getConfig('branch');
     // Manage authentication if DevHub is required but current user is disconnected
-    if (options.Command && (options.Command.supportsDevhubUsername === true || options.checkAuth === true)) {
+    if (options.Command && options.Command.supportsDevhubUsername === true) {
         const devHubAlias = configInfo.devHubAlias || 'DevHub-' + path.basename(process.cwd());
         await authOrg(devHubAlias, options);
     }
     // Manage authentication if org is required but current user is disconnected
     if (options.Command && (options.Command.requiresUsername === true || options.checkAuth === true)) {
-        const scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || configInfo.scratchOrgAlias; // Can be null and it's ok if we're not in scratch org context
+        const scratchOrgAlias = (commandId === 'hardis:auth:login') ? null : process.env.SCRATCH_ORG_ALIAS || configInfo.scratchOrgAlias; // Can be null and it's ok if we're not in scratch org context
         await authOrg(scratchOrgAlias, options);
     }
 };

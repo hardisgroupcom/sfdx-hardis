@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+## [1.0.1] 2021-02-15
+
+- Fix auth:login to avoid DevHub auth when not necessary
+
 ## [1.0.0] 2021-02-15
 
 - New command **hardis:scratch:create**
