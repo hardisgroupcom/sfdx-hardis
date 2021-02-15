@@ -41,7 +41,7 @@ export async function checkSfdxPlugin(
 
 // Get local git branch name
 export async function getCurrentGitBranch(options: any = { formatted: false }) {
-  const gitBranch = (await git.branchLocal()).current;
+  const gitBranch = process.env.CI_COMMIT_REF_NAME || (await git.branchLocal()).current;
   if (options.formatted === true) {
     return gitBranch.replace("/", "-");
   }
