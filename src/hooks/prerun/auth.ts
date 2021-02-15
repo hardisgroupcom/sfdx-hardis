@@ -117,7 +117,8 @@ async function authOrg(orgAlias: string, options: any) {
                 `Successfully authorized ${username}`
             );
             if (!logged) {
-                console.error(JSON.stringify(jwtAuthRes));
+                console.error(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`);
+                process.exit(1)
             }
         } else if (!process.env.CI) {
             // Login with web auth
