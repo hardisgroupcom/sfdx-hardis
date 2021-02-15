@@ -94,8 +94,8 @@ async function authOrg(orgAlias: string, options: any) {
                             ? "https://test.salesforce.com"
                             : "https://login.salesforce.com";
         // Get JWT items clientId and certificate key
-        const sfdxClientId = getSfdxClientId(orgAlias, config);
-        const crtKeyfile = getCertificateKeyFile(orgAlias);
+        const sfdxClientId = await getSfdxClientId(orgAlias, config);
+        const crtKeyfile = await getCertificateKeyFile(orgAlias);
         const usernameArg =
             orgAlias != null && orgAlias.includes("DevHub")
                 ? "--setdefaultdevhubusername"
@@ -109,13 +109,13 @@ async function authOrg(orgAlias: string, options: any) {
                 ` --jwtkeyfile ${crtKeyfile}` +
                 ` --username ${username}` +
                 ` --instanceurl ${instanceUrl}`;
-            console.log(`[sfdx-hardis] Login command: ${loginCommand}`);
+            console.log(`[sfdx-hardis] Login command: ${loginCommand.replace(sfdxClientId,"***********")}`);
             const jwtAuthRes = await exec(loginCommand);
             logged = jwtAuthRes?.stdout.includes(
                 `Successfully authorized ${username}`
             );
             if (logged){
-                console.error(jwtAuthRes);
+                console.error(JSON.stringify(jwtAuthRes));
             }
         } else if (!process.env.CI) {
             // Login with web auth
