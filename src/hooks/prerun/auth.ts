@@ -114,6 +114,9 @@ async function authOrg(orgAlias: string, options: any) {
             logged = jwtAuthRes?.stdout.includes(
                 `Successfully authorized ${username}`
             );
+            if (logged){
+                console.error(jwtAuthRes);
+            }
         } else if (!process.env.CI) {
             // Login with web auth
             const orgLabel = orgAlias == null ? "an org" : `org ${orgAlias}`;
@@ -141,9 +144,7 @@ async function authOrg(orgAlias: string, options: any) {
             logged = loginResult?.instanceUrl != null;
             username = loginResult?.username;
         } else {
-            throw new SfdxError(
-                `[sfdx-hardis] Unable to connect to org ${orgAlias} using JWT. Please check your configuration`
-            );
+            console.error(`[sfdx-hardis] Unable to connect to org ${orgAlias} using JWT. Please check your configuration`)
         }
         if (logged) {
             console.log(
@@ -164,6 +165,7 @@ async function authOrg(orgAlias: string, options: any) {
             console.error(
                 "[sfdx-hardis] You must be logged to an org to perform this action"
             );
+            this.error(); // Exit because we should succeed to connect
         }
     }
 }
