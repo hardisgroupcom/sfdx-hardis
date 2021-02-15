@@ -39,7 +39,7 @@ export const hook = async (options: any) => {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
                 (process.env.CI)
-                    ? getCurrentGitBranch({ formatted: true })
+                    ? await getCurrentGitBranch({ formatted: true })
                     : commandId === "hardis:auth:login"
                         ? configInfo.orgAlias
                         : null; // Can be null and it's ok if we're not in scratch org context

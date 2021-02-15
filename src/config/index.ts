@@ -36,7 +36,7 @@ async function getBranchConfigFiles() {
     if (!isGit) {
         return [];
     }
-    const gitBranchFormatted = getCurrentGitBranch({formatted:true});
+    const gitBranchFormatted = await getCurrentGitBranch({formatted:true});
     const branchConfigFiles = [
         `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
         `config/branches/.${moduleName}.${gitBranchFormatted}.yml`
