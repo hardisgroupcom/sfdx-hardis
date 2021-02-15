@@ -32,7 +32,7 @@ export const hook = async (options: any) => {
     }
     // Manage authentication if org is required but current user is disconnected
     if (
-        (options.Command &&   options.Command.requiresUsername === true) || options.checkAuth === true
+        (options.Command && options.Command.requiresUsername === true) || options.checkAuth === true
     ) {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
@@ -47,6 +47,7 @@ export const hook = async (options: any) => {
 
 // Authorize an org manually or with JWT
 async function authOrg(orgAlias: string, options: any) {
+    const isDevHub = orgAlias != null && orgAlias.includes("DevHub")
     let doConnect = true;
     if (!options.checkAuth) {
         // Check if we are already authenticated
@@ -59,9 +60,7 @@ async function authOrg(orgAlias: string, options: any) {
             orgInfoResult &&
             ((orgInfoResult.connectedStatus &&
                 orgInfoResult.connectedStatus.includes("Connected")) ||
-                (orgAlias != null &&
-                    orgAlias.includes("DevHub") &&
-                    orgInfoResult.id != null))
+                (isDevHub && orgInfoResult.id != null))
         ) {
             doConnect = false;
             const orgAliasLabel = orgAlias != null ? orgAlias : "server";
@@ -78,7 +77,8 @@ async function authOrg(orgAlias: string, options: any) {
         let username =
             typeof options.Command.flags?.targetusername === "string"
                 ? options.Command.flags?.targetusername
-                : process.env.TARGET_USERNAME || config.targetUsername;
+                : process.env.TARGET_USERNAME ||
+                    (isDevHub) ? config.devHubUsername : config.targetUsername;
         const instanceUrl =
             typeof options.Command?.flags?.instanceurl === "string" &&
                 options.Command?.flags?.instanceurl?.startsWith("https")
@@ -95,7 +95,7 @@ async function authOrg(orgAlias: string, options: any) {
         const sfdxClientId = await getSfdxClientId(orgAlias, config);
         const crtKeyfile = await getCertificateKeyFile(orgAlias);
         const usernameArg =
-            orgAlias != null && orgAlias.includes("DevHub")
+            isDevHub
                 ? "--setdefaultdevhubusername"
                 : "--setdefaultusername";
         if (crtKeyfile && sfdxClientId && username) {
@@ -133,8 +133,7 @@ async function authOrg(orgAlias: string, options: any) {
             const loginResult = await sfdx.auth.webLogin({
                 setdefaultusername: true,
                 setalias: orgAlias || "MyOrg",
-                setdefaultdevhubusername:
-                    orgAlias && orgAlias.includes("DevHub") ? true : false,
+                setdefaultdevhubusername: isDevHub,
                 instanceurl: instanceUrl,
                 _quiet: !options.Command.flags.debug === true,
                 _rejectOnError: true
