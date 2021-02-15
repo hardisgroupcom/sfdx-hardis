@@ -72,12 +72,13 @@
     "hooks": {
       "init": [
         "./lib/hooks/init/check-upgrade",
-        "./lib/hooks/init/upgrade-package-json"
+        "./lib/hooks/init/check-local-sfdx-hardis-files"
       ],
       "prerun": [
         "./lib/hooks/prerun/auth"
       ],
       "auth": [
+        "./lib/hooks/prerun/check-config",
         "./lib/hooks/prerun/auth"
       ],
       "postrun": [

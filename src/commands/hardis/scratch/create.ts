@@ -84,21 +84,7 @@ export default class ScratchCreate extends SfdxCommand {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
         }
         this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;
-        // If not found, prompt user project name and store it in user config file
-        if (this.projectName == null) {
-            const promptResponse = await prompts({
-                type: 'text',
-                name: 'value',
-                message: '[sfdx-hardis] Please input your project name (ex: MonClient)',
-                validate: (value: string) => !value.match(/^[0-9a-z]+$/) // check only alphanumeric
-            });
-            this.projectName = promptResponse.value;
-            await setConfig('project', {
-                projectName: this.projectName,
-                devHubAlias: 'DevHub-' + this.projectName
-            });
-        }
-        this.devHubAlias = process.env.DEVHUB_ALIAS || this.configInfo.devHubAlias || 'DevHub-' + this.projectName;
+        this.devHubAlias = process.env.DEVHUB_ALIAS || this.configInfo.devHubAlias;
 
         this.scratchOrgDuration = process.env.SCRATCH_ORG_DURATION || (process.env.CI) ? 1 : 30;
         this.userEmail = process.env.USER_EMAIL || process.env.GITLAB_USER_EMAIL || this.configInfo.userEmail;
@@ -136,7 +122,8 @@ export default class ScratchCreate extends SfdxCommand {
         projectScratchDef.orgName = this.scratchOrgAlias;
         projectScratchDef.adminEmail = this.userEmail;
         projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
-        const projectScratchDefLocal = `./config/project-scratch-def-${this.scratchOrgAlias}.json`;
+        const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
+        await fs.ensureDir(path.dirname(projectScratchDefLocal));
         await fs.writeFile(projectScratchDefLocal, JSON.stringify(projectScratchDef, null, 2));
 
         // Create new scratch org
@@ -149,7 +136,7 @@ export default class ScratchCreate extends SfdxCommand {
         const createResult = await execJson(createCommand, this);
         this.scratchOrgInfo = createResult.result;
         this.scratchOrgUsername = this.scratchOrgInfo.username;
-        await setConfig('branch', {
+        await setConfig('user', {
             scratchOrgAlias: this.scratchOrgAlias,
             scratchOrgUsername: this.scratchOrgUsername
         });

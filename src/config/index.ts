@@ -27,8 +27,8 @@ const projectConfigFiles = [
 ];
 const username = os.userInfo().username;
 const userConfigFiles = [
-    `config/users/.${moduleName}.${username}.yaml`,
-    `config/users/.${moduleName}.${username}.yml`
+    `config/user/.${moduleName}.${username}.yaml`,
+    `config/user/.${moduleName}.${username}.yml`
 ];
 
 async function getBranchConfigFiles() {
@@ -83,7 +83,7 @@ async function setInConfigFile(searchPlaces: string[], propValues: any) {
     const configFile = (configExplorer != null) ? configExplorer.filepath : searchPlaces.slice(-1)[0];
     let doc = {};
     if (fs.existsSync(configFile)) {
-        doc = yaml.load(fs.readFileSync(configFile, 'utf8'));
+        doc = yaml.load(fs.readFileSync(configFile, 'utf-8'));
     }
     doc = Object.assign(doc, propValues);
     await fs.ensureDir(path.dirname(configFile));
