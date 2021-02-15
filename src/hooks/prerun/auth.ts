@@ -79,6 +79,10 @@ async function authOrg(orgAlias: string, options: any) {
                 ? options.Command.flags?.targetusername
                 : process.env.TARGET_USERNAME ||
                     (isDevHub) ? config.devHubUsername : config.targetUsername;
+        if (username == null) {
+            console.error(`[sfdx-hardis][ERROR] You may have to define ${isDevHub ? 'devHubUsername' : 'targetUsername'} in .sfdx-hardis.yml`)
+            process.exit(1);
+        }
         const instanceUrl =
             typeof options.Command?.flags?.instanceurl === "string" &&
                 options.Command?.flags?.instanceurl?.startsWith("https")
@@ -160,7 +164,7 @@ async function authOrg(orgAlias: string, options: any) {
             }
         } else {
             console.error(
-                "[sfdx-hardis] You must be logged to an org to perform this action"
+                "[sfdx-hardis][ERROR] You must be logged to an org to perform this action"
             );
             process.exit(1); // Exit because we should succeed to connect
         }
