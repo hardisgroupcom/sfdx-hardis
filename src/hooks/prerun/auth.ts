@@ -29,7 +29,7 @@ export const hook = async (options: any) => {
             configInfo = await getConfig("branch");
             devHubAlias = configInfo.devHubAlias;
         }
-        await authOrg(devHubAlias, options);
+        await authOrg(devHubAlias, options, this);
     }
     // Manage authentication if org is required but current user is disconnected
     if (
@@ -43,12 +43,12 @@ export const hook = async (options: any) => {
                     : commandId === "hardis:auth:login"
                         ? configInfo.orgAlias
                         : null; // Can be null and it's ok if we're not in scratch org context
-        await authOrg(orgAlias, options);
+        await authOrg(orgAlias, options, this);
     }
 };
 
 // Authorize an org manually or with JWT
-async function authOrg(orgAlias: string, options: any) {
+async function authOrg(orgAlias: string, options: any, hookThis: any) {
     let doConnect = true;
     if (!options.checkAuth) {
         // Check if we are already authenticated
@@ -109,12 +109,12 @@ async function authOrg(orgAlias: string, options: any) {
                 ` --jwtkeyfile ${crtKeyfile}` +
                 ` --username ${username}` +
                 ` --instanceurl ${instanceUrl}`;
-            console.log(`[sfdx-hardis] Login command: ${loginCommand.replace(sfdxClientId,"***********")}`);
+            console.log(`[sfdx-hardis] Login command: ${loginCommand.replace(sfdxClientId, "***********")}`);
             const jwtAuthRes = await exec(loginCommand);
             logged = jwtAuthRes?.stdout.includes(
                 `Successfully authorized ${username}`
             );
-            if (logged){
+            if (!logged) {
                 console.error(JSON.stringify(jwtAuthRes));
             }
         } else if (!process.env.CI) {
@@ -165,7 +165,7 @@ async function authOrg(orgAlias: string, options: any) {
             console.error(
                 "[sfdx-hardis] You must be logged to an org to perform this action"
             );
-            this.error(); // Exit because we should succeed to connect
+            hookThis.error(); // Exit because we should succeed to connect
         }
     }
 }
