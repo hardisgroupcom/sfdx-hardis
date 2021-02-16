@@ -44,11 +44,13 @@ export default class DxSources extends SfdxCommand {
     const debug = this.flags.debug || false;
 
     this.configInfo = await getConfig("branch");
-    const packageXmlFile = process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || "./config/package.xml";
-    const deployCommand =
-      `sfdx force:source:deploy -x ${packageXmlFile} ` + debug
-        ? "--verbose"
-        : "";
+    const packageXmlFile =
+      process.env.PACKAGE_XML_TO_DEPLOY ||
+      this.configInfo.packageXmlToDeploy ||
+      "./config/package.xml";
+    const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile} ${
+      debug ? "--verbose" : ""
+    }`;
     const deployRes = await execJson(deployCommand, this);
     this.ux.log(JSON.stringify(deployRes, null, 2));
     const message = `[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org`;
