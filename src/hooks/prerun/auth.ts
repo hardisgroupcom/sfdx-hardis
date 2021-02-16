@@ -79,7 +79,7 @@ async function authOrg(orgAlias: string, options: any) {
                 ? options.Command.flags?.targetusername
                 : process.env.TARGET_USERNAME ||
                     (isDevHub) ? config.devHubUsername : config.targetUsername;
-        if (username == null) {
+        if (username == null && process.env.CI) {
             console.error(`[sfdx-hardis][ERROR] You may have to define ${isDevHub ? 'devHubUsername' : 'targetUsername'} in .sfdx-hardis.yml`)
             process.exit(1);
         }
