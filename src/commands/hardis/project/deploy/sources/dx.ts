@@ -36,7 +36,7 @@ export default class DxSources extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
-  protected configInfo = {};
+  protected configInfo: any = {};
 
   /* jscpd:ignore-end */
 
@@ -44,7 +44,7 @@ export default class DxSources extends SfdxCommand {
     const debug = this.flags.debug || false;
 
     this.configInfo = await getConfig("branch");
-    const packageXmlFile = "./config/package.xml";
+    const packageXmlFile = process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || "./config/package.xml";
     const deployCommand =
       `sfdx force:source:deploy -x ${packageXmlFile} ` + debug
         ? "--verbose"
