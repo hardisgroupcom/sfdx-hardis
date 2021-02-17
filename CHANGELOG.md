@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+## [1.1.0] 2021-02-15
+
 - New command **hardis:project:deploy:sources:dx** (alpha)
 - New command **hardis:project:audit:apiversion**
 
