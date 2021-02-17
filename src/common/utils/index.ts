@@ -99,9 +99,7 @@ export async function execJson(
     return {
       status: 1,
       errorMessage: 
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(
-          commandResult
-        )}`
+        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}`
     };
   }
 }

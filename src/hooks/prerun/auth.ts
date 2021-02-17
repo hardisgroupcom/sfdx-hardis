@@ -66,7 +66,7 @@ async function authOrg(orgAlias: string, options: any) {
         ) {
             doConnect = false;
             console.log(
-                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAlias)}: ${orgInfoResult.instanceUrl}`
+                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.instanceUrl)}`
             );
         }
     }
