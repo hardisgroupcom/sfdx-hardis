@@ -41,7 +41,7 @@ export const hook = async (options: any) => {
                     ? await getCurrentGitBranch({ formatted: true })
                     : commandId === 'hardis:auth:login'
                         ? configInfo.orgAlias
-                        : "MY_ORG"; // Can be null and it's ok if we're not in scratch org context
+                        : 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
         await authOrg(orgAlias, options);
     }
 };
@@ -53,7 +53,7 @@ async function authOrg(orgAlias: string, options: any) {
     if (!options.checkAuth) {
         // Check if we are already authenticated
         const orgDisplayParams: any = {};
-        if (orgAlias != "MY_ORG") {
+        if (orgAlias !== 'MY_ORG') {
             orgDisplayParams.targetusername = orgAlias;
         }
         const orgInfoResult = await sfdx.org.display(orgDisplayParams);
