@@ -76,10 +76,11 @@ export async function execJson(
   command: string,
   commandThis: any
 ): Promise<any> {
-  commandThis.ux.log(`[sfdx-hardis][command] ${c.grey(command)}`);
+
   if (!command.includes('--json')) {
     command += ' --json';
   }
+  commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
   const commandResult = await exec(command);
   try {
     return JSON.parse(commandResult.stdout);
