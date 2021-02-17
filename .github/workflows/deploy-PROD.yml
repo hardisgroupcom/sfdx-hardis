@@ -32,7 +32,22 @@ jobs:
           scope: "hardisgroupcom"
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false
-      - run: yarn version --prerelease
+      - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --preid="beta$BETAID"
       - run: yarn publish --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  push_beta_to_registry:
+    name: Push Beta Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Publish beta to Registry
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: hardisgroupcom/sfdx-hardis
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          buildargs: SFDX_HARDIS_VERSION=beta
+          tags: "beta"
