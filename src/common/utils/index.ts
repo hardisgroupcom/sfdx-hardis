@@ -1,3 +1,4 @@
+import * as c from 'chalk';
 import * as child from "child_process";
 import * as csvStringify from "csv-stringify/lib/sync";
 import * as fs from "fs-extra";
@@ -53,7 +54,7 @@ export async function execJson(
   command: string,
   commandThis: any
 ): Promise<any> {
-  commandThis.ux.log(`[sfdx-hardis][command] ${command}`);
+  commandThis.ux.log(`[sfdx-hardis][command] ${c.grey(command)}`);
   if (!command.includes("--json")) {
     command += " --json";
   }
@@ -63,9 +64,9 @@ export async function execJson(
   } catch (e) {
     return {
       status: 1,
-      errorMessage: `[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(
+      errorMessage: c.red(`[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(
         commandResult
-      )}`
+      )}`)
     };
   }
 }

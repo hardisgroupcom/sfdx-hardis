@@ -3,6 +3,7 @@ import * as child from "child_process";
 import * as fs from "fs-extra";
 import * as sfdx from "sfdx-node";
 import * as util from "util";
+import * as c from 'chalk';
 import { getCurrentGitBranch } from "../../common/utils";
 import { checkConfig, getConfig } from "../../config";
 const exec = util.promisify(child.exec);
@@ -65,7 +66,7 @@ async function authOrg(orgAlias: string, options: any) {
             doConnect = false;
             const orgAliasLabel = orgAlias != null ? orgAlias : "server";
             console.log(
-                `[sfdx-hardis] You are connected to org ${orgAliasLabel}: ${orgInfoResult.instanceUrl}`
+                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAliasLabel)}: ${orgInfoResult.instanceUrl}`
             );
         }
     }
@@ -80,7 +81,7 @@ async function authOrg(orgAlias: string, options: any) {
                 : process.env.TARGET_USERNAME ||
                     (isDevHub) ? config.devHubUsername : config.targetUsername;
         if (username == null && process.env.CI) {
-            console.error(`[sfdx-hardis][ERROR] You may have to define ${isDevHub ? 'devHubUsername' : 'targetUsername'} in .sfdx-hardis.yml`)
+            console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(isDevHub ? 'devHubUsername' : 'targetUsername')} in .sfdx-hardis.yml`))
             process.exit(1);
         }
         const instanceUrl =
@@ -117,14 +118,14 @@ async function authOrg(orgAlias: string, options: any) {
                 `Successfully authorized ${username}`
             );
             if (!logged) {
-                console.error(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`);
+                console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
                 process.exit(1)
             }
         } else if (!process.env.CI) {
             // Login with web auth
             const orgLabel = orgAlias == null ? "an org" : `org ${orgAlias}`;
             console.warn(
-                `[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`
+                c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`)
             );
             if (process.env.CI === "true") {
                 throw new SfdxError(
@@ -146,26 +147,27 @@ async function authOrg(orgAlias: string, options: any) {
             logged = loginResult?.instanceUrl != null;
             username = loginResult?.username;
         } else {
-            console.error(`[sfdx-hardis] Unable to connect to org ${orgAlias} using JWT. Please check your configuration`)
+            console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} using JWT. Please check your configuration`))
         }
         if (logged) {
             console.log(
-                `[sfdx-hardis] Successfully logged to ${instanceUrl} with username ${username}`
+                `[sfdx-hardis] Successfully logged to ${c.green(instanceUrl)} with username ${c.green(username)}`
             );
-            if (!options.checkAuth) {
+            // Display warning message in case of local usage (not CI), and not login command
+            if (!(options?.Command?.id || "").startsWith("hardis:auth:login")) {
                 console.warn(
-                    "*********************************************************************"
+                    c.yellow("*********************************************************************")
                 );
                 console.warn(
-                    "*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"
+                    c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***")
                 );
                 console.warn(
-                    "*********************************************************************"
+                    c.yellow("*********************************************************************")
                 );
             }
         } else {
             console.error(
-                "[sfdx-hardis][ERROR] You must be logged to an org to perform this action"
+                c.red("[sfdx-hardis][ERROR] You must be logged to an org to perform this action")
             );
             process.exit(1); // Exit because we should succeed to connect
         }
@@ -184,13 +186,13 @@ async function getSfdxClientId(orgAlias: string, config: any) {
     }
     if (process.env.SFDX_CLIENT_ID) {
         console.warn(
-            `[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define ${sfdxClientIdVarNameUpper} than SFDX_CLIENT_ID`
+            c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define ${sfdxClientIdVarNameUpper} than SFDX_CLIENT_ID`)
         );
         return process.env.SFDX_CLIENT_ID;
     }
     if (process.env.CI) {
         console.error(
-            `[sfdx-hardis] You must set env variable ${sfdxClientIdVarNameUpper} with the Consumer Key value defined on SFDX Connected app`
+            c.red(`[sfdx-hardis] You must set env variable ${sfdxClientIdVarNameUpper} with the Consumer Key value defined on SFDX Connected app`)
         );
     }
     return null;
@@ -211,7 +213,7 @@ async function getCertificateKeyFile(orgAlias: string) {
     }
     if (process.env.CI) {
         console.error(
-            `[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join('\n  -')}`
+            c.red(`[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join('\n  -')}`)
         );
     }
     return null;

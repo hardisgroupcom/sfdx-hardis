@@ -29,7 +29,7 @@ async function managePackageJson(commandId: string) {
         // Create package.json to define sfdx utility scripts
         const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
         fs.writeFile(packageJsonFile, JSON.stringify(hardisPackageJsonContent, null, 2), () => {
-            console.log('[sfdx-hardis] Updated package.json with sfdx-hardis content');
+            console.log('[sfdx-hardis] Created package.json with sfdx-hardis content');
         });
     }
 }

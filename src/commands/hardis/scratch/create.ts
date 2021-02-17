@@ -8,6 +8,7 @@ import * as glob from 'glob-promise';
 import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
+import * as c from 'chalk';
 import { execJson, getCurrentGitBranch } from '../../../common/utils';
 import { getConfig, setConfig } from '../../../config';
 
@@ -112,7 +113,7 @@ export default class ScratchCreate extends SfdxCommand {
         if (matchingScratchOrgs.length > 0) {
             this.scratchOrgInfo = matchingScratchOrgs[0];
             this.scratchOrgUsername = this.scratchOrgInfo.username;
-            this.ux.log(`[sfdx-hardis] Reusing org ${this.scratchOrgAlias} with user ${this.scratchOrgUsername}`);
+            this.ux.log(`[sfdx-hardis] Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`);
             return;
         }
 
@@ -143,7 +144,7 @@ export default class ScratchCreate extends SfdxCommand {
         if (!process.env.CI) {
             await execJson('sfdx force:org:open', this);
         }
-        this.ux.log(`[sfdx-hardis] Created scratch org ${this.scratchOrgAlias} with user ${this.scratchOrgUsername}`);
+        this.ux.log(`[sfdx-hardis] Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`);
     }
 
     // Install managed packages
@@ -156,7 +157,7 @@ export default class ScratchCreate extends SfdxCommand {
                     installedPackage.NamespacePrefix === packageInfo.NamespacePrefix).length === 0) {
                 this.ux.log(`[sfdx-hardis] Installing package ${packageInfo.PackageInstallId} - ${packageInfo.Name} - ${packageInfo.NamespacePrefix}`);
                 if (packageInfo.PackageInstallId == null) {
-                    throw new SfdxError('[sfdx-hardis] You must define PackageInstallId in .sfdx-hardis.yml');
+                    throw new SfdxError(c.red('[sfdx-hardis] You must define PackageInstallId in .sfdx-hardis.yml'));
                 }
                 const packageInstallCommand = `sfdx force:package:install --package ${packageInfo.PackageInstallId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
                 await execJson(packageInstallCommand, this);
@@ -171,12 +172,12 @@ export default class ScratchCreate extends SfdxCommand {
     public async initOrgMetadatas() {
         if (process.env.CI) {
             // if CI, use force:source:deploy to make sure package.xml is consistent
-            this.ux.log('[sfdx-hardis] Deploying project sources to scratch org...');
+            this.ux.log(`[sfdx-hardis] Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`);
             const deployCommand = `sfdx force:source:deploy -x ./config/package.xml -u ${this.scratchOrgAlias}`;
             await execJson(deployCommand, this);
         } else {
             // Use push for local scratch orgs
-            this.ux.log('[sfdx-hardis] Pushing project sources to scratch org... (You can see progress in Setup -> Deployment Status)');
+            this.ux.log(`[sfdx-hardis] Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`);
             const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${this.scratchOrgAlias}`;
             await execJson(pushCommand, this);
         }
@@ -184,6 +185,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Assign permission sets to user
     public async initPermissionSetAssignments() {
+        this.ux.log(`[sfdx-hardis] Assigning Permission Sets...`);
         const permSets = this.configInfo.assignPermissionSets || [];
         for (const permSetName of permSets) {
             const assignCommand = `sfdx force:user:permset:assign -n ${permSetName} -u ${this.scratchOrgUsername}`;
@@ -193,13 +195,14 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Run initialization apex scripts
     public async initApexScripts() {
+        this.ux.log(`[sfdx-hardis] Running apex initialization scripts...`);
         const allApexScripts = await glob('**/scripts/**/*.apex');
         const scratchOrgInitApexScripts = this.configInfo.scratchOrgInitApexScripts || [];
         // Build ordered list of apex scripts
         const initApexScripts = scratchOrgInitApexScripts.map((scriptName: string) => {
             const matchingScripts = allApexScripts.filter((apexScript: string) => path.basename(apexScript) === scriptName);
             if (matchingScripts.length === 0) {
-                throw new SfdxError(`Unable to find script ${scriptName}.apex`);
+                throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}.apex`));
             }
             return matchingScripts[0];
         });
@@ -212,6 +215,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Loads data in the org
     public async initOrgData() {
+        this.ux.log(`[sfdx-hardis] Loading org initialization data...`);
         const allDataFiles = await glob('**/data/**/*-plan.json');
         const scratchOrgInitData = this.configInfo.scratchOrgInitData || [];
         // Build ordered list of data files
@@ -219,7 +223,7 @@ export default class ScratchCreate extends SfdxCommand {
             const matchingDataFiles = allDataFiles.filter((dataFile: string) =>
                 path.basename(dataFile).replace('-plan.json', '') === name);
             if (matchingDataFiles.length === 0) {
-                throw new SfdxError(`Unable to find data file ${name}-plan.json`);
+                throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find data file ${name}-plan.json`));
             }
             return matchingDataFiles[0];
         });

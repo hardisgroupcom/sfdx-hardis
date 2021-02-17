@@ -1,5 +1,6 @@
 import * as readPkgUp from 'read-pkg-up';
 import * as updateNotifier from 'update-notifier';
+import * as c from 'chalk'
 
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis commands
@@ -16,8 +17,8 @@ export const hook = async (options: any) => {
         updateCheckInterval: 900 // check every 15 mn
     });
     if (notifier && notifier.update) {
-        console.warn('***********************************************************************************************************************');
-        console.warn(`WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to ${notifier.update.latest} by running "sfdx plugins:install sfdx-hardis"`);
-        console.warn('***********************************************************************************************************************');
+        console.warn(c.yellow('***********************************************************************************************************************'));
+        console.warn(c.yellow(`WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to ${notifier.update.latest} by running "sfdx plugins:install sfdx-hardis"`));
+        console.warn(c.yellow('***********************************************************************************************************************'));
     }
 };
