@@ -4,8 +4,11 @@ export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis:scratch commands
     const commandId = options?.id || '';
     // No await there because it can be processed while other commands
+    // tslint:disable no-floating-promises
     managePackageJson(commandId);
     manageGitIgnore(commandId);
+    // tslint:enable no-floating-promises
+
 };
 
 // Add utility scripts if they are not present
@@ -34,14 +37,14 @@ async function managePackageJson(commandId: string) {
     }
 }
 
-async function manageGitIgnore(commandId:string) {
+async function manageGitIgnore(commandId: string) {
     if (!commandId.startsWith('hardis:scratch')) {
         return;
     }
     const gitIgnoreFile = './.gitignore';
     if (fs.existsSync(gitIgnoreFile)) {
-        const gitIgnore = await fs.readFile(gitIgnoreFile,"utf-8");
-        const gitIgnoreLines = gitIgnore.split("\n");
+        const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
+        const gitIgnoreLines = gitIgnore.split('\n');
         let updated = false;
         for (const gitIgnoreMandatoryLine of await getHardisGitIgnoreContent()) {
             if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine)) {
@@ -50,8 +53,8 @@ async function manageGitIgnore(commandId:string) {
             }
         }
         if (updated) {
-            await fs.writeFile(gitIgnoreFile,gitIgnoreLines.join("\n")+"\n","utf-8");
-            console.log("[sfdx-hardis] Updated .gitignore")
+            await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');
+            console.log('[sfdx-hardis] Updated .gitignore');
         }
 
     }
@@ -72,8 +75,8 @@ async function getSfdxHardisPackageJsonContent() {
 
 async function getHardisGitIgnoreContent() {
     const gitIgnoreContent = [
-        "config/user/",
-        "tmp/"
-    ]
+        'config/user/',
+        'tmp/'
+    ];
     return gitIgnoreContent;
 }

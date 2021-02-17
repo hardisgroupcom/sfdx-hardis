@@ -1,6 +1,6 @@
+import * as c from 'chalk';
 import * as readPkgUp from 'read-pkg-up';
 import * as updateNotifier from 'update-notifier';
-import * as c from 'chalk'
 
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis commands

@@ -2,13 +2,13 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import * as c from 'chalk';
 import * as EmailValidator from 'email-validator';
 import * as fs from 'fs-extra';
 import * as glob from 'glob-promise';
 import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
-import * as c from 'chalk';
 import { execJson, getCurrentGitBranch } from '../../../common/utils';
 import { getConfig, setConfig } from '../../../config';
 
@@ -185,7 +185,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Assign permission sets to user
     public async initPermissionSetAssignments() {
-        this.ux.log(`[sfdx-hardis] Assigning Permission Sets...`);
+        this.ux.log('[sfdx-hardis] Assigning Permission Sets...');
         const permSets = this.configInfo.assignPermissionSets || [];
         for (const permSetName of permSets) {
             const assignCommand = `sfdx force:user:permset:assign -n ${permSetName} -u ${this.scratchOrgUsername}`;
@@ -195,7 +195,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Run initialization apex scripts
     public async initApexScripts() {
-        this.ux.log(`[sfdx-hardis] Running apex initialization scripts...`);
+        this.ux.log('[sfdx-hardis] Running apex initialization scripts...');
         const allApexScripts = await glob('**/scripts/**/*.apex');
         const scratchOrgInitApexScripts = this.configInfo.scratchOrgInitApexScripts || [];
         // Build ordered list of apex scripts
@@ -215,7 +215,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Loads data in the org
     public async initOrgData() {
-        this.ux.log(`[sfdx-hardis] Loading org initialization data...`);
+        this.ux.log('[sfdx-hardis] Loading org initialization data...');
         const allDataFiles = await glob('**/data/**/*-plan.json');
         const scratchOrgInitData = this.configInfo.scratchOrgInitData || [];
         // Build ordered list of data files

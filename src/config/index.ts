@@ -12,9 +12,9 @@ getConfig(layer) returns:
 
 import { cosmiconfig } from 'cosmiconfig';
 import * as fs from 'fs-extra';
-import * as path from "path";
 import * as yaml from 'js-yaml';
 import * as os from 'os';
+import * as path from 'path';
 import * as prompts from 'prompts';
 import { getCurrentGitBranch, isGit } from '../common/utils';
 
@@ -36,7 +36,7 @@ async function getBranchConfigFiles() {
     if (!isGit) {
         return [];
     }
-    const gitBranchFormatted = await getCurrentGitBranch({formatted:true});
+    const gitBranchFormatted = await getCurrentGitBranch({formatted: true});
     const branchConfigFiles = [
         `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
         `config/branches/.${moduleName}.${gitBranchFormatted}.yml`
@@ -51,7 +51,7 @@ export const getConfig = async (layer: string = 'user'): Promise<any> => {
     }
     let branchConfig = await loadFromConfigFile(await getBranchConfigFiles());
     branchConfig = Object.assign(defaultConfig, branchConfig);
-    if (layer === "branch") {
+    if (layer === 'branch') {
         return branchConfig;
     }
     let userConfig = await loadFromConfigFile(userConfigFiles);
@@ -90,7 +90,7 @@ async function setInConfigFile(searchPlaces: string[], propValues: any) {
     doc = Object.assign(doc, propValues);
     await fs.ensureDir(path.dirname(configFile));
     await fs.writeFile(configFile, yaml.dump(doc));
-    explorer.clearCaches()
+    explorer.clearCaches();
 }
 
 // Check configuration of project so it works with sfdx-hardis
@@ -107,7 +107,7 @@ export  const checkConfig = async (options: any) => {
         options.Command &&
         (options.Command.requiresProject === true || options.Command.supportsDevhubUsername === true)
     ) {
-        const configProject = await getConfig("project");
+        const configProject = await getConfig('project');
         let projectName = process.env.PROJECT_NAME || configProject.projectName;
         devHubAliasOk = (process.env.DEVHUB_ALIAS || configProject.devHubAlias) != null;
         // If not found, prompt user project name and store it in user config file
@@ -120,7 +120,7 @@ export  const checkConfig = async (options: any) => {
             });
             projectName = promptResponse.value;
             await setConfig('project', {
-                projectName: projectName,
+                projectName,
                 devHubAlias: `DevHub_${projectName}`
             });
             devHubAliasOk = true;
@@ -129,12 +129,12 @@ export  const checkConfig = async (options: any) => {
 
     // Set DevHub username if not set
     if (devHubAliasOk === false && options.Command && options.Command.supportsDevhubUsername === true) {
-        const configProject = await getConfig("project")
+        const configProject = await getConfig('project');
         const devHubAlias = process.env.DEVHUB_ALIAS || configProject.devHubAlias;
         if (devHubAlias == null) {
             await setConfig('project', {
                 devHubAlias: `DevHub_${configProject.projectName}`
-            });            
+            });
         }
     }
-}
+};
