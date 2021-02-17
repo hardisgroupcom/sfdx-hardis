@@ -77,21 +77,31 @@ export async function execJson(
   commandThis: any
 ): Promise<any> {
 
-  if (!command.includes('--json')) {
+  if (command.startsWith('sfdx') && !command.includes('--json')) {
     command += ' --json';
   }
   commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
-  const commandResult = await exec(command);
+  let commandResult = null;
+  // Call command
+  try {
+    commandResult = await exec(command);
+  } catch(e) {
+    return {
+      status: 1,
+      errorMessage: 
+        `[sfdx-hardis][ERROR] Error processing command: ${e.message}\n${e.stack}`
+    };  
+  }
+  // Parse command result
   try {
     return JSON.parse(commandResult.stdout);
   } catch (e) {
     return {
       status: 1,
-      errorMessage: c.red(
+      errorMessage: 
         `[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(
           commandResult
         )}`
-      )
     };
   }
 }
