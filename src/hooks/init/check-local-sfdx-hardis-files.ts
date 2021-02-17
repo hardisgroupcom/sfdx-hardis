@@ -3,10 +3,19 @@ import * as fs from 'fs-extra';
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis:scratch commands
     const commandId = options?.id || '';
+    // No await there because it can be processed while other commands
+    // tslint:disable no-floating-promises
+    managePackageJson(commandId);
+    manageGitIgnore(commandId);
+    // tslint:enable no-floating-promises
+
+};
+
+// Add utility scripts if they are not present
+async function managePackageJson(commandId: string) {
     if (!commandId.startsWith('hardis:scratch')) {
         return;
     }
-
     const packageJsonFile = './package.json';
     if (fs.existsSync(packageJsonFile)) {
         // Update existing package.json to define sfdx utility scripts
@@ -14,7 +23,7 @@ export const hook = async (options: any) => {
             const packageJson = JSON.parse(text);
             const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
             packageJson['scripts'] = Object.assign(hardisPackageJsonContent['scripts'], packageJson['scripts']);
-            if (JSON.stringify(packageJson) !== text) {
+            if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text))) {
                 await fs.writeFile(packageJsonFile, JSON.stringify(packageJson, null, 2));
                 console.log('[sfdx-hardis] Updated package.json with sfdx-hardis content');
             }
@@ -23,11 +32,33 @@ export const hook = async (options: any) => {
         // Create package.json to define sfdx utility scripts
         const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
         fs.writeFile(packageJsonFile, JSON.stringify(hardisPackageJsonContent, null, 2), () => {
-            console.log('[sfdx-hardis] Updated package.json with sfdx-hardis content');
+            console.log('[sfdx-hardis] Created package.json with sfdx-hardis content');
         });
     }
+}
 
-};
+async function manageGitIgnore(commandId: string) {
+    if (!commandId.startsWith('hardis:scratch')) {
+        return;
+    }
+    const gitIgnoreFile = './.gitignore';
+    if (fs.existsSync(gitIgnoreFile)) {
+        const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
+        const gitIgnoreLines = gitIgnore.split('\n');
+        let updated = false;
+        for (const gitIgnoreMandatoryLine of await getHardisGitIgnoreContent()) {
+            if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine)) {
+                gitIgnoreLines.push(gitIgnoreMandatoryLine);
+                updated = true;
+            }
+        }
+        if (updated) {
+            await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');
+            console.log('[sfdx-hardis] Updated .gitignore');
+        }
+
+    }
+}
 
 async function getSfdxHardisPackageJsonContent() {
     const hardisPackageJsonContent = {
@@ -40,4 +71,12 @@ async function getSfdxHardisPackageJsonContent() {
         }
     };
     return hardisPackageJsonContent;
+}
+
+async function getHardisGitIgnoreContent() {
+    const gitIgnoreContent = [
+        'config/user/',
+        'tmp/'
+    ];
+    return gitIgnoreContent;
 }

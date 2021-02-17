@@ -1,3 +1,4 @@
+import * as c from 'chalk';
 import * as child from 'child_process';
 import * as csvStringify from 'csv-stringify/lib/sync';
 import * as fs from 'fs-extra';
@@ -5,6 +6,16 @@ import * as path from 'path';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
+import simpleGit, { SimpleGit } from 'simple-git';
+
+let git: SimpleGit = null;
+export const isGit = child.exec(
+  'git rev-parse --is-inside-work-tree 2>/dev/null',
+  { encoding: 'utf8' }
+);
+if (isGit) {
+  git = simpleGit();
+}
 
 let pluginsStdout = null;
 
@@ -29,9 +40,21 @@ export async function checkSfdxPlugin(
   };
 }
 
+// Get local git branch name
+export async function getCurrentGitBranch(options: any = { formatted: false }) {
+  const gitBranch = process.env.CI_COMMIT_REF_NAME || (await git.branchLocal()).current;
+  if (options.formatted === true) {
+    return gitBranch.replace('/', '__');
+  }
+  return gitBranch;
+}
+
 // Execute command and parse result as json
-export async function execJson(command: string, commandThis: any): Promise<any> {
-  commandThis.ux.log(`[sfdx-hardis][command] ${command}`);
+export async function execJson(
+  command: string,
+  commandThis: any
+): Promise<any> {
+  commandThis.ux.log(`[sfdx-hardis][command] ${c.grey(command)}`);
   if (!command.includes('--json')) {
     command += ' --json';
   }
@@ -39,9 +62,13 @@ export async function execJson(command: string, commandThis: any): Promise<any> 
   try {
     return JSON.parse(commandResult.stdout);
   } catch (e) {
-    return { status: 1, errorMessage: `[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(commandResult)}` };
+    return {
+      status: 1,
+      errorMessage: c.red(`[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(
+        commandResult
+      )}`)
+    };
   }
-
 }
 
 // Filter package XML
@@ -64,22 +91,35 @@ export async function filterPackageXml(
   if ((options.removeNamespaces || []).length > 0) {
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
-        return options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length === 0;
+        return (
+          options.removeNamespaces.filter((ns: string) => member.startsWith(ns))
+            .length === 0
+        );
       });
       return type;
     });
   }
   // Remove from other packageXml file
   if (options.removeFromPackageXmlFile) {
-    const destructiveFileContent = await fs.readFile(options.removeFromPackageXmlFile);
-    const destructiveManifest = await xml2js.parseStringPromise(destructiveFileContent);
+    const destructiveFileContent = await fs.readFile(
+      options.removeFromPackageXmlFile
+    );
+    const destructiveManifest = await xml2js.parseStringPromise(
+      destructiveFileContent
+    );
     manifest.Package.types = manifest.Package.types.map((type: any) => {
-      const destructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
-        return destructiveType.name[0] === type.name[0];
-      });
+      const destructiveTypes = destructiveManifest.Package.types.filter(
+        (destructiveType: any) => {
+          return destructiveType.name[0] === type.name[0];
+        }
+      );
       if (destructiveTypes.length > 0) {
         type.members = type.members.filter((member: string) => {
-          return destructiveTypes[0].members.filter((destructiveMember: string) => destructiveMember === member).length === 0;
+          return (
+            destructiveTypes[0].members.filter(
+              (destructiveMember: string) => destructiveMember === member
+            ).length === 0
+          );
         });
       }
       return type;
@@ -104,8 +144,10 @@ export async function filterPackageXml(
     manifest.Package.version[0] = options.updateApiVersion;
   }
   // Remove metadata types (named, and empty ones)
-  manifest.Package.types = manifest.Package.types.filter((type: any) =>
-    !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0
+  manifest.Package.types = manifest.Package.types.filter(
+    (type: any) =>
+      !(options.removeMetadatas || []).includes(type.name[0]) &&
+      (type?.members?.length || 0) > 0
   );
   const builder = new xml2js.Builder();
   const updatedFileContent = builder.buildObject(manifest);
@@ -196,13 +238,10 @@ export async function generateReports(
   columns: any[],
   commandThis: any
 ): Promise<any[]> {
-  const logFileName = 'sfdx-hardis-' + commandThis.id.substr(commandThis.id.lastIndexOf(':') + 1);
-  const reportFile = path.resolve(
-    `./hardis-report/${logFileName}.csv`
-  );
-  const reportFileExcel = path.resolve(
-    `./hardis-report/${logFileName}.xls`
-  );
+  const logFileName =
+    'sfdx-hardis-' + commandThis.id.substr(commandThis.id.lastIndexOf(':') + 1);
+  const reportFile = path.resolve(`./hardis-report/${logFileName}.csv`);
+  const reportFileExcel = path.resolve(`./hardis-report/${logFileName}.xls`);
   await fs.ensureDir(path.dirname(reportFile));
   const csv = csvStringify(resultSorted, {
     delimiter: ';',

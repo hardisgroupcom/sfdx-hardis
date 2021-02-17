@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
   "description": "Hardis-Group Toolbox for Salesforce DX",
-  "version": "1.0.1",
+  "version": "1.0.2-beta.1",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "dependencies": {
@@ -12,6 +12,7 @@
     "@salesforce/command": "^2",
     "@salesforce/core": "^2",
     "@salesforce/ts-sinon": "^1.2.4",
+    "chalk": "^4.1.0",
     "changed-git-files": "^0.0.1",
     "columnify": "^1.5.4",
     "cosmiconfig": "^7.0.0",
@@ -72,7 +73,7 @@
     "hooks": {
       "init": [
         "./lib/hooks/init/check-upgrade",
-        "./lib/hooks/init/upgrade-package-json"
+        "./lib/hooks/init/check-local-sfdx-hardis-files"
       ],
       "prerun": [
         "./lib/hooks/prerun/auth"

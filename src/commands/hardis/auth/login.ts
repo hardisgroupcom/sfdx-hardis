@@ -25,6 +25,7 @@ export default class Login extends SfdxCommand {
   protected static flagsConfig = {
     // flag with a value (-n, --name=VALUE)
     instanceurl: flags.string({char: 'r', description: messages.getMessage('instanceUrl')}),
+    devhub: flags.boolean({char: 'h', default: false, description: messages.getMessage('withDevHub')}),
     debug: flags.boolean({char: 'd', default: false, description: messages.getMessage('debugMode')})
   };
 
@@ -37,10 +38,13 @@ export default class Login extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
+  protected devHub = false;
+
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    await this.config.runHook('auth', {checkAuth: true, Command: this});
+    this.devHub = this.flags.devhub || false;
+    await this.config.runHook('auth', {checkAuth: !this.devHub, Command: this, devHub: this.devHub});
 
     // Return an object to be displayed with --json
     return { outputString: 'Logged to Salesforce org' };
