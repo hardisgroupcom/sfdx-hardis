@@ -41,19 +41,19 @@ export const hook = async (options: any) => {
                     ? await getCurrentGitBranch({ formatted: true })
                     : commandId === 'hardis:auth:login'
                         ? configInfo.orgAlias
-                        : null; // Can be null and it's ok if we're not in scratch org context
+                        : "MY_ORG"; // Can be null and it's ok if we're not in scratch org context
         await authOrg(orgAlias, options);
     }
 };
 
 // Authorize an org manually or with JWT
 async function authOrg(orgAlias: string, options: any) {
-    const isDevHub = orgAlias != null && orgAlias.includes('DevHub');
+    const isDevHub = orgAlias.includes('DevHub');
     let doConnect = true;
     if (!options.checkAuth) {
         // Check if we are already authenticated
         const orgDisplayParams: any = {};
-        if (orgAlias != null) {
+        if (orgAlias != "MY_ORG") {
             orgDisplayParams.targetusername = orgAlias;
         }
         const orgInfoResult = await sfdx.org.display(orgDisplayParams);
@@ -64,9 +64,8 @@ async function authOrg(orgAlias: string, options: any) {
                 (isDevHub && orgInfoResult.id != null))
         ) {
             doConnect = false;
-            const orgAliasLabel = orgAlias != null ? orgAlias : 'server';
             console.log(
-                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAliasLabel)}: ${orgInfoResult.instanceUrl}`
+                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAlias)}: ${orgInfoResult.instanceUrl}`
             );
         }
     }
@@ -81,7 +80,10 @@ async function authOrg(orgAlias: string, options: any) {
                 : process.env.TARGET_USERNAME ||
                     (isDevHub) ? config.devHubUsername : config.targetUsername;
         if (username == null && process.env.CI) {
-            console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(isDevHub ? 'devHubUsername' : 'targetUsername')} in .sfdx-hardis.yml`));
+            const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
+            console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(isDevHub ?
+                'devHubUsername in .sfdx-hardis.yml' :
+                `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
             process.exit(1);
         }
         const instanceUrl =
@@ -111,6 +113,7 @@ async function authOrg(orgAlias: string, options: any) {
                 ` --clientid ${sfdxClientId}` +
                 ` --jwtkeyfile ${crtKeyfile}` +
                 ` --username ${username}` +
+                ` --setalias ${orgAlias}` +
                 ` --instanceurl ${instanceUrl}`;
             console.log(`[sfdx-hardis] Login command: ${loginCommand.replace(sfdxClientId, '***********')}`);
             const jwtAuthRes = await exec(loginCommand);
@@ -123,7 +126,7 @@ async function authOrg(orgAlias: string, options: any) {
             }
         } else if (!process.env.CI) {
             // Login with web auth
-            const orgLabel = orgAlias == null ? 'an org' : `org ${orgAlias}`;
+            const orgLabel = `org ${orgAlias}`;
             console.warn(
                 c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`)
             );
@@ -138,7 +141,7 @@ async function authOrg(orgAlias: string, options: any) {
             }
             const loginResult = await sfdx.auth.webLogin({
                 setdefaultusername: true,
-                setalias: orgAlias || 'MyOrg',
+                setalias: orgAlias,
                 setdefaultdevhubusername: isDevHub,
                 instanceurl: instanceUrl,
                 _quiet: !options.Command.flags.debug === true,
@@ -200,11 +203,10 @@ async function getSfdxClientId(orgAlias: string, config: any) {
 
 // Try to find certificate key file for sfdx connected app in different locations
 async function getCertificateKeyFile(orgAlias: string) {
-    const crtKeyFileName = orgAlias != null ? orgAlias : 'server';
     const filesToTry = [
         `./config/branches/.jwt/${orgAlias}.key`,
         `./config/.jwt/${orgAlias}.key`,
-        `./ssh/${crtKeyFileName}.key`, // Legacy wrongly named but avoid to crash existing repos
+        `./ssh/${orgAlias}.key`, // Legacy wrongly named but avoid to crash existing repos
         './ssh/server.key' // Legacy wrongly named but avoid to crash existing repos
     ];
     for (const file of filesToTry) {
