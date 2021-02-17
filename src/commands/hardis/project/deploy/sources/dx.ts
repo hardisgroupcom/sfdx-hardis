@@ -3,7 +3,7 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
-import { execJson } from '../../../../../common/utils';
+import { execCommand } from '../../../../../common/utils';
 import { getConfig } from '../../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -21,6 +21,17 @@ export default class DxSources extends SfdxCommand {
   public static examples = ['$ sfdx hardis:project:deploy:sources:dx'];
 
   protected static flagsConfig = {
+    check: flags.boolean({
+      char: 'c',
+      default: false,
+      description: messages.getMessage('checkOnly')
+    }),
+    testlevel: flags.enum({
+      char: 'l',
+      default: "RunLocalTests",
+      options:["NoTestRun","RunSpecifiedTests","RunLocalTests","RunAllTestsInOrg"],
+      description: messages.getMessage('testLevel')
+    }),
     debug: flags.boolean({
       char: 'd',
       default: false,
@@ -42,6 +53,8 @@ export default class DxSources extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const check = this.flags.debug || false;
+    const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debug = this.flags.debug || false;
 
     this.configInfo = await getConfig('branch');
@@ -49,9 +62,12 @@ export default class DxSources extends SfdxCommand {
       process.env.PACKAGE_XML_TO_DEPLOY ||
       this.configInfo.packageXmlToDeploy ||
       './config/package.xml';
-    const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile} ${debug ? '--verbose' : ''
-      }`;
-    const deployRes = await execJson(deployCommand, this);
+    const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}`+
+      ' --wait 60' +
+      ` --testlevel ${testlevel}`+
+      (check ? ' --checkonly': '')+
+      (debug ? '--verbose' : '') 
+    const deployRes = await execCommand(deployCommand, this);
     let message = '';
     if (deployRes.status === 0) {
       message = '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';

@@ -71,15 +71,20 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   return gitBranch;
 }
 
+export async function execSfdxJson(  command: string,
+  commandThis: any
+): Promise<any> {
+  if (!command.includes('--json')) {
+    command += ' --json';
+  }
+  return await execCommand(command,commandThis);
+}
+
 // Execute command and parse result as json
-export async function execJson(
+export async function execCommand(
   command: string,
   commandThis: any
 ): Promise<any> {
-
-  if (command.startsWith('sfdx') && !command.includes('--json')) {
-    command += ' --json';
-  }
   commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
   let commandResult = null;
   // Call command
@@ -91,6 +96,12 @@ export async function execJson(
       errorMessage: 
         `[sfdx-hardis][ERROR] Error processing command: ${e.message}\n${e.stack}`
     };  
+  }
+  if (!command.includes('--json')) {
+    return {
+      status :0,
+      stdout: commandResult
+    }
   }
   // Parse command result
   try {
