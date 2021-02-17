@@ -71,13 +71,13 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   return gitBranch;
 }
 
-export async function execSfdxJson(  command: string,
+export async function execSfdxJson(command: string,
   commandThis: any
 ): Promise<any> {
   if (!command.includes('--json')) {
     command += ' --json';
   }
-  return await execCommand(command,commandThis);
+  return await execCommand(command, commandThis);
 }
 
 // Execute command and parse result as json
@@ -89,17 +89,20 @@ export async function execCommand(
   let commandResult = null;
   // Call command
   try {
-    commandResult = await exec(command);
-  } catch(e) {
+    commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
+  } catch (e) {
+    if (!command.includes('--json')) {
+      throw e;
+    }
     return {
       status: 1,
-      errorMessage: 
+      errorMessage:
         `[sfdx-hardis][ERROR] Error processing command: ${e.message}\n${e.stack}`
-    };  
+    };
   }
   if (!command.includes('--json')) {
     return {
-      status :0,
+      status: 0,
       stdout: commandResult
     }
   }
@@ -109,7 +112,7 @@ export async function execCommand(
   } catch (e) {
     return {
       status: 1,
-      errorMessage: 
+      errorMessage:
         `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}`
     };
   }
