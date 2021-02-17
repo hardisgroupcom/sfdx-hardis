@@ -1,5 +1,6 @@
 import * as changedGitFiles from 'changed-git-files';
 import { IncomingWebhook } from 'ms-teams-webhook';
+import { isGitRepo } from '../../common/utils';
 import { getConfig } from '../../config';
 
 export const hook = async (options: any) => {
@@ -48,6 +49,9 @@ export const hook = async (options: any) => {
 
 // List updated files and reformat them as string
 async function listChangedFiles(): Promise<string[]> {
+    if (!isGitRepo()) {
+        return [];
+    }
     const files = await new Promise<string[]>((resolve, reject) => {
         changedGitFiles((err: any, result: any[]) => {
             if (result == null) {

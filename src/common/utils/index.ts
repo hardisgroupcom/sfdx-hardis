@@ -9,15 +9,21 @@ const exec = util.promisify(child.exec);
 import simpleGit, { SimpleGit } from 'simple-git';
 
 let git: SimpleGit = null;
-export const isGit = child.exec(
-  'git rev-parse --is-inside-work-tree 2>/dev/null',
-  { encoding: 'utf8' }
-);
-if (isGit) {
+
+if (isGitRepo()) {
   git = simpleGit();
 }
 
 let pluginsStdout = null;
+
+export function isGitRepo() {
+  const isInsideWorkTree = child.spawnSync(
+    'git',
+    ['rev-parse', '--is-inside-work-tree'],
+    { encoding: 'utf8', windowsHide: true }
+  );
+  return isInsideWorkTree.status === 0;
+}
 
 // Install plugin if not present
 export async function checkSfdxPlugin(
@@ -40,9 +46,25 @@ export async function checkSfdxPlugin(
   };
 }
 
+// Check if we are in a repo, or create it if missing
+export async function checkGitRepository() {
+  if (!isGitRepo()) {
+    await exec('git init');
+    console.info(
+      c.yellow(
+        c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)
+      )
+    );
+  }
+}
+
 // Get local git branch name
 export async function getCurrentGitBranch(options: any = { formatted: false }) {
-  const gitBranch = process.env.CI_COMMIT_REF_NAME || (await git.branchLocal()).current;
+  if (git == null) {
+    return null;
+  }
+  const gitBranch =
+    process.env.CI_COMMIT_REF_NAME || (await git.branchLocal()).current;
   if (options.formatted === true) {
     return gitBranch.replace('/', '__');
   }
@@ -64,9 +86,11 @@ export async function execJson(
   } catch (e) {
     return {
       status: 1,
-      errorMessage: c.red(`[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(
-        commandResult
-      )}`)
+      errorMessage: c.red(
+        `[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(
+          commandResult
+        )}`
+      )
     };
   }
 }

@@ -16,7 +16,7 @@ import * as yaml from 'js-yaml';
 import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
-import { getCurrentGitBranch, isGit } from '../common/utils';
+import { getCurrentGitBranch, isGitRepo } from '../common/utils';
 
 const moduleName = 'sfdx-hardis';
 const projectConfigFiles = [
@@ -33,7 +33,7 @@ const userConfigFiles = [
 ];
 
 async function getBranchConfigFiles() {
-    if (!isGit) {
+    if (!isGitRepo()) {
         return [];
     }
     const gitBranchFormatted = await getCurrentGitBranch({formatted: true});

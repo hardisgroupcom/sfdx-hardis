@@ -46,7 +46,7 @@ async function manageGitIgnore(commandId: string) {
         const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
         const gitIgnoreLines = gitIgnore.split('\n');
         let updated = false;
-        for (const gitIgnoreMandatoryLine of await getHardisGitIgnoreContent()) {
+        for (const gitIgnoreMandatoryLine of await getHardisGitRepoIgnoreContent()) {
             if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine)) {
                 gitIgnoreLines.push(gitIgnoreMandatoryLine);
                 updated = true;
@@ -73,7 +73,7 @@ async function getSfdxHardisPackageJsonContent() {
     return hardisPackageJsonContent;
 }
 
-async function getHardisGitIgnoreContent() {
+async function getHardisGitRepoIgnoreContent() {
     const gitIgnoreContent = [
         'config/user/',
         'tmp/'
