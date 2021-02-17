@@ -61,6 +61,7 @@ async function authOrg(orgAlias: string, options: any) {
             orgInfoResult &&
             ((orgInfoResult.connectedStatus &&
                 orgInfoResult.connectedStatus.includes('Connected')) ||
+                (orgInfoResult.alias === orgAlias && orgInfoResult.id != null) ||
                 (isDevHub && orgInfoResult.id != null))
         ) {
             doConnect = false;
