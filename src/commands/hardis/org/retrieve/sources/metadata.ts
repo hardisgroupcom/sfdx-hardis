@@ -5,7 +5,7 @@
   import * as fs from 'fs-extra';
   import * as path from 'path';
   import { MetadataUtils } from '../../../../../common/metadata-utils';
-  import { checkSfdxPlugin } from '../../../../../common/utils';
+  import { checkGitRepository, checkSfdxPlugin } from '../../../../../common/utils';
 
   // Initialize Messages with the current plugin directory
   Messages.importMessagesDirectory(__dirname);
@@ -49,7 +49,8 @@
       const packageXml = path.resolve(this.flags.packagexml || 'package.xml') ;
       const debug = this.flags.debug || false ;
 
-      // Check required plugins
+      // Check required pre-requisites
+      await checkGitRepository();
       const powerkitRes = await checkSfdxPlugin('sfpowerkit');
       this.ux.log(powerkitRes.message);
 
