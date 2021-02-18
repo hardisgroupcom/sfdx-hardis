@@ -3,8 +3,11 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
+import * as fs from 'fs-extra';
+import * as os from 'os';
+import * as path from 'path';
 import { execCommand } from '../../../../../common/utils';
-import { getConfig } from '../../../../../config';
+import { CONSTANTS, getConfig } from '../../../../../config';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -57,6 +60,45 @@ export default class DxSources extends SfdxCommand {
     const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debug = this.flags.debug || false;
 
+    // Deploy destructive changes
+    const packageDeletedXmlFile =
+      process.env.PACKAGE_XML_TO_DELETE ||
+      this.configInfo.packageXmlToDelete ||
+      './config/destructiveChanges.xml';
+    if (fs.existsSync(packageDeletedXmlFile)) {
+      // Create empty deployment file because of sfdx limitation
+      // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
+      this.ux.log(`[sfdx-hardis] Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`);
+      const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString()));
+      await fs.ensureDir(tmpDir);
+      const emptyPackageXmlFile = path.join(tmpDir, 'package.xml');
+      await fs.writeFile(emptyPackageXmlFile,
+        `<?xml version="1.0" encoding="UTF-8"?>
+        <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+          <version>${CONSTANTS.API_VERSION}</version>
+        </Package>`, "utf8");
+      console.assert(fs.existsSync(emptyPackageXmlFile));
+      console.assert(fs.existsSync(packageDeletedXmlFile));
+      await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges'));
+      const deployDelete = `sfdx force:mdapi:deploy -d ${tmpDir}` +
+        ' --wait 60' +
+        ` --testlevel ${testlevel}` +
+        ' --ignorewarnings' + // So it does not fail in case metadata is already deleted
+        (check ? ' --checkonly' : '') +
+        (debug ? ' --verbose' : '');
+      const deployDeleteRes = await execCommand(deployDelete, this);
+      await fs.remove(tmpDir);
+      let deleteMsg = '';
+      if (deployDeleteRes.status === 0) {
+        deleteMsg = '[sfdx-hardis] Successfully deployed destructive changes to Salesforce org';
+        this.ux.log(c.green(deleteMsg));
+      } else {
+        deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';
+        this.ux.log(c.red(deployDeleteRes.errorMessage));
+      }
+    }
+
+    // Deploy sources
     this.configInfo = await getConfig('branch');
     const packageXmlFile =
       process.env.PACKAGE_XML_TO_DEPLOY ||
@@ -66,7 +108,7 @@ export default class DxSources extends SfdxCommand {
       ' --wait 60' +
       ` --testlevel ${testlevel}` +
       (check ? ' --checkonly' : '') +
-      (debug ? ' --verbose' : '') ;
+      (debug ? ' --verbose' : '');
     const deployRes = await execCommand(deployCommand, this);
     let message = '';
     if (deployRes.status === 0) {
