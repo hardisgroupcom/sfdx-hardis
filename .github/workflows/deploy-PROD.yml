@@ -32,7 +32,7 @@ jobs:
           scope: "hardisgroupcom"
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false
-      - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --preid="beta$BETAID"
+      - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="beta$BETAID"
       - run: yarn publish --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
