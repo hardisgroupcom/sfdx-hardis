@@ -89,12 +89,14 @@ export async function execCommand(
   commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
   let commandResult = null;
   // Call command
+  const prevForceColor = process.env.FORCE_COLOR;
+  process.env.FORCE_COLOR = "0";
   try {
     commandResult = await exec(command, {
-      maxBuffer: 10000 * 10000,
-      env: { FORCE_COLOR: "0}" }
+      maxBuffer: 10000 * 10000
     });
   } catch (e) {
+    process.env.FORCE_COLOR = prevForceColor;
     if (!command.includes("--json")) {
       console.error(c.red(e.stdout));
       throw e;
@@ -104,6 +106,7 @@ export async function execCommand(
       errorMessage: `[sfdx-hardis][ERROR] Error processing command: ${e.message}\n${e.stack}`
     };
   }
+  process.env.FORCE_COLOR = prevForceColor;
   if (!command.includes("--json")) {
     return {
       status: 0,
