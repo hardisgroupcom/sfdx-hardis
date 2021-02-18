@@ -28,8 +28,8 @@ export default class DxSources extends SfdxCommand {
     }),
     testlevel: flags.enum({
       char: 'l',
-      default: "RunLocalTests",
-      options:["NoTestRun","RunSpecifiedTests","RunLocalTests","RunAllTestsInOrg"],
+      default: 'RunLocalTests',
+      options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel')
     }),
     debug: flags.boolean({
@@ -62,18 +62,17 @@ export default class DxSources extends SfdxCommand {
       process.env.PACKAGE_XML_TO_DEPLOY ||
       this.configInfo.packageXmlToDeploy ||
       './config/package.xml';
-    const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}`+
+    const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}` +
       ' --wait 60' +
-      ` --testlevel ${testlevel}`+
-      (check ? ' --checkonly': '')+
+      ` --testlevel ${testlevel}` +
+      (check ? ' --checkonly' : '') +
       (debug ? ' --verbose' : '') ;
     const deployRes = await execCommand(deployCommand, this);
     let message = '';
     if (deployRes.status === 0) {
       message = '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';
       this.ux.log(c.green(message));
-    }
-    else {
+    } else {
       message = '[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org';
       this.ux.log(c.red(deployRes.errorMessage));
     }

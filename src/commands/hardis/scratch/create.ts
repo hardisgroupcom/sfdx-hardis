@@ -6,6 +6,7 @@ import * as c from 'chalk';
 import * as EmailValidator from 'email-validator';
 import * as fs from 'fs-extra';
 import * as glob from 'glob-promise';
+import * as moment from 'moment';
 import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
@@ -80,7 +81,8 @@ export default class ScratchCreate extends SfdxCommand {
     public async initConfig() {
         this.configInfo = await getConfig('user');
         this.gitBranch = await getCurrentGitBranch({ formatted: true });
-        this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || this.configInfo.scratchOrgAlias || os.userInfo().username + '-' + this.gitBranch.replace('/', '-');
+        this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || this.configInfo.scratchOrgAlias ||
+            os.userInfo().username + '-' + this.gitBranch.replace('/', '-') + moment().format('YYYY-MM-DD_hh-mm');
         if (process.env.CI && !this.scratchOrgAlias.startsWith('CI-')) {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
         }
