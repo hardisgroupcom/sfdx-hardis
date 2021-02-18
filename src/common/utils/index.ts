@@ -77,7 +77,8 @@ export async function execSfdxJson(
   commandThis: any,
   options: any = {
     fail: false,
-    output: false
+    output: false,
+    debug: false
   }
 ): Promise<any> {
   if (!command.includes("--json")) {
@@ -92,7 +93,8 @@ export async function execCommand(
   commandThis: any,
   options: any = {
     fail: false,
-    output: false
+    output: false,
+    debug: false
   }
 ): Promise<any> {
   commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
@@ -116,11 +118,8 @@ export async function execCommand(
     };
   }
   // Display output if requested, for better user unrstanding of the logs
-  if (options.output) {
+  if (options.output || options.debug) {
     commandThis.ux.log(`[sfdx-hardis][commandresult] ${commandResult.stdout}`);
-  }
-  else {
-    commandThis.debug(`[sfdx-hardis][commandresult] ${commandResult.stdout}`)
   }
   // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;
