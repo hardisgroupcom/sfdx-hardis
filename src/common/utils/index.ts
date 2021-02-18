@@ -108,7 +108,7 @@ export async function execCommand(
     }
     return {
       status: 1,
-      errorMessage: `[sfdx-hardis][ERROR] Error processing command: ${e.message}\n${e.stack}`
+      errorMessage: `[sfdx-hardis][ERROR] Error processing command: ${JSON.stringify(e)}`
     };
   }
   process.env.FORCE_COLOR = prevForceColor;
