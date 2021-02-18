@@ -114,7 +114,7 @@ export async function execCommand(
     return {
       status: 1,
       errorMessage:
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}`
+        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}`
     };
   }
 }
