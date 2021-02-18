@@ -18,7 +18,7 @@ export const hook = async (options: any) => {
     if (typeof global.it === 'function') {
         return;
     }
-    let configInfo = await getConfig('branch');
+    let configInfo = await getConfig('user');
     // Manage authentication if DevHub is required but current user is disconnected
     if (
         (options.Command && options.Command.supportsDevhubUsername === true) || options.devHub === true
@@ -26,7 +26,7 @@ export const hook = async (options: any) => {
         let devHubAlias = configInfo.devHubAlias || process.env.DEVHUB_ALIAS;
         if (devHubAlias == null) {
             await checkConfig(options);
-            configInfo = await getConfig('branch');
+            configInfo = await getConfig('user');
             devHubAlias = configInfo.devHubAlias;
         }
         await authOrg(devHubAlias, options);
@@ -40,8 +40,8 @@ export const hook = async (options: any) => {
                 (process.env.CI)
                     ? await getCurrentGitBranch({ formatted: true })
                     : commandId === 'hardis:auth:login'
-                        ? configInfo.orgAlias
-                        : 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
+                        ? configInfo.orgAlias: 
+                        configInfo.scratchOrgAlias || 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
         await authOrg(orgAlias, options);
     }
 };

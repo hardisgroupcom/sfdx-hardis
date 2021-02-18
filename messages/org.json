@@ -1,5 +1,6 @@
 {
   "allowPurgeFailure": "Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable",
+  "apexTests": "Run apex test cases on org",
   "auditApiVersion": "Audit API version",
   "auditCallInCallOut": "Generate list of callIn and callouts from sfdx project",
   "auditRemoteSites": "Generate list of remote sites",

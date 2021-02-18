@@ -68,6 +68,7 @@ async function getSfdxHardisPackageJsonContent() {
             'scratch:push': 'sfdx force:source:push -g -w 60 --forceoverwrite',
             'scratch:pull': 'sfdx force:source:pull --forceoverwrite',
             'scratch:open': 'sfdx force:org:open',
+            'org:test:apex': 'sfdx hardis:org:test:apex',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true'
         }
     };
