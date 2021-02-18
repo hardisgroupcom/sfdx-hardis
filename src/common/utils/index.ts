@@ -102,13 +102,13 @@ export async function execCommand(
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
   } catch (e) {
     process.env.FORCE_COLOR = prevForceColor;
-    if (!command.includes("--json")) {
-      console.error(c.red(e.stdout));
+    if (!command.includes("--json") || options.fail) {
+      console.error(c.red(`${e.stdout}\n${e.stderr}`));
       throw e;
     }
     return {
       status: 1,
-      errorMessage: `[sfdx-hardis][ERROR] Error processing command: ${JSON.stringify(e)}`
+      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`
     };
   }
   process.env.FORCE_COLOR = prevForceColor;
