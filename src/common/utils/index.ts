@@ -1,12 +1,12 @@
-import * as c from 'chalk';
-import * as child from 'child_process';
-import * as csvStringify from 'csv-stringify/lib/sync';
-import * as fs from 'fs-extra';
-import * as path from 'path';
-import * as util from 'util';
-import * as xml2js from 'xml2js';
+import * as c from "chalk";
+import * as child from "child_process";
+import * as csvStringify from "csv-stringify/lib/sync";
+import * as fs from "fs-extra";
+import * as path from "path";
+import * as util from "util";
+import * as xml2js from "xml2js";
 const exec = util.promisify(child.exec);
-import simpleGit, { SimpleGit } from 'simple-git';
+import simpleGit, { SimpleGit } from "simple-git";
 
 let git: SimpleGit = null;
 
@@ -18,9 +18,9 @@ let pluginsStdout = null;
 
 export function isGitRepo() {
   const isInsideWorkTree = child.spawnSync(
-    'git',
-    ['rev-parse', '--is-inside-work-tree'],
-    { encoding: 'utf8', windowsHide: true }
+    "git",
+    ["rev-parse", "--is-inside-work-tree"],
+    { encoding: "utf8", windowsHide: true }
   );
   return isInsideWorkTree.status === 0;
 }
@@ -31,7 +31,7 @@ export async function checkSfdxPlugin(
 ): Promise<{ installed: boolean; message: string }> {
   let installed = false;
   if (pluginsStdout == null) {
-    const pluginsRes = await exec('sfdx plugins');
+    const pluginsRes = await exec("sfdx plugins");
     pluginsStdout = pluginsRes.stdout;
   }
   if (!pluginsStdout.includes(pluginName)) {
@@ -49,7 +49,7 @@ export async function checkSfdxPlugin(
 // Check if we are in a repo, or create it if missing
 export async function checkGitRepository() {
   if (!isGitRepo()) {
-    await exec('git init');
+    await exec("git init");
     console.info(
       c.yellow(
         c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)
@@ -66,16 +66,17 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   const gitBranch =
     process.env.CI_COMMIT_REF_NAME || (await git.branchLocal()).current;
   if (options.formatted === true) {
-    return gitBranch.replace('/', '__');
+    return gitBranch.replace("/", "__");
   }
   return gitBranch;
 }
 
-export async function execSfdxJson(command: string,
+export async function execSfdxJson(
+  command: string,
   commandThis: any
 ): Promise<any> {
-  if (!command.includes('--json')) {
-    command += ' --json';
+  if (!command.includes("--json")) {
+    command += " --json";
   }
   return await execCommand(command, commandThis);
 }
@@ -89,23 +90,25 @@ export async function execCommand(
   let commandResult = null;
   // Call command
   try {
-    commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
+    commandResult = await exec(command, {
+      maxBuffer: 10000 * 10000,
+      env: { FORCE_COLOR: "0}" }
+    });
   } catch (e) {
-    if (!command.includes('--json')) {
+    if (!command.includes("--json")) {
       console.error(c.red(e.stdout));
       throw e;
     }
     return {
       status: 1,
-      errorMessage:
-        `[sfdx-hardis][ERROR] Error processing command: ${e.message}\n${e.stack}`
+      errorMessage: `[sfdx-hardis][ERROR] Error processing command: ${e.message}\n${e.stack}`
     };
   }
-  if (!command.includes('--json')) {
+  if (!command.includes("--json")) {
     return {
       status: 0,
       stdout: commandResult
-    }
+    };
   }
   // Parse command result
   try {
@@ -113,8 +116,7 @@ export async function execCommand(
   } catch (e) {
     return {
       status: 1,
-      errorMessage:
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}`
+      errorMessage: `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}`
     };
   }
 }
@@ -176,13 +178,13 @@ export async function filterPackageXml(
   // Remove standard objects
   if (options.removeStandard) {
     manifest.Package.types = manifest.Package.types.map((type: any) => {
-      if (['CustomObject'].includes(type.name[0])) {
+      if (["CustomObject"].includes(type.name[0])) {
         type.members = type.members.filter((member: string) => {
-          return member.endsWith('__c');
+          return member.endsWith("__c");
         });
       }
       type.members = type.members.filter((member: string) => {
-        return !member.startsWith('standard__');
+        return !member.startsWith("standard__");
       });
       return type;
     });
@@ -240,7 +242,7 @@ export async function catchMatches(
       }
       const catcherLabel = catcher.regex
         ? `regex ${catcher.regex.toString()}`
-        : 'ERROR';
+        : "ERROR";
       matchResults.push({
         fileName,
         fileText,
@@ -265,7 +267,7 @@ export async function countRegexMatches(
   regex: RegExp,
   text: string
 ): Promise<number> {
-  return ((text || '').match(regex) || []).length;
+  return ((text || "").match(regex) || []).length;
 }
 
 // Get all captured groups of a regex in a string
@@ -273,8 +275,8 @@ export async function extractRegexGroups(
   regex: RegExp,
   text: string
 ): Promise<string[]> {
-  const matches = ((text || '').match(regex) || []).map(e =>
-    e.replace(regex, '$1').trim()
+  const matches = ((text || "").match(regex) || []).map(e =>
+    e.replace(regex, "$1").trim()
   );
   return matches;
   // return ((text || '').matchAll(regex) || []).map(item => item.trim());
@@ -287,27 +289,27 @@ export async function generateReports(
   commandThis: any
 ): Promise<any[]> {
   const logFileName =
-    'sfdx-hardis-' + commandThis.id.substr(commandThis.id.lastIndexOf(':') + 1);
+    "sfdx-hardis-" + commandThis.id.substr(commandThis.id.lastIndexOf(":") + 1);
   const reportFile = path.resolve(`./hardis-report/${logFileName}.csv`);
   const reportFileExcel = path.resolve(`./hardis-report/${logFileName}.xls`);
   await fs.ensureDir(path.dirname(reportFile));
   const csv = csvStringify(resultSorted, {
-    delimiter: ';',
+    delimiter: ";",
     header: true,
     columns
   });
-  await fs.writeFile(reportFile, csv, 'utf8');
+  await fs.writeFile(reportFile, csv, "utf8");
   const excel = csvStringify(resultSorted, {
-    delimiter: '\t',
+    delimiter: "\t",
     header: true,
     columns
   });
-  await fs.writeFile(reportFileExcel, excel, 'utf8');
-  commandThis.ux.log('[sfdx-hardis] Generated report files:');
+  await fs.writeFile(reportFileExcel, excel, "utf8");
+  commandThis.ux.log("[sfdx-hardis] Generated report files:");
   commandThis.ux.log(`[sfdx-hardis] - CSV: ${reportFile}`);
   commandThis.ux.log(`[sfdx-hardis] - XLS: ${reportFileExcel}`);
   return [
-    { type: 'csv', file: reportFile },
-    { type: 'xls', file: reportFileExcel }
+    { type: "csv", file: reportFile },
+    { type: "xls", file: reportFileExcel }
   ];
 }
