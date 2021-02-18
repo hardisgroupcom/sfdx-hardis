@@ -40,6 +40,7 @@ jobs:
 
   push_beta_to_registry:
     name: Push Beta Docker image to Docker Hub
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
