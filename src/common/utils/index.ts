@@ -7,7 +7,6 @@ import * as util from "util";
 import * as xml2js from "xml2js";
 const exec = util.promisify(child.exec);
 import simpleGit, { SimpleGit } from "simple-git";
-import { option } from "@oclif/command/lib/flags";
 import { SfdxError } from "@salesforce/core";
 
 let git: SimpleGit = null;
