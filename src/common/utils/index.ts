@@ -75,8 +75,9 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
 export async function execSfdxJson(
   command: string,
   commandThis: any,
-  options = {
-    fail: false
+  options: any = {
+    fail: false,
+    output: false
   }
 ): Promise<any> {
   if (!command.includes("--json")) {
@@ -89,28 +90,39 @@ export async function execSfdxJson(
 export async function execCommand(
   command: string,
   commandThis: any,
-  options = {
-    fail: false
+  options: any = {
+    fail: false,
+    output: false
   }
 ): Promise<any> {
   commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
   let commandResult = null;
-  // Call command
+  // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = "0";
   try {
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
   } catch (e) {
     process.env.FORCE_COLOR = prevForceColor;
+    // Display error in red if not json
     if (!command.includes("--json") || options.fail) {
       console.error(c.red(`${e.stdout}\n${e.stderr}`));
       throw e;
     }
+    // if --json, we should not have a crash, so return status 1 + output log
     return {
       status: 1,
       errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`
     };
   }
+  // Display output if requested, for better user unrstanding of the logs
+  if (options.output) {
+    commandThis.ux.log(`[sfdx-hardis][commandresult] ${commandResult.stdout}`);
+  }
+  else {
+    commandThis.debug(`[sfdx-hardis][commandresult] ${commandResult.stdout}`)
+  }
+  // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;
   if (!command.includes("--json")) {
     return {
@@ -118,7 +130,7 @@ export async function execCommand(
       stdout: commandResult
     };
   }
-  // Parse command result
+  // Parse command result if --json
   try {
     const parsedResult = JSON.parse(commandResult.stdout);
     if (options.fail && parsedResult.status && parsedResult.status > 0) {
@@ -128,6 +140,7 @@ export async function execCommand(
     }
     return parsedResult;
   } catch (e) {
+    // Manage case when json is not parseable
     return {
       status: 1,
       errorMessage: `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}`

@@ -9,7 +9,7 @@ import * as glob from 'glob-promise';
 import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
-import { execSfdxJson, getCurrentGitBranch } from '../../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch } from '../../../common/utils';
 import { getConfig, setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -79,7 +79,7 @@ export default class ScratchCreate extends SfdxCommand {
     // Initialize configuration from .sfdx-hardis.yml + .gitbranch.sfdx-hardis.yml + .username.sfdx-hardis.yml
     public async initConfig() {
         this.configInfo = await getConfig('user');
-        this.gitBranch = await getCurrentGitBranch({formatted: true});
+        this.gitBranch = await getCurrentGitBranch({ formatted: true });
         this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || this.configInfo.scratchOrgAlias || os.userInfo().username + '-' + this.gitBranch.replace('/', '-');
         if (process.env.CI && !this.scratchOrgAlias.startsWith('CI-')) {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
@@ -134,8 +134,7 @@ export default class ScratchCreate extends SfdxCommand {
             `--setalias ${this.scratchOrgAlias} ` +
             `--targetdevhubusername ${this.devHubAlias} ` +
             `-d ${this.scratchOrgDuration}`;
-        const createResult = await execSfdxJson(createCommand, this, {fail:true});
-        this.ux.log("createResult "+ JSON.stringify(createResult));
+        const createResult = await execSfdxJson(createCommand, this, { fail: true, output: true });
         this.scratchOrgInfo = createResult.result;
         this.scratchOrgUsername = this.scratchOrgInfo.username;
         await setConfig('user', {
@@ -151,7 +150,7 @@ export default class ScratchCreate extends SfdxCommand {
     // Install managed packages
     public async installPackages() {
         const packages = process.env.SFDX_INSTALL_PACKAGES || this.configInfo.installedPackages || [];
-        const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', this);
+        const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', this, { fail: true });
         for (const packageInfo of packages) {
             if (!alreadyInstalled.result?.records ||
                 alreadyInstalled.result.records.filter((installedPackage: any) =>
@@ -161,7 +160,7 @@ export default class ScratchCreate extends SfdxCommand {
                     throw new SfdxError(c.red('[sfdx-hardis] You must define PackageInstallId in .sfdx-hardis.yml'));
                 }
                 const packageInstallCommand = `sfdx force:package:install --package ${packageInfo.PackageInstallId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
-                await execSfdxJson(packageInstallCommand, this);
+                await execSfdxJson(packageInstallCommand, this, { fail: true });
             } else {
                 this.ux.log(`[sfdx-hardis] Skip installation of ${packageInfo.Name} as it is already installed`);
 
@@ -175,12 +174,12 @@ export default class ScratchCreate extends SfdxCommand {
             // if CI, use force:source:deploy to make sure package.xml is consistent
             this.ux.log(`[sfdx-hardis] Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`);
             const deployCommand = `sfdx force:source:deploy -x ./config/package.xml -u ${this.scratchOrgAlias}`;
-            await execSfdxJson(deployCommand, this);
+            await execCommand(deployCommand, this, { fail: true, output: true });
         } else {
             // Use push for local scratch orgs
             this.ux.log(`[sfdx-hardis] Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`);
             const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${this.scratchOrgAlias}`;
-            await execSfdxJson(pushCommand, this);
+            await execCommand(pushCommand, this, { fail: true, output: true });
         }
     }
 
@@ -190,7 +189,7 @@ export default class ScratchCreate extends SfdxCommand {
         const permSets = this.configInfo.assignPermissionSets || [];
         for (const permSetName of permSets) {
             const assignCommand = `sfdx force:user:permset:assign -n ${permSetName} -u ${this.scratchOrgUsername}`;
-            await execSfdxJson(assignCommand, this);
+            await execCommand(assignCommand, this, { fail: true, output: true });
         }
     }
 
@@ -210,7 +209,7 @@ export default class ScratchCreate extends SfdxCommand {
         // Process apex scripts
         for (const apexScript of initApexScripts) {
             const apexScriptCommand = `sfdx force:apex:execute -f "${apexScript}" -u ${this.scratchOrgAlias}`;
-            await execSfdxJson(apexScriptCommand, this);
+            await execCommand(apexScriptCommand, this, { fail: true, output: true });
         }
     }
 
@@ -231,7 +230,7 @@ export default class ScratchCreate extends SfdxCommand {
         // Import data files
         for (const dataFile of initDataFiles) {
             const dataLoadCommand = `sfdx force:data:tree:import -f "${dataFile}" -u ${this.scratchOrgAlias}`;
-            await execSfdxJson(dataLoadCommand, this);
+            await execSfdxJson(dataLoadCommand, this, { fail: true, output: true });
         }
     }
 
