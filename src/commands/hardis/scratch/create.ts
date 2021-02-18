@@ -108,9 +108,9 @@ export default class ScratchCreate extends SfdxCommand {
     // Create a new scratch org or reuse existing one
     public async createScratchOrg() {
         const orgListResult = await execSfdxJson('sfdx force:org:list', this);
-        const matchingScratchOrgs = orgListResult?.result?.scratchOrgs.filter((org: any) => org.alias === this.scratchOrgAlias);
+        const matchingScratchOrgs = orgListResult?.result?.scratchOrgs.filter((org: any) => org.alias === this.scratchOrgAlias) || [];
         // Reuse existing scratch org
-        if (matchingScratchOrgs.length > 0) {
+        if (matchingScratchOrgs?.length > 0) {
             this.scratchOrgInfo = matchingScratchOrgs[0];
             this.scratchOrgUsername = this.scratchOrgInfo.username;
             this.ux.log(`[sfdx-hardis] Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`);
