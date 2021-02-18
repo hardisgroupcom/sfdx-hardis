@@ -82,7 +82,7 @@ export default class DxSources extends SfdxCommand {
       await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges'));
       const deployDelete = `sfdx force:mdapi:deploy -d ${tmpDir}` +
         ' --wait 60' +
-        ` --testlevel ${testlevel}` +
+        ` --testlevel NoTestRun` +
         ' --ignorewarnings' + // So it does not fail in case metadata is already deleted
         (check ? ' --checkonly' : '') +
         (debug ? ' --verbose' : '');
