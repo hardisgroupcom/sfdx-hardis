@@ -123,7 +123,7 @@ export async function execCommand(
         c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`)
       );
     }
-    return JSON.parse(parsedResult);
+    return parsedResult;
   } catch (e) {
     return {
       status: 1,
