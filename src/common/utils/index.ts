@@ -74,12 +74,15 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
 
 export async function execSfdxJson(
   command: string,
-  commandThis: any
+  commandThis: any,
+  options = {
+    fail: false
+  }
 ): Promise<any> {
   if (!command.includes("--json")) {
     command += " --json";
   }
-  return await execCommand(command, commandThis);
+  return await execCommand(command, commandThis, options);
 }
 
 // Execute command and parse result as json
