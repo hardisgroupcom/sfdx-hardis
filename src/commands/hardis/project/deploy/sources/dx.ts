@@ -53,7 +53,7 @@ export default class DxSources extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const check = this.flags.debug || false;
+    const check = this.flags.check || false;
     const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debug = this.flags.debug || false;
 
@@ -66,7 +66,7 @@ export default class DxSources extends SfdxCommand {
       ' --wait 60' +
       ` --testlevel ${testlevel}`+
       (check ? ' --checkonly': '')+
-      (debug ? '--verbose' : '') 
+      (debug ? ' --verbose' : '') ;
     const deployRes = await execCommand(deployCommand, this);
     let message = '';
     if (deployRes.status === 0) {

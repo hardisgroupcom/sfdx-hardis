@@ -92,6 +92,7 @@ export async function execCommand(
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
   } catch (e) {
     if (!command.includes('--json')) {
+      console.error(c.red(e.stdout));
       throw e;
     }
     return {
