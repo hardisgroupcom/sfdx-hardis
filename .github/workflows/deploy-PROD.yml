@@ -31,6 +31,7 @@ jobs:
           # Defaults to the user or organization that owns the workflow file
           scope: "hardisgroupcom"
       - run: yarn install --frozen-lockfile
+      - run: tsc
       - run: yarn config set version-git-tag false
       - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="beta$BETAID"
       - run: yarn publish --tag beta
