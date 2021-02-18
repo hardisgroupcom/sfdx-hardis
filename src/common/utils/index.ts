@@ -7,6 +7,8 @@ import * as util from "util";
 import * as xml2js from "xml2js";
 const exec = util.promisify(child.exec);
 import simpleGit, { SimpleGit } from "simple-git";
+import { option } from "@oclif/command/lib/flags";
+import { SfdxError } from "@salesforce/core";
 
 let git: SimpleGit = null;
 
@@ -84,7 +86,10 @@ export async function execSfdxJson(
 // Execute command and parse result as json
 export async function execCommand(
   command: string,
-  commandThis: any
+  commandThis: any,
+  options = {
+    fail: false
+  }
 ): Promise<any> {
   commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
   let commandResult = null;
@@ -92,9 +97,7 @@ export async function execCommand(
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = "0";
   try {
-    commandResult = await exec(command, {
-      maxBuffer: 10000 * 10000
-    });
+    commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
   } catch (e) {
     process.env.FORCE_COLOR = prevForceColor;
     if (!command.includes("--json")) {
@@ -115,7 +118,13 @@ export async function execCommand(
   }
   // Parse command result
   try {
-    return JSON.parse(commandResult.stdout);
+    const parsedResult = JSON.parse(commandResult.stdout);
+    if (options.fail && parsedResult.status && parsedResult.status > 0) {
+      throw new SfdxError(
+        c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`)
+      );
+    }
+    return JSON.parse(parsedResult);
   } catch (e) {
     return {
       status: 1,
