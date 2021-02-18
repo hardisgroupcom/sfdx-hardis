@@ -34,7 +34,7 @@ export default class ScratchCreate extends SfdxCommand {
         debug: flags.boolean({
             char: 'd',
             default: false,
-            description: messages.getMessage('debug')
+            description: messages.getMessage('debugMode')
         })
     };
 
