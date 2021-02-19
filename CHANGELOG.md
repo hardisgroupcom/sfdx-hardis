@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
 
+- check in manifest folder for package.xml
+
 ## [1.1.3] 2021-02-17
 
 - Fix cases when directory is not git
