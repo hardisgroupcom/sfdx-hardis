@@ -1,3 +1,4 @@
+import * as c from 'chalk';
 import * as fs from 'fs-extra';
 
 export const hook = async (options: any) => {
@@ -25,14 +26,14 @@ async function managePackageJson(commandId: string) {
             packageJson['scripts'] = Object.assign(hardisPackageJsonContent['scripts'], packageJson['scripts']);
             if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text))) {
                 await fs.writeFile(packageJsonFile, JSON.stringify(packageJson, null, 2));
-                console.log('[sfdx-hardis] Updated package.json with sfdx-hardis content');
+                console.log(c.cyan('[sfdx-hardis] Updated package.json with sfdx-hardis content'));
             }
         });
     } else {
         // Create package.json to define sfdx utility scripts
         const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
         fs.writeFile(packageJsonFile, JSON.stringify(hardisPackageJsonContent, null, 2), () => {
-            console.log('[sfdx-hardis] Created package.json with sfdx-hardis content');
+            console.log(c.cyan('[sfdx-hardis] Created package.json with sfdx-hardis content'));
         });
     }
 }
@@ -54,7 +55,7 @@ async function manageGitIgnore(commandId: string) {
         }
         if (updated) {
             await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');
-            console.log('[sfdx-hardis] Updated .gitignore');
+            console.log(c.cyan('[sfdx-hardis] Updated .gitignore'));
         }
 
     }
@@ -67,6 +68,7 @@ async function getSfdxHardisPackageJsonContent() {
             'scratch:push': 'sfdx force:source:push -g -w 60 --forceoverwrite',
             'scratch:pull': 'sfdx force:source:pull --forceoverwrite',
             'scratch:open': 'sfdx force:org:open',
+            'org:test:apex': 'sfdx hardis:org:test:apex',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true'
         }
     };
@@ -76,6 +78,7 @@ async function getSfdxHardisPackageJsonContent() {
 async function getHardisGitRepoIgnoreContent() {
     const gitIgnoreContent = [
         'config/user/',
+        'hardis-report/',
         'tmp/'
     ];
     return gitIgnoreContent;

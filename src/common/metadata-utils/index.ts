@@ -4,7 +4,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as sfdx from 'sfdx-node';
 import * as util from 'util';
-import { execJson, filterPackageXml } from '../../common/utils';
+import { execSfdxJson, filterPackageXml } from '../../common/utils';
 import { CONSTANTS } from '../../config';
 const exec = util.promisify(child.exec);
 
@@ -150,7 +150,7 @@ class MetadataUtils {
   // List installed packages on a org
   public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
     const listPackagesCommand = 'sfdx force:data:soql:query -q "SELECT DurableId,IsSalesforce,MajorVersion,MinorVersion,Name,NamespacePrefix FROM Publisher WHERE MajorVersion > 0 AND MinorVersion > 0"';
-    const installedListResult = await execJson(listPackagesCommand, commandThis);
+    const installedListResult = await execSfdxJson(listPackagesCommand, commandThis);
     return installedListResult.result?.records || [];
   }
 

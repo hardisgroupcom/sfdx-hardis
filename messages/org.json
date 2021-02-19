@@ -1,8 +1,10 @@
 {
   "allowPurgeFailure": "Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable",
+  "apexTests": "Run apex test cases on org",
   "auditApiVersion": "Audit API version",
   "auditCallInCallOut": "Generate list of callIn and callouts from sfdx project",
   "auditRemoteSites": "Generate list of remote sites",
+  "checkOnly": "Only checks the deployment, there is no impact on target org",
   "createOrgShape": "Updates project-scratch-def.json from org shape",
   "debugMode": "Activate debug mode (more logs)",
   "deployDx": "Deploy SFDX project sources to org",
@@ -22,5 +24,6 @@
   "scratchCreate": "Create and initialize a scratch org so it is ready to use",
   "statusFilter": "Filter according to Status criteria",
   "tempFolder": "Temporary folder",
+  "testLevel": "Level of tests to apply to validate deployment",
   "withDevHub": "Also connect associated DevHub"
 }

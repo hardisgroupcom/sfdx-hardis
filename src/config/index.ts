@@ -10,6 +10,7 @@ getConfig(layer) returns:
 - project if layer is project
 */
 
+import * as c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
 import * as fs from 'fs-extra';
 import * as yaml from 'js-yaml';
@@ -91,6 +92,7 @@ async function setInConfigFile(searchPlaces: string[], propValues: any) {
     await fs.ensureDir(path.dirname(configFile));
     await fs.writeFile(configFile, yaml.dump(doc));
     explorer.clearCaches();
+    console.log(c.cyan(`[sfdx-hardis] Updated config file ${configFile} with values ${JSON.stringify(propValues)}`));
 }
 
 // Check configuration of project so it works with sfdx-hardis

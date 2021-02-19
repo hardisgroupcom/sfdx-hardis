@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
+import { SfdxError } from '@salesforce/core';
 import simpleGit, { SimpleGit } from 'simple-git';
 
 let git: SimpleGit = null;
@@ -71,26 +72,77 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   return gitBranch;
 }
 
-// Execute command and parse result as json
-export async function execJson(
+export async function execSfdxJson(
   command: string,
-  commandThis: any
+  commandThis: any,
+  options: any = {
+    fail: false,
+    output: false,
+    debug: false
+  }
 ): Promise<any> {
-  commandThis.ux.log(`[sfdx-hardis][command] ${c.grey(command)}`);
   if (!command.includes('--json')) {
     command += ' --json';
   }
-  const commandResult = await exec(command);
+  return await execCommand(command, commandThis, options);
+}
+
+// Execute command and parse result as json
+export async function execCommand(
+  command: string,
+  commandThis: any,
+  options: any = {
+    fail: false,
+    output: false,
+    debug: false
+  }
+): Promise<any> {
+  commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
+  let commandResult = null;
+  // Call command (disable color before for json parsing)
+  const prevForceColor = process.env.FORCE_COLOR;
+  process.env.FORCE_COLOR = '0';
   try {
-    return JSON.parse(commandResult.stdout);
+    commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
   } catch (e) {
+    process.env.FORCE_COLOR = prevForceColor;
+    // Display error in red if not json
+    if (!command.includes('--json') || options.fail) {
+      console.error(c.red(`${e.stdout}\n${e.stderr}`));
+      throw e;
+    }
+    // if --json, we should not have a crash, so return status 1 + output log
     return {
       status: 1,
-      errorMessage: c.red(
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result ${JSON.stringify(
-          commandResult
-        )}`
-      )
+      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`
+    };
+  }
+  // Display output if requested, for better user unrstanding of the logs
+  if (options.output || options.debug) {
+    commandThis.ux.log(`[sfdx-hardis][commandresult] ${commandResult.stdout}`);
+  }
+  // Return status 0 if not --json
+  process.env.FORCE_COLOR = prevForceColor;
+  if (!command.includes('--json')) {
+    return {
+      status: 0,
+      stdout: commandResult
+    };
+  }
+  // Parse command result if --json
+  try {
+    const parsedResult = JSON.parse(commandResult.stdout);
+    if (options.fail && parsedResult.status && parsedResult.status > 0) {
+      throw new SfdxError(
+        c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`)
+      );
+    }
+    return parsedResult;
+  } catch (e) {
+    // Manage case when json is not parseable
+    return {
+      status: 1,
+      errorMessage: `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}`
     };
   }
 }
