@@ -37,6 +37,7 @@ export const hook = async (options: any) => {
     ) {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
+            (process.env.CI && configInfo.scratchOrgAlias) ?  configInfo.scratchOrgAlias :
                 (process.env.CI)
                     ? await getCurrentGitBranch({ formatted: true })
                     : commandId === 'hardis:auth:login'
