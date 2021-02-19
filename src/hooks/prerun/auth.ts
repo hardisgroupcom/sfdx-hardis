@@ -37,12 +37,12 @@ export const hook = async (options: any) => {
     ) {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
-            (process.env.CI && configInfo.scratchOrgAlias) ?  configInfo.scratchOrgAlias :
-                (process.env.CI)
-                    ? await getCurrentGitBranch({ formatted: true })
-                    : commandId === 'hardis:auth:login'
-                        ? configInfo.orgAlias :
-                        configInfo.scratchOrgAlias || 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
+                (process.env.CI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
+                    (process.env.CI)
+                        ? await getCurrentGitBranch({ formatted: true })
+                        : (commandId === 'hardis:auth:login' && configInfo.orgAlias)
+                            ? configInfo.orgAlias :
+                            configInfo.scratchOrgAlias || 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
         await authOrg(orgAlias, options);
     }
 };

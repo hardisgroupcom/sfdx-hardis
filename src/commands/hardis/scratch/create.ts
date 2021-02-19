@@ -151,21 +151,19 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Install managed packages
     public async installPackages() {
-        const packages = process.env.SFDX_INSTALL_PACKAGES || this.configInfo.installedPackages || [];
+        const packages = this.configInfo.installedPackages || [];
         const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', this, { fail: true });
-        for (const packageInfo of packages) {
-            if (!alreadyInstalled.result?.records ||
-                alreadyInstalled.result.records.filter((installedPackage: any) =>
-                    installedPackage.NamespacePrefix === packageInfo.NamespacePrefix).length === 0) {
-                this.ux.log(`[sfdx-hardis] Installing package ${packageInfo.PackageInstallId} - ${packageInfo.Name} - ${packageInfo.NamespacePrefix}`);
-                if (packageInfo.PackageInstallId == null) {
+        for (const installedPackage of packages) {
+            if (alreadyInstalled.filter((installedPackage: any) =>
+                installedPackage.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
+                this.ux.log(`[sfdx-hardis] Installing package ${installedPackage.SubscriberPackageName} ${installedPackage.SubscriberPackageVersionName}`);
+                if (installedPackage.SubscriberPackageVersionId == null) {
                     throw new SfdxError(c.red('[sfdx-hardis] You must define PackageInstallId in .sfdx-hardis.yml'));
                 }
-                const packageInstallCommand = `sfdx force:package:install --package ${packageInfo.PackageInstallId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
-                await execSfdxJson(packageInstallCommand, this, { fail: true });
+                const packageInstallCommand = `sfdx force:package:install --package ${installedPackage.SubscriberPackageVersionId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
+                await execCommand(packageInstallCommand, this, { fail: true, output: true });
             } else {
-                this.ux.log(`[sfdx-hardis] Skip installation of ${packageInfo.Name} as it is already installed`);
-
+                this.ux.log(`[sfdx-hardis] Skip installation of ${installedPackage.SubscriberPackageName} as it is already installed`);
             }
         }
     }

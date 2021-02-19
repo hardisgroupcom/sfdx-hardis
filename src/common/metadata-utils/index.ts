@@ -149,14 +149,13 @@ class MetadataUtils {
 
   // List installed packages on a org
   public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
-    const listPackagesCommand = 'sfdx force:data:soql:query -q "SELECT DurableId,IsSalesforce,MajorVersion,MinorVersion,Name,NamespacePrefix FROM Publisher WHERE MajorVersion > 0 AND MinorVersion > 0"';
-    const installedListResult = await execSfdxJson(listPackagesCommand, commandThis);
-    return installedListResult.result?.records || [];
+    const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', this, { fail: true });
+    return alreadyInstalled?.result || [];
   }
 
   // Retrieve metadatas from a package.xml
   public static async retrieveMetadatas(packageXml: string, metadataFolder: string, checkEmpty: boolean,
-                                        filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
+    filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
 
     // Build package.xml for all org
     commandThis.ux.log(`[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
@@ -172,8 +171,8 @@ class MetadataUtils {
       const installedPackages = await this.listInstalledPackages(null, commandThis);
       const namespaces = [];
       for (const installedPackage of installedPackages) {
-        if (installedPackage?.NamespacePrefix !== '') {
-          namespaces.push(installedPackage.NamespacePrefix);
+        if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
+          namespaces.push(installedPackage.SubscriberPackageNamespace);
         }
       }
 
