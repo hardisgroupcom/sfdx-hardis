@@ -77,7 +77,7 @@ export default class DxSources extends SfdxCommand {
         <Package xmlns="http://soap.sforce.com/2006/04/metadata">
           <version>${CONSTANTS.API_VERSION}</version>
         </Package>`, "utf8");
-      await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges'));
+      await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
       const deployDelete = `sfdx force:mdapi:deploy -d ${tmpDir}` +
         ' --wait 60' +
         ` --testlevel NoTestRun` +
