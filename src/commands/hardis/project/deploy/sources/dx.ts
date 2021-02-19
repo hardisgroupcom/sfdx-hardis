@@ -77,8 +77,6 @@ export default class DxSources extends SfdxCommand {
         <Package xmlns="http://soap.sforce.com/2006/04/metadata">
           <version>${CONSTANTS.API_VERSION}</version>
         </Package>`, "utf8");
-      console.assert(fs.existsSync(emptyPackageXmlFile));
-      console.assert(fs.existsSync(packageDeletedXmlFile));
       await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges'));
       const deployDelete = `sfdx force:mdapi:deploy -d ${tmpDir}` +
         ' --wait 60' +
@@ -86,7 +84,7 @@ export default class DxSources extends SfdxCommand {
         ' --ignorewarnings' + // So it does not fail in case metadata is already deleted
         (check ? ' --checkonly' : '') +
         (debug ? ' --verbose' : '');
-      const deployDeleteRes = await execCommand(deployDelete, this);
+      const deployDeleteRes = await execCommand(deployDelete, this, {output:true, debug: debug, fail:true});
       await fs.remove(tmpDir);
       let deleteMsg = '';
       if (deployDeleteRes.status === 0) {
@@ -109,7 +107,7 @@ export default class DxSources extends SfdxCommand {
       ` --testlevel ${testlevel}` +
       (check ? ' --checkonly' : '') +
       (debug ? ' --verbose' : '');
-    const deployRes = await execCommand(deployCommand, this);
+    const deployRes = await execCommand(deployCommand, this, {output:true, debug: debug, fail:true});
     let message = '';
     if (deployRes.status === 0) {
       message = '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';
