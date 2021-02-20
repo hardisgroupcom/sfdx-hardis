@@ -114,7 +114,7 @@ export default class ConfigureDeployment extends SfdxCommand {
                 `./config/.jwt/${config.devHubAlias}.key` :
                 `./config/branches/.jwt/${branchName}.key`);
         // Copy certificate file in user home project
-        const crtFile = path.join(require('os').homedir(), (devHub) ?`${config.devHubAlias}.crt`:`${branchName}.crt`);
+        const crtFile = path.join(require('os').homedir(), (devHub) ? `${config.devHubAlias}.crt` : `${branchName}.crt`);
         await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
         await fs.remove(tmpDir);
         this.ux.log('[sfdx-hardis] Now you can configure the sfdx connected app');
