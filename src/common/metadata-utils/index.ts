@@ -149,7 +149,7 @@ class MetadataUtils {
 
   // List installed packages on a org
   public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
-    const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', this, { fail: true });
+    const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', commandThis, { fail: true });
     return alreadyInstalled?.result || [];
   }
 
