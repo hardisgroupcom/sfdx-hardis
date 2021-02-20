@@ -2,7 +2,11 @@
 
 ## [insiders] (master)
 
-Note: Can be used with `sfdx plugins:install hardis-group/sfdx-hardis@beta`
+Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image
+
+- #24: Change the way of listing installed packages
+- #26: New command sfdx hardis:project:configure:deployments to configure Connected app
+- #27: Check in manifest folder for package.xml
 
 ## [1.1.3] 2021-02-17
 

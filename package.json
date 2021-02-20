@@ -16,6 +16,7 @@
     "changed-git-files": "^0.0.1",
     "columnify": "^1.5.4",
     "cosmiconfig": "^7.0.0",
+    "cross-spawn": "^7.0.3",
     "csv-stringify": "^5.6.1",
     "email-validator": "^2.0.4",
     "extract-zip": "^2.0.1",

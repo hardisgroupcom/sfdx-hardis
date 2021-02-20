@@ -31,7 +31,7 @@ For the moment, it can :
 ### SFDX Plugin
 
 ```sh-session
-sfdx plugins:link sfdx-hardis
+sfdx plugins:install sfdx-hardis
 ```
 
 ### Docker

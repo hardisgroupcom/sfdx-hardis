@@ -64,6 +64,7 @@ export default class DxSources extends SfdxCommand {
     const packageDeletedXmlFile =
       process.env.PACKAGE_XML_TO_DELETE ||
       this.configInfo.packageXmlToDelete ||
+      (fs.existsSync('./manifest/destructiveChanges.xml')) ? './manifest/destructiveChanges.xml' :
       './config/destructiveChanges.xml';
     if (fs.existsSync(packageDeletedXmlFile)) {
       // Create empty deployment file because of sfdx limitation
@@ -101,6 +102,7 @@ export default class DxSources extends SfdxCommand {
     const packageXmlFile =
       process.env.PACKAGE_XML_TO_DEPLOY ||
       this.configInfo.packageXmlToDeploy ||
+      (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
       './config/package.xml';
     const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}` +
       ' --wait 60' +
