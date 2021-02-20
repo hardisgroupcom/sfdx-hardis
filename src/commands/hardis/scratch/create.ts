@@ -153,17 +153,17 @@ export default class ScratchCreate extends SfdxCommand {
     public async installPackages() {
         const packages = this.configInfo.installedPackages || [];
         const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', this, { fail: true });
-        for (const installedPackage of packages) {
+        for (const package1 of packages) {
             if (alreadyInstalled.filter((installedPackage: any) =>
-                installedPackage.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
-                this.ux.log(`[sfdx-hardis] Installing package ${installedPackage.SubscriberPackageName} ${installedPackage.SubscriberPackageVersionName}`);
-                if (installedPackage.SubscriberPackageVersionId == null) {
+                package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
+                this.ux.log(`[sfdx-hardis] Installing package ${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`);
+                if (package1.SubscriberPackageVersionId == null) {
                     throw new SfdxError(c.red('[sfdx-hardis] You must define PackageInstallId in .sfdx-hardis.yml'));
                 }
-                const packageInstallCommand = `sfdx force:package:install --package ${installedPackage.SubscriberPackageVersionId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
+                const packageInstallCommand = `sfdx force:package:install --package ${package1.SubscriberPackageVersionId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
                 await execCommand(packageInstallCommand, this, { fail: true, output: true });
             } else {
-                this.ux.log(`[sfdx-hardis] Skip installation of ${installedPackage.SubscriberPackageName} as it is already installed`);
+                this.ux.log(`[sfdx-hardis] Skip installation of ${package1.SubscriberPackageName} as it is already installed`);
             }
         }
     }

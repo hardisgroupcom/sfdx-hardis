@@ -155,7 +155,7 @@ class MetadataUtils {
 
   // Retrieve metadatas from a package.xml
   public static async retrieveMetadatas(packageXml: string, metadataFolder: string, checkEmpty: boolean,
-    filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
+                                        filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
 
     // Build package.xml for all org
     commandThis.ux.log(`[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
