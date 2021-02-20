@@ -50,6 +50,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     /* jscpd:ignore-end */
 
+    protected debugMode = false;
     protected configInfo: any;
     protected devHubAlias: string;
     protected scratchOrgAlias: string;
@@ -62,7 +63,7 @@ export default class ScratchCreate extends SfdxCommand {
     protected projectName: string;
 
     public async run(): Promise<AnyJson> {
-        this.debug = this.flags.debug || false;
+        this.debugMode = this.flags.debug || false;
 
         await this.initConfig();
         await this.createScratchOrg();
@@ -137,14 +138,21 @@ export default class ScratchCreate extends SfdxCommand {
             `--setalias ${this.scratchOrgAlias} ` +
             `--targetdevhubusername ${this.devHubAlias} ` +
             `-d ${this.scratchOrgDuration}`;
-        const createResult = await execSfdxJson(createCommand, this, { fail: true, output: true, debug: this.debug });
+        const createResult = await execSfdxJson(createCommand, this, { fail: true, output: true, debug: this.debugMode });
         this.scratchOrgInfo = createResult.result;
         this.scratchOrgUsername = this.scratchOrgInfo.username;
         await setConfig('user', {
             scratchOrgAlias: this.scratchOrgAlias,
             scratchOrgUsername: this.scratchOrgUsername
         });
-        if (!process.env.CI) {
+
+        if (process.env.CI) {
+            const displayOrgCommand = `sfdx force:org:display -u ${this.scratchOrgAlias} --verbose`;
+            const displayResult = await execSfdxJson(displayOrgCommand, this, {fail: true, output: false, debug: this.debugMode});
+            await setConfig('user', {
+                scratchOrgAuthUrl: displayResult.sfdxAuthUrl
+            });
+        } else {
             await execSfdxJson('sfdx force:org:open', this);
         }
         this.ux.log(`[sfdx-hardis] Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`);
@@ -175,12 +183,12 @@ export default class ScratchCreate extends SfdxCommand {
             // if CI, use force:source:deploy to make sure package.xml is consistent
             this.ux.log(`[sfdx-hardis] Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`);
             const deployCommand = `sfdx force:source:deploy -x ./config/package.xml -u ${this.scratchOrgAlias}`;
-            await execCommand(deployCommand, this, { fail: true, output: true, debug: this.debug });
+            await execCommand(deployCommand, this, { fail: true, output: true, debug: this.debugMode });
         } else {
             // Use push for local scratch orgs
             this.ux.log(`[sfdx-hardis] Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`);
             const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${this.scratchOrgAlias}`;
-            await execCommand(pushCommand, this, { fail: true, output: true, debug: this.debug });
+            await execCommand(pushCommand, this, { fail: true, output: true, debug: this.debugMode });
         }
     }
 
@@ -190,7 +198,7 @@ export default class ScratchCreate extends SfdxCommand {
         const permSets = this.configInfo.assignPermissionSets || [];
         for (const permSetName of permSets) {
             const assignCommand = `sfdx force:user:permset:assign -n ${permSetName} -u ${this.scratchOrgUsername}`;
-            await execCommand(assignCommand, this, { fail: true, output: true, debug: this.debug });
+            await execCommand(assignCommand, this, { fail: true, output: true, debug: this.debugMode });
         }
     }
 
@@ -210,7 +218,7 @@ export default class ScratchCreate extends SfdxCommand {
         // Process apex scripts
         for (const apexScript of initApexScripts) {
             const apexScriptCommand = `sfdx force:apex:execute -f "${apexScript}" -u ${this.scratchOrgAlias}`;
-            await execCommand(apexScriptCommand, this, { fail: true, output: true, debug: this.debug });
+            await execCommand(apexScriptCommand, this, { fail: true, output: true, debug: this.debugMode });
         }
     }
 
@@ -231,7 +239,7 @@ export default class ScratchCreate extends SfdxCommand {
         // Import data files
         for (const dataFile of initDataFiles) {
             const dataLoadCommand = `sfdx force:data:tree:import -f "${dataFile}" -u ${this.scratchOrgAlias}`;
-            await execSfdxJson(dataLoadCommand, this, { fail: true, output: true, debug: this.debug });
+            await execSfdxJson(dataLoadCommand, this, { fail: true, output: true, debug: this.debugMode });
         }
     }
 

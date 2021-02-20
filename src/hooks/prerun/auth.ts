@@ -2,9 +2,11 @@ import { SfdxError } from '@salesforce/core';
 import * as c from 'chalk';
 import * as child from 'child_process';
 import * as fs from 'fs-extra';
+import * as os from 'os';
+import * as path from 'path';
 import * as sfdx from 'sfdx-node';
 import * as util from 'util';
-import { getCurrentGitBranch } from '../../common/utils';
+import { execCommand, getCurrentGitBranch } from '../../common/utils';
 import { checkConfig, getConfig } from '../../config';
 const exec = util.promisify(child.exec);
 
@@ -38,6 +40,7 @@ export const hook = async (options: any) => {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
                 (process.env.CI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
+                (process.env.CI && options.scratch && configInfo.sfdxAuthUrl) ? configInfo.sfdxAuthUrl :
                     (process.env.CI)
                         ? await getCurrentGitBranch({ formatted: true })
                         : (commandId === 'hardis:auth:login' && configInfo.orgAlias)
@@ -49,6 +52,14 @@ export const hook = async (options: any) => {
 
 // Authorize an org manually or with JWT
 async function authOrg(orgAlias: string, options: any) {
+    // Manage auth with sfdxAuthUrl (CI & scratch org only)
+    if (orgAlias.startsWith('force://')) {
+        const authFile = path.join(os.tmpdir(), 'sfdxScratchAuth.txt');
+        await fs.writeFile(authFile, orgAlias, 'utf8');
+        await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, {fail: true, output: false});
+        await fs.remove(authFile);
+        return;
+    }
     const isDevHub = orgAlias.includes('DevHub');
     let doConnect = true;
     if (!options.checkAuth) {
