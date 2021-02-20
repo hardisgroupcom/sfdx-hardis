@@ -10,6 +10,7 @@ import * as moment from 'moment';
 import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
+import { MetadataUtils } from '../../../common/metadata-utils';
 import { execCommand, execSfdxJson, getCurrentGitBranch } from '../../../common/utils';
 import { getConfig, setConfig } from '../../../config';
 
@@ -152,7 +153,7 @@ export default class ScratchCreate extends SfdxCommand {
     // Install managed packages
     public async installPackages() {
         const packages = this.configInfo.installedPackages || [];
-        const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', this, { fail: true });
+        const alreadyInstalled = await MetadataUtils.listInstalledPackages(null, this);
         for (const package1 of packages) {
             if (alreadyInstalled.filter((installedPackage: any) =>
                 package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
