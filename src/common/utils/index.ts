@@ -97,7 +97,7 @@ export async function execCommand(
     debug: false
   }
 ): Promise<any> {
-  commandThis.ux.log(`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
+  uxLog(commandThis,`[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
   let commandResult = null;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
@@ -119,7 +119,7 @@ export async function execCommand(
   }
   // Display output if requested, for better user unrstanding of the logs
   if (options.output || options.debug) {
-    commandThis.ux.log(`[sfdx-hardis][commandresult] ${commandResult.stdout}`);
+    uxLog(commandThis,`[commandresult] ${commandResult.stdout}`);
   }
   // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;
@@ -279,8 +279,8 @@ export async function catchMatches(
         catcherLabel
       });
       if (commandThis.debug) {
-        commandThis.ux.log(
-          `[sfdx-hardis] [${fileName}]: Match [${matches}] occurences of [${catcher.type}/${catcher.name}] with catcher [${catcherLabel}]`
+        uxLog(commandThis,
+          `[${fileName}]: Match [${matches}] occurences of [${catcher.type}/${catcher.name}] with catcher [${catcherLabel}]`
         );
       }
     }
@@ -331,11 +331,21 @@ export async function generateReports(
     columns
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');
-  commandThis.ux.log('[sfdx-hardis] Generated report files:');
-  commandThis.ux.log(`[sfdx-hardis] - CSV: ${reportFile}`);
-  commandThis.ux.log(`[sfdx-hardis] - XLS: ${reportFileExcel}`);
+  uxLog(commandThis, 'Generated report files:');
+  uxLog(commandThis, `- CSV: ${reportFile}`);
+  uxLog(commandThis, `- XLS: ${reportFileExcel}`);
   return [
     { type: 'csv', file: reportFile },
     { type: 'xls', file: reportFileExcel }
   ];
+}
+
+export function uxLog(commandThis: any, text: string) {
+  text = (text.includes('[sfdx-hardis]')) ? text : '[sfdx-hardis] ' + text;
+  if (commandThis?.ux) {
+    commandThis.ux.log(text)
+  }
+  else {
+    console.log(text);
+  }
 }
