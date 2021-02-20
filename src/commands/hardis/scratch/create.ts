@@ -159,7 +159,7 @@ export default class ScratchCreate extends SfdxCommand {
                 package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
                 this.ux.log(`[sfdx-hardis] Installing package ${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`);
                 if (package1.SubscriberPackageVersionId == null) {
-                    throw new SfdxError(c.red('[sfdx-hardis] You must define PackageInstallId in .sfdx-hardis.yml'));
+                    throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
                 }
                 const packageInstallCommand = `sfdx force:package:install --package ${package1.SubscriberPackageVersionId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
                 await execCommand(packageInstallCommand, this, { fail: true, output: true });
