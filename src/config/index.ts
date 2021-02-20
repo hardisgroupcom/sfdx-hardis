@@ -94,7 +94,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
     doc = Object.assign(doc, propValues);
     await fs.ensureDir(path.dirname(configFile));
     await fs.writeFile(configFile, yaml.dump(doc));
-    if (explorer == null) {
+    if (explorer != null) {
         explorer.clearCaches();
     }
     console.log(c.cyan(`[sfdx-hardis] Updated config file ${configFile} with values ${JSON.stringify(propValues)}`));

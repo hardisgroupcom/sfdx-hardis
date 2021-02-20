@@ -158,15 +158,15 @@ class MetadataUtils {
                                         filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
 
     // Build package.xml for all org
-    uxLog(commandThis,`[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
+    uxLog(commandThis, `[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
     const manifestRes = await exec('sfdx sfpowerkit:org:manifest:build -o package.xml');
     if (debug) {
-      uxLog(commandThis,manifestRes.stdout + manifestRes.stderr);
+      uxLog(commandThis, manifestRes.stdout + manifestRes.stderr);
     }
 
     // Filter managed items if requested
     if (options.filterManagedItems) {
-      uxLog(commandThis,'[sfdx-hardis] Filtering managed items from package.Xml manifest');
+      uxLog(commandThis, '[sfdx-hardis] Filtering managed items from package.Xml manifest');
       // List installed packages & collect managed namespaces
       const installedPackages = await this.listInstalledPackages(null, commandThis);
       const namespaces = [];
@@ -186,16 +186,16 @@ class MetadataUtils {
         removeFromPackageXmlFile: packageXmlToRemove,
         updateApiVersion: CONSTANTS.API_VERSION
       });
-      uxLog(commandThis,filterNamespaceRes.message);
+      uxLog(commandThis, filterNamespaceRes.message);
     }
 
     // Filter package XML to remove identified metadatas
     const filterRes = await filterPackageXml(packageXml, packageXml, { removeMetadatas: filteredMetadatas });
-    uxLog(commandThis,filterRes.message);
+    uxLog(commandThis, filterRes.message);
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog(commandThis,`[sfdx-hardis] Retrieving metadatas in ${metadataFolder}...`);
+      uxLog(commandThis, `[sfdx-hardis] Retrieving metadatas in ${metadataFolder}...`);
       const retrieveRes = await sfdx.mdapi.retrieve({
         retrievetargetdir: metadataFolder,
         unpackaged: packageXml,
@@ -205,10 +205,10 @@ class MetadataUtils {
         _rejectOnError: true
       });
       if (debug) {
-        uxLog(commandThis,retrieveRes);
+        uxLog(commandThis, retrieveRes);
       }
       // Unzip metadatas
-      uxLog(commandThis,'[sfdx-hardis] Unzipping metadatas...');
+      uxLog(commandThis, '[sfdx-hardis] Unzipping metadatas...');
       await extractZip(path.join(metadataFolder, 'unpackaged.zip'), { dir: metadataFolder });
       await fs.unlink(path.join(metadataFolder, 'unpackaged.zip'));
     }
