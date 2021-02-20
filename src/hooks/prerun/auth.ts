@@ -6,7 +6,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as sfdx from 'sfdx-node';
 import * as util from 'util';
-import { execCommand, getCurrentGitBranch } from '../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch } from '../../common/utils';
 import { checkConfig, getConfig } from '../../config';
 const exec = util.promisify(child.exec);
 
@@ -64,28 +64,28 @@ async function authOrg(orgAlias: string, options: any) {
     let doConnect = true;
     if (!options.checkAuth) {
         // Check if we are already authenticated
-        const orgDisplayParams: any = {};
+        let orgDisplayCommand = 'sfdx force:org:display';
         if (orgAlias !== 'MY_ORG') {
-            orgDisplayParams.targetusername = orgAlias;
+            orgDisplayCommand += '--targetusername ' + orgAlias;
         }
-        const orgInfoResult = await sfdx.org.display(orgDisplayParams);
+        const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {fail: false});
         if (
-            orgInfoResult &&
-            ((orgInfoResult.connectedStatus &&
-                orgInfoResult.connectedStatus.includes('Connected')) ||
-                (orgInfoResult.alias === orgAlias && orgInfoResult.id != null) ||
-                (isDevHub && orgInfoResult.id != null))
+            orgInfoResult.result &&
+            ((orgInfoResult.result.connectedStatus &&
+                orgInfoResult.result.connectedStatus.includes('Connected')) ||
+                (orgInfoResult.result.alias === orgAlias && orgInfoResult.result.id != null) ||
+                (isDevHub && orgInfoResult.result.id != null))
         ) {
             doConnect = false;
             console.log(
-                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.instanceUrl)}`
+                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`
             );
         }
     }
     // Perform authentication
     if (doConnect) {
         let logged = false;
-        const config = await getConfig('branch');
+        const config = await getConfig('branch'); // User layer is used only for scratch orgs so don't use it in config here
         // Get auth variables, with priority CLI arguments, environment variables, then .hardis-sfdx.yml config file
         let username =
             typeof options.Command.flags?.targetusername === 'string'
@@ -95,7 +95,8 @@ async function authOrg(orgAlias: string, options: any) {
         if (username == null && process.env.CI) {
             const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
             console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(isDevHub ?
-                'devHubUsername in .sfdx-hardis.yml' :
+                'devHubUsername in .sfdx-hardis.yml' : (options.scratch) ?
+                'cache between your CI jobs (.sfdx  and config/user/)' :
                 `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
             process.exit(1);
         }
