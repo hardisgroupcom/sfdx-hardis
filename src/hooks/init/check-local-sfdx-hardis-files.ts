@@ -14,7 +14,7 @@ export const hook = async (options: any) => {
 
 // Add utility scripts if they are not present
 async function managePackageJson(commandId: string) {
-    if (!commandId.startsWith('hardis:scratch')) {
+    if (!commandId.startsWith('hardis:scratch') || !commandId.startsWith('hardis:project:configure')) {
         return;
     }
     const packageJsonFile = './package.json';
