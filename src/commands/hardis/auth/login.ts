@@ -25,7 +25,7 @@ export default class Login extends SfdxCommand {
   protected static flagsConfig = {
     instanceurl: flags.string({ char: 'r', description: messages.getMessage('instanceUrl') }),
     devhub: flags.boolean({ char: 'h', default: false, description: messages.getMessage('withDevHub') }),
-    scratch: flags.boolean({ char: 's', default: false, description: messages.getMessage('scratch') }),
+    scratchorg: flags.boolean({ char: 's', default: false, description: messages.getMessage('scratch') }),
     debug: flags.boolean({ char: 'd', default: false, description: messages.getMessage('debugMode') })
   };
 
@@ -42,7 +42,7 @@ export default class Login extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const devHub = this.flags.devhub || false;
-    const scratch = this.flags.scratch || false;
+    const scratch = this.flags.scratchorg || false;
     await this.config.runHook('auth', { checkAuth: !devHub, Command: this, devHub, scratch });
 
     // Return an object to be displayed with --json

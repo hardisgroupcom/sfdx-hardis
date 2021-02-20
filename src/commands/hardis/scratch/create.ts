@@ -147,11 +147,13 @@ export default class ScratchCreate extends SfdxCommand {
         });
 
         if (process.env.CI) {
+            console.error('WE ARE HERE')
             const displayOrgCommand = `sfdx force:org:display -u ${this.scratchOrgAlias} --verbose`;
-            const displayResult = await execSfdxJson(displayOrgCommand, this, {fail: true, output: false, debug: this.debugMode});
+            const displayResult = await execSfdxJson(displayOrgCommand, this, {fail: true, output: true, debug: this.debugMode});
             await setConfig('user', {
                 scratchOrgAuthUrl: displayResult.sfdxAuthUrl
             });
+            console.error('WE ARE HERE2')
         } else {
             await execSfdxJson('sfdx force:org:open', this);
         }
