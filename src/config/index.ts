@@ -37,7 +37,7 @@ async function getBranchConfigFiles() {
     if (!isGitRepo()) {
         return [];
     }
-    const gitBranchFormatted = await getCurrentGitBranch({formatted: true});
+    const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
     const branchConfigFiles = [
         `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
         `config/branches/.${moduleName}.${gitBranchFormatted}.yml`
@@ -63,8 +63,8 @@ export const getConfig = async (layer: string = 'user'): Promise<any> => {
 // Set data in configuration file
 export const setConfig = async (layer: string, propValues: any): Promise<void> => {
     const configSearchPlaces = (layer === 'project') ? projectConfigFiles :
-    (layer === 'user') ? userConfigFiles :
-    (layer === 'branch') ? await getBranchConfigFiles() : [];
+        (layer === 'user') ? userConfigFiles :
+            (layer === 'branch') ? await getBranchConfigFiles() : [];
     await setInConfigFile(configSearchPlaces, propValues);
 };
 
@@ -76,14 +76,16 @@ export const CONSTANTS = {
 async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
     const configExplorer = await cosmiconfig(moduleName, { searchPlaces }).search();
     const config = (configExplorer != null) ? configExplorer.config : {};
-    return config ;
+    return config;
 }
 
 // Update configuration file
-async function setInConfigFile(searchPlaces: string[], propValues: any) {
+export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = null) {
     const explorer = cosmiconfig(moduleName, { searchPlaces });
-    const configExplorer = await explorer.search();
-    const configFile = (configExplorer != null) ? configExplorer.filepath : searchPlaces.slice(-1)[0];
+    if (!configFile == null) {
+        const configExplorer = await explorer.search();
+        configFile = (configExplorer != null) ? configExplorer.filepath : searchPlaces.slice(-1)[0];
+    }
     let doc = {};
     if (fs.existsSync(configFile)) {
         doc = yaml.load(fs.readFileSync(configFile, 'utf-8'));
@@ -96,9 +98,9 @@ async function setInConfigFile(searchPlaces: string[], propValues: any) {
 }
 
 // Check configuration of project so it works with sfdx-hardis
-export  const checkConfig = async (options: any) => {
+export const checkConfig = async (options: any) => {
     // Skip hooks from other commands than hardis:scratch commands
-    const commandId = options?.Command?.id || options?.id ||  '';
+    const commandId = options?.Command?.id || options?.id || '';
     if (!commandId.startsWith('hardis')) {
         return;
     }
