@@ -23,7 +23,6 @@ export default class Login extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    // flag with a value (-n, --name=VALUE)
     instanceurl: flags.string({ char: 'r', description: messages.getMessage('instanceUrl') }),
     devhub: flags.boolean({ char: 'h', default: false, description: messages.getMessage('withDevHub') }),
     scratch: flags.boolean({ char: 's', default: false, description: messages.getMessage('scratch') }),
