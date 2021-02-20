@@ -51,5 +51,5 @@ jobs:
           name: hardisgroupcom/sfdx-hardis
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          buildargs: SFDX_HARDIS_VERSION=beta
+          buildargs: SFDX_HARDIS_VERSION=alpha
           tags: "alpha"
