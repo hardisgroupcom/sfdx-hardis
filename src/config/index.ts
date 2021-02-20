@@ -81,8 +81,9 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
 
 // Update configuration file
 export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = null) {
-    const explorer = cosmiconfig(moduleName, { searchPlaces });
-    if (!configFile == null) {
+    let explorer = null ;
+    if (configFile == null) {
+        explorer = cosmiconfig(moduleName, { searchPlaces });
         const configExplorer = await explorer.search();
         configFile = (configExplorer != null) ? configExplorer.filepath : searchPlaces.slice(-1)[0];
     }
@@ -93,7 +94,9 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
     doc = Object.assign(doc, propValues);
     await fs.ensureDir(path.dirname(configFile));
     await fs.writeFile(configFile, yaml.dump(doc));
-    explorer.clearCaches();
+    if (explorer = null) {
+        explorer.clearCaches();
+    }
     console.log(c.cyan(`[sfdx-hardis] Updated config file ${configFile} with values ${JSON.stringify(propValues)}`));
 }
 
