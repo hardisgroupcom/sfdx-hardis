@@ -34,6 +34,7 @@ export const hook = async (options: any) => {
     if (
         (options.Command && options.Command.requiresUsername === true) || options.checkAuth === true
     ) {
+        console.warn("CONFIG INFOOOO "+JSON.stringify(configInfo,null,2));
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
                 (process.env.CI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
@@ -65,7 +66,7 @@ async function authOrg(orgAlias: string, options: any) {
         if (orgAlias !== 'MY_ORG') {
             orgDisplayCommand += ' --targetusername ' + orgAlias;
         }
-        const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, { fail: false });
+        const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, { fail: false, output: true });
         if (
             orgInfoResult.result &&
             ((orgInfoResult.result.connectedStatus &&
@@ -91,10 +92,12 @@ async function authOrg(orgAlias: string, options: any) {
                     (isDevHub) ? config.devHubUsername : config.targetUsername;
         if (username == null && process.env.CI) {
             const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
-            console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(isDevHub ?
-                'devHubUsername in .sfdx-hardis.yml' : (options.scratch) ?
-                    'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"' :
-                    `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
+            console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(
+                isDevHub ?
+                    'devHubUsername in .sfdx-hardis.yml' :
+                    (options.scratch) ?
+                        'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"' :
+                        `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
             process.exit(1);
         }
         const instanceUrl =
