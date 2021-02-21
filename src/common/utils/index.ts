@@ -341,7 +341,7 @@ export async function generateReports(
 }
 
 export function uxLog(commandThis: any, text: string) {
-  text = (text.includes('[sfdx-hardis]')) ? text : '[sfdx-hardis] ' + text;
+  text = (text.includes('[sfdx-hardis]')) ? text : '[sfdx-hardis]' + (text.startsWith('[') ? '' : ' ') + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
   } else {
@@ -362,7 +362,7 @@ export async function copyLocalSfdxInfo() {
   if (fs.existsSync(SFDX_LOCAL_FOLDER)) {
     await fs.ensureDir(path.dirname(TMP_COPY_FOLDER));
     await fs.copy(SFDX_LOCAL_FOLDER, TMP_COPY_FOLDER, { overwrite: true });
-    uxLog(this, '[cache] Copied sfdx cache for later reuse');
+    uxLog(this, `[cache] Copied sfdx cache in ${TMP_COPY_FOLDER} for later reuse`);
   }
 }
 
@@ -373,7 +373,7 @@ export async function restoreLocalSfdxInfo() {
   }
   if (fs.existsSync(TMP_COPY_FOLDER)) {
     await fs.copy(TMP_COPY_FOLDER, SFDX_LOCAL_FOLDER, { overwrite: false });
-    uxLog(this, 'Restored cache for CI');
+    uxLog(this, '[cache] Restored cache for CI');
     RESTORED = true;
   }
 }
