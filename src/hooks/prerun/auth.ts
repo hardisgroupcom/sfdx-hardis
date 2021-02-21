@@ -95,7 +95,7 @@ async function authOrg(orgAlias: string, options: any) {
                     (isDevHub) ? config.devHubUsername : config.targetUsername;
         if (username == null && process.env.CI) {
             const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
-            console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(
+            console.error(c.yellow(`[sfdx-hardis][WARNING] You may have to define ${c.bold(
                 isDevHub ?
                     'devHubUsername in .sfdx-hardis.yml' :
                     (options.scratch) ?
