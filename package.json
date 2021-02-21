@@ -84,7 +84,8 @@
         "./lib/hooks/prerun/auth"
       ],
       "postrun": [
-        "./lib/hooks/postrun/notify"
+        "./lib/hooks/postrun/notify",
+        "./lib/hooks/postrun/store-cache"
       ]
     },
     "topics": {

@@ -7,6 +7,21 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image
 - #24: Change the way of listing installed packages
 - #26: New command sfdx hardis:project:configure:deployments to configure Connected app
 - #27: Check in manifest folder for package.xml
+- Auto-generate **alpha** version of plugin package and associated docker image when publishing from branch **alpha**
+- Manage cache storage for CI dependent jobs (cache, artifacts)
+  - .cache/sfdx-hardis/.sfdx
+  - .sfdx
+  - config/user
+- Improve org authentication
+- New command **hardis:org:test**
+  - Test org coverage and fail if < 75%
+- Installed package management
+  - Factorize method
+  - Install packages during hardis:project:deploy:sources:dx
+- Allow to reuse scratch org if previous creation failed. Force using --forcenew
+- Improve auto-update of local project sfdx-hardis files
+- Improve console logs
+- Allow to store DevHubSfdxClientId in user sfdx-hardis.yml ( in /user folder)
 
 ## [1.1.3] 2021-02-17
 

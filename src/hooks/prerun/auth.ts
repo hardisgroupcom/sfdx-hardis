@@ -1,12 +1,10 @@
 import { SfdxError } from '@salesforce/core';
 import * as c from 'chalk';
-import * as child from 'child_process';
 import * as fs from 'fs-extra';
-import * as sfdx from 'sfdx-node';
-import * as util from 'util';
-import { getCurrentGitBranch } from '../../common/utils';
+import * as os from 'os';
+import * as path from 'path';
+import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
 import { checkConfig, getConfig } from '../../config';
-const exec = util.promisify(child.exec);
 
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis commands
@@ -18,6 +16,7 @@ export const hook = async (options: any) => {
     if (typeof global.it === 'function') {
         return;
     }
+    await restoreLocalSfdxInfo();
     let configInfo = await getConfig('user');
     // Manage authentication if DevHub is required but current user is disconnected
     if (
@@ -37,55 +36,71 @@ export const hook = async (options: any) => {
     ) {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
-                (process.env.CI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
-                    (process.env.CI)
-                        ? await getCurrentGitBranch({ formatted: true })
-                        : (commandId === 'hardis:auth:login' && configInfo.orgAlias)
-                            ? configInfo.orgAlias :
-                            configInfo.scratchOrgAlias || 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
+                (isCI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
+                    (isCI && options.scratch && configInfo.sfdxAuthUrl) ? configInfo.sfdxAuthUrl :
+                        (isCI)
+                            ? await getCurrentGitBranch({ formatted: true })
+                            : (commandId === 'hardis:auth:login' && configInfo.orgAlias)
+                                ? configInfo.orgAlias :
+                                configInfo.scratchOrgAlias || 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
         await authOrg(orgAlias, options);
     }
 };
 
 // Authorize an org manually or with JWT
 async function authOrg(orgAlias: string, options: any) {
+    // Manage auth with sfdxAuthUrl (CI & scratch org only)
+    if (orgAlias.startsWith('force://')) {
+        const authFile = path.join(os.tmpdir(), 'sfdxScratchAuth.txt');
+        await fs.writeFile(authFile, orgAlias, 'utf8');
+        await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, { fail: true, output: false });
+        await fs.remove(authFile);
+        return;
+    }
     const isDevHub = orgAlias.includes('DevHub');
     let doConnect = true;
     if (!options.checkAuth) {
         // Check if we are already authenticated
-        const orgDisplayParams: any = {};
+        let orgDisplayCommand = 'sfdx force:org:display';
         if (orgAlias !== 'MY_ORG') {
-            orgDisplayParams.targetusername = orgAlias;
+            orgDisplayCommand += ' --targetusername ' + orgAlias;
         }
-        const orgInfoResult = await sfdx.org.display(orgDisplayParams);
+        const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, { fail: false, output: false, debug: options.debug });
         if (
-            orgInfoResult &&
-            ((orgInfoResult.connectedStatus &&
-                orgInfoResult.connectedStatus.includes('Connected')) ||
-                (orgInfoResult.alias === orgAlias && orgInfoResult.id != null) ||
-                (isDevHub && orgInfoResult.id != null))
+            orgInfoResult.result &&
+            ((orgInfoResult.result.connectedStatus &&
+                orgInfoResult.result.connectedStatus.includes('Connected')) ||
+                (options.scratch && orgInfoResult.result.connectedStatus.includes('Unknown')) ||
+                (orgInfoResult.result.alias === orgAlias && orgInfoResult.result.id != null) ||
+                (isDevHub && orgInfoResult.result.id != null))
         ) {
+            // Set as default username or devhubusername
+            const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgInfoResult.result.username}`;
+            await execCommand(setDefaultUsernameCommand, this, {});
             doConnect = false;
             console.log(
-                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.instanceUrl)}`
+                `[sfdx-hardis] You are already ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`
             );
         }
     }
     // Perform authentication
     if (doConnect) {
         let logged = false;
-        const config = await getConfig('branch');
+        const config = await getConfig('user');
         // Get auth variables, with priority CLI arguments, environment variables, then .hardis-sfdx.yml config file
         let username =
             typeof options.Command.flags?.targetusername === 'string'
                 ? options.Command.flags?.targetusername
                 : process.env.TARGET_USERNAME ||
                     (isDevHub) ? config.devHubUsername : config.targetUsername;
-        if (username == null && process.env.CI) {
+        if (username == null && isCI) {
             const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
-            console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(isDevHub ?
-                'devHubUsername in .sfdx-hardis.yml' :
-                `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
+            console.error(c.yellow(`[sfdx-hardis][WARNING] You may have to define ${c.bold(
+                isDevHub ?
+                    'devHubUsername in .sfdx-hardis.yml' :
+                    (options.scratch) ?
+                        'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"' :
+                        `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
             process.exit(1);
         }
         const instanceUrl =
@@ -117,22 +132,19 @@ async function authOrg(orgAlias: string, options: any) {
                 ` --username ${username}` +
                 ` --setalias ${orgAlias}` +
                 ` --instanceurl ${instanceUrl}`;
-            console.log(`[sfdx-hardis] Login command: ${loginCommand.replace(sfdxClientId, '***********')}`);
-            const jwtAuthRes = await exec(loginCommand);
-            logged = jwtAuthRes?.stdout.includes(
-                `Successfully authorized ${username}`
-            );
+            const jwtAuthRes = await execSfdxJson(loginCommand, this, { fail: false });
+            logged = jwtAuthRes.status === 0;
             if (!logged) {
                 console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
                 process.exit(1);
             }
-        } else if (!process.env.CI) {
+        } else if (!isCI) {
             // Login with web auth
             const orgLabel = `org ${orgAlias}`;
             console.warn(
                 c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`)
             );
-            if (process.env.CI === 'true') {
+            if (isCI) {
                 throw new SfdxError(
                     `In CI context, you may define:
                 - a .sfdx-hardis.yml file with instanceUrl and targetUsername properties (or INSTANCE_URL and TARGET_USERNAME repo variables)
@@ -141,23 +153,20 @@ async function authOrg(orgAlias: string, options: any) {
                 `
                 );
             }
-            const loginResult = await sfdx.auth.webLogin({
-                setdefaultusername: true,
-                setalias: orgAlias,
-                setdefaultdevhubusername: isDevHub,
-                instanceurl: instanceUrl,
-                _quiet: !options.Command.flags.debug === true,
-                _rejectOnError: true
-            });
+            const loginResult = await execCommand(
+                'sfdx auth:web:login' +
+                ' --setdefaultusername' +
+                ` --setalias ${orgAlias}` +
+                ((isDevHub) ? ' --setdefaultdevhubusername' : '') +
+                ` --instanceurl ${instanceUrl}`
+                , this, { output: true, fail: true });
             logged = loginResult?.instanceUrl != null;
             username = loginResult?.username;
         } else {
             console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} using JWT. Please check your configuration`));
         }
         if (logged) {
-            console.log(
-                `[sfdx-hardis] Successfully logged to ${c.green(instanceUrl)} with username ${c.green(username)}`
-            );
+            uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with username ${c.green(username)}`);
             // Display warning message in case of local usage (not CI), and not login command
             if (!(options?.Command?.id || '').startsWith('hardis:auth:login')) {
                 console.warn(
@@ -181,6 +190,7 @@ async function authOrg(orgAlias: string, options: any) {
 
 // Get clientId for SFDX connected app
 async function getSfdxClientId(orgAlias: string, config: any) {
+    // Try to find in global variables
     const sfdxClientIdVarName = `SFDX_CLIENT_ID_${orgAlias}`;
     if (process.env[sfdxClientIdVarName]) {
         return process.env[sfdxClientIdVarName];
@@ -195,7 +205,11 @@ async function getSfdxClientId(orgAlias: string, config: any) {
         );
         return process.env.SFDX_CLIENT_ID;
     }
-    if (process.env.CI) {
+    // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
+    if (!isCI && config.devHubSfdxClientId) {
+        return config.devHubSfdxClientId;
+    }
+    if (isCI) {
         console.error(
             c.red(`[sfdx-hardis] You must set env variable ${sfdxClientIdVarNameUpper} with the Consumer Key value defined on SFDX Connected app`)
         );
@@ -216,7 +230,7 @@ async function getCertificateKeyFile(orgAlias: string) {
             return file;
         }
     }
-    if (process.env.CI) {
+    if (isCI) {
         console.error(
             c.red(`[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join('\n  -')}`)
         );

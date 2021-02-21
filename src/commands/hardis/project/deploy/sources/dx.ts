@@ -1,4 +1,5 @@
 /* jscpd:ignore-start */
+
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -6,6 +7,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
+import { MetadataUtils } from '../../../../../common/metadata-utils';
 import { execCommand } from '../../../../../common/utils';
 import { CONSTANTS, getConfig } from '../../../../../config';
 
@@ -45,9 +47,6 @@ export default class DxSources extends SfdxCommand {
   // Comment this out if your command does not require an org username
   protected static requiresUsername = true;
 
-  // Comment this out if your command does not support a hub org username
-  // protected static supportsDevhubUsername = true;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
@@ -59,13 +58,18 @@ export default class DxSources extends SfdxCommand {
     const check = this.flags.check || false;
     const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debug = this.flags.debug || false;
+    this.configInfo = await getConfig('branch');
+
+    // Install packages
+    const packages = this.configInfo.installedPackages || [];
+    await MetadataUtils.installPackagesOnOrg(packages, null, this);
 
     // Deploy destructive changes
     const packageDeletedXmlFile =
       process.env.PACKAGE_XML_TO_DELETE ||
-      this.configInfo.packageXmlToDelete ||
-      (fs.existsSync('./manifest/destructiveChanges.xml')) ? './manifest/destructiveChanges.xml' :
-      './config/destructiveChanges.xml';
+        this.configInfo.packageXmlToDelete ||
+        (fs.existsSync('./manifest/destructiveChanges.xml')) ? './manifest/destructiveChanges.xml' :
+        './config/destructiveChanges.xml';
     if (fs.existsSync(packageDeletedXmlFile)) {
       // Create empty deployment file because of sfdx limitation
       // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
@@ -85,7 +89,7 @@ export default class DxSources extends SfdxCommand {
         ' --ignorewarnings' + // So it does not fail in case metadata is already deleted
         (check ? ' --checkonly' : '') +
         (debug ? ' --verbose' : '');
-      const deployDeleteRes = await execCommand(deployDelete, this, {output: true, debug, fail: true});
+      const deployDeleteRes = await execCommand(deployDelete, this, { output: true, debug, fail: true });
       await fs.remove(tmpDir);
       let deleteMsg = '';
       if (deployDeleteRes.status === 0) {
@@ -98,18 +102,17 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Deploy sources
-    this.configInfo = await getConfig('branch');
     const packageXmlFile =
       process.env.PACKAGE_XML_TO_DEPLOY ||
-      this.configInfo.packageXmlToDeploy ||
-      (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
-      './config/package.xml';
+        this.configInfo.packageXmlToDeploy ||
+        (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
+        './config/package.xml';
     const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}` +
       ' --wait 60' +
       ` --testlevel ${testlevel}` +
       (check ? ' --checkonly' : '') +
       (debug ? ' --verbose' : '');
-    const deployRes = await execCommand(deployCommand, this, {output: true, debug, fail: true});
+    const deployRes = await execCommand(deployCommand, this, { output: true, debug, fail: true });
     let message = '';
     if (deployRes.status === 0) {
       message = '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';

@@ -19,14 +19,14 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class ConfigureDeployment extends SfdxCommand {
+export default class ConfigureAuth extends SfdxCommand {
 
-    public static title = 'Configure deployments';
+    public static title = 'Configure authentication';
 
-    public static description = 'Configure deployments from git branch to target org';
+    public static description = 'Configure authentication from git branch to target org';
 
     public static examples = [
-        '$ sfdx hardis:project:configure:deployments'
+        '$ sfdx hardis:project:configure:auth'
     ];
 
     // public static args = [{name: 'file'}];
@@ -114,14 +114,14 @@ export default class ConfigureDeployment extends SfdxCommand {
                 `./config/.jwt/${config.devHubAlias}.key` :
                 `./config/branches/.jwt/${branchName}.key`);
         // Copy certificate file in user home project
-        const crtFile = path.join(require('os').homedir(), `${branchName}.crt`);
+        const crtFile = path.join(require('os').homedir(), (devHub) ? `${config.devHubAlias}.crt` : `${branchName}.crt`);
         await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
         await fs.remove(tmpDir);
         this.ux.log('[sfdx-hardis] Now you can configure the sfdx connected app');
+        this.ux.log(`[sfdx-hardis] Follow instructions here: ${c.bold('https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm')}`);
         this.ux.log(`[sfdx-hardis] Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
-        this.ux.log('[sfdx-hardis] Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm');
-        this.ux.log(`[sfdx-hardis] Then configure CI variable ${c.green(`SFDX_CLIENT_ID_${((devHub) ? config.devHubAlias : branchName).toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
+        this.ux.log(`[sfdx-hardis] Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${((devHub) ? config.devHubAlias : branchName).toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
         // Return an object to be displayed with --json
-        return { outputString: 'Configured branch for deployment' };
+        return { outputString: 'Configured branch for authentication' };
     }
 }

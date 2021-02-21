@@ -17,16 +17,16 @@ export default class Login extends SfdxCommand {
   public static description = messages.getMessage('loginToOrg');
 
   public static examples = [
-  '$ sfdx hardis:auth:login'
+    '$ sfdx hardis:auth:login'
   ];
 
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    // flag with a value (-n, --name=VALUE)
-    instanceurl: flags.string({char: 'r', description: messages.getMessage('instanceUrl')}),
-    devhub: flags.boolean({char: 'h', default: false, description: messages.getMessage('withDevHub')}),
-    debug: flags.boolean({char: 'd', default: false, description: messages.getMessage('debugMode')})
+    instanceurl: flags.string({ char: 'r', description: messages.getMessage('instanceUrl') }),
+    devhub: flags.boolean({ char: 'h', default: false, description: messages.getMessage('withDevHub') }),
+    scratchorg: flags.boolean({ char: 's', default: false, description: messages.getMessage('scratch') }),
+    debug: flags.boolean({ char: 'd', default: false, description: messages.getMessage('debugMode') })
   };
 
   // Comment this out if your command does not require an org username
@@ -38,13 +38,12 @@ export default class Login extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-  protected devHub = false;
-
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.devHub = this.flags.devhub || false;
-    await this.config.runHook('auth', {checkAuth: !this.devHub, Command: this, devHub: this.devHub});
+    const devHub = this.flags.devhub || false;
+    const scratch = this.flags.scratchorg || false;
+    await this.config.runHook('auth', { checkAuth: !devHub, Command: this, devHub, scratch });
 
     // Return an object to be displayed with --json
     return { outputString: 'Logged to Salesforce org' };
