@@ -2,6 +2,7 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
+import * as fs from 'fs-extra';
 import { execSfdxJson } from '../../../../common/utils';
 import { getConfig } from '../../../../config';
 
@@ -50,6 +51,8 @@ export default class OrgTestApex extends SfdxCommand {
     const debug = this.flags.debug || false;
 
     this.configInfo = await getConfig('branch');
+
+    await fs.ensureDir('./hardis-report');
     const testCommand = 'sfdx force:apex:test:run' +
       ' --codecoverage' +
       ' --resultformat human' +

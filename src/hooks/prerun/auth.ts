@@ -190,6 +190,7 @@ async function authOrg(orgAlias: string, options: any) {
 
 // Get clientId for SFDX connected app
 async function getSfdxClientId(orgAlias: string, config: any) {
+    // Try to find in global variables
     const sfdxClientIdVarName = `SFDX_CLIENT_ID_${orgAlias}`;
     if (process.env[sfdxClientIdVarName]) {
         return process.env[sfdxClientIdVarName];
@@ -203,6 +204,10 @@ async function getSfdxClientId(orgAlias: string, config: any) {
             c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define ${sfdxClientIdVarNameUpper} than SFDX_CLIENT_ID`)
         );
         return process.env.SFDX_CLIENT_ID;
+    }
+    // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
+    if (!process.env.CI && config.devHubSfdxClientId) {
+        return config.devHubSfdxClientId;
     }
     if (process.env.CI) {
         console.error(
