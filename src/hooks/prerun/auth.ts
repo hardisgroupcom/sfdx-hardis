@@ -34,7 +34,7 @@ export const hook = async (options: any) => {
     if (
         (options.Command && options.Command.requiresUsername === true) || options.checkAuth === true
     ) {
-        console.warn("CONFIG INFOOOO "+JSON.stringify(configInfo,null,2));
+        console.warn('CONFIG INFOOOO ' + JSON.stringify(configInfo, null, 2));
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
                 (process.env.CI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
