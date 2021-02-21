@@ -350,8 +350,8 @@ export function uxLog(commandThis: any, text: string) {
 }
 
 // Caching methods
-const SFDX_LOCAL_FOLDER = '~/root/.sfdx';
-const TMP_COPY_FOLDER = './tmp/sfdx-hardis-local';
+const SFDX_LOCAL_FOLDER = '/root/.sfdx';
+const TMP_COPY_FOLDER = 'tmp/sfdx-hardis-local';
 let RESTORED = false;
 
 // Put local sfdx folder in tmp/sfdx-hardis-local for CI tools needing cache/artifacts to be within repo dir

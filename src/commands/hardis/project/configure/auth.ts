@@ -19,14 +19,14 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class ConfigureDeployment extends SfdxCommand {
+export default class ConfigureAuth extends SfdxCommand {
 
-    public static title = 'Configure deployments';
+    public static title = 'Configure authentication';
 
-    public static description = 'Configure deployments from git branch to target org';
+    public static description = 'Configure authentication from git branch to target org';
 
     public static examples = [
-        '$ sfdx hardis:project:configure:deployments'
+        '$ sfdx hardis:project:configure:auth'
     ];
 
     // public static args = [{name: 'file'}];
@@ -122,6 +122,6 @@ export default class ConfigureDeployment extends SfdxCommand {
         this.ux.log(`[sfdx-hardis] Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
         this.ux.log(`[sfdx-hardis] Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${((devHub) ? config.devHubAlias : branchName).toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
         // Return an object to be displayed with --json
-        return { outputString: 'Configured branch for deployment' };
+        return { outputString: 'Configured branch for authentication' };
     }
 }

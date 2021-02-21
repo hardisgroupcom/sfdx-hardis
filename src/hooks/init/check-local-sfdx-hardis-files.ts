@@ -80,8 +80,8 @@ async function getSfdxHardisPackageJsonContent() {
             'org:test:apex': 'sfdx hardis:org:test:apex',
             'scratch:create': 'sfdx hardis:scratch:create',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
-            'configure:org:devhub': 'sfdx hardis:project:configure:deployments --devhub',
-            'configure:org:deployment': 'sfdx hardis:project:configure:deployments'
+            'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub',
+            'configure:auth:deployment': 'sfdx hardis:project:configure:auth'
         }
     };
     return hardisPackageJsonContent;
