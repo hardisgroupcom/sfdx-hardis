@@ -56,7 +56,7 @@ export const getConfig = async (layer: string = 'user'): Promise<any> => {
         return branchConfig;
     }
     let userConfig = await loadFromConfigFile(userConfigFiles);
-    userConfig = Object.assign(defaultConfig, userConfig);
+    userConfig = Object.assign(branchConfig, userConfig);
     return userConfig;
 };
 
