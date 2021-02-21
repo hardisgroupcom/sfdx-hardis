@@ -5,36 +5,36 @@ import * as prompts from 'prompts';
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis:scratch commands
     const commandId = options?.id || '';
-    // No await there because it can be processed while other commands
-    // tslint:disable no-floating-promises
-    managePackageJson(commandId);
-    manageGitIgnore(commandId);
-    // tslint:enable no-floating-promises
 
+    await managePackageJson(commandId);
+    await manageGitIgnore(commandId);
 };
 
 // Add utility scripts if they are not present
 async function managePackageJson(commandId: string) {
-    if (!commandId.startsWith('hardis:scratch') || !commandId.startsWith('hardis:project:configure')) {
+    if (!commandId.startsWith('hardis:scratch') && !commandId.startsWith('hardis:project:configure')) {
         return;
     }
     const packageJsonFile = './package.json';
     if (fs.existsSync(packageJsonFile)) {
         // Update existing package.json to define sfdx utility scripts
-        fs.readFile(packageJsonFile, 'utf8').then(async (text: string) => {
-            const packageJson = JSON.parse(text);
-            const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
-            packageJson['scripts'] = Object.assign(hardisPackageJsonContent['scripts'], packageJson['scripts']);
-            if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text)) &&
-                !process.env.CI && (await prompts({
-                    type: 'confirm',
-                    name: 'update',
-                    message: 'Your package.json is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
-                })).value === true) {
+        const text = await fs.readFile(packageJsonFile, 'utf8')
+        const packageJson = JSON.parse(text);
+        const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
+        packageJson['scripts'] = Object.assign(packageJson['scripts'], hardisPackageJsonContent['scripts']);
+        if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text)) && !process.env.CI) {
+            const confirm = await prompts({
+                type: 'confirm',
+                name: 'value',
+                initial: true,
+                message: 'Your package.json is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
+            });
+            if (confirm.value === true) {
                 await fs.writeFile(packageJsonFile, JSON.stringify(packageJson, null, 2));
                 console.log(c.cyan('[sfdx-hardis] Updated package.json with sfdx-hardis content'));
             }
-        });
+        }
+
     } else {
         // Create package.json to define sfdx utility scripts
         const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
@@ -59,15 +59,18 @@ async function manageGitIgnore(commandId: string) {
                 updated = true;
             }
         }
-        if (updated && !process.env.CI && (await prompts({
-            type: 'confirm',
-            name: 'update',
-            message: 'Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
-        })).value === true) {
-            await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');
-            console.log(c.cyan('[sfdx-hardis] Updated .gitignore'));
+        if (updated && !process.env.CI) {
+            const confirm = await prompts({
+                type: 'confirm',
+                name: 'value',
+                initial: true,
+                message: 'Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
+            });
+            if (confirm.value === true) {
+                await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');
+                console.log(c.cyan('[sfdx-hardis] Updated .gitignore'));
+            }
         }
-
     }
 }
 
