@@ -18,7 +18,7 @@ async function managePackageJson(commandId: string) {
     const packageJsonFile = './package.json';
     if (fs.existsSync(packageJsonFile)) {
         // Update existing package.json to define sfdx utility scripts
-        const text = await fs.readFile(packageJsonFile, 'utf8')
+        const text = await fs.readFile(packageJsonFile, 'utf8');
         const packageJson = JSON.parse(text);
         const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
         packageJson['scripts'] = Object.assign(packageJson['scripts'], hardisPackageJsonContent['scripts']);
