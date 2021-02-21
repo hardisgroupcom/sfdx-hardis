@@ -363,7 +363,6 @@ export async function copyLocalSfdxInfo() {
   if (fs.existsSync(SFDX_LOCAL_FOLDER)) {
     await fs.ensureDir(path.dirname(TMP_COPY_FOLDER));
     await fs.copy(SFDX_LOCAL_FOLDER, TMP_COPY_FOLDER, { dereference: true , overwrite: true });
-    fs.chownSync(TMP_COPY_FOLDER,os.userInfo().username)
     uxLog(this, `[cache] Copied sfdx cache in ${TMP_COPY_FOLDER} for later reuse`);
   }
 }
