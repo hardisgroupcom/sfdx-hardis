@@ -1,14 +1,10 @@
 import { SfdxError } from '@salesforce/core';
 import * as c from 'chalk';
-import * as child from 'child_process';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import * as sfdx from 'sfdx-node';
-import * as util from 'util';
-import { execCommand, execSfdxJson, getCurrentGitBranch } from '../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../common/utils';
 import { checkConfig, getConfig } from '../../config';
-const exec = util.promisify(child.exec);
 
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis commands
@@ -40,12 +36,12 @@ export const hook = async (options: any) => {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
                 (process.env.CI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
-                (process.env.CI && options.scratch && configInfo.sfdxAuthUrl) ? configInfo.sfdxAuthUrl :
-                    (process.env.CI)
-                        ? await getCurrentGitBranch({ formatted: true })
-                        : (commandId === 'hardis:auth:login' && configInfo.orgAlias)
-                            ? configInfo.orgAlias :
-                            configInfo.scratchOrgAlias || 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
+                    (process.env.CI && options.scratch && configInfo.sfdxAuthUrl) ? configInfo.sfdxAuthUrl :
+                        (process.env.CI)
+                            ? await getCurrentGitBranch({ formatted: true })
+                            : (commandId === 'hardis:auth:login' && configInfo.orgAlias)
+                                ? configInfo.orgAlias :
+                                configInfo.scratchOrgAlias || 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
         await authOrg(orgAlias, options);
     }
 };
@@ -56,7 +52,7 @@ async function authOrg(orgAlias: string, options: any) {
     if (orgAlias.startsWith('force://')) {
         const authFile = path.join(os.tmpdir(), 'sfdxScratchAuth.txt');
         await fs.writeFile(authFile, orgAlias, 'utf8');
-        await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, {fail: true, output: false});
+        await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, { fail: true, output: false });
         await fs.remove(authFile);
         return;
     }
@@ -68,7 +64,7 @@ async function authOrg(orgAlias: string, options: any) {
         if (orgAlias !== 'MY_ORG') {
             orgDisplayCommand += ' --targetusername ' + orgAlias;
         }
-        const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {fail: false});
+        const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, { fail: false });
         if (
             orgInfoResult.result &&
             ((orgInfoResult.result.connectedStatus &&
@@ -78,7 +74,7 @@ async function authOrg(orgAlias: string, options: any) {
         ) {
             doConnect = false;
             console.log(
-                `[sfdx-hardis] You are ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`
+                `[sfdx-hardis] You are already ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`
             );
         }
     }
@@ -96,8 +92,8 @@ async function authOrg(orgAlias: string, options: any) {
             const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
             console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(isDevHub ?
                 'devHubUsername in .sfdx-hardis.yml' : (options.scratch) ?
-                'cache between your CI jobs (.sfdx  and config/user/)' :
-                `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
+                    'cache between your CI jobs (.sfdx  and config/user/)' :
+                    `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
             process.exit(1);
         }
         const instanceUrl =
@@ -129,11 +125,8 @@ async function authOrg(orgAlias: string, options: any) {
                 ` --username ${username}` +
                 ` --setalias ${orgAlias}` +
                 ` --instanceurl ${instanceUrl}`;
-            console.log(`[sfdx-hardis] Login command: ${loginCommand.replace(sfdxClientId, '***********')}`);
-            const jwtAuthRes = await exec(loginCommand);
-            logged = jwtAuthRes?.stdout.includes(
-                `Successfully authorized ${username}`
-            );
+            const jwtAuthRes = await execSfdxJson(loginCommand, this, { fail: false });
+            logged = jwtAuthRes.status === 0;
             if (!logged) {
                 console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
                 process.exit(1);
@@ -153,23 +146,20 @@ async function authOrg(orgAlias: string, options: any) {
                 `
                 );
             }
-            const loginResult = await sfdx.auth.webLogin({
-                setdefaultusername: true,
-                setalias: orgAlias,
-                setdefaultdevhubusername: isDevHub,
-                instanceurl: instanceUrl,
-                _quiet: !options.Command.flags.debug === true,
-                _rejectOnError: true
-            });
+            const loginResult = await execCommand(
+                'sfdx auth:web:login' +
+                ' --setdefaultusername' +
+                ` --setalias ${orgAlias}` +
+                ((isDevHub) ? ' --setdefaultdevhubusername' : '') +
+                ` --instanceurl ${instanceUrl}`
+                , this, { output: true, fail: true });
             logged = loginResult?.instanceUrl != null;
             username = loginResult?.username;
         } else {
             console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} using JWT. Please check your configuration`));
         }
         if (logged) {
-            console.log(
-                `[sfdx-hardis] Successfully logged to ${c.green(instanceUrl)} with username ${c.green(username)}`
-            );
+            uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with username ${c.green(username)}`);
             // Display warning message in case of local usage (not CI), and not login command
             if (!(options?.Command?.id || '').startsWith('hardis:auth:login')) {
                 console.warn(
