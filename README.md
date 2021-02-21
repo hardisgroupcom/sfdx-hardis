@@ -121,17 +121,20 @@ Example: `SFDX_CLIENT_ID: 3MVG9SOw8KERNN0.1kPOtqFc1ekdNpUho5WvGMn5n5IVMAFbcSvmY3
 
 ## Commands
 <!-- commands -->
-* [`sfdx hardis:auth:login [-r <string>] [-h] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisauthlogin--r-string--h--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:auth:login [-r <string>] [-h] [-s] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisauthlogin--r-string--h--s--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string--f---sandbox--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-o] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesdx--f-string--t-string--m-string--o--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesmetadata--f-string--p-string--s--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgtestapex--l-notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectauditapiversion--m-number--f--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:audit:callincallout [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectauditcallincallout--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:audit:remotesites [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectauditremotesites--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:project:deploy:sources:dx [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectdeploysourcesdx--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:scratch:create [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchcreate--d--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:project:configure:auth [-b] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectconfigureauth--b--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:project:configure:deployment [-b] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectconfiguredeployment--b--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectdeploysourcesdx--c--l-notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:scratch:create [-n] [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchcreate--n--d--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 
-## `sfdx hardis:auth:login [-r <string>] [-h] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+## `sfdx hardis:auth:login [-r <string>] [-h] [-s] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Login to salesforce org
 
@@ -139,13 +142,14 @@ Login to salesforce org
 Login to salesforce org
 
 USAGE
-  $ sfdx hardis:auth:login [-r <string>] [-h] [-d] [--json] [--loglevel 
+  $ sfdx hardis:auth:login [-r <string>] [-h] [-s] [-d] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
   -h, --devhub                                                                      Also connect associated DevHub
   -r, --instanceurl=instanceurl                                                     URL of org instance
+  -s, --scratchorg                                                                  Scratch org
   --json                                                                            format output as json
 
   --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
@@ -155,7 +159,7 @@ EXAMPLE
   $ sfdx hardis:auth:login
 ```
 
-_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/auth/login.js)_
+_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/auth/login.js)_
 
 ## `sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [--sandbox] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -223,7 +227,7 @@ EXAMPLES
      No record deleted
 ```
 
-_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/org/purge/flow.js)_
+_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/org/purge/flow.js)_
 
 ## `sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-o] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -269,7 +273,7 @@ EXAMPLES
   $ sfdx hardis:org:retrieve:sources:dx --sandbox
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/org/retrieve/sources/dx.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/org/retrieve/sources/dx.js)_
 
 ## `sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-s] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -305,7 +309,42 @@ EXAMPLES
   $ sfdx hardis:org:retrieve:sources:dx --sandbox
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/org/retrieve/sources/metadata.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/org/retrieve/sources/metadata.js)_
+
+## `sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Run apex test cases on org
+
+```
+Run apex test cases on org
+
+USAGE
+  $ sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u <string>] 
+  [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+
+  -l, --testlevel=(NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg)      [default: RunLocalTests] Level of
+                                                                                    tests to apply to validate
+                                                                                    deployment
+
+  -u, --targetusername=targetusername                                               username or alias for the target
+                                                                                    org; overrides default target org
+
+  --apiversion=apiversion                                                           override the api version used for
+                                                                                    api requests made by this command
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+EXAMPLE
+  $ sfdx hardis:org:test:apex
+```
+
+_See code: [lib/commands/hardis/org/test/apex.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/org/test/apex.js)_
 
 ## `sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -336,7 +375,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:apiversion
 ```
 
-_See code: [lib/commands/hardis/project/audit/apiversion.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/project/audit/apiversion.js)_
+_See code: [lib/commands/hardis/project/audit/apiversion.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/project/audit/apiversion.js)_
 
 ## `sfdx hardis:project:audit:callincallout [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -360,7 +399,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:callouts
 ```
 
-_See code: [lib/commands/hardis/project/audit/callincallout.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/project/audit/callincallout.js)_
+_See code: [lib/commands/hardis/project/audit/callincallout.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/project/audit/callincallout.js)_
 
 ## `sfdx hardis:project:audit:remotesites [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -384,9 +423,59 @@ EXAMPLE
   $ sfdx hardis:project:audit:remotesites
 ```
 
-_See code: [lib/commands/hardis/project/audit/remotesites.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/project/audit/remotesites.js)_
+_See code: [lib/commands/hardis/project/audit/remotesites.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/project/audit/remotesites.js)_
 
-## `sfdx hardis:project:deploy:sources:dx [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+## `sfdx hardis:project:configure:auth [-b] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Configure authentication from git branch to target org
+
+```
+Configure authentication from git branch to target org
+
+USAGE
+  $ sfdx hardis:project:configure:auth [-b] [-d] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -b, --devhub                                                                      Configure project DevHub
+  -d, --debug                                                                       Activate debug mode (more logs)
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+EXAMPLE
+  $ sfdx hardis:project:configure:auth
+```
+
+_See code: [lib/commands/hardis/project/configure/auth.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/project/configure/auth.js)_
+
+## `sfdx hardis:project:configure:deployment [-b] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Configure authentication from git branch to target org
+
+```
+Configure authentication from git branch to target org
+
+USAGE
+  $ sfdx hardis:project:configure:deployment [-b] [-d] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -b, --devhub                                                                      Configure project DevHub
+  -d, --debug                                                                       Activate debug mode (more logs)
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+EXAMPLE
+  $ sfdx hardis:project:configure:auth
+```
+
+_See code: [lib/commands/hardis/project/configure/deployment.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/project/configure/deployment.js)_
+
+## `sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Deploy SFDX project sources to org
 
@@ -394,11 +483,19 @@ Deploy SFDX project sources to org
 Deploy SFDX project sources to org
 
 USAGE
-  $ sfdx hardis:project:deploy:sources:dx [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u 
+  <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
+  -c, --check                                                                       Only checks the deployment, there is
+                                                                                    no impact on target org
+
   -d, --debug                                                                       Activate debug mode (more logs)
+
+  -l, --testlevel=(NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg)      [default: RunLocalTests] Level of
+                                                                                    tests to apply to validate
+                                                                                    deployment
 
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
@@ -415,9 +512,9 @@ EXAMPLE
   $ sfdx hardis:project:deploy:sources:dx
 ```
 
-_See code: [lib/commands/hardis/project/deploy/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/project/deploy/sources/dx.js)_
+_See code: [lib/commands/hardis/project/deploy/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/project/deploy/sources/dx.js)_
 
-## `sfdx hardis:scratch:create [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+## `sfdx hardis:scratch:create [-n] [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Create and initialize a scratch org so it is ready to use
 
@@ -425,11 +522,14 @@ Create and initialize a scratch org so it is ready to use
 Create and initialize a scratch org so it is ready to use
 
 USAGE
-  $ sfdx hardis:scratch:create [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:create [-n] [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
+
+  -n, --forcenew                                                                    If an existing scratch org exists,
+                                                                                    do not reuse it but create a new one
 
   -v, --targetdevhubusername=targetdevhubusername                                   username or alias for the dev hub
                                                                                     org; overrides default dev hub org
@@ -446,5 +546,5 @@ EXAMPLE
   $ sfdx hardis:scratch:create
 ```
 
-_See code: [lib/commands/hardis/scratch/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.1.3/lib/commands/hardis/scratch/create.js)_
+_See code: [lib/commands/hardis/scratch/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.2.0/lib/commands/hardis/scratch/create.js)_
 <!-- commandsstop -->
