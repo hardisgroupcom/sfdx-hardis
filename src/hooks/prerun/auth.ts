@@ -66,7 +66,7 @@ async function authOrg(orgAlias: string, options: any) {
         // Check if we are already authenticated
         let orgDisplayCommand = 'sfdx force:org:display';
         if (orgAlias !== 'MY_ORG') {
-            orgDisplayCommand += '--targetusername ' + orgAlias;
+            orgDisplayCommand += ' --targetusername ' + orgAlias;
         }
         const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {fail: false});
         if (
