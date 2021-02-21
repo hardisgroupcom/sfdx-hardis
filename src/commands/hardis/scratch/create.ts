@@ -3,6 +3,7 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
+import { assert } from 'console';
 import * as EmailValidator from 'email-validator';
 import * as fs from 'fs-extra';
 import * as glob from 'glob-promise';
@@ -149,7 +150,10 @@ export default class ScratchCreate extends SfdxCommand {
             `--setalias ${this.scratchOrgAlias} ` +
             `--targetdevhubusername ${this.devHubAlias} ` +
             `-d ${this.scratchOrgDuration}`;
-        const createResult = await execSfdxJson(createCommand, this, { fail: true, output: true, debug: this.debugMode });
+        const createResult = await execSfdxJson(createCommand, this, { fail: false, output: false, debug: this.debugMode });
+        assert(createResult.status === 0,
+            c.red(`[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold('sfdx hardis:scratch:create --forcenew'))} ?\n${JSON.stringify(createResult, null, 2)}`)
+        );
         this.scratchOrgInfo = createResult.result;
         this.scratchOrgUsername = this.scratchOrgInfo.username;
         await setConfig('user', {
