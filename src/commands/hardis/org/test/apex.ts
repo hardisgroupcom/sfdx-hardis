@@ -1,4 +1,3 @@
-/* jscpd:ignore-start */
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -44,8 +43,6 @@ export default class OrgTestApex extends SfdxCommand {
   // protected static requiresProject = true;
 
   protected configInfo: any = {};
-
-  /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const check = this.flags.check || false;
