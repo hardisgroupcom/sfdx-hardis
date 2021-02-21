@@ -2,7 +2,6 @@ import * as c from 'chalk';
 import * as child from 'child_process';
 import * as csvStringify from 'csv-stringify/lib/sync';
 import * as fs from 'fs-extra';
-import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
