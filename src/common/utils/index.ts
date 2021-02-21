@@ -350,10 +350,11 @@ export function uxLog(commandThis: any, text: string) {
 }
 
 // Caching methods
-const SFDX_LOCAL_FOLDER = '/root/.sfdx';
-const TMP_COPY_FOLDER = 'tmp/sfdx-hardis-local';
+const SFDX_LOCAL_FOLDER = '~/root/.sfdx';
+const TMP_COPY_FOLDER = './tmp/sfdx-hardis-local';
 let RESTORED = false;
 
+// Put local sfdx folder in tmp/sfdx-hardis-local for CI tools needing cache/artifacts to be within repo dir
 export async function copyLocalSfdxInfo() {
   if (!process.env.CI) {
     return;
@@ -365,8 +366,9 @@ export async function copyLocalSfdxInfo() {
   }
 }
 
+// Restore only once local Sfdx folder
 export async function restoreLocalSfdxInfo() {
-  if (!process.env.CI || RESTORED) {
+  if ((!process.env.CI) || RESTORED === true) {
     return;
   }
   if (fs.existsSync(TMP_COPY_FOLDER)) {
