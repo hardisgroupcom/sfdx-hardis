@@ -1,6 +1,6 @@
 import * as changedGitFiles from 'changed-git-files';
 import { IncomingWebhook } from 'ms-teams-webhook';
-import { isGitRepo } from '../../common/utils';
+import { copyLocalSfdxInfo, isGitRepo } from '../../common/utils';
 import { getConfig } from '../../config';
 
 export const hook = async (options: any) => {
@@ -9,6 +9,10 @@ export const hook = async (options: any) => {
     if (!commandId.startsWith('hardis')) {
         return;
     }
+
+    // Copy local SFDX info for CI
+    await copyLocalSfdxInfo();
+
     // Send hook to microsoft ?teams if MS_TEAMS_WEBHOOK_URL env var is set, or msTeamsWebhookUrl in config
     const config = await getConfig('user');
     const msTeamsWebhookUrl = process.env.MS_TEAMS_WEBHOOK_URL || config.msTeamsWebhookUrl ;

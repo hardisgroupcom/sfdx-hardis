@@ -348,3 +348,29 @@ export function uxLog(commandThis: any, text: string) {
     console.log(text);
   }
 }
+
+export async function copyLocalSfdxInfo() {
+  if (!process.env.CI) {
+    return;
+  }
+  const sfdxLocalFolder = '/root/.sfdx';
+  const tmpCopyFolder = '/tmp/hardis-sfdx-local';
+  if (fs.existsSync(sfdxLocalFolder)) {
+    await fs.copy(sfdxLocalFolder, tmpCopyFolder, { overwrite: true });
+  }
+}
+
+let RESTORED = false;
+
+export async function restoreLocalSfdxInfo() {
+  if (!process.env.CI || RESTORED) {
+    return;
+  }
+  const sfdxLocalFolder = '/root/.sfdx';
+  const tmpCopyFolder = '/tmp/hardis-sfdx-local';
+  if (fs.existsSync(tmpCopyFolder)) {
+    await fs.copy(tmpCopyFolder, sfdxLocalFolder, { overwrite: false });
+    uxLog(this, 'Restored cache for CI');
+    RESTORED = true;
+  }
+}

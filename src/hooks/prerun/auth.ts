@@ -3,7 +3,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
 import { checkConfig, getConfig } from '../../config';
 
 export const hook = async (options: any) => {
@@ -16,6 +16,7 @@ export const hook = async (options: any) => {
     if (typeof global.it === 'function') {
         return;
     }
+    await restoreLocalSfdxInfo();
     let configInfo = await getConfig('user');
     // Manage authentication if DevHub is required but current user is disconnected
     if (
