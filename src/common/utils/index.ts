@@ -364,7 +364,7 @@ export async function copyLocalSfdxInfo() {
     await fs.copy(SFDX_LOCAL_FOLDER, TMP_COPY_FOLDER, { dereference: true , overwrite: true });
     uxLog(this, `[cache] Copied sfdx cache in ${TMP_COPY_FOLDER} for later reuse`);
     const files = fs.readdirSync(TMP_COPY_FOLDER, {withFileTypes: true}).map(item => item.name);
-    uxLog(this,'[cache]'+ JSON.stringify(files));
+    uxLog(this, '[cache]' + JSON.stringify(files));
   }
 }
 
@@ -377,7 +377,7 @@ export async function restoreLocalSfdxInfo() {
     await fs.copy(TMP_COPY_FOLDER, SFDX_LOCAL_FOLDER, { dereference: true, overwrite: false });
     uxLog(this, '[cache] Restored cache for CI');
     const files = fs.readdirSync(SFDX_LOCAL_FOLDER, {withFileTypes: true}).map(item => item.name);
-    uxLog(this,'[cache]'+ JSON.stringify(files));
+    uxLog(this, '[cache]' + JSON.stringify(files));
     RESTORED = true;
   }
 }
