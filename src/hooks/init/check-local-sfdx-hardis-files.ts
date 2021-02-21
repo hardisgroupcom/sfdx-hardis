@@ -92,6 +92,7 @@ async function getSfdxHardisPackageJsonContent() {
 
 async function getHardisGitRepoIgnoreContent() {
     const gitIgnoreContent = [
+        '.cache/',
         'config/user/',
         'hardis-report/',
         'tmp/'
