@@ -84,7 +84,7 @@ export default class ScratchCreate extends SfdxCommand {
         this.configInfo = await getConfig('user');
         this.gitBranch = await getCurrentGitBranch({ formatted: true });
         this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || this.configInfo.scratchOrgAlias ||
-            os.userInfo().username + '-' + this.gitBranch.replace('/', '-') + moment().format('YYYY-MM-DD_hh-mm');
+            os.userInfo().username + '-' + this.gitBranch.replace('/', '-') + '_' + moment().format('YYYY-MM-DD_hh-mm');
         if (process.env.CI && !this.scratchOrgAlias.startsWith('CI-')) {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
         }
@@ -157,7 +157,7 @@ export default class ScratchCreate extends SfdxCommand {
             }
         } else {
             // Open scratch org for user if not in CI
-            await execSfdxJson('sfdx force:org:open', this, {fail: true, output: false, debug: this.debugMode});
+            await execSfdxJson('sfdx force:org:open', this, { fail: true, output: false, debug: this.debugMode });
         }
         this.ux.log(`[sfdx-hardis] Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`);
     }

@@ -93,7 +93,7 @@ async function authOrg(orgAlias: string, options: any) {
             const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
             console.error(c.red(`[sfdx-hardis][ERROR] You may have to define ${c.bold(isDevHub ?
                 'devHubUsername in .sfdx-hardis.yml' : (options.scratch) ?
-                    'cache between your CI jobs (.sfdx  and config/user/)' :
+                    'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"' :
                     `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
             process.exit(1);
         }
