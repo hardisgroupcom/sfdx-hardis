@@ -162,23 +162,10 @@ export default class ScratchCreate extends SfdxCommand {
         this.ux.log(`[sfdx-hardis] Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`);
     }
 
-    // Install managed packages
+    // Install packages
     public async installPackages() {
         const packages = this.configInfo.installedPackages || [];
-        const alreadyInstalled = await MetadataUtils.listInstalledPackages(null, this);
-        for (const package1 of packages) {
-            if (alreadyInstalled.filter((installedPackage: any) =>
-                package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
-                this.ux.log(`[sfdx-hardis] Installing package ${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`);
-                if (package1.SubscriberPackageVersionId == null) {
-                    throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
-                }
-                const packageInstallCommand = `sfdx force:package:install --package ${package1.SubscriberPackageVersionId} -u ${this.scratchOrgAlias} --noprompt --securitytype AllUsers -w 60`;
-                await execCommand(packageInstallCommand, this, { fail: true, output: true });
-            } else {
-                this.ux.log(`[sfdx-hardis] Skip installation of ${package1.SubscriberPackageName} as it is already installed`);
-            }
-        }
+        await MetadataUtils.installPackagesOnOrg(packages, this.scratchOrgAlias, this);
     }
 
     // Push or deploy metadatas to the scratch org

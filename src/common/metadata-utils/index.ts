@@ -1,10 +1,12 @@
+import { SfdxError } from '@salesforce/core';
+import * as c from 'chalk';
 import * as child from 'child_process';
 import * as extractZip from 'extract-zip';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as sfdx from 'sfdx-node';
 import * as util from 'util';
-import { execSfdxJson, filterPackageXml, uxLog } from '../../common/utils';
+import { execCommand, execSfdxJson, filterPackageXml, uxLog } from '../../common/utils';
 import { CONSTANTS } from '../../config';
 const exec = util.promisify(child.exec);
 
@@ -149,8 +151,34 @@ class MetadataUtils {
 
   // List installed packages on a org
   public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
-    const alreadyInstalled = await execSfdxJson('sfdx force:package:installed:list', commandThis, { fail: true });
+    let listCommand = 'sfdx force:package:installed:list';
+    if (orgAlias != null) {
+      listCommand += ` -u ${orgAlias}`;
+    }
+    const alreadyInstalled = await execSfdxJson(listCommand, commandThis, { fail: true });
     return alreadyInstalled?.result || [];
+  }
+
+  // Install package on existing org
+  public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null) {
+    const alreadyInstalled = await MetadataUtils.listInstalledPackages(null, this);
+    for (const package1 of packages) {
+      if (alreadyInstalled.filter((installedPackage: any) =>
+        package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
+        uxLog(commandThis, `Installing package ${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`);
+        if (package1.SubscriberPackageVersionId == null) {
+          throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
+        }
+        const securityType = package1.SecurityType || 'AllUsers' ;
+        let packageInstallCommand = `sfdx force:package:install --package ${package1.SubscriberPackageVersionId} --noprompt --securitytype ${securityType} -w 60`;
+        if (orgAlias != null) {
+          packageInstallCommand += ` -u ${orgAlias}`;
+        }
+        await execCommand(packageInstallCommand, this, { fail: true, output: true });
+      } else {
+        uxLog(commandThis, `Skip installation of ${package1.SubscriberPackageName} as it is already installed`);
+      }
+    }
   }
 
   // Retrieve metadatas from a package.xml

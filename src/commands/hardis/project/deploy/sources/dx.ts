@@ -6,6 +6,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
+import { MetadataUtils } from '../../../../../common/metadata-utils';
 import { execCommand } from '../../../../../common/utils';
 import { CONSTANTS, getConfig } from '../../../../../config';
 
@@ -60,6 +61,12 @@ export default class DxSources extends SfdxCommand {
     const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debug = this.flags.debug || false;
 
+    this.configInfo = await getConfig('branch');
+
+    // Install packages
+    const packages = this.configInfo.installedPackages || [];
+    await MetadataUtils.installPackagesOnOrg(packages, null, this);
+
     // Deploy destructive changes
     const packageDeletedXmlFile =
       process.env.PACKAGE_XML_TO_DELETE ||
@@ -98,7 +105,6 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Deploy sources
-    this.configInfo = await getConfig('branch');
     const packageXmlFile =
       process.env.PACKAGE_XML_TO_DEPLOY ||
       this.configInfo.packageXmlToDeploy ||
