@@ -76,7 +76,7 @@ async function authOrg(orgAlias: string, options: any) {
         ) {
             // Set as default username or devhubusername
             const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgInfoResult.result.username}`;
-            await execCommand(setDefaultUsernameCommand, this, {});
+            await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
             doConnect = false;
             console.log(
                 `[sfdx-hardis] You are already ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`

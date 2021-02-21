@@ -46,7 +46,7 @@ async function managePackageJson(commandId: string) {
 }
 
 async function manageGitIgnore(commandId: string) {
-    if (!commandId.startsWith('hardis:scratch')) {
+    if (!commandId.startsWith('hardis')) {
         return;
     }
     const gitIgnoreFile = './.gitignore';
@@ -67,7 +67,7 @@ async function manageGitIgnore(commandId: string) {
                 initial: true,
                 message: 'Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
             });
-            if (confirm.value === true) {
+            if (confirm.value === true || isCI) {
                 await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');
                 console.log(c.cyan('[sfdx-hardis] Updated .gitignore'));
             }
