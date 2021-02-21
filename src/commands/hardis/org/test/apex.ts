@@ -59,7 +59,7 @@ export default class OrgTestApex extends SfdxCommand {
       ` --testlevel ${testlevel}` +
       (check ? ' --checkonly' : '') +
       (debug ? ' --verbose' : '') ;
-    const testRes = await execSfdxJson(testCommand, this, {output: true, debug, fail: false});
+    const testRes = await execSfdxJson(testCommand, this, {output: true, debug, fail: true});
     let message = '';
     if (testRes.status === 0) {
       message = '[sfdx-hardis] Successfully tested orgs';
