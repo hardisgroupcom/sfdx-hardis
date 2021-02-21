@@ -147,13 +147,17 @@ export default class ScratchCreate extends SfdxCommand {
         });
 
         if (process.env.CI) {
+            // Try to store sfdxAuthUrl for scratch org reuse during CI
             const displayOrgCommand = `sfdx force:org:display -u ${this.scratchOrgAlias} --verbose`;
-            const displayResult = await execSfdxJson(displayOrgCommand, this, {fail: true, output: false, debug: this.debugMode});
-            await setConfig('user', {
-                scratchOrgAuthUrl: displayResult.sfdxAuthUrl
-            });
+            const displayResult = await execSfdxJson(displayOrgCommand, this, { fail: true, output: false, debug: this.debugMode });
+            if (displayResult.sfdxAuthUrl) {
+                await setConfig('user', {
+                    scratchOrgAuthUrl: displayResult.sfdxAuthUrl
+                });
+            }
         } else {
-            await execSfdxJson('sfdx force:org:open', this);
+            // Open scratch org for user if not in CI
+            await execSfdxJson('sfdx force:org:open', this, {fail: true, output: false, debug: this.debugMode});
         }
         this.ux.log(`[sfdx-hardis] Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`);
     }

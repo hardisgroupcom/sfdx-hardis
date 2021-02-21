@@ -349,27 +349,28 @@ export function uxLog(commandThis: any, text: string) {
   }
 }
 
+// Caching methods
+const SFDX_LOCAL_FOLDER = '/root/.sfdx';
+const TMP_COPY_FOLDER = 'tmp/sfdx-hardis-local';
+let RESTORED = false;
+
 export async function copyLocalSfdxInfo() {
   if (!process.env.CI) {
     return;
   }
-  const sfdxLocalFolder = '/root/.sfdx';
-  const tmpCopyFolder = '/tmp/hardis-sfdx-local';
-  if (fs.existsSync(sfdxLocalFolder)) {
-    await fs.copy(sfdxLocalFolder, tmpCopyFolder, { overwrite: true });
+  if (fs.existsSync(SFDX_LOCAL_FOLDER)) {
+    await fs.ensureDir(path.dirname(TMP_COPY_FOLDER));
+    await fs.copy(SFDX_LOCAL_FOLDER, TMP_COPY_FOLDER, { overwrite: true });
+    uxLog(this, '[cache] Copied sfdx cache for later reuse');
   }
 }
-
-let RESTORED = false;
 
 export async function restoreLocalSfdxInfo() {
   if (!process.env.CI || RESTORED) {
     return;
   }
-  const sfdxLocalFolder = '/root/.sfdx';
-  const tmpCopyFolder = '/tmp/hardis-sfdx-local';
-  if (fs.existsSync(tmpCopyFolder)) {
-    await fs.copy(tmpCopyFolder, sfdxLocalFolder, { overwrite: false });
+  if (fs.existsSync(TMP_COPY_FOLDER)) {
+    await fs.copy(TMP_COPY_FOLDER, SFDX_LOCAL_FOLDER, { overwrite: false });
     uxLog(this, 'Restored cache for CI');
     RESTORED = true;
   }
