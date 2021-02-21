@@ -2,6 +2,7 @@ import Amplitude = require('@amplitude/node');
 import Debug from 'debug';
 import os = require('os');
 import path = require('path');
+import { isCI } from './utils';
 const debug = Debug('sfdx-essentials');
 
 /* analytics not implemented yet */
@@ -48,7 +49,7 @@ function buildEventPayload(eventType: string, data: any) {
     data.appVersion = pkgJson.version;
     data.osPlatform = os.platform();
     data.osRelease = os.release();
-    data.ci = process.env.CI ? true : false;
+    data.ci = isCI ? true : false;
     data.statsVersion = STATS_VERSION;
     data.command = eventType;
     return data;

@@ -11,6 +11,7 @@
   "failIfError": "Fails (exit code 1) if an error is found",
   "filteredMetadatas": "Comma separated list of Metadatas keys to remove from PackageXml file",
   "folder": "Folder",
+  "forceNewScratch": "If an existing scratch org exists, do not reuse it but create a new one",
   "instanceUrl": "URL of org instance",
   "loginToOrg": "Login to salesforce org",
   "minimumApiVersion": "Minimum allowed API version",

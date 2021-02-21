@@ -1,6 +1,7 @@
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as prompts from 'prompts';
+import { isCI } from '../../common/utils';
 
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis:scratch commands
@@ -22,7 +23,7 @@ async function managePackageJson(commandId: string) {
         const packageJson = JSON.parse(text);
         const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
         packageJson['scripts'] = Object.assign(packageJson['scripts'], hardisPackageJsonContent['scripts']);
-        if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text)) && !process.env.CI) {
+        if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text)) && !isCI) {
             const confirm = await prompts({
                 type: 'confirm',
                 name: 'value',
@@ -59,7 +60,7 @@ async function manageGitIgnore(commandId: string) {
                 updated = true;
             }
         }
-        if (updated && !process.env.CI) {
+        if (updated && !isCI) {
             const confirm = await prompts({
                 type: 'confirm',
                 name: 'value',

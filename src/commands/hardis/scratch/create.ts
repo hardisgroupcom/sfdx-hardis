@@ -11,7 +11,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
 import { MetadataUtils } from '../../../common/metadata-utils';
-import { execCommand, execSfdxJson, getCurrentGitBranch } from '../../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch, isCI } from '../../../common/utils';
 import { getConfig, setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -31,7 +31,11 @@ export default class ScratchCreate extends SfdxCommand {
     // public static args = [{name: 'file'}];
 
     protected static flagsConfig = {
-        // flag with a value (-n, --name=VALUE)
+        forcenew: flags.boolean({
+            char: 'n',
+            default: false,
+            description: messages.getMessage('forceNewScratch')
+        }),
         debug: flags.boolean({
             char: 'd',
             default: false,
@@ -47,6 +51,8 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
     protected static requiresProject = true;
+
+    protected forceNew = false;
 
     /* jscpd:ignore-end */
 
@@ -64,6 +70,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     public async run(): Promise<AnyJson> {
         this.debugMode = this.flags.debug || false;
+        this.forceNew = this.flags.forcenew || false;
 
         await this.initConfig();
         await this.createScratchOrg();
@@ -83,15 +90,16 @@ export default class ScratchCreate extends SfdxCommand {
     public async initConfig() {
         this.configInfo = await getConfig('user');
         this.gitBranch = await getCurrentGitBranch({ formatted: true });
-        this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || this.configInfo.scratchOrgAlias ||
+        this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS ||
+            ((!this.forceNew) ? this.configInfo.scratchOrgAlias : null) ||
             os.userInfo().username + '-' + this.gitBranch.replace('/', '-') + '_' + moment().format('YYYY-MM-DD_hh-mm');
-        if (process.env.CI && !this.scratchOrgAlias.startsWith('CI-')) {
+        if (isCI && !this.scratchOrgAlias.startsWith('CI-')) {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
         }
         this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;
         this.devHubAlias = process.env.DEVHUB_ALIAS || this.configInfo.devHubAlias;
 
-        this.scratchOrgDuration = process.env.SCRATCH_ORG_DURATION || (process.env.CI) ? 1 : 30;
+        this.scratchOrgDuration = process.env.SCRATCH_ORG_DURATION || (isCI) ? 1 : 30;
         this.userEmail = process.env.USER_EMAIL || process.env.GITLAB_USER_EMAIL || this.configInfo.userEmail;
 
         // If not found, prompt user email and store it in user config file
@@ -117,7 +125,7 @@ export default class ScratchCreate extends SfdxCommand {
                 org.status === 'Active';
         })) || [];
         // Reuse existing scratch org
-        if (matchingScratchOrgs?.length > 0) {
+        if (matchingScratchOrgs?.length > 0 && !this.forceNew) {
             this.scratchOrgInfo = matchingScratchOrgs[0];
             this.scratchOrgUsername = this.scratchOrgInfo.username;
             this.ux.log(`[sfdx-hardis] Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`);
@@ -149,7 +157,7 @@ export default class ScratchCreate extends SfdxCommand {
             scratchOrgUsername: this.scratchOrgUsername
         });
 
-        if (process.env.CI) {
+        if (isCI) {
             // Try to store sfdxAuthUrl for scratch org reuse during CI
             const displayOrgCommand = `sfdx force:org:display -u ${this.scratchOrgAlias} --verbose`;
             const displayResult = await execSfdxJson(displayOrgCommand, this, { fail: true, output: false, debug: this.debugMode });
@@ -173,7 +181,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Push or deploy metadatas to the scratch org
     public async initOrgMetadatas() {
-        if (process.env.CI) {
+        if (isCI) {
             // if CI, use force:source:deploy to make sure package.xml is consistent
             this.ux.log(`[sfdx-hardis] Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`);
             const deployCommand = `sfdx force:source:deploy -x ./config/package.xml -u ${this.scratchOrgAlias}`;

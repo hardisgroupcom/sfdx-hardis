@@ -3,7 +3,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { execCommand, execSfdxJson, getCurrentGitBranch, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
 import { checkConfig, getConfig } from '../../config';
 
 export const hook = async (options: any) => {
@@ -36,9 +36,9 @@ export const hook = async (options: any) => {
     ) {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :
-                (process.env.CI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
-                    (process.env.CI && options.scratch && configInfo.sfdxAuthUrl) ? configInfo.sfdxAuthUrl :
-                        (process.env.CI)
+                (isCI && configInfo.scratchOrgAlias) ? configInfo.scratchOrgAlias :
+                    (isCI && options.scratch && configInfo.sfdxAuthUrl) ? configInfo.sfdxAuthUrl :
+                        (isCI)
                             ? await getCurrentGitBranch({ formatted: true })
                             : (commandId === 'hardis:auth:login' && configInfo.orgAlias)
                                 ? configInfo.orgAlias :
@@ -86,14 +86,14 @@ async function authOrg(orgAlias: string, options: any) {
     // Perform authentication
     if (doConnect) {
         let logged = false;
-        const config = await getConfig('branch'); // User layer is used only for scratch orgs so don't use it in config here
+        const config = await getConfig('user');
         // Get auth variables, with priority CLI arguments, environment variables, then .hardis-sfdx.yml config file
         let username =
             typeof options.Command.flags?.targetusername === 'string'
                 ? options.Command.flags?.targetusername
                 : process.env.TARGET_USERNAME ||
                     (isDevHub) ? config.devHubUsername : config.targetUsername;
-        if (username == null && process.env.CI) {
+        if (username == null && isCI) {
             const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
             console.error(c.yellow(`[sfdx-hardis][WARNING] You may have to define ${c.bold(
                 isDevHub ?
@@ -138,13 +138,13 @@ async function authOrg(orgAlias: string, options: any) {
                 console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
                 process.exit(1);
             }
-        } else if (!process.env.CI) {
+        } else if (!isCI) {
             // Login with web auth
             const orgLabel = `org ${orgAlias}`;
             console.warn(
                 c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`)
             );
-            if (process.env.CI === 'true') {
+            if (isCI) {
                 throw new SfdxError(
                     `In CI context, you may define:
                 - a .sfdx-hardis.yml file with instanceUrl and targetUsername properties (or INSTANCE_URL and TARGET_USERNAME repo variables)
@@ -206,10 +206,10 @@ async function getSfdxClientId(orgAlias: string, config: any) {
         return process.env.SFDX_CLIENT_ID;
     }
     // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
-    if (!process.env.CI && config.devHubSfdxClientId) {
+    if (!isCI && config.devHubSfdxClientId) {
         return config.devHubSfdxClientId;
     }
-    if (process.env.CI) {
+    if (isCI) {
         console.error(
             c.red(`[sfdx-hardis] You must set env variable ${sfdxClientIdVarNameUpper} with the Consumer Key value defined on SFDX Connected app`)
         );
@@ -230,7 +230,7 @@ async function getCertificateKeyFile(orgAlias: string) {
             return file;
         }
     }
-    if (process.env.CI) {
+    if (isCI) {
         console.error(
             c.red(`[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join('\n  -')}`)
         );

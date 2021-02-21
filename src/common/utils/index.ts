@@ -17,6 +17,8 @@ if (isGitRepo()) {
 
 let pluginsStdout = null;
 
+export const isCI = process.env.CI != null;
+
 export function isGitRepo() {
   const isInsideWorkTree = child.spawnSync(
     'git',
@@ -356,7 +358,7 @@ let RESTORED = false;
 
 // Put local sfdx folder in tmp/sfdx-hardis-local for CI tools needing cache/artifacts to be within repo dir
 export async function copyLocalSfdxInfo() {
-  if (!process.env.CI) {
+  if (!isCI) {
     return;
   }
   if (fs.existsSync(SFDX_LOCAL_FOLDER)) {
@@ -370,7 +372,7 @@ export async function copyLocalSfdxInfo() {
 
 // Restore only once local Sfdx folder
 export async function restoreLocalSfdxInfo() {
-  if ((!process.env.CI) || RESTORED === true) {
+  if ((!isCI) || RESTORED === true) {
     return;
   }
   if (fs.existsSync(TMP_COPY_FOLDER)) {
