@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image
 
 - #30: Remove use of sfdx-node
+- New command **sfdx:project:deploy:sources:metadata**
 
 ## [1.2.0] 2021-02-21
 

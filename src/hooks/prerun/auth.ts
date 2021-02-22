@@ -142,8 +142,9 @@ async function authOrg(orgAlias: string, options: any) {
             // Login with web auth
             const orgLabel = `org ${orgAlias}`;
             console.warn(
-                c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`)
+                c.yellow(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser\nAdd ${c.bold('--sandbox')} to the command to use a sandbox`)
             );
+
             if (isCI) {
                 throw new SfdxError(
                     `In CI context, you may define:
@@ -201,7 +202,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
     }
     if (process.env.SFDX_CLIENT_ID) {
         console.warn(
-            c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define ${sfdxClientIdVarNameUpper} than SFDX_CLIENT_ID`)
+            c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define ${c.bold(sfdxClientIdVarNameUpper)} than SFDX_CLIENT_ID`)
         );
         return process.env.SFDX_CLIENT_ID;
     }
@@ -211,7 +212,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
     }
     if (isCI) {
         console.error(
-            c.red(`[sfdx-hardis] You must set env variable ${sfdxClientIdVarNameUpper} with the Consumer Key value defined on SFDX Connected app`)
+            c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientIdVarNameUpper)} with the Consumer Key value defined on SFDX Connected app`)
         );
     }
     return null;
