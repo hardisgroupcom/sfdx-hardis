@@ -8,6 +8,7 @@
   "createOrgShape": "Updates project-scratch-def.json from org shape",
   "debugMode": "Activate debug mode (more logs)",
   "deployDx": "Deploy SFDX project sources to org",
+  "deployMetadatas": "Deploy metadatas to source org",
   "failIfError": "Fails (exit code 1) if an error is found",
   "filteredMetadatas": "Comma separated list of Metadatas keys to remove from PackageXml file",
   "folder": "Folder",

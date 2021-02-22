@@ -3,8 +3,8 @@ import * as c from 'chalk';
 import * as child from 'child_process';
 import * as extractZip from 'extract-zip';
 import * as fs from 'fs-extra';
+import * as os from 'os';
 import * as path from 'path';
-import * as sfdx from 'sfdx-node';
 import * as util from 'util';
 import { execCommand, execSfdxJson, filterPackageXml, uxLog } from '../../common/utils';
 import { CONSTANTS } from '../../config';
@@ -223,15 +223,13 @@ class MetadataUtils {
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog(commandThis, `[sfdx-hardis] Retrieving metadatas in ${metadataFolder}...`);
-      const retrieveRes = await sfdx.mdapi.retrieve({
-        retrievetargetdir: metadataFolder,
-        unpackaged: packageXml,
-        wait: 60,
-        verbose: debug,
-        _quiet: !debug,
-        _rejectOnError: true
-      });
+      uxLog(commandThis, `[sfdx-hardis] Retrieving metadatas in ${c.green(metadataFolder)}...`);
+      const retrieveCommand = 'sfdx force:mdapi:retrieve' +
+      ` --retrievetargetdir ${metadataFolder}` +
+      ` --unpackaged ${packageXml}` +
+      ' --wait 60' +
+      ((debug) ? ' --verbose' : '');
+      const retrieveRes = await execSfdxJson(retrieveCommand, this, {output: false, fail: true, debug});
       if (debug) {
         uxLog(commandThis, retrieveRes);
       }
@@ -240,6 +238,38 @@ class MetadataUtils {
       await extractZip(path.join(metadataFolder, 'unpackaged.zip'), { dir: metadataFolder });
       await fs.unlink(path.join(metadataFolder, 'unpackaged.zip'));
     }
+  }
+
+  // Deploy destructive changes
+  public static async deployDestructiveChanges(packageDeletedXmlFile: string, options: any = {debug: false, check: false}, commandThis: any) {
+          // Create empty deployment file because of sfdx limitation
+      // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
+      uxLog(commandThis, `[sfdx-hardis] Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`);
+      const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString()));
+      await fs.ensureDir(tmpDir);
+      const emptyPackageXmlFile = path.join(tmpDir, 'package.xml');
+      await fs.writeFile(emptyPackageXmlFile,
+        `<?xml version="1.0" encoding="UTF-8"?>
+        <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+          <version>${CONSTANTS.API_VERSION}</version>
+        </Package>`, 'utf8');
+      await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
+      const deployDelete = `sfdx force:mdapi:deploy -d ${tmpDir}` +
+        ' --wait 60' +
+        ' --testlevel NoTestRun' +
+        ' --ignorewarnings' + // So it does not fail in case metadata is already deleted
+        (options.check ? ' --checkonly' : '') +
+        (options.debug ? ' --verbose' : '');
+      const deployDeleteRes = await execCommand(deployDelete, this, { output: true, debug: options.debug, fail: true });
+      await fs.remove(tmpDir);
+      let deleteMsg = '';
+      if (deployDeleteRes.status === 0) {
+        deleteMsg = '[sfdx-hardis] Successfully deployed destructive changes to Salesforce org';
+        uxLog(commandThis, c.green(deleteMsg));
+      } else {
+        deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';
+        uxLog(commandThis, c.red(deployDeleteRes.errorMessage));
+      }
   }
 
 }

@@ -45,13 +45,14 @@ export default class OrgTestApex extends SfdxCommand {
 
   protected configInfo: any = {};
 
+  /* jscpd:ignore-start */
   public async run(): Promise<AnyJson> {
     const check = this.flags.check || false;
     const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debugMode = this.flags.debug || false;
 
     this.configInfo = await getConfig('branch');
-
+    /* jscpd:ignore-end */
     await fs.ensureDir('./hardis-report');
     const testCommand = 'sfdx force:apex:test:run' +
       ' --codecoverage' +

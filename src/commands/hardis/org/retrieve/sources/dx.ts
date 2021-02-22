@@ -2,6 +2,7 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import * as c from 'chalk';
 import * as child from 'child_process';
 import * as fs from 'fs-extra';
 import * as os from 'os';
@@ -127,7 +128,7 @@ export default class DxSources extends SfdxCommand {
 
     // Converting metadatas to sfdx
     this.ux.log(
-      `[sfdx-hardis] Converting metadatas into SFDX sources in ${sfdxFolder}...`
+      `[sfdx-hardis] Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`
     );
     process.chdir(sfdxFolder);
     try {
@@ -147,9 +148,9 @@ export default class DxSources extends SfdxCommand {
 
     // Move sfdx sources in main folder
     this.ux.log(
-      `[sfdx-hardis] Moving temp files to main folder ${path.resolve(
+      `[sfdx-hardis] Moving temp files to main folder ${c.green(path.resolve(
         folder
-      )}...`
+      ))}...`
     );
     process.chdir(prevCwd);
     await fs.copy(sfdxFolder, path.resolve(folder));
@@ -157,9 +158,10 @@ export default class DxSources extends SfdxCommand {
     // Manage org shape if requested
     if (shapeFlag === true) {
       // Copy package.xml
-      const packageXmlInConfig = path.resolve(folder) + '/config/package.xml';
+      const packageXmlInConfig = path.resolve(folder) + '/manifest/package.xml'; // '/config/package.xml';
       if (!fs.existsSync(packageXmlInConfig)) {
-        this.ux.log(`[sfdx-hardis] Copying package.xml manifest ${packageXmlInConfig}...`);
+        await fs.ensureDir(path.dirname(packageXmlInConfig));
+        this.ux.log(`[sfdx-hardis] Copying package.xml manifest ${c.green(packageXmlInConfig)}...`);
         await fs.copy(packageXml, packageXmlInConfig);
       }
       // Store list of installed packages
@@ -169,7 +171,7 @@ export default class DxSources extends SfdxCommand {
       });
       // Try to get org shape
       const projectScratchDefFile = './config/project-scratch-def.json';
-      this.ux.log(`[sfdx-hardis] Getting org shape in ${path.resolve(projectScratchDefFile)}...`);
+      this.ux.log(`[sfdx-hardis] Getting org shape in ${c.green(path.resolve(projectScratchDefFile))}...`);
       const shapeFile = `${os.tmpdir()}/project-scratch-def.json`;
       try {
         await exec(
@@ -180,9 +182,9 @@ export default class DxSources extends SfdxCommand {
         const newShape = Object.assign(projectScratchDef, orgShape);
         await fs.writeFile(projectScratchDefFile, JSON.stringify(newShape, null, 2));
       } catch (e) {
-        this.ux.log('[sfdx-hardis][ERROR] Unable to create org shape');
-        this.ux.log('[sfdx-hardis] You need to manually update config/project-scratch-def.json');
-        this.ux.log('[sfdx-hardis] See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm');
+        this.ux.log(c.yellow('[sfdx-hardis][ERROR] Unable to create org shape'));
+        this.ux.log(c.yellow('[sfdx-hardis] You need to manually update config/project-scratch-def.json'));
+        this.ux.log(c.yellow('[sfdx-hardis] See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm'));
       }
     }
 
@@ -191,7 +193,7 @@ export default class DxSources extends SfdxCommand {
 
     // Set bac initial cwd
     const message = `[sfdx-hardis] Successfully retrieved sfdx project in ${folder}`;
-    this.ux.log(message);
+    this.ux.log(c.green(message));
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 }

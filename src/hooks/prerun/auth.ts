@@ -75,12 +75,12 @@ async function authOrg(orgAlias: string, options: any) {
                 (isDevHub && orgInfoResult.result.id != null))
         ) {
             // Set as default username or devhubusername
-            const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgInfoResult.result.username}`;
-            await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
-            doConnect = false;
             console.log(
                 `[sfdx-hardis] You are already ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`
             );
+            const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgInfoResult.result.username}`;
+            await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
+            doConnect = false;
         }
     }
     // Perform authentication
@@ -142,8 +142,9 @@ async function authOrg(orgAlias: string, options: any) {
             // Login with web auth
             const orgLabel = `org ${orgAlias}`;
             console.warn(
-                c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`)
+                c.yellow(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser\nAdd ${c.bold('--sandbox')} to the command to use a sandbox`)
             );
+
             if (isCI) {
                 throw new SfdxError(
                     `In CI context, you may define:
@@ -169,15 +170,9 @@ async function authOrg(orgAlias: string, options: any) {
             uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with username ${c.green(username)}`);
             // Display warning message in case of local usage (not CI), and not login command
             if (!(options?.Command?.id || '').startsWith('hardis:auth:login')) {
-                console.warn(
-                    c.yellow('*********************************************************************')
-                );
-                console.warn(
-                    c.yellow('*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***')
-                );
-                console.warn(
-                    c.yellow('*********************************************************************')
-                );
+                console.warn(c.yellow('*********************************************************************'));
+                console.warn(c.yellow('*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***'));
+                console.warn(c.yellow('*********************************************************************'));
             }
         } else {
             console.error(
@@ -201,7 +196,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
     }
     if (process.env.SFDX_CLIENT_ID) {
         console.warn(
-            c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define ${sfdxClientIdVarNameUpper} than SFDX_CLIENT_ID`)
+            c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define CI variable ${c.bold(sfdxClientIdVarNameUpper)} than SFDX_CLIENT_ID`)
         );
         return process.env.SFDX_CLIENT_ID;
     }
@@ -211,7 +206,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
     }
     if (isCI) {
         console.error(
-            c.red(`[sfdx-hardis] You must set env variable ${sfdxClientIdVarNameUpper} with the Consumer Key value defined on SFDX Connected app`)
+            c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientIdVarNameUpper)} with the Consumer Key value defined on SFDX Connected app`)
         );
     }
     return null;
