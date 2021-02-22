@@ -3,13 +3,8 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import * as c from 'chalk';
-import * as crossSpawn from 'cross-spawn';
-import * as fs from 'fs-extra';
-import * as os from 'os';
-import * as path from 'path';
 import * as prompts from 'prompts';
-import { execCommand } from '../../../../common/utils';
+import { generateSSLCertificate } from '../../../../common/utils';
 import { checkConfig, getConfig, setConfig, setInConfigFile } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -91,36 +86,11 @@ export default class ConfigureAuth extends SfdxCommand {
         }
 
         // Generate SSL certificate (requires openssl to be installed on computer)
-        this.ux.log('[sfdx-hardis] Generating SSL certificate');
-        const tmpDir = path.join(os.tmpdir(), 'sslTmp-') + Math.random().toString(36).slice(-5);
-        await fs.ensureDir(tmpDir);
-        const prevDir = process.cwd();
-        process.chdir(tmpDir);
-        const pwd = Math.random().toString(36).slice(-20);
-        await execCommand(`openssl genrsa -des3 -passout "pass:${pwd}" -out server.pass.key 2048`, this, { output: true, fail: true });
-        await execCommand(`openssl rsa -passin "pass:${pwd}" -in server.pass.key -out server.key`, this, { output: true, fail: true });
-        await fs.remove('server.pass.key');
-        this.ux.log('[sfdx-hardis] Now answer the following questions. The answers are not really important :)');
-        await new Promise((resolve, reject) => {
-            crossSpawn('openssl req -new -key server.key -out server.csr', [], { stdio: 'inherit' }).on('close', () => {
-                resolve(null);
-            });
-        });
-        await execCommand('openssl x509 -req -sha256 -days 365 -in server.csr -signkey server.key -out server.crt', this, { output: true, fail: true });
-        process.chdir(prevDir);
-        // Copy certificate key in local project
-        await fs.copy(path.join(tmpDir, 'server.key'),
-            (devHub) ?
-                `./config/.jwt/${config.devHubAlias}.key` :
-                `./config/branches/.jwt/${branchName}.key`);
-        // Copy certificate file in user home project
-        const crtFile = path.join(require('os').homedir(), (devHub) ? `${config.devHubAlias}.crt` : `${branchName}.crt`);
-        await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
-        await fs.remove(tmpDir);
-        this.ux.log('[sfdx-hardis] Now you can configure the sfdx connected app');
-        this.ux.log(`[sfdx-hardis] Follow instructions here: ${c.bold('https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm')}`);
-        this.ux.log(`[sfdx-hardis] Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
-        this.ux.log(`[sfdx-hardis] Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${((devHub) ? config.devHubAlias : branchName).toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
+        const certFolder = (devHub) ?
+            './config/.jwt' :
+            './config/branches/.jwt';
+        const certName = (devHub) ? config.devHubAlias : branchName;
+        await generateSSLCertificate(certName, certFolder, this);
         // Return an object to be displayed with --json
         return { outputString: 'Configured branch for authentication' };
     }

@@ -1,7 +1,9 @@
 import * as c from 'chalk';
 import * as child from 'child_process';
+import * as crossSpawn from 'cross-spawn';
 import * as csvStringify from 'csv-stringify/lib/sync';
 import * as fs from 'fs-extra';
+import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
@@ -382,4 +384,38 @@ export async function restoreLocalSfdxInfo() {
     // uxLog(this, '[cache]' + JSON.stringify(files));
     RESTORED = true;
   }
+}
+
+// Generate SSL certificate in temporary folder and copy the key in project directory
+export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any) {
+  uxLog(commandThis, '[sfdx-hardis] Generating SSL certificate');
+  const tmpDir = path.join(os.tmpdir(), 'sslTmp-') + Math.random().toString(36).slice(-5);
+  await fs.ensureDir(tmpDir);
+  const prevDir = process.cwd();
+  process.chdir(tmpDir);
+  const pwd = Math.random().toString(36).slice(-20);
+  await execCommand(`openssl genrsa -des3 -passout "pass:${pwd}" -out server.pass.key 2048`, this, { output: true, fail: true });
+  await execCommand(`openssl rsa -passin "pass:${pwd}" -in server.pass.key -out server.key`, this, { output: true, fail: true });
+  await fs.remove('server.pass.key');
+  uxLog(commandThis, '[sfdx-hardis] Now answer the following questions. The answers are not really important :)');
+  await new Promise((resolve, reject) => {
+      crossSpawn('openssl req -new -key server.key -out server.csr', [], { stdio: 'inherit' }).on('close', () => {
+          resolve(null);
+      });
+  });
+  await execCommand('openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt', this, { output: true, fail: true });
+  process.chdir(prevDir);
+  // Copy certificate key in local project
+  await fs.ensureDir(folder);
+  await fs.copy(path.join(tmpDir, 'server.key'), path.join(folder, `${branchName}.key`));
+  // Copy certificate file in user home project
+  const crtFile = path.join(require('os').homedir(), `${branchName}.crt`);
+  await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
+  // delete temporary cert folder
+  await fs.remove(tmpDir);
+  // user messages
+  uxLog(commandThis, '[sfdx-hardis] Now you can configure the sfdx connected app');
+  uxLog(commandThis, `[sfdx-hardis] Follow instructions here: ${c.bold('https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm')}`);
+  uxLog(commandThis, `[sfdx-hardis] Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
+  uxLog(commandThis, `[sfdx-hardis] Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
 }

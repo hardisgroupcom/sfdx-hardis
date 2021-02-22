@@ -1,0 +1,79 @@
+########################################################
+# Pipeline pour effectuer un backup régulier d'une org #
+########################################################
+
+# Configuration dans GitLab
+# Pour permettre au job de commit/push,
+
+# Definissez un access token dans Project -> Settings -> Access Token
+# - name: ACCESS_TOKEN
+# - scopes: read_repository et write_repository
+# - copiez le token généré dans le presse-papier (CTRL+C)
+
+# Definissez ensuite la variable ACCESS_TOKEN dans Project -> Settings -> CI / CD -> Variables
+# - name: ACCESS_TOKEN
+# - Cochez "Mask variable", décochez "Protected variable"
+
+# Vous pouvez suivre le bon déroulement du job dans Project -> CI/CD -> Pipelines
+
+# Vous pouvez planifier ce pipeline une ou plusieurs fois par jour dans Project -> CI/CD -> Schedules
+
+# Ce job ne sera pas lancé sur la branch master: les backups doivent être gérés sous des sous-branches de master
+
+# Un gitlab-runner doit être accessible pour traiter le job !
+
+# Ce fichier ne doit de préférence pas être modifié de façon à faciliter sa mise à jour
+# Pour personnaliser ce pipeline, modifiez le fichier .gitlab-ci-config.yml
+include: 
+- local: '.gitlab-ci-config.yml'
+
+variables:
+  FORCE_COLOR: '1'
+
+# Liste ordonnée des étapes du pipeline
+stages:
+  - purge
+  - backup
+
+# On execute les jobs sur l'image hardisgroupcom/sfdx-hardis qui contient les applications necessaires
+image: hardisgroupcom/sfdx-hardis:latest
+
+# Purge des versions de flows obsoletes
+purge_flow_versions:
+  stage: purge
+  # Important: si un job n'a pas le tag ubuntu (ou un autre dans le futur), aucun runner ne le traitera
+  tags:
+    - ubuntu
+  # Conditions d'execution
+  only:
+    variables:
+      - $PURGE == "true"
+      - $PURGE_FLOW_VERSIONS == "true"
+  except:
+    - master
+  script:
+    # On utilise sfdx-hardis pour purger les versions obsolètes de Flows
+    - sfdx hardis:auth:login
+    - sfdx hardis:org:purge:flow --no-prompt
+
+# BackUp des metadatas de l'org
+backup:
+  stage: backup
+  # Important: si un job n'a pas le tag ubuntu (ou un autre dans le futur), aucun runner ne le traitera
+  tags:
+    - ubuntu
+  # Conditions d'execution
+  except:
+      - master
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+  script:
+    # On utilise sfdx-hardis pour rapatrier les métadatas de l'org
+    - sfdx hardis:auth:login
+    - sfdx hardis:org:retrieve:sources:metadata --folder metadatas
+    # On upload le nouvel état des metadatas sur la même branche
+    - git status
+    - git add --all
+    - git commit -m "$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME org state on $(date -u +'%Y-%m-%d %H:%M') [skip ci]" || echo "No changes to commit"
+    - git push -o ci-skip http://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_COMMIT_REF_NAME

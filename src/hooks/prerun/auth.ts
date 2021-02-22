@@ -217,8 +217,9 @@ async function getCertificateKeyFile(orgAlias: string) {
     const filesToTry = [
         `./config/branches/.jwt/${orgAlias}.key`,
         `./config/.jwt/${orgAlias}.key`,
-        `./ssh/${orgAlias}.key`, // Legacy wrongly named but avoid to crash existing repos
-        './ssh/server.key' // Legacy wrongly named but avoid to crash existing repos
+        `./ssh/${orgAlias}.key`,
+        `./.ssh/${orgAlias}.key`,
+        './ssh/server.key'
     ];
     for (const file of filesToTry) {
         if (fs.existsSync(file)) {
