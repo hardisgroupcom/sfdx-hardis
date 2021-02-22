@@ -1,0 +1,4 @@
+# Vous pouvez personnaliser l'éxécution de votre pipeline ici
+variables:
+  PURGE: "false"  # Définir "true" pour activer les jobs de purge
+  PURGE_FLOW_VERSIONS: "false" # Définir "true" pour activer la purge des versions obsolètes de Flows
