@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image
 
+- #30: Remove use of sfdx-node
+
 ## [1.2.0] 2021-02-21
 
 - #24: Change the way of listing installed packages

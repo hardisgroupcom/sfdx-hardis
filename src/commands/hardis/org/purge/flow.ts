@@ -2,8 +2,9 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import * as c from 'chalk';
 import * as columnify from 'columnify';
-import * as sfdx from 'sfdx-node';
+import { execSfdxJson, uxLog } from '../../../../common/utils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -70,7 +71,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const statusFilter = (this.flags.status) ? this.flags.status.split(',') : ['Obsolete'];
     const nameFilter = this.flags.name || null;
     const allowPurgeFailure = (this.flags.allowpurgefailure === false) ? false : true;
-    const debug = this.flags.debug || false ;
+    const debugMode = this.flags.debug || false ;
 
     // Check we don't delete active Flows
     if (statusFilter.includes('Active')) {
@@ -90,23 +91,20 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const username = this.org.getUsername();
 
     // const flowQueryResult = await conn.query<Flow>(query,{ });
-    const flowQueryResult = await sfdx.data.soqlQuery({
-      query,
-      targetusername: username,
-      usetoolingapi: true,
-      _quiet: !debug,
-      _rejectOnError: true
-    });
+    const flowQueryCommand = 'sfdx data:soql:query ' +
+    ` --targetusername ${username}` +
+    ' --usetoolingapi';
+    const flowQueryRes  = await execSfdxJson(flowQueryCommand, this, {output: false, debug: debugMode, fail: true});
 
     // Check empty result
-    if (!flowQueryResult.records || flowQueryResult.records.length <= 0) {
+    if (!flowQueryRes.records || flowQueryRes.records.length <= 0) {
       const outputString = `[sfdx-hardis] No matching Flow records found with query ${query}`;
       this.ux.log(outputString);
       return { deleted: [] , outputString};
     }
 
     // Simplify results format & display them
-    const records = flowQueryResult.records.map(record => {
+    const records = flowQueryRes.records.map(record => {
       return { Id: record.Id, MasterLabel: record.MasterLabel, VersionNumber: record.VersionNumber,
          Description: record.Description, Status: record.Status };
     });
@@ -117,19 +115,18 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const deleteErrors = [];
     if (
       !prompt ||
-      await this.ux.confirm(`[sfdx-hardis] Are you sure you want to delete this list of records in ${this.org.getUsername()} (y/n)?`)
+      await this.ux.confirm(c.bold(`[sfdx-hardis] Are you sure you want to delete this list of records in ${c.green(this.org.getUsername())} (y/n)?`))
       ) {
         for (const record of records) {
-          const deleteResult = await sfdx.data.recordDelete({
-            sobjecttype: 'Flow',
-            sobjectid: record.Id,
-            targetusername: username,
-            usetoolingapi: true,
-            _quiet: debug
-          });
-          if ((deleteResult && deleteResult.success !== true) || deleteResult == null) {
-            this.ux.error(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteResult || {})}`);
-            deleteErrors.push(deleteResult);
+          const deleteCommand = 'sfdx data:record:delete' +
+          ' --sobjecttype Flow' +
+          ` --sobjectid ${record.Id}` +
+          ` --targetusername ${username}` +
+          ' --usetoolingapi';
+          const deleteRes = await execSfdxJson(deleteCommand, this, { fail: false, output: false, debug: debugMode});
+          if (!(deleteRes.status === 0)) {
+            this.ux.error(c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
+            deleteErrors.push(deleteRes);
           }
           deleted.push(record);
         }
@@ -138,14 +135,14 @@ export default class OrgPurgeFlow extends SfdxCommand {
     if (deleteErrors.length > 0) {
       const errMsg = `[sfdx-hardis] There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`;
       if (allowPurgeFailure) {
-        console.warn(errMsg);
+        uxLog(this, c.yellow(errMsg));
       } else {
-        throw new SfdxError(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`);
+        throw new SfdxError(c.yellow(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`));
       }
     }
 
-    const summary = (deleted.length > 0) ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : '[sfdx-hardis] No record deleted';
-    this.ux.log(summary);
+    const summary = (deleted.length > 0) ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : '[sfdx-hardis] No record to delete';
+    this.ux.log(c.green(summary));
     // Return an object to be displayed with --json
     return { orgId: this.org.getOrgId(), outputString: summary };
   }

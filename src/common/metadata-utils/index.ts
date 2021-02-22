@@ -4,7 +4,6 @@ import * as child from 'child_process';
 import * as extractZip from 'extract-zip';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as sfdx from 'sfdx-node';
 import * as util from 'util';
 import { execCommand, execSfdxJson, filterPackageXml, uxLog } from '../../common/utils';
 import { CONSTANTS } from '../../config';
@@ -223,15 +222,13 @@ class MetadataUtils {
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog(commandThis, `[sfdx-hardis] Retrieving metadatas in ${metadataFolder}...`);
-      const retrieveRes = await sfdx.mdapi.retrieve({
-        retrievetargetdir: metadataFolder,
-        unpackaged: packageXml,
-        wait: 60,
-        verbose: debug,
-        _quiet: !debug,
-        _rejectOnError: true
-      });
+      uxLog(commandThis, `[sfdx-hardis] Retrieving metadatas in ${c.green(metadataFolder)}...`);
+      const retrieveCommand = 'sfdx mdapi:retrieve' +
+      ` --retrievetargetdir ${metadataFolder}` +
+      ` --unpackaged ${packageXml}` +
+      ' --wait 60' +
+      ((debug) ? ' --verbose' : '');
+      const retrieveRes = await execSfdxJson(retrieveCommand, this, {output: false, fail: true, debug});
       if (debug) {
         uxLog(commandThis, retrieveRes);
       }
