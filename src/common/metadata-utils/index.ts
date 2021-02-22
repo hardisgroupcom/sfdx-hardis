@@ -223,7 +223,7 @@ class MetadataUtils {
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
       uxLog(commandThis, `[sfdx-hardis] Retrieving metadatas in ${c.green(metadataFolder)}...`);
-      const retrieveCommand = 'sfdx mdapi:retrieve' +
+      const retrieveCommand = 'sfdx force:mdapi:retrieve' +
       ` --retrievetargetdir ${metadataFolder}` +
       ` --unpackaged ${packageXml}` +
       ' --wait 60' +

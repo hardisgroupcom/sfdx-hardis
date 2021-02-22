@@ -91,7 +91,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const username = this.org.getUsername();
 
     // const flowQueryResult = await conn.query<Flow>(query,{ });
-    const flowQueryCommand = 'sfdx data:soql:query ' +
+    const flowQueryCommand = 'sfdx force:data:soql:query ' +
     ` --targetusername ${username}` +
     ' --usetoolingapi';
     const flowQueryRes  = await execSfdxJson(flowQueryCommand, this, {output: false, debug: debugMode, fail: true});
@@ -108,7 +108,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
       return { Id: record.Id, MasterLabel: record.MasterLabel, VersionNumber: record.VersionNumber,
          Description: record.Description, Status: record.Status };
     });
-    this.ux.log(`[sfdx-hardis] Found ${records.length} records:\n${columnify(records)}`);
+    this.ux.log(`[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.grey(columnify(records))}`);
 
     // Perform deletion
     const deleted = [];
@@ -118,7 +118,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
       await this.ux.confirm(c.bold(`[sfdx-hardis] Are you sure you want to delete this list of records in ${c.green(this.org.getUsername())} (y/n)?`))
       ) {
         for (const record of records) {
-          const deleteCommand = 'sfdx data:record:delete' +
+          const deleteCommand = 'sfdx force:data:record:delete' +
           ' --sobjecttype Flow' +
           ` --sobjectid ${record.Id}` +
           ` --targetusername ${username}` +
