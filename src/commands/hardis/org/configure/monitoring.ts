@@ -105,7 +105,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
 
         // Update config file
         await setInConfigFile([], {
-            targetUsername: usernameMsTeamsResponse.value,
+            targetUsername: usernameMsTeamsResponse.username,
             instanceUrl,
             msTeamsWebhookUrl: (usernameMsTeamsResponse.teamsHook) ? usernameMsTeamsResponse.teamsHook : null
         }, './.sfdx-hardis.yml');
