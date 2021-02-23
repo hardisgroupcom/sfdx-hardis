@@ -108,7 +108,7 @@ export default class ScratchCreate extends SfdxCommand {
             const promptResponse = await prompts({
                 type: 'text',
                 name: 'value',
-                message: '[sfdx-hardis] Please input your email address',
+                message: c.cyanBright('Please input your email address'),
                 validate: (value: string) => EmailValidator.validate(value)
             });
             this.userEmail = promptResponse.value;

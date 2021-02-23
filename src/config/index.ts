@@ -122,7 +122,7 @@ export const checkConfig = async (options: any) => {
             const promptResponse = await prompts({
                 type: 'text',
                 name: 'value',
-                message: '[sfdx-hardis] Please input your project name without spaces or special characters (ex: MonClient)',
+                message: c.cyanBright('Please input your project name without spaces or special characters (ex: MonClient)'),
                 validate: (value: string) => !value.match(/^[0-9a-z]+$/) // check only alphanumeric
             });
             projectName = promptResponse.value;

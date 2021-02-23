@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image
 
+- Manage git clone & push for **sfdx:org:configure:monitoring**
+- Manage upload of connected app metadata for **sfdx:org:configure:monitoring**
+
 ## [1.3.0] 2021-02-23
 
 - #30: Remove use of sfdx-node

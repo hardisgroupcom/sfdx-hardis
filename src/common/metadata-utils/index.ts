@@ -169,7 +169,7 @@ class MetadataUtils {
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
         }
-        const securityType = package1.SecurityType || 'AllUsers' ;
+        const securityType = package1.SecurityType || 'AllUsers';
         let packageInstallCommand = `sfdx force:package:install --package ${package1.SubscriberPackageVersionId} --noprompt --securitytype ${securityType} -w 60`;
         if (orgAlias != null) {
           packageInstallCommand += ` -u ${orgAlias}`;
@@ -184,6 +184,9 @@ class MetadataUtils {
   // Retrieve metadatas from a package.xml
   public static async retrieveMetadatas(packageXml: string, metadataFolder: string, checkEmpty: boolean,
                                         filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
+
+    // Create output folder if not existing
+    await fs.ensureDir(metadataFolder);
 
     // Build package.xml for all org
     uxLog(commandThis, `[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
@@ -225,11 +228,11 @@ class MetadataUtils {
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
       uxLog(commandThis, `[sfdx-hardis] Retrieving metadatas in ${c.green(metadataFolder)}...`);
       const retrieveCommand = 'sfdx force:mdapi:retrieve' +
-      ` --retrievetargetdir ${metadataFolder}` +
-      ` --unpackaged ${packageXml}` +
-      ' --wait 60' +
-      ((debug) ? ' --verbose' : '');
-      const retrieveRes = await execSfdxJson(retrieveCommand, this, {output: false, fail: true, debug});
+        ` --retrievetargetdir ${metadataFolder}` +
+        ` --unpackaged ${packageXml}` +
+        ' --wait 60' +
+        ((debug) ? ' --verbose' : '');
+      const retrieveRes = await execSfdxJson(retrieveCommand, this, { output: false, fail: true, debug });
       if (debug) {
         uxLog(commandThis, retrieveRes);
       }
@@ -241,35 +244,54 @@ class MetadataUtils {
   }
 
   // Deploy destructive changes
-  public static async deployDestructiveChanges(packageDeletedXmlFile: string, options: any = {debug: false, check: false}, commandThis: any) {
-          // Create empty deployment file because of sfdx limitation
-      // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
-      uxLog(commandThis, `[sfdx-hardis] Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`);
-      const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString()));
-      await fs.ensureDir(tmpDir);
-      const emptyPackageXmlFile = path.join(tmpDir, 'package.xml');
-      await fs.writeFile(emptyPackageXmlFile,
-        `<?xml version="1.0" encoding="UTF-8"?>
+  public static async deployDestructiveChanges(packageDeletedXmlFile: string, options: any = { debug: false, check: false }, commandThis: any) {
+    // Create empty deployment file because of sfdx limitation
+    // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
+    uxLog(commandThis, `[sfdx-hardis] Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`);
+    const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString()));
+    await fs.ensureDir(tmpDir);
+    const emptyPackageXmlFile = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(emptyPackageXmlFile,
+      `<?xml version="1.0" encoding="UTF-8"?>
         <Package xmlns="http://soap.sforce.com/2006/04/metadata">
           <version>${CONSTANTS.API_VERSION}</version>
         </Package>`, 'utf8');
-      await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
-      const deployDelete = `sfdx force:mdapi:deploy -d ${tmpDir}` +
-        ' --wait 60' +
-        ' --testlevel NoTestRun' +
-        ' --ignorewarnings' + // So it does not fail in case metadata is already deleted
-        (options.check ? ' --checkonly' : '') +
-        (options.debug ? ' --verbose' : '');
-      const deployDeleteRes = await execCommand(deployDelete, this, { output: true, debug: options.debug, fail: true });
-      await fs.remove(tmpDir);
-      let deleteMsg = '';
-      if (deployDeleteRes.status === 0) {
-        deleteMsg = '[sfdx-hardis] Successfully deployed destructive changes to Salesforce org';
-        uxLog(commandThis, c.green(deleteMsg));
-      } else {
-        deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';
-        uxLog(commandThis, c.red(deployDeleteRes.errorMessage));
-      }
+    await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
+    const deployDelete = `sfdx force:mdapi:deploy -d ${tmpDir}` +
+      ' --wait 60' +
+      ' --testlevel NoTestRun' +
+      ' --ignorewarnings' + // So it does not fail in case metadata is already deleted
+      (options.check ? ' --checkonly' : '') +
+      (options.debug ? ' --verbose' : '');
+    const deployDeleteRes = await execCommand(deployDelete, this, { output: true, debug: options.debug, fail: true });
+    await fs.remove(tmpDir);
+    let deleteMsg = '';
+    if (deployDeleteRes.status === 0) {
+      deleteMsg = '[sfdx-hardis] Successfully deployed destructive changes to Salesforce org';
+      uxLog(commandThis, c.green(deleteMsg));
+    } else {
+      deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';
+      uxLog(commandThis, c.red(deployDeleteRes.errorMessage));
+    }
+  }
+
+  public static async deployMetadatas(options: any = {
+    deployDir: '.',
+    testlevel: 'RunLocalTests',
+    check: false,
+    debug: false
+  }) {
+    // Perform deployment
+    const deployCommand =
+      'sfdx force:mdapi:deploy' +
+      ` --deploydir ${options.deployDir || '.'}` +
+      ' --wait 60' +
+      ` --testlevel ${options.testlevel || 'RunLocalTests'}` +
+      ` --apiversion ${options.apiVersion || CONSTANTS.API_VERSION}` +
+      (options.check ? ' --checkonly' : '') +
+      (options.debug ? ' --verbose' : '');
+    const deployRes = await execCommand(deployCommand, this, { output: true, debug: options.debug, fail: true });
+    return deployRes;
   }
 
 }

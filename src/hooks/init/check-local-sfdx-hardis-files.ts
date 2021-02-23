@@ -28,7 +28,7 @@ async function managePackageJson(commandId: string) {
                 type: 'confirm',
                 name: 'value',
                 initial: true,
-                message: 'Your package.json is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
+                message: c.cyanBright('Your package.json is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)')
             });
             if (confirm.value === true) {
                 await fs.writeFile(packageJsonFile, JSON.stringify(packageJson, null, 2));
@@ -65,7 +65,7 @@ async function manageGitIgnore(commandId: string) {
                 type: 'confirm',
                 name: 'value',
                 initial: true,
-                message: 'Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
+                message: c.cyanBright('Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)')
             });
             if (confirm.value === true || isCI) {
                 await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');

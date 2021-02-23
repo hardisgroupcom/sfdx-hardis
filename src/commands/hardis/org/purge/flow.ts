@@ -66,10 +66,6 @@ export default class OrgPurgeFlow extends SfdxCommand {
       allowNo: true,
       description: messages.getMessage('allowPurgeFailure')
     }),
-    sandbox: flags.boolean({
-      default: false,
-      description: messages.getMessage('sandboxLogin')
-    }),
     instanceurl: flags.string({
       char: 'r',
       default: 'https://login.saleforce.com',
