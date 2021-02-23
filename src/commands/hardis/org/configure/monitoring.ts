@@ -129,7 +129,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         } else {
             uxLog(this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
         }
-
+        uxLog(this, c.greenBright('You may schedule monitoring to be automatically run every day. To do that, go in Project -> CI -> Schedules -> New schedule'));
         // Return an object to be displayed with --json
         return { outputString: 'Configured branch for authentication' };
     }
