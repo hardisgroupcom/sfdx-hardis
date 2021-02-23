@@ -75,7 +75,7 @@ export default class DxSources extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     const check = this.flags.check || false;
     const packageXml = this.flags.packagexml || null;
-    const filter = this.flags.filter || false ;
+    const filter = this.flags.filter || false;
     const destructivePackageXml = this.flags.destructivepackagexml || null;
     const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debugMode = this.flags.debug || false;
@@ -87,7 +87,7 @@ export default class DxSources extends SfdxCommand {
     // Install packages
     const packages = this.configInfo.installedPackages || [];
     if (packages.length > 0) {
-        await MetadataUtils.installPackagesOnOrg(packages, null, this);
+      await MetadataUtils.installPackagesOnOrg(packages, null, this);
     }
 
     const destructiveProcessed = false;
@@ -96,67 +96,59 @@ export default class DxSources extends SfdxCommand {
     // Deploy destructive changes
     const packageDeletedXmlFile =
       destructivePackageXml ||
-      process.env.PACKAGE_XML_TO_DELETE ||
-      this.configInfo.packageXmlToDelete ||
-      fs.existsSync('./manifest/destructiveChanges.xml')
+        process.env.PACKAGE_XML_TO_DELETE ||
+        this.configInfo.packageXmlToDelete ||
+        fs.existsSync('./manifest/destructiveChanges.xml')
         ? './manifest/destructiveChanges.xml'
         : fs.existsSync('./destructiveChanges.xml')
-        ? './destructiveChanges.xml'
-        : './config/destructiveChanges.xml';
+          ? './destructiveChanges.xml'
+          : './config/destructiveChanges.xml';
     if (fs.existsSync(packageDeletedXmlFile)) {
-        await MetadataUtils.deployDestructiveChanges(packageDeletedXmlFile, {debug: debugMode, check}, this);
+      await MetadataUtils.deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {
-      uxLog( this, 'No destructivePackage.Xml found so no destructive deployment has been performed' );
+      uxLog(this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
     }
 
     // Deploy sources
     const packageXmlFile =
       packageXml ||
-      process.env.PACKAGE_XML_TO_DEPLOY ||
-      this.configInfo.packageXmlToDeploy ||
-      fs.existsSync('./manifest/package.xml')
+        process.env.PACKAGE_XML_TO_DEPLOY ||
+        this.configInfo.packageXmlToDeploy ||
+        fs.existsSync('./manifest/package.xml')
         ? './manifest/package.xml'
         : fs.existsSync('./package.xml')
-        ? './package.xml'
-        : './config/package.xml';
+          ? './package.xml'
+          : './config/package.xml';
     if (fs.existsSync(packageXmlFile)) {
-        let deployDir = '.';
-        // Filter if necessary
-        if (filter) {
-            const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-deploy-') + Math.random().toString(36).slice(-5);
-            const filterCommand = 'sfdx essentials:metadata:filter-from-packagexml' +
-            ` -i ${deployDir}` +
-            ` -p ${packageXmlFile}` +
-            ` -o ${tmpDir}`;
-            deployDir = tmpDir ;
-            await execCommand(filterCommand, this, {
-                output: true,
-                debugMode,
-                fail: true
-              });
-        }
-        // Perform deployment
-        const deployCommand =
-        'sfdx force:mdapi:deploy' +
-        ` --deploydir ${deployDir}` +
-        ' --wait 60' +
-        ` --testlevel ${testlevel}` +
-        (check ? ' --checkonly' : '') +
-        (debugMode ? ' --verbose' : '');
-        const deployRes = await execCommand(deployCommand, this, {
-        output: true,
-        debugMode,
-        fail: true
+      let deployDir = '.';
+      // Filter if necessary
+      if (filter) {
+        const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-deploy-') + Math.random().toString(36).slice(-5);
+        const filterCommand = 'sfdx essentials:metadata:filter-from-packagexml' +
+          ` -i ${deployDir}` +
+          ` -p ${packageXmlFile}` +
+          ` -o ${tmpDir}`;
+        deployDir = tmpDir;
+        await execCommand(filterCommand, this, {
+          output: true,
+          debugMode,
+          fail: true
+        });
+      }
+      // Perform deployment
+      const deployRes = await MetadataUtils.deployMetadatas({
+        deployDir,
+        testlevel,
+        check,
+        debug: debugMode
       });
-        let message = '';
-        if (deployRes.status === 0) {
+      let message = '';
+      if (deployRes.status === 0) {
         deployProcessed = true;
-        message =
-          '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';
+        message = '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';
         this.ux.log(c.green(message));
       } else {
-        message =
-          '[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org';
+        message = '[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org';
         this.ux.log(c.red(deployRes.errorMessage));
       }
     } else {

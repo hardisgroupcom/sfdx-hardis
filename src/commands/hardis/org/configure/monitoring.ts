@@ -3,10 +3,11 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as prompts from 'prompts';
-import { generateSSLCertificate, getCurrentGitBranch, uxLog } from '../../../../common/utils';
+import { ensureGitBranch, ensureGitRepository, execCommand, generateSSLCertificate, getCurrentGitBranch, gitAddCommitPush, promptInstanceUrl, uxLog } from '../../../../common/utils';
 import { getConfig, setInConfigFile } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -18,7 +19,7 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgConfigureMonitoring extends SfdxCommand {
 
-    public static title = 'Configure org minotoring';
+    public static title = 'Configure org monitoring';
 
     public static description = 'Configure monitoring of an org';
 
@@ -31,7 +32,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     };
 
     // Comment this out if your command does not require an org username
-    protected static requiresUsername = false;
+    protected static requiresUsername = true;
 
     // Comment this out if your command does not support a hub org username
     protected static supportsDevhubUsername = false;
@@ -41,9 +42,27 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     /* jscpd:ignore-end */
 
     public async run(): Promise<AnyJson> {
+
+        // Clone repository if there is not
+        await ensureGitRepository({ clone: true });
+
         // Copying folder structure
         uxLog(this, 'Copying default files...');
-        await fs.copy(path.join(__dirname, '../../../../../defaults/monitoring', '.'), process.cwd(), {overwrite: false});
+        if (fs.existsSync('README.md') && fs.readFileSync('README.md', 'utf8').toString().split('\n').length < 5) {
+            // Remove default README if necessary
+            await fs.remove('README.md');
+        }
+        await fs.copy(path.join(__dirname, '../../../../../defaults/monitoring', '.'), process.cwd(), { overwrite: false });
+
+        const gitLabInfo =
+            `- If you're using GitLab, ACCESS_TOKEN must be defined in Project -> Settings -> Access Token
+    - name: ACCESS_TOKEN
+    - scopes: read_repository & write_repository
+    - Copy generated token in clipboard (CTRL+C)
+- Then define CI variable ACCESS_TOKEN in Project -> Settings -> CI / CD -> Variables
+    - name: ACCESS_TOKEN
+    - Select "Mask variable", unselect "Protected variable"`;
+        this.ux.log(c.whiteBright(c.italic(gitLabInfo)));
 
         const config = await getConfig('project');
         // Get branch name to configure
@@ -52,34 +71,43 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
             type: 'text',
             name: 'value',
             initial: currentBranch,
-            message: 'What is the name of the git branch you want to configure ? Exemples: developpement,recette,production'
+            message: c.cyanBright('What is the name of the git branch you want to configure ? Exemples: developpement,recette,production')
         });
         const branchName = branchResponse.value;
-        let instanceUrl = 'https://login.salesforce.com';
-        const orgTypeResponse = await prompts({
-            type: 'select',
-            name: 'value',
-            message: `Is the org that you will monitor in ${branchName} a sandbox or any other type of org ?`,
-            choices: [
-                { title: 'Sandbox', description: 'The org I want to deploy to is a sandbox', value: 'https://test.salesforce.com' },
-                { title: 'Other', description: 'The org I want to deploy to is NOT a sandbox', value: 'https://login.salesforce.com' }
-            ],
-            initial: (config.instanceUrl === instanceUrl) ? 1 : 0
-        });
-        instanceUrl = orgTypeResponse.value;
+
+        // Create and checkout branch if not existing
+        await ensureGitBranch(branchName);
+
+        // Ask to login again in case
+        if (currentBranch != null && branchName !== currentBranch && branchName !== 'master') {
+            await execCommand('sfdx auth:logout --noprompt || true', this, { fail: true });
+            uxLog(this, c.yellow('You need to login to new org, please run again the same command :)'));
+            process.exit(0);
+        }
+
+        // Request instanceUrl
+        const instanceUrl = await promptInstanceUrl();
 
         // Request username
-        const usernameResponse = await prompts({
-            type: 'text',
-            name: 'value',
-            message: 'What is the username you will use for sfdx in the org you want to monitor ? Exemple: admin.sfdx@myclient.com',
-            initial: config.targetUsername
-        });
+        const usernameMsTeamsResponse = await prompts([
+            {
+                type: 'text',
+                name: 'username',
+                message: c.cyanBright('What is the username you will use for sfdx in the org you want to monitor ? Exemple: admin.sfdx@myclient.com'),
+                initial: config.targetUsername
+            },
+            {
+                type: 'text',
+                name: 'teamsHook',
+                message: c.cyanBright('Do you want notifications of updates in orgs in a MsTeams channel ?\nIf yes:\n- Create the WebHook: https://docs.microsoft.com/fr-fr/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook#add-an-incoming-webhook-to-a-teams-channel\n- paste the hook Url here\nIf not, just hit ENTER')
+            }
+        ]);
 
         // Update config file
         await setInConfigFile([], {
-            targetUsername: usernameResponse.value,
-            instanceUrl
+            targetUsername: usernameMsTeamsResponse.username,
+            instanceUrl,
+            msTeamsWebhookUrl: (usernameMsTeamsResponse.teamsHook) ? usernameMsTeamsResponse.teamsHook : null
         }, './.sfdx-hardis.yml');
 
         // Generate SSL certificate (requires openssl to be installed on computer)
@@ -87,6 +115,21 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
 
         uxLog(this, 'You can customize monitoring updating .gitlab-ci-config.yml');
 
+        // Confirm & push on server
+        const confirmPush = await prompts({
+            type: 'confirm',
+            name: 'value',
+            initial: true,
+            message: c.cyanBright('Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)')
+        });
+
+        if (confirmPush.value === true) {
+            await gitAddCommitPush({ message: '[sfdx-hardis] Update monitoring configuration' });
+            uxLog(this, c.green('Your configuration for org monitoring is now ready :)'));
+        } else {
+            uxLog(this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
+        }
+        uxLog(this, c.greenBright('You may schedule monitoring to be automatically run every day. To do that, go in Project -> CI -> Schedules -> New schedule'));
         // Return an object to be displayed with --json
         return { outputString: 'Configured branch for authentication' };
     }

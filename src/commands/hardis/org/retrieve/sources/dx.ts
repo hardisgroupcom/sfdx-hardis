@@ -27,8 +27,7 @@ export default class DxSources extends SfdxCommand {
   public static description = messages.getMessage('retrieveDx');
 
   public static examples = [
-    '$ sfdx hardis:org:retrieve:sources:dx',
-    '$ sfdx hardis:org:retrieve:sources:dx --sandbox'
+    '$ sfdx hardis:org:retrieve:sources:dx'
   ];
 
   protected static flagsConfig = {
@@ -50,11 +49,6 @@ export default class DxSources extends SfdxCommand {
       char: 'o',
       default: false,
       description: messages.getMessage('createOrgShape')
-    }),
-    sandbox: flags.boolean({
-      char: 's',
-      default: false,
-      description: messages.getMessage('sandboxLogin')
     }),
     instanceurl: flags.string({
       char: 'r',

@@ -3,8 +3,9 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import * as c from 'chalk';
 import * as prompts from 'prompts';
-import { generateSSLCertificate } from '../../../../common/utils';
+import { generateSSLCertificate, promptInstanceUrl } from '../../../../common/utils';
 import { checkConfig, getConfig, setConfig, setInConfigFile } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -52,26 +53,16 @@ export default class ConfigureAuth extends SfdxCommand {
             const branchResponse = await prompts({
                 type: 'text',
                 name: 'value',
-                message: 'What is the name of the git branch you want to configure ? Exemples: developpement,recette,production'
+                message: c.cyanBright('What is the name of the git branch you want to configure ? Exemples: developpement,recette,production')
             });
             branchName = branchResponse.value;
-            const orgTypeResponse = await prompts({
-                type: 'select',
-                name: 'value',
-                message: `Is the org where you'll deploy ${branchName} a sandbox or another type of org ?`,
-                choices: [
-                    { title: 'Sandbox', description: 'The org I want to deploy to is a sandbox', value: 'https://test.salesforce.com' },
-                    { title: 'Other', description: 'The org I want to deploy to is NOT a sandbox', value: 'https://login.salesforce.com' }
-                ],
-                initial: 1
-            });
-            instanceUrl = orgTypeResponse.value;
+            instanceUrl = await promptInstanceUrl();
         }
         // Request username
         const usernameResponse = await prompts({
             type: 'text',
             name: 'value',
-            message: `What is the username you will use for sfdx in the org you want to ${(devHub) ? 'use as Dev Hub' : 'deploy to'} ? Exemple: admin.sfdx@myclient.com`
+            message: c.cyanBright(`What is the username you will use for sfdx in the org you want to ${(devHub) ? 'use as Dev Hub' : 'deploy to'} ? Exemple: admin.sfdx@myclient.com`)
         });
         if (devHub) {
             await setConfig('project', {

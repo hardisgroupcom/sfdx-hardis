@@ -5,21 +5,31 @@ import * as csvStringify from 'csv-stringify/lib/sync';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
+import * as prompts from 'prompts';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
 import { SfdxError } from '@salesforce/core';
 import simpleGit, { SimpleGit } from 'simple-git';
+import { CONSTANTS } from '../../config';
+import { MetadataUtils } from '../metadata-utils';
 
 let git: SimpleGit = null;
 
 if (isGitRepo()) {
-  git = simpleGit();
+  initSimpleGit();
 }
 
 let pluginsStdout = null;
 
 export const isCI = process.env.CI != null;
+
+function initSimpleGit() {
+  git = simpleGit().outputHandler((command, stdout, stderr) => {
+    stdout.pipe(process.stdout);
+    stderr.pipe(process.stderr);
+  });
+}
 
 export function isGitRepo() {
   const isInsideWorkTree = child.spawnSync(
@@ -51,15 +61,52 @@ export async function checkSfdxPlugin(
   };
 }
 
+export async function promptInstanceUrl() {
+  const orgTypeResponse = await prompts({
+    type: 'select',
+    name: 'value',
+    message: c.cyanBright('Is the org you need to connect a sandbox or another type of org (dev org, enterprise org...)'),
+    choices: [
+      { title: 'Sandbox', description: 'The org I want to connect is a sandbox', value: 'https://test.salesforce.com' },
+      { title: 'Other', description: 'The org I want to connect is not a sandbox', value: 'https://login.salesforce.com' }
+    ],
+    initial: 1
+  });
+  return orgTypeResponse.value;
+}
+
 // Check if we are in a repo, or create it if missing
-export async function checkGitRepository() {
+export async function ensureGitRepository(options: any = { init: false, clone: false, cloneUrl: null }) {
   if (!isGitRepo()) {
-    await exec('git init');
-    console.info(
-      c.yellow(
-        c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)
-      )
-    );
+    // Init repo
+    if (options.init) {
+      await exec('git init -b main');
+      initSimpleGit();
+      console.info(c.yellow(c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)));
+    } else if (options.clone) {
+      // Clone repo
+      let cloneUrl = options.cloneUrl;
+      if (!cloneUrl) {
+        // Request repo url if not provided
+        const cloneUrlPrompt = await prompts({
+          type: 'text',
+          name: 'value',
+          message: c.cyanBright('What is the URL of your git repository ? example: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git')
+        });
+        cloneUrl = cloneUrlPrompt.value;
+      }
+      // Git lcone
+      await new Promise((resolve, reject) => {
+        crossSpawn('git', ['clone', cloneUrl, '.'], { stdio: 'inherit' }).on('close', () => {
+          resolve(null);
+        });
+      });
+      uxLog(this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
+      initSimpleGit();
+      process.exit(0);
+    } else {
+      throw new SfdxError('Developer: please send init or clone as option');
+    }
   }
 }
 
@@ -76,6 +123,53 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   return gitBranch;
 }
 
+// Get local git branch name
+export async function ensureGitBranch(branchName: string, options: any = { init: false }) {
+  if (git == null) {
+    if (options.init) {
+      await ensureGitRepository({ init: true });
+    } else {
+      return false;
+    }
+  }
+  const branches = await git.branch();
+  const localBranches = await git.branchLocal();
+  if (localBranches.current !== branchName) {
+    if (branches.all.includes(branchName)) {
+      // Existing branch: checkout & pull
+      await git.checkout(branchName);
+      // await git.pull()
+    } else {
+      // Not existing branch: create it
+      await git.checkoutBranch(branchName, localBranches.current);
+    }
+  }
+  return true;
+}
+
+// Shortcut to add, commit and push
+export async function gitAddCommitPush(options: any = {
+  init: false,
+  pattern: './*',
+  commitMessage: 'Updated by sfdx-hardis',
+  branch: null
+}) {
+  if (git == null) {
+    if (options.init) {
+      // Initialize git repo
+      await execCommand('git init -b main', this);
+      initSimpleGit();
+      await git.checkoutBranch(options.branch || 'dev', 'main');
+    }
+  }
+  // Add, commit & push
+  const currentgitBranch = (await git.branchLocal()).current;
+  await git.add(options.pattern || './*')
+    .commit(options.commitMessage || 'Updated by sfdx-hardis')
+    .push(['-u', 'origin', currentgitBranch]);
+}
+
+// Execute salesforce DX command with --json
 export async function execSfdxJson(
   command: string,
   commandThis: any,
@@ -91,7 +185,7 @@ export async function execSfdxJson(
   return await execCommand(command, commandThis, options);
 }
 
-// Execute command and parse result as json
+// Execute command
 export async function execCommand(
   command: string,
   commandThis: any,
@@ -365,7 +459,7 @@ export async function copyLocalSfdxInfo() {
   }
   if (fs.existsSync(SFDX_LOCAL_FOLDER)) {
     await fs.ensureDir(path.dirname(TMP_COPY_FOLDER));
-    await fs.copy(SFDX_LOCAL_FOLDER, TMP_COPY_FOLDER, { dereference: true , overwrite: true });
+    await fs.copy(SFDX_LOCAL_FOLDER, TMP_COPY_FOLDER, { dereference: true, overwrite: true });
     // uxLog(this, `[cache] Copied sfdx cache in ${TMP_COPY_FOLDER} for later reuse`);
     // const files = fs.readdirSync(TMP_COPY_FOLDER, {withFileTypes: true}).map(item => item.name);
     // uxLog(this, '[cache]' + JSON.stringify(files));
@@ -399,9 +493,9 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   await fs.remove('server.pass.key');
   uxLog(commandThis, '[sfdx-hardis] Now answer the following questions. The answers are not really important :)');
   await new Promise((resolve, reject) => {
-      crossSpawn('openssl req -new -key server.key -out server.csr', [], { stdio: 'inherit' }).on('close', () => {
-          resolve(null);
-      });
+    crossSpawn('openssl req -new -key server.key -out server.csr', [], { stdio: 'inherit' }).on('close', () => {
+      resolve(null);
+    });
   });
   await execCommand('openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt', this, { output: true, fail: true });
   process.chdir(prevDir);
@@ -413,9 +507,106 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
   // delete temporary cert folder
   await fs.remove(tmpDir);
-  // user messages
-  uxLog(commandThis, '[sfdx-hardis] Now you can configure the sfdx connected app');
-  uxLog(commandThis, `[sfdx-hardis] Follow instructions here: ${c.bold('https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm')}`);
-  uxLog(commandThis, `[sfdx-hardis] Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
-  uxLog(commandThis, `[sfdx-hardis] Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
+  // Generate random consumer key for Connected app
+  const consumerKey = require('crypto').randomBytes(256).toString('base64').substr(0, 255);
+
+  // Ask user if he/she wants to create connected app
+  let deployError = false;
+  const confirmResponse = await prompts({
+    type: 'confirm',
+    name: 'value',
+    initial: true,
+    message: c.cyanBright('Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don\'t now)')
+  });
+  if (confirmResponse.value === true) {
+    uxLog(commandThis, c.cyanBright(`You must configure CI variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with value ${c.bold(c.green(consumerKey))}`));
+    await prompts({ type: 'confirm', message: c.cyanBright('In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done') });
+    // Request info for deployment
+    const promptResponses = await prompts([
+      {
+        type: 'text',
+        name: 'appName',
+        initial: 'sfdx_hardis',
+        message: c.cyanBright('How would you like to name the Connected App (ex: sfdx) ?')
+      },
+      {
+        type: 'text',
+        name: 'contactEmail',
+        message: c.cyanBright('Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)')
+      },
+      {
+        type: 'text',
+        name: 'profile',
+        initial: 'System Administrator',
+        message: c.cyanBright('What profile will be used for the connected app ? (ex: System Administrator)')
+      }
+    ]);
+    const crtContent = await fs.readFile(crtFile, 'utf8');
+
+    // Build ConnectedApp metadata
+    const connectedAppMetadata =
+      `<?xml version="1.0" encoding="UTF-8"?>
+<ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
+  <contactEmail>${promptResponses.contactEmail}</contactEmail>
+  <label>${promptResponses.appName || 'sfdx-hardis'}</label>
+  <oauthConfig>
+      <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
+      <certificate>${crtContent}</certificate>
+      <consumerKey>${consumerKey}</consumerKey>
+      <isAdminApproved>true</isAdminApproved>
+      <isConsumerSecretOptional>false</isConsumerSecretOptional>
+      <isIntrospectAllTokens>false</isIntrospectAllTokens>
+      <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
+      <scopes>Api</scopes>
+      <scopes>Web</scopes>
+      <scopes>RefreshToken</scopes>
+  </oauthConfig>
+  <oauthPolicy>
+      <ipRelaxation>ENFORCE</ipRelaxation>
+      <refreshTokenPolicy>infinite</refreshTokenPolicy>
+  </oauthPolicy>
+  <profileName>${promptResponses.profile || 'System Administrator'}</profileName>
+</ConnectedApp>
+`;
+    const packageXml =
+      `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+  <types>
+    <members>${promptResponses.appName}</members>
+    <name>ConnectedApp</name>
+  </types>
+  <version>${CONSTANTS.API_VERSION}</version>
+</Package>
+`;
+    // create metadata folder
+    const tmpDirMd = path.join(os.tmpdir(), 'sfdx-hardis-deploy' + Math.random().toString(36).slice(-8));
+    const connectedAppDir = path.join(tmpDirMd, 'connectedApps');
+    await fs.ensureDir(connectedAppDir);
+    await fs.writeFile(path.join(tmpDirMd, 'package.xml'), packageXml);
+    await fs.writeFile(path.join(connectedAppDir, `${promptResponses.appName}.connectedApp`), connectedAppMetadata);
+
+    // Deploy metadatas
+    try {
+      const deployRes = await MetadataUtils.deployMetadatas({
+        deployDir: tmpDirMd,
+        testlevel: 'NoTestRun'
+      });
+      console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
+
+      uxLog(commandThis, `Successfully deployed ${c.green(promptResponses.appName)} Connected App`);
+      await fs.remove(tmpDirMd);
+    } catch (e) {
+      deployError = true;
+    }
+  } else {
+    // Tell infos to install manually
+    uxLog(commandThis, '[sfdx-hardis] Now you can configure the sfdx connected app');
+    uxLog(commandThis, `[sfdx-hardis] Follow instructions here: ${c.bold('https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm')}`);
+    uxLog(commandThis, `[sfdx-hardis] Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
+    uxLog(commandThis, `[sfdx-hardis] Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
+  }
+
+  if (confirmResponse.value === true || deployError === true) {
+
+  }
 }

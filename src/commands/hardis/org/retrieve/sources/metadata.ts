@@ -5,7 +5,7 @@
   import * as fs from 'fs-extra';
   import * as path from 'path';
   import { MetadataUtils } from '../../../../../common/metadata-utils';
-  import { checkGitRepository, checkSfdxPlugin } from '../../../../../common/utils';
+  import { checkSfdxPlugin, ensureGitRepository } from '../../../../../common/utils';
 
   // Initialize Messages with the current plugin directory
   Messages.importMessagesDirectory(__dirname);
@@ -21,14 +21,12 @@
     public static description = messages.getMessage('retrieveDx');
 
     public static examples = [
-    '$ sfdx hardis:org:retrieve:sources:dx',
-    '$ sfdx hardis:org:retrieve:sources:dx --sandbox'
+    '$ sfdx hardis:org:retrieve:sources:metadata'
     ];
 
     protected static flagsConfig = {
       folder: flags.string({char: 'f', default: '.',  description: messages.getMessage('folder')}),
       packagexml: flags.string({char: 'p', description: messages.getMessage('packageXml')}),
-      sandbox: flags.boolean({ char: 's', default: false, description: messages.getMessage('sandboxLogin')}),
       instanceurl: flags.string({char: 'r', description: messages.getMessage('instanceUrl')}),
       debug: flags.boolean({char: 'd', default: false, description: messages.getMessage('debugMode')})
     };
@@ -50,7 +48,7 @@
       const debug = this.flags.debug || false ;
 
       // Check required pre-requisites
-      await checkGitRepository();
+      await ensureGitRepository({init: true});
       const powerkitRes = await checkSfdxPlugin('sfpowerkit');
       this.ux.log(powerkitRes.message);
 

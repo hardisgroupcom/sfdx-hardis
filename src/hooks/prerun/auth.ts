@@ -3,7 +3,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, promptInstanceUrl, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
 import { checkConfig, getConfig } from '../../config';
 
 export const hook = async (options: any) => {
@@ -78,6 +78,11 @@ async function authOrg(orgAlias: string, options: any) {
             console.log(
                 `[sfdx-hardis] You are already ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`
             );
+            if (!isCI) {
+                console.log(
+                    c.yellow(c.italic(`[sfdx-hardis] If this is NOT the org you want to play with, hit CTRL+C , then input ${c.grey(c.bold('sfdx auth:logout'))}`))
+                );
+            }
             const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgInfoResult.result.username}`;
             await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
             doConnect = false;
@@ -103,7 +108,7 @@ async function authOrg(orgAlias: string, options: any) {
                         `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`)} `));
             process.exit(1);
         }
-        const instanceUrl =
+        let instanceUrl =
             typeof options.Command?.flags?.instanceurl === 'string' &&
                 options.Command?.flags?.instanceurl?.startsWith('https')
                 ? options.Command.flags.instanceurl
@@ -111,10 +116,7 @@ async function authOrg(orgAlias: string, options: any) {
                     ? process.env.INSTANCE_URL
                     : config.instanceUrl
                         ? config.instanceUrl
-                        : (options.argv && options.argv.includes('--sandbox')) ||
-                            options.Command.flags.sandbox === true
-                            ? 'https://test.salesforce.com'
-                            : 'https://login.salesforce.com';
+                        : 'https://login.salesforce.com';
         // Get JWT items clientId and certificate key
         const sfdxClientId = await getSfdxClientId(orgAlias, config);
         const crtKeyfile = await getCertificateKeyFile(orgAlias);
@@ -142,7 +144,7 @@ async function authOrg(orgAlias: string, options: any) {
             // Login with web auth
             const orgLabel = `org ${orgAlias}`;
             console.warn(
-                c.yellow(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser\nAdd ${c.bold('--sandbox')} to the command to use a sandbox`)
+                c.yellow(c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`))
             );
 
             if (isCI) {
@@ -154,6 +156,8 @@ async function authOrg(orgAlias: string, options: any) {
                 `
                 );
             }
+            instanceUrl = await promptInstanceUrl();
+
             const loginResult = await execCommand(
                 'sfdx auth:web:login' +
                 ' --setdefaultusername' +
@@ -161,13 +165,15 @@ async function authOrg(orgAlias: string, options: any) {
                 ((isDevHub) ? ' --setdefaultdevhubusername' : '') +
                 ` --instanceurl ${instanceUrl}`
                 , this, { output: true, fail: true });
-            logged = loginResult?.instanceUrl != null;
-            username = loginResult?.username;
+            console.log(JSON.stringify(loginResult, null, 2));
+            logged = loginResult.status === 0;
+            username = loginResult?.username || 'your username';
+            instanceUrl = loginResult?.instanceUrl || instanceUrl;
         } else {
-            console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} using JWT. Please check your configuration`));
+            console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} with browser. Please try again :)`));
         }
         if (logged) {
-            uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with username ${c.green(username)}`);
+            uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
             // Display warning message in case of local usage (not CI), and not login command
             if (!(options?.Command?.id || '').startsWith('hardis:auth:login')) {
                 console.warn(c.yellow('*********************************************************************'));
