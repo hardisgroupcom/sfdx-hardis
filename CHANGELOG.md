@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image
 
+## [1.3.1] 2021-02-24
+
 - Manage git clone & push for **sfdx:org:configure:monitoring**
 - Manage upload of connected app metadata for **sfdx:org:configure:monitoring**
 
