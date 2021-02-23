@@ -44,7 +44,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     public async run(): Promise<AnyJson> {
 
         // Clone repository if there is not
-        await ensureGitRepository({clone: true});
+        await ensureGitRepository({ clone: true });
 
         // Copying folder structure
         uxLog(this, 'Copying default files...');
@@ -52,10 +52,10 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
             // Remove default README if necessary
             await fs.remove('README.md');
         }
-        await fs.copy(path.join(__dirname, '../../../../../defaults/monitoring', '.'), process.cwd(), {overwrite: false});
+        await fs.copy(path.join(__dirname, '../../../../../defaults/monitoring', '.'), process.cwd(), { overwrite: false });
 
         const gitLabInfo =
-`- If you're using GitLab, ACCESS_TOKEN must be defined in Project -> Settings -> Access Token
+            `- If you're using GitLab, ACCESS_TOKEN must be defined in Project -> Settings -> Access Token
     - name: ACCESS_TOKEN
     - scopes: read_repository & write_repository
     - Copy generated token in clipboard (CTRL+C)
@@ -80,7 +80,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
 
         // Ask to login again in case
         if (currentBranch != null && branchName !== currentBranch && branchName !== 'master') {
-            await execCommand('sfdx auth:logout --noprompt || true', this, {fail: true});
+            await execCommand('sfdx auth:logout --noprompt || true', this, { fail: true });
             uxLog(this, c.yellow('You need to login to new org, please run again the same command :)'));
             process.exit(0);
         }
@@ -89,17 +89,25 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         const instanceUrl = await promptInstanceUrl();
 
         // Request username
-        const usernameResponse = await prompts({
-            type: 'text',
-            name: 'value',
-            message: c.cyanBright('What is the username you will use for sfdx in the org you want to monitor ? Exemple: admin.sfdx@myclient.com'),
-            initial: config.targetUsername
-        });
+        const usernameMsTeamsResponse = await prompts([
+            {
+                type: 'text',
+                name: 'username',
+                message: c.cyanBright('What is the username you will use for sfdx in the org you want to monitor ? Exemple: admin.sfdx@myclient.com'),
+                initial: config.targetUsername
+            },
+            {
+                type: 'text',
+                name: 'teamsHook',
+                message: c.cyanBright('Do you want notifications of updates in orgs in a MsTeams channel ?\nIf yes:\n- Create the WebHook: https://docs.microsoft.com/fr-fr/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook#add-an-incoming-webhook-to-a-teams-channel\n- paste the hook Url here\nIf not, just hit ENTER')
+            }
+        ]);
 
         // Update config file
         await setInConfigFile([], {
-            targetUsername: usernameResponse.value,
-            instanceUrl
+            targetUsername: usernameMsTeamsResponse.value,
+            instanceUrl,
+            msTeamsWebhookUrl: (usernameMsTeamsResponse.teamsHook) ? usernameMsTeamsResponse.teamsHook : null
         }, './.sfdx-hardis.yml');
 
         // Generate SSL certificate (requires openssl to be installed on computer)
@@ -116,7 +124,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         });
 
         if (confirmPush.value === true) {
-            await gitAddCommitPush({message: '[sfdx-hardis] Update monitoring configuration'});
+            await gitAddCommitPush({ message: '[sfdx-hardis] Update monitoring configuration' });
             uxLog(this, c.green('Your configuration for org monitoring is now ready :)'));
         } else {
             uxLog(this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
