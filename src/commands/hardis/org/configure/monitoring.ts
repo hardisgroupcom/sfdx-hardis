@@ -55,15 +55,16 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         await fs.copy(path.join(__dirname, '../../../../../defaults/monitoring', '.'), process.cwd(), { overwrite: false });
 
         const gitLabInfo =
-            `- If you're using GitLab, ACCESS_TOKEN must be defined in Project -> Settings -> Access Token
-    - name: ACCESS_TOKEN
-    - scopes: read_repository & write_repository
+            `- If you're using GitLab, ACCESS_TOKEN must be defined in ${c.bold('Project -> Settings -> Access Token')}
+    - name: ${c.bold('ACCESS_TOKEN')}
+    - scopes: ${c.bold('read_repository, write_repository')}
     - Copy generated token in clipboard (CTRL+C)
-- Then define CI variable ACCESS_TOKEN in Project -> Settings -> CI / CD -> Variables
-    - name: ACCESS_TOKEN
+- Then define CI variable ACCESS_TOKEN in ${c.bold('Project -> Settings -> CI / CD -> Variables')}
+    - name: ${c.bold('ACCESS_TOKEN')}
+    - value: Paste token previously generated (CTRL+V)
     - Select "Mask variable", unselect "Protected variable"`;
-        this.ux.log(c.whiteBright(c.italic(gitLabInfo)));
-
+        this.ux.log(c.blue(gitLabInfo));
+        await prompts({ type: 'confirm', message: c.cyanBright('Hit ENTER when done (or if previously done on the same repository)') });
         const config = await getConfig('project');
         // Get branch name to configure
         const currentBranch = await getCurrentGitBranch({ formatted: true });
@@ -99,7 +100,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
             {
                 type: 'text',
                 name: 'teamsHook',
-                message: c.cyanBright('Do you want notifications of updates in orgs in a MsTeams channel ?\nIf yes:\n- Create the WebHook: https://docs.microsoft.com/fr-fr/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook#add-an-incoming-webhook-to-a-teams-channel\n- paste the hook Url here\nIf not, just hit ENTER')
+                message: c.cyanBright(`If you want notifications of updates in orgs in a Microsoft Teams channel:\n- Create the WebHook: https://docs.microsoft.com/fr-fr/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook#add-an-incoming-webhook-to-a-teams-channel\n- paste the hook Url here\nIf you do not want Ms Team notifications, just leave empty and hit ENTER`)
             }
         ]);
 

@@ -482,7 +482,7 @@ export async function restoreLocalSfdxInfo() {
 
 // Generate SSL certificate in temporary folder and copy the key in project directory
 export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any) {
-  uxLog(commandThis, '[sfdx-hardis] Generating SSL certificate');
+  uxLog(commandThis, 'Generating SSL certificate...');
   const tmpDir = path.join(os.tmpdir(), 'sslTmp-') + Math.random().toString(36).slice(-5);
   await fs.ensureDir(tmpDir);
   const prevDir = process.cwd();
@@ -491,9 +491,10 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   await execCommand(`openssl genrsa -des3 -passout "pass:${pwd}" -out server.pass.key 2048`, this, { output: true, fail: true });
   await execCommand(`openssl rsa -passin "pass:${pwd}" -in server.pass.key -out server.key`, this, { output: true, fail: true });
   await fs.remove('server.pass.key');
-  uxLog(commandThis, '[sfdx-hardis] Now answer the following questions. The answers are not really important :)');
+  await prompts({type: 'confirm', message: c.cyanBright('Now answer the following questions. The answers are not really important :)\nHit ENTER when ready')});
   await new Promise((resolve, reject) => {
-    crossSpawn('openssl req -new -key server.key -out server.csr', [], { stdio: 'inherit' }).on('close', () => {
+    const opensslCommand = "openssl req -new -key server.key -out server.csr";
+    crossSpawn(opensslCommand, [], { stdio: 'inherit' }).on('close', () => {
       resolve(null);
     });
   });
@@ -542,7 +543,6 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       }
     ]);
     const crtContent = await fs.readFile(crtFile, 'utf8');
-
     // Build ConnectedApp metadata
     const connectedAppMetadata =
       `<?xml version="1.0" encoding="UTF-8"?>
@@ -592,21 +592,32 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         testlevel: 'NoTestRun'
       });
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
-
       uxLog(commandThis, `Successfully deployed ${c.green(promptResponses.appName)} Connected App`);
       await fs.remove(tmpDirMd);
+      await fs.remove(crtFile);
     } catch (e) {
       deployError = true;
+      uxLog(commandThis, c.red('Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name'));
+    }
+    // Last manual step
+    if (deployError === false) {
+      await prompts({
+        type: 'confirm', message: c.cyanBright(
+          `You need to give rights to profile "System Administrator" (or related Permission Set) on connected app ${promptResponses.appName}
+On the page that will open, ${c.bold(`find app ${promptResponses.appName}, then click Manage`)}
+On the app managing page, ${c.bold('click Manage profiles, then add profile System Administrator')} (or related Permission set)
+Hit ENTER when you are ready`)
+      });
+      await execCommand('sfdx force:org:open -p lightning/setup/NavigationMenus/home', this);
+      await prompts({
+        type: 'confirm', message: c.cyanBright(`Hit ENTER when the profile right has been manually granted on connected app ${promptResponses.appName}`)
+      });
     }
   } else {
     // Tell infos to install manually
-    uxLog(commandThis, '[sfdx-hardis] Now you can configure the sfdx connected app');
-    uxLog(commandThis, `[sfdx-hardis] Follow instructions here: ${c.bold('https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm')}`);
-    uxLog(commandThis, `[sfdx-hardis] Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
-    uxLog(commandThis, `[sfdx-hardis] Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
-  }
-
-  if (confirmResponse.value === true || deployError === true) {
-
+    uxLog(commandThis, c.yellow('Now you can configure the sfdx connected app'));
+    uxLog(commandThis, `Follow instructions here: ${c.bold('https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm')}`);
+    uxLog(commandThis, `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
+    uxLog(commandThis, `Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
   }
 }
