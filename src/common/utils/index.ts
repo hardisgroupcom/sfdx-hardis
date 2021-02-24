@@ -589,7 +589,8 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     try {
       const deployRes = await MetadataUtils.deployMetadatas({
         deployDir: tmpDirMd,
-        testlevel: 'NoTestRun'
+        testlevel: 'NoTestRun',
+        soap: true
       });
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
       uxLog(commandThis, `Successfully deployed ${c.green(promptResponses.appName)} Connected App`);

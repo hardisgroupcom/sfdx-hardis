@@ -279,7 +279,8 @@ class MetadataUtils {
     deployDir: '.',
     testlevel: 'RunLocalTests',
     check: false,
-    debug: false
+    debug: false,
+    soap: false
   }) {
     // Perform deployment
     const deployCommand =
@@ -288,6 +289,7 @@ class MetadataUtils {
       ' --wait 60' +
       ` --testlevel ${options.testlevel || 'RunLocalTests'}` +
       ` --apiversion ${options.apiVersion || CONSTANTS.API_VERSION}` +
+      (options.soap ? ' --soapdeploy' : '') +
       (options.check ? ' --checkonly' : '') +
       (options.debug ? ' --verbose' : '');
     const deployRes = await execCommand(deployCommand, this, { output: true, debug: options.debug, fail: true });

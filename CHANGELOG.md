@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image
 
+## [1.3.3] 2021-02-24
+
+- Soap option for force:mdapi:deploy
+
 ## [1.3.2] 2021-02-24
 
 - Guide user to assign rights to Connected App in **sfdx:org:configure:monitoring**
