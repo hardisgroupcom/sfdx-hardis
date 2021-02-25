@@ -5,7 +5,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as prompts from 'prompts';
-import { generateSSLCertificate, promptInstanceUrl } from '../../../../common/utils';
+import { execCommand, generateSSLCertificate, promptInstanceUrl, uxLog } from '../../../../common/utils';
 import { checkConfig, getConfig, setConfig, setInConfigFile } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -44,6 +44,17 @@ export default class ConfigureAuth extends SfdxCommand {
 
     public async run(): Promise<AnyJson> {
         const devHub = this.flags.devhub || false;
+        const orgResponse = await prompts({
+            type: 'boolean',
+            name: 'value',
+            initial: true,
+            message: c.yellow(`You are about to configure authentication to the org attached to ${c.green(this.org.getUsername)}\nIs this the good org ?`)
+        });
+        if (orgResponse.value === false) {
+            await execCommand('sfdx auth:logout --noprompt || true', this, { fail: true });
+            uxLog(this, c.yellow('You need to login to a new org, please run again the same command :)'));
+            process.exit(0);
+        }
         await checkConfig(this);
         const config = await getConfig('project');
         // Get branch name to configure if not Dev Hub

@@ -58,7 +58,6 @@ check_quality:
   tags:
     - ubuntu
   only:
-    - pushes
     - merge_requests
     - web
   image: nvuillam/mega-linter-salesforce:latest
