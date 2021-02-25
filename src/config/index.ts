@@ -37,7 +37,7 @@ async function getBranchConfigFiles() {
     if (!isGitRepo()) {
         return [];
     }
-    const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
+    const gitBranchFormatted = process.env.CONFIG_BRANCH || (await getCurrentGitBranch({ formatted: true }));
     const branchConfigFiles = [
         `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
         `config/branches/.${moduleName}.${gitBranchFormatted}.yml`

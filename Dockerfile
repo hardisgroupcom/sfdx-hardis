@@ -10,6 +10,7 @@ RUN apk add --update --no-cache \
             npm
 
 # Add node packages to path #
+# hadolint ignore=DL3044
 ENV PATH="/node_modules/.bin:${PATH}"
 
 ARG SFDX_HARDIS_VERSION=latest
