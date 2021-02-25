@@ -1,0 +1,3 @@
+# Vous pouvez personnaliser l'éxécution de votre pipeline ici
+variables:
+  DEPLOY_BRANCHES: /(developpement|integration|recette|preprod|master)/  # Regex contenant la liste des branches où un push va déclencher un déploiement

@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [1.3.4] 2021-02-25
+
 - Reuse msTeamsWebhookUrl during sfdx:org:configure:monitoring prompts
+- Allow to override CONFIG_BRANCH to get forced .sfdx.hardis.BRANCH.yml
 
 ## [1.3.3] 2021-02-24
 
