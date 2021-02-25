@@ -2,7 +2,9 @@
 
 ## [insiders] (master)
 
-Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image
+Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
+
+- Reuse msTeamsWebhookUrl during sfdx:org:configure:monitoring prompts
 
 ## [1.3.3] 2021-02-24
 
