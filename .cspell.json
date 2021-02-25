@@ -73,6 +73,7 @@
         "jlsfgd",
         "lcov",
         "loglevel",
+        "mdapi",
         "minimumapiversion",
         "mkdir",
         "noprompt",

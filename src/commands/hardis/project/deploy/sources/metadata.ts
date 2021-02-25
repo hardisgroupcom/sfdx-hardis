@@ -140,6 +140,7 @@ export default class DxSources extends SfdxCommand {
         deployDir,
         testlevel,
         check,
+        soap: true,
         debug: debugMode
       });
       let message = '';

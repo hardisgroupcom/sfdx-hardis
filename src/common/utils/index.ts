@@ -493,7 +493,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   await fs.remove('server.pass.key');
   await prompts({type: 'confirm', message: c.cyanBright('Now answer the following questions. The answers are not really important :)\nHit ENTER when ready')});
   await new Promise((resolve, reject) => {
-    const opensslCommand = "openssl req -new -key server.key -out server.csr";
+    const opensslCommand = 'openssl req -new -key server.key -out server.csr';
     crossSpawn(opensslCommand, [], { stdio: 'inherit' }).on('close', () => {
       resolve(null);
     });
@@ -589,7 +589,8 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     try {
       const deployRes = await MetadataUtils.deployMetadatas({
         deployDir: tmpDirMd,
-        testlevel: 'NoTestRun'
+        testlevel: 'NoTestRun',
+        soap: true
       });
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
       uxLog(commandThis, `Successfully deployed ${c.green(promptResponses.appName)} Connected App`);
