@@ -292,7 +292,19 @@ class MetadataUtils {
       (options.soap ? ' --soapdeploy' : '') +
       (options.check ? ' --checkonly' : '') +
       (options.debug ? ' --verbose' : '');
-    const deployRes = await execCommand(deployCommand, this, { output: true, debug: options.debug, fail: true });
+    let deployRes;
+    try {
+      deployRes = await execCommand(deployCommand, this, { output: true, debug: options.debug, fail: true });
+    } catch (e) {
+      // workaround if --soapdeploy is not available
+      if (JSON.stringify(e).includes('--soapdeploy')) {
+        uxLog(this, c.yellow("This may be a error with a workaround... let's try it :)"));
+        deployRes = await execCommand(deployCommand.replace(' --soapdeploy', ''), this,
+          { output: true, debug: options.debug, fail: true });
+      } else {
+        throw e;
+      }
+    }
     return deployRes;
   }
 
