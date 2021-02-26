@@ -604,9 +604,9 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     if (deployError === false) {
       await prompts({
         type: 'confirm', message: c.cyanBright(
-          `You need to give rights to profile "System Administrator" (or related Permission Set) on connected app ${promptResponses.appName}
-On the page that will open, ${c.bold(`find app ${promptResponses.appName}, then click Manage`)}
-On the app managing page, ${c.bold('click Manage profiles, then add profile System Administrator')} (or related Permission set)
+          `You need to give rights to profile ${c.green('System Administrator')} (or related Permission Set) on Connected App ${c.green(promptResponses.appName)}
+On the page that will open, ${c.green(`find app ${promptResponses.appName}, then click Manage`)}
+On the app managing page, ${c.green('click Manage profiles, then add profile System Administrator')} (or related Permission set)
 Hit ENTER when you are ready`)
       });
       await execCommand('sfdx force:org:open -p lightning/setup/NavigationMenus/home', this);
