@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [1.3.5] 2021-02-26
+
+- Workaround when --soapdeploy argument is not available
+
 ## [1.3.4] 2021-02-25
 
 - Reuse msTeamsWebhookUrl during sfdx:org:configure:monitoring prompts
