@@ -5,7 +5,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as prompts from 'prompts';
-import { generateSSLCertificate, promptInstanceUrl } from '../../../../common/utils';
+import { generateSSLCertificate, promptInstanceUrl, uxLog } from '../../../../common/utils';
 import { checkConfig, getConfig, setConfig, setInConfigFile } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -44,6 +44,8 @@ export default class ConfigureAuth extends SfdxCommand {
 
     public async run(): Promise<AnyJson> {
         const devHub = this.flags.devhub || false;
+        uxLog(this, c.cyan('Please login into the org you want to configure the SFDX Authentication'));
+        await this.config.runHook('auth', { checkAuth: true, Command: this });
         await checkConfig(this);
         const config = await getConfig('project');
         // Get branch name to configure if not Dev Hub

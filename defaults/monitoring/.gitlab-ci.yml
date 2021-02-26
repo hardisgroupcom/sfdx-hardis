@@ -34,6 +34,7 @@ variables:
 stages:
   - purge
   - backup
+  - test
 
 # On execute les jobs sur l'image hardisgroupcom/sfdx-hardis qui contient les applications necessaires
 image: hardisgroupcom/sfdx-hardis:latest
@@ -77,3 +78,27 @@ backup:
     - git add --all
     - git commit -m "$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME org state on $(date -u +'%Y-%m-%d %H:%M') [skip ci]" || echo "No changes to commit"
     - git push -o ci-skip http://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_COMMIT_REF_NAME
+
+# Controle de la qualité des sources avec Mega-Linter, qui contient sfdx-scanner (apex PMD),
+# mais aussi d'autres linters et détecteurs de mauvaises pratiques
+check_quality:
+  stage: test
+  tags:
+    - ubuntu
+  # Conditions d'execution
+  except:
+      - master
+  image: nvuillam/mega-linter-salesforce:latest
+  script: [ "true" ]
+  allow_failure: true
+  variables:
+      # All available variables are described in documentation
+    # https://nvuillam.github.io/mega-linter/configuration/
+    DEFAULT_WORKSPACE: $CI_PROJECT_DIR
+    DEFAULT_BRANCH: master
+    # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
+  artifacts:
+    when: always
+    paths:
+      - report
+    expire_in: 1 week

@@ -1,0 +1,11 @@
+# Configuration file for Mega-Linter
+# See all available variables at https://nvuillam.github.io/mega-linter/configuration/ and in linters documentation
+
+APPLY_FIXES: none # all, none, or list of linter keys
+DEFAULT_BRANCH: master # Usually master or main
+DISABLE:
+  - SPELL # Uncomment to enable checks of spelling mistakes # - SPELL # Uncomment to disable checks of spelling mistakes
+SHOW_ELAPSED_TIME: true
+DISABLE_ERRORS: true
+SALESFORCE_DIRECTORY: metadatas
+SALESFORCE_SFDX_SCANNER_ARGUMENTS: ['--outfile', './report/sfdx-scanner-log.csv']
