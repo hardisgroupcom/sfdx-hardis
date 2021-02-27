@@ -149,6 +149,31 @@ class MetadataUtils {
     ];
   }
 
+  // Get default org that is currently selected for user
+  public static async getCurrentOrg(type: string = 'any') {
+    const displayOrgCommand = 'sfdx force:org:display --verbose';
+    const displayResult = await execSfdxJson(displayOrgCommand, this, { fail: false, output: true });
+    if (displayResult.id && type === 'scratch' && displayResult.scratchOrg) {
+      return displayResult;
+    } else if (displayResult.id && type === 'any') {
+      return displayResult;
+    }
+    return null;
+  }
+
+  // List local orgs for user
+  public static async listLocalOrgs(type: string = 'any') {
+    const orgListResult = await execSfdxJson('sfdx force:org:list', this);
+    if (type === 'any') {
+      return orgListResult?.result || [];
+    } else if (type === 'scratch') {
+      return (orgListResult?.result?.scratchOrgs.filter((org: any) => {
+        return org.status === 'Active';
+      })) || [];
+    }
+    return [];
+  }
+
   // List installed packages on a org
   public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
     let listCommand = 'sfdx force:package:installed:list';

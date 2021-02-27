@@ -10,7 +10,7 @@ import * as util from 'util';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
 import { SfdxError } from '@salesforce/core';
-import simpleGit, { SimpleGit } from 'simple-git';
+import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
 import { MetadataUtils } from '../metadata-utils';
 
@@ -123,6 +123,11 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   return gitBranch;
 }
 
+export async function gitCheckOutRemote(branchName: string) {
+  const branchNameRemote = `origin/${branchName}`;
+  await git.checkout(branchNameRemote, { '--track': null });
+}
+
 // Get local git branch name
 export async function ensureGitBranch(branchName: string, options: any = { init: false }) {
   if (git == null) {
@@ -145,6 +150,20 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
     }
   }
   return true;
+}
+
+// Checks that current git status is clean.
+export async function checkGitClean(options: any) {
+  if (git == null) {
+    throw new SfdxError('[sfdx-hardis] You must be within a git repository');
+  }
+  const gitStatus = await git.status();
+  if (gitStatus.files.length > 0) {
+    const localUpdates = gitStatus.files.map((fileStatus: FileStatusResult) => {
+      return `(${fileStatus.index}) ${path.relative(fileStatus.path, process.cwd())}`;
+    });
+    throw new SfdxError(`[sfdx-hardis] Branch ${gitStatus.current} is not clean. You must commit or cancel the following local updates:\n${localUpdates}`);
+  }
 }
 
 // Shortcut to add, commit and push
@@ -491,7 +510,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   await execCommand(`openssl genrsa -des3 -passout "pass:${pwd}" -out server.pass.key 2048`, this, { output: true, fail: true });
   await execCommand(`openssl rsa -passin "pass:${pwd}" -in server.pass.key -out server.key`, this, { output: true, fail: true });
   await fs.remove('server.pass.key');
-  await prompts({type: 'confirm', message: c.cyanBright('Now answer the following questions. The answers are not really important :)\nHit ENTER when ready')});
+  await prompts({ type: 'confirm', message: c.cyanBright('Now answer the following questions. The answers are not really important :)\nHit ENTER when ready') });
   await new Promise((resolve, reject) => {
     const opensslCommand = 'openssl req -new -key server.key -out server.csr';
     crossSpawn(opensslCommand, [], { stdio: 'inherit' }).on('close', () => {

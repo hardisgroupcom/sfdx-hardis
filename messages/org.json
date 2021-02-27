@@ -17,6 +17,7 @@
   "loginToOrg": "Login to salesforce org",
   "minimumApiVersion": "Minimum allowed API version",
   "nameFilter": "Filter according to Name criteria",
+  "newWorkTask": "New work task",
   "orgPurgeFlow": "Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name",
   "packageXml": "Path to package.xml manifest file",
   "prompt": "Prompt for confirmation (true by default, use --no-prompt to skip)",
