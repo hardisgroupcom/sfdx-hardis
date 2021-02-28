@@ -22,6 +22,7 @@
   "orgPurgeFlow": "Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name",
   "packageXml": "Path to package.xml manifest file",
   "prompt": "Prompt for confirmation (true by default, use --no-prompt to skip)",
+  "refreshWorkTask": "Make my local branch and my scratch org up to date with the most recent sources",
   "retrieveDx": "Retrieve Salesforce DX project from org",
   "retrieveMetadatas": "Retrieve metadatas from an org with package.xml manifest",
   "sandboxLogin": "Use if the environment is a sandbox",

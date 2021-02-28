@@ -6,6 +6,7 @@ import * as c from 'chalk';
 // import * as open from 'open';
 import * as prompts from 'prompts';
 import { execCommand, getCurrentGitBranch, git, interactiveGitAdd, uxLog } from '../../../../common/utils';
+import { getConfig } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -45,7 +46,10 @@ export default class CompleteTask extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
+    const config = await getConfig('project');
+    const localBranch = await getCurrentGitBranch();
 
+    uxLog(this, c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(config.developmentBranch)}`));
     uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
     const pullCommand = 'sfdx force:source:pull -w 60 --forceoverwrite';
     await execCommand(pullCommand, this, { output: true, fail: true });

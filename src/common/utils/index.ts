@@ -208,9 +208,8 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
     if (commitFilesResponse.commit === true) {
       await git.add(listOfFiles);
     }
-  }
-  else {
-    uxLog(this,c.cyan("No uncommited local files"));
+  } else {
+    uxLog(this, c.cyan('No uncommited local files'));
   }
   return listOfFiles;
 }

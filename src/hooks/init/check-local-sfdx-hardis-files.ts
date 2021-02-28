@@ -84,6 +84,8 @@ async function getSfdxHardisPackageJsonContent() {
             'scratch:open': 'sfdx force:org:open',
             'org:test:apex': 'sfdx hardis:org:test:apex',
             'work:new-task': 'sfdx hardis:work:task:new',
+            'work:refresh': 'sfdx hardis:work:task:refresh',
+            'work:save-task': 'sfdx hardis:work:task:complete',
             'scratch:create': 'sfdx hardis:scratch:create',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
             'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub',
