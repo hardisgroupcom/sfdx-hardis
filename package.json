@@ -25,6 +25,7 @@
     "js-yaml": "^4.0.0",
     "moment": "^2.29.1",
     "ms-teams-webhook": "^1.0.4",
+    "open": "^7.4.2",
     "prompts": "^2.4.0",
     "psl": "^1.8.0",
     "read-pkg-up": "^7.0.1",

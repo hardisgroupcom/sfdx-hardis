@@ -6,6 +6,7 @@
   "auditRemoteSites": "Generate list of remote sites",
   "checkOnly": "Only checks the deployment, there is no impact on target org",
   "createOrgShape": "Updates project-scratch-def.json from org shape",
+  "completeWorkTask": "When a work task is completed, guide user to create a merge request",
   "debugMode": "Activate debug mode (more logs)",
   "deployDx": "Deploy SFDX project sources to org",
   "deployMetadatas": "Deploy metadatas to source org",

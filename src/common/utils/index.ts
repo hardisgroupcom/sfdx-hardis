@@ -14,7 +14,7 @@ import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
 import { MetadataUtils } from '../metadata-utils';
 
-let git: SimpleGit = null;
+export let git: SimpleGit = null;
 
 if (isGitRepo()) {
   initSimpleGit();
@@ -124,8 +124,8 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
 }
 
 export async function gitCheckOutRemote(branchName: string) {
-  const branchNameRemote = `origin/${branchName}`;
-  await git.checkout(branchNameRemote, { '--track': null });
+  await git.checkout(branchName);
+  await git.pull();
 }
 
 // Get local git branch name
@@ -160,10 +160,59 @@ export async function checkGitClean(options: any) {
   const gitStatus = await git.status();
   if (gitStatus.files.length > 0) {
     const localUpdates = gitStatus.files.map((fileStatus: FileStatusResult) => {
-      return `(${fileStatus.index}) ${path.relative(fileStatus.path, process.cwd())}`;
-    });
-    throw new SfdxError(`[sfdx-hardis] Branch ${gitStatus.current} is not clean. You must commit or cancel the following local updates:\n${localUpdates}`);
+      return `(${fileStatus.working_dir}) ${fileStatus.path}`;
+    }).join('\n');
+    throw new SfdxError(`[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold('commit or cancel')} the following local updates:\n${c.yellow(localUpdates)}`);
   }
+}
+
+// Interactive git add
+export async function interactiveGitAdd(options: any = { filter: [], unstage: true }) {
+  if (git == null) {
+    throw new SfdxError('[sfdx-hardis] You must be within a git repository');
+  }
+  const gitStatus = await git.status();
+  const filesFiltered = gitStatus.files.filter((fileStatus: FileStatusResult) => {
+    return options.filter.filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
+  });
+  let listOfFiles = [];
+  if (filesFiltered.length > 0) {
+    const selectFilesStatus = await prompts({
+      type: 'multiselect',
+      name: 'files',
+      message: c.cyanBright('Please select the files you want to commit (save)'),
+      choices: filesFiltered.map((fileStatus: FileStatusResult) => {
+        return { title: `(${fileStatus.working_dir}) ${fileStatus.path}`, value: fileStatus };
+      })
+    });
+    const listOfFilesDisplay = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
+      return `(${fileStatus.working_dir}) ${fileStatus.path}`;
+    }).join('\n');
+    const commitFilesResponse = await prompts({
+      type: 'confirm',
+      name: 'commit',
+      message: c.cyanBright(`Do you confirm that you want to commit the following list of files ?\n${c.yellow(listOfFilesDisplay)}`),
+      choices: filesFiltered.map((fileStatus: FileStatusResult) => {
+        return { title: `(${fileStatus.working_dir}) ${fileStatus.path}`, value: fileStatus };
+      })
+    });
+    listOfFiles = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
+      if (fileStatus.path.startsWith('"')) {
+        fileStatus.path = fileStatus.path.substring(1);
+      }
+      if (fileStatus.path.endsWith('"')) {
+        fileStatus.path = fileStatus.path.slice(0, -1);
+      }
+      return fileStatus.path;
+    });
+    if (commitFilesResponse.commit === true) {
+      await git.add(listOfFiles);
+    }
+  }
+  else {
+    uxLog(this,c.cyan("No uncommited local files"));
+  }
+  return listOfFiles;
 }
 
 // Shortcut to add, commit and push

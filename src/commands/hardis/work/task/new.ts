@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages } from '@salesforce/core';
+import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as prompts from 'prompts';
@@ -36,7 +36,7 @@ export default class NewTask extends SfdxCommand {
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
-  protected static supportsDevhubUsername = true;
+  protected static supportsDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
@@ -81,6 +81,11 @@ export default class NewTask extends SfdxCommand {
           { title: 'Development (Apex, Javascript...)', value: 'dev' },
           { title: 'Configuration + Development', value: 'dev' }
         ]
+      },
+      {
+        type: 'text',
+        name: 'taskName',
+        message: c.cyanBright('What is the name of your new task ? (examples: webservice-get-account, flow-process-opportunity...)')
       }
     ]);
 
@@ -90,7 +95,7 @@ export default class NewTask extends SfdxCommand {
       await setConfig('project', { developmentBranch: targetBranch });
     }
     // Checkout development main branch
-    const branchName = `${response.branch || 'features'}/${response.sources || 'dev'}`;
+    const branchName = `${response.branch || 'features'}/${response.sources || 'dev'}/${response.taskName}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(targetBranch)} on server...`));
     await gitCheckOutRemote(targetBranch);
     // Create new branch
@@ -105,16 +110,23 @@ export default class NewTask extends SfdxCommand {
         {
           type: 'select',
           name: 'value',
-          message: c.cyanBright('What is the type of the task you want to do ?'),
+          message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
           initial: 0,
           choices: [...scratchOrgList.map((scratchOrg: any) => {
             return { title: `${scratchOrg.alias} - ${scratchOrg.instanceUrl}`, value: scratchOrg.alias };
           }), ...[{ title: 'Create new scratch org', value: 'newScratchOrg' }]]
         });
       if (scratchResponse.value === 'newScratchOrg') {
-        await ScratchCreate.run();
+        await setConfig('user', {
+          scratchOrgAlias: null,
+          scratchOrgUsername: null
+        });
+        const createResult = await ScratchCreate.run([]);
+        if (createResult == null) {
+          throw new SfdxError('Unable to create scratch org');
+        }
       } else {
-        await execCommand(`sfdx config:set defaultusername=${scratchResponse.username}`, this, {output: true, fail: true});
+        await execCommand(`sfdx config:set defaultusername=${scratchResponse.username}`, this, { output: true, fail: true });
       }
     } else {
       uxLog(this, c.cyan(`You will use scratch org ${c.green(currentOrg.alias)} : ${c.green(currentOrg.instanceUrl)}`));
