@@ -14,8 +14,11 @@ export const hook = async (options: any) => {
 // Add utility scripts if they are not present
 async function managePackageJson(commandId: string) {
     if (!commandId.startsWith('hardis:scratch') && !commandId.startsWith('hardis:project:configure') &&
-        !commandId.startsWith('hardis:work')) {
+        !commandId.startsWith('hardis:work') ) {
         return;
+    }
+    if (commandId.startsWith('hardis:work:task:new')) {
+        return ;
     }
     const packageJsonFile = './package.json';
     if (fs.existsSync(packageJsonFile)) {
@@ -85,7 +88,7 @@ async function getSfdxHardisPackageJsonContent() {
             'org:test:apex': 'sfdx hardis:org:test:apex',
             'work:new-task': 'sfdx hardis:work:task:new',
             'work:refresh': 'sfdx hardis:work:task:refresh',
-            'work:save-task': 'sfdx hardis:work:task:complete',
+            'work:publish-task': 'sfdx hardis:work:task:publish',
             'scratch:create': 'sfdx hardis:scratch:create',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
             'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub',

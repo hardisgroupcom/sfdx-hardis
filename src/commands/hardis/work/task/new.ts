@@ -36,7 +36,7 @@ export default class NewTask extends SfdxCommand {
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
-  protected static supportsDevhubUsername = false;
+  protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
@@ -47,6 +47,9 @@ export default class NewTask extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
+
+    uxLog(this, c.cyan('This tool will assist you to create a new task (dev or config) with Hardis CI/CD'));
+    uxLog(this, c.cyan("When you don't know what to answer, you can let the default value and push ENTER"));
 
     // Make sure the git status is clean, to not delete uncommited updates
     await checkGitClean({});
@@ -67,8 +70,8 @@ export default class NewTask extends SfdxCommand {
         message: c.cyanBright('What is the type of the task you want to do ?'),
         initial: 0,
         choices: [
-          { title: 'Feature', value: 'features' },
-          { title: 'Debug', value: 'bugs' }
+          { title: 'Feature (new feature, evolution of an existing feature...)', value: 'features' },
+          { title: 'Debug (a bug fix :) )', value: 'bugs' }
         ]
       },
       {
