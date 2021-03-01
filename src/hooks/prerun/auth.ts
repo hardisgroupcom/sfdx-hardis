@@ -164,7 +164,7 @@ async function authOrg(orgAlias: string, options: any) {
                 ` --setalias ${orgAlias}` +
                 ((isDevHub) ? ' --setdefaultdevhubusername' : '') +
                 ` --instanceurl ${instanceUrl}`
-                , this, { output: true, fail: true });
+                , this, { output: true, fail: true, spinner: false });
             console.log(JSON.stringify(loginResult, null, 2));
             logged = loginResult.status === 0;
             username = loginResult?.username || 'your username';

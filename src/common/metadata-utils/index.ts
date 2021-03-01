@@ -149,6 +149,31 @@ class MetadataUtils {
     ];
   }
 
+  // Get default org that is currently selected for user
+  public static async getCurrentOrg(type: string = 'any') {
+    const displayOrgCommand = 'sfdx force:org:display --verbose';
+    const displayResult = await execSfdxJson(displayOrgCommand, this, { fail: false, output: true });
+    if (displayResult.id && type === 'scratch' && displayResult.scratchOrg) {
+      return displayResult;
+    } else if (displayResult.id && type === 'any') {
+      return displayResult;
+    }
+    return null;
+  }
+
+  // List local orgs for user
+  public static async listLocalOrgs(type: string = 'any') {
+    const orgListResult = await execSfdxJson('sfdx force:org:list', this);
+    if (type === 'any') {
+      return orgListResult?.result || [];
+    } else if (type === 'scratch') {
+      return (orgListResult?.result?.scratchOrgs.filter((org: any) => {
+        return org.status === 'Active';
+      })) || [];
+    }
+    return [];
+  }
+
   // List installed packages on a org
   public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
     let listCommand = 'sfdx force:package:installed:list';
@@ -165,7 +190,7 @@ class MetadataUtils {
     for (const package1 of packages) {
       if (alreadyInstalled.filter((installedPackage: any) =>
         package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
-        uxLog(commandThis, `Installing package ${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`);
+        uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`)}`));
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
         }
@@ -267,7 +292,7 @@ class MetadataUtils {
     await fs.remove(tmpDir);
     let deleteMsg = '';
     if (deployDeleteRes.status === 0) {
-      deleteMsg = '[sfdx-hardis] Successfully deployed destructive changes to Salesforce org';
+      deleteMsg = `[sfdx-hardis] Successfully ${options.check ? 'checked deployment of' : 'deployed'} destructive changes to Salesforce org`;
       uxLog(commandThis, c.green(deleteMsg));
     } else {
       deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';

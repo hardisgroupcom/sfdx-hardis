@@ -18,7 +18,7 @@ export const hook = async (options: any) => {
     });
     if (notifier && notifier.update) {
         console.warn(c.yellow('***********************************************************************************************************************'));
-        console.warn(c.yellow(`WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to ${notifier.update.latest} by running "sfdx plugins:install sfdx-hardis"`));
+        console.warn(c.yellow(`WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to ${notifier.update.latest} by running ${c.green('sfdx plugins:install sfdx-hardis')}`));
         console.warn(c.yellow('***********************************************************************************************************************'));
     }
 };

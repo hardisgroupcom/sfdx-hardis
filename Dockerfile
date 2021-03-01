@@ -17,8 +17,9 @@ ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache \
-            sfdx-cli && \
+            sfdx-cli@7.85.1 && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdx-essentials && \
     echo 'y' | sfdx plugins:install sfpowerkit && \
     sfdx plugins
+

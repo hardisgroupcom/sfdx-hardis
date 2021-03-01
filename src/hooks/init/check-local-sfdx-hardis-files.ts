@@ -13,8 +13,12 @@ export const hook = async (options: any) => {
 
 // Add utility scripts if they are not present
 async function managePackageJson(commandId: string) {
-    if (!commandId.startsWith('hardis:scratch') && !commandId.startsWith('hardis:project:configure')) {
+    if (!commandId.startsWith('hardis:scratch') && !commandId.startsWith('hardis:project:configure') &&
+        !commandId.startsWith('hardis:work') ) {
         return;
+    }
+    if (commandId.startsWith('hardis:work:task:new')) {
+        return ;
     }
     const packageJsonFile = './package.json';
     if (fs.existsSync(packageJsonFile)) {
@@ -49,6 +53,9 @@ async function manageGitIgnore(commandId: string) {
     if (!commandId.startsWith('hardis')) {
         return;
     }
+    if (commandId.startsWith('hardis:work:task:new')) {
+        return ;
+    }
     const gitIgnoreFile = './.gitignore';
     if (fs.existsSync(gitIgnoreFile)) {
         const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
@@ -78,10 +85,13 @@ async function manageGitIgnore(commandId: string) {
 async function getSfdxHardisPackageJsonContent() {
     const hardisPackageJsonContent = {
         scripts: {
-            'scratch:push': 'sfdx force:source:push -g -w 60 --forceoverwrite',
-            'scratch:pull': 'sfdx force:source:pull --forceoverwrite',
+            'scratch:push-from-git-to-org': 'sfdx force:source:push -g -w 60 --forceoverwrite',
+            'scratch:pull-from-org-to-git': 'sfdx force:source:pull -w 60 --forceoverwrite',
             'scratch:open': 'sfdx force:org:open',
             'org:test:apex': 'sfdx hardis:org:test:apex',
+            'work:new': 'sfdx hardis:work:new',
+            'work:refresh': 'sfdx hardis:work:refresh',
+            'work:publish': 'sfdx hardis:work:publish',
             'scratch:create': 'sfdx hardis:scratch:create',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
             'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub',

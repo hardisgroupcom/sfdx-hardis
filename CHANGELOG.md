@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [1.4.0] 2021-02-28
+
+- New work commands to make easier non technical users to use Hardis CI
+  - **hardis:work:task:new**
+  - **hardis:work:task:save**
+  - **hardis:work:task:refresh**
+
 ## [1.3.6] 2021-02-26
 
 - Quick fix hardis:org:configure:monitoring + colors
