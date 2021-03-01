@@ -190,7 +190,7 @@ class MetadataUtils {
     for (const package1 of packages) {
       if (alreadyInstalled.filter((installedPackage: any) =>
         package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
-        uxLog(commandThis, `Installing package ${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`);
+        uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`)}`));
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
         }
@@ -292,7 +292,7 @@ class MetadataUtils {
     await fs.remove(tmpDir);
     let deleteMsg = '';
     if (deployDeleteRes.status === 0) {
-      deleteMsg = '[sfdx-hardis] Successfully deployed destructive changes to Salesforce org';
+      deleteMsg = `[sfdx-hardis] Successfully ${options.check ? 'checked deployment of' : 'deployed'} destructive changes to Salesforce org`;
       uxLog(commandThis, c.green(deleteMsg));
     } else {
       deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';

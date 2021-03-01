@@ -10,6 +10,7 @@ import * as util from 'util';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
 import { SfdxError } from '@salesforce/core';
+import ora = require('ora');
 import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
 import { MetadataUtils } from '../metadata-utils';
@@ -259,17 +260,24 @@ export async function execCommand(
   options: any = {
     fail: false,
     output: false,
-    debug: false
+    debug: false,
+    spinner: true
   }
 ): Promise<any> {
-  uxLog(commandThis, `[sfdx-hardis][command] ${c.bold(c.grey(command))}`);
+  const commandLog = `[sfdx-hardis][command] ${c.bold(c.grey(command))}`;
   let commandResult = null;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = '0';
+  const spinner = ora({text: commandLog, spinner: 'moon'}).start();
+  if (options.spinner === false) {
+    spinner.stop();
+  }
   try {
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
+    spinner.succeed();
   } catch (e) {
+    spinner.fail();
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
@@ -302,12 +310,15 @@ export async function execCommand(
         c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`)
       );
     }
+    if (commandResult.stderr && commandResult.stderr.length > 2) {
+      uxLog(this,"[sfdx-hardis][WARNING] stderr: "+c.yellow(commandResult.stderr));
+    }
     return parsedResult;
   } catch (e) {
     // Manage case when json is not parseable
     return {
       status: 1,
-      errorMessage: `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}`
+      errorMessage: c.red(`[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`)
     };
   }
 }

@@ -88,11 +88,11 @@ export default class DxSources extends SfdxCommand {
     const deployRes = await execCommand(deployCommand, this, { output: true, debug: debugMode, fail: true });
     let message = '';
     if (deployRes.status === 0) {
-      message = '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';
-      this.ux.log(c.green(message));
+      message = `[sfdx-hardis] Successfully ${check ? 'checked deployment of' : 'deployed'} sfdx project sources to Salesforce org`;
+      uxLog(this, c.green(message));
     } else {
       message = '[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org';
-      this.ux.log(c.red(deployRes.errorMessage));
+      uxLog(this, c.red(deployRes.errorMessage));
     }
     return { orgId: this.org.getOrgId(), outputString: message };
   }
