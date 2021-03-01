@@ -93,7 +93,7 @@ export default class ScratchCreate extends SfdxCommand {
         this.gitBranch = await getCurrentGitBranch({ formatted: true });
         this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS ||
             ((!this.forceNew) ? this.configInfo.scratchOrgAlias : null) ||
-            os.userInfo().username + '-' + this.gitBranch.replace('/', '-').slice(0,10) + '_' + moment().format('YYYY-MM-DD_hh-mm');
+            os.userInfo().username + '-' + this.gitBranch.split('/').pop().slice(0, 15) + '_' + moment().format('YYYY-MM-DD_hh-mm');
         if (isCI && !this.scratchOrgAlias.startsWith('CI-')) {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
         }
