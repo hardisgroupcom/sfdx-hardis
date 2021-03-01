@@ -102,7 +102,7 @@ export default class NewTask extends SfdxCommand {
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(targetBranch)} on server...`));
     await gitCheckOutRemote(targetBranch);
     // Create new branch
-    uxLog(this, c.cyan(`Creating new branch ${branchName}...`));
+    uxLog(this, c.cyan(`Creating new branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
 
     // Select/Create scratch org
