@@ -310,6 +310,9 @@ export async function execCommand(
         c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`)
       );
     }
+    if (commandResult.stderr && commandResult.stderr.length > 2) {
+      uxLog(this,"[sfdx-hardis][WARNING] stderr: "+c.yellow(commandResult.stderr));
+    }
     return parsedResult;
   } catch (e) {
     // Manage case when json is not parseable
