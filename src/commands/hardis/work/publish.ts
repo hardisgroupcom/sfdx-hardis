@@ -3,7 +3,6 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
-// import * as open from 'open';
 import * as prompts from 'prompts';
 import { execCommand, getCurrentGitBranch, git, interactiveGitAdd, uxLog } from '../../../common/utils';
 import { getConfig } from '../../../config';
