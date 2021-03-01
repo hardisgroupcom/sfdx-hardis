@@ -138,7 +138,7 @@ export default class ScratchCreate extends SfdxCommand {
         const projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json'));
         projectScratchDef.orgName = this.scratchOrgAlias;
         projectScratchDef.adminEmail = this.userEmail;
-        projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
+        projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias.slice(0,5)}.com`;
         const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
         await fs.ensureDir(path.dirname(projectScratchDefLocal));
         await fs.writeFile(projectScratchDefLocal, JSON.stringify(projectScratchDef, null, 2));
