@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [1.4.0] 2021-02-28
 
-- New work commands
+- New work commands to make easier non technical users to use Hardis CI
   - **hardis:work:task:new**
   - **hardis:work:task:save** 
   - **hardis:work:task:refresh**

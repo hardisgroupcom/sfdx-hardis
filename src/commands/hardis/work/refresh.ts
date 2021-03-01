@@ -3,8 +3,8 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
-import { execCommand, getCurrentGitBranch, git, uxLog } from '../../../../common/utils';
-import { getConfig } from '../../../../config';
+import { execCommand, getCurrentGitBranch, git, uxLog } from '../../../common/utils';
+import { getConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

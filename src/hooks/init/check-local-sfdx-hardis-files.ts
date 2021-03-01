@@ -53,6 +53,9 @@ async function manageGitIgnore(commandId: string) {
     if (!commandId.startsWith('hardis')) {
         return;
     }
+    if (commandId.startsWith('hardis:work:task:new')) {
+        return ;
+    }
     const gitIgnoreFile = './.gitignore';
     if (fs.existsSync(gitIgnoreFile)) {
         const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
@@ -86,9 +89,9 @@ async function getSfdxHardisPackageJsonContent() {
             'scratch:pull-from-org-to-git': 'sfdx force:source:pull -w 60 --forceoverwrite',
             'scratch:open': 'sfdx force:org:open',
             'org:test:apex': 'sfdx hardis:org:test:apex',
-            'work:new-task': 'sfdx hardis:work:task:new',
-            'work:refresh': 'sfdx hardis:work:task:refresh',
-            'work:publish-task': 'sfdx hardis:work:task:publish',
+            'work:new': 'sfdx hardis:work:new',
+            'work:refresh': 'sfdx hardis:work:refresh',
+            'work:publish': 'sfdx hardis:work:publish',
             'scratch:create': 'sfdx hardis:scratch:create',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
             'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub',

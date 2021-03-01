@@ -311,7 +311,7 @@ export async function execCommand(
       );
     }
     if (commandResult.stderr && commandResult.stderr.length > 2) {
-      uxLog(this,"[sfdx-hardis][WARNING] stderr: "+c.yellow(commandResult.stderr));
+      uxLog(this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
     }
     return parsedResult;
   } catch (e) {

@@ -4,10 +4,10 @@ import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as prompts from 'prompts';
-import { MetadataUtils } from '../../../../common/metadata-utils';
-import { checkGitClean, ensureGitBranch, execCommand, gitCheckOutRemote, uxLog } from '../../../../common/utils';
-import { getConfig, setConfig } from '../../../../config';
-import ScratchCreate from '../../scratch/create';
+import { MetadataUtils } from '../../../common/metadata-utils';
+import { checkGitClean, ensureGitBranch, execCommand, gitCheckOutRemote, uxLog } from '../../../common/utils';
+import { getConfig, setConfig } from '../../../config';
+import ScratchCreate from '../scratch/create';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
