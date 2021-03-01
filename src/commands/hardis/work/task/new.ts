@@ -48,8 +48,8 @@ export default class NewTask extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
 
-    uxLog(this,c.cyan("This tool will assist you to create a new task (dev or config) with Hardis CI/CD"));
-    uxLog(this,c.cyan("When you don't know what to answer, you can let the default value and push ENTER"));
+    uxLog(this, c.cyan('This tool will assist you to create a new task (dev or config) with Hardis CI/CD'));
+    uxLog(this, c.cyan("When you don't know what to answer, you can let the default value and push ENTER"));
 
     // Make sure the git status is clean, to not delete uncommited updates
     await checkGitClean({});

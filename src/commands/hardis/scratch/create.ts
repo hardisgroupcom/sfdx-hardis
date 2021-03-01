@@ -93,7 +93,7 @@ export default class ScratchCreate extends SfdxCommand {
         this.gitBranch = await getCurrentGitBranch({ formatted: true });
         this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS ||
             ((!this.forceNew) ? this.configInfo.scratchOrgAlias : null) ||
-            os.userInfo().username + '-' + this.gitBranch.replace('/', '-') + '_' + moment().format('YYYY-MM-DD_hh-mm');
+            os.userInfo().username + '-' + this.gitBranch.replace('/', '-').slice(0,10) + '_' + moment().format('YYYY-MM-DD_hh-mm');
         if (isCI && !this.scratchOrgAlias.startsWith('CI-')) {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
         }
@@ -138,7 +138,7 @@ export default class ScratchCreate extends SfdxCommand {
         const projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json'));
         projectScratchDef.orgName = this.scratchOrgAlias;
         projectScratchDef.adminEmail = this.userEmail;
-        projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias.slice(0,5)}.com`;
+        projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
         const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
         await fs.ensureDir(path.dirname(projectScratchDefLocal));
         await fs.writeFile(projectScratchDefLocal, JSON.stringify(projectScratchDef, null, 2));
