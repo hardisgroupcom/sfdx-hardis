@@ -14,14 +14,14 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class PublishTask extends SfdxCommand {
+export default class SaveTask extends SfdxCommand {
 
-  public static title = 'Complete work task';
+  public static title = 'Save work task';
 
   public static description = messages.getMessage('completeWorkTask');
 
   public static examples = [
-    '$ sfdx hardis:work:task:publish'
+    '$ sfdx hardis:work:task:save'
   ];
 
   // public static args = [{name: 'file'}];
@@ -53,36 +53,42 @@ export default class PublishTask extends SfdxCommand {
     const pullCommand = 'sfdx force:source:pull -w 60 --forceoverwrite';
     await execCommand(pullCommand, this, { output: true, fail: true });
 
-    await interactiveGitAdd();
-
-    // Request commit info
-    const commitResponse = await prompts([
-      {
-        type: 'text',
-        name: 'commitText',
-        message: c.cyanBright('Please define a title what you did in the work task (50 chars max). Exemples "Update sharing rules configuration", "Create new webservice getAccount"...')
-      }
-    ]);
     const currentgitBranch = await getCurrentGitBranch();
-    uxLog(this, `Committing files in local git branch ${c.green(currentgitBranch)}...`);
-    await git.commit(commitResponse.commitText || 'Updated by sfdx-hardis');
+    const added = await interactiveGitAdd();
 
-    // Push new commit
-    const pushResponse = await prompts([
-      {
-        type: 'confirm',
-        name: 'push',
-        default: true,
-        message: c.cyanBright(`Do you want to push your updates in remote git branch ${c.green(currentgitBranch)} ?`)
+    // Commit / push
+    if (added.length > 0) {
+      // Request commit info
+      const commitResponse = await prompts([
+        {
+          type: 'text',
+          name: 'commitText',
+          message: c.cyanBright('Please define a title describing what you did in the work task (50 chars max). Exemples "Update sharing rules configuration", "Create new webservice getAccount"...')
+        }
+      ]);
+
+      uxLog(this, `Committing files in local git branch ${c.green(currentgitBranch)}...`);
+      await git.commit(commitResponse.commitText || 'Updated by sfdx-hardis');
+
+      // Push new commit
+      const pushResponse = await prompts([
+        {
+          type: 'confirm',
+          name: 'push',
+          default: true,
+          message: c.cyanBright(`Do you want to save your updates your updates on server ?(in remote git branch ${c.green(currentgitBranch)}) ?`)
+        }
+      ]);
+      if (pushResponse.push === true) {
+        uxLog(this, c.cyan(`Pushing new commit in remote git branch ${c.green(`origin/${currentgitBranch}`)}...`));
+        await git.push(['-u', 'origin', currentgitBranch]);
       }
-    ]);
-    if (pushResponse.push === true) {
-      uxLog(this, `Pushing new commit in remote git branch ${c.green(`origin/${currentgitBranch}`)}...`);
-      await git.push(['-u', 'origin', currentgitBranch]);
     }
-
     // Merge request
-    uxLog(this, c.cyan(`If you want to create a merge request, click on the link in the upper text, below ${c.italic('To create a merge request for ' + currentgitBranch + ', visit')}`));
+    const gitUrl = await git.listRemote(['--get-url']);
+    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`));
+    uxLog(this, c.cyan(`- click on the link in the upper text, below ${c.italic('To create a merge request for ' + currentgitBranch + ', visit')}`));
+    uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(gitUrl)}`));
     // const remote = await git.listRemote();
     // const remoteMergeRequest = `${remote.replace('.git','-/merge_requests/new')}`;
     // await open(remoteMergeRequest, {wait: true});

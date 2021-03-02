@@ -11,7 +11,8 @@
       "address": "127.0.0.1",
       "port": 9229,
       "localRoot": "${workspaceFolder}",
-      "remoteRoot": "${workspaceFolder}"
+      "remoteRoot": "${workspaceFolder}", 
+      "stopOnEntry": false
     },
     {
       "name": "Run All Tests",
