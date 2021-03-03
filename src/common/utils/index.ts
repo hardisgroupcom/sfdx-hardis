@@ -325,15 +325,15 @@ export async function execCommand(
 
 /* Ex: force-app/main/default/layouts/Opportunity-Opportunity %28Marketing%29 Layout.layout-meta.xml
    becomes layouts/Opportunity-Opportunity (Marketing Layout).layout-meta.xml */
-export function getSfdxFileLabel(filePath: string){
+export function getSfdxFileLabel(filePath: string) {
   const regex = /(.*)\/(.*)\..*\..*/;
-  const cleanStr = decodeURIComponent(filePath.replace('force-app/main/default/','')
-    .replace('force-app/main/','')
-    .replace('"','')
-  )
+  const cleanStr = decodeURIComponent(filePath.replace('force-app/main/default/', '')
+    .replace('force-app/main/', '')
+    .replace('"', '')
+  );
   const m = regex.exec(cleanStr);
   if (m && m.length >= 2) {
-    return cleanStr.replace(m[1],c.cyan(m[1])).replace(m[2],c.bold(c.yellow(m[2])))
+    return cleanStr.replace(m[1], c.cyan(m[1])).replace(m[2], c.bold(c.yellow(m[2])));
   }
   return cleanStr;
 }
