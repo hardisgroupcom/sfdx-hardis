@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New command **hardis:org:select**
+
 ## [1.4.1] 2021-03-03
 
 - Update default gitlab-ci.yml

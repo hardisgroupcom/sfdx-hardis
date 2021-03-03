@@ -14,7 +14,7 @@ export const hook = async (options: any) => {
 // Add utility scripts if they are not present
 async function managePackageJson(commandId: string) {
     if (!commandId.startsWith('hardis:scratch') && !commandId.startsWith('hardis:project:configure') &&
-        !commandId.startsWith('hardis:work') ) {
+        !commandId.startsWith('hardis:work')) {
         return;
     }
     if (commandId.startsWith('hardis:work:task:new')) {
@@ -87,16 +87,17 @@ async function getSfdxHardisPackageJsonContent() {
         scripts: {
             'scratch:push-from-git-to-org': 'sfdx force:source:push -g -w 60 --forceoverwrite',
             'scratch:pull-from-org-to-git': 'sfdx force:source:pull -w 60 --forceoverwrite',
-            'scratch:open': 'sfdx force:org:open',
-            'org:test:apex': 'sfdx hardis:org:test:apex',
             'work:new': 'sfdx hardis:work:new',
             'work:refresh': 'sfdx hardis:work:refresh',
             'work:save': 'sfdx hardis:work:save',
+            'org:open': 'sfdx force:org:open',
+            'org:test:apex': 'sfdx hardis:org:test:apex',
+            'org:select': 'sfdx hardis:org:select',
             'scratch:create': 'sfdx hardis:scratch:create',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
-            'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub',
-            'configure:auth:deployment': 'sfdx hardis:project:configure:auth'
-        }
+            'configure:auth:deployment': 'sfdx hardis:project:configure:auth',
+            'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub'
+          }
     };
     return hardisPackageJsonContent;
 }
@@ -106,7 +107,8 @@ async function getHardisGitRepoIgnoreContent() {
         '.cache/',
         'config/user/',
         'hardis-report/',
-        'tmp/'
+        'tmp/',
+        'metadatas/siteDotComSites/'
     ];
     return gitIgnoreContent;
 }
