@@ -804,7 +804,7 @@ EXAMPLE
   $ sfdx hardis:work:task:new
 ```
 
-_See code: [lib/commands/hardis/work/task/new copy.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.4.0/lib/commands/hardis/work/task/new copy.js)_
+_See code: [lib/commands/hardis/work/task/new copy.js](<https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.4.0/lib/commands/hardis/work/task/new> copy.js)_
 
 ## `sfdx hardis:work:task:publish [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
