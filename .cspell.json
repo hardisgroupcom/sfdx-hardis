@@ -72,6 +72,7 @@
         "hardisworknew",
         "hardisworkpublish",
         "hardisworkrefresh",
+        "hardisworksave",
         "hardisworktaskcomplete",
         "hardisworktasknew",
         "hardisworktaskpublish",
