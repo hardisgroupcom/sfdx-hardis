@@ -28,6 +28,7 @@
   "sandboxLogin": "Use if the environment is a sandbox",
   "scratch": "Scratch org",
   "scratchCreate": "Create and initialize a scratch org so it is ready to use",
+  "selectOrg": "Interactive org selection for user",
   "statusFilter": "Filter according to Status criteria",
   "tempFolder": "Temporary folder",
   "testLevel": "Level of tests to apply to validate deployment",

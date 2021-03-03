@@ -190,7 +190,7 @@ class MetadataUtils {
     for (const package1 of packages) {
       if (alreadyInstalled.filter((installedPackage: any) =>
         package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
-        uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`)}`));
+        uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`)}...`));
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
         }
@@ -201,7 +201,7 @@ class MetadataUtils {
         }
         await execCommand(packageInstallCommand, this, { fail: true, output: true });
       } else {
-        uxLog(commandThis, `Skip installation of ${package1.SubscriberPackageName} as it is already installed`);
+        uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`));
       }
     }
   }
@@ -214,7 +214,7 @@ class MetadataUtils {
     await fs.ensureDir(metadataFolder);
 
     // Build package.xml for all org
-    uxLog(commandThis, `[sfdx-hardis] Generating full package.xml from ${commandThis.org.getUsername()}...`);
+    uxLog(commandThis, c.cyan(`Generating full package.xml from ${c.green(commandThis.org.getUsername())}...`));
     const manifestRes = await exec('sfdx sfpowerkit:org:manifest:build -o package.xml');
     if (debug) {
       uxLog(commandThis, manifestRes.stdout + manifestRes.stderr);
@@ -222,7 +222,7 @@ class MetadataUtils {
 
     // Filter managed items if requested
     if (options.filterManagedItems) {
-      uxLog(commandThis, '[sfdx-hardis] Filtering managed items from package.Xml manifest');
+      uxLog(commandThis, c.cyan('Filtering managed items from package.Xml manifest...'));
       // List installed packages & collect managed namespaces
       const installedPackages = await this.listInstalledPackages(null, commandThis);
       const namespaces = [];
@@ -251,7 +251,7 @@ class MetadataUtils {
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog(commandThis, `[sfdx-hardis] Retrieving metadatas in ${c.green(metadataFolder)}...`);
+      uxLog(commandThis, c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`));
       const retrieveCommand = 'sfdx force:mdapi:retrieve' +
         ` --retrievetargetdir ${metadataFolder}` +
         ` --unpackaged ${packageXml}` +
@@ -262,7 +262,7 @@ class MetadataUtils {
         uxLog(commandThis, retrieveRes);
       }
       // Unzip metadatas
-      uxLog(commandThis, '[sfdx-hardis] Unzipping metadatas...');
+      uxLog(commandThis, c.cyan('Unzipping metadatas...'));
       await extractZip(path.join(metadataFolder, 'unpackaged.zip'), { dir: metadataFolder });
       await fs.unlink(path.join(metadataFolder, 'unpackaged.zip'));
     }
@@ -272,7 +272,7 @@ class MetadataUtils {
   public static async deployDestructiveChanges(packageDeletedXmlFile: string, options: any = { debug: false, check: false }, commandThis: any) {
     // Create empty deployment file because of sfdx limitation
     // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
-    uxLog(commandThis, `[sfdx-hardis] Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`);
+    uxLog(commandThis, c.cyan(`Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`));
     const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString()));
     await fs.ensureDir(tmpDir);
     const emptyPackageXmlFile = path.join(tmpDir, 'package.xml');
