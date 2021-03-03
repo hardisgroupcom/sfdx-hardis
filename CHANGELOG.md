@@ -4,6 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [1.4.1] 2021-03-03
+
+- Update default gitlab-ci.yml
+- rename commands:
+  - **hardis:work:new**
+  - **hardis:work:refresh**
+  - **hardis:work:save**
+- cosmetic enhancements
+
 ## [1.4.0] 2021-02-28
 
 - New work commands to make easier non technical users to use Hardis CI
