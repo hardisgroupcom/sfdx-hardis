@@ -181,20 +181,20 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
     const selectFilesStatus = await prompts({
       type: 'multiselect',
       name: 'files',
-      message: c.cyanBright('Please select the files you want to commit (save)'),
+      message: c.cyanBright(`Please select ${c.red('carefully')} the files you want to commit (save). ${c.red('They will be deployed to production someday !')}`),
       choices: filesFiltered.map((fileStatus: FileStatusResult) => {
-        return { title: `(${fileStatus.working_dir}) ${fileStatus.path}`, value: fileStatus };
+        return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
       })
     });
     const listOfFilesDisplay = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
-      return `(${fileStatus.working_dir}) ${fileStatus.path}`;
+      return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
     }).join('\n');
     const commitFilesResponse = await prompts({
       type: 'confirm',
       name: 'commit',
       message: c.cyanBright(`Do you confirm that you want to commit the following list of files ?\n${c.yellow(listOfFilesDisplay)}`),
       choices: filesFiltered.map((fileStatus: FileStatusResult) => {
-        return { title: `(${fileStatus.working_dir}) ${fileStatus.path}`, value: fileStatus };
+        return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
       })
     });
     listOfFiles = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
@@ -210,7 +210,7 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
       await git.add(listOfFiles);
     }
   } else {
-    uxLog(this, c.cyan('No uncommited local files'));
+    uxLog(this, c.cyan('There is no new file to commit'));
   }
   return listOfFiles;
 }
@@ -321,6 +321,21 @@ export async function execCommand(
       errorMessage: c.red(`[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`)
     };
   }
+}
+
+/* Ex: force-app/main/default/layouts/Opportunity-Opportunity %28Marketing%29 Layout.layout-meta.xml
+   becomes layouts/Opportunity-Opportunity (Marketing Layout).layout-meta.xml */
+export function getSfdxFileLabel(filePath: string) {
+  const regex = /(.*)\/(.*)\..*\..*/;
+  const cleanStr = decodeURIComponent(filePath.replace('force-app/main/default/', '')
+    .replace('force-app/main/', '')
+    .replace('"', '')
+  );
+  const m = regex.exec(cleanStr);
+  if (m && m.length >= 2) {
+    return cleanStr.replace(m[1], c.cyan(m[1])).replace(m[2], c.bold(c.yellow(m[2])));
+  }
+  return cleanStr;
 }
 
 // Filter package XML

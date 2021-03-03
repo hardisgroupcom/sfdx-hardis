@@ -58,7 +58,6 @@ check_quality:
   tags:
     - ubuntu
   only:
-    - pushes
     - merge_requests
     - web
   image: nvuillam/mega-linter-salesforce:latest
@@ -169,11 +168,10 @@ clean:
 # Simulation de déploiement vers l'org Salesforce cible
 # Se déclenche en cas de planification ou lancement manuel
 check_deploy_to_current_branch_org:
-  stage: deploy
+  stage: check_deploy
   tags:
     - ubuntu
   only:
-    - pushes
     - schedules
     - web
   except:
