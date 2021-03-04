@@ -8,7 +8,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
 import { execCommand, execSfdxJson, getCurrentGitBranch, git, interactiveGitAdd, uxLog } from '../../../common/utils';
-import { getConfig } from '../../../config';
+import { getConfig, setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -61,13 +61,28 @@ export default class SaveTask extends SfdxCommand {
 
     const gitUrl = await git().listRemote(['--get-url']);
     const currentGitBranch = await getCurrentGitBranch();
-    const added = await interactiveGitAdd();
+    await interactiveGitAdd();
+
+    // Commit updates
+    const gitStatus = await git().status();
+    if (gitStatus.staged.length > 0) {
+      // Request commit info
+      const commitResponse = await prompts([
+        {
+          type: 'text',
+          name: 'commitText',
+          message: c.cyanBright('Please define a title describing what you did in the work task (50 chars max). Exemples "Update sharing rules configuration", "Create new webservice getAccount"...')
+        }
+      ]);
+      uxLog(this, c.cyan(`Committing files in local git branch ${c.green(currentGitBranch)}...`));
+      await git().commit(commitResponse.commitText || 'Updated by sfdx-hardis');
+    }
 
     // Retrieving info about current branch latest commit and master branch latest commit
     const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
     const toCommit = logResult.latest;
     const mergeBaseCommand = `git merge-base ${config.developmentBranch} ${currentGitBranch}`;
-    const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {fail: true, debug: this.debugMode});
+    const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, { fail: true, debug: this.debugMode });
     const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace('\n', '').replace('\r', '');
 
     // Build package.xml delta between most recent commit and developpement
@@ -83,9 +98,9 @@ export default class SaveTask extends SfdxCommand {
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
       uxLog(this, c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) + c.green(packageXmlDiffStr));
       const appendPackageXmlCommand = 'sfdx essentials:packagexml:append' +
-      ` --packagexmls ${localPackageXml},${diffPackageXml}` +
-      ` --outputfile ${localPackageXml}`;
-      await execCommand(appendPackageXmlCommand, this, {fail: true, debug: this.debugMode});
+        ` --packagexmls ${localPackageXml},${diffPackageXml}` +
+        ` --outputfile ${localPackageXml}`;
+      await execCommand(appendPackageXmlCommand, this, { fail: true, debug: this.debugMode });
       await git().add(localPackageXml);
 
       // Upgrade local destructivePackage.xml
@@ -94,42 +109,40 @@ export default class SaveTask extends SfdxCommand {
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(this, c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) + c.red(destructivePackageXmlDiffStr));
       const appendDestructivePackageXmlCommand = 'sfdx essentials:packagexml:append' +
-      ` --packagexmls ${localDestructiveChangesXml},${diffDestructivePackageXml}` +
-      ` --outputfile ${localDestructiveChangesXml}`;
-      await execCommand(appendDestructivePackageXmlCommand, this, {fail: true, debug: this.debugMode});
+        ` --packagexmls ${localDestructiveChangesXml},${diffDestructivePackageXml}` +
+        ` --outputfile ${localDestructiveChangesXml}`;
+      await execCommand(appendDestructivePackageXmlCommand, this, { fail: true, debug: this.debugMode });
       await git().add(localDestructiveChangesXml);
     } else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(this, c.red(`Unable to build git diff. Please call a developer to ${c.yellow(c.bold('update package.xml and destructivePackage.xml manually'))}`));
     }
 
-    // Commit / push
-    const gitStatus = await git().status();
-    if (added.length > 0 || gitStatus.staged.length > 0) {
-      // Request commit info
-      const commitResponse = await prompts([
-        {
-          type: 'text',
-          name: 'commitText',
-          message: c.cyanBright('Please define a title describing what you did in the work task (50 chars max). Exemples "Update sharing rules configuration", "Create new webservice getAccount"...')
-        }
-      ]);
-
+    // Commit updates
+    const gitStatusWithConfig = await git().status();
+    if (gitStatusWithConfig.staged.length > 0) {
       uxLog(this, `Committing files in local git branch ${c.green(currentGitBranch)}...`);
-      await git().commit(commitResponse.commitText || 'Updated by sfdx-hardis');
+      await git().commit('[sfdx-hardis] Update package content');
+    }
 
-      // Push new commit
-      const pushResponse = await prompts([
-        {
-          type: 'confirm',
-          name: 'push',
-          default: true,
-          message: c.cyanBright(`Do you want to save your updates your updates on server ?(in remote git branch ${c.green(currentGitBranch)}) ?`)
-        }
-      ]);
+    // Push new commit(s)
+    if (gitStatus.staged.length > 0 || gitStatusWithConfig.staged.length > 0) {
+      const pushResponse = await prompts({
+        type: 'confirm',
+        name: 'push',
+        default: true,
+        message: c.cyanBright(`Do you want to save your updates your updates on server ? (git push in remote git branch ${c.green(currentGitBranch)})`)
+      });
       if (pushResponse.push === true) {
-        uxLog(this, c.cyan(`Pushing new commit in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));
-        await git({output: true}).push(['-u', 'origin', currentGitBranch]);
+        uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));
+        const configUSer = await getConfig('user');
+        if (configUSer.canForcePush === true) {
+          // Force push if hardis:work:resetselection has been called before
+          await git({ output: true }).push(['-u', 'origin', currentGitBranch, '--force']);
+          await setConfig('user', { canForcePush: false });
+        } else {
+          await git({ output: true }).push(['-u', 'origin', currentGitBranch]);
+        }
       }
     }
 

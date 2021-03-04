@@ -3,8 +3,8 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
-import {  getCurrentGitBranch, git, uxLog } from '../../../common/utils';
-import { getConfig } from '../../../config';
+import { execCommand, getCurrentGitBranch, git, uxLog } from '../../../common/utils';
+import { getConfig, setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -53,14 +53,15 @@ export default class RebuildSelection extends SfdxCommand {
         }
         // List all commits since the branch creation
         const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
-        const commitstoRevert = logResult.all;
-        // Revert commits
-        for (const commit of commitstoRevert) {
-            await git({output: true}).revert(commit.hash, ['--no-commit']);
-        }
-
-        uxLog(this, c.cyan('The following items are not available for selection'));
+        const commitstoReset = logResult.all;
+        const commitsToResetNumber = commitstoReset.length;
+        // Reset commits
+        await git({ output: true }).reset(['--soft', `HEAD~${commitsToResetNumber}`]);
+        await setConfig('user', {canForcePush: true});
+        // unstage files
+        await execCommand('git reset', this, { output: true, fail: true, debug: this.debugMode }); // await git({output:true}).reset(); does not work, let's use direct command
         await git({output: true}).status();
+        uxLog(this, c.cyan('The following items are not available for selection'));
         uxLog(this, c.cyan('Selection has been reset'));
         // Return an object to be displayed with --json
         return { outputString: 'Reset selection pocessed' };

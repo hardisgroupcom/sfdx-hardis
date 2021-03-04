@@ -52,7 +52,7 @@ export default class NewTask extends SfdxCommand {
     uxLog(this, c.cyan("When you don't know what to answer, you can let the default value and push ENTER"));
 
     // Make sure the git status is clean, to not delete uncommited updates
-    await checkGitClean({});
+    await checkGitClean({allowStash: true});
 
     const config = await getConfig('project');
 

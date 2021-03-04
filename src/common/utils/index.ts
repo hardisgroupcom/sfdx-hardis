@@ -19,7 +19,7 @@ let pluginsStdout = null;
 
 export const isCI = process.env.CI != null;
 
-export function git(options: any = {output: false}): SimpleGit {
+export function git(options: any = { output: false }): SimpleGit {
   const simpleGitInstance = simpleGit();
   // Hack to be able to display executed git command (and it still doesn't work...)
   // cf: https://github.com/steveukx/git-js/issues/593
@@ -166,9 +166,13 @@ export async function checkGitClean(options: any) {
   const gitStatus = await git().status();
   if (gitStatus.files.length > 0) {
     const localUpdates = gitStatus.files.map((fileStatus: FileStatusResult) => {
-      return `(${fileStatus.working_dir}) ${fileStatus.path}`;
+      return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
     }).join('\n');
-    throw new SfdxError(`[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold('commit or cancel')} the following local updates:\n${c.yellow(localUpdates)}`);
+    if (options.allowStash) {
+
+    } else {
+      throw new SfdxError(`[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold('commit or reset')} the following local updates:\n${c.yellow(localUpdates)}`);
+    }
   }
 }
 
@@ -177,11 +181,21 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
   if (git == null) {
     throw new SfdxError('[sfdx-hardis] You must be within a git repository');
   }
+  // List all files and arrange their format
   const gitStatus = await git().status();
   const filesFiltered = gitStatus.files.filter((fileStatus: FileStatusResult) => {
     return options.filter.filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
+  }).map((fileStatus: FileStatusResult) => {
+    if (fileStatus.path.startsWith('"')) {
+      fileStatus.path = fileStatus.path.substring(1);
+    }
+    if (fileStatus.path.endsWith('"')) {
+      fileStatus.path = fileStatus.path.slice(0, -1);
+    }
+    return fileStatus;
   });
-  let listOfFiles = [];
+  // Ask user what he/she wants to git add/rm
+  const result = { added: [], removed: [] };
   if (filesFiltered.length > 0) {
     const selectFilesStatus = await prompts({
       type: 'multiselect',
@@ -197,30 +211,34 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
     const listOfFilesDisplay = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
       return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
     }).join('\n');
-    const commitFilesResponse = await prompts({
+    const addFilesResponse = await prompts({
       type: 'confirm',
-      name: 'commit',
-      message: c.cyanBright(`Do you confirm that you want to commit the following list of files ?\n${c.yellow(listOfFilesDisplay)}`),
+      name: 'addFiles',
+      message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${c.yellow(listOfFilesDisplay)}`),
       choices: filesFiltered.map((fileStatus: FileStatusResult) => {
         return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
       })
     });
-    listOfFiles = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
-      if (fileStatus.path.startsWith('"')) {
-        fileStatus.path = fileStatus.path.substring(1);
+    // Separate added to removed files
+    result.added = selectFilesStatus.files
+      .filter((fileStatus: FileStatusResult) => fileStatus.working_dir !== 'D')
+      .map((fileStatus: FileStatusResult) => fileStatus.path);
+    result.removed = selectFilesStatus.files
+      .filter((fileStatus: FileStatusResult) => fileStatus.working_dir === 'D')
+      .map((fileStatus: FileStatusResult) => fileStatus.path);
+    // Commit if requested
+    if (addFilesResponse.addFiles === true) {
+      if (result.added.length > 0) {
+        await git({ output: true }).add(result.added);
       }
-      if (fileStatus.path.endsWith('"')) {
-        fileStatus.path = fileStatus.path.slice(0, -1);
+      if (result.removed.length > 0) {
+        await git({ output: true }).rm(result.removed);
       }
-      return fileStatus.path;
-    });
-    if (commitFilesResponse.commit === true) {
-      await git().add(listOfFiles);
     }
   } else {
     uxLog(this, c.cyan('There is no new file to commit'));
   }
-  return listOfFiles;
+  return result;
 }
 
 // Shortcut to add, commit and push
@@ -334,14 +352,21 @@ export async function execCommand(
 /* Ex: force-app/main/default/layouts/Opportunity-Opportunity %28Marketing%29 Layout.layout-meta.xml
    becomes layouts/Opportunity-Opportunity (Marketing Layout).layout-meta.xml */
 export function getSfdxFileLabel(filePath: string) {
-  const regex = /(.*)\/(.*)\..*\..*/;
   const cleanStr = decodeURIComponent(filePath.replace('force-app/main/default/', '')
     .replace('force-app/main/', '')
     .replace('"', '')
   );
-  const m = regex.exec(cleanStr);
-  if (m && m.length >= 2) {
-    return cleanStr.replace(m[1], c.cyan(m[1])).replace(m[2], c.bold(c.yellow(m[2])));
+  const dotNumbers = (filePath.match(/\./g) || []).length;
+  if (dotNumbers > 1) {
+    const m = /(.*)\/(.*)\..*\..*/.exec(cleanStr);
+    if (m && m.length >= 2) {
+      return cleanStr.replace(m[1], c.cyan(m[1])).replace(m[2], c.bold(c.yellow(m[2])));
+    }
+  } else {
+    const m = /(.*)\/(.*)\..*/.exec(cleanStr);
+    if (m && m.length >= 2) {
+      return cleanStr.replace(m[2], c.yellow(m[2]));
+    }
   }
   return cleanStr;
 }

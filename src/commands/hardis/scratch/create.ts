@@ -186,9 +186,14 @@ export default class ScratchCreate extends SfdxCommand {
     // Push or deploy metadatas to the scratch org
     public async initOrgMetadatas() {
         if (isCI) {
+            const packageXmlFile =
+            process.env.PACKAGE_XML_TO_DEPLOY ||
+              this.configInfo.packageXmlToDeploy ||
+              (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
+              './config/package.xml';
             // if CI, use force:source:deploy to make sure package.xml is consistent
             uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
-            const deployCommand = `sfdx force:source:deploy -x ./config/package.xml -u ${this.scratchOrgAlias}`;
+            const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile} -u ${this.scratchOrgAlias}`;
             await execCommand(deployCommand, this, { fail: true, output: true, debug: this.debugMode });
         } else {
             // Use push for local scratch orgs
