@@ -89,6 +89,7 @@ async function getSfdxHardisPackageJsonContent() {
             'scratch:pull-from-org-to-git': 'sfdx force:source:pull -w 60 --forceoverwrite',
             'work:new': 'sfdx hardis:work:new',
             'work:refresh': 'sfdx hardis:work:refresh',
+            'work:resetselection': 'sfdx hardis:work:resetselection',
             'work:save': 'sfdx hardis:work:save',
             'org:open': 'sfdx force:org:open',
             'org:test:apex': 'sfdx hardis:org:test:apex',

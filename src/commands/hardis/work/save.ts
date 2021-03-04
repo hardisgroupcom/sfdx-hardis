@@ -64,8 +64,8 @@ export default class SaveTask extends SfdxCommand {
     const added = await interactiveGitAdd();
 
     // Retrieving info about current branch latest commit and master branch latest commit
-    const commits = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
-    const toCommit = commits.latest;
+    const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
+    const toCommit = logResult.latest;
     const mergeBaseCommand = `git merge-base ${config.developmentBranch} ${currentGitBranch}`;
     const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {fail: true, debug: this.debugMode});
     const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace('\n', '').replace('\r', '');
@@ -92,13 +92,14 @@ export default class SaveTask extends SfdxCommand {
       const localDestructiveChangesXml = path.join('manifest', 'destructiveChanges.xml');
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
-      uxLog(this, c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) + c.red(destructivePackageXmlDiffStr));
+      uxLog(this, c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) + c.red(destructivePackageXmlDiffStr));
       const appendDestructivePackageXmlCommand = 'sfdx essentials:packagexml:append' +
       ` --packagexmls ${localDestructiveChangesXml},${diffDestructivePackageXml}` +
       ` --outputfile ${localDestructiveChangesXml}`;
       await execCommand(appendDestructivePackageXmlCommand, this, {fail: true, debug: this.debugMode});
       await git().add(localDestructiveChangesXml);
-    } else {
+    } 
+    else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(this, c.red(`Unable to build git diff. Please call a developer to ${c.yellow(c.bold('update package.xml and destructivePackage.xml manually'))}`));
     }
