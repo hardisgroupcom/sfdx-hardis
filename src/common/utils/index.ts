@@ -19,28 +19,28 @@ let pluginsStdout = null;
 
 export const isCI = process.env.CI != null;
 
-export function git(options: any = {output:false}): SimpleGit {
+export function git(options: any = {output: false}): SimpleGit {
   const simpleGitInstance = simpleGit();
   // Hack to be able to display executed git command (and it still doesn't work...)
   // cf: https://github.com/steveukx/git-js/issues/593
   return simpleGitInstance.outputHandler((command, stdout, stderr) => {
     let first = true;
-    stdout.on("data", (data) => {
-      logCommand()
+    stdout.on('data', data => {
+      logCommand();
       if (options.output) {
-        uxLog(this,c.italic(c.grey(data)))
+        uxLog(this, c.italic(c.grey(data)));
       }
     });
-    stderr.on("data", (data) => {
-      logCommand()
+    stderr.on('data', data => {
+      logCommand();
       if (options.output) {
-        uxLog(this,c.italic(c.yellow(data)))
+        uxLog(this, c.italic(c.yellow(data)));
       }
     });
-    function logCommand(){
+    function logCommand() {
       if (first) {
-        first= false;
-        uxLog(this,`[command] ${c.grey(command)}`);
+        first = false;
+        uxLog(this, `[command] ${c.grey(command)}`);
       }
     }
   });

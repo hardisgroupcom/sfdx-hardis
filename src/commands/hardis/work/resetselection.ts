@@ -19,7 +19,7 @@ export default class RebuildSelection extends SfdxCommand {
 
     public static description = messages.getMessage('rebuildSelection');
 
-    public static examples = [ 
+    public static examples = [
         '$ sfdx hardis:work:resetsave'
     ];
 
@@ -49,19 +49,19 @@ export default class RebuildSelection extends SfdxCommand {
 
         const currentGitBranch = await getCurrentGitBranch();
         if (currentGitBranch === config.developmentBranch) {
-            throw new SfdxError(c.red('[sfdx-hardis] You can not revert commits of a protected branch !'))
+            throw new SfdxError(c.red('[sfdx-hardis] You can not revert commits of a protected branch !'));
         }
         // List all commits since the branch creation
         const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
         const commitstoRevert = logResult.all;
         // Revert commits
         for (const commit of commitstoRevert) {
-            await git({output:true}).revert(commit.hash,['--no-commit']);
+            await git({output: true}).revert(commit.hash, ['--no-commit']);
         }
 
-        uxLog(this,c.cyan(`The following items are not available for selection`));
-        await git({output:true}).status();
-        uxLog(this,c.cyan(`Selection has been reset`));
+        uxLog(this, c.cyan('The following items are not available for selection'));
+        await git({output: true}).status();
+        uxLog(this, c.cyan('Selection has been reset'));
         // Return an object to be displayed with --json
         return { outputString: 'Reset selection pocessed' };
     }

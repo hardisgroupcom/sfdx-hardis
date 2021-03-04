@@ -43,7 +43,7 @@ export default class SaveTask extends SfdxCommand {
   protected static requiresProject = true;
 
   // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ['sfdx-essentials','sfdx-git-delta'];
+  protected static requiresSfdxPlugins = ['sfdx-essentials', 'sfdx-git-delta'];
 
   protected debugMode = false;
 
@@ -98,8 +98,7 @@ export default class SaveTask extends SfdxCommand {
       ` --outputfile ${localDestructiveChangesXml}`;
       await execCommand(appendDestructivePackageXmlCommand, this, {fail: true, debug: this.debugMode});
       await git().add(localDestructiveChangesXml);
-    } 
-    else {
+    } else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(this, c.red(`Unable to build git diff. Please call a developer to ${c.yellow(c.bold('update package.xml and destructivePackage.xml manually'))}`));
     }
@@ -130,7 +129,7 @@ export default class SaveTask extends SfdxCommand {
       ]);
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));
-        await git({output:true}).push(['-u', 'origin', currentGitBranch]);
+        await git({output: true}).push(['-u', 'origin', currentGitBranch]);
       }
     }
 
