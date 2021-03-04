@@ -28,6 +28,7 @@
   "sandboxLogin": "Use if the environment is a sandbox",
   "scratch": "Scratch org",
   "scratchCreate": "Create and initialize a scratch org so it is ready to use",
+  "rebuildSelection": "Process again the selection of the items that you want to publish to upper level",
   "selectOrg": "Interactive org selection for user",
   "statusFilter": "Filter according to Status criteria",
   "tempFolder": "Temporary folder",

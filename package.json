@@ -79,7 +79,8 @@
         "./lib/hooks/init/check-local-sfdx-hardis-files"
       ],
       "prerun": [
-        "./lib/hooks/prerun/auth"
+        "./lib/hooks/prerun/auth",
+        "./lib/hooks/prerun/check-dependencies"        
       ],
       "auth": [
         "./lib/hooks/prerun/auth"

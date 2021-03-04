@@ -15,20 +15,34 @@ import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
 import { MetadataUtils } from '../metadata-utils';
 
-export let git: SimpleGit = null;
-
-if (isGitRepo()) {
-  initSimpleGit();
-}
-
 let pluginsStdout = null;
 
 export const isCI = process.env.CI != null;
 
-function initSimpleGit() {
-  git = simpleGit().outputHandler((command, stdout, stderr) => {
-    stdout.pipe(process.stdout);
-    stderr.pipe(process.stderr);
+export function git(options: any = { output: false }): SimpleGit {
+  const simpleGitInstance = simpleGit();
+  // Hack to be able to display executed git command (and it still doesn't work...)
+  // cf: https://github.com/steveukx/git-js/issues/593
+  return simpleGitInstance.outputHandler((command, stdout, stderr) => {
+    let first = true;
+    stdout.on('data', data => {
+      logCommand();
+      if (options.output) {
+        uxLog(this, c.italic(c.grey(data)));
+      }
+    });
+    stderr.on('data', data => {
+      logCommand();
+      if (options.output) {
+        uxLog(this, c.italic(c.yellow(data)));
+      }
+    });
+    function logCommand() {
+      if (first) {
+        first = false;
+        uxLog(this, `[command] ${c.grey(command)}`);
+      }
+    }
   });
 }
 
@@ -42,24 +56,17 @@ export function isGitRepo() {
 }
 
 // Install plugin if not present
-export async function checkSfdxPlugin(
-  pluginName: string
-): Promise<{ installed: boolean; message: string }> {
-  let installed = false;
+export async function checkSfdxPlugin(pluginName: string) {
+  // Manage cache of sfdx plugins result
   if (pluginsStdout == null) {
     const pluginsRes = await exec('sfdx plugins');
     pluginsStdout = pluginsRes.stdout;
   }
   if (!pluginsStdout.includes(pluginName)) {
-    await exec(`echo y|sfdx plugins:install ${pluginName}`);
-    installed = true;
+    uxLog(this, c.yellow(`[dependencies] Installing sfdx plugin ${c.green(pluginName)}...`));
+    const installCommand = `echo y|sfdx plugins:install ${pluginName}`;
+    await execCommand(installCommand, this, { fail: true, output: false });
   }
-  return {
-    installed,
-    message: installed
-      ? `[sfdx-hardis] Installed sfdx plugin ${pluginName}`
-      : `[sfdx-hardis] sfdx plugin ${pluginName} is already installed`
-  };
 }
 
 export async function promptInstanceUrl() {
@@ -82,7 +89,6 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
     // Init repo
     if (options.init) {
       await exec('git init -b main');
-      initSimpleGit();
       console.info(c.yellow(c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)));
     } else if (options.clone) {
       // Clone repo
@@ -103,7 +109,6 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
         });
       });
       uxLog(this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
-      initSimpleGit();
       process.exit(0);
     } else {
       throw new SfdxError('Developer: please send init or clone as option');
@@ -117,7 +122,7 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
     return null;
   }
   const gitBranch =
-    process.env.CI_COMMIT_REF_NAME || (await git.branchLocal()).current;
+    process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
   if (options.formatted === true) {
     return gitBranch.replace('/', '__');
   }
@@ -125,8 +130,8 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
 }
 
 export async function gitCheckOutRemote(branchName: string) {
-  await git.checkout(branchName);
-  await git.pull();
+  await git().checkout(branchName);
+  await git().pull();
 }
 
 // Get local git branch name
@@ -138,16 +143,16 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       return false;
     }
   }
-  const branches = await git.branch();
-  const localBranches = await git.branchLocal();
+  const branches = await git().branch();
+  const localBranches = await git().branchLocal();
   if (localBranches.current !== branchName) {
     if (branches.all.includes(branchName)) {
       // Existing branch: checkout & pull
-      await git.checkout(branchName);
-      // await git.pull()
+      await git().checkout(branchName);
+      // await git().pull()
     } else {
       // Not existing branch: create it
-      await git.checkoutBranch(branchName, localBranches.current);
+      await git().checkoutBranch(branchName, localBranches.current);
     }
   }
   return true;
@@ -158,12 +163,16 @@ export async function checkGitClean(options: any) {
   if (git == null) {
     throw new SfdxError('[sfdx-hardis] You must be within a git repository');
   }
-  const gitStatus = await git.status();
+  const gitStatus = await git().status();
   if (gitStatus.files.length > 0) {
     const localUpdates = gitStatus.files.map((fileStatus: FileStatusResult) => {
-      return `(${fileStatus.working_dir}) ${fileStatus.path}`;
+      return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
     }).join('\n');
-    throw new SfdxError(`[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold('commit or cancel')} the following local updates:\n${c.yellow(localUpdates)}`);
+    if (options.allowStash) {
+
+    } else {
+      throw new SfdxError(`[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold('commit or reset')} the following local updates:\n${c.yellow(localUpdates)}`);
+    }
   }
 }
 
@@ -172,11 +181,21 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
   if (git == null) {
     throw new SfdxError('[sfdx-hardis] You must be within a git repository');
   }
-  const gitStatus = await git.status();
+  // List all files and arrange their format
+  const gitStatus = await git().status();
   const filesFiltered = gitStatus.files.filter((fileStatus: FileStatusResult) => {
     return options.filter.filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
+  }).map((fileStatus: FileStatusResult) => {
+    if (fileStatus.path.startsWith('"')) {
+      fileStatus.path = fileStatus.path.substring(1);
+    }
+    if (fileStatus.path.endsWith('"')) {
+      fileStatus.path = fileStatus.path.slice(0, -1);
+    }
+    return fileStatus;
   });
-  let listOfFiles = [];
+  // Ask user what he/she wants to git add/rm
+  const result = { added: [], removed: [] };
   if (filesFiltered.length > 0) {
     const selectFilesStatus = await prompts({
       type: 'multiselect',
@@ -186,33 +205,40 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
         return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
       })
     });
+    if (selectFilesStatus.files.length === 0) {
+      return [];
+    }
     const listOfFilesDisplay = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
       return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
     }).join('\n');
-    const commitFilesResponse = await prompts({
+    const addFilesResponse = await prompts({
       type: 'confirm',
-      name: 'commit',
-      message: c.cyanBright(`Do you confirm that you want to commit the following list of files ?\n${c.yellow(listOfFilesDisplay)}`),
+      name: 'addFiles',
+      message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${c.yellow(listOfFilesDisplay)}`),
       choices: filesFiltered.map((fileStatus: FileStatusResult) => {
         return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
       })
     });
-    listOfFiles = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
-      if (fileStatus.path.startsWith('"')) {
-        fileStatus.path = fileStatus.path.substring(1);
+    // Separate added to removed files
+    result.added = selectFilesStatus.files
+      .filter((fileStatus: FileStatusResult) => fileStatus.working_dir !== 'D')
+      .map((fileStatus: FileStatusResult) => fileStatus.path);
+    result.removed = selectFilesStatus.files
+      .filter((fileStatus: FileStatusResult) => fileStatus.working_dir === 'D')
+      .map((fileStatus: FileStatusResult) => fileStatus.path);
+    // Commit if requested
+    if (addFilesResponse.addFiles === true) {
+      if (result.added.length > 0) {
+        await git({ output: true }).add(result.added);
       }
-      if (fileStatus.path.endsWith('"')) {
-        fileStatus.path = fileStatus.path.slice(0, -1);
+      if (result.removed.length > 0) {
+        await git({ output: true }).rm(result.removed);
       }
-      return fileStatus.path;
-    });
-    if (commitFilesResponse.commit === true) {
-      await git.add(listOfFiles);
     }
   } else {
     uxLog(this, c.cyan('There is no new file to commit'));
   }
-  return listOfFiles;
+  return result;
 }
 
 // Shortcut to add, commit and push
@@ -226,13 +252,12 @@ export async function gitAddCommitPush(options: any = {
     if (options.init) {
       // Initialize git repo
       await execCommand('git init -b main', this);
-      initSimpleGit();
-      await git.checkoutBranch(options.branch || 'dev', 'main');
+      await git().checkoutBranch(options.branch || 'dev', 'main');
     }
   }
   // Add, commit & push
-  const currentgitBranch = (await git.branchLocal()).current;
-  await git.add(options.pattern || './*')
+  const currentgitBranch = (await git().branchLocal()).current;
+  await git().add(options.pattern || './*')
     .commit(options.commitMessage || 'Updated by sfdx-hardis')
     .push(['-u', 'origin', currentgitBranch]);
 }
@@ -269,7 +294,7 @@ export async function execCommand(
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = '0';
-  const spinner = ora({text: commandLog, spinner: 'moon'}).start();
+  const spinner = ora({ text: commandLog, spinner: 'moon' }).start();
   if (options.spinner === false) {
     spinner.stop();
   }
@@ -292,14 +317,15 @@ export async function execCommand(
   }
   // Display output if requested, for better user unrstanding of the logs
   if (options.output || options.debug) {
-    uxLog(commandThis, `[commandresult] ${commandResult.stdout}`);
+    uxLog(commandThis, c.italic(c.grey(commandResult.stdout)));
   }
   // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;
   if (!command.includes('--json')) {
     return {
       status: 0,
-      stdout: commandResult
+      stdout: commandResult.stdout,
+      stderr: commandResult.stderr
     };
   }
   // Parse command result if --json
@@ -326,14 +352,21 @@ export async function execCommand(
 /* Ex: force-app/main/default/layouts/Opportunity-Opportunity %28Marketing%29 Layout.layout-meta.xml
    becomes layouts/Opportunity-Opportunity (Marketing Layout).layout-meta.xml */
 export function getSfdxFileLabel(filePath: string) {
-  const regex = /(.*)\/(.*)\..*\..*/;
   const cleanStr = decodeURIComponent(filePath.replace('force-app/main/default/', '')
     .replace('force-app/main/', '')
     .replace('"', '')
   );
-  const m = regex.exec(cleanStr);
-  if (m && m.length >= 2) {
-    return cleanStr.replace(m[1], c.cyan(m[1])).replace(m[2], c.bold(c.yellow(m[2])));
+  const dotNumbers = (filePath.match(/\./g) || []).length;
+  if (dotNumbers > 1) {
+    const m = /(.*)\/(.*)\..*\..*/.exec(cleanStr);
+    if (m && m.length >= 2) {
+      return cleanStr.replace(m[1], c.cyan(m[1])).replace(m[2], c.bold(c.yellow(m[2])));
+    }
+  } else {
+    const m = /(.*)\/(.*)\..*/.exec(cleanStr);
+    if (m && m.length >= 2) {
+      return cleanStr.replace(m[2], c.yellow(m[2]));
+    }
   }
   return cleanStr;
 }
