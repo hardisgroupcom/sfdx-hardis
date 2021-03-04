@@ -108,7 +108,10 @@ async function getHardisGitRepoIgnoreContent() {
         'config/user/',
         'hardis-report/',
         'tmp/',
-        'metadatas/siteDotComSites/'
+        // Metadatas to be ignored
+        'metadatas/siteDotComSites/',
+        // SFDX Items to be ignored
+        'force-app/main/default/appMenus/AppSwitcher.appMenu-meta.xml'
     ];
     return gitIgnoreContent;
 }
