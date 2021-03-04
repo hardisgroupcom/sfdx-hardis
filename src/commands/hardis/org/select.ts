@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as prompts from 'prompts';
 import { MetadataUtils } from '../../../common/metadata-utils';
-import {  execSfdxJson, uxLog } from '../../../common/utils';
+import { execSfdxJson, uxLog } from '../../../common/utils';
 import { setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -51,39 +51,49 @@ export default class OrgSelect extends SfdxCommand {
 
     // List all local orgs and request to user
     const orgListResult = await MetadataUtils.listLocalOrgs('any');
-    const orgList = [...orgListResult.scratchOrgs, ...orgListResult.nonScratchOrgs, {username: 'Connect to another org', otherOrg: true}];
+    const orgList = [...orgListResult.scratchOrgs,
+    ...orgListResult.nonScratchOrgs,
+    { username: 'Connect to another org', otherOrg: true },
+    { username: 'Cancel', cancel: true }
+    ];
     const orgResponse = await prompts({
-            type: 'select',
-            name: 'org',
-            message: c.cyanBright('Please select an org'),
-            choices: orgList.map((org: any) => {
-                return {title: `${c.cyan(org.username)} - ${org.instanceUrl || ''}`, value: org };
-            })
-          }
+      type: 'select',
+      name: 'org',
+      message: c.cyanBright('Please select an org'),
+      choices: orgList.map((org: any) => {
+        return { title: `${c.cyan(org.username)} - ${org.instanceUrl || ''}`, value: org };
+      })
+    }
     );
 
-        // Connect to new org
+    // Cancel
+    if (orgResponse.org.cancel === true) {
+      uxLog(this, c.cyan('Cancelled'));
+      process.exit(0);
+    }
+
+    // Connect to new org
     if (orgResponse.org.otherOrg === true) {
-        await this.config.runHook('auth', { checkAuth: true, Command: this, devHub });
-        return { outputString: 'Launched org connection' };
+      await this.config.runHook('auth', { checkAuth: true, Command: this, devHub });
+      return { outputString: 'Launched org connection' };
     } else {
-        // Set default username
-        const setDefaultUsernameCommand = `sfdx config:set ${devHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgResponse.org.username}`;
-        await execSfdxJson(setDefaultUsernameCommand, this, { fail: true, output: false });
+      // Set default username
+      const setDefaultUsernameCommand = `sfdx config:set ${devHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgResponse.org.username}`;
+      await execSfdxJson(setDefaultUsernameCommand, this, { fail: true, output: false });
 
-        // Update local user .sfdx-hardis.yml file with response if scratch has been selected
-        if (orgResponse.org.username.includes('scratch')) {
-            await setConfig('user', {
-                scratchOrgAlias: orgResponse.org.username,
-                scratchOrgUsername: orgResponse.org.alias || orgResponse.org.username
-            });
-        }
+      // Update local user .sfdx-hardis.yml file with response if scratch has been selected
+      if (orgResponse.org.username.includes('scratch')) {
+        await setConfig('user', {
+          scratchOrgAlias: orgResponse.org.username,
+          scratchOrgUsername: orgResponse.org.alias || orgResponse.org.username
+        });
+      }
 
-        uxLog(this, c.gray(JSON.stringify(orgResponse.org, null, 2)));
-        uxLog(this, c.cyan(`Selected org ${c.green(orgResponse.org.username)} - ${c.green(orgResponse.org.instanceUrl)}`));
+      uxLog(this, c.gray(JSON.stringify(orgResponse.org, null, 2)));
+      uxLog(this, c.cyan(`Selected org ${c.green(orgResponse.org.username)} - ${c.green(orgResponse.org.instanceUrl)}`));
 
-        // Return an object to be displayed with --json
-        return { outputString: `Selected org ${orgResponse.org.username}` };
+      // Return an object to be displayed with --json
+      return { outputString: `Selected org ${orgResponse.org.username}` };
     }
   }
 }
