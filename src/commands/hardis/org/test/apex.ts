@@ -69,15 +69,28 @@ export default class OrgTestApex extends SfdxCommand {
       this.ux.log(c.green(message));
       // Check code coverage (orgWide)
       const coverageOrgWide = parseFloat(testRes.result.summary.orgWideCoverage.replace('%', ''));
-      const minCoverageOrgWide = process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
-        process.env.APEX_TESTS_MIN_COVERAGE || 75.0;
+      const minCoverageOrgWide = 
+        process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
+        process.env.APEX_TESTS_MIN_COVERAGE || 
+        this.configInfo.apexTestsMinCoverageOrgWide ||
+        this.configInfo.apexTestsMinCoverage || 
+        75.0;
+      if (minCoverageOrgWide < 75.0) {
+        throw new SfdxError(`[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)`);
+      }
       if (coverageOrgWide < minCoverageOrgWide) {
-        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageOrgWide} should be > to ${minCoverageOrgWide}`);
+        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${coverageOrgWide} should be > to ${minCoverageOrgWide}`);
       }
       // Check code coverage ()
       const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
-      const minCoverageTestRun = process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
-        process.env.APEX_TESTS_MIN_COVERAGE || 75.0;
+      const minCoverageTestRun = 
+        process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
+        process.env.APEX_TESTS_MIN_COVERAGE ||
+        this.configInfo.apexTestsMinCoverage || 
+        minCoverageOrgWide
+      if (minCoverageTestRun < 75.0) {
+        throw new SfdxError(`[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)`);
+      }
       if (coverageTestRun < minCoverageTestRun) {
         throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun} should be > to ${minCoverageTestRun}`);
       }

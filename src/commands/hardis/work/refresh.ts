@@ -20,7 +20,7 @@ export default class RefreshTask extends SfdxCommand {
     public static description = messages.getMessage('refreshWorkTask');
 
     public static examples = [
-        '$ sfdx hardis:work:task:refresh'
+        '$ sfdx hardis:work:refresh'
     ];
 
     // public static args = [{name: 'file'}];
@@ -53,23 +53,30 @@ export default class RefreshTask extends SfdxCommand {
         await execCommand(pullCommand, this, { output: true, fail: true });
 
         // Stash
-        uxLog(this, c.cyan(`Stash your local updates before merging ${c.green(config.developmentBranch)} into your local branch ${c.green(localBranch)}...`));
-        await git.stash();
-
+        uxLog(this, c.cyan(`Stashing your uncommited updates in ${c.green(localBranch)} before merging ${c.green(config.developmentBranch)} into your local branch ${c.green(localBranch)}...`));
+        const stashResult = await git({output:true}).stash();
+        const stashed = stashResult.includes('Saved working directory');
         // Pull most recent version of development branch
-        uxLog(this, c.cyan(`Retrieving most recent version of remote branch ${config.developmentBranch}...`));
-        await git.fetch();
-        await git.checkout(config.developmentBranch);
-        await git.pull();
-        // Merge into current branch
-        // Create new commit from merge
-        uxLog(this, c.cyan(`Creating a merge commit within ${localBranch}...`));
-        await git.mergeFromTo(config.developmentBranch, localBranch)
-            .add('./*')
-            .commit(`[sfdx-hardis] Merge from ${config.developmentBranch}`);
-        uxLog(this, c.cyan(`Restoring stash into your local branch ${c.green(localBranch)}...`));
-        await git.checkout(localBranch);
-        await git.stash(['pop']);
+        uxLog(this, c.cyan(`Pulling most recent version of remote branch ${c.green(config.developmentBranch)}...`));
+        await git({output:true}).fetch();
+        await git({output:true}).checkout(config.developmentBranch);
+        const pullRes = await git({output:true}).pull();
+        // Merge into current branch if necessary
+        if (pullRes.summary.changes > 0) {
+            // Create new commit from merge
+            uxLog(this, c.cyan(`Creating a merge commit of ${c.green(config.developmentBranch)} within ${c.green(localBranch)}...`));
+            await git({output:true}).mergeFromTo(config.developmentBranch, localBranch)
+                .add('./*')
+                .commit(`[sfdx-hardis] Merge updates from ${config.developmentBranch}`);
+        }
+        else {
+            uxLog(this, c.cyan(`Local branch ${c.green(localBranch)} is already up to date with ${c.green(config.developmentBranch)}`));
+        }
+        await git({output:true}).checkout(localBranch);
+        if (stashed) {
+            uxLog(this, c.cyan(`Restoring stash into your local branch ${c.green(localBranch)}...`));
+            await git({output:true}).stash(['pop']);
+        }
 
         // Return an object to be displayed with --json
         return { outputString: 'Refreshed the task' };

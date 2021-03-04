@@ -15,22 +15,33 @@ import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
 import { MetadataUtils } from '../metadata-utils';
 
-export let git: SimpleGit = null;
-
-if (isGitRepo()) {
-  initSimpleGit();
-}
-
 let pluginsStdout = null;
 
 export const isCI = process.env.CI != null;
 
-function initSimpleGit() {
-  git = simpleGit().outputHandler((command, stdout, stderr) => {
-    if (command !== 'git') {
-      uxLog(this, c.grey(command));
-      stdout.pipe(process.stdout);
-      stderr.pipe(process.stderr);
+export function git(options: any = {output:false}): SimpleGit {
+  const simpleGitInstance = simpleGit();
+  // Hack to be able to display executed git command (and it still doesn't work...)
+  // cf: https://github.com/steveukx/git-js/issues/593
+  return simpleGitInstance.outputHandler((command, stdout, stderr) => {
+    let first = true;
+    stdout.on("data", (data) => {
+      logCommand()
+      if (options.output) {
+        uxLog(this,c.italic(c.grey(data)))
+      }
+    });
+    stderr.on("data", (data) => {
+      logCommand()
+      if (options.output) {
+        uxLog(this,c.italic(c.yellow(data)))
+      }
+    });
+    function logCommand(){
+      if (first) {
+        first= false;
+        uxLog(this,`[command] ${c.grey(command)}`);
+      }
     }
   });
 }
@@ -78,7 +89,6 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
     // Init repo
     if (options.init) {
       await exec('git init -b main');
-      initSimpleGit();
       console.info(c.yellow(c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)));
     } else if (options.clone) {
       // Clone repo
@@ -99,7 +109,6 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
         });
       });
       uxLog(this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
-      initSimpleGit();
       process.exit(0);
     } else {
       throw new SfdxError('Developer: please send init or clone as option');
@@ -113,7 +122,7 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
     return null;
   }
   const gitBranch =
-    process.env.CI_COMMIT_REF_NAME || (await git.branchLocal()).current;
+    process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
   if (options.formatted === true) {
     return gitBranch.replace('/', '__');
   }
@@ -121,8 +130,8 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
 }
 
 export async function gitCheckOutRemote(branchName: string) {
-  await git.checkout(branchName);
-  await git.pull();
+  await git().checkout(branchName);
+  await git().pull();
 }
 
 // Get local git branch name
@@ -134,16 +143,16 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       return false;
     }
   }
-  const branches = await git.branch();
-  const localBranches = await git.branchLocal();
+  const branches = await git().branch();
+  const localBranches = await git().branchLocal();
   if (localBranches.current !== branchName) {
     if (branches.all.includes(branchName)) {
       // Existing branch: checkout & pull
-      await git.checkout(branchName);
-      // await git.pull()
+      await git().checkout(branchName);
+      // await git().pull()
     } else {
       // Not existing branch: create it
-      await git.checkoutBranch(branchName, localBranches.current);
+      await git().checkoutBranch(branchName, localBranches.current);
     }
   }
   return true;
@@ -154,7 +163,7 @@ export async function checkGitClean(options: any) {
   if (git == null) {
     throw new SfdxError('[sfdx-hardis] You must be within a git repository');
   }
-  const gitStatus = await git.status();
+  const gitStatus = await git().status();
   if (gitStatus.files.length > 0) {
     const localUpdates = gitStatus.files.map((fileStatus: FileStatusResult) => {
       return `(${fileStatus.working_dir}) ${fileStatus.path}`;
@@ -168,7 +177,7 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
   if (git == null) {
     throw new SfdxError('[sfdx-hardis] You must be within a git repository');
   }
-  const gitStatus = await git.status();
+  const gitStatus = await git().status();
   const filesFiltered = gitStatus.files.filter((fileStatus: FileStatusResult) => {
     return options.filter.filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
   });
@@ -206,7 +215,7 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
       return fileStatus.path;
     });
     if (commitFilesResponse.commit === true) {
-      await git.add(listOfFiles);
+      await git().add(listOfFiles);
     }
   } else {
     uxLog(this, c.cyan('There is no new file to commit'));
@@ -225,13 +234,12 @@ export async function gitAddCommitPush(options: any = {
     if (options.init) {
       // Initialize git repo
       await execCommand('git init -b main', this);
-      initSimpleGit();
-      await git.checkoutBranch(options.branch || 'dev', 'main');
+      await git().checkoutBranch(options.branch || 'dev', 'main');
     }
   }
   // Add, commit & push
-  const currentgitBranch = (await git.branchLocal()).current;
-  await git.add(options.pattern || './*')
+  const currentgitBranch = (await git().branchLocal()).current;
+  await git().add(options.pattern || './*')
     .commit(options.commitMessage || 'Updated by sfdx-hardis')
     .push(['-u', 'origin', currentgitBranch]);
 }
@@ -291,7 +299,7 @@ export async function execCommand(
   }
   // Display output if requested, for better user unrstanding of the logs
   if (options.output || options.debug) {
-    uxLog(commandThis, `[commandresult] ${commandResult.stdout}`);
+    uxLog(commandThis, c.italic(c.grey(commandResult.stdout)));
   }
   // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;

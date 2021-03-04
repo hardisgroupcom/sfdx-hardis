@@ -43,7 +43,7 @@ export default class SaveTask extends SfdxCommand {
   protected static requiresProject = true;
 
   // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ['sfdx-essentials'];
+  protected static requiresSfdxPlugins = ['sfdx-essentials','sfdx-git-delta'];
 
   protected debugMode = false;
 
@@ -59,13 +59,13 @@ export default class SaveTask extends SfdxCommand {
     const pullCommand = 'sfdx force:source:pull -w 60 --forceoverwrite';
     await execCommand(pullCommand, this, { output: true, fail: true });
 
-    const gitUrl = await git.listRemote(['--get-url']);
+    const gitUrl = await git().listRemote(['--get-url']);
     const currentGitBranch = await getCurrentGitBranch();
     const added = await interactiveGitAdd();
 
     // Retrieving info about current branch latest commit and master branch latest commit
-    const commits = await git.log([`${config.developmentBranch}..${currentGitBranch}`]);
-    const toCommit = commits.latest;
+    const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
+    const toCommit = logResult.latest;
     const mergeBaseCommand = `git merge-base ${config.developmentBranch} ${currentGitBranch}`;
     const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {fail: true, debug: this.debugMode});
     const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace('\n', '').replace('\r', '');
@@ -76,36 +76,36 @@ export default class SaveTask extends SfdxCommand {
     await fs.ensureDir(tmpDir);
     const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit.hash} --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, { output: false, fail: false, debug: this.debugMode });
-    const updatedManifest = false ;
     if (packageXmlResult.status === 0) {
       // Upgrade local package.xml
+      const localPackageXml = path.join('manifest', 'package.xml');
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
-      uxLog(this, c.cyan('package.xml diff:\n') + c.green(packageXmlDiffStr));
-      const localPackageXml = path.join('manifest', 'package.xml');
+      uxLog(this, c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) + c.green(packageXmlDiffStr));
       const appendPackageXmlCommand = 'sfdx essentials:packagexml:append' +
       ` --packagexmls ${localPackageXml},${diffPackageXml}` +
       ` --outputfile ${localPackageXml}`;
       await execCommand(appendPackageXmlCommand, this, {fail: true, debug: this.debugMode});
-      await git.add(localPackageXml);
+      await git().add(localPackageXml);
 
       // Upgrade local destructivePackage.xml
+      const localDestructiveChangesXml = path.join('manifest', 'destructiveChanges.xml');
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
-      uxLog(this, c.cyan('destructivePackage.xml diff:\n') + c.red(destructivePackageXmlDiffStr));
-      const localDestructiveChangesXml = path.join('manifest', 'destructiveChanges.xml');
+      uxLog(this, c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) + c.red(destructivePackageXmlDiffStr));
       const appendDestructivePackageXmlCommand = 'sfdx essentials:packagexml:append' +
       ` --packagexmls ${localDestructiveChangesXml},${diffDestructivePackageXml}` +
       ` --outputfile ${localDestructiveChangesXml}`;
       await execCommand(appendDestructivePackageXmlCommand, this, {fail: true, debug: this.debugMode});
-      await git.add(localDestructiveChangesXml);
-    } else {
+      await git().add(localDestructiveChangesXml);
+    } 
+    else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(this, c.red(`Unable to build git diff. Please call a developer to ${c.yellow(c.bold('update package.xml and destructivePackage.xml manually'))}`));
     }
 
     // Commit / push
-    const gitStatus = await git.status();
+    const gitStatus = await git().status();
     if (added.length > 0 || gitStatus.staged.length > 0) {
       // Request commit info
       const commitResponse = await prompts([
@@ -117,7 +117,7 @@ export default class SaveTask extends SfdxCommand {
       ]);
 
       uxLog(this, `Committing files in local git branch ${c.green(currentGitBranch)}...`);
-      await git.commit(commitResponse.commitText || 'Updated by sfdx-hardis');
+      await git().commit(commitResponse.commitText || 'Updated by sfdx-hardis');
 
       // Push new commit
       const pushResponse = await prompts([
@@ -130,7 +130,7 @@ export default class SaveTask extends SfdxCommand {
       ]);
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));
-        await git.push(['-u', 'origin', currentGitBranch]);
+        await git({output:true}).push(['-u', 'origin', currentGitBranch]);
       }
     }
 
@@ -138,7 +138,7 @@ export default class SaveTask extends SfdxCommand {
     uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`));
     uxLog(this, c.cyan(`- click on the link in the upper text, below ${c.italic('To create a merge request for ' + currentGitBranch + ', visit')}`));
     uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(gitUrl)}`));
-    // const remote = await git.listRemote();
+    // const remote = await git().listRemote();
     // const remoteMergeRequest = `${remote.replace('.git','-/merge_requests/new')}`;
     // await open(remoteMergeRequest, {wait: true});
 
