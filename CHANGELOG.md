@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - New command **hardis:org:select**
+- **hardis:work:save**: Upgrade package.xml and destructiveChanges.xml from git diff
 
 ## [1.4.1] 2021-03-03
 

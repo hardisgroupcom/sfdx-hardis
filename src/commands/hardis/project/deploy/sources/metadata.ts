@@ -8,7 +8,7 @@ import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 import { MetadataUtils } from '../../../../../common/metadata-utils';
-import { checkSfdxPlugin, execCommand, uxLog } from '../../../../../common/utils';
+import { execCommand, uxLog } from '../../../../../common/utils';
 import { getConfig } from '../../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -68,6 +68,9 @@ export default class DxSources extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
+  // List required plugins, their presence will be tested before running the command
+  protected static requiresSfdxPlugins = ['sfdx-essentials'];
+
   protected configInfo: any = {};
 
   /* jscpd:ignore-end */
@@ -80,9 +83,6 @@ export default class DxSources extends SfdxCommand {
     const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debugMode = this.flags.debug || false;
     this.configInfo = await getConfig('branch');
-
-    const essentialsRes = await checkSfdxPlugin('sfdx-essentials');
-    this.ux.log(essentialsRes.message);
 
     // Install packages
     const packages = this.configInfo.installedPackages || [];

@@ -11,7 +11,6 @@ import * as util from 'util';
 const exec = util.promisify(child.exec);
 
 import { MetadataUtils } from '../../../../../common/metadata-utils';
-import { checkSfdxPlugin } from '../../../../../common/utils';
 import { setConfig } from '../../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -70,6 +69,9 @@ export default class DxSources extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
+  // List required plugins, their presence will be tested before running the command
+  protected static requiresSfdxPlugins = ['sfpowerkit', 'sfdx-essentials'];
+
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
@@ -80,12 +82,6 @@ export default class DxSources extends SfdxCommand {
       : MetadataUtils.listMetadatasNotManagedBySfdx();
     const shapeFlag = this.flags.shape || false;
     const debug = this.flags.debug || false;
-
-    // Check required plugins
-    const powerkitRes = await checkSfdxPlugin('sfpowerkit');
-    this.ux.log(powerkitRes.message);
-    const essentialsRes = await checkSfdxPlugin('sfdx-essentials');
-    this.ux.log(essentialsRes.message);
 
     // Create working temp folders and define it as cwd
     const prevCwd = process.cwd();

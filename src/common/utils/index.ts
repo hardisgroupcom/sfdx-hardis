@@ -27,8 +27,11 @@ export const isCI = process.env.CI != null;
 
 function initSimpleGit() {
   git = simpleGit().outputHandler((command, stdout, stderr) => {
-    stdout.pipe(process.stdout);
-    stderr.pipe(process.stderr);
+    if (command !== 'git') {
+      uxLog(this, c.grey(command));
+      stdout.pipe(process.stdout);
+      stderr.pipe(process.stderr);
+    }
   });
 }
 
@@ -42,24 +45,17 @@ export function isGitRepo() {
 }
 
 // Install plugin if not present
-export async function checkSfdxPlugin(
-  pluginName: string
-): Promise<{ installed: boolean; message: string }> {
-  let installed = false;
+export async function checkSfdxPlugin(pluginName: string) {
+  // Manage cache of sfdx plugins result
   if (pluginsStdout == null) {
     const pluginsRes = await exec('sfdx plugins');
     pluginsStdout = pluginsRes.stdout;
   }
   if (!pluginsStdout.includes(pluginName)) {
-    await exec(`echo y|sfdx plugins:install ${pluginName}`);
-    installed = true;
+    uxLog(this, c.yellow(`[dependencies] Installing sfdx plugin ${c.green(pluginName)}...`));
+    const installCommand = `echo y|sfdx plugins:install ${pluginName}`;
+    await execCommand(installCommand, this, { fail: true, output: false });
   }
-  return {
-    installed,
-    message: installed
-      ? `[sfdx-hardis] Installed sfdx plugin ${pluginName}`
-      : `[sfdx-hardis] sfdx plugin ${pluginName} is already installed`
-  };
 }
 
 export async function promptInstanceUrl() {
@@ -186,6 +182,9 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
         return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
       })
     });
+    if (selectFilesStatus.files.length === 0) {
+      return [];
+    }
     const listOfFilesDisplay = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
       return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
     }).join('\n');
@@ -269,7 +268,7 @@ export async function execCommand(
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = '0';
-  const spinner = ora({text: commandLog, spinner: 'moon'}).start();
+  const spinner = ora({ text: commandLog, spinner: 'moon' }).start();
   if (options.spinner === false) {
     spinner.stop();
   }
@@ -299,7 +298,8 @@ export async function execCommand(
   if (!command.includes('--json')) {
     return {
       status: 0,
-      stdout: commandResult
+      stdout: commandResult.stdout,
+      stderr: commandResult.stderr
     };
   }
   // Parse command result if --json
