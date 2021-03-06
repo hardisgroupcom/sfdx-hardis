@@ -1,0 +1,16 @@
+# Configuration file for Mega-Linter
+# See all available variables at https://nvuillam.github.io/mega-linter/configuration/ and in linters documentation
+
+# To use this config from your local .mega-linter.yml file, add the following lines:
+# EXTENDS:
+#  - https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.mega-linter-config.yml
+
+APPLY_FIXES: all # all, none, or list of linter keys
+DEFAULT_BRANCH: master # Usually master or main
+DISABLE:
+  - SPELL # Uncomment to enable checks of spelling mistakes # - SPELL # Uncomment to disable checks of spelling mistakes
+SHOW_ELAPSED_TIME: true
+FILTER_REGEX_EXCLUDE: (\.vscode)
+SALESFORCE_SFDX_SCANNER_ARGUMENTS:
+  - "--pmdconfig"
+  - "./config/pmd-ruleset.xml"

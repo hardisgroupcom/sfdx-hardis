@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [1.5.1] - 2021-03-07
+
+- Use shared Mega-Linter configuration
+
 ## [1.5.0] 2021-03-05
 
 - New command **hardis:org:select**
