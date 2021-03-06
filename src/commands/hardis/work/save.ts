@@ -65,7 +65,7 @@ export default class SaveTask extends SfdxCommand {
 
     // Commit updates
     const gitStatus = await git().status();
-    if (gitStatus.staged.length > 0) {
+    if (gitStatus.files.length > 0) {
       // Request commit info
       const commitResponse = await prompts([
         {
@@ -86,23 +86,13 @@ export default class SaveTask extends SfdxCommand {
     const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace('\n', '').replace('\r', '');
 
     // Build package.xml delta between most recent commit and developpement
-    uxLog(this, c.cyan(`Calculating package.xml diff from [${c.green(config.developmentBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommit.message)}]`));
+    const toCommitMessage = toCommit ? toCommit.message : '';
+    uxLog(this, c.cyan(`Calculating package.xml diff from [${c.green(config.developmentBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`));
     const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-package-xml-') + Math.random().toString(36).slice(-5);
     await fs.ensureDir(tmpDir);
-    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit.hash} --output ${tmpDir}`;
+    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit ? toCommit.hash : masterBranchLatestCommit} --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, { output: false, fail: false, debug: this.debugMode });
     if (packageXmlResult.status === 0) {
-      // Upgrade local package.xml
-      const localPackageXml = path.join('manifest', 'package.xml');
-      const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
-      const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
-      uxLog(this, c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) + c.green(packageXmlDiffStr));
-      const appendPackageXmlCommand = 'sfdx essentials:packagexml:append' +
-        ` --packagexmls ${localPackageXml},${diffPackageXml}` +
-        ` --outputfile ${localPackageXml}`;
-      await execCommand(appendPackageXmlCommand, this, { fail: true, debug: this.debugMode });
-      await git().add(localPackageXml);
-
       // Upgrade local destructivePackage.xml
       const localDestructiveChangesXml = path.join('manifest', 'destructiveChanges.xml');
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
@@ -113,6 +103,23 @@ export default class SaveTask extends SfdxCommand {
         ` --outputfile ${localDestructiveChangesXml}`;
       await execCommand(appendDestructivePackageXmlCommand, this, { fail: true, debug: this.debugMode });
       await git().add(localDestructiveChangesXml);
+
+      // Upgrade local package.xml
+      const localPackageXml = path.join('manifest', 'package.xml');
+      const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
+      const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
+      uxLog(this, c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) + c.green(packageXmlDiffStr));
+      const appendPackageXmlCommand = 'sfdx essentials:packagexml:append' +
+        ` --packagexmls ${localPackageXml},${diffPackageXml}` +
+        ` --outputfile ${localPackageXml}`;
+      await execCommand(appendPackageXmlCommand, this, { fail: true, debug: this.debugMode });
+      const removePackageXmlCommand = 'sfdx essentials:packagexml:remove' +
+        ` --packagexml ${localPackageXml}` +
+        ` --removepackagexml ${localDestructiveChangesXml}` +
+        ` --outputfile ${localPackageXml}`;
+      await execCommand(removePackageXmlCommand, this, { fail: true, debug: this.debugMode });
+      await git().add(localPackageXml);
+
     } else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(this, c.red(`Unable to build git diff. Please call a developer to ${c.yellow(c.bold('update package.xml and destructivePackage.xml manually'))}`));
