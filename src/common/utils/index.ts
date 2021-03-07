@@ -23,7 +23,7 @@ export function git(options: any = { output: false }): SimpleGit {
   const simpleGitInstance = simpleGit();
   // Hack to be able to display executed git command (and it still doesn't work...)
   // cf: https://github.com/steveukx/git-js/issues/593
-  return simpleGitInstance.outputHandler((command, stdout, stderr) => {
+  return simpleGitInstance.outputHandler((command, stdout, stderr, gitArgs) => {
     let first = true;
     stdout.on('data', data => {
       logCommand();
@@ -40,7 +40,7 @@ export function git(options: any = { output: false }): SimpleGit {
     function logCommand() {
       if (first) {
         first = false;
-        uxLog(this, `[command] ${c.grey(command)}`);
+        uxLog(this, `[command] ${c.grey(command)} ${c.grey(gitArgs.join(' '))}`);
       }
     }
   });
@@ -635,7 +635,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   // delete temporary cert folder
   await fs.remove(tmpDir);
   // Generate random consumer key for Connected app
-  const consumerKey = require('crypto').randomBytes(256).toString('base64').substr(0, 255);
+  const consumerKey = require('crypto').randomBytes(256).toString('base64').substr(0, 119);
 
   // Ask user if he/she wants to create connected app
   let deployError = false;

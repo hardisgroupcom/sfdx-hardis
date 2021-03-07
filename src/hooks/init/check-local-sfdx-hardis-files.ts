@@ -2,6 +2,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as prompts from 'prompts';
 import { isCI } from '../../common/utils';
+import { getConfig } from '../../config';
 
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis:scratch commands
@@ -14,7 +15,7 @@ export const hook = async (options: any) => {
 // Add utility scripts if they are not present
 async function managePackageJson(commandId: string) {
     if (!commandId.startsWith('hardis:scratch') && !commandId.startsWith('hardis:project:configure') &&
-        !commandId.startsWith('hardis:work')) {
+        !commandId.startsWith('hardis:work') && !commandId.startsWith('hardis:package')) {
         return;
     }
     if (commandId.startsWith('hardis:work:task:new')) {
@@ -97,7 +98,24 @@ async function getSfdxHardisPackageJsonContent() {
             'scratch:create': 'sfdx hardis:scratch:create',
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
             'configure:auth:deployment': 'sfdx hardis:project:configure:auth',
-            'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub'
+            'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub',
+            'package:install': 'sfdx hardis:package:install'
+          }
+    };
+    // Manage special commands for packaging projects
+    const config = await getConfig('project');
+    if (config.packageId) {
+        const packagingCommands = await getSfdxHardisPackageJsonContentForPackaging();
+        hardisPackageJsonContent.scripts = Object.assign(hardisPackageJsonContent.scripts, packagingCommands.scripts);
+    }
+    return hardisPackageJsonContent;
+}
+
+async function getSfdxHardisPackageJsonContentForPackaging() {
+    const hardisPackageJsonContent = {
+        scripts: {
+            'package:version:create': 'sfdx hardis:package:version:create',
+            'package:version:list': 'sfdx hardis:package:version:list'
           }
     };
     return hardisPackageJsonContent;

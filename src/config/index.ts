@@ -17,7 +17,7 @@ import * as yaml from 'js-yaml';
 import * as os from 'os';
 import * as path from 'path';
 import * as prompts from 'prompts';
-import { getCurrentGitBranch, isGitRepo } from '../common/utils';
+import { getCurrentGitBranch, isGitRepo, uxLog } from '../common/utils';
 
 const moduleName = 'sfdx-hardis';
 const projectConfigFiles = [
@@ -81,7 +81,7 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
 
 // Update configuration file
 export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = null) {
-    let explorer = null ;
+    let explorer = null;
     if (configFile == null) {
         explorer = cosmiconfig(moduleName, { searchPlaces });
         const configExplorer = await explorer.search();
@@ -97,7 +97,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
     if (explorer != null) {
         explorer.clearCaches();
     }
-    console.log(c.cyan(`[sfdx-hardis] Updated config file ${configFile} with values ${JSON.stringify(propValues)}`));
+    uxLog(this, c.cyan(`Updated config file ${configFile} with values ${JSON.stringify(propValues)}`));
 }
 
 // Check configuration of project so it works with sfdx-hardis
@@ -112,7 +112,10 @@ export const checkConfig = async (options: any) => {
     // Check projectName is set. If not, request user to input it
     if (
         options.Command &&
-        (options.Command.requiresProject === true || options.Command.supportsDevhubUsername === true)
+        (
+            (options.Command.requiresProject === true || options.Command.supportsDevhubUsername === true) ||
+            (options?.flags?.devhub === true || options.devHub === true)
+        )
     ) {
         const configProject = await getConfig('project');
         let projectName = process.env.PROJECT_NAME || configProject.projectName;

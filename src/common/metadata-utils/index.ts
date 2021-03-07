@@ -190,7 +190,7 @@ class MetadataUtils {
     for (const package1 of packages) {
       if (alreadyInstalled.filter((installedPackage: any) =>
         package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
-        uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName}`)}...`));
+        uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName || ''}`)}...`));
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
         }

@@ -9,6 +9,7 @@ APPLY_FIXES: all # all, none, or list of linter keys
 DEFAULT_BRANCH: master # Usually master or main
 DISABLE:
   - SPELL # Uncomment to enable checks of spelling mistakes # - SPELL # Uncomment to disable checks of spelling mistakes
+  - XML
 SHOW_ELAPSED_TIME: true
 FILTER_REGEX_EXCLUDE: (\.vscode)
 PRE_COMMANDS:

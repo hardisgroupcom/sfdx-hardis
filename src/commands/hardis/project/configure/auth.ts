@@ -45,7 +45,7 @@ export default class ConfigureAuth extends SfdxCommand {
     public async run(): Promise<AnyJson> {
         const devHub = this.flags.devhub || false;
         uxLog(this, c.cyan('Please login into the org you want to configure the SFDX Authentication'));
-        await this.config.runHook('auth', { checkAuth: true, Command: this });
+        await this.config.runHook('auth', { checkAuth: true, Command: this, devHub });
         await checkConfig(this);
         const config = await getConfig('project');
         // Get branch name to configure if not Dev Hub

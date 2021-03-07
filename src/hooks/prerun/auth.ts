@@ -26,7 +26,7 @@ export const hook = async (options: any) => {
         if (devHubAlias == null) {
             await checkConfig(options);
             configInfo = await getConfig('user');
-            devHubAlias = configInfo.devHubAlias;
+            devHubAlias = configInfo.devHubAlias || 'DevHub';
         }
         await authOrg(devHubAlias, options);
     }
@@ -50,7 +50,7 @@ export const hook = async (options: any) => {
 // Authorize an org manually or with JWT
 async function authOrg(orgAlias: string, options: any) {
     // Manage auth with sfdxAuthUrl (CI & scratch org only)
-    if (orgAlias.startsWith('force://')) {
+    if ((orgAlias || '').startsWith('force://')) {
         const authFile = path.join(os.tmpdir(), 'sfdxScratchAuth.txt');
         await fs.writeFile(authFile, orgAlias, 'utf8');
         await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, { fail: true, output: false });
@@ -110,9 +110,9 @@ async function authOrg(orgAlias: string, options: any) {
         }
         let instanceUrl =
             typeof options.Command?.flags?.instanceurl === 'string' &&
-                options.Command?.flags?.instanceurl?.startsWith('https')
+                (options.Command?.flags?.instanceurl || '').startsWith('https')
                 ? options.Command.flags.instanceurl
-                : process.env.INSTANCE_URL?.startsWith('https')
+                : (process.env.INSTANCE_URL || '').startsWith('https')
                     ? process.env.INSTANCE_URL
                     : config.instanceUrl
                         ? config.instanceUrl

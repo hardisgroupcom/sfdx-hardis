@@ -1,0 +1,19 @@
+{
+    "fflib": {
+        "name": "All FFLib packages (Hardis version)",
+        "packages": [
+            "fflib-apex-mocks",
+            "fflib-apexcommon"            
+        ]
+    },
+    "fflib-apexcommon": {
+        "name": "FFLib Apex Common (Hardis version)",
+        "repoUrl": "https://github.com/hardisgroupcom/fflib-apex-common",
+        "configUrl": "https://raw.githubusercontent.com/hardisgroupcom/fflib-apex-common/main/config/.sfdx-hardis.yml"
+    },
+    "fflib-apex-mocks": {
+        "name": "FFLib Apex Mocks (Hardis version)",
+        "repoUrl": "https://github.com/hardisgroupcom/fflib-apex-mocks",
+        "configUrl": "https://raw.githubusercontent.com/hardisgroupcom/fflib-apex-mocks/main/config/.sfdx-hardis.yml" 
+    }
+}
