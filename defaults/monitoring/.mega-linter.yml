@@ -2,3 +2,4 @@
 # See all available variables at https://nvuillam.github.io/mega-linter/configuration/ and in linters documentation
 EXTENDS:
   - https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.mega-linter-config.yml
+SALESFORCE_SFDX_SCANNER_DIRECTORY: metadatas
