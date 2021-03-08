@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update sfdx-project.json when installing a package
+- Refresh env & scratch org if same scratch org is reused
+- Update default files for CI & monitoring projects
+- Do not deploy packages from hardis:project:deploy:sources:dx when we are in --check mode !
+- Better output display for hardis:org:test:apex
+
 ## [1.6.0] - 2021-03-08
 
 - New package commands

@@ -57,10 +57,12 @@ export default class RebuildSelection extends SfdxCommand {
         const commitsToResetNumber = commitstoReset.length;
         // Reset commits
         await git({ output: true }).reset(['--soft', `HEAD~${commitsToResetNumber}`]);
-        await setConfig('user', {canForcePush: true});
+        await setConfig('user', { canForcePush: true });
         // unstage files
         await execCommand('git reset', this, { output: true, fail: true, debug: this.debugMode }); // await git({output:true}).reset(); does not work, let's use direct command
-        await git({output: true}).status();
+        await git({ output: true }).checkout(['--', 'manifest/package.xml']);
+        await git({ output: true }).checkout(['--', 'manifest/destructiveChanges.xml']);
+        await git({ output: true }).status();
         uxLog(this, c.cyan('The following items are not available for selection'));
         uxLog(this, c.cyan('Selection has been reset'));
         // Return an object to be displayed with --json

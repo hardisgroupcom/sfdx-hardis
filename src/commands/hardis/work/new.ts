@@ -116,8 +116,8 @@ export default class NewTask extends SfdxCommand {
           message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
           initial: 0,
           choices: [...scratchOrgList.map((scratchOrg: any) => {
-            return { title: `${scratchOrg.alias} - ${scratchOrg.instanceUrl}`, value: scratchOrg.alias };
-          }), ...[{ title: 'Create new scratch org', value: 'newScratchOrg' }]]
+            return { title: `${c.yellow(scratchOrg.alias)} - ${scratchOrg.instanceUrl}`, value: scratchOrg };
+          }), ...[{ title: c.yellow('Create new scratch org'), value: 'newScratchOrg' }]]
         });
       if (scratchResponse.value === 'newScratchOrg') {
         await setConfig('user', {
@@ -129,10 +129,12 @@ export default class NewTask extends SfdxCommand {
           throw new SfdxError('Unable to create scratch org');
         }
       } else {
-        await execCommand(`sfdx config:set defaultusername=${scratchResponse.username}`, this, { output: true, fail: true });
+        await execCommand(`sfdx config:set defaultusername=${scratchResponse.value.username}`, this, { output: true, fail: true });
       }
     } else {
       uxLog(this, c.cyan(`You will use scratch org ${c.green(currentOrg.alias)} : ${c.green(currentOrg.instanceUrl)}`));
+      uxLog(this, c.cyan('Refreshing org...'));
+      await execCommand('sfdx hardis:work:refresh', this, {output: true, fail: true, debug: this.debugMode});
     }
     uxLog(this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
     // Return an object to be displayed with --json

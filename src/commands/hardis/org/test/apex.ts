@@ -3,7 +3,7 @@ import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
-import { execSfdxJson } from '../../../../common/utils';
+import { execSfdxJson, uxLog } from '../../../../common/utils';
 import { getConfig } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -62,9 +62,10 @@ export default class OrgTestApex extends SfdxCommand {
       ` --testlevel ${testlevel}` +
       (check ? ' --checkonly' : '') +
       (debugMode ? ' --verbose' : '');
-    const testRes = await execSfdxJson(testCommand, this, { output: true, debug: debugMode, fail: false });
+    const testRes = await execSfdxJson(testCommand, this, { output: false, debug: debugMode, fail: false });
     let message = '';
     if (testRes.status === 0) {
+      uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = '[sfdx-hardis] Successfully run apex tests on org';
       this.ux.log(c.green(message));
       // Check code coverage (orgWide)
@@ -79,7 +80,9 @@ export default class OrgTestApex extends SfdxCommand {
         throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
       }
       if (coverageOrgWide < minCoverageOrgWide) {
-        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${coverageOrgWide} should be > to ${minCoverageOrgWide}`);
+        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${coverageOrgWide}% should be > to ${minCoverageOrgWide}%`);
+      } else {
+        uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(coverageOrgWide))}% is > to ${c.bold(minCoverageOrgWide)}%`));
       }
       // Check code coverage ()
       const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
@@ -92,14 +95,17 @@ export default class OrgTestApex extends SfdxCommand {
         throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
       }
       if (coverageTestRun < minCoverageTestRun) {
-        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun} should be > to ${minCoverageTestRun}`);
+        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
+      } else {
+        uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
       }
-      this.ux.log(c.green(JSON.stringify(testRes.result.summary)));
+
       if (debugMode) {
         this.ux.log(c.green(JSON.stringify(testRes.result)));
       }
     } else {
       message = '[sfdx-hardis] Test org failure';
+      this.ux.log(c.red(JSON.stringify(testRes.result.summary)));
       this.ux.log(c.red(JSON.stringify(testRes.result)));
     }
     return { orgId: this.org.getOrgId(), outputString: message };
