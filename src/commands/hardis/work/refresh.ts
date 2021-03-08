@@ -15,7 +15,7 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class RefreshTask extends SfdxCommand {
 
-    public static title = 'Refresb work task';
+    public static title = 'Refresh work task';
 
     public static description = messages.getMessage('refreshWorkTask');
 

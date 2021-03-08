@@ -53,14 +53,17 @@ export default class DxSources extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    this.configInfo = await getConfig('branch');
     const check = this.flags.check || false;
     const testlevel = this.flags.testlevel || 'RunLocalTests';
     const debugMode = this.flags.debug || false;
-    this.configInfo = await getConfig('branch');
 
     // Install packages
     const packages = this.configInfo.installedPackages || [];
-    await MetadataUtils.installPackagesOnOrg(packages, null, this);
+    if (packages.length > 0 && !check) {
+      // Install package only if we are in real deployment mode
+      await MetadataUtils.installPackagesOnOrg(packages, null, this);
+    }
 
     // Deploy destructive changes
     const packageDeletedXmlFile =
@@ -69,9 +72,9 @@ export default class DxSources extends SfdxCommand {
         (fs.existsSync('./manifest/destructiveChanges.xml')) ? './manifest/destructiveChanges.xml' :
         './config/destructiveChanges.xml';
     if (fs.existsSync(packageDeletedXmlFile)) {
-      await MetadataUtils.deployDestructiveChanges(packageDeletedXmlFile, {debug: debugMode, check}, this);
+      await MetadataUtils.deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {
-      uxLog( this, 'No destructivePackage.Xml found so no destructive deployment has been performed' );
+      uxLog(this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
     }
 
     // Deploy sources
