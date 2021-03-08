@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [1.6.1] 2021-03-09
+
 - Update sfdx-project.json when installing a package
 - Refresh env & scratch org if same scratch org is reused
 - Update default files for CI & monitoring projects
