@@ -6,7 +6,7 @@
     <!-- IGNORE FILES -->
     <exclude-pattern>.*/apex-domainbuilder/*.*</exclude-pattern>
     <exclude-pattern>.*/app-setup/*.*</exclude-pattern>
-    <exclude-pattern>.*/fflib-apex-common/*.*</exclude-pattern>
+    <exclude-pattern>.*/fflib_*.*</exclude-pattern>
     <exclude-pattern>.*/json2apex/*.*</exclude-pattern>
 
     <!-- STANDARD RULES -->
