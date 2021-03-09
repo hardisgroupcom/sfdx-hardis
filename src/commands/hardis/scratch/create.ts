@@ -206,10 +206,14 @@ export default class ScratchCreate extends SfdxCommand {
     // Assign permission sets to user
     public async initPermissionSetAssignments() {
         uxLog(this, c.cyan('Assigning Permission Sets...'));
-        const permSets = this.configInfo.assignPermissionSets || [];
-        for (const permSetName of permSets) {
-            const assignCommand = `sfdx force:user:permset:assign -n ${permSetName} -u ${this.scratchOrgUsername}`;
-            await execCommand(assignCommand, this, { fail: true, output: true, debug: this.debugMode });
+        const permSets = this.configInfo.initPermissionSets || [];
+        for (const permSet of permSets) {
+            uxLog(this,c.cyan(`Assigning ${c.bold(permSet.name)} to scratch org user`));
+            const assignCommand = `sfdx force:user:permset:assign -n ${permSet.name} -u ${this.scratchOrgUsername}`;
+            const assignResult = await execSfdxJson(assignCommand, this, { fail: false, output: false, debug: this.debugMode });
+            if (assignResult.status !== 0 && !assignResult.message.includes("Duplicate")) {
+                uxLog(this,c.red(`Error assigning to${c.bold(permSet.name)}\n${assignResult.message}`));
+            }
         }
     }
 
@@ -236,21 +240,16 @@ export default class ScratchCreate extends SfdxCommand {
     // Loads data in the org
     public async initOrgData() {
         uxLog(this, c.cyan('Loading org initialization data...'));
-        const allDataFiles = await glob('**/data/**/*-plan.json');
-        const scratchOrgInitData = this.configInfo.scratchOrgInitData || [];
-        // Build ordered list of data files
-        const initDataFiles = scratchOrgInitData.map((name: string) => {
-            const matchingDataFiles = allDataFiles.filter((dataFile: string) =>
-                path.basename(dataFile).replace('-plan.json', '') === name);
-            if (matchingDataFiles.length === 0) {
-                throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find data file ${name}-plan.json`));
-            }
-            return matchingDataFiles[0];
-        });
+        const initDataRequests = this.configInfo.initDataRequests 
         // Import data files
-        for (const dataFile of initDataFiles) {
-            const dataLoadCommand = `sfdx force:data:tree:import -f "${dataFile}" -u ${this.scratchOrgAlias}`;
-            await execSfdxJson(dataLoadCommand, this, { fail: true, output: true, debug: this.debugMode });
+        for (const initDataRequest of initDataRequests) {
+            const planFile = path.join('data', initDataRequest.plan);
+            uxLog(this,c.cyan(`Importing ${c.bold(initDataRequest.name)} ${c.italic(initDataRequest.description)}`));
+            const dataLoadCommand = `sfdx force:data:tree:import -p "${planFile}" -u ${this.scratchOrgAlias}`;
+            const loadResult = await execSfdxJson(dataLoadCommand, this, { fail: false, output: true, debug: this.debugMode });
+            if (loadResult.status !== 0) {
+                uxLog(this,c.red(`Error importing ${c.bold(initDataRequest.name)} ${c.italic(initDataRequest.description)}\n${loadResult.message}`));
+            }
         }
     }
 

@@ -15,7 +15,8 @@ export const hook = async (options: any) => {
 // Add utility scripts if they are not present
 async function managePackageJson(commandId: string) {
     if (!commandId.startsWith('hardis:scratch') && !commandId.startsWith('hardis:project:configure') &&
-        !commandId.startsWith('hardis:work') && !commandId.startsWith('hardis:package')) {
+        !commandId.startsWith('hardis:work') && !commandId.startsWith('hardis:package') &&
+        !commandId.startsWith('hardis:data')) {
         return;
     }
     if (commandId.startsWith('hardis:work:task:new')) {
@@ -99,7 +100,8 @@ async function getSfdxHardisPackageJsonContent() {
             'login:reset': 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
             'configure:auth:deployment': 'sfdx hardis:project:configure:auth',
             'configure:auth:devhub': 'sfdx hardis:project:configure:auth --devhub',
-            'package:install': 'sfdx hardis:package:install'
+            'package:install': 'sfdx hardis:package:install',
+            'data:tree:export': 'sfdx hardis:data:tree:export'
           }
     };
     // Manage special commands for packaging projects

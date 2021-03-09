@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.1.0] 2021-03-10
+
+- New command **hardis:data:tree:export**
+- **scratch:create**: Import init data using .sfdx-hardis.yml `initDataRequests` property
+- **scratch:create**: Assign to permission set (or PS groups) using .sfdx-hardis.yml `initPermissionSets` property
+
 ## [2.0.0] 2021-03-09
 
 - New command **hardis:package:create** to create Managed and Unlocked packages
