@@ -62,6 +62,7 @@
         "hardcode",
         "hardis",
         "hardisauthlogin",
+        "hardisdatatreeexport",
         "hardisgroupcom",
         "hardisorgconfiguremonitoring",
         "hardisorgpurgeflow",
