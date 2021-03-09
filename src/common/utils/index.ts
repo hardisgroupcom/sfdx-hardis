@@ -218,7 +218,8 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
       message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${c.yellow(listOfFilesDisplay)}`),
       choices: filesFiltered.map((fileStatus: FileStatusResult) => {
         return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
-      })
+      }),
+      optionsPerPage: 30
     });
     // Separate added to removed files
     result.added = selectFilesStatus.files

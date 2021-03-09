@@ -236,21 +236,16 @@ export default class ScratchCreate extends SfdxCommand {
     // Loads data in the org
     public async initOrgData() {
         uxLog(this, c.cyan('Loading org initialization data...'));
-        const allDataFiles = await glob('**/data/**/*-plan.json');
-        const scratchOrgInitData = this.configInfo.scratchOrgInitData || [];
-        // Build ordered list of data files
-        const initDataFiles = scratchOrgInitData.map((name: string) => {
-            const matchingDataFiles = allDataFiles.filter((dataFile: string) =>
-                path.basename(dataFile).replace('-plan.json', '') === name);
-            if (matchingDataFiles.length === 0) {
-                throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find data file ${name}-plan.json`));
-            }
-            return matchingDataFiles[0];
-        });
+        const initDataRequests = this.configInfo.initDataRequests 
         // Import data files
-        for (const dataFile of initDataFiles) {
-            const dataLoadCommand = `sfdx force:data:tree:import -f "${dataFile}" -u ${this.scratchOrgAlias}`;
-            await execSfdxJson(dataLoadCommand, this, { fail: true, output: true, debug: this.debugMode });
+        for (const initDataRequest of initDataRequests) {
+            const planFile = path.join('data', initDataRequest.plan);
+            uxLog(this,c.cyan(`Importing ${c.bold(initDataRequest.name)} ${c.italic(initDataRequest.description)}`));
+            const dataLoadCommand = `sfdx force:data:tree:import -p "${planFile}" -u ${this.scratchOrgAlias}`;
+            const loadResult = await execSfdxJson(dataLoadCommand, this, { fail: false, output: true, debug: this.debugMode });
+            if (loadResult.status !== 0) {
+                uxLog(this,c.red(`Error importing ${c.bold(initDataRequest.name)} ${c.italic(initDataRequest.description)}\n${loadResult.message}`));
+            }
         }
     }
 
