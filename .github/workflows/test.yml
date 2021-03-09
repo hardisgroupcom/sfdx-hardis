@@ -32,7 +32,7 @@ jobs:
       - run: yarn
       - run: yarn prepack
       - run: yarn test
-      - name: Submitting code coverage to codecov
-        run: |
-          ./node_modules/.bin/nyc report --reporter text-lcov > coverage.lcov
-          curl -s https://codecov.io/bash | bash
+#      - name: Submitting code coverage to codecov
+#        run: |
+#          ./node_modules/.bin/nyc report --reporter text-lcov > coverage.lcov
+#          curl -s https://codecov.io/bash | bash

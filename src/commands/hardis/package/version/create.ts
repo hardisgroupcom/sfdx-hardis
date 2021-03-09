@@ -2,8 +2,9 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import * as c from 'chalk';
+import * as prompts from 'prompts';
 import { execSfdxJson } from '../../../../common/utils';
-import { getConfig, setConfig } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -41,15 +42,26 @@ export default class PackageVersionCreate extends SfdxCommand {
 
     public async run(): Promise<AnyJson> {
         const debugMode = this.flags.debug || false;
-        const config = await getConfig('project');
+
+        const packageDirectories = this.project.getUniquePackageDirectories();
+        console.error(JSON.stringify(packageDirectories));
+        const packageResponse = await prompts([
+            {
+                type: 'select', 
+                name: 'package',
+                message: c.cyanBright(`Please select a package`),
+                choices: packageDirectories.map(packageDirectory => {
+                        return { title: packageDirectory.package, value: packageDirectory}
+                    })
+            }
+        ]);
 
         const createCommand = 'sfdx force:package:version:create' +
-            ` -p ${config.packageId}` +
-            ((config.packageInstallationKey ? ` --installationkey ${config.packageInstallationKey}` : ' --installationkeybypass')) +
+            ` -p ${packageResponse.package.package}` +
+            ((packageResponse.package.packageInstallationKey ? ` --installationkey ${packageResponse.package.packageInstallationKey}` : ' --installationkeybypass')) +
             ' -w 60';
         const createResult = await execSfdxJson(createCommand, this, { fail: true, output: true, debug: debugMode });
         const latestVersion = createResult.result.SubscriberPackageVersionId;
-        await setConfig('project', { latestPackageVersionId: latestVersion });
         // Return an object to be displayed with --json
         return { outputString: 'Generated new package version', packageVersionId: latestVersion };
     }

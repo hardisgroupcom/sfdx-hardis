@@ -5,7 +5,6 @@ import { AnyJson } from '@salesforce/ts-types';
 import * as axios1 from 'axios';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
-import * as yaml from 'js-yaml';
 import * as path from 'path';
 import * as prompts from 'prompts';
 // import * as packages from '../../../../defaults/packages.json'
@@ -60,9 +59,7 @@ export default class PackageVersionInstall extends SfdxCommand {
         const packagesToInstall = [];
         // If no package Id is sent, ask user what package he/she wants to install
         if (!isCI && (packageId == null || !packageId.startsWith('04t'))) {
-            const allPackages = Object.keys(packages)
-                .map(key => Object.assign(packages[key], { key }))
-                .map(pack => ({ title: pack.name, value: pack }));
+            const allPackages = packages.map(pack => ({ title: `${c.yellow(pack.name)} - ${pack.repoUrl || 'Bundle'}`, value: pack }));
             const packageResponse = await prompts({
                 type: 'select',
                 name: 'value',
@@ -70,13 +67,15 @@ export default class PackageVersionInstall extends SfdxCommand {
                 choices: allPackages,
                 initial: 0
             });
-            // Packages combination selected
-            if (packageResponse.value.packages) {
-                for (const pckgId of packageResponse.value.packages) {
-                    packagesToInstall.push(packages[pckgId]);
-                }
+            if (packageResponse.value.bundle) {
+                // Package bundle selected
+                const packagesToAdd = packageResponse.value.packages.map(packageId => {
+                    return packages.filter(pckg => pckg.package === packageId)[0]
+                });
+                packagesToInstall.push(...packagesToAdd);
             } else {
-                packagesToInstall.push(packageResponse.value);
+                // Single package selected
+                packagesToInstall.push(packageResponse.value.package);
             }
         } else {
             packagesToInstall.push({ SubscriberPackageVersionId: packageId });
@@ -84,10 +83,21 @@ export default class PackageVersionInstall extends SfdxCommand {
         // Complete packages with remote information
         const packagesToInstallCompleted = await Promise.all(packagesToInstall.map(async pckg => {
             if (pckg.SubscriberPackageVersionId == null) {
-                const packageConfigRaw = await axios.get(pckg.configUrl);
-                const packageConfig = yaml.load(packageConfigRaw.data);
-                pckg.SubscriberPackageName = pckg.name;
-                pckg.SubscriberPackageVersionId = packageConfig.latestPackageVersionId;
+                const configResp = await axios.get(pckg.configUrl);
+                const packageAliases = configResp.data.packageAliases || [];
+                pckg.SubscriberPackageName = pckg.package;
+                if (pckg.package.includes("@")) {
+                    pckg.SubscriberPackageVersionId = packageAliases[pckg.package];
+                }
+                else {
+                    // use last occurence of package alias
+                    for (const packageAlias of Object.keys(packageAliases)) {
+                        if (packageAlias.startsWith(pckg.package)) {
+                            pckg.SubscriberPackageName = packageAlias;
+                            pckg.SubscriberPackageVersionId = packageAliases[packageAlias];
+                        }
+                    }
+                }   
             }
             return pckg;
         }));
@@ -102,8 +112,8 @@ export default class PackageVersionInstall extends SfdxCommand {
             const projectPackages = config.installedPackages || [];
             let updated = false;
             for (const installedPackage of installedPackages) {
-                const matchInstalled = packagesToInstallCompleted.filter(pckg => pckg.key === installedPackage.SubscriberPackageName);
-                const matchLocal = projectPackages.filter(projectPackage => installedPackage.SubscriberPackageName === projectPackage.SubscriberPackageName);
+                const matchInstalled = packagesToInstallCompleted.filter(pckg => pckg.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId);
+                const matchLocal = projectPackages.filter(projectPackage => installedPackage.SubscriberPackageVersionId === projectPackage.SubscriberPackageVersionId);
                 if (matchInstalled.length > 0 && matchLocal.length === 0) {
                     projectPackages.push(installedPackage);
                     updated = true;

@@ -1,7 +1,10 @@
-import Amplitude = require('@amplitude/node');
+import * as Amplitude from '@amplitude/node';
 import Debug from 'debug';
-import os = require('os');
-import path = require('path');
+import * as fs from 'fs-extra';
+import * as os from 'os';
+import * as path from 'path';
+import * as uuid from 'uuid';
+import * as findPackageJson from 'find-package-json';
 import { isCI } from './utils';
 const debug = Debug('sfdx-essentials');
 
@@ -57,7 +60,6 @@ function buildEventPayload(eventType: string, data: any) {
 
 // Retrieve npm-groovy-lint package.json
 function getPackageJson() {
-    const findPackageJson = require('find-package-json');
     const finder = findPackageJson(__dirname);
     const packageJsonFileNm = finder.next().filename;
     let pkg;
@@ -73,19 +75,18 @@ function getPackageJson() {
 // Get unique anonymous user identifier
 function getUuidV4() {
     const localStorageFileNm = path.resolve(os.homedir() + '/.node-stats/local-storage.json');
-    const fse = require('fs-extra');
     let usrLocalStorage = { anonymousUserId: null };
-    if (fse.existsSync(localStorageFileNm)) {
-        usrLocalStorage = fse.readJsonSync(localStorageFileNm);
+    if (fs.existsSync(localStorageFileNm)) {
+        usrLocalStorage = fs.readJsonSync(localStorageFileNm);
     }
     if (usrLocalStorage.anonymousUserId && usrLocalStorage.anonymousUserId != null) {
         return usrLocalStorage.anonymousUserId;
     }
-    const { v4: uuidv4 } = require('uuid');
+    const { v4: uuidv4 } = uuid ;
     const anonUsrId = uuidv4();
     usrLocalStorage.anonymousUserId = anonUsrId;
-    fse.ensureDirSync(path.resolve(os.homedir() + '/.node-stats'), { mode: '0777' });
-    fse.writeJsonSync(localStorageFileNm, usrLocalStorage);
+    fs.ensureDirSync(path.resolve(os.homedir() + '/.node-stats'), { mode: '0777' });
+    fs.writeJsonSync(localStorageFileNm, usrLocalStorage);
     return usrLocalStorage.anonymousUserId;
 }
 

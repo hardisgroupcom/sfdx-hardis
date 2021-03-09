@@ -108,8 +108,6 @@ export default class OrgPurgeFlow extends SfdxCommand {
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE Status IN ('${statusFilter.join(
       "','"
     )}')`;
-    if (statusFilter) {
-    }
     if (nameFilter) {
       query += ` AND MasterLabel LIKE '${nameFilter}%'`;
     }
@@ -126,15 +124,16 @@ export default class OrgPurgeFlow extends SfdxCommand {
       fail: true
     });
 
+    const recordsRaw = flowQueryRes?.result?.records || flowQueryRes.records || []
     // Check empty result
-    if (!flowQueryRes.records || flowQueryRes.records.length <= 0) {
+    if (recordsRaw.length === 0) {
       const outputString = `[sfdx-hardis] No matching Flow records found with query ${query}`;
-      this.ux.log(outputString);
+      uxLog(this,c.yellow(outputString));
       return { deleted: [], outputString };
     }
 
     // Simplify results format & display them
-    const records = flowQueryRes.records.map(record => {
+    const records = recordsRaw.map((record: any) => {
       return {
         Id: record.Id,
         MasterLabel: record.MasterLabel,
@@ -143,10 +142,8 @@ export default class OrgPurgeFlow extends SfdxCommand {
         Status: record.Status
       };
     });
-    this.ux.log(
-      `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.grey(
-        columnify(records)
-      )}`
+    uxLog(this,
+      `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(columnify(records))}`
     );
 
     // Perform deletion
@@ -211,7 +208,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
             deleted
           )}`
         : '[sfdx-hardis] No record to delete';
-    this.ux.log(c.green(summary));
+    uxLog(this,c.green(summary));
     // Return an object to be displayed with --json
     return { orgId: this.org.getOrgId(), outputString: summary };
   }

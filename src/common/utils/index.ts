@@ -1,6 +1,7 @@
 import * as c from 'chalk';
 import * as child from 'child_process';
 import * as crossSpawn from 'cross-spawn';
+import * as crypto from 'crypto';
 import * as csvStringify from 'csv-stringify/lib/sync';
 import * as fs from 'fs-extra';
 import * as os from 'os';
@@ -10,7 +11,7 @@ import * as util from 'util';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
 import { SfdxError } from '@salesforce/core';
-import ora = require('ora');
+import * as ora from 'ora';
 import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
 import { MetadataUtils } from '../metadata-utils';
@@ -103,7 +104,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
         cloneUrl = cloneUrlPrompt.value;
       }
       // Git lcone
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve) => {
         crossSpawn('git', ['clone', cloneUrl, '.'], { stdio: 'inherit' }).on('close', () => {
           resolve(null);
         });
@@ -169,7 +170,7 @@ export async function checkGitClean(options: any) {
       return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
     }).join('\n');
     if (options.allowStash) {
-
+      await git({output:true}).stash();
     } else {
       throw new SfdxError(`[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold('commit or reset')} the following local updates:\n${c.yellow(localUpdates)}`);
     }
@@ -618,7 +619,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   await execCommand(`openssl rsa -passin "pass:${pwd}" -in server.pass.key -out server.key`, this, { output: true, fail: true });
   await fs.remove('server.pass.key');
   await prompts({ type: 'confirm', message: c.cyanBright('Now answer the following questions. The answers are not really important :)\nHit ENTER when ready') });
-  await new Promise((resolve, reject) => {
+  await new Promise((resolve) => {
     const opensslCommand = 'openssl req -new -key server.key -out server.csr';
     crossSpawn(opensslCommand, [], { stdio: 'inherit' }).on('close', () => {
       resolve(null);
@@ -630,12 +631,12 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   await fs.ensureDir(folder);
   await fs.copy(path.join(tmpDir, 'server.key'), path.join(folder, `${branchName}.key`));
   // Copy certificate file in user home project
-  const crtFile = path.join(require('os').homedir(), `${branchName}.crt`);
+  const crtFile = path.join(os.homedir(), `${branchName}.crt`);
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
   // delete temporary cert folder
   await fs.remove(tmpDir);
   // Generate random consumer key for Connected app
-  const consumerKey = require('crypto').randomBytes(256).toString('base64').substr(0, 119);
+  const consumerKey = crypto.randomBytes(256).toString('base64').substr(0, 119);
 
   // Ask user if he/she wants to create connected app
   let deployError = false;

@@ -1,10 +1,17 @@
 {
-  "extends": "./node_modules/@salesforce/dev-config/tsconfig",
   "compilerOptions": {
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "target": "es2019",
+    "lib": ["es2019"],
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "sourceMap": true,
     "declaration": true,
     "outDir": "./lib",
     "importHelpers": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node","mocha"]
   },
   "include": [
     "./src/**/*"
