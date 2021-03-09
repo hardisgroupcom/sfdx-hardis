@@ -80,7 +80,7 @@ async function authOrg(orgAlias: string, options: any) {
             );
             if (!isCI) {
                 console.log(
-                    c.yellow(c.italic(`[sfdx-hardis] If this is NOT the org you want to play with, hit CTRL+C , then input ${c.whiteBright(c.bold('npm run org:select'))}`))
+                    c.yellow(c.italic(`[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold('hit CTRL+C'))}, then input ${c.whiteBright(c.bold('sfdx hardis:org:select'))}`))
                 );
             }
             const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgInfoResult.result.username}`;
