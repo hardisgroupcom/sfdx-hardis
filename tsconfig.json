@@ -4,7 +4,8 @@
     "declaration": true,
     "outDir": "./lib",
     "importHelpers": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node","mocha"]
   },
   "include": [
     "./src/**/*"

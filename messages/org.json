@@ -21,6 +21,7 @@
   "nameFilter": "Filter according to Name criteria",
   "newWorkTask": "New work task",
   "orgPurgeFlow": "Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name",
+  "packageCreate": "Create a new package",
   "packageInstall": "Install a package",
   "packageVersionCreate": "Create a new version of an unlocked package",
   "packageVersionList": "List versions of unlocked package",

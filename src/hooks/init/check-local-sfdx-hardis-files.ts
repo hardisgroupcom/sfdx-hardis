@@ -104,7 +104,7 @@ async function getSfdxHardisPackageJsonContent() {
     };
     // Manage special commands for packaging projects
     const config = await getConfig('project');
-    if (config.packageId) {
+    if (config.activatePackaging) {
         const packagingCommands = await getSfdxHardisPackageJsonContentForPackaging();
         hardisPackageJsonContent.scripts = Object.assign(hardisPackageJsonContent.scripts, packagingCommands.scripts);
     }
@@ -115,7 +115,8 @@ async function getSfdxHardisPackageJsonContentForPackaging() {
     const hardisPackageJsonContent = {
         scripts: {
             'package:version:create': 'sfdx hardis:package:version:create',
-            'package:version:list': 'sfdx hardis:package:version:list'
+            'package:version:list': 'sfdx hardis:package:version:list',
+            'package:create': 'sfdx hardis:package:create'
           }
     };
     return hardisPackageJsonContent;
