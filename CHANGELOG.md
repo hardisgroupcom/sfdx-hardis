@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.0.0] 2021-03-09
+
+- New command **hardis:package:create** to create Managed and Unlocked packages
 - Migrate from tslint to eslint
 - Fix dependencies hell
 - Fix **hardis:org:purge:flow** with new result format [(#49)](https://github.com/hardisgroupcom/sfdx-hardis/issues/49)
