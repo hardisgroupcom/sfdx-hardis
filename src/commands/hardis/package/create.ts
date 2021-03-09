@@ -44,23 +44,19 @@ export default class PackageCreate extends SfdxCommand {
         const debugMode = this.flags.debug || false;
 
         // Request questions to user
-        const packageDirectories = this.project.getPackageDirectories();
         const packageResponse = await prompts([
             {
-                type: 'select',
+                type: 'text',
                 name: 'path',
-                message: c.cyanBright(`Please select the folder you want to use to generate the package`),
-                choices: packageDirectories.map(packageDirectory => {
-                    return {title: packageDirectory.name, value: packageDirectory.name};
-                })
+                message: c.cyanBright(`Please input the path of the package (ex: sfdx-source/apex-mocks)`)
             },
             {
                 type: 'text',
                 name: 'name',
-                message: c.cyanBright(`Please input the name of the package`)
+                message: c.cyanBright(`Please input the name of the package (ex: MyPackage)`)
             },
             {
-                type: 'select',
+                type: 'select', 
                 name: 'type',
                 message: c.cyanBright(`Please select the type of the package`),
                 choices: [
@@ -74,9 +70,7 @@ export default class PackageCreate extends SfdxCommand {
         const packageCreateCommand = 'sfdx force:package:create'+
         ` --name "${packageResponse.name}"`+
         ` --packagetype ${packageResponse.type}`+
-        ` --path "${packageResponse.path}"` +
-        ` --errornotificationusername`+
-        ` --targetdevhubusername "${this.hubOrg.getUsername()}"` ;
+        ` --path "${packageResponse.path}"` ;
         const packageCreateResult = await execSfdxJson(packageCreateCommand,this,{output:true,fail:true,debug:debugMode});
         uxLog(this,c.cyan(`Created package Id: ${c.green(packageCreateResult.result.Id)} associated to DevHub ${c.green(this.hubOrg.getUsername())}`))
 
