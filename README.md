@@ -128,6 +128,7 @@ Example: `SFDX_CLIENT_ID: 3MVG9SOw8KERNN0.1kPOtqFc1ekdNpUho5WvGMn5n5IVMAFbcSvmY3
 * [`sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-r <string>] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesmetadata--f-string--p-string--r-string--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:select [-h] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgselect--h--d---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgtestapex--l-notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:package:create [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardispackagecreate--d--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:package:install [-p] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardispackageinstall--p--d--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:package:version:create [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardispackageversioncreate--d--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:package:version:list [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardispackageversionlist--d--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -148,8 +149,6 @@ Example: `SFDX_CLIENT_ID: 3MVG9SOw8KERNN0.1kPOtqFc1ekdNpUho5WvGMn5n5IVMAFbcSvmY3
 Login to salesforce org
 
 ```
-Login to salesforce org
-
 USAGE
   $ sfdx hardis:auth:login [-r <string>] [-h] [-s] [-d] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -175,8 +174,6 @@ _See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom
 Configure monitoring of an org
 
 ```
-Configure monitoring of an org
-
 USAGE
   $ sfdx hardis:org:configure:monitoring [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -206,8 +203,6 @@ _See code: [lib/commands/hardis/org/configure/monitoring.js](https://github.com/
 Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name
 
 ```
-Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name
-
 USAGE
   $ sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [-u <string>] [--apiversion 
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -272,8 +267,6 @@ _See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgrou
 Retrieve Salesforce DX project from org
 
 ```
-Retrieve Salesforce DX project from org
-
 USAGE
   $ sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-o] [-r <string>] [-d] [-u <string>] 
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -314,8 +307,6 @@ _See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/h
 Retrieve Salesforce DX project from org
 
 ```
-Retrieve Salesforce DX project from org
-
 USAGE
   $ sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-r <string>] [-d] [-u <string>] [--apiversion 
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -348,8 +339,6 @@ _See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github
 Interactive org selection for user
 
 ```
-Interactive org selection for user
-
 USAGE
   $ sfdx hardis:org:select [-h] [-d] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -373,8 +362,6 @@ _See code: [lib/commands/hardis/org/select.js](https://github.com/hardisgroupcom
 Run apex test cases on org
 
 ```
-Run apex test cases on org
-
 USAGE
   $ sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u <string>] 
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -403,13 +390,40 @@ EXAMPLE
 
 _See code: [lib/commands/hardis/org/test/apex.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.6.1/lib/commands/hardis/org/test/apex.js)_
 
+## `sfdx hardis:package:create [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Create a new package
+
+```
+USAGE
+  $ sfdx hardis:package:create [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+
+  -v, --targetdevhubusername=targetdevhubusername                                   username or alias for the dev hub
+                                                                                    org; overrides default dev hub org
+
+  --apiversion=apiversion                                                           override the api version used for
+                                                                                    api requests made by this command
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+EXAMPLE
+  $ sfdx hardis:package:create
+```
+
+_See code: [lib/commands/hardis/package/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v1.6.1/lib/commands/hardis/package/create.js)_
+
 ## `sfdx hardis:package:install [-p] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Install a package
 
 ```
-Install a package
-
 USAGE
   $ sfdx hardis:package:install [-p] [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -442,8 +456,6 @@ _See code: [lib/commands/hardis/package/install.js](https://github.com/hardisgro
 Create a new version of an unlocked package
 
 ```
-Create a new version of an unlocked package
-
 USAGE
   $ sfdx hardis:package:version:create [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -473,8 +485,6 @@ _See code: [lib/commands/hardis/package/version/create.js](https://github.com/ha
 List versions of unlocked package
 
 ```
-List versions of unlocked package
-
 USAGE
   $ sfdx hardis:package:version:list [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -504,8 +514,6 @@ _See code: [lib/commands/hardis/package/version/list.js](https://github.com/hard
 Audit API version
 
 ```
-Audit API version
-
 USAGE
   $ sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -535,8 +543,6 @@ _See code: [lib/commands/hardis/project/audit/apiversion.js](https://github.com/
 Generate list of callIn and callouts from sfdx project
 
 ```
-Generate list of callIn and callouts from sfdx project
-
 USAGE
   $ sfdx hardis:project:audit:callincallout [-d] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -559,8 +565,6 @@ _See code: [lib/commands/hardis/project/audit/callincallout.js](https://github.c
 Generate list of remote sites
 
 ```
-Generate list of remote sites
-
 USAGE
   $ sfdx hardis:project:audit:remotesites [-d] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -583,8 +587,6 @@ _See code: [lib/commands/hardis/project/audit/remotesites.js](https://github.com
 Configure authentication from git branch to target org
 
 ```
-Configure authentication from git branch to target org
-
 USAGE
   $ sfdx hardis:project:configure:auth [-b] [-d] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -608,8 +610,6 @@ _See code: [lib/commands/hardis/project/configure/auth.js](https://github.com/ha
 Deploy SFDX project sources to org
 
 ```
-Deploy SFDX project sources to org
-
 USAGE
   $ sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u 
   <string>] [--apiversion <string>] [--json] [--loglevel 
@@ -647,8 +647,6 @@ _See code: [lib/commands/hardis/project/deploy/sources/dx.js](https://github.com
 Deploy metadatas to source org
 
 ```
-Deploy metadatas to source org
-
 USAGE
   $ sfdx hardis:project:deploy:sources:metadata [-c] [-p <string>] [-f] [-k <string>] [-l 
   NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [-u <string>] [--apiversion <string>] [--json] 
@@ -693,8 +691,6 @@ _See code: [lib/commands/hardis/project/deploy/sources/metadata.js](https://gith
 Create and initialize a scratch org so it is ready to use
 
 ```
-Create and initialize a scratch org so it is ready to use
-
 USAGE
   $ sfdx hardis:scratch:create [-n] [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -727,8 +723,6 @@ _See code: [lib/commands/hardis/scratch/create.js](https://github.com/hardisgrou
 New work task
 
 ```
-New work task
-
 USAGE
   $ sfdx hardis:work:new [-d] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -758,8 +752,6 @@ _See code: [lib/commands/hardis/work/new.js](https://github.com/hardisgroupcom/s
 Make my local branch and my scratch org up to date with the most recent sources
 
 ```
-Make my local branch and my scratch org up to date with the most recent sources
-
 USAGE
   $ sfdx hardis:work:refresh [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -789,8 +781,6 @@ _See code: [lib/commands/hardis/work/refresh.js](https://github.com/hardisgroupc
 Process again the selection of the items that you want to publish to upper level
 
 ```
-Process again the selection of the items that you want to publish to upper level
-
 USAGE
   $ sfdx hardis:work:resetselection [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
@@ -820,8 +810,6 @@ _See code: [lib/commands/hardis/work/resetselection.js](https://github.com/hardi
 When a work task is completed, guide user to create a merge request
 
 ```
-When a work task is completed, guide user to create a merge request
-
 USAGE
   $ sfdx hardis:work:save [-d] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]

@@ -150,7 +150,7 @@ class MetadataUtils {
   }
 
   // Get default org that is currently selected for user
-  public static async getCurrentOrg(type: string = 'any') {
+  public static async getCurrentOrg(type = 'any') {
     const displayOrgCommand = 'sfdx force:org:display --verbose';
     const displayResult = await execSfdxJson(displayOrgCommand, this, { fail: false, output: true });
     if (displayResult.id && type === 'scratch' && displayResult.scratchOrg) {
@@ -162,7 +162,7 @@ class MetadataUtils {
   }
 
   // List local orgs for user
-  public static async listLocalOrgs(type: string = 'any') {
+  public static async listLocalOrgs(type = 'any') {
     const orgListResult = await execSfdxJson('sfdx force:org:list', this);
     if (type === 'any') {
       return orgListResult?.result || [];

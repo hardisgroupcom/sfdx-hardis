@@ -53,7 +53,7 @@ async function listChangedFiles(): Promise<string[]> {
     if (!isGitRepo()) {
         return [];
     }
-    const files = await new Promise<string[]>((resolve, reject) => {
+    const files = await new Promise<string[]>((resolve) => {
         changedGitFiles((err: any, result: any[]) => {
             if (result == null) {
                 console.warn(JSON.stringify(err, null, 2));

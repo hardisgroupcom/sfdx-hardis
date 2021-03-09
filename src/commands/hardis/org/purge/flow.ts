@@ -108,8 +108,6 @@ export default class OrgPurgeFlow extends SfdxCommand {
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE Status IN ('${statusFilter.join(
       "','"
     )}')`;
-    if (statusFilter) {
-    }
     if (nameFilter) {
       query += ` AND MasterLabel LIKE '${nameFilter}%'`;
     }
