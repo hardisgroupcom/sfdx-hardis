@@ -206,10 +206,14 @@ export default class ScratchCreate extends SfdxCommand {
     // Assign permission sets to user
     public async initPermissionSetAssignments() {
         uxLog(this, c.cyan('Assigning Permission Sets...'));
-        const permSets = this.configInfo.assignPermissionSets || [];
-        for (const permSetName of permSets) {
-            const assignCommand = `sfdx force:user:permset:assign -n ${permSetName} -u ${this.scratchOrgUsername}`;
-            await execCommand(assignCommand, this, { fail: true, output: true, debug: this.debugMode });
+        const permSets = this.configInfo.initPermissionSets || [];
+        for (const permSet of permSets) {
+            uxLog(this,c.cyan(`Assigning ${c.bold(permSet.name)} to scratch org user`));
+            const assignCommand = `sfdx force:user:permset:assign -n ${permSet.name} -u ${this.scratchOrgUsername}`;
+            const assignResult = await execSfdxJson(assignCommand, this, { fail: false, output: false, debug: this.debugMode });
+            if (assignResult.status !== 0 && !assignResult.message.includes("Duplicate")) {
+                uxLog(this,c.red(`Error assigning to${c.bold(permSet.name)}\n${assignResult.message}`));
+            }
         }
     }
 
