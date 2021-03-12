@@ -240,7 +240,7 @@ export default class ScratchCreate extends SfdxCommand {
     // Loads data in the org
     public async initOrgData() {
         uxLog(this, c.cyan('Loading org initialization data...'));
-        const initDataRequests = this.configInfo.initDataRequests 
+        const initDataRequests = this.configInfo.initDataRequests || [];
         // Import data files
         for (const initDataRequest of initDataRequests) {
             const planFile = path.join('data', initDataRequest.plan);
