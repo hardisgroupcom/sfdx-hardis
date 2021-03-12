@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.1.1] 2021-03-12
+
 - Fix **hardis:scratch:create** when initDataRequests
 
 ## [2.1.0] 2021-03-10
