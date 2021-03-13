@@ -185,11 +185,19 @@ class MetadataUtils {
   }
 
   // Install package on existing org
-  public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null) {
+  public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null, context = 'none') {
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(null, this);
     for (const package1 of packages) {
       if (alreadyInstalled.filter((installedPackage: any) =>
         package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId).length === 0) {
+          if (context === 'scratch' && package1.installOnScratchOrgs === false) {
+            uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`));
+            continue;
+          }
+          if (context === 'deploy' && package1.installDuringDeployments === false) {
+            uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`));
+            continue;
+          }
         uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName || ''}`)}...`));
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
@@ -208,7 +216,7 @@ class MetadataUtils {
 
   // Retrieve metadatas from a package.xml
   public static async retrieveMetadatas(packageXml: string, metadataFolder: string, checkEmpty: boolean,
-                                        filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
+    filteredMetadatas: string[], options: any = {}, commandThis: any, debug: boolean) {
 
     // Create output folder if not existing
     await fs.ensureDir(metadataFolder);

@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Improve package installation
+  - Allow to install a package not listed in sfdx-hardis
+  - Allow to configure automatic installation during deployments, or not
+  - Allow to configure automatic installation during scratch org initialisation, or not
+
 ## [2.1.1] 2021-03-12
 
 - Fix **hardis:scratch:create** when initDataRequests

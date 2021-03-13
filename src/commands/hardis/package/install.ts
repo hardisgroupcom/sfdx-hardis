@@ -60,6 +60,7 @@ export default class PackageVersionInstall extends SfdxCommand {
         // If no package Id is sent, ask user what package he/she wants to install
         if (!isCI && (packageId == null || !packageId.startsWith('04t'))) {
             const allPackages = packages.map(pack => ({ title: `${c.yellow(pack.name)} - ${pack.repoUrl || 'Bundle'}`, value: pack }));
+            allPackages.push({ title: "Other", value: "other" });
             const packageResponse = await prompts({
                 type: 'select',
                 name: 'value',
@@ -67,7 +68,15 @@ export default class PackageVersionInstall extends SfdxCommand {
                 choices: allPackages,
                 initial: 0
             });
-            if (packageResponse.value.bundle) {
+            if (packageResponse.value === 'other') {
+                const packageDtlResponse = await prompts({
+                    type: 'text',
+                    name: 'value',
+                    message: c.cyanBright("What is the id of the Package Version to install ? (starting with 04t)"),
+                });
+                packagesToInstall.push({ SubscriberPackageVersionId: packageDtlResponse.value });
+            }
+            else if (packageResponse.value.bundle) {
                 // Package bundle selected
                 const packagesToAdd = packageResponse.value.packages.map(packageId => {
                     return packages.filter(pckg => pckg.package === packageId)[0]
@@ -97,12 +106,12 @@ export default class PackageVersionInstall extends SfdxCommand {
                             pckg.SubscriberPackageVersionId = packageAliases[packageAlias];
                         }
                     }
-                }   
+                }
             }
             return pckg;
         }));
         // Install packages
-        await MetadataUtils.installPackagesOnOrg(packagesToInstallCompleted, null, this);
+        await MetadataUtils.installPackagesOnOrg(packagesToInstallCompleted, null, this, 'install');
         const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
         uxLog(this, c.italic(c.grey('New package list on org:\n' + JSON.stringify(installedPackages, null, 2))));
 
@@ -115,8 +124,24 @@ export default class PackageVersionInstall extends SfdxCommand {
                 const matchInstalled = packagesToInstallCompleted.filter(pckg => pckg.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId);
                 const matchLocal = projectPackages.filter(projectPackage => installedPackage.SubscriberPackageVersionId === projectPackage.SubscriberPackageVersionId);
                 if (matchInstalled.length > 0 && matchLocal.length === 0) {
-                    projectPackages.push(installedPackage);
-                    updated = true;
+                    // Request user about automatic installation during scratch orgs and deployments
+                    const installResponse = await prompts({
+                        type: 'select',
+                        name: 'value',
+                        message: c.cyanBright(`Please select the package you want to install on org  ${c.green(this.org.getUsername())}`),
+                        choices: [
+                            { title: `Install automatically ${installedPackage.SubscriberPackageName} on scratch orgs only`, value: 'scratch' },
+                            { title: `Deploy automatically ${installedPackage.SubscriberPackageName} on integration/production orgs only`, value: 'deploy' },
+                            { title: `Both: Install & deploy automatically ${installedPackage.SubscriberPackageName}`, value: 'scratch-deploy' },
+                            { title: `Do not configure ${installedPackage.SubscriberPackageName} installation / deployment`, value: "none" },
+                        ]
+                    });
+                    installedPackage.installOnScratchOrgs = installResponse.value.includes("scratch");
+                    installedPackage.installDuringDeployments = installResponse.value.includes("deploy");
+                    if (installResponse.value !== 'none' && installResponse.value != null) {
+                        projectPackages.push(installedPackage);
+                        updated = true;
+                    }
                 }
             }
             if (updated) {
