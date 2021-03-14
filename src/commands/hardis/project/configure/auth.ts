@@ -57,7 +57,7 @@ export default class ConfigureAuth extends SfdxCommand {
                 name: 'value',
                 message: c.cyanBright('What is the name of the git branch you want to configure ? Exemples: developpement,recette,production')
             });
-            branchName = branchResponse.value;
+            branchName = branchResponse.value.replace(/\s/g, '-');
             instanceUrl = await promptInstanceUrl();
         }
         // Request username

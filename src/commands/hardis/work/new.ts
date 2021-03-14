@@ -98,7 +98,7 @@ export default class NewTask extends SfdxCommand {
       await setConfig('project', { developmentBranch: targetBranch });
     }
     // Checkout development main branch
-    const branchName = `${response.branch || 'features'}/${response.sources || 'dev'}/${response.taskName}`;
+    const branchName = `${response.branch || 'features'}/${response.sources || 'dev'}/${response.taskName.replace(/\s/g, '-')}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(targetBranch)} on server...`));
     await gitCheckOutRemote(targetBranch);
     // Create new branch

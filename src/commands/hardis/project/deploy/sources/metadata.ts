@@ -87,7 +87,7 @@ export default class DxSources extends SfdxCommand {
     // Install packages
     const packages = this.configInfo.installedPackages || [];
     if (packages.length > 0 && !check) {
-      await MetadataUtils.installPackagesOnOrg(packages, null, this);
+      await MetadataUtils.installPackagesOnOrg(packages, null, this, "deploy");
     }
 
     const destructiveProcessed = false;
