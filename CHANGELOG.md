@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.1.2] 2021-03-14
+
 - Improve package installation
   - Allow to install a package not listed in sfdx-hardis
   - Allow to configure automatic installation during deployments, or not
