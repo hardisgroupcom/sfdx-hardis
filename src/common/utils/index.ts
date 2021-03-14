@@ -676,7 +676,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       `<?xml version="1.0" encoding="UTF-8"?>
 <ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
   <contactEmail>${promptResponses.contactEmail}</contactEmail>
-  <label>${promptResponses.appName || 'sfdx-hardis'}</label>
+  <label>${promptResponses.appName.replace(/\s/g, '_') || 'sfdx-hardis'}</label>
   <oauthConfig>
       <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
       <certificate>${crtContent}</certificate>
