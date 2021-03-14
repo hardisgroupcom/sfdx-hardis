@@ -7,10 +7,9 @@ DEFAULT_BRANCH: main # Usually master or main
 # ENABLE_LINTERS: # If you use ENABLE_LINTERS variable, all other linters will be disabled by default
 DISABLE:
   - EDITORCONFIG
-  - TYPESCRIPT
 DISABLE_LINTERS:
   - JSON_JSONLINT
-  - TYPESCRIPT_ES
+  - TYPESCRIPT_STANDARD
 MARKDOWN_MARKDOWN_LINK_CHECK_DISABLE_ERRORS: true
 YAML_V8R_DISABLE_ERRORS: true
 FILTER_REGEX_EXCLUDE: "(vscode|defaults)"
