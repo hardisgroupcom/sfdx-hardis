@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix hardis:retrieve:sources:dx when not in a DX project
+
 ## [2.1.2] 2021-03-14
 
 - Improve package installation

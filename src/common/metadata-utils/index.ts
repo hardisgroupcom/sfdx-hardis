@@ -232,7 +232,7 @@ class MetadataUtils {
     if (options.filterManagedItems) {
       uxLog(commandThis, c.cyan('Filtering managed items from package.Xml manifest...'));
       // List installed packages & collect managed namespaces
-      const installedPackages = await this.listInstalledPackages(null, commandThis);
+      const installedPackages = fs.existsSync('sfdx-project.json')?(await this.listInstalledPackages(null, commandThis)):[];
       const namespaces = [];
       for (const installedPackage of installedPackages) {
         if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
