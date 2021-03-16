@@ -201,7 +201,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: []}
     groups = [
       {
         label: "All",
-        regex: /(.*)/gi,
+        regex: /(.*)/i,
         defaultSelect: false,
         ignore: false
       }

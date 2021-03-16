@@ -66,37 +66,37 @@ export default class SaveTask extends SfdxCommand {
     const groups = [
       {
         label: "Objects",
-        regex: /\/objects\//gi,
+        regex: /objects\//i,
         defaultSelect: true
       },
       {
         label: "Value sets",
-        regex: /\/(standardValueSets|globalValueSets)\//gi,
+        regex: /(standardValueSets|globalValueSets)\//i,
         defaultSelect: true
       },
       {
         label: "Tabs",
-        regex: /\/tabs\//gi,
+        regex: /tabs\//i,
         defaultSelect: true
       },
       {
         label: "Classes",
-        regex: /\/classes\//gi,
+        regex: /classes\//i,
         defaultSelect: true
       },
       {
         label: "Layouts",
-        regex: /\/layouts\//gi,
+        regex: /layouts\//i,
         defaultSelect: false
       },
       {
         label: "Object Translations",
-        regex: /\/objectTranslations\//gi,
+        regex: /objectTranslations\//i,
         defaultSelect: false
       },
       {
         label: "Other",
-        regex: /(.*?)/gi,
+        regex: /(.*?)/i,
         defaultSelect: false
       }
     ]
@@ -177,7 +177,7 @@ export default class SaveTask extends SfdxCommand {
         type: 'confirm',
         name: 'push',
         default: true,
-        message: c.cyanBright(`Do you want to save your updates your updates on server ? (git push in remote git branch ${c.green(currentGitBranch)})`)
+        message: c.cyanBright(`Do you want to save your updates on git server ? (git push in remote git branch ${c.green(currentGitBranch)})`)
       });
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));
