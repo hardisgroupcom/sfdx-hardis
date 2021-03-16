@@ -61,7 +61,46 @@ export default class SaveTask extends SfdxCommand {
 
     const gitUrl = await git().listRemote(['--get-url']);
     const currentGitBranch = await getCurrentGitBranch();
-    await interactiveGitAdd();
+
+    // Request user to select what he/she wants to commit
+    const groups = [
+      {
+        label: "Objects",
+        regex: /\/objects\//gi,
+        defaultSelect: true
+      },
+      {
+        label: "Value sets",
+        regex: /\/(standardValueSets|globalValueSets)\//gi,
+        defaultSelect: true
+      },
+      {
+        label: "Tabs",
+        regex: /\/tabs\//gi,
+        defaultSelect: true
+      },
+      {
+        label: "Classes",
+        regex: /\/classes\//gi,
+        defaultSelect: true
+      },
+      {
+        label: "Layouts",
+        regex: /\/layouts\//gi,
+        defaultSelect: false
+      },
+      {
+        label: "Object Translations",
+        regex: /\/objectTranslations\//gi,
+        defaultSelect: false
+      },
+      {
+        label: "Other",
+        regex: /(.*?)/gi,
+        defaultSelect: false
+      }
+    ]
+    await interactiveGitAdd({groups: groups});
 
     // Commit updates
     const gitStatus = await git().status();
