@@ -6,6 +6,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Fix hardis:retrieve:sources:dx when not in a DX project
 - Fix deloyment of Connected App in production
+- Display more options by page during interactive git add
+- Sort files to git add by group and manage preselection
 
 ## [2.1.2] 2021-03-14
 
