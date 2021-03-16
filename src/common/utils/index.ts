@@ -178,14 +178,14 @@ export async function checkGitClean(options: any) {
 }
 
 // Interactive git add
-export async function interactiveGitAdd(options: any = { filter: [], unstage: true }) {
+export async function interactiveGitAdd(options: any = { filter: [], groups: []}) {
   if (git == null) {
     throw new SfdxError('[sfdx-hardis] You must be within a git repository');
   }
   // List all files and arrange their format
   const gitStatus = await git().status();
-  const filesFiltered = gitStatus.files.filter((fileStatus: FileStatusResult) => {
-    return options.filter.filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
+  let filesFiltered = gitStatus.files.filter((fileStatus: FileStatusResult) => {
+    return (options.filter || []).filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
   }).map((fileStatus: FileStatusResult) => {
     if (fileStatus.path.startsWith('"')) {
       fileStatus.path = fileStatus.path.substring(1);
@@ -195,47 +195,100 @@ export async function interactiveGitAdd(options: any = { filter: [], unstage: tr
     }
     return fileStatus;
   });
+  // Create default group if 
+  let groups = options.groups || [];
+  if (groups.length === 0){
+    groups = [
+      {
+        label: "All",
+        regex: /(.*)/i,
+        defaultSelect: false,
+        ignore: false
+      }
+    ]
+  }
   // Ask user what he/she wants to git add/rm
   const result = { added: [], removed: [] };
   if (filesFiltered.length > 0) {
-    const selectFilesStatus = await prompts({
-      type: 'multiselect',
-      name: 'files',
-      message: c.cyanBright(`Please select ${c.red('carefully')} the files you want to commit (save). ${c.red('They will be deployed to production someday !')}`),
-      choices: filesFiltered.map((fileStatus: FileStatusResult) => {
-        return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
-      })
-    });
-    if (selectFilesStatus.files.length === 0) {
-      return [];
+    for (const group of groups) {
+      // Extract files matching group regex
+      const matchingFiles = filesFiltered.filter((fileStatus: FileStatusResult) => {
+        return group.regex.test(fileStatus.path);
+      });
+      if (matchingFiles.length === 0) {
+        continue ;
+      }
+      // Remove remaining files list
+      filesFiltered = filesFiltered.filter((fileStatus: FileStatusResult) => {
+        return !group.regex.test(fileStatus.path);
+      });    
+      // Ask user for input  
+      const selectFilesStatus = await prompts({
+        type: "multiselect",
+        name: "files",
+        message: c.cyanBright( `Please select ${c.red("carefully")} the ${c.bgWhiteBright(c.red(c.bold(group.label)))} files you want to commit (save)\n${c.italic(c.grey("They will be deployed to production someday !"))}`),
+        choices: matchingFiles.map((fileStatus: FileStatusResult) => {
+        return {
+            title: `(${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`, 
+            selected: group.defaultSelect || false,
+            value: fileStatus 
+        }
+        }),
+        optionsPerPage: 100,
+      });
+      // Add to group list of files
+      group.files = selectFilesStatus.files;
+      // Separate added to removed files
+      result.added.push(...(selectFilesStatus.files
+        .filter((fileStatus: FileStatusResult) => fileStatus.working_dir !== 'D')
+        .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ''))));
+      result.removed.push(...(selectFilesStatus.files
+        .filter((fileStatus: FileStatusResult) => fileStatus.working_dir === 'D')
+        .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ''))));
     }
-    const listOfFilesDisplay = selectFilesStatus.files.map((fileStatus: FileStatusResult) => {
-      return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
-    }).join('\n');
+    if (filesFiltered.length > 0) {
+      uxLog(this,c.grey("The following list of files has not been proposed for selection\n" +
+        filesFiltered.map((fileStatus:FileStatusResult) => {
+          return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+        }).join('\n')))
+    }
+    // Ask user for confirmation
+    const confirmationText = groups
+      .filter(group => group.files != null && group.files.length > 0)
+      .map(group => {
+        return c.bgWhiteBright(c.red(c.bold(group.label)))+'\n'+
+          group.files.map((fileStatus:FileStatusResult) => {
+            return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+          }).join('\n')+"\n";
+      }).join('\n');
     const addFilesResponse = await prompts({
-      type: 'confirm',
+      type: 'select',
       name: 'addFiles',
-      message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${c.yellow(listOfFilesDisplay)}`),
-      choices: filesFiltered.map((fileStatus: FileStatusResult) => {
-        return { title: `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`, value: fileStatus };
-      }),
-      optionsPerPage: 30
+      message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${confirmationText}`),
+      choices : [
+        { title: 'Yes, my selection is complete !', value: "yes" },
+        { title: 'No, I want to select again', value: "no" },
+        { title: 'Let me out of here !', value: "bye" }
+      ],
+      initial: 0
     });
-    // Separate added to removed files
-    result.added = selectFilesStatus.files
-      .filter((fileStatus: FileStatusResult) => fileStatus.working_dir !== 'D')
-      .map((fileStatus: FileStatusResult) => fileStatus.path);
-    result.removed = selectFilesStatus.files
-      .filter((fileStatus: FileStatusResult) => fileStatus.working_dir === 'D')
-      .map((fileStatus: FileStatusResult) => fileStatus.path);
     // Commit if requested
-    if (addFilesResponse.addFiles === true) {
+    if (addFilesResponse.addFiles === "yes") {
       if (result.added.length > 0) {
         await git({ output: true }).add(result.added);
       }
       if (result.removed.length > 0) {
         await git({ output: true }).rm(result.removed);
       }
+    }
+    // restart selection
+    else if (addFilesResponse.addFiles === "no") {
+      return await interactiveGitAdd(options);
+    }
+    // exit
+    else {
+      uxLog(this,"Cancelled by user");
+      process.exit(0);
     }
   } else {
     uxLog(this, c.cyan('There is no new file to commit'));
@@ -371,6 +424,16 @@ export function getSfdxFileLabel(filePath: string) {
     }
   }
   return cleanStr;
+}
+
+function getGitWorkingDirLabel(workingDir) {
+  return workingDir === "?"
+    ? "CREATED"
+    : workingDir === "D"
+    ? "DELETED"
+    : workingDir === "M"
+    ? "UPDATED"
+    : "OOOOOPS";
 }
 
 // Filter package XML
@@ -717,7 +780,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     try {
       const deployRes = await MetadataUtils.deployMetadatas({
         deployDir: tmpDirMd,
-        testlevel: 'NoTestRun',
+        testlevel: (branchName.includes('production'))?'RunAllTests':'NoTestRun',
         soap: true
       });
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));

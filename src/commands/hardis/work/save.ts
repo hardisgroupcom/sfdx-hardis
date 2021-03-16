@@ -61,7 +61,46 @@ export default class SaveTask extends SfdxCommand {
 
     const gitUrl = await git().listRemote(['--get-url']);
     const currentGitBranch = await getCurrentGitBranch();
-    await interactiveGitAdd();
+
+    // Request user to select what he/she wants to commit
+    const groups = [
+      {
+        label: "Objects",
+        regex: /objects\//i,
+        defaultSelect: true
+      },
+      {
+        label: "Value sets",
+        regex: /(standardValueSets|globalValueSets)\//i,
+        defaultSelect: true
+      },
+      {
+        label: "Tabs",
+        regex: /tabs\//i,
+        defaultSelect: true
+      },
+      {
+        label: "Classes",
+        regex: /classes\//i,
+        defaultSelect: true
+      },
+      {
+        label: "Layouts",
+        regex: /layouts\//i,
+        defaultSelect: false
+      },
+      {
+        label: "Object Translations",
+        regex: /objectTranslations\//i,
+        defaultSelect: false
+      },
+      {
+        label: "Other",
+        regex: /(.*?)/i,
+        defaultSelect: false
+      }
+    ]
+    await interactiveGitAdd({groups: groups});
 
     // Commit updates
     const gitStatus = await git().status();
@@ -138,7 +177,7 @@ export default class SaveTask extends SfdxCommand {
         type: 'confirm',
         name: 'push',
         default: true,
-        message: c.cyanBright(`Do you want to save your updates your updates on server ? (git push in remote git branch ${c.green(currentGitBranch)})`)
+        message: c.cyanBright(`Do you want to save your updates on git server ? (git push in remote git branch ${c.green(currentGitBranch)})`)
       });
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));

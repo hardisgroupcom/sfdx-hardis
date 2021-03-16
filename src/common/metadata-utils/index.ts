@@ -232,7 +232,7 @@ class MetadataUtils {
     if (options.filterManagedItems) {
       uxLog(commandThis, c.cyan('Filtering managed items from package.Xml manifest...'));
       // List installed packages & collect managed namespaces
-      const installedPackages = await this.listInstalledPackages(null, commandThis);
+      const installedPackages = fs.existsSync('sfdx-project.json')?(await this.listInstalledPackages(null, commandThis)):[];
       const namespaces = [];
       for (const installedPackage of installedPackages) {
         if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
@@ -244,9 +244,10 @@ class MetadataUtils {
       const packageXmlToRemove = (fs.existsSync('./remove-items-package.xml')) ?
         path.resolve('./remove-items-package.xml') :
         path.resolve(__dirname + '/../../../defaults/remove-items-package.xml');
+      const removeStandard = (options.removeStandard === false)? false: true ;
       const filterNamespaceRes = await filterPackageXml(packageXml, packageXml, {
         removeNamespaces: namespaces,
-        removeStandard: true,
+        removeStandard: removeStandard,
         removeFromPackageXmlFile: packageXmlToRemove,
         updateApiVersion: CONSTANTS.API_VERSION
       });

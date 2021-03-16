@@ -99,7 +99,7 @@ export default class DxSources extends SfdxCommand {
       metadataFolder,
       true,
       filteredMetadatas,
-      {filterManagedItems: true},
+      {filterManagedItems: true, removeStandard: false},
       this,
       debug
     );

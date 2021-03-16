@@ -78,6 +78,9 @@ async function authOrg(orgAlias: string, options: any) {
             console.log(
                 `[sfdx-hardis] You are already ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`
             );
+            if (orgInfoResult.result.expirationDate){
+                console.log(c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
+            }
             if (!isCI) {
                 console.log(
                     c.yellow(c.italic(`[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold('hit CTRL+C'))}, then input ${c.whiteBright(c.bold('sfdx hardis:org:select'))}`))
