@@ -85,6 +85,7 @@ export default class DxSources extends SfdxCommand {
         './config/package.xml';
     const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}` +
       ' --wait 60' +
+      ' --ignorewarnings' + // So it does not fail in for objectTranslations stuff
       ` --testlevel ${testlevel}` +
       (check ? ' --checkonly' : '') +
       (debugMode ? ' --verbose' : '');
