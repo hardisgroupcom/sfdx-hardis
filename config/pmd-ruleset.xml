@@ -12,7 +12,9 @@
     <!-- STANDARD RULES -->
     <rule ref="category/apex/design.xml" />
     <rule ref="category/apex/performance.xml" />
-    <rule ref="category/apex/codestyle.xml" />
+    <rule ref="category/apex/codestyle.xml">
+        <exclude name="FieldNamingConventions"/>
+    </rule>
     <rule ref="category/apex/security.xml">
         <priority>1</priority>
     </rule>
