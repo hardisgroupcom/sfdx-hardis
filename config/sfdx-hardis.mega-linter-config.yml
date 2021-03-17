@@ -17,7 +17,7 @@ PRE_COMMANDS:
     continue_if_failed: false
   - command: (cd ${DEFAULT_WORKSPACE} && npm install)
     continue_if_failed: true
-  - command: (cd ${DEFAULT_WORKSPACE} && npm i @ljharb/eslint-config)
+  - command: (cd ${DEFAULT_WORKSPACE} && npm i @ljharb/eslint-config airbnb-base)
     continue_if_failed: true
 SALESFORCE_SFDX_SCANNER_ARGUMENTS:
   - --pmdconfig
