@@ -3,9 +3,9 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
-import * as prompts from 'prompts';
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { execSfdxJson, uxLog } from '../../../common/utils';
+import { prompts } from '../../../common/utils/prompts';
 import { setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory

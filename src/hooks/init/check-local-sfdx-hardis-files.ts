@@ -1,7 +1,7 @@
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
-import * as prompts from 'prompts';
 import { isCI } from '../../common/utils';
+import { prompts } from '../../common/utils/prompts';
 import { getConfig } from '../../config';
 
 export const hook = async (options: any) => {

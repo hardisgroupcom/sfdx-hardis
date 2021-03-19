@@ -3,8 +3,8 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
-import * as prompts from 'prompts';
 import { execSfdxJson, uxLog } from '../../../common/utils';
+import { prompts } from '../../../common/utils/prompts';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

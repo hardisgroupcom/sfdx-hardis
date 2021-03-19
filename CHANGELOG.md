@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.1.5] 2021-03-19
+
+- Unlimited list of items displayed during interactive git add
+- Uniformize prompts to user
+
 ## [2.1.4] 2021-03-17
 
 - Deploy with --ignorewarnings

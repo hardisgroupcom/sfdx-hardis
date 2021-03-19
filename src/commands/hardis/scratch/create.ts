@@ -10,9 +10,9 @@ import * as glob from 'glob-promise';
 import * as moment from 'moment';
 import * as os from 'os';
 import * as path from 'path';
-import * as prompts from 'prompts';
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../../../common/utils';
+import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory

@@ -16,8 +16,8 @@ import * as fs from 'fs-extra';
 import * as yaml from 'js-yaml';
 import * as os from 'os';
 import * as path from 'path';
-import * as prompts from 'prompts';
 import { getCurrentGitBranch, isGitRepo, uxLog } from '../common/utils';
+import { prompts } from '../common/utils/prompts';
 
 const moduleName = 'sfdx-hardis';
 const projectConfigFiles = [
