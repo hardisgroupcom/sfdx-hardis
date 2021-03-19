@@ -6,8 +6,8 @@ import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as prompts from 'prompts';
 import { ensureGitBranch, ensureGitRepository, execCommand, generateSSLCertificate, getCurrentGitBranch, gitAddCommitPush, promptInstanceUrl, uxLog } from '../../../../common/utils';
+import { prompts } from '../../../../common/utils/prompts';
 import { getConfig, setInConfigFile } from '../../../../config';
 
 // Initialize Messages with the current plugin directory

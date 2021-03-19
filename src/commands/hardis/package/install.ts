@@ -6,10 +6,10 @@ import * as axios1 from 'axios';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as prompts from 'prompts';
 // import * as packages from '../../../../defaults/packages.json'
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { isCI, uxLog } from '../../../common/utils';
+import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory

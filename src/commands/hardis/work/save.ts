@@ -6,8 +6,8 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import * as prompts from 'prompts';
 import { execCommand, execSfdxJson, getCurrentGitBranch, git, interactiveGitAdd, uxLog } from '../../../common/utils';
+import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory

@@ -6,7 +6,6 @@ import * as csvStringify from 'csv-stringify/lib/sync';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import * as prompts from 'prompts';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
@@ -15,6 +14,7 @@ import * as ora from 'ora';
 import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
 import { MetadataUtils } from '../metadata-utils';
+import { prompts } from './prompts';
 
 let pluginsStdout = null;
 
@@ -234,7 +234,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: []}
             value: fileStatus 
         }
         }),
-        optionsPerPage: 100,
+        optionsPerPage: 9999,
       });
       // Add to group list of files
       group.files = selectFilesStatus.files;
