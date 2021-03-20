@@ -72,6 +72,7 @@ async function authOrg(orgAlias: string, options: any) {
                 orgInfoResult.result.connectedStatus.includes('Connected')) ||
                 (options.scratch && orgInfoResult.result.connectedStatus.includes('Unknown')) ||
                 (orgInfoResult.result.alias === orgAlias && orgInfoResult.result.id != null) ||
+                (orgInfoResult.result.username === orgAlias && orgInfoResult.result.id != null) ||
                 (isDevHub && orgInfoResult.result.id != null))
         ) {
             // Set as default username or devhubusername
