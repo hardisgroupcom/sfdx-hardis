@@ -43,81 +43,47 @@ You can use docker image **hardisgroupcom/sfdx-hardis**
 sfdx hardis:<COMMAND> <OPTIONS>
 ```
 
-## Use JWT to auth my salesforce org from CI
+## Use sfdx-hardis in CI
 
-### Create a self-signed certificate
+You can use sfdx-hardis within CI scripts
 
-Run the following commands (in [Git Bash](https://git-scm.com/downloads) if you are on Windows)
+To do that, you need to configure authentication. This will create/update:
+- .sfdx-hardis.yml configuration file (repo)
+- Self signed certificate (repo)
+- Connected App (uploaded to org via metadata api)
+- SFDX_CLIENT_ID variable (manually set in a CI variable)
 
-**Change the password in the script before running**
+### Configure authentication
 
-```sh-session
-export PASSWORD=dfgdlf999s2jlsfgd7
-mkdir ssh
-cd ssh
-openssl genrsa -des3 -passout "pass:$PASSWORD" -out server.pass.key 2048
-openssl rsa -passin "pass:$PASSWORD" -in server.pass.key -out server.key
-rm server.pass.key
-openssl req -new -key server.key -out server.csr
-openssl x509 -req -sha256 -days 365 -in server.csr -signkey server.key -out server.crt
+You need [openssl](https://www.openssl.org/) installed on your computer
+
+Run the following command and follow instructions
+
+```shell
+sfdx hardis:project:configure:auth
 ```
 
-More info on [heroku documentation](https://devcenter.heroku.com/articles/ssl-certificate-self)
+Alternative for DevHub
 
-<details>
-<summary>Example info to input</summary>
-
-```sh-session
-$ openssl req -new -key server.key -out server.csr
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Country Name (2 letter code) [AU]:FR
-string is too long, it needs to be less than  2 bytes long
-Country Name (2 letter code) [AU]:FR
-State or Province Name (full name) [Some-State]:Ile de France
-Locality Name (eg, city) []:Paris
-Organization Name (eg, company) [Internet Widgits Pty Ltd]:Hardis-Group
-Organizational Unit Name (eg, section) []:ACS
-Common Name (e.g. server FQDN or YOUR name) []:Nicolas Vuillamy
-Email Address []:nicolas.vuillamy@hardis-group.com
-
-Please enter the following 'extra' attributes
-to be sent with your certificate request
-A challenge password []:pFeW2g9:ff*
-An optional company name []:Hardis-Group
+```shell
+sfdx hardis:project:configure:auth --devhub
 ```
 
-</details>
+### Authentication in CI
 
-### Create sfdx connected app
+Call **sfdx hardis:login** at the root of the repository where you configured authentication
 
-Please follow steps of [documentation](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm) (the instructions are the same even if it is not a DevHub org)
-
-The certificate to use is file server.crt generated during previous step
-
-### Manage repository configuration
-
-- Create a **.sfdx-hardis.yml** file at the root of your repository, with the following properties
-  - **instanceUrl** : `http://login.salesforce.com` or `https://test.salesforce.com`
-  - **targetUsername** : your salesforce username on the org (ex: `jeandupont@ma-prod.com`)
-
-Example
-
-```yaml
-instanceUrl: https://login.salesforce.com # Must be the root of Salesforce Classic URL
-targetUsername: nicolas.vuillamy@gmail.com
+```shell
+sfdx hardis:auth:login
+sfdx hardis:org:purge:flow --no-prompt
 ```
 
-- Define SFDX_CLIENT_ID in your repository secret variables, with **Consumer key** value on Connected App sfdx
-  - [Github instructions](https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository)
-  - [GitLab instructions](https://docs.gitlab.com/ee/ci/variables/#create-a-custom-variable-in-the-ui) (select **Mask variable** option)
 
-Example: `SFDX_CLIENT_ID: 3MVG9SOw8KERNN0.1kPOtqFc1ekdNpUho5WvGMn5n5IVMAFbcSvmY3_PEqoehefCbaQ299._Uh79SPeEPwk_5`
+Alternative for DevHub
+
+```shell
+sfdx hardis:auth:login --devhub
+```
 
 ## Commands
 <!-- commands -->
