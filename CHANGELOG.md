@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.1.6] 2021-03-19
+
 - Fix org authentication check
 
 ## [2.1.5] 2021-03-19
