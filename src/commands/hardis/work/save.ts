@@ -65,6 +65,11 @@ export default class SaveTask extends SfdxCommand {
     // Request user to select what he/she wants to commit
     const groups = [
       {
+        label: "Tech config",
+        regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
+        defaultSelect: true
+      },
+      {
         label: "Objects",
         regex: /objects\//i,
         defaultSelect: true
@@ -84,6 +89,16 @@ export default class SaveTask extends SfdxCommand {
         regex: /classes\//i,
         defaultSelect: true
       },
+      {
+        label: "Aura Components",
+        regex: /aura\//i,
+        defaultSelect: true
+      },    
+      {
+        label: "Lightning Web Components",
+        regex: /lwc\//i,
+        defaultSelect: true
+      },      
       {
         label: "Layouts",
         regex: /layouts\//i,

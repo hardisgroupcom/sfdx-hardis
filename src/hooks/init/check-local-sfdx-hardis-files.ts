@@ -58,6 +58,7 @@ async function manageGitIgnore(commandId: string) {
     if (commandId.startsWith('hardis:work:task:new')) {
         return ;
     }
+    // Manage .gitignore
     const gitIgnoreFile = './.gitignore';
     if (fs.existsSync(gitIgnoreFile)) {
         const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
@@ -79,6 +80,32 @@ async function manageGitIgnore(commandId: string) {
             if (confirm.value === true || isCI) {
                 await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');
                 console.log(c.cyan('[sfdx-hardis] Updated .gitignore'));
+            }
+        }
+    }
+
+    // Manage .forceignore
+    const forceIgnoreFile = './.forceignore';
+    if (fs.existsSync(forceIgnoreFile)) {
+        const forceIgnore = await fs.readFile(forceIgnoreFile, 'utf-8');
+        const forceIgnoreLines = forceIgnore.split('\n');
+        let updated = false;
+        for (const forceIgnoreMandatoryLine of await getHardisForceIgnoreContent()) {
+            if (!forceIgnoreLines.includes(forceIgnoreMandatoryLine)) {
+                forceIgnoreLines.push(forceIgnoreMandatoryLine);
+                updated = true;
+            }
+        }
+        if (updated && !isCI) {
+            const confirm = await prompts({
+                type: 'confirm',
+                name: 'value',
+                initial: true,
+                message: c.cyanBright('Your .forceignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)')
+            });
+            if (confirm.value === true || isCI) {
+                await fs.writeFile(forceIgnoreFile, forceIgnoreLines.join('\n') + '\n', 'utf-8');
+                console.log(c.cyan('[sfdx-hardis] Updated .forceignore'));
             }
         }
     }
@@ -136,4 +163,22 @@ async function getHardisGitRepoIgnoreContent() {
         'force-app/main/default/appMenus/AppSwitcher.appMenu-meta.xml'
     ];
     return gitIgnoreContent;
+}
+
+
+async function getHardisForceIgnoreContent() {
+    const forceIgnoreContent = [
+        "**/appMenu/**",
+        "**/appSwitcher/**",
+        "**/objectTranslations/**",
+        // "**/profiles/**", 
+        // "**/settings/**",
+        
+        "**/jsconfig.json",
+        "**/.eslintrc.json",
+        
+        "**/__tests__/**",
+        "**/pubsub/**"
+    ];
+    return forceIgnoreContent;
 }
