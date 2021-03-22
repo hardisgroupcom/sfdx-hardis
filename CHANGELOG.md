@@ -4,11 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.1.7] 2021-03-22
+
 - More categories for Interactive Git Add (Aura,LWC, Tech Config)
 - Auto-update .forceignore
 - Fix `hardis:org:test:apex`
 
-## [2.1.6] 2021-03-19
+## [2.1.6] 2021-03-20
 
 - Fix org authentication check
 
