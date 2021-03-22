@@ -106,6 +106,7 @@ export default class OrgTestApex extends SfdxCommand {
       message = '[sfdx-hardis] Org apex tests failure';
       uxLog(this, c.red(message));
       uxLog(this, c.red(JSON.stringify(testRes)));
+      throw new SfdxError("[sfdx-hardis] " + message);
     }
     return { orgId: this.org.getOrgId(), outputString: message };
   }

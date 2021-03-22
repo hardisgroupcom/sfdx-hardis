@@ -33,19 +33,19 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: tsc
       - run: yarn config set version-git-tag false
-      - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$BETAID"
+      - run: ALPHAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$ALPHAID"
       - run: yarn publish --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  push_beta_to_registry:
-    name: Push Beta Docker image to Docker Hub
+  push_alpha_to_registry:
+    name: Push alpha Docker image to Docker Hub
     needs: deploy
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Publish beta to Registry
+      - name: Publish alpha to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: hardisgroupcom/sfdx-hardis
