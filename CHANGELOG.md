@@ -7,7 +7,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - More categories for Interactive Git Add (Aura,LWC, Tech Config)
 - Auto-update .forceignore
 - Fix `hardis:org:test:apex`
-- Override fflib test cases so they work in french
 
 ## [2.1.6] 2021-03-19
 
