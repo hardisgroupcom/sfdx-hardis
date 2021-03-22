@@ -64,6 +64,9 @@ export default class OrgTestApex extends SfdxCommand {
       (debugMode ? ' --verbose' : '');
     const testRes = await execSfdxJson(testCommand, this, { output: false, debug: debugMode, fail: false });
     let message = '';
+    if (debugMode) {
+      this.ux.log(c.green(JSON.stringify(testRes.result)));
+    }
     if (testRes.status === 0) {
       uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = '[sfdx-hardis] Successfully run apex tests on org';
@@ -99,14 +102,10 @@ export default class OrgTestApex extends SfdxCommand {
       } else {
         uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
       }
-
-      if (debugMode) {
-        this.ux.log(c.green(JSON.stringify(testRes.result)));
-      }
     } else {
-      message = '[sfdx-hardis] Test org failure';
-      this.ux.log(c.red(JSON.stringify(testRes.result.summary)));
-      this.ux.log(c.red(JSON.stringify(testRes.result)));
+      message = '[sfdx-hardis] Org apex tests failure';
+      uxLog(this, c.red(message));
+      uxLog(this, c.red(JSON.stringify(testRes)));
     }
     return { orgId: this.org.getOrgId(), outputString: message };
   }
