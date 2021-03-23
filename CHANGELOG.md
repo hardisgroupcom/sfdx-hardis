@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.2.1] 2021-03-23
+
+- QuickFix 2.2.1
+- Use RunLocalTests when deploying ConnectedApp metadata to production org
+
 ## [2.2.0] 2021-03-23
 
 - Enhance security by encrypting SSH private key
