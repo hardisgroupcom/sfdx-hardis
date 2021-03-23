@@ -13,6 +13,12 @@ export async function encryptFile(filePath) {
     return encryptedFileContent.encryptionKey;
 }
 
+export async function decryptFile(filePath,targetFile,encryptionKey) {
+    const fileContent = await fs.readFile(filePath,"utf8");
+    const decryptedFileContent = decrypt(fileContent,encryptionKey);
+    await fs.writeFile(targetFile,decryptedFileContent);
+}
+
 export function encrypt(text) {
  const iv = crypto.randomBytes(IV_LENGTH);
  const encryptionKey = crypto.randomBytes(16).toString('hex');
