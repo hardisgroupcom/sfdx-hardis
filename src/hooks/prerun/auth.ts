@@ -235,15 +235,15 @@ async function getKey(orgAlias: string, config: any) {
     if (process.env[sfdxClientKeyVarNameUpper]) {
         return process.env[sfdxClientKeyVarNameUpper];
     }
-    if (process.env.SFDX_CLIENT_ID) {
+    if (process.env.SFDX_CLIENT_KEY) {
         console.warn(
-            c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define CI variable ${c.bold(sfdxClientKeyVarNameUpper)} than SFDX_CLIENT_ID`)
+            c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define CI variable ${c.bold(sfdxClientKeyVarNameUpper)} than SFDX_CLIENT_KEY`)
         );
-        return process.env.SFDX_CLIENT_ID;
+        return process.env.SFDX_CLIENT_KEY;
     }
     // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
-    if (!isCI && config.devHubSfdxClientId) {
-        return config.devHubSfdxClientId;
+    if (!isCI && config.devHubSfdxClientKey) {
+        return config.devHubSfdxClientKey;
     }
     if (isCI) {
         console.error(
