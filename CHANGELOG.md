@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.2.0] 2021-03-23
+
+- Enhance security by encrypting SSH private key
+
 ## [2.1.7] 2021-03-22
 
 - More categories for Interactive Git Add (Aura,LWC, Tech Config)

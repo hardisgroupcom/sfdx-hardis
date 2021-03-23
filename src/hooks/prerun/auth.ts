@@ -123,7 +123,7 @@ async function authOrg(orgAlias: string, options: any) {
                         : 'https://login.salesforce.com';
         // Get JWT items clientId and certificate key
         const sfdxClientId = await getSfdxClientId(orgAlias, config);
-        const crtKeyfile = await getCertificateKeyFile(orgAlias);
+        const crtKeyfile = await getCertificateKeyFile(orgAlias,config);
         const usernameArg =
             isDevHub
                 ? '--setdefaultdevhubusername'
@@ -139,6 +139,7 @@ async function authOrg(orgAlias: string, options: any) {
                 ` --setalias ${orgAlias}` +
                 ` --instanceurl ${instanceUrl}`;
             const jwtAuthRes = await execSfdxJson(loginCommand, this, { fail: false });
+            await fs.remove(crtKeyfile); // Delete private key file
             logged = jwtAuthRes.status === 0;
             if (!logged) {
                 console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
@@ -222,8 +223,37 @@ async function getSfdxClientId(orgAlias: string, config: any) {
     return null;
 }
 
+// Get clientId for SFDX connected app
+async function getKey(orgAlias: string, config: any) {
+    // Try to find in global variables
+    const sfdxClientKeyVarName = `SFDX_CLIENT_KEY_${orgAlias}`;
+    if (process.env[sfdxClientKeyVarName]) {
+        return process.env[sfdxClientKeyVarName];
+    }
+    const sfdxClientKeyVarNameUpper = sfdxClientKeyVarName.toUpperCase();
+    if (process.env[sfdxClientKeyVarNameUpper]) {
+        return process.env[sfdxClientKeyVarNameUpper];
+    }
+    if (process.env.SFDX_CLIENT_ID) {
+        console.warn(
+            c.yellow(`[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define CI variable ${c.bold(sfdxClientKeyVarNameUpper)} than SFDX_CLIENT_ID`)
+        );
+        return process.env.SFDX_CLIENT_ID;
+    }
+    // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
+    if (!isCI && config.devHubSfdxClientId) {
+        return config.devHubSfdxClientId;
+    }
+    if (isCI) {
+        console.error(
+            c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientKeyVarNameUpper)} with the value of SSH private key`)
+        );
+    }
+    return null;
+}
+
 // Try to find certificate key file for sfdx connected app in different locations
-async function getCertificateKeyFile(orgAlias: string) {
+async function getCertificateKeyFile(orgAlias: string, config: any) {
     const filesToTry = [
         `./config/branches/.jwt/${orgAlias}.key`,
         `./config/.jwt/${orgAlias}.key`,
@@ -233,7 +263,11 @@ async function getCertificateKeyFile(orgAlias: string) {
     ];
     for (const file of filesToTry) {
         if (fs.existsSync(file)) {
-            return file;
+            // Decrypt SSH private key and write a temporary file
+            const sshKey = await getKey(orgAlias,config); 
+            const sshKeyFile = path.join(os.tmpdir(),'server.key'); 
+            await fs.writeFile(sshKeyFile,sshKey); 
+            return sshKeyFile; 
         }
     }
     if (isCI) {

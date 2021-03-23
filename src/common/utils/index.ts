@@ -15,6 +15,7 @@ import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
 import { MetadataUtils } from '../metadata-utils';
 import { prompts } from './prompts';
+import { encryptFile } from '../cryptoUtils';
 
 let pluginsStdout = null;
 
@@ -693,7 +694,9 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   process.chdir(prevDir);
   // Copy certificate key in local project
   await fs.ensureDir(folder);
-  await fs.copy(path.join(tmpDir, 'server.key'), path.join(folder, `${branchName}.key`));
+  const targetKeyFile = path.join(folder, `${branchName}.key`);
+  await fs.copy(path.join(tmpDir, 'server.key'), targetKeyFile);
+  const encryptionKey = await encryptFile(targetKeyFile);
   // Copy certificate file in user home project
   const crtFile = path.join(os.homedir(), `${branchName}.crt`);
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
@@ -712,6 +715,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   });
   if (confirmResponse.value === true) {
     uxLog(commandThis, c.cyanBright(`You must configure CI variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with value ${c.bold(c.green(consumerKey))}`));
+    uxLog(commandThis, c.cyanBright(`You must configure CI variable ${c.green(c.bold(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`))} with value ${c.bold(c.green(encryptionKey))}`));
     await prompts({ type: 'confirm', message: c.cyanBright('In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done') });
     // Request info for deployment
     const promptResponses = await prompts([
@@ -810,6 +814,7 @@ Hit ENTER when you are ready`)
     uxLog(commandThis, c.yellow('Now you can configure the sfdx connected app'));
     uxLog(commandThis, `Follow instructions here: ${c.bold('https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm')}`);
     uxLog(commandThis, `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`);
-    uxLog(commandThis, `Then, configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
+    uxLog(commandThis, `- configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`);
+    uxLog(commandThis, `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(encryptionKey)} key`);
   }
 }
