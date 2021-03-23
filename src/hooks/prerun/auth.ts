@@ -3,6 +3,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
+import { decryptFile } from '../../common/cryptoUtils';
 import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, promptInstanceUrl, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
 import { checkConfig, getConfig } from '../../config';
 
@@ -246,7 +247,7 @@ async function getKey(orgAlias: string, config: any) {
     }
     if (isCI) {
         console.error(
-            c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientKeyVarNameUpper)} with the value of SSH private key`)
+            c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientKeyVarNameUpper)} with the value of SSH private key encryption key`)
         );
     }
     return null;
@@ -265,9 +266,9 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
         if (fs.existsSync(file)) {
             // Decrypt SSH private key and write a temporary file
             const sshKey = await getKey(orgAlias,config); 
-            const sshKeyFile = path.join(os.tmpdir(),'server.key'); 
-            await fs.writeFile(sshKeyFile,sshKey); 
-            return sshKeyFile; 
+            const tmpSshKeyFile = path.join(os.tmpdir(),'server.key'); 
+            await decryptFile(file,tmpSshKeyFile,sshKey);
+            return tmpSshKeyFile; 
         }
     }
     if (isCI) {
