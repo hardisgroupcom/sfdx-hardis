@@ -140,7 +140,7 @@ async function authOrg(orgAlias: string, options: any) {
                 ` --setalias ${orgAlias}` +
                 ` --instanceurl ${instanceUrl}`;
             const jwtAuthRes = await execSfdxJson(loginCommand, this, { fail: false });
-            await fs.remove(crtKeyfile); // Delete private key file
+            // await fs.remove(crtKeyfile); // Delete private key file from temp folder TODO: move to postrun hook
             logged = jwtAuthRes.status === 0;
             if (!logged) {
                 console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
