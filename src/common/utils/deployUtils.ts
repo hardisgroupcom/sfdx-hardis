@@ -62,8 +62,8 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
     // Build list of package.xml according to plan
     if (fs.existsSync(deploymentPlanFile) && !check) {
         // Read deployment plan
-        const deploymentPlanFileXmlString = await fs.readFile(deploymentPlanFile);
-        const deploymentPlan = await xml2js.parseStringPromise(deploymentPlanFileXmlString);
+        const deploymentPlanFileXmlString = await fs.readFile(deploymentPlanFile,"utf8");
+        const deploymentPlan = await xml2js.parseStringPromise(deploymentPlanFileXmlString.toString().replace("\ufeff", ""));
         // Copy main package.xml
         const tmpDeployDir = path.join(os.tmpdir(),'sfdx-hardis-deploy');
         await fs.ensureDir(tmpDeployDir);
