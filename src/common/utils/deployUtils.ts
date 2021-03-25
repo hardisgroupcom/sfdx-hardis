@@ -15,6 +15,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       const packageXmlFile = packageXml.packageXmlFile ;
       uxLog(this,c.cyan(`Deploying ${c.bold(packageXml.label)} package: ${packageXmlFile} ...`));
       if (packageXmlFile.waitBefore) {
+        uxLog(this,`Waiting ${packageXmlFile.waitBefore * 1000} seconds before deployment according to deploymentPlan.json`);
         await new Promise(resolve => setTimeout(resolve, packageXmlFile.waitBefore * 1000));
       }
       const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}` +
@@ -25,7 +26,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
         (debugMode ? ' --verbose' : '');
         let deployRes ;
       try {
-        deployRes = await execCommand(deployCommand, this, { output: true, debug: debugMode, fail: true })
+        deployRes = await execCommand(deployCommand, this, { output: true, debug: debugMode, fail: true });
       } catch (e) {
         const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
         uxLog(this,c.red("Sadly there has been Deployment error(s)"));
@@ -42,6 +43,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
         uxLog(this, c.red(deployRes.errorMessage));
       }
       if (packageXmlFile.waitAfter) {
+        uxLog(this,`Waiting ${packageXmlFile.waitAfter * 1000} seconds after deployment according to deploymentPlan.json`);
         await new Promise(resolve => setTimeout(resolve, packageXmlFile.waitAfter * 1000));
       }
       messages.push(message);
@@ -51,7 +53,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
 
 // In some case we can not deploy the whole package.xml, so let's split it before :)
 async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,debugMode: boolean): Promise<any[]> {
-    const packageXmlString = await fs.readFile(packageXmlFile);
+    const packageXmlString = await fs.readFile(packageXmlFile,'utf8');
     const packageXml = await xml2js.parseStringPromise(packageXmlString);
     // Check for empty package.xml
     if (!(packageXml && packageXml.Package && packageXml.Package.types && packageXml.Package.types.length > 0)) {
@@ -62,42 +64,42 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
     // Build list of package.xml according to plan
     if (fs.existsSync(deploymentPlanFile) && !check) {
         // Read deployment plan
-        const deploymentPlanFileXmlString = await fs.readFile(deploymentPlanFile,"utf8");
-        const deploymentPlan = await xml2js.parseStringPromise(deploymentPlanFileXmlString.toString().replace("\ufeff", ""));
+        const deploymentPlanFileJsonString = await fs.readFile(deploymentPlanFile,"utf8");
+        const deploymentPlan = JSON.parse(deploymentPlanFileJsonString);
         // Copy main package.xml
         const tmpDeployDir = path.join(os.tmpdir(),'sfdx-hardis-deploy');
         await fs.ensureDir(tmpDeployDir);
         const mainPackageXmlCopyFileName = path.join(tmpDeployDir,'mainPackageXml');
         await fs.copy(packageXmlFile,mainPackageXmlCopyFileName);
         const mainPackageXmlItem = {
-        label: 'main',
-        packageXmlFile: mainPackageXmlCopyFileName,
-        order: 0
+          label: 'main',
+          packageXmlFile: mainPackageXmlCopyFileName,
+          order: 0
         }
         const packageXmlItems = [mainPackageXmlItem];
         // Remove other package.xml items from main package.xml
         for (const separatePackageXml of deploymentPlan.packages) {
-        uxLog(this,c.cyan(`Removing ${separatePackageXml.packageXmlFile} content from main package.xml`));
-        const removePackageXmlCommand = 'sfdx essentials:packagexml:remove' +
-        ` --packagexml ${mainPackageXmlCopyFileName}` +
-        ` --removepackagexml ${separatePackageXml.packageXmlFile}` +
-        ` --outputfile ${mainPackageXmlCopyFileName}`;
-        await execCommand(removePackageXmlCommand, this, { fail: true, debug: debugMode });
-        packageXmlItems.push(separatePackageXml);
+          uxLog(this,c.cyan(`Removing ${separatePackageXml.packageXmlFile} content from main package.xml`));
+          const removePackageXmlCommand = 'sfdx essentials:packagexml:remove' +
+          ` --packagexml ${mainPackageXmlCopyFileName}` +
+          ` --removepackagexml ${path.join("manifest", separatePackageXml.packageXmlFile)}` +
+          ` --outputfile ${mainPackageXmlCopyFileName}`;
+          await execCommand(removePackageXmlCommand, this, { fail: true, debug: debugMode });
+          packageXmlItems.push(separatePackageXml);
         }
 
         // Sort in requested order
         const packageXmlItemsSorted = sortArray(packageXmlItems, {
-        by: ['order','label'],
-        order: ['asc','asc']
+          by: ['order','label'],
+          order: ['asc','asc']
         });
         return packageXmlItemsSorted ;
     }
     // No transformation: return initial package.xml file
     return [
         {
-        label: 'main',
-        packageXmlFile: packageXmlFile
+          label: 'main',
+          packageXmlFile: packageXmlFile
         }
     ]
 }
