@@ -54,6 +54,9 @@ export default class ScratchCreate extends SfdxCommand {
     // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
     protected static requiresProject = true;
 
+    // List required plugins, their presence will be tested before running the command
+    protected static requiresSfdxPlugins = ['texei-sfdx-plugin'];
+
     protected forceNew = false;
 
     /* jscpd:ignore-end */
@@ -66,6 +69,7 @@ export default class ScratchCreate extends SfdxCommand {
     protected userEmail: string;
 
     protected gitBranch: string;
+    protected projectScratchDef: any;
     protected scratchOrgInfo: any;
     protected scratchOrgUsername: string;
     protected projectName: string;
@@ -121,6 +125,16 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Create a new scratch org or reuse existing one
     public async createScratchOrg() {
+        // Build project-scratch-def-branch-user.json
+        uxLog(this, c.cyan('Building custom project-scratch-def.json...'));
+        this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json'));
+        this.projectScratchDef.orgName = this.scratchOrgAlias;
+        this.projectScratchDef.adminEmail = this.userEmail;
+        this.projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
+        const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
+        await fs.ensureDir(path.dirname(projectScratchDefLocal));
+        await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
+        // Check current scratch org
         const orgListResult = await execSfdxJson('sfdx force:org:list', this);
         const matchingScratchOrgs = (orgListResult?.result?.scratchOrgs.filter((org: any) => {
             return org.alias === this.scratchOrgAlias &&
@@ -133,16 +147,6 @@ export default class ScratchCreate extends SfdxCommand {
             uxLog(this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
             return;
         }
-
-        // Build project-scratch-def-branch-user.json
-        uxLog(this, c.cyan('Building custom project-scratch-def.json...'));
-        const projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json'));
-        projectScratchDef.orgName = this.scratchOrgAlias;
-        projectScratchDef.adminEmail = this.userEmail;
-        projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
-        const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
-        await fs.ensureDir(path.dirname(projectScratchDefLocal));
-        await fs.writeFile(projectScratchDefLocal, JSON.stringify(projectScratchDef, null, 2));
 
         // Create new scratch org
         uxLog(this, c.cyan('Creating new scratch org...'));
@@ -198,8 +202,17 @@ export default class ScratchCreate extends SfdxCommand {
         } else { 
             // Use push for local scratch orgs
             uxLog(this, c.cyan(`Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`));
+            const deferSharingCalc = (this.projectScratchDef.features || []).includes("DeferSharingCalc");
+            // Suspend sharing calc if necessary
+            if (deferSharingCalc) {
+                await execCommand('sfdx texei:sharingcalc:suspend', this, { fail: true, output: true, debug: this.debugMode });
+            }
             const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${this.scratchOrgAlias}`;
             await execCommand(pushCommand, this, { fail: true, output: true, debug: this.debugMode });
+            // Resume sharing calc if necessary
+            if (deferSharingCalc) {
+                await execCommand('sfdx texei:sharingcalc:resume', this, { fail: true, output: true, debug: this.debugMode });
+            }
         }
     }
 
