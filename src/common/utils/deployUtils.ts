@@ -79,10 +79,11 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
         const packageXmlItems = [mainPackageXmlItem];
         // Remove other package.xml items from main package.xml
         for (const separatePackageXml of deploymentPlan.packages) {
+          separatePackageXml.packageXmlFile = path.join(path.dirname(deploymentPlanFile), separatePackageXml.packageXmlFile);
           uxLog(this,c.cyan(`Removing ${separatePackageXml.packageXmlFile} content from main package.xml`));
           const removePackageXmlCommand = 'sfdx essentials:packagexml:remove' +
           ` --packagexml ${mainPackageXmlCopyFileName}` +
-          ` --removepackagexml ${path.join("manifest", separatePackageXml.packageXmlFile)}` +
+          ` --removepackagexml ${separatePackageXml.packageXmlFile}` +
           ` --outputfile ${mainPackageXmlCopyFileName}`;
           await execCommand(removePackageXmlCommand, this, { fail: true, debug: debugMode });
           packageXmlItems.push(separatePackageXml);
