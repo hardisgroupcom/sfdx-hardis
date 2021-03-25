@@ -109,7 +109,7 @@ export default class DxSources extends SfdxCommand {
       } catch (e) {
         const {tips} = analyzeDeployErrorLogs(e.error.stdout + e.error.stderr);
         uxLog(this,c.red("Sadly there has been Deployment error(s)"));
-        uxLog(this,c.yellow(tips.map((tip:any) => tip.tip).join("\n")));
+        uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n")));
         uxLog(this,c.yellow(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`));
         throw new SfdxError('Deployment failure. Check messages above');
       }
