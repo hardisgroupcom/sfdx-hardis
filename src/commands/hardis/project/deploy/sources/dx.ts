@@ -35,6 +35,10 @@ export default class DxSources extends SfdxCommand {
       options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel')
     }),
+    packagexml: flags.string({
+      char: 'p',
+      description:"Path to package.xml containing what you want to deploy in target org"
+    }),
     debug: flags.boolean({
       char: 'd',
       default: false,
@@ -57,6 +61,7 @@ export default class DxSources extends SfdxCommand {
     this.configInfo = await getConfig('branch');
     const check = this.flags.check || false;
     const testlevel = this.flags.testlevel || 'RunLocalTests';
+    const packageXml = this.flags.packagexml || null ;
     this.debugMode = this.flags.debug || false;
 
     // Install packages
@@ -79,7 +84,7 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Deploy sources
-    const packageXmlFile =
+    const packageXmlFile = packageXml ||
       process.env.PACKAGE_XML_TO_DEPLOY ||
         this.configInfo.packageXmlToDeploy ||
         (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :

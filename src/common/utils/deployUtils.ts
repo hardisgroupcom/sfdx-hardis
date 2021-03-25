@@ -27,7 +27,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       try {
         deployRes = await execCommand(deployCommand, this, { output: true, debug: debugMode, fail: true })
       } catch (e) {
-        const {tips} = analyzeDeployErrorLogs(e.error.stdout + e.error.stderr);
+        const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
         uxLog(this,c.red("Sadly there has been Deployment error(s)"));
         uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n")));
         uxLog(this,c.yellow(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`));
@@ -46,6 +46,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       }
       messages.push(message);
     }
+    return {messages};
 }
 
 // In some case we can not deploy the whole package.xml, so let's split it before :)
