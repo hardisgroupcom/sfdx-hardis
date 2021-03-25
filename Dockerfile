@@ -21,5 +21,6 @@ RUN npm install --no-cache \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdx-essentials && \
     echo 'y' | sfdx plugins:install sfpowerkit && \
+    echo 'y' | sfdx plugins:install texei-sfdx-plugin && \
     sfdx plugins
 
