@@ -6,7 +6,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { execCommand, execSfdxJson, getCurrentGitBranch, git, interactiveGitAdd, uxLog } from '../../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, interactiveGitAdd, uxLog } from '../../../common/utils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
@@ -156,7 +156,9 @@ export default class SaveTask extends SfdxCommand {
         ` --packagexmls ${localDestructiveChangesXml},${diffDestructivePackageXml}` +
         ` --outputfile ${localDestructiveChangesXml}`;
       await execCommand(appendDestructivePackageXmlCommand, this, { fail: true, debug: this.debugMode });
-      await git().add(localDestructiveChangesXml);
+      if (await gitHasLocalUpdates()) {
+        await git().add(localDestructiveChangesXml);
+      }
 
       // Upgrade local package.xml
       const localPackageXml = path.join('manifest', 'package.xml');
@@ -172,7 +174,9 @@ export default class SaveTask extends SfdxCommand {
         ` --removepackagexml ${localDestructiveChangesXml}` +
         ` --outputfile ${localPackageXml}`;
       await execCommand(removePackageXmlCommand, this, { fail: true, debug: this.debugMode });
-      await git().add(localPackageXml);
+      if (await gitHasLocalUpdates()) {
+        await git().add(localPackageXml);
+      }
 
     } else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
