@@ -188,7 +188,7 @@ export default class ScratchCreate extends SfdxCommand {
         if (isCI) {
             // if CI, use force:source:deploy to make sure package.xml is consistent
             uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
-            const deployCommand = `sfdx hardis:project:deploy:dx`;
+            const deployCommand = `sfdx hardis:project:deploy:sources:dx`;
             await execCommand(deployCommand, this, { fail: true, output: true, debug: this.debugMode });
         } else { 
             // Use push for local scratch orgs
