@@ -12,6 +12,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../../../common/utils';
+import { forceSourceDeploy } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
@@ -188,8 +189,12 @@ export default class ScratchCreate extends SfdxCommand {
         if (isCI) {
             // if CI, use force:source:deploy to make sure package.xml is consistent
             uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
-            const deployCommand = `sfdx hardis:project:deploy:sources:dx`;
-            await execCommand(deployCommand, this, { fail: true, output: true, debug: this.debugMode });
+            const packageXmlFile =
+            process.env.PACKAGE_XML_TO_DEPLOY ||
+              this.configInfo.packageXmlToDeploy ||
+              (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
+              './config/package.xml';
+            await forceSourceDeploy(packageXmlFile, false, 'NoTestRun', this.debugMode);
         } else { 
             // Use push for local scratch orgs
             uxLog(this, c.cyan(`Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`));
