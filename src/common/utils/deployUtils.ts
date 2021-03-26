@@ -8,7 +8,7 @@ import * as xml2js from 'xml2js';
 import { execCommand, uxLog } from ".";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
-export async function forceSourceDeploy(packageXmlFile:string,check=false,testlevel='RunLocalTests',debugMode=false, commandThis: any):Promise<any> {
+export async function forceSourceDeploy(packageXmlFile:string,check=false,testlevel='RunLocalTests',debugMode=false, commandThis: any,options = {}):Promise<any> {
     const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile,check,debugMode);
     const messages = [];
     for (const deployment of splitDeployments) {
@@ -20,8 +20,8 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       }
       // Deployment of type package.xml file
       if (deployment.packageXmlFile) {
-        uxLog(this,c.cyan(`Deploying ${c.bold(deployment.label)} package: ${packageXmlFile} ...`));
-        const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}` +
+        uxLog(this,c.cyan(`Deploying ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`));
+        const deployCommand = `sfdx force:source:deploy -x ${deployment.packageXmlFile}` +
           ' --wait 60' +
           ' --ignorewarnings' + // So it does not fail in for objectTranslations stuff
           ` --testlevel ${testlevel}` +
@@ -48,7 +48,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       // Deployment of type data import
       if (deployment.dataPath) {
         const dataPath = path.resolve(deployment.dataPath);
-        await importData(dataPath,commandThis);
+        await importData(dataPath,commandThis,options);
       }
       // Wait after deployment item process if necessary
       if (deployment.waitAfter) {
@@ -117,9 +117,9 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
 }
 
 // Import data from sfdmu folder
-export async function importData(sfdmuPath: string, commandThis: any) {
+export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
   uxLog(commandThis,c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
-  const targetUsername = commandThis.org.getConnection().username;
+  const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis,{fail:true,output:true});
 }

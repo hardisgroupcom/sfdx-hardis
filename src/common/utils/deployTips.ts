@@ -80,18 +80,20 @@ function getAllTips() {
 
 - Update deploymentPlan.json to add:
 
-  {
-    "label": "Emails Templates",
-    "packageXmlFile": "splits/packageXmlEmails.xml",
-    "order": -20
-  },
-  {
-    "label": "EmailTemplate records",
-    "dataPath": "scripts/data/EmailTemplate",
-    "order": -19
-  },`
-        },
-        
+{
+    "packages": [
+      {
+        "label": "EmailTemplate records",
+        "dataPath": "scripts/data/EmailTemplate",
+        "order": -21
+      },
+      {
+        "label": "Emails Templates",
+        "packageXmlFile": "splits/packageXmlEmails.xml",
+        "order": -20
+      }
     ]
+}`
+        }
+    ];
 }
-
