@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.3.0] 2021-03-26
+
 - hardis:work:save: Do not git add manifest files when they have not been updated
 - Select type of org to connect: enhance label
 - Multi-Select default to 9999 items displayed
