@@ -205,6 +205,15 @@ export default class ScratchCreate extends SfdxCommand {
             const deferSharingCalc = (this.projectScratchDef.features || []).includes("DeferSharingCalc");
             // Suspend sharing calc if necessary
             if (deferSharingCalc) {
+                // Deploy to permission set allowing to update SharingCalc
+                await MetadataUtils.deployMetadatas({
+                    deployDir: path.join(path.join(__dirname, '../../../../defaults/utils/deferSharingCalc', '.')),
+                    testlevel: 'NoTestRun',
+                    soap: true
+                  });
+                // Assign to permission set allowing to update SharingCalc
+                const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
+                await execSfdxJson(assignCommand, this, { fail: true, output: false, debug: this.debugMode });
                 await execCommand('sfdx texei:sharingcalc:suspend', this, { fail: true, output: true, debug: this.debugMode });
             }
             const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${this.scratchOrgAlias}`;
