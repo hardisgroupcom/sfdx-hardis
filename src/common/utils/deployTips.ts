@@ -6,7 +6,7 @@ export function analyzeDeployErrorLogs(log: string): any {
         if (tipDefinition.expressionString && log.includes(tipDefinition.expressionString)) {
             tips.push(tipDefinition);
         }
-        else if (tipDefinition.expressionRegex && tipDefinition.expressionRegex.test(tipDefinition.expressionString)) {
+        else if (tipDefinition.expressionRegex && tipDefinition.expressionRegex.test(log)) {
             tips.push(tipDefinition);
         }
     }
