@@ -85,27 +85,27 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
           packageXmlFile: mainPackageXmlCopyFileName,
           order: 0
         }
-        const packageXmlItems = [mainPackageXmlItem];
+        const deploymentItems = [mainPackageXmlItem];
         // Remove other package.xml items from main package.xml
-        for (const separatePackageXml of deploymentPlan.packages) {
-          if (separatePackageXml.packageXmlFile) {
-            separatePackageXml.packageXmlFile = path.resolve(path.join(path.dirname(deploymentPlanFile), separatePackageXml.packageXmlFile));
-            uxLog(this,c.cyan(`Removing ${separatePackageXml.packageXmlFile} content from main package.xml`));
+        for (const deploymentItem of deploymentPlan.packages) {
+          if (deploymentItem.packageXmlFile) {
+            deploymentItem.packageXmlFile = path.resolve(path.join(path.dirname(deploymentPlanFile), deploymentItem.packageXmlFile));
+            uxLog(this,c.cyan(`Removing ${deploymentItem.packageXmlFile} content from main package.xml`));
             const removePackageXmlCommand = 'sfdx essentials:packagexml:remove' +
             ` --packagexml ${mainPackageXmlCopyFileName}` +
-            ` --removepackagexml ${separatePackageXml.packageXmlFile}` +
+            ` --removepackagexml ${deploymentItem.packageXmlFile}` +
             ` --outputfile ${mainPackageXmlCopyFileName}`;
             await execCommand(removePackageXmlCommand, this, { fail: true, debug: debugMode });
-            packageXmlItems.push(separatePackageXml);
           }
+          deploymentItems.push(deploymentItem);
         }
 
         // Sort in requested order
-        const packageXmlItemsSorted = sortArray(packageXmlItems, {
+        const deploymentItemsSorted = sortArray(deploymentItems, {
           by: ['order','label'],
           order: ['asc','asc']
         });
-        return packageXmlItemsSorted ;
+        return deploymentItemsSorted ;
     }
     // No transformation: return initial package.xml file
     return [
