@@ -1,13 +1,13 @@
 /* jscpd:ignore-start */
 
 import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages } from '@salesforce/core';
+import { Messages} from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import { MetadataUtils } from '../../../../../common/metadata-utils';
-import { execCommand, uxLog } from '../../../../../common/utils';
+import {  uxLog } from '../../../../../common/utils';
 import { getConfig } from '../../../../../config';
+import { forceSourceDeploy } from '../../../../../common/utils/deployUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -35,6 +35,10 @@ export default class DxSources extends SfdxCommand {
       options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel')
     }),
+    packagexml: flags.string({
+      char: 'p',
+      description:"Path to package.xml containing what you want to deploy in target org"
+    }),
     debug: flags.boolean({
       char: 'd',
       default: false,
@@ -49,6 +53,7 @@ export default class DxSources extends SfdxCommand {
   protected static requiresProject = true;
 
   protected configInfo: any = {};
+  protected debugMode = false ;
 
   /* jscpd:ignore-end */
 
@@ -56,7 +61,8 @@ export default class DxSources extends SfdxCommand {
     this.configInfo = await getConfig('branch');
     const check = this.flags.check || false;
     const testlevel = this.flags.testlevel || 'RunLocalTests';
-    const debugMode = this.flags.debug || false;
+    const packageXml = this.flags.packagexml || null ;
+    this.debugMode = this.flags.debug || false;
 
     // Install packages
     const packages = this.configInfo.installedPackages || [];
@@ -72,32 +78,46 @@ export default class DxSources extends SfdxCommand {
         (fs.existsSync('./manifest/destructiveChanges.xml')) ? './manifest/destructiveChanges.xml' :
         './config/destructiveChanges.xml';
     if (fs.existsSync(packageDeletedXmlFile)) {
-      await MetadataUtils.deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
+      await MetadataUtils.deployDestructiveChanges(packageDeletedXmlFile, { debug: this.debugMode, check }, this);
     } else {
       uxLog(this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
     }
 
     // Deploy sources
-    const packageXmlFile =
+    const packageXmlFile = packageXml ||
       process.env.PACKAGE_XML_TO_DEPLOY ||
         this.configInfo.packageXmlToDeploy ||
         (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
         './config/package.xml';
-    const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}` +
-      ' --wait 60' +
-      ' --ignorewarnings' + // So it does not fail in for objectTranslations stuff
-      ` --testlevel ${testlevel}` +
-      (check ? ' --checkonly' : '') +
-      (debugMode ? ' --verbose' : '');
-    const deployRes = await execCommand(deployCommand, this, { output: true, debug: debugMode, fail: true });
-    let message = '';
-    if (deployRes.status === 0) {
-      message = `[sfdx-hardis] Successfully ${check ? 'checked deployment of' : 'deployed'} sfdx project sources to Salesforce org`;
-      uxLog(this, c.green(message));
-    } else {
-      message = '[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org';
-      uxLog(this, c.red(deployRes.errorMessage));
-    }
-    return { orgId: this.org.getOrgId(), outputString: message };
+    const {messages} = await forceSourceDeploy(packageXmlFile,check,testlevel);
+
+    return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
+
 }
+
+    /* MAYBE USE LATER
+    const emptyManifest = {
+      Package: {
+        types: []
+      }
+    };
+    const manifests = {'main':  Object.assign({}, emptyManifest) };
+    // Separate special cases from main package.xml
+    for (const type of packageXml.Package.types) {
+      const typeName = type.name[0];
+      // SharingOwnerRule managed by SharingRule
+      manifests.main.Package.types.push(type);
+    }
+
+    const packageXmlItems = [];
+    return []; 
+
+
+
+  manifest.Package.types = manifest.Package.types.filter(
+    (type: any) =>
+      !(options.removeMetadatas || []).includes(type.name[0]) &&
+      (type?.members?.length || 0) > 0
+  );
+  */

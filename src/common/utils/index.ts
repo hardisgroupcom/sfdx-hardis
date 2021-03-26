@@ -57,6 +57,11 @@ export function isGitRepo() {
   return isInsideWorkTree.status === 0;
 }
 
+export async function gitHasLocalUpdates() {
+  const gitStatus = await git().status();
+  return (gitStatus.files.length > 0)
+}
+
 // Install plugin if not present
 export async function checkSfdxPlugin(pluginName: string) {
   // Manage cache of sfdx plugins result
@@ -78,7 +83,7 @@ export async function promptInstanceUrl() {
     message: c.cyanBright('Is the org you need to connect a sandbox or another type of org (dev org, enterprise org...)'),
     choices: [
       { title: 'Sandbox', description: 'The org I want to connect is a sandbox', value: 'https://test.salesforce.com' },
-      { title: 'Other', description: 'The org I want to connect is not a sandbox', value: 'https://login.salesforce.com' }
+      { title: 'Other (Dev org, Enterprise org...)', description: 'The org I want to connect is NOT a sandbox', value: 'https://login.salesforce.com' }
     ],
     initial: 1
   });
@@ -368,7 +373,8 @@ export async function execCommand(
     // if --json, we should not have a crash, so return status 1 + output log
     return {
       status: 1,
-      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`
+      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`,
+      error : e
     };
   }
   // Display output if requested, for better user unrstanding of the logs
