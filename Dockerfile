@@ -19,6 +19,8 @@ ARG SFDX_HARDIS_VERSION=latest
 RUN npm install --no-cache \
             sfdx-cli@7.85.1 && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
+    echo 'y' | sfdx plugins:install sfdmu && \
+    echo 'y' | sfdx plugins:install sfdx-git-delta && \
     echo 'y' | sfdx plugins:install sfdx-essentials && \
     echo 'y' | sfdx plugins:install sfpowerkit && \
     echo 'y' | sfdx plugins:install texei-sfdx-plugin && \

@@ -89,35 +89,9 @@ export default class DxSources extends SfdxCommand {
         this.configInfo.packageXmlToDeploy ||
         (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
         './config/package.xml';
-    const {messages} = await forceSourceDeploy(packageXmlFile,check,testlevel);
+    const {messages} = await forceSourceDeploy(packageXmlFile,check,testlevel,this.debugMode,this);
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
 
 }
-
-    /* MAYBE USE LATER
-    const emptyManifest = {
-      Package: {
-        types: []
-      }
-    };
-    const manifests = {'main':  Object.assign({}, emptyManifest) };
-    // Separate special cases from main package.xml
-    for (const type of packageXml.Package.types) {
-      const typeName = type.name[0];
-      // SharingOwnerRule managed by SharingRule
-      manifests.main.Package.types.push(type);
-    }
-
-    const packageXmlItems = [];
-    return []; 
-
-
-
-  manifest.Package.types = manifest.Package.types.filter(
-    (type: any) =>
-      !(options.removeMetadatas || []).includes(type.name[0]) &&
-      (type?.members?.length || 0) > 0
-  );
-  */

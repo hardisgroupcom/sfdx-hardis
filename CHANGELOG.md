@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add sfdmu & sfdx-git-delta in dependencies & Dockerfile
+- Import data with sfdmu
+
 ## [2.3.0] 2021-03-26
 
 - hardis:work:save: Do not git add manifest files when they have not been updated
