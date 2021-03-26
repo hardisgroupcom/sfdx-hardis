@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Select type of org to connect: enhance label
 - Multi-Select default to 9999 items displayed
 - Display tips about deployment failures when they happen
+- Create scratch org: When DeferSharingCalc in features, suspend and resume sharing calc during force:source:push
 - Allow to define a file `manifest/deploymentPlan.json` to split the deployment into separate package.xml files
 
 Example:
