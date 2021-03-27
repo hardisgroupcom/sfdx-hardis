@@ -8,20 +8,20 @@ import * as xml2js from 'xml2js';
 import { execCommand, uxLog } from ".";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
-export async function forceSourceDeploy(packageXmlFile:string,check=false,testlevel='RunLocalTests',debugMode=false, commandThis: any):Promise<any> {
+export async function forceSourceDeploy(packageXmlFile:string,check=false,testlevel='RunLocalTests',debugMode=false, commandThis: any,options = {}):Promise<any> {
     const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile,check,debugMode);
     const messages = [];
     for (const deployment of splitDeployments) {
       let message = '';
       // Wait before deployment item process if necessary
       if (deployment.waitBefore) {
-        uxLog(this,`Waiting ${deployment.waitBefore * 1000} seconds before deployment according to deploymentPlan.json`);
+        uxLog(this,`Waiting ${deployment.waitBefore} seconds before deployment according to deploymentPlan.json`);
         await new Promise(resolve => setTimeout(resolve, deployment.waitBefore * 1000));
       }
       // Deployment of type package.xml file
       if (deployment.packageXmlFile) {
-        uxLog(this,c.cyan(`Deploying ${c.bold(deployment.label)} package: ${packageXmlFile} ...`));
-        const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile}` +
+        uxLog(this,c.cyan(`Deploying ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`));
+        const deployCommand = `sfdx force:source:deploy -x ${deployment.packageXmlFile}` +
           ' --wait 60' +
           ' --ignorewarnings' + // So it does not fail in for objectTranslations stuff
           ` --testlevel ${testlevel}` +
@@ -33,8 +33,8 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
         } catch (e) {
           const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
           uxLog(this,c.red("Sadly there has been Deployment error(s)"));
-          uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n")));
-          uxLog(this,c.yellow(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`));
+          uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n\n")));
+          uxLog(this,c.yellow(c.bold(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`)));
           throw new SfdxError('Deployment failure. Check messages above');
         }
         if (deployRes.status === 0) {
@@ -48,11 +48,11 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       // Deployment of type data import
       if (deployment.dataPath) {
         const dataPath = path.resolve(deployment.dataPath);
-        await importData(dataPath,commandThis);
+        await importData(dataPath,commandThis,options);
       }
       // Wait after deployment item process if necessary
       if (deployment.waitAfter) {
-        uxLog(this,`Waiting ${deployment.waitAfter * 1000} seconds after deployment according to deploymentPlan.json`);
+        uxLog(this,`Waiting ${deployment.waitAfter} seconds after deployment according to deploymentPlan.json`);
         await new Promise(resolve => setTimeout(resolve, deployment.waitAfter * 1000));
       }
       messages.push(message);
@@ -85,25 +85,27 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
           packageXmlFile: mainPackageXmlCopyFileName,
           order: 0
         }
-        const packageXmlItems = [mainPackageXmlItem];
+        const deploymentItems = [mainPackageXmlItem];
         // Remove other package.xml items from main package.xml
-        for (const separatePackageXml of deploymentPlan.packages) {
-          separatePackageXml.packageXmlFile = path.resolve(path.join(path.dirname(deploymentPlanFile), separatePackageXml.packageXmlFile));
-          uxLog(this,c.cyan(`Removing ${separatePackageXml.packageXmlFile} content from main package.xml`));
-          const removePackageXmlCommand = 'sfdx essentials:packagexml:remove' +
-          ` --packagexml ${mainPackageXmlCopyFileName}` +
-          ` --removepackagexml ${separatePackageXml.packageXmlFile}` +
-          ` --outputfile ${mainPackageXmlCopyFileName}`;
-          await execCommand(removePackageXmlCommand, this, { fail: true, debug: debugMode });
-          packageXmlItems.push(separatePackageXml);
+        for (const deploymentItem of deploymentPlan.packages) {
+          if (deploymentItem.packageXmlFile) {
+            deploymentItem.packageXmlFile = path.resolve(path.join(path.dirname(deploymentPlanFile), deploymentItem.packageXmlFile));
+            uxLog(this,c.cyan(`Removing ${deploymentItem.packageXmlFile} content from main package.xml`));
+            const removePackageXmlCommand = 'sfdx essentials:packagexml:remove' +
+            ` --packagexml ${mainPackageXmlCopyFileName}` +
+            ` --removepackagexml ${deploymentItem.packageXmlFile}` +
+            ` --outputfile ${mainPackageXmlCopyFileName}`;
+            await execCommand(removePackageXmlCommand, this, { fail: true, debug: debugMode });
+          }
+          deploymentItems.push(deploymentItem);
         }
 
         // Sort in requested order
-        const packageXmlItemsSorted = sortArray(packageXmlItems, {
+        const deploymentItemsSorted = sortArray(deploymentItems, {
           by: ['order','label'],
           order: ['asc','asc']
         });
-        return packageXmlItemsSorted ;
+        return deploymentItemsSorted ;
     }
     // No transformation: return initial package.xml file
     return [
@@ -115,9 +117,9 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
 }
 
 // Import data from sfdmu folder
-export async function importData(sfdmuPath: string, commandThis: any) {
+export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
   uxLog(commandThis,c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
-  const targetUsername = commandThis.org.getConnection().username;
+  const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis,{fail:true,output:true});
 }

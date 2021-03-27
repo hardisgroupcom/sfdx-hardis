@@ -1,4 +1,5 @@
-// Analyse deployment errors to provide tips to user :)
+// Analyze deployment errors to provide tips to user :)
+import * as c from "chalk";
 
 export function analyzeDeployErrorLogs(log: string): any {
     const tips: any = [];
@@ -6,7 +7,7 @@ export function analyzeDeployErrorLogs(log: string): any {
         if (tipDefinition.expressionString && log.includes(tipDefinition.expressionString)) {
             tips.push(tipDefinition);
         }
-        else if (tipDefinition.expressionRegex && tipDefinition.expressionRegex.test(tipDefinition.expressionString)) {
+        else if (tipDefinition.expressionRegex && tipDefinition.expressionRegex.test(log)) {
             tips.push(tipDefinition);
         }
     }
@@ -52,6 +53,7 @@ function getAllTips() {
             label: 'Missing e-mail template',
             expressionRegex: /In field: template - no EmailTemplate named (.*) found/gm,
             tip: `Lightning EmailTemplates must also be imported with metadatas.
+${c.cyan('If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, incuding the one importing EmailTemplate records)')}
 - Create a file scripts/data/EmailTemplates/export.json:
 
 {
@@ -80,18 +82,20 @@ function getAllTips() {
 
 - Update deploymentPlan.json to add:
 
-  {
-    "label": "Emails Templates",
-    "packageXmlFile": "splits/packageXmlEmails.xml",
-    "order": -20
-  },
-  {
-    "label": "EmailTemplate records",
-    "dataPath": "scripts/data/EmailTemplate",
-    "order": -19
-  },`
-        },
-        
+{
+    "packages": [
+      {
+        "label": "EmailTemplate records",
+        "dataPath": "scripts/data/EmailTemplate",
+        "order": -21
+      },
+      {
+        "label": "Emails Templates",
+        "packageXmlFile": "splits/packageXmlEmails.xml",
+        "order": -20
+      }
     ]
+}`
+        }
+    ];
 }
-
