@@ -33,8 +33,8 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
         } catch (e) {
           const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
           uxLog(this,c.red("Sadly there has been Deployment error(s)"));
-          uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n")));
-          uxLog(this,c.yellow(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`));
+          uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n\n")));
+          uxLog(this,c.yellow(c.bold(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`)));
           throw new SfdxError('Deployment failure. Check messages above');
         }
         if (deployRes.status === 0) {
