@@ -1,4 +1,5 @@
-// Analyse deployment errors to provide tips to user :)
+// Analyze deployment errors to provide tips to user :)
+import * as c from "chalk";
 
 export function analyzeDeployErrorLogs(log: string): any {
     const tips: any = [];
@@ -52,6 +53,7 @@ function getAllTips() {
             label: 'Missing e-mail template',
             expressionRegex: /In field: template - no EmailTemplate named (.*) found/gm,
             tip: `Lightning EmailTemplates must also be imported with metadatas.
+${c.cyan('If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, incuding the one importing EmailTemplate records)')}
 - Create a file scripts/data/EmailTemplates/export.json:
 
 {
