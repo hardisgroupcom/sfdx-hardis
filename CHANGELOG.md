@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Add sfdmu & sfdx-git-delta in dependencies & Dockerfile
 - Import data with sfdmu
+- Manage data import steps in deploymentPlan.json
 
 ## [2.3.0] 2021-03-26
 

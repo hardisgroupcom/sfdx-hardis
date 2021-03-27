@@ -15,7 +15,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       let message = '';
       // Wait before deployment item process if necessary
       if (deployment.waitBefore) {
-        uxLog(this,`Waiting ${deployment.waitBefore * 1000} seconds before deployment according to deploymentPlan.json`);
+        uxLog(this,`Waiting ${deployment.waitBefore} seconds before deployment according to deploymentPlan.json`);
         await new Promise(resolve => setTimeout(resolve, deployment.waitBefore * 1000));
       }
       // Deployment of type package.xml file
@@ -52,7 +52,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       }
       // Wait after deployment item process if necessary
       if (deployment.waitAfter) {
-        uxLog(this,`Waiting ${deployment.waitAfter * 1000} seconds after deployment according to deploymentPlan.json`);
+        uxLog(this,`Waiting ${deployment.waitAfter} seconds after deployment according to deploymentPlan.json`);
         await new Promise(resolve => setTimeout(resolve, deployment.waitAfter * 1000));
       }
       messages.push(message);
