@@ -89,7 +89,7 @@ export default class DxSources extends SfdxCommand {
         this.configInfo.packageXmlToDeploy ||
         (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
         './config/package.xml';
-    const {messages} = await forceSourceDeploy(packageXmlFile,check,testlevel,this.debugMode,this);
+    const {messages} = await forceSourceDeploy(packageXmlFile,check,testlevel,this.debugMode,this,{targetUsername: this.org.getUsername()});
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
