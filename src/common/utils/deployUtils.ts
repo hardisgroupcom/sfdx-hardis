@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as sortArray from 'sort-array';
 import * as xml2js from 'xml2js';
 import { execCommand, uxLog } from ".";
+import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
 export async function forceSourceDeploy(packageXmlFile:string,check=false,testlevel='RunLocalTests',debugMode=false, commandThis: any,options = {}):Promise<any> {
@@ -116,10 +117,3 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
     ]
 }
 
-// Import data from sfdmu folder
-export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
-  uxLog(commandThis,c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
-  const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
-  const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath}`;
-  await execCommand(dataImportCommand, commandThis,{fail:true,output:true});
-}
