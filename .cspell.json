@@ -107,6 +107,8 @@
         "hardisdatatreeexport",
         "hardisgroupcom",
         "hardisorgconfiguremonitoring",
+        "hardisorgdataexport",
+        "hardisorgdataimport",
         "hardisorgpurgeflow",
         "hardisorgretrievesourcesdx",
         "hardisorgretrievesourcesmetadata",
