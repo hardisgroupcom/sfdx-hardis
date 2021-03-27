@@ -179,6 +179,7 @@ async function getHardisForceIgnoreContent() {
         
         "**/__tests__/**",
         "**/pubsub/**",
+        "**data/**/target/**",
         "**SfdxHardisDeferSharingRecalc**"
     ];
     return forceIgnoreContent;

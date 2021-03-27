@@ -55,7 +55,7 @@ export default class ScratchCreate extends SfdxCommand {
     protected static requiresProject = true;
 
     // List required plugins, their presence will be tested before running the command
-    protected static requiresSfdxPlugins = ['texei-sfdx-plugin'];
+    protected static requiresSfdxPlugins = ['sfdmu','texei-sfdx-plugin'];
 
     protected forceNew = false;
 
@@ -198,7 +198,7 @@ export default class ScratchCreate extends SfdxCommand {
               this.configInfo.packageXmlToDeploy ||
               (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
               './config/package.xml';
-            await forceSourceDeploy(packageXmlFile, false, 'NoTestRun', this.debugMode);
+            await forceSourceDeploy(packageXmlFile, false, 'NoTestRun', this.debugMode,this,{targetUsername: this.scratchOrgUsername});
         } else { 
             // Use push for local scratch orgs
             uxLog(this, c.cyan(`Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`));
