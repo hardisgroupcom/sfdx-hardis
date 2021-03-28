@@ -12,7 +12,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../../../common/utils';
-import { forceSourceDeploy } from '../../../common/utils/deployUtils';
+import { forceSourceDeploy, forceSourcePush } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
@@ -190,7 +190,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Push or deploy metadatas to the scratch org
     public async initOrgMetadatas() {
-        if (isCI) {
+        if (isCI || process.env.DEBUG_DEPLOY === 'true') {
             // if CI, use force:source:deploy to make sure package.xml is consistent
             uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
             const packageXmlFile =
@@ -216,8 +216,7 @@ export default class ScratchCreate extends SfdxCommand {
                 await execSfdxJson(assignCommand, this, { fail: true, output: false, debug: this.debugMode });
                 await execCommand('sfdx texei:sharingcalc:suspend', this, { fail: true, output: true, debug: this.debugMode });
             }
-            const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${this.scratchOrgAlias}`;
-            await execCommand(pushCommand, this, { fail: true, output: true, debug: this.debugMode });
+            await forceSourcePush(this.scratchOrgAlias,this.debugMode);
             // Resume sharing calc if necessary
             if (deferSharingCalc) {
                 await execCommand('sfdx texei:sharingcalc:resume', this, { fail: true, output: true, debug: this.debugMode });

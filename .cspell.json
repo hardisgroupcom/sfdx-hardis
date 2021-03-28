@@ -127,6 +127,8 @@
         "hardisprojectdeploysourcesmetadata",
         "hardisprojectworktasknew",
         "hardisscratchcreate",
+        "hardisscratchpull",
+        "hardisscratchpush",
         "hardisworknew",
         "hardisworkpublish",
         "hardisworkrefresh",

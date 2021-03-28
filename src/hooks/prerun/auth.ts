@@ -10,7 +10,7 @@ import { checkConfig, getConfig } from '../../config';
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis commands
     const commandId = options?.Command?.id || '';
-    if (!commandId.startsWith('hardis')) {
+    if ((!commandId.startsWith('hardis')) || ['hardis:source:push','hardis:source:pull'].includes(commandId)) {
         return;
     }
     // skip if during mocha tests
@@ -78,7 +78,7 @@ async function authOrg(orgAlias: string, options: any) {
         ) {
             // Set as default username or devhubusername
             console.log(
-                `[sfdx-hardis] You are already ${c.green('connected')} to org ${c.green(orgAlias)}: ${c.green(orgInfoResult.result.instanceUrl)}`
+                `[sfdx-hardis] You are already ${c.green('connected')} to org ${c.green(orgInfoResult.result.alias || orgInfoResult.result.username)}: ${c.green(orgInfoResult.result.instanceUrl)}`
             );
             if (orgInfoResult.result.expirationDate){
                 console.log(c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));

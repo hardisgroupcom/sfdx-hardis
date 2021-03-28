@@ -198,7 +198,7 @@ class MetadataUtils {
             uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`));
             continue;
           }
-        uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName} ${package1.SubscriberPackageVersionName || ''}`)}...`));
+        uxLog(commandThis, c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName || ''} ${package1.SubscriberPackageVersionName || ''}`)}...`));
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(c.red(`[sfdx-hardis] You must define ${c.bold('SubscriberPackageVersionId')} in .sfdx-hardis.yml (in installedPackages property)`));
         }

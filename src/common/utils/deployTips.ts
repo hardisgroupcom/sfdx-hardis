@@ -22,7 +22,7 @@ function getAllTips() {
             expressionString: 'sharing operation already in progress',
             tip: `You can not deploy multiple SharingRules at the same time. You can either:
 - Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
-- Create a file manifest/deploymentPlan.json to deploy separately the sharing rules
+- Create a property deploymentPlan in .sfdx-hardis.yml to deploy separately the sharing rules
 
 {
     "packages": [
@@ -80,22 +80,36 @@ ${c.cyan('If this type of error is displayed in a deployment with --check, you m
   <version>51.0</version>
 </Package>
 
-- Update deploymentPlan.json to add:
+- Update deploymentPlan in config/.sfdx-hardis.json (order must be < 0):
 
-{
-    "packages": [
-      {
-        "label": "EmailTemplate records",
-        "dataPath": "scripts/data/EmailTemplate",
-        "order": -21
-      },
-      {
-        "label": "Emails Templates",
-        "packageXmlFile": "splits/packageXmlEmails.xml",
-        "order": -20
-      }
-    ]
-}`
-        }
+deploymentPlan:
+  packages:
+    - label: EmailTemplate records
+      dataPath: scripts/data/EmailTemplate
+      order: -21
+    - label: Emails Templates
+      packageXmlFile: manifest/splits/packageXmlEmails.xml
+      order: -20`
+        },
+        {
+          name: 'custom-object-not-found',
+          label: 'Custom object not found',
+          expressionRegex: /In field: field - no CustomObject named (.*) found/gm,
+          tip: `A reference to a custom object is not found:
+- If you renamed the custom object, do a search/replace in sources with previous object name and new object name
+- If you deleted the custom object, or if you don't want to deploy it, do a search on the custom object name, and remove XML elements referencing it
+- If the object should exist, make sure it is in force-app/main/default/objects and that the object name is in manifest/package.xml in CustomObject section
+`
+        },
+        {
+          name: 'custom-field-not-found',
+          label: 'Custom field not found',
+          expressionRegex: /In field: field - no CustomField named (.*) found/gm,
+          tip: `A reference to a custom object is not found:
+- If you renamed the custom field, do a search/replace in sources with previous field name and new field name
+- If you deleted the custom field, or if you don't want to deploy it, do a search on the custom field name, and remove XML elements referencing it
+- If the object should exist, make sure it is in force-app/main/default/objects/YOUROBJECT/fields and that the field name is in manifest/package.xml in CustomField section
+`
+        },
     ];
 }
