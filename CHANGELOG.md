@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.6.0] 2021-03-28
+
+- New command **hardis:project:clean:references** to clean SFDX project from data.com license references
+- **hardis:scratch:create**: Load sfdmu workspace `scripts/data/ScratchInit` if existing in , to initialize scratch org data
+
 ## [2.5.0] 2021-03-28
 
 - New command **hardis:source:push**

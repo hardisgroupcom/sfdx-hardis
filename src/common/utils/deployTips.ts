@@ -99,6 +99,7 @@ deploymentPlan:
 - If you renamed the custom object, do a search/replace in sources with previous object name and new object name
 - If you deleted the custom object, or if you don't want to deploy it, do a search on the custom object name, and remove XML elements referencing it
 - If the object should exist, make sure it is in force-app/main/default/objects and that the object name is in manifest/package.xml in CustomObject section
+You may also have a look to command sfdx hardis:project:clean:references
 `
         },
         {
@@ -109,6 +110,7 @@ deploymentPlan:
 - If you renamed the custom field, do a search/replace in sources with previous field name and new field name
 - If you deleted the custom field, or if you don't want to deploy it, do a search on the custom field name, and remove XML elements referencing it
 - If the object should exist, make sure it is in force-app/main/default/objects/YOUROBJECT/fields and that the field name is in manifest/package.xml in CustomField section
+You may also have a look to command sfdx hardis:project:clean:references
 `
         },
     ];

@@ -12,6 +12,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../../../common/utils';
+import { importData } from '../../../common/utils/dataUtils';
 import { forceSourceDeploy, forceSourcePush } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
@@ -260,18 +261,13 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Loads data in the org
     public async initOrgData() {
-        uxLog(this, c.cyan('Loading org initialization data...'));
-        const initDataRequests = this.configInfo.initDataRequests || [];
-        // Import data files
-        for (const initDataRequest of initDataRequests) {
-            const planFile = path.join('data', initDataRequest.plan);
-            uxLog(this,c.cyan(`Importing ${c.bold(initDataRequest.name)} ${c.italic(initDataRequest.description)}`));
-            const dataLoadCommand = `sfdx force:data:tree:import -p "${planFile}" -u ${this.scratchOrgAlias}`;
-            const loadResult = await execSfdxJson(dataLoadCommand, this, { fail: false, output: true, debug: this.debugMode });
-            if (loadResult.status !== 0) {
-                uxLog(this,c.red(`Error importing ${c.bold(initDataRequest.name)} ${c.italic(initDataRequest.description)}\n${loadResult.message}`));
-            }
+        const scratchInitDataFolder = path.join('.','scripts','data','ScratchInit');
+        if (fs.existsSync(scratchInitDataFolder)) {
+            uxLog(this, c.cyan('Loading scratch org initialization data...'));
+            await importData(scratchInitDataFolder,this,{targetUsername: this.scratchOrgUsername});
+        }
+        else {
+            uxLog(this, c.cyan(`No initialization data: Define a sfdmu workspace in ${scratchInitDataFolder} if you need data in your new scratch orgs`));
         }
     }
-
 }
