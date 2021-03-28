@@ -368,6 +368,21 @@ export async function execCommand(
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
       console.error(c.red(`${e.stdout}\n${e.stderr}`));
+      // Manage retry if requested
+      if (options.retry != null) {
+        options.retry.tryCount = (options.retry.tryCount||0) + 1;
+        if (options.retry.tryCount <= (options.retry.retryMaxAttempts || 1) && 
+        (
+          options.retry.retryStringConstraint == null || (e.stdout+e.stderr).includes(options.retry.retryStringConstraint)
+        )) {
+          uxLog(commandThis,c.yellow(`Retry command: ${options.retry.tryCount} on ${options.retry.retryMaxAttempts || 1}`));
+          if (options.retry.retryDelay) {
+            uxLog(this,`Waiting ${options.retry.retryDelay} seconds before retrying command`);
+            await new Promise(resolve => setTimeout(resolve, options.retry.retryDelay * 1000));
+          }
+          return await execCommand(command,commandThis,options);
+        }
+      }
       throw e;
     }
     // if --json, we should not have a crash, so return status 1 + output log

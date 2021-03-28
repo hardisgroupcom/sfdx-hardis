@@ -57,7 +57,10 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
           (debugMode ? ' --verbose' : '');
           let deployRes ;
         try {
-          deployRes = await execCommand(deployCommand, this, { output: true, debug: debugMode, fail: true });
+          deployRes = await execCommand(deployCommand, this,
+             { output: true, debug: debugMode, fail: true,
+               retry: deployment.retry || null
+              });
         } catch (e) {
           const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
           uxLog(this,c.red("Sadly there has been Deployment error(s)"));

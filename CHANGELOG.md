@@ -4,10 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.5.0] 2021-03-28
+
 - New command **hardis:source:push**
 - New command **hardis:source:pull**
 - Various mini-fixes
 - Move deploymentPlan.json within .sfdx-hardis.json
+- Retry management for execCommand function. ex: `retry: {retryDelay: 30,retryStringConstraint: 'some string present in output', retryMaxAttempts: 5}`
 
 ## [2.4.0] 2021-03-27
 
