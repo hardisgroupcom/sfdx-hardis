@@ -22,7 +22,7 @@ function getAllTips() {
             expressionString: 'sharing operation already in progress',
             tip: `You can not deploy multiple SharingRules at the same time. You can either:
 - Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
-- Create a file manifest/deploymentPlan.json to deploy separately the sharing rules
+- Create a property deploymentPlan in .sfdx-hardis.yml to deploy separately the sharing rules
 
 {
     "packages": [
@@ -80,22 +80,16 @@ ${c.cyan('If this type of error is displayed in a deployment with --check, you m
   <version>51.0</version>
 </Package>
 
-- Update deploymentPlan.json to add:
+- Update deploymentPlan in config/.sfdx-hardis.json (order must be < 0):
 
-{
-    "packages": [
-      {
-        "label": "EmailTemplate records",
-        "dataPath": "scripts/data/EmailTemplate",
-        "order": -21
-      },
-      {
-        "label": "Emails Templates",
-        "packageXmlFile": "splits/packageXmlEmails.xml",
-        "order": -20
-      }
-    ]
-}`
+deploymentPlan:
+  packages:
+    - label: EmailTemplate records
+      dataPath: scripts/data/EmailTemplate
+      order: -21
+    - label: Emails Templates
+      packageXmlFile: manifest/splits/packageXmlEmails.xml
+      order: -20`
         },
         {
           name: 'custom-object-not-found',
