@@ -157,9 +157,12 @@ async function getHardisGitRepoIgnoreContent() {
         'config/user/',
         'hardis-report/',
         'tmp/',
+        "**/__tests__/**",
         // Metadatas to be ignored
         '**/siteDotComSites/*.site',
         // SFDX Items to be ignored
+        "**data/**/source/**",
+        "**data/**/target/**",
         'force-app/main/default/appMenus/AppSwitcher.appMenu-meta.xml'
     ];
     return gitIgnoreContent;
@@ -179,6 +182,7 @@ async function getHardisForceIgnoreContent() {
         
         "**/__tests__/**",
         "**/pubsub/**",
+        "**data/**/source/**",
         "**data/**/target/**",
         "**SfdxHardisDeferSharingRecalc**"
     ];
