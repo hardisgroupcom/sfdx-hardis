@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as sortArray from 'sort-array';
 import * as xml2js from 'xml2js';
 import { execCommand, uxLog } from ".";
+import { getConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
@@ -42,7 +43,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       let message = '';
       // Wait before deployment item process if necessary
       if (deployment.waitBefore) {
-        uxLog(this,`Waiting ${deployment.waitBefore} seconds before deployment according to deploymentPlan.json`);
+        uxLog(this,`Waiting ${deployment.waitBefore} seconds before deployment according to deployment plan`);
         await new Promise(resolve => setTimeout(resolve, deployment.waitBefore * 1000));
       }
       // Deployment of type package.xml file
@@ -79,7 +80,7 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
       }
       // Wait after deployment item process if necessary
       if (deployment.waitAfter) {
-        uxLog(this,`Waiting ${deployment.waitAfter} seconds after deployment according to deploymentPlan.json`);
+        uxLog(this,`Waiting ${deployment.waitAfter} seconds after deployment according to deployment plan`);
         await new Promise(resolve => setTimeout(resolve, deployment.waitAfter * 1000));
       }
       messages.push(message);
@@ -96,12 +97,9 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
         uxLog(this,'Empty package.xml: nothing to deploy')
         return [];
     }
-    const deploymentPlanFile = path.join(path.dirname(packageXmlFile),'deploymentPlan.json');
+    const config = await getConfig("user");
     // Build list of package.xml according to plan
-    if (fs.existsSync(deploymentPlanFile) && !check) {
-        // Read deployment plan
-        const deploymentPlanFileJsonString = await fs.readFile(deploymentPlanFile,"utf8");
-        const deploymentPlan = JSON.parse(deploymentPlanFileJsonString);
+    if (config.deploymentPlan && !check) {
         // Copy main package.xml
         const tmpDeployDir = path.join(os.tmpdir(),'sfdx-hardis-deploy');
         await fs.ensureDir(tmpDeployDir);
@@ -114,9 +112,9 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
         }
         const deploymentItems = [mainPackageXmlItem];
         // Remove other package.xml items from main package.xml
-        for (const deploymentItem of deploymentPlan.packages) {
+        for (const deploymentItem of config.deploymentPlan.packages) {
           if (deploymentItem.packageXmlFile) {
-            deploymentItem.packageXmlFile = path.resolve(path.join(path.dirname(deploymentPlanFile), deploymentItem.packageXmlFile));
+            deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
             uxLog(this,c.cyan(`Removing ${deploymentItem.packageXmlFile} content from main package.xml`));
             const removePackageXmlCommand = 'sfdx essentials:packagexml:remove' +
             ` --packagexml ${mainPackageXmlCopyFileName}` +

@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command **hardis:source:push**
 - New command **hardis:source:pull**
 - Various mini-fixes
+- Move deploymentPlan.json within .sfdx-hardis.json
 
 ## [2.4.0] 2021-03-27
 
