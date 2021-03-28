@@ -9,6 +9,32 @@ import { execCommand, uxLog } from ".";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
+export async function forceSourcePush(scratchOrgAlias:string,debug = false) {
+  try {
+    const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
+    await execCommand(pushCommand, this, { fail: true, output: true, debug: debug });
+  } catch (e) {
+    const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    uxLog(this,c.red("Sadly there has been Deployment error(s)"));
+    uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n\n")));
+    uxLog(this,c.yellow(c.bold(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`)));
+    throw new SfdxError('Deployment failure. Check messages above');
+  }
+}
+
+export async function forceSourcePull(scratchOrgAlias:string,debug = false) { 
+  try {
+    const pushCommand = `sfdx force:source:pull -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
+    await execCommand(pushCommand, this, { fail: true, output: true, debug: debug });
+  } catch (e) {
+    const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    uxLog(this,c.red("Sadly there has been Deployment error(s)"));
+    uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n\n")));
+    uxLog(this,c.yellow(c.bold(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`)));
+    throw new SfdxError('Deployment failure. Check messages above');
+  }
+} 
+
 export async function forceSourceDeploy(packageXmlFile:string,check=false,testlevel='RunLocalTests',debugMode=false, commandThis: any,options = {}):Promise<any> {
     const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile,check,debugMode);
     const messages = [];

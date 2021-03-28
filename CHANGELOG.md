@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New command **hardis:source:push**
+- New command **hardis:source:pull**
+
 ## [2.4.0] 2021-03-27
 
 - Add sfdmu & sfdx-git-delta in dependencies & Dockerfile

@@ -72,7 +72,7 @@ export default class PackageVersionInstall extends SfdxCommand {
                 const packageDtlResponse = await prompts({
                     type: 'text',
                     name: 'value',
-                    message: c.cyanBright("What is the id of the Package Version to install ? (starting with 04t)"),
+                    message: c.cyanBright("What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using toolting api request "+c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")),
                 });
                 packagesToInstall.push({ SubscriberPackageVersionId: packageDtlResponse.value });
             }

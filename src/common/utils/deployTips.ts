@@ -96,6 +96,26 @@ ${c.cyan('If this type of error is displayed in a deployment with --check, you m
       }
     ]
 }`
-        }
+        },
+        {
+          name: 'custom-object-not-found',
+          label: 'Custom object not found',
+          expressionRegex: /In field: field - no CustomObject named (.*) found/gm,
+          tip: `A reference to a custom object is not found:
+- If you renamed the custom object, do a search/replace in sources with previous object name and new object name
+- If you deleted the custom object, or if you don't want to deploy it, do a search on the custom object name, and remove XML elements referencing it
+- If the object should exist, make sure it is in force-app/main/default/objects and that the object name is in manifest/package.xml in CustomObject section
+`
+        },
+        {
+          name: 'custom-field-not-found',
+          label: 'Custom field not found',
+          expressionRegex: /In field: field - no CustomField named (.*) found/gm,
+          tip: `A reference to a custom object is not found:
+- If you renamed the custom field, do a search/replace in sources with previous field name and new field name
+- If you deleted the custom field, or if you don't want to deploy it, do a search on the custom field name, and remove XML elements referencing it
+- If the object should exist, make sure it is in force-app/main/default/objects/YOUROBJECT/fields and that the field name is in manifest/package.xml in CustomField section
+`
+        },
     ];
 }
