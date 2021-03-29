@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.7.1] 2021-03-29
+
+- Fix auto-fix of .gitignore and .forceignore
+- Propose to auto-update .force ignore when there is a pull issue
+
 ## [2.7.0] 2021-03-29
 
 - Communicate with VsCode SFDX Hardis extension via WebSocket if server is found
