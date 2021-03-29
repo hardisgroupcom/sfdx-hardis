@@ -232,7 +232,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: []}
       const selectFilesStatus = await prompts({
         type: "multiselect",
         name: "files",
-        message: c.cyanBright( `Please select ${c.red("carefully")} the ${c.bgWhiteBright(c.red(c.bold(group.label)))} files you want to commit (save)\n${c.italic(c.grey("They will be deployed to production someday !"))}`),
+        message: c.cyanBright( `Please select ${c.red("carefully")} the ${c.bgWhiteBright(c.red(c.bold(group.label.toUpperCase())))} files you want to commit (save)}`),
         choices: matchingFiles.map((fileStatus: FileStatusResult) => {
         return {
             title: `(${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`, 

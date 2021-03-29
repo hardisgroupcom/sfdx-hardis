@@ -5,6 +5,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { decryptFile } from '../../common/cryptoUtils';
 import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, promptInstanceUrl, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
+import { WebSocketClient } from '../../common/websocketClient';
 import { checkConfig, getConfig } from '../../config';
 
 export const hook = async (options: any) => {
@@ -180,6 +181,7 @@ async function authOrg(orgAlias: string, options: any) {
         }
         if (logged) {
             uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
+            WebSocketClient.sendMessage({event: "refreshStatus"});
             // Display warning message in case of local usage (not CI), and not login command
             if (!(options?.Command?.id || '').startsWith('hardis:auth:login')) {
                 console.warn(c.yellow('*********************************************************************'));

@@ -10,6 +10,12 @@ export const hook = async (options: any) => {
         return;
     }
 
+    // Close WebSocketClient if existing
+    if (globalThis.webSocketClient) {
+        globalThis.webSocketClient.dispose();
+        globalThis.webSocketClient = null;
+    }
+
     // Send hook to microsoft ?teams if MS_TEAMS_WEBHOOK_URL env var is set, or msTeamsWebhookUrl in config
     const config = await getConfig('user');
     const msTeamsWebhookUrl = process.env.MS_TEAMS_WEBHOOK_URL || config.msTeamsWebhookUrl ;
@@ -45,7 +51,6 @@ export const hook = async (options: any) => {
         }));
         console.info('[sfdx-hardis] Sent notification to MsTeams channel');
     }
-    return;
 };
 
 // List updated files and reformat them as string

@@ -15,6 +15,7 @@ import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../
 import { importData } from '../../../common/utils/dataUtils';
 import { forceSourceDeploy, forceSourcePush } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
+import { WebSocketClient } from '../../../common/websocketClient';
 import { getConfig, setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -166,6 +167,7 @@ export default class ScratchCreate extends SfdxCommand {
             scratchOrgAlias: this.scratchOrgAlias,
             scratchOrgUsername: this.scratchOrgUsername
         });
+        WebSocketClient.sendMessage({event: "refreshStatus"});
 
         if (isCI) {
             // Try to store sfdxAuthUrl for scratch org reuse during CI

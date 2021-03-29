@@ -1,6 +1,8 @@
+import * as c from 'chalk';
 import * as defaultPrompts from 'prompts';
 import { SfdxError } from '@salesforce/core';
 import { isCI, uxLog } from '.';
+import { WebSocketClient } from '../websocketClient';
 
 // Centralized prompts function
 export async function prompts(options) {
@@ -14,14 +16,14 @@ export async function prompts(options) {
         if (question.type === 'confirm') {
             question.type = 'select';
             question.choices = [
-                { title: 'Yes', value: true },
-                { title: 'No', value: false }
+                { title: '☑ Yes', value: true },
+                { title: '☓ No', value: false }
             ];
             question.initial = question.initial === false ? 1 : 0
         }
         // Add exit option when possible
         if (question.type === 'select') {
-            question.choices.push({title: "-- Exit this script", value: 'exitNow'});
+            question.choices.push({title: "⛔ Exit this script", value: 'exitNow'});
         }
         if (['select','multiselect'].includes(question.type) && question.optionsPerPage == null) {
             question.optionsPerPage = 9999
@@ -29,7 +31,19 @@ export async function prompts(options) {
         questionsReformatted.push(question)
     }
     // Prompt user
-    const answers = await defaultPrompts(questionsReformatted);
+    let answers : any = null ;
+    if (WebSocketClient.isAlive()) {
+        // Use UI prompt
+        for (const question of questionsReformatted) {
+            uxLog(this,c.cyan(question.message)+c.white(' ↑↑↑↑↑↑↑↑'));
+            const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
+            answers = Object.assign(question,questionAnswer);
+        }
+    }
+    else {
+        // Use text prompt
+        answers = await defaultPrompts(questionsReformatted);
+    }
     // Stop script if requested
     for (const answer of Object.keys(answers)) {
         if (answers[answer] === 'exitNow') {
