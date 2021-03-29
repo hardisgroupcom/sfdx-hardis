@@ -5,10 +5,11 @@ import * as os from 'os';
 import * as path from 'path';
 import * as sortArray from 'sort-array';
 import * as xml2js from 'xml2js';
-import { execCommand, uxLog } from ".";
+import { execCommand, isCI, uxLog } from ".";
 import { getConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
+import { prompts } from "./prompts";
 
 export async function forceSourcePush(scratchOrgAlias:string,debug = false) {
   try {
@@ -31,6 +32,28 @@ export async function forceSourcePull(scratchOrgAlias:string,debug = false) {
     const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(this,c.red("Sadly there has been pull error(s)"));
     uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n\n")));
+    // List unknown elements from output
+    const forceIgnoreElements = [...(e.stdout + e.stderr).matchAll(/Entity of type '(.*)' named '(.*)' cannot be found/gm)];
+    if (forceIgnoreElements.length > 0 && !isCI) {
+      // Propose user to ignore elements
+      const forceIgnoreRes = await prompts({
+        type: "multiselect",
+        message: 'If you want to try again with updated .forceignore file, please select elements you want to add',
+        name: 'value',
+        choices: forceIgnoreElements.map(forceIgnoreElt => {
+          return { title: `${forceIgnoreElt[1]}: ${forceIgnoreElt[2]}`, value: forceIgnoreElt[2]};
+        })
+      });
+      if (forceIgnoreRes.value.length > 0) {
+        const forceIgnoreFile = './.forceignore';
+        const forceIgnore = await fs.readFile(forceIgnoreFile, 'utf-8');
+        const forceIgnoreLines = forceIgnore.replace("\r\n","\n").split('\n');
+        forceIgnoreLines.push(...forceIgnoreRes.value);
+        await fs.writeFile(forceIgnoreFile, forceIgnoreLines.join("\n")+"\n");
+        uxLog(this,'Updated .forceignore file');
+        return await forceSourcePull(scratchOrgAlias,debug);
+      }
+    }
     uxLog(this,c.yellow(c.bold(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the pull issues :)`)));
     throw new SfdxError('Pull failure. Check messages above');
   }

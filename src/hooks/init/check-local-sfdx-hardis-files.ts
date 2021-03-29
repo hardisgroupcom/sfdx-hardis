@@ -88,7 +88,7 @@ async function manageGitIgnore(commandId: string) {
     const forceIgnoreFile = './.forceignore';
     if (fs.existsSync(forceIgnoreFile)) {
         const forceIgnore = await fs.readFile(forceIgnoreFile, 'utf-8');
-        const forceIgnoreLines = forceIgnore.split('\n');
+        const forceIgnoreLines = forceIgnore.replace("\r\n","\n").split('\n');
         let updated = false;
         for (const forceIgnoreMandatoryLine of await getHardisForceIgnoreContent()) {
             if (!forceIgnoreLines.includes(forceIgnoreMandatoryLine)) {
@@ -161,8 +161,8 @@ async function getHardisGitRepoIgnoreContent() {
         // Metadatas to be ignored
         '**/siteDotComSites/*.site',
         // SFDX Items to be ignored
-        "**data/**/source/**",
-        "**data/**/target/**",
+        "**/data/**/source/**",
+        "**/data/**/target/**",
         'force-app/main/default/appMenus/AppSwitcher.appMenu-meta.xml'
     ];
     return gitIgnoreContent;
@@ -182,8 +182,6 @@ async function getHardisForceIgnoreContent() {
         
         "**/__tests__/**",
         "**/pubsub/**",
-        "**data/**/source/**",
-        "**data/**/target/**",
         "**SfdxHardisDeferSharingRecalc**"
     ];
     return forceIgnoreContent;

@@ -21,6 +21,7 @@
                         "Account.DandbCompanyId",
                         "Account.NaicsCode",
                         "Account.NaicsDesc",
+                        "Account.OperatingHoursId",
                         "Account.Tradestyle",
                         "Account.YearStarted",
                         "Account.CleanStatus",
