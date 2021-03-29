@@ -115,9 +115,12 @@ export default class NewTask extends SfdxCommand {
           name: 'value',
           message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
           initial: 0,
-          choices: [...scratchOrgList.map((scratchOrg: any) => {
-            return { title: `${c.yellow(scratchOrg.alias)} - ${scratchOrg.instanceUrl}`, value: scratchOrg };
-          }), ...[{ title: c.yellow('Create new scratch org'), value: 'newScratchOrg' }]]
+          choices: [ ...[{ title: c.yellow('Create new scratch org'), value: 'newScratchOrg' }],
+                     ...scratchOrgList.map((scratchOrg: any) => {
+                            return { title: `Reuse ${c.yellow(scratchOrg.alias)}`,
+                            description: scratchOrg.instanceUrl,
+                            value: scratchOrg };
+          })]
         });
       if (scratchResponse.value === 'newScratchOrg') {
         await setConfig('user', {

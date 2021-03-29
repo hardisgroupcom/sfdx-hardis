@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.7.0] 2021-03-29
+
+- Communicate with VsCode SFDX Hardis extension via WebSocket if server is found
+- Send user input prompts to VsCode UI if WebSocket server found
+- Send refreshStatus notifications when context is updated
+- Arrange some messages for better display on UI
+
 ## [2.6.0] 2021-03-28
 
 - New command **hardis:project:clean:references** to clean SFDX project from data.com license references

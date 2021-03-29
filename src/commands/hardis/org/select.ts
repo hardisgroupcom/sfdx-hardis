@@ -6,6 +6,7 @@ import * as c from 'chalk';
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { execSfdxJson, uxLog } from '../../../common/utils';
 import { prompts } from '../../../common/utils/prompts';
+import { WebSocketClient } from '../../../common/websocketClient';
 import { setConfig } from '../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -61,7 +62,13 @@ export default class OrgSelect extends SfdxCommand {
       name: 'org',
       message: c.cyanBright('Please select an org'),
       choices: orgList.map((org: any) => {
-        return { title: `${c.cyan(org.username)} - ${org.instanceUrl || ''}`, value: org };
+        const title = org.username || org.alias || org.instanceUrl;
+        const description = title !== org.instanceUrl ? org.instanceUrl : '';
+        return { 
+          title: c.cyan(title),
+          description: description,
+          value: org
+        };
       })
     }
     );
@@ -80,7 +87,7 @@ export default class OrgSelect extends SfdxCommand {
       // Set default username
       const setDefaultUsernameCommand = `sfdx config:set ${devHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgResponse.org.username}`;
       await execSfdxJson(setDefaultUsernameCommand, this, { fail: true, output: false });
-
+      WebSocketClient.sendMessage({event: "refreshStatus"});
       // Update local user .sfdx-hardis.yml file with response if scratch has been selected
       if (orgResponse.org.username.includes('scratch')) {
         await setConfig('user', {
