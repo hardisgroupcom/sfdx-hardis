@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.7.2] 2021-03-30
+
+- Check user is sure to want to reuse an existing scratch org
+- Fix **hardis:work:refresh**
+
 ## [2.7.1] 2021-03-29
 
 - Fix auto-fix of .gitignore and .forceignore

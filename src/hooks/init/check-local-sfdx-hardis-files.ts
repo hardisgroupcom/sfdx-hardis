@@ -173,7 +173,7 @@ async function getHardisForceIgnoreContent() {
     const forceIgnoreContent = [
         "**/appMenu/**",
         "**/appSwitcher/**",
-        "**/objectTranslations/**",
+        //"**/objectTranslations/**",
         // "**/profiles/**", 
         // "**/settings/**",
         
