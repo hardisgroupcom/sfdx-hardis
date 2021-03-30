@@ -98,11 +98,23 @@ export default class ScratchCreate extends SfdxCommand {
     public async initConfig() {
         this.configInfo = await getConfig('user');
         this.gitBranch = await getCurrentGitBranch({ formatted: true });
+        const newScratchName = os.userInfo().username + '-' + this.gitBranch.split('/').pop().slice(0, 15) + '_' + moment().format('YYYY-MM-DD_hh-mm');
         this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS ||
             ((!this.forceNew) ? this.configInfo.scratchOrgAlias : null) ||
-            os.userInfo().username + '-' + this.gitBranch.split('/').pop().slice(0, 15) + '_' + moment().format('YYYY-MM-DD_hh-mm');
+            newScratchName;
         if (isCI && !this.scratchOrgAlias.startsWith('CI-')) {
             this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
+        }
+        // Verify that the user wants to resume scratch org creation
+        if ((!isCI) && this.scratchOrgAlias !== newScratchName) {
+            const checkRes = await prompts({ 
+                type: "confirm",
+                message: c.cyanBright(`You are about to reuse scratch org ${c.green(this.scratchOrgAlias)}. Are you sure that's what you want to do ?\n${c.grey('(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)')}`),
+                default: false
+            });
+            if (checkRes === false) {
+                process.exit(0);
+            }
         }
         this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;
         this.devHubAlias = process.env.DEVHUB_ALIAS || this.configInfo.devHubAlias;
