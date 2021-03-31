@@ -7,7 +7,7 @@ import * as fs from 'fs-extra';
 import { MetadataUtils } from '../../../../../common/metadata-utils';
 import {  uxLog } from '../../../../../common/utils';
 import { getConfig } from '../../../../../config';
-import { forceSourceDeploy } from '../../../../../common/utils/deployUtils';
+import { deployDestructiveChanges, forceSourceDeploy } from '../../../../../common/utils/deployUtils';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -71,18 +71,6 @@ export default class DxSources extends SfdxCommand {
       await MetadataUtils.installPackagesOnOrg(packages, null, this, "deploy");
     }
 
-    // Deploy destructive changes
-    const packageDeletedXmlFile =
-      process.env.PACKAGE_XML_TO_DELETE ||
-        this.configInfo.packageXmlToDelete ||
-        (fs.existsSync('./manifest/destructiveChanges.xml')) ? './manifest/destructiveChanges.xml' :
-        './config/destructiveChanges.xml';
-    if (fs.existsSync(packageDeletedXmlFile)) {
-      await MetadataUtils.deployDestructiveChanges(packageDeletedXmlFile, { debug: this.debugMode, check }, this);
-    } else {
-      uxLog(this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
-    }
-
     // Deploy sources
     const packageXmlFile = packageXml ||
       process.env.PACKAGE_XML_TO_DEPLOY ||
@@ -90,6 +78,18 @@ export default class DxSources extends SfdxCommand {
         (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
         './config/package.xml';
     const {messages} = await forceSourceDeploy(packageXmlFile,check,testlevel,this.debugMode,this,{targetUsername: this.org.getUsername()});
+
+    // Deploy destructive changes
+    const packageDeletedXmlFile =
+      process.env.PACKAGE_XML_TO_DELETE ||
+        this.configInfo.packageXmlToDelete ||
+        (fs.existsSync('./manifest/destructiveChanges.xml')) ? './manifest/destructiveChanges.xml' :
+        './config/destructiveChanges.xml';
+    if (fs.existsSync(packageDeletedXmlFile)) {
+      await deployDestructiveChanges(packageDeletedXmlFile, { debug: this.debugMode, check }, this);
+    } else {
+      uxLog(this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
+    }
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }

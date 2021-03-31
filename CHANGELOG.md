@@ -4,8 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Define git user.name and user.email if not set
 - Define VsCode as git merge/diff tool if none is defined
 - Unstash changes (git reset) at the beginning of hardis:work:save
+- Deploy destructive changes after real deployment
 
 ## [2.7.2] 2021-03-30
 

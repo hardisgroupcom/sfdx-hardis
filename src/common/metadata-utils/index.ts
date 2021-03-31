@@ -3,7 +3,6 @@ import * as c from 'chalk';
 import * as child from 'child_process';
 import * as extractZip from 'extract-zip';
 import * as fs from 'fs-extra';
-import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 import { execCommand, execSfdxJson, filterPackageXml, uxLog } from '../../common/utils';
@@ -275,71 +274,6 @@ class MetadataUtils {
       await extractZip(path.join(metadataFolder, 'unpackaged.zip'), { dir: metadataFolder });
       await fs.unlink(path.join(metadataFolder, 'unpackaged.zip'));
     }
-  }
-
-  // Deploy destructive changes
-  public static async deployDestructiveChanges(packageDeletedXmlFile: string, options: any = { debug: false, check: false }, commandThis: any) {
-    // Create empty deployment file because of sfdx limitation
-    // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
-    uxLog(commandThis, c.cyan(`Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`));
-    const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString()));
-    await fs.ensureDir(tmpDir);
-    const emptyPackageXmlFile = path.join(tmpDir, 'package.xml');
-    await fs.writeFile(emptyPackageXmlFile,
-      `<?xml version="1.0" encoding="UTF-8"?>
-        <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-          <version>${CONSTANTS.API_VERSION}</version>
-        </Package>`, 'utf8');
-    await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
-    const deployDelete = `sfdx force:mdapi:deploy -d ${tmpDir}` +
-      ' --wait 60' +
-      ' --testlevel NoTestRun' +
-      ' --ignorewarnings' + // So it does not fail in case metadata is already deleted
-      (options.check ? ' --checkonly' : '') +
-      (options.debug ? ' --verbose' : '');
-    const deployDeleteRes = await execCommand(deployDelete, this, { output: true, debug: options.debug, fail: true });
-    await fs.remove(tmpDir);
-    let deleteMsg = '';
-    if (deployDeleteRes.status === 0) {
-      deleteMsg = `[sfdx-hardis] Successfully ${options.check ? 'checked deployment of' : 'deployed'} destructive changes to Salesforce org`;
-      uxLog(commandThis, c.green(deleteMsg));
-    } else {
-      deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';
-      uxLog(commandThis, c.red(deployDeleteRes.errorMessage));
-    }
-  }
-
-  public static async deployMetadatas(options: any = {
-    deployDir: '.',
-    testlevel: 'RunLocalTests',
-    check: false,
-    debug: false,
-    soap: false
-  }) {
-    // Perform deployment
-    const deployCommand =
-      'sfdx force:mdapi:deploy' +
-      ` --deploydir ${options.deployDir || '.'}` +
-      ' --wait 60' +
-      ` --testlevel ${options.testlevel || 'RunLocalTests'}` +
-      ` --apiversion ${options.apiVersion || CONSTANTS.API_VERSION}` +
-      (options.soap ? ' --soapdeploy' : '') +
-      (options.check ? ' --checkonly' : '') +
-      (options.debug ? ' --verbose' : '');
-    let deployRes;
-    try {
-      deployRes = await execCommand(deployCommand, this, { output: true, debug: options.debug, fail: true });
-    } catch (e) {
-      // workaround if --soapdeploy is not available
-      if (JSON.stringify(e).includes('--soapdeploy')) {
-        uxLog(this, c.yellow("This may be a error with a workaround... let's try it :)"));
-        deployRes = await execCommand(deployCommand.replace(' --soapdeploy', ''), this,
-          { output: true, debug: options.debug, fail: true });
-      } else {
-        throw e;
-      }
-    }
-    return deployRes;
   }
 
 }
