@@ -5,10 +5,8 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
-import * as os from 'os';
-import * as path from 'path';
 import { MetadataUtils } from '../../../../../common/metadata-utils';
-import { execCommand, uxLog } from '../../../../../common/utils';
+import { createTempDir, execCommand, uxLog } from '../../../../../common/utils';
 import { deployDestructiveChanges, deployMetadatas } from '../../../../../common/utils/deployUtils';
 import { getConfig } from '../../../../../config';
 
@@ -108,7 +106,7 @@ export default class DxSources extends SfdxCommand {
       let deployDir = '.';
       // Filter if necessary
       if (filter) {
-        const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-deploy-') + Math.random().toString(36).slice(-5);
+        const tmpDir = await createTempDir();
         const filterCommand = 'sfdx essentials:metadata:filter-from-packagexml' +
           ` -i ${deployDir}` +
           ` -p ${packageXmlFile}` +

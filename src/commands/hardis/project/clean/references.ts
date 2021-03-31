@@ -6,8 +6,9 @@ import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as fs from "fs-extra";
 import * as path from 'path';
-import { execCommand, isCI, uxLog } from '../../../../common/utils';
+import { createTempDir, execCommand, isCI, uxLog } from '../../../../common/utils';
 import { prompts } from '../../../../common/utils/prompts';
+import { parseXmlFile } from '../../../../common/utils/xmlUtils';
 import { getConfig, setConfig } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -19,7 +20,7 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class CleanReferences extends SfdxCommand {
 
-    public static title = 'Clean references in ds sources';
+    public static title = 'Clean references in dx sources';
 
     public static description = 'Remove unwanted references within sfdx project sources';
 
@@ -33,7 +34,7 @@ export default class CleanReferences extends SfdxCommand {
         type: flags.string({
             char: 't',
             description: 'Cleaning type',
-            options: ["all","datadotcom"]                     
+            options: ["all","datadotcom","destructivechanges"]                     
         }),
         debug: flags.boolean({ char: 'd', default: false, description: messages.getMessage('debugMode') })
     };
@@ -54,6 +55,10 @@ export default class CleanReferences extends SfdxCommand {
         {
             value: "datadotcom",
             title: "References to Data.com items. https://help.salesforce.com/articleView?id=000320795&type=1&mode=1"
+        },
+        {
+            value: "destructivechanges",
+            title: "References to destructiveChanges.xml items"
         }
     ]
 
@@ -95,20 +100,41 @@ export default class CleanReferences extends SfdxCommand {
 
         // Process cleaning
         for (const cleaningType of this.cleaningTypes) {
-            uxLog(this,c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)}`));
-            const filterConfigFile = path.join(path.join(__dirname, '../../../../../defaults/clean', cleaningType+'.json'));
-            if (!fs.existsSync(filterConfigFile)) {
-                throw new SfdxError(`[sfdx-hardis] Cleaning config file not found in ${filterConfigFile}`);
-            }
+            uxLog(this,c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)}...`));
+            const filterConfigFile = await this.getFilterConfigFile(cleaningType);
             const cleanCommand = 'sfdx essentials:metadata:filter-xml-content' +
                 ` -c ${filterConfigFile}` +
                 ` --inputfolder ./force-app/main/default`+
                 ` --outputfolder ./force-app/main/default`+
                 ' --noinsight';
-            await execCommand(cleanCommand,this,{fail:true,output:true,debug: this.debugMode});
+            await execCommand(cleanCommand,this,{fail:true,output:false,debug: this.debugMode});
         }
 
         // Return an object to be displayed with --json
         return { outputString: 'Cleaned references from sfdx project' };
+    }
+
+    private async getFilterConfigFile(cleaningType) {
+        let filterConfigFile: string = null;
+        if (cleaningType === "destructivechanges") {
+            // Create file from template
+            const templateFile = path.join(path.join(__dirname, '../../../../../defaults/clean', 'template.txt'));
+            let templateContent = await fs.readFile(templateFile,"utf8");
+            const destructiveChanges = await parseXmlFile('./manifest/destructiveChanges.xml');
+            for (const type of destructiveChanges.Package.types) {
+                const members = type.members;
+                templateContent = templateContent.replace(`{{ ${type.name[0]} }}`, JSON.stringify(members,null,2));
+            }
+            // Create temporary file
+            filterConfigFile = path.join((await createTempDir()),"cleanDestructiveChanges.json");
+            await fs.writeFile(filterConfigFile,templateContent);
+        }
+        else {
+             filterConfigFile = path.join(path.join(__dirname, '../../../../../defaults/clean', cleaningType+'.json'));
+        }
+        if (!fs.existsSync(filterConfigFile)) {
+            throw new SfdxError(`[sfdx-hardis] Cleaning config file not found in ${filterConfigFile}`);
+        }
+        return filterConfigFile;
     }
 }

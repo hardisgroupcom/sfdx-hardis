@@ -8,6 +8,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Define VsCode as git merge/diff tool if none is defined
 - Unstash changes (git reset) at the beginning of hardis:work:save
 - Deploy destructive changes after real deployment
+- **hardis:project:clean:references** now works also to remove references to content of manifest/destructiveChanges.xml
+- **hardis:work:save**: Clean sfdx project while saving it
+- Factorize temp directory creation
 
 ## [2.7.2] 2021-03-30
 

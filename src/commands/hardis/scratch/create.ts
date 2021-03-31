@@ -13,7 +13,7 @@ import * as path from 'path';
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../../../common/utils';
 import { importData } from '../../../common/utils/dataUtils';
-import { forceSourceDeploy, forceSourcePush } from '../../../common/utils/deployUtils';
+import { deployMetadatas, forceSourceDeploy, forceSourcePush } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { WebSocketClient } from '../../../common/websocketClient';
 import { getConfig, setConfig } from '../../../config';
@@ -221,7 +221,7 @@ export default class ScratchCreate extends SfdxCommand {
             // Suspend sharing calc if necessary
             if (deferSharingCalc) {
                 // Deploy to permission set allowing to update SharingCalc
-                await MetadataUtils.deployMetadatas({
+                await deployMetadatas({
                     deployDir: path.join(path.join(__dirname, '../../../../defaults/utils/deferSharingCalc', '.')),
                     testlevel: 'NoTestRun',
                     soap: true

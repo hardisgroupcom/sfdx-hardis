@@ -4,10 +4,9 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
-import * as os from 'os';
 import * as path from 'path';
 import { ResetMode } from 'simple-git';
-import { execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, interactiveGitAdd, uxLog } from '../../../common/utils';
+import { createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, interactiveGitAdd, uxLog } from '../../../common/utils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
@@ -148,8 +147,7 @@ export default class SaveTask extends SfdxCommand {
     // Build package.xml delta between most recent commit and developpement
     const toCommitMessage = toCommit ? toCommit.message : '';
     uxLog(this, c.cyan(`Calculating package.xml diff from [${c.green(config.developmentBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`));
-    const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-package-xml-') + Math.random().toString(36).slice(-5);
-    await fs.ensureDir(tmpDir);
+    const tmpDir = await createTempDir();
     const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit ? toCommit.hash : masterBranchLatestCommit} --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, { output: false, fail: false, debug: this.debugMode });
     if (packageXmlResult.status === 0) {
@@ -193,7 +191,23 @@ export default class SaveTask extends SfdxCommand {
     const gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0) {
       uxLog(this, `Committing files in local git branch ${c.green(currentGitBranch)}...`);
-      await git().commit('[sfdx-hardis] Update package content');
+      await git({output:true}).commit('[sfdx-hardis] Update package content');
+    }
+
+    // Apply cleaning defined on project
+    const gitStatusFilesBeforeClean = (await git().status()).files.map(file => file.path);
+    console.log(JSON.stringify(gitStatusFilesBeforeClean,null,2));
+    uxLog(this,c.cyan("Cleaning sfdx project from obsolete references..."));
+    await execCommand("sfdx hardis:project:clean:references --type all",this, {output:true, fail: true, debug: this.debugMode});
+    const gitStatusAfterClean = await git().status();
+    console.log(JSON.stringify(gitStatusAfterClean,null,2));
+    const cleanedFiles = gitStatusAfterClean.files
+      .filter(file => !gitStatusFilesBeforeClean.includes(file.path))
+      .map(file => file.path);
+    if (cleanedFiles.length > 0) {
+      uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join("\n")}`));
+      await git().add(cleanedFiles);
+      await git({output:true}).commit('[sfdx-hardis] Clean sfdx project');
     }
 
     // Push new commit(s)

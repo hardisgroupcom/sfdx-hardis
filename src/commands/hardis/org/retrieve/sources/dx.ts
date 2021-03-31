@@ -5,12 +5,12 @@ import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as child from 'child_process';
 import * as fs from 'fs-extra';
-import * as os from 'os';
 import * as path from 'path';
 import * as util from 'util';
 const exec = util.promisify(child.exec);
 
 import { MetadataUtils } from '../../../../../common/metadata-utils';
+import { createTempDir } from '../../../../../common/utils';
 import { setConfig } from '../../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -162,7 +162,7 @@ export default class DxSources extends SfdxCommand {
       // Try to get org shape
       const projectScratchDefFile = './config/project-scratch-def.json';
       this.ux.log(`[sfdx-hardis] Getting org shape in ${c.green(path.resolve(projectScratchDefFile))}...`);
-      const shapeFile = `${os.tmpdir()}/project-scratch-def.json`;
+      const shapeFile = path.join((await createTempDir()), "project-scratch-def.json");
       try {
         await exec(
           `sfdx force:org:shape:create -f "${shapeFile} -u `
