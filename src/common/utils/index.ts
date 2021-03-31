@@ -13,9 +13,9 @@ import { SfdxError } from '@salesforce/core';
 import * as ora from 'ora';
 import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
-import { MetadataUtils } from '../metadata-utils';
 import { prompts } from './prompts';
 import { encryptFile } from '../cryptoUtils';
+import { deployMetadatas } from './deployUtils';
 
 let pluginsStdout = null;
 
@@ -803,7 +803,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
 
     // Deploy metadatas
     try {
-      const deployRes = await MetadataUtils.deployMetadatas({
+      const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
         testlevel: (branchName.includes('production'))?'RunLocalTests':'NoTestRun',
         soap: true
