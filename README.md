@@ -624,7 +624,7 @@ USAGE
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
-  -t, --type=all|datadotcom                                                         Cleaning type
+  -t, --type=all|datadotcom|destructivechanges                                      Cleaning type
   --json                                                                            format output as json
 
   --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
