@@ -82,10 +82,19 @@ export default class RefreshTask extends SfdxCommand {
             uxLog(this, c.cyan(`Creating a merge commit of ${c.green(config.developmentBranch)} within ${c.green(localBranch)}...`));
             let mergeSummary = await git({output: true}).merge([config.developmentBranch]);
             while(mergeSummary.failed) {
-                await prompts({
-                    type: 'confirm',
-                    message: c.cyanBright('There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help :)')
+                const mergeResult = await prompts({
+                    type: 'select',
+                    name: 'value',
+                    message: c.cyanBright('There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help :)'),
+                    choices: [
+                        { value: true, title: "If finished to merge conflicts"},
+                        { value: false, title: "I can't merge conflicts, I give up for now"}
+                    ]
                 })
+                if (mergeResult.value === false) {
+                    uxLog(this, 'Refresh script stopped by user');
+                    process.exit(0);
+                }
                 mergeSummary = await git({output: true}).merge(['--continue']);
             }
         } else {

@@ -13,9 +13,9 @@ import { SfdxError } from '@salesforce/core';
 import * as ora from 'ora';
 import simpleGit, { FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS } from '../../config';
-import { MetadataUtils } from '../metadata-utils';
 import { prompts } from './prompts';
 import { encryptFile } from '../cryptoUtils';
+import { deployMetadatas } from './deployUtils';
 
 let pluginsStdout = null;
 
@@ -46,6 +46,12 @@ export function git(options: any = { output: false }): SimpleGit {
       }
     }
   });
+}
+
+export async function createTempDir() {
+  const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString(36).slice(-5)));
+  await fs.ensureDir(tmpDir);
+  return tmpDir;
 }
 
 export function isGitRepo() {
@@ -696,8 +702,7 @@ export async function restoreLocalSfdxInfo() {
 // Generate SSL certificate in temporary folder and copy the key in project directory
 export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any) {
   uxLog(commandThis, 'Generating SSL certificate...');
-  const tmpDir = path.join(os.tmpdir(), 'sslTmp-') + Math.random().toString(36).slice(-5);
-  await fs.ensureDir(tmpDir);
+  const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
   const pwd = Math.random().toString(36).slice(-20);
@@ -795,7 +800,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
 </Package>
 `;
     // create metadata folder
-    const tmpDirMd = path.join(os.tmpdir(), 'sfdx-hardis-deploy' + Math.random().toString(36).slice(-8));
+    const tmpDirMd = await createTempDir();
     const connectedAppDir = path.join(tmpDirMd, 'connectedApps');
     await fs.ensureDir(connectedAppDir);
     await fs.writeFile(path.join(tmpDirMd, 'package.xml'), packageXml);
@@ -803,7 +808,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
 
     // Deploy metadatas
     try {
-      const deployRes = await MetadataUtils.deployMetadatas({
+      const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
         testlevel: (branchName.includes('production'))?'RunLocalTests':'NoTestRun',
         soap: true
