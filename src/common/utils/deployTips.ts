@@ -122,7 +122,7 @@ You may also have a look to command sfdx hardis:project:clean:references
 - If you deleted the custom field, or if you don't want to deploy it, do a search on the custom field name, and remove XML elements referencing it
 - If the custom field should exist, make sure it is in force-app/main/default/objects/YOUROBJECT/fields and that the field name is in manifest/package.xml in CustomField section
 - If the field is standard, the error is because the field not available in the org you are trying to deploy to. You can:
-  - Remove the reference to the standard field ( maybe sfdx hardis:project:clean:references can clean auotmatically for you ! )
+  - Remove the reference to the standard field ( maybe sfdx hardis:project:clean:references can clean automatically for you ! )
   - Activate the required features/license in the target org
 `
         },

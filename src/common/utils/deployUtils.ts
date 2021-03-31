@@ -190,7 +190,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
     deployDeleteRes = await execCommand(deployDelete, commandThis, { output: true, debug: options.debug, fail: true });
   } catch (e){
     const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
-    uxLog(this,c.red("Sadly there has been pull error(s)"));
+    uxLog(this,c.red("Sadly there has been destruction error(s)"));
     uxLog(this,c.yellow(tips.map((tip:any) => c.bold(tip.label)+'\n'+tip.tip).join("\n\n")));
     throw new SfdxError("Error while deploying destructive changes");
   }

@@ -1,4 +1,4 @@
-// XML Utils fonctions
+// XML Utils functions
 import * as fs from 'fs-extra';
 import * as xml2js from 'xml2js';
 
