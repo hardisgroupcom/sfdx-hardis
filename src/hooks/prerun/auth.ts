@@ -1,10 +1,9 @@
 import { SfdxError } from '@salesforce/core';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
-import * as os from 'os';
 import * as path from 'path';
 import { decryptFile } from '../../common/cryptoUtils';
-import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, promptInstanceUrl, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
+import { createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, isCI, promptInstanceUrl, restoreLocalSfdxInfo, uxLog } from '../../common/utils';
 import { WebSocketClient } from '../../common/websocketClient';
 import { checkConfig, getConfig } from '../../config';
 
@@ -53,7 +52,7 @@ export const hook = async (options: any) => {
 async function authOrg(orgAlias: string, options: any) {
     // Manage auth with sfdxAuthUrl (CI & scratch org only)
     if ((orgAlias || '').startsWith('force://')) {
-        const authFile = path.join(os.tmpdir(), 'sfdxScratchAuth.txt');
+        const authFile = path.join((await createTempDir()), 'sfdxScratchAuth.txt');
         await fs.writeFile(authFile, orgAlias, 'utf8');
         await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, { fail: true, output: false });
         await fs.remove(authFile);
@@ -268,7 +267,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
         if (fs.existsSync(file)) {
             // Decrypt SSH private key and write a temporary file
             const sshKey = await getKey(orgAlias,config); 
-            const tmpSshKeyFile = path.join(os.tmpdir(), `${orgAlias}.key`); 
+            const tmpSshKeyFile = path.join((await createTempDir()), `${orgAlias}.key`); 
             await decryptFile(file,tmpSshKeyFile,sshKey);
             return tmpSshKeyFile; 
         }

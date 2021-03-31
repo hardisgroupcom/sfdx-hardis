@@ -1,11 +1,10 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
-import * as os from 'os';
 import * as path from 'path';
 import * as sortArray from 'sort-array';
 import * as xml2js from 'xml2js';
-import { execCommand, isCI, uxLog } from ".";
+import { createTempDir, execCommand, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
@@ -127,8 +126,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string,check: boolean,
     // Build list of package.xml according to plan
     if (config.deploymentPlan && !check) {
         // Copy main package.xml
-        const tmpDeployDir = path.join(os.tmpdir(),'sfdx-hardis-deploy');
-        await fs.ensureDir(tmpDeployDir);
+        const tmpDeployDir = await createTempDir();
         const mainPackageXmlCopyFileName = path.join(tmpDeployDir,'mainPackage.xml');
         await fs.copy(packageXmlFile,mainPackageXmlCopyFileName);
         const mainPackageXmlItem = {
@@ -172,8 +170,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
   // Create empty deployment file because of sfdx limitation
   // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
   uxLog(commandThis, c.cyan(`Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`));
-  const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString()));
-  await fs.ensureDir(tmpDir);
+  const tmpDir = await createTempDir();
   const emptyPackageXmlFile = path.join(tmpDir, 'package.xml');
   await fs.writeFile(emptyPackageXmlFile,
     `<?xml version="1.0" encoding="UTF-8"?>
