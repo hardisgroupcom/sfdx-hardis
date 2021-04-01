@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.8.2] 2021-04-01
+
 - hardis:work:save : reset ongoing merge if existing
 - Fix git reset call
 
