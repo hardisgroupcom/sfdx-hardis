@@ -2,7 +2,7 @@
     "filters": [
         {
             "name": "PermissionSetsFiltering",
-            "description": "Remove references from data.com license",
+            "description": "Remove obsolete Custom Objects references",
             "folders": [
                 "profiles",
                 "permissionsets"
