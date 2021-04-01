@@ -5,7 +5,6 @@ import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { ResetMode } from 'simple-git';
 import { createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, interactiveGitAdd, uxLog } from '../../../common/utils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
@@ -57,7 +56,10 @@ export default class SaveTask extends SfdxCommand {
     uxLog(this, c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(config.developmentBranch)}`));
 
     // Unstage files
-    await git().reset(ResetMode.SOFT);
+    const gitStatusInit = await git().status();
+    if (gitStatusInit.staged.length > 0) {
+      await git({output:true}).reset(gitStatusInit.staged);
+    }
 
     // Pull from scratch org
     uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));

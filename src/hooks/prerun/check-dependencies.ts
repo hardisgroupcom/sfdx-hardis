@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 
 import * as os from 'os';
-import { checkSfdxPlugin, git, uxLog } from '../../common/utils';
+import { checkSfdxPlugin, git, uxLog, execCommand } from '../../common/utils';
 import { getConfig } from '../../config';
 
 export const hook = async (options: any) => {
@@ -10,6 +10,9 @@ export const hook = async (options: any) => {
     if (!commandId.startsWith('hardis')) {
         return;
     }
+
+    execCommand("sfdx config:set restDeploy=false --global",{output:false,fail:true});
+
     /* jscpd:ignore-end */
     // Check Git config and complete it if necessary(asynchronously so the script is not stopped)
     git().listConfig().then(async(gitConfig) => {
