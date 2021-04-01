@@ -47,17 +47,17 @@ export default class PackageCreate extends SfdxCommand {
         const packageResponse = await prompts([
             {
                 type: 'text',
-                name: 'path',
-                message: c.cyanBright(`Please input the path of the package (ex: sfdx-source/apex-mocks)`)
-            },
-            {
-                type: 'text',
-                name: 'name',
+                name: 'packageName',
                 message: c.cyanBright(`Please input the name of the package (ex: MyPackage)`)
             },
             {
+                type: 'text',
+                name: 'packagePath',
+                message: c.cyanBright(`Please input the path of the package (ex: sfdx-source/apex-mocks)`)
+            },
+            {
                 type: 'select', 
-                name: 'type',
+                name: 'packageType',
                 message: c.cyanBright(`Please select the type of the package`),
                 choices: [
                     {title: 'Managed',value: 'Managed', description: 'Managed packages code is hidden in orgs where it is installed. Suited for AppExchanges packages'},
@@ -65,12 +65,13 @@ export default class PackageCreate extends SfdxCommand {
                 ]
             }
         ]);
+        
 
         // Create package
         const packageCreateCommand = 'sfdx force:package:create'+
-        ` --name "${packageResponse.name}"`+
-        ` --packagetype ${packageResponse.type}`+
-        ` --path "${packageResponse.path}"` ;
+        ` --name "${packageResponse.packageName}"`+
+        ` --packagetype ${packageResponse.packageType}`+
+        ` --path "${packageResponse.packagePath}"` ;
         const packageCreateResult = await execSfdxJson(packageCreateCommand,this,{output:true,fail:true,debug:debugMode});
         uxLog(this,c.cyan(`Created package Id: ${c.green(packageCreateResult.result.Id)} associated to DevHub ${c.green(this.hubOrg.getUsername())}`))
 

@@ -31,13 +31,14 @@ export async function prompts(options) {
         questionsReformatted.push(question)
     }
     // Prompt user
-    let answers : any = null ;
+    let answers : any = {} ;
     if (WebSocketClient.isAlive()) {
         // Use UI prompt
         for (const question of questionsReformatted) {
             uxLog(this,c.cyan(question.message)+c.white(' ↑↑↑↑↑↑↑↑'));
             const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
-            answers = Object.assign(question,questionAnswer);
+            answers = Object.assign(answers,questionAnswer);
+            uxLog(this,c.grey(JSON.stringify(answers)));
         }
     }
     else {
