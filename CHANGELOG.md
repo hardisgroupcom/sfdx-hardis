@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- hardis:work:save : reset ongoing merge if existing
+- Fix git reset call
+
 ## [2.8.0] 2021-03-31
 
 - Define git user.name and user.email if not set

@@ -55,8 +55,13 @@ export default class SaveTask extends SfdxCommand {
 
     uxLog(this, c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(config.developmentBranch)}`));
 
+    let gitStatusInit = await git().status();
+    // Cancel merge if ongoing merge
+    if (gitStatusInit.conflicted.length > 0) {
+      await git({output: true}).merge(['--abort']); 
+      gitStatusInit = await git().status();
+    }
     // Unstage files
-    const gitStatusInit = await git().status();
     if (gitStatusInit.staged.length > 0) {
       await git({output:true}).reset(gitStatusInit.staged);
     }
