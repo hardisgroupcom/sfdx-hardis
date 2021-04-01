@@ -134,5 +134,12 @@ You may also have a look to command sfdx hardis:project:clean:references
           tip: `A custom field can not be deleted because it is used elsewhere. Remove its references ans try again
 THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed before updated items deployment`
         },
+        {
+          name: 'test-deployment-issue',
+          label: 'Can not test item deployment in simulation mode',
+          expressionRegex: [/Test only deployment cannot update/gm],
+          tip: `THIS IS A FALSE POSITIVE
+When effective deployment will happen, it should pass`
+        },
     ];
 }

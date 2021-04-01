@@ -4,7 +4,7 @@ import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import { MetadataUtils } from '../../../common/metadata-utils';
-import { checkGitClean, ensureGitBranch, execCommand, gitCheckOutRemote, uxLog } from '../../../common/utils';
+import { checkGitClean, ensureGitBranch, execCommand, git, gitCheckOutRemote, uxLog } from '../../../common/utils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 import ScratchCreate from '../scratch/create';
@@ -101,6 +101,8 @@ export default class NewTask extends SfdxCommand {
     const branchName = `${response.branch || 'features'}/${response.sources || 'dev'}/${response.taskName.replace(/\s/g, '-')}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(targetBranch)} on server...`));
     await gitCheckOutRemote(targetBranch);
+    // Pull latest version of target branch
+    await git().pull();
     // Create new branch
     uxLog(this, c.cyan(`Creating new branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);

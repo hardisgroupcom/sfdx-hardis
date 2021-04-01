@@ -49,7 +49,7 @@ export function git(options: any = { output: false }): SimpleGit {
 }
 
 export async function createTempDir() {
-  const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + parseFloat(Math.random().toString(36).slice(-5)));
+  const tmpDir = path.join(os.tmpdir(), 'sfdx-hardis-' + Math.random().toString(36).substring(7));
   await fs.ensureDir(tmpDir);
   return tmpDir;
 }
