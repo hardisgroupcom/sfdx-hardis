@@ -127,6 +127,13 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
       throw new SfdxError('Developer: please send init or clone as option');
     }
   }
+  // Check if root
+  else if (options.mustBeRoot) {
+    const gitRepoRoot = await git().revparse(['--show-toplevel']);
+    if (path.resolve(gitRepoRoot) !== path.resolve(process.cwd())) {
+      throw new SfdxError(`You must be at the root of the git repository (${path.resolve(gitRepoRoot)})`);
+    }
+  }
 }
 
 // Get local git branch name

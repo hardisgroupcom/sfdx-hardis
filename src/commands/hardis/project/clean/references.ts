@@ -121,10 +121,11 @@ export default class CleanReferences extends SfdxCommand {
             const templateFile = path.join(path.join(__dirname, '../../../../../defaults/clean', 'template.txt'));
             let templateContent = await fs.readFile(templateFile,"utf8");
             const destructiveChanges = await parseXmlFile('./manifest/destructiveChanges.xml');
-            for (const type of destructiveChanges.Package.types) {
+            for (const type of (destructiveChanges.Package.types || [])) {
                 const members = type.members;
                 templateContent = templateContent.replace(`{{ ${type.name[0]} }}`, JSON.stringify(members,null,2));
             }
+            templateContent = templateContent.replace(/({{ .* }})/gm, "[]");
             // Create temporary file
             filterConfigFile = path.join((await createTempDir()),"cleanDestructiveChanges.json");
             await fs.writeFile(filterConfigFile,templateContent);

@@ -4,6 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.9.0] 2021-04-06
+
+- New command **hardis:project:create**
+- Fixes 
+  - hardis:work:save : Create destructiveChanges.xml if not existing
+  - hardis:work:save : call forceSourcePull method to propose to update .forceignore if errors are found
+  - hardis:project:configure:auth: call mdapi:deploy with RunLocalTests to manage production environments
+  - authentication: auth only to devHub if --devhub sent
+
 ## [2.8.5] 2021-04-06
 
 - QuickFix question icon

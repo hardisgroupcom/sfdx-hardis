@@ -25,8 +25,8 @@ export async function forceSourcePush(scratchOrgAlias:string,debug = false) {
 
 export async function forceSourcePull(scratchOrgAlias:string,debug = false) { 
   try {
-    const pushCommand = `sfdx force:source:pull -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
-    await execCommand(pushCommand, this, { fail: true, output: true, debug: debug });
+    const pullCommand = `sfdx force:source:pull -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
+    await execCommand(pullCommand, this, { fail: true, output: true, debug: debug });
   } catch (e) {
     const {tips} = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(this,c.red("Sadly there has been pull error(s)"));
@@ -229,8 +229,20 @@ export async function deployMetadatas(options: any = {
     // workaround if --soapdeploy is not available
     if (JSON.stringify(e).includes('--soapdeploy')) {
       uxLog(this, c.yellow("This may be a error with a workaround... let's try it :)"));
-      deployRes = await execCommand(deployCommand.replace(' --soapdeploy', ''), this,
-        { output: true, debug: options.debug, fail: true });
+      try {
+        deployRes = await execCommand(deployCommand.replace(' --soapdeploy', ''), this,
+          { output: true, debug: options.debug, fail: true });
+      } catch (e2) {
+        if (JSON.stringify(e2).includes('NoTestRun')) {
+          // Another workaround: try running tests
+          uxLog(this, c.yellow("This may be again an error with a workaround... let's make a last attempt :)"));
+          deployRes = await execCommand(deployCommand.replace(' --soapdeploy', '').replace("NoTestRun","RunLocalTests"), this,
+            { output: true, debug: options.debug, fail: true });
+        }
+        else {
+          throw e2;
+        }
+      }
     } else {
       throw e;
     }

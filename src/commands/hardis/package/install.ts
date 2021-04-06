@@ -128,7 +128,7 @@ export default class PackageVersionInstall extends SfdxCommand {
                     const installResponse = await prompts({
                         type: 'select',
                         name: 'value',
-                        message: c.cyanBright(`Please select the package you want to install on org  ${c.green(this.org.getUsername())}`),
+                        message: c.cyanBright(`Please select the install configuration for ${installedPackage.SubscriberPackageName}`),
                         choices: [
                             { title: `Install automatically ${installedPackage.SubscriberPackageName} on scratch orgs only`, value: 'scratch' },
                             { title: `Deploy automatically ${installedPackage.SubscriberPackageName} on integration/production orgs only`, value: 'deploy' },
