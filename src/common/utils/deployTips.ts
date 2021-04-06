@@ -141,5 +141,11 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
           tip: `THIS IS A FALSE POSITIVE
 When effective deployment will happen, it should pass`
         },
+        {
+          name: 'test-coverage-0-percent',
+          label: 'Test classes with 0% coverage',
+          expressionRegex: [/ 0%/gm],
+          tip: `Please make sure that none of the test classes are 0% covered`
+        },
     ];
 }

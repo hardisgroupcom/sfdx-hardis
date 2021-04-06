@@ -29,6 +29,7 @@ export default class SaveTask extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
+    nopull: flags.boolean({ char: 'n', default: false, description: "No scratch pull before save" }),
     debug: flags.boolean({ char: 'd', default: false, description: messages.getMessage('debugMode') })
   };
 
@@ -45,10 +46,12 @@ export default class SaveTask extends SfdxCommand {
   protected static requiresSfdxPlugins = ['sfdx-essentials', 'sfdx-git-delta'];
 
   protected debugMode = false;
+  protected noPull = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    this.noPull = this.flags.nopull || false;
     this.debugMode = this.flags.debug || false;
     const config = await getConfig('project');
     const localBranch = await getCurrentGitBranch();
@@ -67,9 +70,14 @@ export default class SaveTask extends SfdxCommand {
     }
 
     // Pull from scratch org
-    uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
-    const pullCommand = 'sfdx force:source:pull -w 60 --forceoverwrite';
-    await execCommand(pullCommand, this, { output: true, fail: true });
+    if (this.noPull) {
+      uxLog(this, c.cyan(`Skipped pull from scratch org`));
+    }
+    else {
+      uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
+      const pullCommand = 'sfdx force:source:pull -w 60 --forceoverwrite';
+      await execCommand(pullCommand, this, { output: true, fail: true });
+    }
 
     const gitUrl = await git().listRemote(['--get-url']);
     const currentGitBranch = await getCurrentGitBranch();
