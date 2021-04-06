@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 
 import * as os from 'os';
-import { checkSfdxPlugin, git, uxLog, execCommand, isCI } from '../../common/utils';
+import { checkSfdxPlugin, git, uxLog, execCommand, isCI, execSfdxJson } from '../../common/utils';
 import { getConfig } from '../../config';
 
 export const hook = async (options: any) => {
@@ -11,7 +11,12 @@ export const hook = async (options: any) => {
         return;
     }
 
-    execCommand("sfdx config:set restDeploy=false --global",{output:false,fail:true});
+    execSfdxJson("sfdx config:get restDeploy",{output:false, fail:true, spinner:false}).then(async (res) => {
+        if (!(res && res.result && res.result[0] && res.result[0].value === "false")) {
+            await execCommand("sfdx config:set restDeploy=false --global",{output:false,fail:true});
+        }
+    });
+    
 
     /* jscpd:ignore-end */
     // Check Git config and complete it if necessary (asynchronously so the script is not stopped)
