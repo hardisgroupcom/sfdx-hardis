@@ -267,6 +267,9 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
         if (fs.existsSync(file)) {
             // Decrypt SSH private key and write a temporary file
             const sshKey = await getKey(orgAlias,config); 
+            if (sshKey == null) {
+                continue;
+            }
             const tmpSshKeyFile = path.join((await createTempDir()), `${orgAlias}.key`); 
             await decryptFile(file,tmpSshKeyFile,sshKey);
             return tmpSshKeyFile; 

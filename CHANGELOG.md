@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.8.4] 2021-04-06
+
+- Allow to skip pull before save
+- New deployTip: code coverage items with 0%
+- Fix DevHub auth when credential out of date
+- Use latest sfdx-cli package
+- Init git config only if we are not in CI
+
 ## [2.8.3] 2021-04-01
 
 - Fix package creation

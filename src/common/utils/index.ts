@@ -176,7 +176,7 @@ export async function checkGitClean(options: any) {
   if (git == null) {
     throw new SfdxError('[sfdx-hardis] You must be within a git repository');
   }
-  const gitStatus = await git().status();
+  const gitStatus = await git({output:true}).status();
   if (gitStatus.files.length > 0) {
     const localUpdates = gitStatus.files.map((fileStatus: FileStatusResult) => {
       return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
