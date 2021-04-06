@@ -65,6 +65,7 @@ function getAllTips() {
             expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
             tip: `Lightning EmailTemplates must also be imported with metadatas.
 ${c.cyan('If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, incuding the one importing EmailTemplate records)')}
+IF WHAT IS BELOW IS ALREADY DONE, JUST RUN sfdx hardis:data:export and select EmailTemplate before doing sfdx hardis:work:save
 - Create a file scripts/data/EmailTemplates/export.json:
 
 {

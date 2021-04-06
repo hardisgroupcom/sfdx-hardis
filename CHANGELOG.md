@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.9.0] 2021-04-06
 
 - New command **hardis:project:create**
+- Refactor project cleaning and allow to use external config files (destructiveChanges-like.xml or json)
 - Fixes 
   - hardis:work:save : Create destructiveChanges.xml if not existing
   - hardis:work:save : call forceSourcePull method to propose to update .forceignore if errors are found
