@@ -6,6 +6,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, interactiveGitAdd, uxLog } from '../../../common/utils';
+import { forceSourcePull } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
@@ -75,8 +76,7 @@ export default class SaveTask extends SfdxCommand {
     }
     else {
       uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
-      const pullCommand = 'sfdx force:source:pull -w 60 --forceoverwrite';
-      await execCommand(pullCommand, this, { output: true, fail: true });
+      await forceSourcePull(this.org.getUsername(),this.debugMode);
     }
 
     const gitUrl = await git().listRemote(['--get-url']);
@@ -168,6 +168,15 @@ export default class SaveTask extends SfdxCommand {
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml
       const localDestructiveChangesXml = path.join('manifest', 'destructiveChanges.xml');
+      if (!fs.existsSync(localDestructiveChangesXml)) {
+        // Create default destructiveChanges.xml if not defined
+        const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+  <version>51.0</version>
+</Package>        
+`;
+        await fs.writeFile(localDestructiveChangesXml,blankDestructiveChanges);
+      }
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(this, c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) + c.red(destructivePackageXmlDiffStr));

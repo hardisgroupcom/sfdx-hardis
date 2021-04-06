@@ -1,0 +1,8 @@
+{
+    "items": {
+        "CustomField": [
+            "Contact.FirstNameLocal",
+            "Contact.LastNameLocal"
+        ]
+    }
+}

@@ -33,7 +33,8 @@ export const hook = async (options: any) => {
     }
     // Manage authentication if org is required but current user is disconnected
     if (
-        (options.Command && options.Command.requiresUsername === true) || options.checkAuth === true
+        ((options.Command && options.Command.requiresUsername === true) || options.checkAuth === true) &&
+        !(options.devHub === true)
     ) {
         const orgAlias =
             (process.env.ORG_ALIAS) ? process.env.ORG_ALIAS :

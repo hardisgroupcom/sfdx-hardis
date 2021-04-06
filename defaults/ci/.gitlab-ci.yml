@@ -21,11 +21,11 @@ stages:
 
 # On execute les jobs sur l'image hardisgroupcom/sfdx-hardis qui contient les applications necessaires
 # Version latest recommandée, cependant beta et alpha peuvent être utilisées pour les tests
-image: hardisgroupcom/sfdx-hardis:alpha
+image: hardisgroupcom/sfdx-hardis:latest
 
 # Variables globales aux jobs
 variables:
-  FORCE_COLOR: '1'
+  FORCE_COLOR: "1"
 
 # Décommenter pour utiliser un des 2 trucs commencés en dessous :)
 #default:
@@ -61,7 +61,7 @@ check_quality:
     - merge_requests
     - web
   image: nvuillam/mega-linter-salesforce:latest
-  script: [ "true" ]
+  script: ["true"]
   variables:
     # All available variables are described in documentation
     # https://nvuillam.github.io/mega-linter/configuration/
@@ -74,7 +74,7 @@ check_quality:
       - report
     expire_in: 1 week
 
-# Check du déploiement dans l'org cible de la merge request 
+# Check du déploiement dans l'org cible de la merge request
 check_deploy_to_target_branch_org:
   stage: build
   tags:
@@ -84,10 +84,10 @@ check_deploy_to_target_branch_org:
       - merge_requests
       - web
   variables:
-      CONFIG_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
-      ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    CONFIG_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
   script:
-    - '[ -z "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ] && exit 0;' # Skip this job if it is launched from web UI and we are not in merge request context 
+    - '[ -z "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ] && exit 0;' # Skip this job if it is launched from web UI and we are not in merge request context
     - sfdx hardis:auth:login
     - sfdx hardis:project:deploy:sources:dx --check
 
@@ -125,6 +125,7 @@ test_apex:
     - job: create_scratch_org
       artifacts: true
   script:
+    - sleep 120 # Les scratch orgs nouvellement créées peuvent poser problème, attendons 2 minutes avant de lancer les tests
     - sfdx hardis:auth:login --scratchorg || true
     - sfdx hardis:org:test:apex
   artifacts:
