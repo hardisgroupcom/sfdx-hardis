@@ -12,6 +12,9 @@ export async function prompts(options) {
     const questionsRaw = Array.isArray(options) ? options : [options];
     const questionsReformatted = [];
     for (const question of questionsRaw) {
+        if (!question.message.startsWith('🦙')){
+            question.message += '🦙 '+question.message
+        }
         // Convert confirm to select
         if (question.type === 'confirm') {
             question.type = 'select';
