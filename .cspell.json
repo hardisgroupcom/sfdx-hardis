@@ -172,6 +172,7 @@
         "namespaceprefix",
         "noinsight",
         "noprompt",
+        "nopull",
         "notif",
         "notificationtypes",
         "notiftype",
