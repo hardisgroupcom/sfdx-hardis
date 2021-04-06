@@ -13,7 +13,7 @@ export async function prompts(options) {
     const questionsReformatted = [];
     for (const question of questionsRaw) {
         if (!question.message.startsWith('🦙')){
-            question.message += '🦙 '+question.message
+            question.message = '🦙 '+question.message
         }
         // Convert confirm to select
         if (question.type === 'confirm') {

@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.8.5] 2021-04-06
+
+- QuickFix question icon
+
 ## [2.8.4] 2021-04-06
 
 - Allow to skip pull before save
