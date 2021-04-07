@@ -148,5 +148,13 @@ When effective deployment will happen, it should pass`
           expressionRegex: [/ 0%/gm],
           tip: `Please make sure that none of the test classes are 0% covered`
         },
+        {
+          name: 'sharing-recalc-lock',
+          label: 'Sharing recalculation lock',
+          expressionString: [
+            "because it interferes with another operation already in progress",
+            "Le calcul de partage demandé ne peut être traité maintenant car il interfère avec une autre opération en cours"],
+          tip: `If you changed a field from MasterDetail to Lookup, you must do it manually in the target org before being able to deploy`
+        }
     ];
 }
