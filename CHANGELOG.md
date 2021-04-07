@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.9.1] 2021-04-07
+
+- Clean git reset before save
+
 ## [2.9.0] 2021-04-06
 
 - New command **hardis:project:create**

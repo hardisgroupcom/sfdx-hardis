@@ -67,7 +67,7 @@ export default class SaveTask extends SfdxCommand {
     }
     // Unstage files
     if (gitStatusInit.staged.length > 0) {
-      await git({output:true}).reset(gitStatusInit.staged);
+      await execCommand('git reset',this,{output:true, fail:true});
     }
 
     // Pull from scratch org
@@ -267,3 +267,4 @@ export default class SaveTask extends SfdxCommand {
     return { outputString: 'Saved the task' };
   }
 }
+
