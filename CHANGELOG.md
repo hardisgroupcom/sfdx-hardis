@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.9.1] 2021-04-07
 
 - Clean git reset before save
+- Clean git stash before new task
 
 ## [2.9.0] 2021-04-06
 

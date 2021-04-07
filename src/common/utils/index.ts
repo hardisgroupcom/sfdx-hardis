@@ -189,7 +189,8 @@ export async function checkGitClean(options: any) {
       return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
     }).join('\n');
     if (options.allowStash) {
-      await git({output:true}).stash();
+      await execCommand('git add --all',this,{output:true,fail:true});
+      await execCommand('git stash',this,{output:true,fail:true});
     } else {
       throw new SfdxError(`[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold('commit or reset')} the following local updates:\n${c.yellow(localUpdates)}`);
     }
