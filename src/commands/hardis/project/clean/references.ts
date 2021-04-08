@@ -166,7 +166,7 @@ export default class CleanReferences extends SfdxCommand {
             const destructiveChanges = await parseXmlFile(destructiveChangesFile);
             for (const type of (destructiveChanges.Package.types || [])) {
                 const members = type.members;
-                templateContent = templateContent.replace(`{{ ${type.name[0]} }}`, JSON.stringify(members,null,2));
+                templateContent = templateContent.replace(new RegExp(`{{ ${type.name[0]} }}`,'g'), JSON.stringify(members,null,2));
                 this.deleteItems[type.name[0]] = (this.deleteItems[type.name[0]] || []).concat(members);
             }
         }
@@ -175,12 +175,12 @@ export default class CleanReferences extends SfdxCommand {
             const filterConfigFileConfigPath = (cleaningType.endsWith('.json')) ? cleaningType : path.join(path.join(__dirname, '../../../../../defaults/clean', cleaningType+'.json'));
             const filterConfigFileConfig = JSON.parse(await fs.readFile(filterConfigFileConfigPath,"utf8"));
             for (const type of Object.keys(filterConfigFileConfig.items)) {
-                 templateContent = templateContent.replace(`{{ ${type} }}`, JSON.stringify(filterConfigFileConfig.items[type],null,2));
+                 templateContent = templateContent.replace(new RegExp(`{{ ${type} }}`,'g'), JSON.stringify(filterConfigFileConfig.items[type],null,2));
                  this.deleteItems[type] = (this.deleteItems[type] || []).concat(filterConfigFileConfig.items[type]);
             }
         }
         // Create temporary file
-        templateContent = templateContent.replaceAll(/{{ .* }}/gm, "[]");
+        templateContent = templateContent.replace(/{{ .* }}/gm, "[]");
         const tmpCleanFileName = (cleaningType.endsWith('.xml') || cleaningType.endsWith('.json')) ? path.basename(cleaningType) : cleaningType ;
         const filterConfigFile = path.join((await createTempDir()),`clean_${tmpCleanFileName}.json`);
         await fs.writeFile(filterConfigFile,templateContent);
