@@ -230,8 +230,12 @@ export default class SaveTask extends SfdxCommand {
       .map(file => file.path);
     if (cleanedFiles.length > 0) {
       uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join("\n")}`));
-      await git().add(cleanedFiles);
-      await git({output:true}).commit('[sfdx-hardis] Clean sfdx project');
+      try {
+        await git().add(cleanedFiles);
+        await git({output:true}).commit('[sfdx-hardis] Clean sfdx project');
+      } catch (e) {
+        uxLog(this,c.yellow(`There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(e.message)}`))
+      }
     }
 
     // Push new commit(s)
