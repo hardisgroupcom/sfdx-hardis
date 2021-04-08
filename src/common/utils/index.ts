@@ -88,7 +88,7 @@ export async function promptInstanceUrl() {
     name: 'value',
     message: c.cyanBright('Is the org you need to connect a sandbox or another type of org (dev org, enterprise org...)'),
     choices: [
-      { title: 'Sandbox', description: 'The org I want to connect is a sandbox', value: 'https://test.salesforce.com' },
+      { title: 'Sandbox or Scratch org', description: 'The org I want to connect is a sandbox', value: 'https://test.salesforce.com' },
       { title: 'Other (Dev org, Enterprise org...)', description: 'The org I want to connect is NOT a sandbox', value: 'https://login.salesforce.com' }
     ],
     initial: 1
@@ -828,6 +828,10 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     } catch (e) {
       deployError = true;
       uxLog(commandThis, c.red('Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name'));
+      uxLog(commandThis, c.yellow(`If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName}:
+- Using certificate ${crtFile}
+- Doc: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
+- Once created, update variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with ConsumerKey of the newly created connected app`));
     }
     // Last manual step
     if (deployError === false) {
