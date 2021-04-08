@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.9.3] 2021-04-08
+
+- hardis:work:refresh : allow to refresh from another branch
+
 ## [2.9.2] 2021-04-08
 
 - hardis:work:save : Fix issue when trying to stage & commit ignored files after project cleaning
