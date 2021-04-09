@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.9.4] 2021-04-09
+
+- Fix refresh
+- Update project cleaning references
+
 ## [2.9.3] 2021-04-08
 
 - hardis:work:refresh : allow to refresh from another branch

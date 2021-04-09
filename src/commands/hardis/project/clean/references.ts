@@ -64,6 +64,10 @@ export default class CleanReferences extends SfdxCommand {
     protected cleaningTypes = [];
     protected allCleaningTypes = [ 
         {
+            value: "caseentitlement",
+            title: "References to Entitlement Management items"
+        },
+        {
             value: "datadotcom",
             title: "References to Data.com items. https://help.salesforce.com/articleView?id=000320795&type=1&mode=1"
         },

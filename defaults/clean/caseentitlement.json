@@ -1,0 +1,16 @@
+{
+    "items": {
+        "CustomField": [
+            "Case.AssetWarrantyId",
+            "Case.EntitlementId",
+            "Case.IsStopped",
+            "Case.MilestoneStatus",
+            "Case.MilestoneStatusIcon",
+            "Case.ProductId",
+            "Case.ServiceContractId",
+            "Case.SlaExitDate",
+            "Case.SlaStartDate",
+            "Case.StopStartDate"
+        ]
+    }
+}
