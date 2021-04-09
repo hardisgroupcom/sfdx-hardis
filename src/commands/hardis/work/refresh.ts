@@ -3,7 +3,7 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
-import { getCurrentGitBranch, git, uxLog } from '../../../common/utils';
+import { execCommand, getCurrentGitBranch, git, uxLog } from '../../../common/utils';
 import { forceSourcePull, forceSourcePush } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig } from '../../../config';
@@ -105,8 +105,11 @@ export default class RefreshTask extends SfdxCommand {
         const pullRes = await git({ output: true }).pull();
         // Go back to current work branch
         await git({ output: true }).checkout(localBranch);
+        // Check if merge is necessary ( https://stackoverflow.com/a/30177226/7113625 )
+        const mergeRef = (await execCommand(`git show-ref --heads -s ${this.mergeBranch}`,this,{output:true})).stdout;
+        const localRef = (await execCommand(`git merge-base ${this.mergeBranch} ${localBranch}`,this,{output:true})).stdout;
         // Merge into current branch if necessary
-        if (pullRes.summary.changes > 0) {
+        if (pullRes.summary.changes > 0 || mergeRef !== localRef) {
             // Create new commit from merge
             uxLog(this, c.cyan(`Creating a merge commit of ${c.green(this.mergeBranch)} within ${c.green(localBranch)}...`));
             let mergeSummary = await git({ output: true }).merge([this.mergeBranch]);
