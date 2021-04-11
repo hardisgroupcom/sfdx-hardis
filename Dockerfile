@@ -5,6 +5,7 @@ FROM alpine:latest
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@hardis-group.com>"
 
 RUN apk add --update --no-cache \
+            chromium \
             git \
             nodejs \
             npm
