@@ -62,7 +62,7 @@ async function manageGitIgnore(commandId: string) {
     const gitIgnoreFile = './.gitignore';
     if (fs.existsSync(gitIgnoreFile)) {
         const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
-        const gitIgnoreLines = gitIgnore.replace('\r\n','\n').split('\n').map(line => line.trim());
+        const gitIgnoreLines = gitIgnore.replace('\r\n','\n').split('\n').map(line => line.trim()).filter(line => line !== '');
         let updated = false;
         for (const gitIgnoreMandatoryLine of await getHardisGitRepoIgnoreContent()) {
             if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine)) {
@@ -91,7 +91,7 @@ async function manageGitIgnore(commandId: string) {
     const forceIgnoreFile = './.forceignore';
     if (fs.existsSync(forceIgnoreFile)) {
         const forceIgnore = await fs.readFile(forceIgnoreFile, 'utf-8');
-        const forceIgnoreLines = forceIgnore.replace("\r\n","\n").split('\n').map(line => line.trim());
+        const forceIgnoreLines = forceIgnore.replace("\r\n","\n").split('\n').map(line => line.trim()).filter(line => line !== '');
         let updated = false;
         for (const forceIgnoreMandatoryLine of await getHardisForceIgnoreContent()) {
             if (!forceIgnoreLines.includes(forceIgnoreMandatoryLine)) {
