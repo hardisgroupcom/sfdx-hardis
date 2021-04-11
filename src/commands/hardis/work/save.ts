@@ -374,10 +374,6 @@ export default class SaveTask extends SfdxCommand {
         content: {}
       },
       {
-        types: ["QuickAction"], file: 'manifest/splits/packageXmlQuickAction.xml', filePos: 20,
-        content: {}
-      },
-      {
         types: ["SharingRules", "SharingOwnerRule"], files: 'manifest/splits/packageXmlSharingRules{{name}}.xml', filePos: 30,
         mainType: "SharingRules", waitAfter: 30, content: {}
       }
