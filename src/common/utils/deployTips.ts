@@ -33,22 +33,7 @@ function getAllTips() {
             expressionString: ['sharing operation already in progress'],
             tip: `You can not deploy multiple SharingRules at the same time. You can either:
 - Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
-- Create a property deploymentPlan in .sfdx-hardis.yml to deploy separately the sharing rules
-
-{
-    "packages": [
-  {
-    "label": "SharingRules for Account",
-    "packageXmlFile": "splits/packageXmlSharingRulesAccount.xml",
-    "order": 10,
-    "waitAfter": 60
-  },
-  {
-    "label": "SharingRules for Visit__c",
-    "packageXmlFile": "splits/packageXmlSharingRulesVisit__c.xml",
-    "order": 20
-  }
-}`
+- Use sfdx hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json`
         },
         {
             name: 'role-below-org-default',
@@ -65,9 +50,7 @@ function getAllTips() {
             expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
             tip: `Lightning EmailTemplates must also be imported with metadatas.
 ${c.cyan('If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, incuding the one importing EmailTemplate records)')}
-IF WHAT IS BELOW IS ALREADY DONE, JUST RUN sfdx hardis:data:export and select EmailTemplate before doing sfdx hardis:work:save
 - Create a file scripts/data/EmailTemplates/export.json:
-
 {
     "objects": [
         {
@@ -77,31 +60,7 @@ IF WHAT IS BELOW IS ALREADY DONE, JUST RUN sfdx hardis:data:export and select Em
         }
     ]
 }
-
-- Create a file manifest/splits/packageXmlEmails.xml
-
-<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-<Package xmlns="http://soap.sforce.com/2006/04/metadata">
-  <types>
-    <members>unfiled/$public</members>
-    <members>unfiled/$public/ChantierJ14DateDemarrage</members>
-    <members>unfiled/$public/ChantierReferenceMarketing</members>
-    <members>unfiled/$public/LotChantierGagnePlanification</members>
-    <name>EmailTemplate</name>
-  </types>
-  <version>51.0</version>
-</Package>
-
-- Update deploymentPlan in config/.sfdx-hardis.json (order must be < 0):
-
-deploymentPlan:
-  packages:
-    - label: EmailTemplate records
-      dataPath: scripts/data/EmailTemplate
-      order: -21
-    - label: Emails Templates
-      packageXmlFile: manifest/splits/packageXmlEmails.xml
-      order: -20`
+- Run sfdx hardis:work:save`
         },
         {
           name: 'custom-object-not-found',

@@ -38,7 +38,7 @@ export default class CleanReferences extends SfdxCommand {
         type: flags.string({
             char: 't',
             description: 'Cleaning type',
-            options: ["all","datadotcom","destructivechanges","localfields"]                     
+            options: ["all","caseentitlement","datadotcom","destructivechanges","localfields"]                     
         }),
         config: flags.string({
             char: 'c',
@@ -116,7 +116,7 @@ export default class CleanReferences extends SfdxCommand {
         // Prompt user to save choice in configuration
         const autoCleanTypes = config.autoCleanTypes || [];
         const toAdd = this.cleaningTypes.filter(type => !autoCleanTypes.includes(type));
-        if (toAdd.length > 0 && !isCI) {
+        if (toAdd.length > 0 && !isCI && this.flags.type !== 'all') {
             const saveResponse = await prompts({
                 type: 'confirm',
                 name: 'value',
@@ -142,12 +142,13 @@ export default class CleanReferences extends SfdxCommand {
         }
 
         // Delete files when necessary
+        uxLog(this,c.grey(`Removing obsolete files...`));
         for (const type of Object.keys(this.deleteItems)) {
             if (type === 'CustomField') {
                 for (const field of this.deleteItems[type]) {
                     const [obj,fld] = field.split('.');
-                    const pattern = `**/${obj}/**/${fld}.field-meta.xml`;
-                    const matchFiles = await glob(pattern);
+                    const pattern = process.cwd()+'/force-app'+`**/objects/${obj}/fields/${fld}.field-meta.xml`;
+                    const matchFiles = await glob(pattern, {cwd: process.cwd()});
                     for (const removeFile of matchFiles) {
                         await fs.remove(removeFile);
                         uxLog(this,c.grey(`Removed file ${removeFile}`))

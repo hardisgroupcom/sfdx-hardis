@@ -5,9 +5,15 @@ FROM alpine:latest
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@hardis-group.com>"
 
 RUN apk add --update --no-cache \
+            chromium \
             git \
             nodejs \
             npm
+
+# Do not use puppeteer embedded chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
+ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
+ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 
 # Add node packages to path #
 # hadolint ignore=DL3044

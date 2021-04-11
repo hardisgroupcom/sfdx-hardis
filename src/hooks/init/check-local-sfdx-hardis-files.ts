@@ -62,7 +62,7 @@ async function manageGitIgnore(commandId: string) {
     const gitIgnoreFile = './.gitignore';
     if (fs.existsSync(gitIgnoreFile)) {
         const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
-        const gitIgnoreLines = gitIgnore.split('\n');
+        const gitIgnoreLines = gitIgnore.replace('\r\n','\n').split('\n').map(line => line.trim()).filter(line => line !== '');
         let updated = false;
         for (const gitIgnoreMandatoryLine of await getHardisGitRepoIgnoreContent()) {
             if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine)) {
@@ -70,7 +70,10 @@ async function manageGitIgnore(commandId: string) {
                 updated = true;
             }
         }
-        if (updated && !isCI) {
+        // Remove duplicates
+        const gitIgnoreLinesUnique = Array.from(new Set(gitIgnoreLines));
+        // Propose user to apply updates
+        if ((updated || gitIgnoreLines.length !== gitIgnoreLinesUnique.length) && !isCI) {
             const confirm = await prompts({
                 type: 'confirm',
                 name: 'value',
@@ -78,7 +81,7 @@ async function manageGitIgnore(commandId: string) {
                 message: c.cyanBright('Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)')
             });
             if (confirm.value === true || isCI) {
-                await fs.writeFile(gitIgnoreFile, gitIgnoreLines.join('\n') + '\n', 'utf-8');
+                await fs.writeFile(gitIgnoreFile, gitIgnoreLinesUnique.join('\n') + '\n', 'utf-8');
                 console.log(c.cyan('[sfdx-hardis] Updated .gitignore'));
             }
         }
@@ -88,7 +91,7 @@ async function manageGitIgnore(commandId: string) {
     const forceIgnoreFile = './.forceignore';
     if (fs.existsSync(forceIgnoreFile)) {
         const forceIgnore = await fs.readFile(forceIgnoreFile, 'utf-8');
-        const forceIgnoreLines = forceIgnore.replace("\r\n","\n").split('\n');
+        const forceIgnoreLines = forceIgnore.replace("\r\n","\n").split('\n').map(line => line.trim()).filter(line => line !== '');
         let updated = false;
         for (const forceIgnoreMandatoryLine of await getHardisForceIgnoreContent()) {
             if (!forceIgnoreLines.includes(forceIgnoreMandatoryLine)) {
@@ -96,7 +99,10 @@ async function manageGitIgnore(commandId: string) {
                 updated = true;
             }
         }
-        if (updated && !isCI) {
+        // Remove duplicates
+        const forceIgnoreLinesUnique = Array.from(new Set(forceIgnoreLines));
+        // Propose user to apply updates
+        if ((updated || forceIgnoreLines.length !== forceIgnoreLinesUnique.length) && !isCI) {
             const confirm = await prompts({
                 type: 'confirm',
                 name: 'value',
@@ -104,7 +110,7 @@ async function manageGitIgnore(commandId: string) {
                 message: c.cyanBright('Your .forceignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)')
             });
             if (confirm.value === true || isCI) {
-                await fs.writeFile(forceIgnoreFile, forceIgnoreLines.join('\n') + '\n', 'utf-8');
+                await fs.writeFile(forceIgnoreFile, forceIgnoreLinesUnique.join('\n') + '\n', 'utf-8');
                 console.log(c.cyan('[sfdx-hardis] Updated .forceignore'));
             }
         }
