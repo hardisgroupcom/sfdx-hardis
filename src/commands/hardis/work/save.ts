@@ -6,6 +6,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, interactiveGitAdd, uxLog } from '../../../common/utils';
+import { exportData } from '../../../common/utils/dataUtils';
 import { forceSourcePull } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils';
@@ -77,8 +78,28 @@ export default class SaveTask extends SfdxCommand {
       uxLog(this, c.cyan(`Skipped pull from scratch org`));
     }
     else {
+      // Pull DX sources
       uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
       await forceSourcePull(this.org.getUsername(), this.debugMode);
+      // Extract data from org
+      const dataSources = [
+        { 
+          label: 'Email templates',
+          dataPath:'./scripts/data/EmailTemplate'
+        }
+      ];
+      for (const dataSource of dataSources) {
+        if (fs.existsSync(dataSource.dataPath)) {
+          const exportDataRes = await prompts({
+            type: "confirm",
+            name: 'value',
+            message: c.cyan(`Did you update ${c.green(dataSource.label)} and want to export related data ?`)
+          });
+          if (exportDataRes.value === true) {
+            await exportData(dataSource.dataPath,this,{sourceUsername: this.org.getUsername()});
+          }
+        }
+      }
     }
 
     const gitUrl = await git().listRemote(['--get-url']);
