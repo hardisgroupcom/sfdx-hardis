@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.10.1] 2021-04-11
+
+- hardis:org:test:apex : Fix regex to new Apex Test results stdout format
+
 ## [2.10.0] 2021-04-11
 
 - hardis:work:save : Automatic generation of split package.xml and deploymentPlan in .sfdx-hardis.yml

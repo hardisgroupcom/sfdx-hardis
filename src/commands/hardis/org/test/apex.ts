@@ -65,7 +65,7 @@ export default class OrgTestApex extends SfdxCommand {
     const testRes = await execCommand(testCommand, this, { output: true, debug: debugMode, fail: true });
     let message = '';
     const testResStr = testRes.stdout + testRes.stderr ;
-    const outcome = /Outcome *(.*)/.exec(testResStr)[1];
+    const outcome = /Outcome *(.*) */.exec(testResStr)[1].trim();
     if (outcome === 'Passed') {
       //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = '[sfdx-hardis] Successfully run apex tests on org';
@@ -88,23 +88,25 @@ export default class OrgTestApex extends SfdxCommand {
         uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(coverageOrgWide))}% is > to ${c.bold(minCoverageOrgWide)}%`));
       }
       // Check code coverage ()
-      // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
-      const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(testResStr)[1].replace('%', ''));
-      const minCoverageTestRun =
-        process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
-        process.env.APEX_TESTS_MIN_COVERAGE ||
-        this.configInfo.apexTestsMinCoverage ||
-        minCoverageOrgWide;
-      if (minCoverageTestRun < 75.0) {
-        throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
-      }
-      if (coverageTestRun < minCoverageTestRun) {
-        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
-      } else {
-        uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
+      if (testResStr.includes('Test Run Coverage')) {
+        // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
+        const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(testResStr)[1].replace('%', ''));
+        const minCoverageTestRun =
+          process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
+          process.env.APEX_TESTS_MIN_COVERAGE ||
+          this.configInfo.apexTestsMinCoverage ||
+          minCoverageOrgWide;
+        if (minCoverageTestRun < 75.0) {
+          throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
+        }
+        if (coverageTestRun < minCoverageTestRun) {
+          throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
+        } else {
+          uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
+        }
       }
     } else {
-      message = '[sfdx-hardis] Org apex tests failure';
+      message = `Org apex tests failure (Outcome: ${outcome} )`;
       uxLog(this, c.red(message));
       // uxLog(this, c.red(JSON.stringify(Object.keys(testRes))));
       throw new SfdxError("[sfdx-hardis] " + message);
