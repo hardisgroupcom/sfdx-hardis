@@ -8,7 +8,9 @@ import * as path from 'path';
 import { createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, interactiveGitAdd, uxLog } from '../../../common/utils';
 import { forceSourcePull } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
+import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils';
 import { getConfig, setConfig } from '../../../config';
+import CleanReferences from '../project/clean/references';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -54,7 +56,7 @@ export default class SaveTask extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     this.noPull = this.flags.nopull || false;
     this.debugMode = this.flags.debug || false;
-    const config = await getConfig('project');
+    let config = await getConfig('project');
     const localBranch = await getCurrentGitBranch();
 
     uxLog(this, c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(config.developmentBranch)}`));
@@ -62,12 +64,12 @@ export default class SaveTask extends SfdxCommand {
     let gitStatusInit = await git().status();
     // Cancel merge if ongoing merge
     if (gitStatusInit.conflicted.length > 0) {
-      await git({output: true}).merge(['--abort']); 
+      await git({ output: true }).merge(['--abort']);
       gitStatusInit = await git().status();
     }
     // Unstage files
     if (gitStatusInit.staged.length > 0) {
-      await execCommand('git reset',this,{output:true, fail:true});
+      await execCommand('git reset', this, { output: true, fail: true });
     }
 
     // Pull from scratch org
@@ -76,7 +78,7 @@ export default class SaveTask extends SfdxCommand {
     }
     else {
       uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
-      await forceSourcePull(this.org.getUsername(),this.debugMode);
+      await forceSourcePull(this.org.getUsername(), this.debugMode);
     }
 
     const gitUrl = await git().listRemote(['--get-url']);
@@ -113,12 +115,12 @@ export default class SaveTask extends SfdxCommand {
         label: "Aura Components",
         regex: /aura\//i,
         defaultSelect: true
-      },    
+      },
       {
         label: "Lightning Web Components",
         regex: /lwc\//i,
         defaultSelect: true
-      },      
+      },
       {
         label: "Layouts",
         regex: /layouts\//i,
@@ -135,7 +137,7 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: false
       }
     ]
-    await interactiveGitAdd({groups: groups});
+    await interactiveGitAdd({ groups: groups });
 
     // Commit updates
     const gitStatus = await git().status();
@@ -160,6 +162,7 @@ export default class SaveTask extends SfdxCommand {
     const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace('\n', '').replace('\r', '');
 
     // Build package.xml delta between most recent commit and developpement
+    const localPackageXml = path.join('manifest', 'package.xml');
     const toCommitMessage = toCommit ? toCommit.message : '';
     uxLog(this, c.cyan(`Calculating package.xml diff from [${c.green(config.developmentBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`));
     const tmpDir = await createTempDir();
@@ -175,7 +178,7 @@ export default class SaveTask extends SfdxCommand {
   <version>51.0</version>
 </Package>        
 `;
-        await fs.writeFile(localDestructiveChangesXml,blankDestructiveChanges);
+        await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
       }
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
@@ -189,7 +192,6 @@ export default class SaveTask extends SfdxCommand {
       }
 
       // Upgrade local package.xml
-      const localPackageXml = path.join('manifest', 'package.xml');
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
       uxLog(this, c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) + c.green(packageXmlDiffStr));
@@ -215,16 +217,17 @@ export default class SaveTask extends SfdxCommand {
     const gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0) {
       uxLog(this, `Committing files in local git branch ${c.green(currentGitBranch)}...`);
-      await git({output:true}).commit('[sfdx-hardis] Update package content');
+      await git({ output: true }).commit('[sfdx-hardis] Update package content');
     }
 
     // Apply cleaning defined on project
     const gitStatusFilesBeforeClean = (await git().status()).files.map(file => file.path);
-    console.log(JSON.stringify(gitStatusFilesBeforeClean,null,2));
-    uxLog(this,c.cyan("Cleaning sfdx project from obsolete references..."));
-    await execCommand("sfdx hardis:project:clean:references --type all",this, {output:true, fail: true, debug: this.debugMode});
+    console.log(JSON.stringify(gitStatusFilesBeforeClean, null, 2));
+    uxLog(this, c.cyan("Cleaning sfdx project from obsolete references..."));
+    // await execCommand("sfdx hardis:project:clean:references --type all", this, { output: true, fail: true, debug: this.debugMode });
+    await CleanReferences.run(['--type','all']);
     const gitStatusAfterClean = await git().status();
-    console.log(JSON.stringify(gitStatusAfterClean,null,2));
+    console.log(JSON.stringify(gitStatusAfterClean, null, 2));
     const cleanedFiles = gitStatusAfterClean.files
       .filter(file => !gitStatusFilesBeforeClean.includes(file.path))
       .map(file => file.path);
@@ -232,14 +235,82 @@ export default class SaveTask extends SfdxCommand {
       uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join("\n")}`));
       try {
         await git().add(cleanedFiles);
-        await git({output:true}).commit('[sfdx-hardis] Clean sfdx project');
+        await git({ output: true }).commit('[sfdx-hardis] Clean sfdx project');
       } catch (e) {
-        uxLog(this,c.yellow(`There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(e.message)}`))
+        uxLog(this, c.yellow(`There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(e.message)}`))
       }
     }
 
+    // Build deployment plan splits
+    let splitConfig = this.getSeparateDeploymentsConfig();
+    const packageXml = await parseXmlFile(localPackageXml);
+    for (const type of (packageXml.Package.types || [])) {
+      const typeName = type.name[0];
+      splitConfig = splitConfig.map(split => {
+        if (split.types.includes(typeName)) {
+          split.content[typeName] = type.members;
+        }
+        return split;
+      })
+    }
+    // Generate deployment plan items
+    config = await getConfig('project');
+    const deploymentPlan = config?.deploymentPlan || {};
+    let packages = deploymentPlan?.packages || [];
+    const blankPackageXml = packageXml;
+    blankPackageXml.Package.types = [];
+    for (const split of splitConfig) {
+      if (Object.keys(split.content).length > 0) {
+        // data case
+        if (split.data) {
+          const label = `Import ${split.types.join('-')} records`;
+          packages = this.addToPlan(packages, { label: label, dataPath: split.data, order: split.dataPos, waitAfter: split.waitAfter });
+        }
+        // single split file case
+        if (split.file) {
+          const splitPackageXml = blankPackageXml;
+          blankPackageXml.Package.types = [];
+          for (const type of Object.keys(split.content)) {
+            splitPackageXml.Package.types.push({ name: [type], members: split.content[type] })
+          }
+          await writeXmlFile(split.file, splitPackageXml);
+          const label = `Deploy ${split.types.join('-')}`;
+          packages = this.addToPlan(packages, { label: label, packageXmlFile: split.file, order: split.filePos, waitAfter: split.waitAfter });
+        }
+        // Multiple split file case
+        if (split.files) {
+          let pos = split.filePos;
+          for (const mainTypeMember of split.content[split.mainType]) {
+            const splitFile = split.files.replace(`{{name}}`, mainTypeMember);
+            const splitPackageXml = blankPackageXml;
+            blankPackageXml.Package.types = [];
+            for (const type of Object.keys(split.content)) {
+              if (type !== split.mainType) {
+                const filteredMembers = split.content[type].filter(member => member.includes(`${mainTypeMember}.`));
+                splitPackageXml.Package.types.push({ name: [type], members: filteredMembers });
+              }
+            }
+            splitPackageXml.Package.types.push({ name: [split.mainType], members: [mainTypeMember] });
+            await writeXmlFile(splitFile, splitPackageXml);
+            const label = `Deploy ${split.mainType} - ${mainTypeMember}`;
+            packages = this.addToPlan(packages, { label: label, packageXmlFile: splitFile, order: pos, waitAfter: split.waitAfter });
+            pos++;
+          }
+        }
+      }
+    }
+    // Update deployment plan in config
+    deploymentPlan.packages = packages.sort((a, b) => (a.order > b.order) ? 1 : -1);
+    await setConfig("project", { deploymentPlan: deploymentPlan });
+    await git({output:true}).add(["./config"]);
+    await git({output:true}).add(["./manifest"]);
+    const gitStatusAfterDeployPlan = await git().status();
+    if (gitStatusAfterDeployPlan.staged.length > 0) {
+      await git({ output: true }).commit('[sfdx-hardis] Update deployment plan');
+    }
+
     // Push new commit(s)
-    if (gitStatus.staged.length > 0 || gitStatusWithConfig.staged.length > 0) {
+    if (gitStatus.staged.length > 0 || gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) {
       const pushResponse = await prompts({
         type: 'confirm',
         name: 'push',
@@ -269,6 +340,43 @@ export default class SaveTask extends SfdxCommand {
 
     // Return an object to be displayed with --json
     return { outputString: 'Saved the task' };
+  }
+
+  private getSeparateDeploymentsConfig() {
+    const separateDeploymentConfig = [
+      {
+        types: ["EmailTemplate"], file: 'manifest/splits/packageXmlEmails.xml', filePos: -20,
+        data: 'scripts/data/EmailTemplate', dataPos: -21, content: {}
+      },
+      {
+        types: ["Flow", "Workflow"], file: 'manifest/splits/packageXmlFlowWorkflow.xml', filePos: 6,
+        content: {}
+      },
+      {
+        types: ["SharingRules", "SharingOwnerRule"], files: 'manifest/splits/packageXmlSharingRules{{name}}.xml', filePos: 30,
+        mainType: "SharingRules", waitAfter: 30, content: {}
+      }
+    ]
+    return separateDeploymentConfig;
+  }
+
+  // Add item to .sfdx-hardis.yml deploymentPlan property
+  private addToPlan(packages, item) {
+    let updated = false;
+    if (item.waitAfter === null) {
+      delete item.waitAfter
+    }
+    packages = packages.map(pckg => {
+      if (pckg.label === item.label) {
+        pckg = item;
+        updated = true;
+      }
+      return pckg;
+    });
+    if (updated === false) {
+      packages.push(item);
+    }
+    return packages;
   }
 }
 
