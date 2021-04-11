@@ -7,6 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.10.0] 2021-04-11
 
 - hardis:work:save : Automatic generation of split package.xml and deploymentPlan in .sfdx-hardis.yml
+- hardis:work:save : Propose to export data when saving
+- Remove duplicates from .gitignore and .forceignore
 
 ## [2.9.4] 2021-04-09
 
