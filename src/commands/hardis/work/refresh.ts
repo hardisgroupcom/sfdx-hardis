@@ -49,6 +49,19 @@ export default class RefreshTask extends SfdxCommand {
     public async run(): Promise<AnyJson> {
         this.noPull = this.flags.nopull || false;
         uxLog(this, c.cyan('This command will refresh your git branch and your org with the content of another git branch'));
+        // Verify that the user saved his/her work before merging another branch
+        const savePromptRes = await prompts({
+            type: 'select',
+            message: c.cyanBright(`This is a SENSITIVE OPERATION. Did you run ${c.green('hardis:work:save')} BEFORE running this command ?`),
+            name: 'value',
+            choices: [
+                {title: 'Yes I did save my current updates before merging updates from others !',value: true},
+                {title: 'No, I did not, I will do that right now', value: false}
+            ]
+        });
+        if (savePromptRes.value !== true) {
+            process.exit(0);
+        }
         // Select branch to merge
         const config = await getConfig('project');
         const localBranch = await getCurrentGitBranch();
@@ -142,6 +155,6 @@ export default class RefreshTask extends SfdxCommand {
         await forceSourcePush(this.org.getUsername(), this.debugMode);
 
         // Return an object to be displayed with --json
-        return { outputString: 'Refreshed the task' };
+        return { outputString: 'Refreshed the task & org' };
     }
 }
