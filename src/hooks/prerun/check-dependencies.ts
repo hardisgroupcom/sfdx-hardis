@@ -2,7 +2,7 @@
 
 import * as os from 'os';
 import { checkSfdxPlugin, git, uxLog, execCommand, isCI, execSfdxJson } from '../../common/utils';
-import { getConfig } from '../../config';
+import { getConfig, setConfig } from '../../config';
 
 export const hook = async (options: any) => {
     // Skip hooks from other commands than hardis commands
@@ -11,11 +11,15 @@ export const hook = async (options: any) => {
         return;
     }
 
-    execSfdxJson("sfdx config:get restDeploy",{output:false, fail:true, spinner:false}).then(async (res) => {
-        if (!(res && res.result && res.result[0] && res.result[0].value === "false")) {
-            await execCommand("sfdx config:set restDeploy=false --global",{output:false,fail:true});
-        }
-    });
+    const config = await getConfig("user");
+    if (config.restDeploy !== true) {
+        execSfdxJson("sfdx config:get restDeploy",{output:false, fail:true, spinner:false}).then(async (res) => {
+            if (!(res && res.result && res.result[0] && res.result[0].value === "false")) {
+                await execCommand("sfdx config:set restDeploy=false --global",{output:false,fail:true});
+            }
+            await setConfig("user",{restDeploy: true})
+        });
+    }
     
 
     /* jscpd:ignore-end */

@@ -19,6 +19,10 @@ export const hook = async (options: any) => {
     }
     await restoreLocalSfdxInfo();
     let configInfo = await getConfig('user');
+    if (configInfo.skipAuthCheck === true) {
+        uxLog(this,c.yellow('No authentication check, you better know what you are doing ;)'));
+        return ;
+    }
     // Manage authentication if DevHub is required but current user is disconnected
     if (
         (options.Command && options.Command.supportsDevhubUsername === true) || options.devHub === true

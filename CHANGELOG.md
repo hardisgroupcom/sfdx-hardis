@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.10.3] 2021-04-14
+
+- Allow advanced user to bypass auth check (set `skipAuthCheck:true` in config/user/***.sfdx-hardis.yml)
+- Optimize check of `force:config:set restDeploy: false`
+- hardis:package:version:create : Store package installation password in project config + fixes
+
 ## [2.10.2] 2021-04-14
 
 - hardis:work:refresh : Make sure the user saved his work (commit) before merging another branch in current branch

@@ -22,9 +22,14 @@ For the moment, it can :
 - Help tools
   - Purge obsolete flows versions
 
-<!-- toc -->
-* [sfdx-hardis](#sfdx-hardis)
-<!-- tocstop -->
+**sfdx-hardis** partially relies on the following SFDX Open-Source packages
+- [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
+- [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
+- [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
+- [SfPowerkit](https://github.com/Accenture/sfpowerkit)
+- [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
+
+**sfdx-hardis** commands are also available with UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 ## Installation
 
@@ -32,6 +37,12 @@ For the moment, it can :
 
 ```sh-session
 sfdx plugins:install sfdx-hardis
+```
+
+For advanced use, please also install dependencies
+
+```sh-session
+sfdx plugins:install sfdmu sfdx-git-delta sfdx-essentials sfpowerkit texei-sfdx-plugin
 ```
 
 ### Docker
