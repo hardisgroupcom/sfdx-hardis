@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.10.2] 2021-04-14
+
+- hardis:work:refresh : Make sure the user saved his work (commit) before merging another branch in current branch
+
 ## [2.10.1] 2021-04-11
 
 - hardis:org:test:apex : Fix regex to new Apex Test results stdout format
