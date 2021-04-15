@@ -74,6 +74,7 @@ export default class ScratchCreate extends SfdxCommand {
     protected projectScratchDef: any;
     protected scratchOrgInfo: any;
     protected scratchOrgUsername: string;
+    protected scratchOrgPassword: string;
     protected projectName: string;
 
     public async run(): Promise<AnyJson> {
@@ -87,6 +88,11 @@ export default class ScratchCreate extends SfdxCommand {
         await this.initPermissionSetAssignments();
         await this.initApexScripts();
         await this.initOrgData();
+
+        // Show password to user
+        if (this.scratchOrgPassword) {
+            uxLog(this,c.cyan(`You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(this.scratchOrgPassword)}`));
+        }
 
         // Return an object to be displayed with --json
         return {
@@ -179,6 +185,14 @@ export default class ScratchCreate extends SfdxCommand {
             scratchOrgAlias: this.scratchOrgAlias,
             scratchOrgUsername: this.scratchOrgUsername
         });
+        // Generate password 
+        const passwordCommand = `sfdx force:user:password:generate --targetusername ${this.scratchOrgUsername}`;
+        const passwordResult = await execSfdxJson(passwordCommand, this, { fail: true, output: false, debug: this.debugMode });
+        this.scratchOrgPassword = passwordResult.result.password ;
+        await setConfig('user', {
+            scratchOrgPassword: this.scratchOrgPassword
+        });
+        // Trigger a status refresh on VsCode WebSocket Client
         WebSocketClient.sendMessage({event: "refreshStatus"});
 
         if (isCI) {

@@ -87,6 +87,24 @@ You may also have a look to command sfdx hardis:project:clean:references
 `
         },
         {
+          name: 'picklist-value-not-found',
+          label: 'Picklist value not found',
+          expressionRegex: [/Picklist value: (.*) in picklist: (.*) not found/gm],
+          tip: `Some element have references to missing picklist value(e)
+- Perform a search in all code of the picklist value name
+- Remove XML tags referring to unknown picklist value (for example in record types metadatas)
+`
+        },
+        {
+          name: 'record-type-not-found',
+          label: 'Record Type not found',
+          expressionRegex: [/In field: recordType - no RecordType named (.*) found/gm],
+          tip: `Some element have references to missing record type
+- If the record type is not supposed to exist, perform a search in all files and remove XML elements referring to this record type
+- If the record type is supposed to exist, you may have to create it manually in the target org to make the deployment pass
+`
+        },
+        {
           name: 'can-not-delete-custom-field',
           label: 'Can not delete custom field',
           context: "destructiveChange",
