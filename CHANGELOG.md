@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.10.5] 2021-04-15
+
+- Delete scratch org when its initialization has failed during CI
+
 ## [2.10.4] 2021-04-15
 
 - Provide password to user when creating new scratch org

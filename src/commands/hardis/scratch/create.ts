@@ -83,11 +83,19 @@ export default class ScratchCreate extends SfdxCommand {
 
         await this.initConfig();
         await this.createScratchOrg();
-        await this.installPackages();
-        await this.initOrgMetadatas();
-        await this.initPermissionSetAssignments();
-        await this.initApexScripts();
-        await this.initOrgData();
+        try {
+            await this.installPackages();
+            await this.initOrgMetadatas();
+            await this.initPermissionSetAssignments();
+            await this.initApexScripts();
+            await this.initOrgData();
+        } catch (e){
+            if (isCI && this.scratchOrgUsername) {
+                await execCommand(`sfdx force:org:delete --noprompt --targetusername ${this.scratchOrgUsername}`, this, {fail:false,output:true});
+                uxLog(this,c.red('Deleted scratch org as we are in CI and its creation has failed'));
+            }
+            throw e;
+        }
 
         // Show password to user
         if (this.scratchOrgPassword) {
