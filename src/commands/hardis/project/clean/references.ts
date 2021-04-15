@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as glob from 'glob-promise';
 import { createTempDir, execCommand, isCI, uxLog } from '../../../../common/utils';
 import { prompts } from '../../../../common/utils/prompts';
-import { parseXmlFile } from '../../../../common/utils/xmlUtils';
+import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils';
 import { getConfig, setConfig } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -144,9 +144,10 @@ export default class CleanReferences extends SfdxCommand {
         // Delete files when necessary
         uxLog(this,c.grey(`Removing obsolete files...`));
         for (const type of Object.keys(this.deleteItems)) {
-            // Remove custom fields and customTranslations
+            // Custom fields
             if (type === 'CustomField') {
                 for (const field of this.deleteItems[type]) {
+                    // Remove custom field and customTranslation
                     const [obj,fld] = field.split('.');
                     const patternField = process.cwd()+'/force-app/'+`**/objects/${obj}/fields/${fld}.field-meta.xml`;
                     const patternTranslation = process.cwd()+'/force-app/'+`**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
@@ -156,7 +157,24 @@ export default class CleanReferences extends SfdxCommand {
                             await fs.remove(removeFile);
                             uxLog(this,c.grey(`Removed file ${removeFile}`))
                         }
-                     }
+                    }
+                    // Remove field in recordTypes
+                    const patternRecordType = process.cwd()+'/force-app/'+`**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
+                    const matchFilesPattern = await glob(patternRecordType, {cwd: process.cwd()});
+                    for (const recordTypeFile of matchFilesPattern) {
+                        const recordType = await parseXmlFile(recordTypeFile);
+                        if (recordType?.RecordType.picklistValues) {
+                            const updatedPicklistValues = recordType.RecordType.picklistValues.filter(picklistValue => {
+                                return (picklistValue?.picklist[0] !== fld)
+                            });
+                            if (updatedPicklistValues.length !== recordType.RecordType.picklistValues.length) {
+                                recordType.RecordType.picklistValues = updatedPicklistValues ;
+                                await writeXmlFile(recordTypeFile,recordType);
+                                uxLog(this,c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
+                            }
+                        }
+                        
+                    }
                 }
             }
         }
