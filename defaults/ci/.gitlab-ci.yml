@@ -158,6 +158,9 @@ clean:
   only:
     - merge_requests
     - web
+  except:
+    variables:
+      - $CI_DELETE_SCRATCH_ORG == "false"
   needs:
     - job: create_scratch_org
     - job: test_apex

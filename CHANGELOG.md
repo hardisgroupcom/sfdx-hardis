@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.10.4] 2021-04-15
+
+- Provide password to user when creating new scratch org
+- Update CI default config to allow to not delete scratch orgs (define `CI_DELETE_SCRATCH_ORG: "true"` in gitlab-ci-config.yml)
+- New deploy tips: record type not found, picklist value not found
+
 ## [2.10.3] 2021-04-14
 
 - Allow advanced user to bypass auth check (set `skipAuthCheck:true` in config/user/***.sfdx-hardis.yml)
