@@ -144,15 +144,19 @@ export default class CleanReferences extends SfdxCommand {
         // Delete files when necessary
         uxLog(this,c.grey(`Removing obsolete files...`));
         for (const type of Object.keys(this.deleteItems)) {
+            // Remove custom fields and customTranslations
             if (type === 'CustomField') {
                 for (const field of this.deleteItems[type]) {
                     const [obj,fld] = field.split('.');
-                    const pattern = process.cwd()+'/force-app'+`**/objects/${obj}/fields/${fld}.field-meta.xml`;
-                    const matchFiles = await glob(pattern, {cwd: process.cwd()});
-                    for (const removeFile of matchFiles) {
-                        await fs.remove(removeFile);
-                        uxLog(this,c.grey(`Removed file ${removeFile}`))
-                    }
+                    const patternField = process.cwd()+'/force-app/'+`**/objects/${obj}/fields/${fld}.field-meta.xml`;
+                    const patternTranslation = process.cwd()+'/force-app/'+`**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
+                    for (const pattern of [patternField,patternTranslation]) {
+                        const matchFiles = await glob(pattern, {cwd: process.cwd()});
+                        for (const removeFile of matchFiles) {
+                            await fs.remove(removeFile);
+                            uxLog(this,c.grey(`Removed file ${removeFile}`))
+                        }
+                     }
                 }
             }
         }
