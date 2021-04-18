@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.12.0] 2021-04-18
+
+- New variable CI_DEPLOY_QUICK_ACTIONS_DUMMY
+  - set to "true" in CI variables when there are QuickActions dependent of Flows that are later in publication plan
+  - then set again to "false" and the deployment will pass :)
+- hardis:project:clean:references : now deletes obsolete objects and objectTranslations
+- hardis:work:save : More categories in interactive git add
+
 ## [2.11.0] 2021-04-15
 
 - Delete scratch org when its initialization has failed during CI

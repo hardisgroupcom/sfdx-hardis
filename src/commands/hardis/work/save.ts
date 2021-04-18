@@ -108,7 +108,7 @@ export default class SaveTask extends SfdxCommand {
     // Request user to select what he/she wants to commit
     const groups = [
       {
-        label: "Tech config",
+        label: "Tech config (recommended)",
         regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
         defaultSelect: true
       },
@@ -118,7 +118,7 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: true
       },
       {
-        label: "Value sets",
+        label: "Picklists",
         regex: /(standardValueSets|globalValueSets)\//i,
         defaultSelect: true
       },
@@ -128,18 +128,23 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: true
       },
       {
-        label: "Classes",
-        regex: /classes\//i,
+        label: "Classes/Triggers",
+        regex: /(classes|triggers)\//i,
         defaultSelect: true
       },
       {
-        label: "Aura Components",
-        regex: /aura\//i,
+        label: "Aura/LWC Components",
+        regex: /(aura|lwc)\//i,
         defaultSelect: true
       },
       {
-        label: "Lightning Web Components",
-        regex: /lwc\//i,
+        label: "Emails",
+        regex: /email\//i,
+        defaultSelect: true
+      },
+      {
+        label: "Flows, Workflows, Path Assistants",
+        regex: /(flows|workflows|pathAssistants)\//i,
         defaultSelect: true
       },
       {
@@ -152,6 +157,16 @@ export default class SaveTask extends SfdxCommand {
         regex: /objectTranslations\//i,
         defaultSelect: false
       },
+      {
+        label: "Permissionsets",
+        regex: /permissionsets\//i,
+        defaultSelect: false
+      },    
+      {
+        label: "Profiles (not recommended, use Permission Sets instead)",
+        regex: /profiles\//i,
+        defaultSelect: false
+      },      
       {
         label: "Other",
         regex: /(.*?)/i,
