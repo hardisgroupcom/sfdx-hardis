@@ -70,8 +70,9 @@ export default class PackageVersionCreate extends SfdxCommand {
 
         // Create package version
         const createCommand = 'sfdx force:package:version:create' +
-            ` -p "${pckgDirectory.package}"` +
+            ` --package "${pckgDirectory.package}"` +
             ((packageResponse.packageInstallationKey ? ` --installationkey "${packageResponse.packageInstallationKey}"` : ' --installationkeybypass')) +
+            ' --codecoverage'+
             ' -w 60';
         const createResult = await execSfdxJson(createCommand, this, { fail: true, output: true, debug: debugMode });
         const latestVersion = createResult.result.SubscriberPackageVersionId;

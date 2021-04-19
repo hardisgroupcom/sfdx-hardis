@@ -3,9 +3,8 @@ import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
-import { execSfdxJson } from '../../../../common/utils';
+import { execSfdxJson, uxLog } from '../../../../common/utils';
 import { prompts } from '../../../../common/utils/prompts';
-import { getConfig, setConfig } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -18,7 +17,7 @@ export default class PackageVersionPromote extends SfdxCommand {
 
     public static title = 'Promote new versions of package(s)';
 
-    public static description = messages.getMessage('packageVersionPromote');
+    public static description = "Promote package(s) version(s): convert it from beta to released";
 
     public static examples = [
         '$ sfdx hardis:package:version:promote',
@@ -46,39 +45,45 @@ export default class PackageVersionPromote extends SfdxCommand {
     public async run(): Promise<AnyJson> {
         const debugMode = this.flags.debug || false;
         const auto = this.flags.auto || false ;
-        const config = await getConfig("project");
         // List project packages
-        const packageDirectories = this.project.getUniquePackageDirectories();
-        const packageResponse = await prompts([
-            {
-                type: 'select', 
-                name: 'packageSelected',
-                message: c.cyanBright(`Please select a package (this is not a drill, it will create an official new version !)`),
-                choices: packageDirectories.map(packageDirectory => {
-                        return { title: (packageDirectory.package || packageDirectory.path), value: packageDirectory.name}
-                    })
-            },
-            {
-                type: 'text', 
-                name: 'packageInstallationKey',
-                message: c.cyanBright(`Please input an installation password (or let empty)`),
-                initial: config.defaultPackageInstallationKey || ''
-            }
-        ]);
-        // Manage user response
-        const pckgDirectory = packageDirectories.filter(pckgDirectory => pckgDirectory.name === packageResponse.packageSelected)[0];
-        if (config.defaultPackageInstallationKey !== packageResponse.packageInstallationKey) {
-            await setConfig("project", {defaultPackageInstallationKey: packageResponse.packageInstallationKey})
+        const sfdxProjectJson = await this.project.retrieveSfdxProjectJson(false);
+        const packageAliases = sfdxProjectJson.get('packageAliases') || [];
+        const availablePackageAliases = {}
+        for (const packageAlias of Object.keys(packageAliases).sort().filter(pckgAlias => pckgAlias.includes("@"))) {
+            const packageName = packageAlias.split("@")[0];
+            availablePackageAliases[packageName] = packageAlias;
+        }
+        console.log(JSON.stringify(availablePackageAliases));
+        const packagesToPromote = [];
+        if (auto) {
+            packagesToPromote.push(Object.values(availablePackageAliases));
+        }
+        else {
+            // Prompt user if not auto
+            const packageResponse = await prompts([
+                {
+                    type: 'select', 
+                    name: 'packageSelected',
+                    message: c.cyanBright(`Please select a package (this is not a drill, it will create an official new version !)`),
+                    choices: Object.values(availablePackageAliases).map(packageAlias => {
+                            return { title: packageAlias, value: packageAlias}
+                        })
+                }
+            ]);
+            // Manage user response
+            packagesToPromote.push(packageResponse.packageSelected);
         }
 
-        // Create package version
-        const createCommand = 'sfdx force:package:version:create' +
-            ` -p "${pckgDirectory.package}"` +
-            ((packageResponse.packageInstallationKey ? ` --installationkey "${packageResponse.packageInstallationKey}"` : ' --installationkeybypass')) +
-            ' -w 60';
-        const createResult = await execSfdxJson(createCommand, this, { fail: true, output: true, debug: debugMode });
-        const latestVersion = createResult.result.SubscriberPackageVersionId;
+        // Promote packages
+        for (const packageToPromote of packagesToPromote) {
+            uxLog(this,c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
+            const promoteCommand = 'sfdx force:package:version:promote' +
+                ` --package "${packageToPromote}"` +
+                ' --noprompt';
+            const createResult = await execSfdxJson(promoteCommand, this, { fail: true, output: true, debug: debugMode });
+            uxLog(this,c.cyan(`Promoted package version ${c.green(packageToPromote)} with id ${c.green(createResult.result.id)}. It is now installable on production orgs`));
+        }
         // Return an object to be displayed with --json
-        return { outputString: 'Generated new package version', packageVersionId: latestVersion };
+        return { outputString: 'Promoted packages' };
     }
 }
