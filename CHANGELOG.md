@@ -11,6 +11,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - then set again to "false" and the deployment will pass :)
 - hardis:project:clean:references : now deletes obsolete objects and objectTranslations
 - hardis:work:save : More categories in interactive git add
+- Improve authentication check performances
+- New command hardis:config:get to return all config for project, branch or user
 - New deployment errors tips
 
 ## [2.11.0] 2021-04-15

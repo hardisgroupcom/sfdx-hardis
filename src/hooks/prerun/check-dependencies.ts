@@ -11,6 +11,7 @@ export const hook = async (options: any) => {
         return;
     }
 
+    // Set only once restDeploy=false to improve performances
     const config = await getConfig("user");
     if (config.restDeploy !== true) {
         execSfdxJson("sfdx config:get restDeploy",{output:false, fail:true, spinner:false}).then(async (res) => {
