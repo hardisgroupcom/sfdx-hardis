@@ -1,7 +1,6 @@
-import * as c from "chalk";
 import * as util from 'util';
 import * as WebSocket from "ws";
-import { isCI, uxLog } from "./utils";
+import { isCI } from "./utils";
 
 let globalWs: WebSocketClient | null;
 
@@ -39,7 +38,7 @@ export class WebSocketClient {
         event: "initClient",
         context: this.wsContext
       }));
-      uxLog(this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
+      // uxLog(this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
     });
 
     this.ws.on("message", (data: any) => {
@@ -100,6 +99,6 @@ export class WebSocketClient {
     }));
     this.ws.terminate();
     globalWs = null;
-    uxLog(this,c.grey('Closed WebSocket connection with VsCode SFDX Hardis'));
+    // uxLog(this,c.grey('Closed WebSocket connection with VsCode SFDX Hardis'));
   }
 }

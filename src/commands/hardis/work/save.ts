@@ -10,6 +10,7 @@ import { exportData } from '../../../common/utils/dataUtils';
 import { forceSourcePull } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils';
+import { WebSocketClient } from '../../../common/websocketClient';
 import { getConfig, setConfig } from '../../../config';
 import CleanReferences from '../project/clean/references';
 
@@ -108,7 +109,7 @@ export default class SaveTask extends SfdxCommand {
     // Request user to select what he/she wants to commit
     const groups = [
       {
-        label: "Tech config",
+        label: "Tech config (recommended)",
         regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
         defaultSelect: true
       },
@@ -118,7 +119,7 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: true
       },
       {
-        label: "Value sets",
+        label: "Picklists",
         regex: /(standardValueSets|globalValueSets)\//i,
         defaultSelect: true
       },
@@ -128,18 +129,23 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: true
       },
       {
-        label: "Classes",
-        regex: /classes\//i,
+        label: "Classes/Triggers",
+        regex: /(classes|triggers)\//i,
         defaultSelect: true
       },
       {
-        label: "Aura Components",
-        regex: /aura\//i,
+        label: "Aura/LWC Components",
+        regex: /(aura|lwc)\//i,
         defaultSelect: true
       },
       {
-        label: "Lightning Web Components",
-        regex: /lwc\//i,
+        label: "Emails",
+        regex: /email\//i,
+        defaultSelect: true
+      },
+      {
+        label: "Flows, Workflows, Path Assistants",
+        regex: /(flows|workflows|pathAssistants)\//i,
         defaultSelect: true
       },
       {
@@ -152,6 +158,16 @@ export default class SaveTask extends SfdxCommand {
         regex: /objectTranslations\//i,
         defaultSelect: false
       },
+      {
+        label: "Permissionsets",
+        regex: /permissionsets\//i,
+        defaultSelect: false
+      },    
+      {
+        label: "Profiles (not recommended, use Permission Sets instead)",
+        regex: /profiles\//i,
+        defaultSelect: false
+      },      
       {
         label: "Other",
         regex: /(.*?)/i,
@@ -341,12 +357,30 @@ export default class SaveTask extends SfdxCommand {
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));
         const configUSer = await getConfig('user');
+        let pushResult : any;
         if (configUSer.canForcePush === true) {
           // Force push if hardis:work:resetselection has been called before
-          await git({ output: true }).push(['-u', 'origin', currentGitBranch, '--force']);
+          pushResult = await git({ output: true }).push(['-u', 'origin', currentGitBranch, '--force']);
           await setConfig('user', { canForcePush: false });
         } else {
-          await git({ output: true }).push(['-u', 'origin', currentGitBranch]);
+          pushResult = await git({ output: true }).push(['-u', 'origin', currentGitBranch]);
+        }
+        // Update merge request info
+        if (pushResult && pushResult.remoteMessages) {
+          let mergeRequestsStored = configUSer.mergeRequests || [];
+          if (mergeRequestsStored.filter(mergeRequest => mergeRequest.branch === currentGitBranch).length === 1) {
+            mergeRequestsStored = mergeRequestsStored.map(mergeRequestStored => {
+              if (mergeRequestStored.branch === currentGitBranch) {
+                return this.updateMergeRequestInfo(mergeRequestStored,pushResult)
+              }
+            })
+          }
+          else {
+            mergeRequestsStored.push(this.updateMergeRequestInfo({branch: currentGitBranch},pushResult))
+          }
+          // Update user config file & send Websocket event
+          await setConfig("user",{mergeRequests: mergeRequestsStored});
+          WebSocketClient.sendMessage({event: "refreshStatus"});
         }
       }
     }
@@ -361,6 +395,28 @@ export default class SaveTask extends SfdxCommand {
 
     // Return an object to be displayed with --json
     return { outputString: 'Saved the task' };
+  }
+
+  private updateMergeRequestInfo(mergeRequestStored,mergeRequestInfo) {
+    if (mergeRequestInfo.remoteMessages.id) {
+      mergeRequestStored.id = mergeRequestInfo.id
+    }
+    else {
+      delete mergeRequestStored.id ;
+    }
+    if (mergeRequestInfo.remoteMessages.pullRequestUrl) {
+      mergeRequestStored.url = mergeRequestInfo.pullRequestUrl
+    }
+    else {
+      delete mergeRequestStored.url ;
+    }
+    if (mergeRequestInfo.remoteMessages.pullRequestUrl) {
+      mergeRequestStored.createUrl = mergeRequestInfo.pullRequestUrl
+    }
+    else {
+      delete mergeRequestStored.createUrl ;
+    }
+    return mergeRequestStored;
   }
 
   private getSeparateDeploymentsConfig() {

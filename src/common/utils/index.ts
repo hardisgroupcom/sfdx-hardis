@@ -369,15 +369,20 @@ export async function execCommand(
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = '0';
-  const spinner = ora({ text: commandLog, spinner: 'moon' }).start();
-  if (options.spinner === false) {
-    spinner.stop();
+  const output = !process.argv.includes('--json');
+  let spinner: any;
+  if (output && (!(options.spinner === false))) {
+    spinner = ora({ text: commandLog, spinner: 'moon' }).start();
   }
   try {
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
-    spinner.succeed();
+    if (spinner){
+      spinner.succeed();
+    }
   } catch (e) {
-    spinner.fail();
+    if (spinner) {
+      spinner.fail();
+    }
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
@@ -669,7 +674,8 @@ export function uxLog(commandThis: any, text: string) {
   text = (text.includes('[sfdx-hardis]')) ? text : '[sfdx-hardis]' + (text.startsWith('[') ? '' : ' ') + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
-  } else {
+  } 
+  else if (!process.argv.includes('--json')) {
     console.log(text);
   }
 }

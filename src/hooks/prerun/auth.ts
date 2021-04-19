@@ -68,8 +68,10 @@ async function authOrg(orgAlias: string, options: any) {
     if (!options.checkAuth) {
         // Check if we are already authenticated
         let orgDisplayCommand = 'sfdx force:org:display';
+        let setDefaultUsername = false ;
         if (orgAlias !== 'MY_ORG' && (isCI||isDevHub)) {
             orgDisplayCommand += ' --targetusername ' + orgAlias;
+            setDefaultUsername = true;
         } 
         const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, { fail: false, output: false, debug: options.debug });
         if (
@@ -93,8 +95,10 @@ async function authOrg(orgAlias: string, options: any) {
                     c.yellow(c.italic(`[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold('hit CTRL+C'))}, then input ${c.whiteBright(c.bold('sfdx hardis:org:select'))}`))
                 );
             }
-            const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgInfoResult.result.username}`;
-            await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
+            if (setDefaultUsername) {
+                const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? 'defaultdevhubusername' : 'defaultusername'}=${orgInfoResult.result.username}`;
+                await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
+            }
             doConnect = false;
         }
     }

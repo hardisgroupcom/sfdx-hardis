@@ -105,12 +105,35 @@ You may also have a look to command sfdx hardis:project:clean:references
 `
         },
         {
+          name: 'can-not-change-to-formula-field',
+          label: 'Can not change field type to a formula field',
+          expressionRegex: [/Cannot update a field to a Formula from something else/gm],
+          tip: `You need to manually delete or rename the field in the target org to allow the deployment to pass
+- first try to delete the field in the target org
+- if you can't delete it, rename it, then once the deployment done, delete the legacy renamed field it`
+        },
+        {
           name: 'can-not-delete-custom-field',
           label: 'Can not delete custom field',
           context: "destructiveChange",
           expressionRegex: [/Le champ personnalisé (.*) est utilisé dans (.*)/gm],
           tip: `A custom field can not be deleted because it is used elsewhere. Remove its references ans try again
 THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed before updated items deployment`
+        },
+        {
+          name: 'can-not-delete-record-type',
+          label: 'Can not delete record type',
+          context: "destructiveChange",
+          expressionString: ['Cannot delete record type through API'],
+          tip: `You need to manually delete record type in target org
+- Edit record type, uncheck "Active"
+- Delete record type`
+        },
+        {
+          name: 'duplicate-label',
+          label: 'Duplicate label',
+          expressionString: ['Duplicate label:'],
+          tip: `You probably renamed a picklist API name. Please update manually the picklist to avoid to have a duplicate label`
         },
         {
           name: 'test-deployment-issue',

@@ -1,6 +1,7 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
+import * as glob from 'glob-promise';
 import * as path from 'path';
 import * as sortArray from 'sort-array';
 import * as xml2js from 'xml2js';
@@ -61,6 +62,9 @@ export async function forceSourcePull(scratchOrgAlias:string,debug = false) {
 export async function forceSourceDeploy(packageXmlFile:string,check=false,testlevel='RunLocalTests',debugMode=false, commandThis: any = this,options = {}):Promise<any> {
     const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile,check,debugMode);
     const messages = [];
+    // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
+    await replaceQuickActionsWithDummy()
+    // Process items of deployment plan
     for (const deployment of splitDeployments) {
       let message = '';
       // Wait before deployment item process if necessary
@@ -90,12 +94,17 @@ export async function forceSourceDeploy(packageXmlFile:string,check=false,testle
           uxLog(commandThis,c.yellow(c.bold(`You may${tips.length > 0?' also':''} copy-paste errors on google to find how to solve the deployment issues :)`)));
           throw new SfdxError('Deployment failure. Check messages above');
         }
+        // Display deployment status
         if (deployRes.status === 0) {
           message = `[sfdx-hardis] Successfully ${check ? 'checked deployment of' : 'deployed'} sfdx project sources to Salesforce org`;
           uxLog(commandThis, c.green(message));
         } else {
           message = '[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org';
           uxLog(commandThis, c.red(deployRes.errorMessage));
+        }
+        // Restore quickActions after deployment of main package
+        if (deployment.packageXmlFile.includes('mainPackage.xml')) {
+          await restoreQuickActions()
         }
       }
       // Deployment of type data import
@@ -250,3 +259,42 @@ export async function deployMetadatas(options: any = {
   return deployRes;
 }
 
+let quickActionsBackUpFolder : string ;
+
+// Replace QuickAction content with Dummy content that will always pass
+async function replaceQuickActionsWithDummy() {
+  if (process.env.CI_DEPLOY_QUICK_ACTIONS_DUMMY === "true") {
+    uxLog(this,c.cyan("Replacing QuickActions content with Dummy content that will always pass..."))
+    quickActionsBackUpFolder = await createTempDir();
+    const patternQuickActions = process.cwd()+'/force-app/'+`**/quickActions/*__c.*.quickAction-meta.xml`;
+    const matchQuickActions = await glob(patternQuickActions, {cwd: process.cwd()});
+    for (const quickActionFile of matchQuickActions) {
+      const tmpBackupFile = path.join(quickActionsBackUpFolder,path.resolve(quickActionFile).replace(path.resolve(process.cwd()),''));
+      await fs.ensureDir(path.dirname(tmpBackupFile));
+      await fs.copy(quickActionFile,tmpBackupFile);
+      await fs.writeFile(quickActionFile, `<?xml version="1.0" encoding="UTF-8"?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <height>500</height>
+    <label>Deployment in progress - ${Math.random()}</label>
+    <lightningComponent>NoQuickAction</lightningComponent>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <type>LightningComponent</type>
+    <width>100</width>
+</QuickAction>`);
+      uxLog(this,c.grey('Backuped and replaced '+quickActionFile));
+    }
+  }
+}
+
+// Restore original QuickActions
+async function restoreQuickActions() {
+  if (process.env.CI_DEPLOY_QUICK_ACTIONS_DUMMY === "true") {
+    const patternQuickActionsBackup = quickActionsBackUpFolder+'/force-app/'+`**/quickActions/*.quickAction-meta.xml`;
+    const matchQuickActions = await glob(patternQuickActionsBackup, {cwd: process.cwd()});
+    for (const quickActionFile of matchQuickActions) {
+      const prevFileName = path.resolve(quickActionFile).replace(path.resolve(quickActionsBackUpFolder),path.resolve(process.cwd()));
+      await fs.copy(quickActionFile,prevFileName);
+      uxLog(this,c.grey('Restored '+ quickActionFile));
+    }
+  }
+}
