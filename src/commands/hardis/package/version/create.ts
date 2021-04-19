@@ -46,7 +46,6 @@ export default class PackageVersionCreate extends SfdxCommand {
         const config = await getConfig("project");
         // List project packages
         const packageDirectories = this.project.getUniquePackageDirectories();
-        console.error(JSON.stringify(packageDirectories));
         const packageResponse = await prompts([
             {
                 type: 'select', 
