@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.13.0] 2021-04-21
+
+- hardis:work:save
+  - New parameter --nogit for expert developers who want to manage git operations themselves
+  - New parameter --noclean for expert developers who want to manage clean operations themselves
+
 ## [2.12.0] 2021-04-19
 
 - New variable CI_DEPLOY_QUICK_ACTIONS_DUMMY
