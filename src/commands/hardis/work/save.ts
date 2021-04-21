@@ -28,13 +28,16 @@ export default class SaveTask extends SfdxCommand {
   public static description = messages.getMessage('completeWorkTask');
 
   public static examples = [
-    '$ sfdx hardis:work:task:save'
+    '$ sfdx hardis:work:task:save',
+    '$ sfdx hardis:work:task:save --nopull --nogit --noclean'
   ];
 
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
     nopull: flags.boolean({ char: 'n', default: false, description: "No scratch pull before save" }),
+    nogit: flags.boolean({ char: 'g', default: false, description: "No automated git operations" }),
+    noclean: flags.boolean({ char: 'c', default: false, description: "No cleaning of local sources" }),
     debug: flags.boolean({ char: 'd', default: false, description: messages.getMessage('debugMode') })
   };
 
@@ -52,31 +55,39 @@ export default class SaveTask extends SfdxCommand {
 
   protected debugMode = false;
   protected noPull = false;
-
+  protected noGit = false ;
+  protected noClean = false ;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     this.noPull = this.flags.nopull || false;
+    this.noGit = this.flags.nogit || false;
+    this.noClean = this.flags.noclean || false;
     this.debugMode = this.flags.debug || false;
     let config = await getConfig('project');
     const localBranch = await getCurrentGitBranch();
 
     uxLog(this, c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(config.developmentBranch)}`));
 
-    let gitStatusInit = await git().status();
-    // Cancel merge if ongoing merge
-    if (gitStatusInit.conflicted.length > 0) {
-      await git({ output: true }).merge(['--abort']);
-      gitStatusInit = await git().status();
+    if (this.noGit) {
+      uxLog(this, c.cyan(`[Expert mode] Skipped git reset`));
     }
-    // Unstage files
-    if (gitStatusInit.staged.length > 0) {
-      await execCommand('git reset', this, { output: true, fail: true });
+    else {
+      let gitStatusInit = await git().status();
+      // Cancel merge if ongoing merge
+      if (gitStatusInit.conflicted.length > 0) {
+        await git({ output: true }).merge(['--abort']);
+        gitStatusInit = await git().status();
+      }
+      // Unstage files
+      if (gitStatusInit.staged.length > 0) {
+        await execCommand('git reset', this, { output: true, fail: true });
+      }
     }
 
     // Pull from scratch org
     if (this.noPull) {
-      uxLog(this, c.cyan(`Skipped pull from scratch org`));
+      uxLog(this, c.cyan(`[Expert mode] Skipped force:source:pull from scratch org`));
     }
     else {
       // Pull DX sources
@@ -174,11 +185,16 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: false
       }
     ]
-    await interactiveGitAdd({ groups: groups });
+    if (this.noGit) {
+      uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
+    }
+    else {
+      await interactiveGitAdd({ groups: groups });
+    }
 
     // Commit updates
     const gitStatus = await git().status();
-    if (gitStatus.files.length > 0) {
+    if (gitStatus.files.length > 0 && !this.noGit) {
       // Request commit info
       const commitResponse = await prompts([
         {
@@ -224,7 +240,7 @@ export default class SaveTask extends SfdxCommand {
         ` --packagexmls ${localDestructiveChangesXml},${diffDestructivePackageXml}` +
         ` --outputfile ${localDestructiveChangesXml}`;
       await execCommand(appendDestructivePackageXmlCommand, this, { fail: true, debug: this.debugMode });
-      if (await gitHasLocalUpdates()) {
+      if (await gitHasLocalUpdates() && !this.noGit) {
         await git().add(localDestructiveChangesXml);
       }
 
@@ -241,7 +257,7 @@ export default class SaveTask extends SfdxCommand {
         ` --removepackagexml ${localDestructiveChangesXml}` +
         ` --outputfile ${localPackageXml}`;
       await execCommand(removePackageXmlCommand, this, { fail: true, debug: this.debugMode });
-      if (await gitHasLocalUpdates()) {
+      if (await gitHasLocalUpdates() && !this.noGit) {
         await git().add(localPackageXml);
       }
 
@@ -252,32 +268,36 @@ export default class SaveTask extends SfdxCommand {
 
     // Commit updates
     const gitStatusWithConfig = await git().status();
-    if (gitStatusWithConfig.staged.length > 0) {
+    if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
       uxLog(this, `Committing files in local git branch ${c.green(currentGitBranch)}...`);
       await git({ output: true }).commit('[sfdx-hardis] Update package content');
     }
 
     // Apply cleaning defined on project
-    const gitStatusFilesBeforeClean = (await git().status()).files.map(file => file.path);
-    console.log(JSON.stringify(gitStatusFilesBeforeClean, null, 2));
-    uxLog(this, c.cyan("Cleaning sfdx project from obsolete references..."));
-    // await execCommand("sfdx hardis:project:clean:references --type all", this, { output: true, fail: true, debug: this.debugMode });
-    await CleanReferences.run(['--type','all']);
-    const gitStatusAfterClean = await git().status();
-    console.log(JSON.stringify(gitStatusAfterClean, null, 2));
-    const cleanedFiles = gitStatusAfterClean.files
-      .filter(file => !gitStatusFilesBeforeClean.includes(file.path))
-      .map(file => file.path);
-    if (cleanedFiles.length > 0) {
-      uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join("\n")}`));
-      try {
-        await git().add(cleanedFiles);
-        await git({ output: true }).commit('[sfdx-hardis] Clean sfdx project');
-      } catch (e) {
-        uxLog(this, c.yellow(`There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(e.message)}`))
+    if (!this.noClean) {
+      const gitStatusFilesBeforeClean = (await git().status()).files.map(file => file.path);
+      console.log(JSON.stringify(gitStatusFilesBeforeClean, null, 2));
+      uxLog(this, c.cyan("Cleaning sfdx project from obsolete references..."));
+      // await execCommand("sfdx hardis:project:clean:references --type all", this, { output: true, fail: true, debug: this.debugMode });
+      await CleanReferences.run(['--type','all']);
+      const gitStatusAfterClean = await git().status();
+      console.log(JSON.stringify(gitStatusAfterClean, null, 2));
+      const cleanedFiles = gitStatusAfterClean.files
+        .filter(file => !gitStatusFilesBeforeClean.includes(file.path))
+        .map(file => file.path);
+      if (cleanedFiles.length > 0) {
+        uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join("\n")}`));
+        if (!this.noGit) {
+          try {
+            await git().add(cleanedFiles);
+            await git({ output: true }).commit('[sfdx-hardis] Clean sfdx project');
+          } catch (e) {
+            uxLog(this, c.yellow(`There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(e.message)}`))
+          }
+        }
       }
     }
-
+    
     // Build deployment plan splits
     let splitConfig = this.getSeparateDeploymentsConfig();
     const packageXml = await parseXmlFile(localPackageXml);
@@ -339,15 +359,17 @@ export default class SaveTask extends SfdxCommand {
     // Update deployment plan in config
     deploymentPlan.packages = packages.sort((a, b) => (a.order > b.order) ? 1 : -1);
     await setConfig("project", { deploymentPlan: deploymentPlan });
-    await git({output:true}).add(["./config"]);
-    await git({output:true}).add(["./manifest"]);
+    if (!this.noGit) {
+      await git({output:true}).add(["./config"]);
+      await git({output:true}).add(["./manifest"]);
+    }
     const gitStatusAfterDeployPlan = await git().status();
-    if (gitStatusAfterDeployPlan.staged.length > 0) {
+    if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
       await git({ output: true }).commit('[sfdx-hardis] Update deployment plan');
     }
 
     // Push new commit(s)
-    if (gitStatus.staged.length > 0 || gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) {
+    if ((gitStatus.staged.length > 0 || gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) && !this.noGit) {
       const pushResponse = await prompts({
         type: 'confirm',
         name: 'push',
