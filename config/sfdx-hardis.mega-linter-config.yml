@@ -16,6 +16,6 @@ FILTER_REGEX_EXCLUDE: (\.vscode)
 PRE_COMMANDS:
   - command: mkdir -p "${DEFAULT_WORKSPACE}/config" && wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/config/pmd-ruleset.xml"
     continue_if_failed: false
-SALESFORCE_SFDX_SCANNER_ARGUMENTS:
+SALESFORCE_SFDX_SCANNER_APEX_ARGUMENTS:
   - --pmdconfig
   - ./config/pmd-ruleset.xml
