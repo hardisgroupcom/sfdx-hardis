@@ -53,10 +53,17 @@ export default class PackageVersionPromote extends SfdxCommand {
             const packageName = packageAlias.split("@")[0];
             availablePackageAliases[packageName] = packageAlias;
         }
-        console.log(JSON.stringify(availablePackageAliases));
+        // Select packages to promote
         const packagesToPromote = [];
         if (auto) {
-            packagesToPromote.push(...Object.values(availablePackageAliases));
+            // Promote only packages not promoted yet
+            const packageListRes = await execSfdxJson('sfdx force:package:version:list --released',this,{output:true, fail:true})
+            const filteredPackagesToPromote = Object.values(availablePackageAliases).filter(packageAlias => {
+                return packageListRes.result.filter(releasedPackage =>  {
+                    return releasedPackage.Alias === packageAlias && !(releasedPackage.IsReleased === true)
+                }).length === 0
+            })
+            packagesToPromote.push(...filteredPackagesToPromote);
         }
         else {
             // Prompt user if not auto
