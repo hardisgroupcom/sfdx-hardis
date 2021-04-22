@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.13.1] 2021-04-22
+
+- QuickFix hardis:package:version:promote --auto
+
 ## [2.13.0] 2021-04-21
 
 - hardis:work:save
