@@ -56,7 +56,7 @@ export default class PackageVersionPromote extends SfdxCommand {
         console.log(JSON.stringify(availablePackageAliases));
         const packagesToPromote = [];
         if (auto) {
-            packagesToPromote.push(Object.values(availablePackageAliases));
+            packagesToPromote.push(...Object.values(availablePackageAliases));
         }
         else {
             // Prompt user if not auto
