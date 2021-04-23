@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.13.3] 2021-04-23
+
+- Remove PMD rule :
+  - CyclomaticComplexity
+
 ## [2.13.2] 2021-04-22
 
 - QuickFix hardis:package:version:promote --auto
@@ -72,7 +77,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:work:save : Fix issue when trying to stage & commit ignored files after project cleaning
 - hardis:project:configure:auth Improve error message when unable to upload ConnectedApp on production environment
 - Update default Apex PMD ruleset
-- Use replace and not replaceAll for node14 combatibility
+- Use replace and not replaceAll for node14 compatibility
 
 ## [2.9.1] 2021-04-07
 
@@ -83,7 +88,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New command **hardis:project:create**
 - Refactor project cleaning and allow to use external config files (destructiveChanges-like.xml or json)
-- Fixes 
+- Fixes
   - hardis:work:save : Create destructiveChanges.xml if not existing
   - hardis:work:save : call forceSourcePull method to propose to update .forceignore if errors are found
   - hardis:project:configure:auth: call mdapi:deploy with RunLocalTests to manage production environments
@@ -307,10 +312,6 @@ Example:
 ## [1.3.3] 2021-02-24
 
 - Soap option for force:mdapi:deploy
-
-## [1.3.2] 2021-02-24
-
-- Guide user to assign rights to Connected App in **sfdx:org:configure:monitoring**
 
 ## [1.3.2] 2021-02-24
 

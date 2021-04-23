@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ruleset xmlns="http://pmd.sourceforge.net/ruleset/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Default ruleset used by the CodeClimate Engine for Salesforce.com Apex" xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
-    
+
     <description>RuleSet for Mega-Linter</description>
 
     <!-- IGNORE FILES -->
@@ -14,6 +14,7 @@
         <exclude name="ExcessiveParameterList" />
         <exclude name="ExcessivePublicCount" />
         <exclude name="TooManyFields" />
+        <exclude name="CyclomaticComplexity" />
     </rule>
     <rule ref="category/apex/performance.xml" />
     <rule ref="category/apex/codestyle.xml">
@@ -42,7 +43,7 @@
         <properties>
             <property name="xpath">
                 <value><![CDATA[
-                        //MethodCallExpression[@MethodName="setEndpoint"]/LiteralExpression[@Image!="callout:"] 
+                        //MethodCallExpression[@MethodName="setEndpoint"]/LiteralExpression[@Image!="callout:"]
                 ]]></value>
             </property>
         </properties>
