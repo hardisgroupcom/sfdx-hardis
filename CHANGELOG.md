@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.13.3] 2021-04-23
+
+- Remove PMD rule :
+  - CyclomaticComplexity
+
 ## [2.13.2] 2021-04-22
 
 - QuickFix hardis:package:version:promote --auto
@@ -83,7 +88,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New command **hardis:project:create**
 - Refactor project cleaning and allow to use external config files (destructiveChanges-like.xml or json)
-- Fixes 
+- Fixes
   - hardis:work:save : Create destructiveChanges.xml if not existing
   - hardis:work:save : call forceSourcePull method to propose to update .forceignore if errors are found
   - hardis:project:configure:auth: call mdapi:deploy with RunLocalTests to manage production environments
