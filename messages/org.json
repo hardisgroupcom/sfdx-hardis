@@ -17,7 +17,7 @@
   "forceNewScratch": "If an existing scratch org exists, do not reuse it but create a new one",
   "installFFLib": "Install FFLib in current project",
   "instanceUrl": "URL of org instance",
-  "loginToOrg": "Login to salesforce org", 
+  "loginToOrg": "Login to salesforce org",
   "minimumApiVersion": "Minimum allowed API version",
   "nameFilter": "Filter according to Name criteria",
   "newWorkTask": "New work task",

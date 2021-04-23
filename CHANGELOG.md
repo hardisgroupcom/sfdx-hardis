@@ -77,7 +77,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:work:save : Fix issue when trying to stage & commit ignored files after project cleaning
 - hardis:project:configure:auth Improve error message when unable to upload ConnectedApp on production environment
 - Update default Apex PMD ruleset
-- Use replace and not replaceAll for node14 combatibility
+- Use replace and not replaceAll for node14 compatibility
 
 ## [2.9.1] 2021-04-07
 

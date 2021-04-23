@@ -1,37 +1,42 @@
-import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages, SfdxError } from '@salesforce/core';
-import { AnyJson } from '@salesforce/ts-types';
-import * as c from 'chalk';
-import * as fs from 'fs-extra';
-import { execCommand, uxLog } from '../../../../common/utils';
-import { getConfig } from '../../../../config';
+import { flags, SfdxCommand } from "@salesforce/command";
+import { Messages, SfdxError } from "@salesforce/core";
+import { AnyJson } from "@salesforce/ts-types";
+import * as c from "chalk";
+import * as fs from "fs-extra";
+import { execCommand, uxLog } from "../../../../common/utils";
+import { getConfig } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('sfdx-hardis', 'org');
+const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class OrgTestApex extends SfdxCommand {
-  public static title = 'Run apex tests';
+  public static title = "Run apex tests";
 
-  public static description = messages.getMessage('apexTests');
+  public static description = messages.getMessage("apexTests");
 
-  public static examples = ['$ sfdx hardis:org:test:apex'];
+  public static examples = ["$ sfdx hardis:org:test:apex"];
 
   protected static flagsConfig = {
     testlevel: flags.enum({
-      char: 'l',
-      default: 'RunLocalTests',
-      options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
-      description: messages.getMessage('testLevel')
+      char: "l",
+      default: "RunLocalTests",
+      options: [
+        "NoTestRun",
+        "RunSpecifiedTests",
+        "RunLocalTests",
+        "RunAllTestsInOrg",
+      ],
+      description: messages.getMessage("testLevel"),
     }),
     debug: flags.boolean({
-      char: 'd',
+      char: "d",
       default: false,
-      description: messages.getMessage('debugMode')
-    })
+      description: messages.getMessage("debugMode"),
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -48,31 +53,38 @@ export default class OrgTestApex extends SfdxCommand {
   /* jscpd:ignore-start */
   public async run(): Promise<AnyJson> {
     const check = this.flags.check || false;
-    const testlevel = this.flags.testlevel || 'RunLocalTests';
+    const testlevel = this.flags.testlevel || "RunLocalTests";
     const debugMode = this.flags.debug || false;
 
-    this.configInfo = await getConfig('branch');
+    this.configInfo = await getConfig("branch");
     /* jscpd:ignore-end */
-    await fs.ensureDir('./hardis-report');
-    const testCommand = 'sfdx force:apex:test:run' +
-      ' --codecoverage' +
-      ' --resultformat human' +
-      ' --outputdir ./hardis-report' +
-      ' --wait 60' +
+    await fs.ensureDir("./hardis-report");
+    const testCommand =
+      "sfdx force:apex:test:run" +
+      " --codecoverage" +
+      " --resultformat human" +
+      " --outputdir ./hardis-report" +
+      " --wait 60" +
       ` --testlevel ${testlevel}` +
-      (check ? ' --checkonly' : '') +
-      (debugMode ? ' --verbose' : '');
-    const testRes = await execCommand(testCommand, this, { output: true, debug: debugMode, fail: true });
-    let message = '';
-    const testResStr = testRes.stdout + testRes.stderr ;
+      (check ? " --checkonly" : "") +
+      (debugMode ? " --verbose" : "");
+    const testRes = await execCommand(testCommand, this, {
+      output: true,
+      debug: debugMode,
+      fail: true,
+    });
+    let message = "";
+    const testResStr = testRes.stdout + testRes.stderr;
     const outcome = /Outcome *(.*) */.exec(testResStr)[1].trim();
-    if (outcome === 'Passed') {
+    if (outcome === "Passed") {
       //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
-      message = '[sfdx-hardis] Successfully run apex tests on org';
+      message = "[sfdx-hardis] Successfully run apex tests on org";
       this.ux.log(c.green(message));
       // Check code coverage (orgWide)
       //const coverageOrgWide = parseFloat(testRes.result.summary.orgWideCoverage.replace('%', ''));
-      const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(testResStr)[1].replace('%', ''));
+      const coverageOrgWide = parseFloat(
+        /Org Wide Coverage *(.*)/.exec(testResStr)[1].replace("%", "")
+      );
       const minCoverageOrgWide =
         process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
         process.env.APEX_TESTS_MIN_COVERAGE ||
@@ -80,29 +92,53 @@ export default class OrgTestApex extends SfdxCommand {
         this.configInfo.apexTestsMinCoverage ||
         75.0;
       if (minCoverageOrgWide < 75.0) {
-        throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
+        throw new SfdxError(
+          "[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)"
+        );
       }
       if (coverageOrgWide < minCoverageOrgWide) {
-        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${coverageOrgWide}% should be > to ${minCoverageOrgWide}%`);
+        throw new SfdxError(
+          `[sfdx-hardis][apextest] Test run coverage (org wide) ${coverageOrgWide}% should be > to ${minCoverageOrgWide}%`
+        );
       } else {
-        uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(coverageOrgWide))}% is > to ${c.bold(minCoverageOrgWide)}%`));
+        uxLog(
+          this,
+          c.cyan(
+            `[apextest] Test run coverage (org wide) ${c.bold(
+              c.green(coverageOrgWide)
+            )}% is > to ${c.bold(minCoverageOrgWide)}%`
+          )
+        );
       }
       // Check code coverage ()
-      if (testResStr.includes('Test Run Coverage')) {
+      if (testResStr.includes("Test Run Coverage")) {
         // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
-        const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(testResStr)[1].replace('%', ''));
+        const coverageTestRun = parseFloat(
+          /Test Run Coverage *(.*)/.exec(testResStr)[1].replace("%", "")
+        );
         const minCoverageTestRun =
           process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
           process.env.APEX_TESTS_MIN_COVERAGE ||
           this.configInfo.apexTestsMinCoverage ||
           minCoverageOrgWide;
         if (minCoverageTestRun < 75.0) {
-          throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
+          throw new SfdxError(
+            "[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)"
+          );
         }
         if (coverageTestRun < minCoverageTestRun) {
-          throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
+          throw new SfdxError(
+            `[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`
+          );
         } else {
-          uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
+          uxLog(
+            this,
+            c.cyan(
+              `[apextest] Test run coverage ${c.bold(
+                c.green(coverageTestRun)
+              )}% is > to ${c.bold(minCoverageTestRun)}%`
+            )
+          );
         }
       }
     } else {
