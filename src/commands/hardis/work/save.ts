@@ -591,7 +591,10 @@ export default class SaveTask extends SfdxCommand {
           ) {
             mergeRequestsStored = mergeRequestsStored.map(
               (mergeRequestStored) => {
-                if (mergeRequestStored && mergeRequestStored.branch === currentGitBranch) {
+                if (
+                  mergeRequestStored &&
+                  mergeRequestStored.branch === currentGitBranch
+                ) {
                   return this.updateMergeRequestInfo(
                     mergeRequestStored,
                     pushResult
