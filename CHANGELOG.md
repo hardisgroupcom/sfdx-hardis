@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.13.4] 2021-04-26
+
+- New deploy tips
+- Do not update local files when calling configure commands
+- hardis:work:save : Fix branch update issue
+
 ## [2.13.3] 2021-04-23
 
 - Remove PMD rule :

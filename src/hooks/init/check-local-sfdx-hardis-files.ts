@@ -28,6 +28,9 @@ async function managePackageJson(commandId: string) {
   if (commandId.startsWith("hardis:work:task:new")) {
     return;
   }
+  if (commandId.includes("configure")) {
+    return;
+  }
   const packageJsonFile = "./package.json";
   if (fs.existsSync(packageJsonFile)) {
     // Update existing package.json to define sfdx utility scripts

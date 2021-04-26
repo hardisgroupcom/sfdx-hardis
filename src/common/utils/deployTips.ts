@@ -191,6 +191,20 @@ When effective deployment will happen, it should pass`
             "because it interferes with another operation already in progress",
             "Le calcul de partage demandé ne peut être traité maintenant car il interfère avec une autre opération en cours"],
           tip: `If you changed a field from MasterDetail to Lookup, you must do it manually in the target org before being able to deploy`
+        },
+        {
+          name: 'test-case-async-exception',
+          label: 'Async exception in test class',
+          expressionRegex: [/System.AsyncException: (.*) Apex/gm],
+          tip: `This may be a test class implementation issue.
+Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY`
+        },
+        {
+          name: 'unknown-perm-create-audit-fields',
+          label: 'Unknown user permission: CreateAuditFields',
+          expressionString: ["Unknown user permission: CreateAuditFields"],
+          tip: `You need to enable the "Create audit field" permission 
+Please check https://help.salesforce.com/articleView?id=000334139&type=1&mode=1`
         }
     ];
 }
