@@ -591,7 +591,10 @@ export default class SaveTask extends SfdxCommand {
           ) {
             mergeRequestsStored = mergeRequestsStored.map(
               (mergeRequestStored) => {
-                if (mergeRequestStored.branch === currentGitBranch) {
+                if (
+                  mergeRequestStored &&
+                  mergeRequestStored.branch === currentGitBranch
+                ) {
                   return this.updateMergeRequestInfo(
                     mergeRequestStored,
                     pushResult
@@ -657,11 +660,6 @@ export default class SaveTask extends SfdxCommand {
       mergeRequestStored.url = mergeRequestInfo.pullRequestUrl;
     } else {
       delete mergeRequestStored.url;
-    }
-    if (mergeRequestInfo.remoteMessages.pullRequestUrl) {
-      mergeRequestStored.createUrl = mergeRequestInfo.pullRequestUrl;
-    } else {
-      delete mergeRequestStored.createUrl;
     }
     return mergeRequestStored;
   }

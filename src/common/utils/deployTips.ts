@@ -97,6 +97,23 @@ You may also have a look to command sfdx hardis:project:clean:references
 `,
     },
     {
+      name: "custom-field-rights-mandatory",
+      label: "Mandatory custom field can not be in a profile/permission set",
+      expressionString: [
+        "You cannot deploy to a required field",
+        "Impossible de déployer vers un champ obligatoire",
+      ],
+      tip: `A custom field declared as mandatory can not have rights defined in Profiles and Permission Sets
+- Search the name of the Object.Field in sfdx folders permissionsets / profiles and remove the entries matching the results
+Example of element to delete:
+<fieldPermissions>
+  <editable>true</editable>
+  <field>MyObject.MyField__c</field>
+  <readable>true</readable>
+</fieldPermissions>
+`,
+    },
+    {
       name: "picklist-value-not-found",
       label: "Picklist value not found",
       expressionRegex: [/Picklist value: (.*) in picklist: (.*) not found/gm],
@@ -144,10 +161,20 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
 - Delete record type`,
     },
     {
+      name: "formula-picklist-issue",
+      label: "Formula picklist field issue",
+      expressionString: [
+        "Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions.",
+      ],
+      tip: `You probably changed the type of a field that is used in a formula.
+Update the formula to use a field compliant with formulas.
+More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_formulas.htm&type=5`,
+    },
+    {
       name: "duplicate-label",
       label: "Duplicate label",
       expressionString: ["Duplicate label:"],
-      tip: `You probably renamed a picklist API name. Please update manually the picklist to avoid to have a duplicate label`,
+      tip: `You probably renamed a picklist API name. Please update manually the picklist in the target ogr to avoid to have a duplicate label`,
     },
     {
       name: "test-deployment-issue",
@@ -170,6 +197,20 @@ When effective deployment will happen, it should pass`,
         "Le calcul de partage demandé ne peut être traité maintenant car il interfère avec une autre opération en cours",
       ],
       tip: `If you changed a field from MasterDetail to Lookup, you must do it manually in the target org before being able to deploy`,
+    },
+    {
+      name: "test-case-async-exception",
+      label: "Async exception in test class",
+      expressionRegex: [/System.AsyncException: (.*) Apex/gm],
+      tip: `This may be a test class implementation issue.
+Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY`,
+    },
+    {
+      name: "unknown-perm-create-audit-fields",
+      label: "Unknown user permission: CreateAuditFields",
+      expressionString: ["Unknown user permission: CreateAuditFields"],
+      tip: `You need to enable the "Create audit field" permission 
+Please check https://help.salesforce.com/articleView?id=000334139&type=1&mode=1`,
     },
   ];
 }
