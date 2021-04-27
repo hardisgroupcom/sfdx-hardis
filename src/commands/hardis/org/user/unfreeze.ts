@@ -2,10 +2,12 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages/*, SfdxError*/ } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import * as fs from 'fs-extra';
 import * as c from 'chalk';
 import * as columnify from 'columnify';
+import * as path from 'path';
 import { execSfdxJson, uxLog } from '../../../../common/utils';
-
+ 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
@@ -90,111 +92,109 @@ export default class OrgUnfreezeUser extends SfdxCommand {
 
     const debugMode = this.flags.debug || false;
 
+    //select id, isfrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN (\''+exceptFilter+'\') and isactive=true) AND isfrozen=false
     // Build query with name filter if sent
-    let queryUser = `select id from user where profile.name NOT IN ('${exceptFilter.join(
+    let queryUser = `select id, isFrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN ('${exceptFilter.join(
       "','"
-    )})' and isactive=true)`;
+    )}') and isactive=true`;
     if (nameFilter) {
-      queryUser += ` AND Name LIKE '${nameFilter}%'`;
+      queryUser += ' AND Name LIKE \'%'+nameFilter+'%\'';
     }
-    queryUser += ' ORDER BY Name';
+    queryUser +=') AND isfrozen=true';
 
-    let query = 'select id, isfrozen, UserId from UserLogin where userid in ('+queryUser+') AND isfrozen=true'
-    const username = this.org.getUsername();
+    let apexcode = 'list<userLogin> userLoginList = ['+queryUser+']; \n'+
+    'Set<Id> userIdList = new Set<Id>();\n'+
+    'if(userLoginList != null && userLoginList.size()> 0){\n'+
+        'for(UserLogin userfromList : userLoginList){\n'+
+            'userIdList.add(userfromList.UserId);\n'+
+        '}\n'+
+    '}\n'+
+    'list<User> userList = [SELECT Id,Name,Profile.Name FROM User WHERE Id IN :userIdList];\n'+
+    'system.debug(\'OUTPUTVALUE=\'+JSON.serialize(userList)+\'END_OUTPUTVALUE\'); \n';
+    
+    const username = this.org.getUsername(); 
 
-    // const flowQueryResult = await conn.query<Flow>(query,{ });
-    const unfreezeQueryCommand = 'sfdx force:data:soql:query ' + ` -q "${query}"` +
-    ` --targetusername ${username}` + ' --usetoolingapi';
-    const unfreezeQueryRes = await execSfdxJson(unfreezeQueryCommand, this, {
-      output: false,
-      debug: debugMode,
-      fail: true
-    });
-
-    const recordsRaw = unfreezeQueryRes?.result?.records || unfreezeQueryRes.records || []
+    await fs.readFileSync(path.join(__dirname,'./apex-freeze.apex'),'utf8');
+    const targetFile = path.join(__dirname,'apex-freeze.apex');
+    await fs.writeFile(targetFile,apexcode);
+  
+    const apexScriptCommand = `sfdx force:apex:execute -f "${targetFile}" --targetusername ${username}`;
+    const freezeQueryRes = await execSfdxJson(apexScriptCommand, this, { fail: true, output: true, debug: debugMode });
+  
+    let logs = freezeQueryRes?.result?.logs || '' ;
+  
+    let userlistraw= JSON.parse(logs.split('OUTPUTVALUE=')[2].split('END_OUTPUTVALUE')[0]);
     // Check empty result
-    if (true/*recordsRaw.length === 0*/) {
-      const outputString = `[sfdx-hardis] No matching user records found with query ${query}`;
+    if (userlistraw.length === 0) {
+      const outputString = `[sfdx-hardis] No matching user records found for all profile  except ${exceptFilter}`;
       uxLog(this,c.yellow(outputString));
       return { deleted: [], outputString };
     }
 
-    // Simplify results format & display them
-    const records = recordsRaw.map((record: any) => {
+    let userlist = userlistraw.map((record: any) => {
       return {
-        Id: record.Id,
-        isFrozen: record.isfrozen
+        Name: record.Name,
+        Profile: record.Profile.Name
       };
     });
     uxLog(this,
-      `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(columnify(records))}`
+      `[sfdx-hardis] Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist))}`
     );
 
-    // Perform update
-   // const udapted = [];
-    //const updateErrors = [];
+
+    userlistraw = [];
     if (
       !prompt ||
       (await this.ux.confirm(
         c.bold(
-          `[sfdx-hardis] Are you sure you want to update this list of records in ${c.green(
+          `[sfdx-hardis] Are you sure you want to unfreeze this list of records in ${c.green(
             this.org.getUsername()
           )} (y/n)?`
         )
       ))
     ) {
-     /* for (const record of records) {
-        const deleteCommand =
-          'sfdx force:data:record:delete' +
-          ' --sobjecttype Flow' +
-          ` --sobjectid ${record.Id}` +
-          ` --targetusername ${username}` +
-          ' --usetoolingapi';
-        const deleteRes = await execSfdxJson(deleteCommand, this, {
-          fail: false,
-          output: false,
-          debug: debugMode
-        });
-        if (!(deleteRes.status === 0)) {
-          this.ux.error(
-            c.red(
-              `[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(
-                deleteRes
-              )}`
-            )
-          );
-          deleteErrors.push(deleteRes);
-        }
-        deleted.push(record);
-      }*/
+        apexcode = 'list<userLogin> userLoginList = ['+queryUser+']; \n'+
+        'Set<Id> userIdList = new Set<Id>();\n'+
+        'if(userLoginList != null && userLoginList.size()> 0){\n'+
+            'for(UserLogin userfromList : userLoginList){\n'+
+                'userfromList.isFrozen = false;\n'+
+                'userIdList.add(userfromList.UserId);\n'+
+            '}\n'+
+        '}\n'+
+        'upsert userLoginList;\n'+
+        'list<User> userList = [SELECT Id,Name,Profile.Name FROM User WHERE Id IN :userIdList];\n'+
+        'system.debug(\'OUTPUTVALUE=\'+JSON.serialize(userList)+\'END_OUTPUTVALUE\'); \n';
+        await fs.readFileSync(path.join(__dirname,'./apex-freeze.apex'),'utf8');
+        const targetFile = path.join(__dirname,'apex-freeze.apex');
+        await fs.writeFile(targetFile,apexcode);
+      
+        const apexScriptCommand = `sfdx force:apex:execute -f "${targetFile}" --targetusername ${username}`;
+        const freezeQueryRes = await execSfdxJson(apexScriptCommand, this, { fail: true, output: true, debug: debugMode });
+      
+        logs = freezeQueryRes?.result?.logs || '' ;
+      
+        userlistraw= JSON.parse(logs.split('OUTPUTVALUE=')[2].split('END_OUTPUTVALUE')[0]);
+
     }
-/*
-    if (deleteErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There are been errors while deleting ${
-        deleteErrors.length
-      } records: \n${JSON.stringify(deleteErrors)}`;
-      if (allowPurgeFailure) {
-        uxLog(this, c.yellow(errMsg));
-      } else {
-        throw new SfdxError(
-          c.yellow(
-            `There are been errors while deleting ${
-              deleteErrors.length
-            } records: \n${JSON.stringify(deleteErrors)}`
-          )
-        );
-      }
+    
+    if (userlistraw.length === 0) {
+      const outputString = `[sfdx-hardis] No user has been frozen`;
+      uxLog(this,c.green(outputString));
+      return { deleted: [], outputString };
+    }else{
+      userlist = userlistraw.map((record: any) => {
+        return {
+          Name: record.Name,
+          Profile: record.Profile.Name
+        };
+      });
+      const summary =
+        `[sfdx-hardis] updated ${c.bold(userlist.length)} user, records:\n${c.yellow(columnify(userlist))}`;
+  
+      uxLog(this,c.green(summary));
+      // Return an object to be displayed with --json
+      return { orgId: this.org.getOrgId(), outputString: summary };
     }
 
-    const summary =
-      deleted.length > 0
-        ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(
-            deleted
-          )}`
-        : '[sfdx-hardis] No record to delete';
-    uxLog(this,c.green(summary));
-    // Return an object to be displayed with --json
-    return { orgId: this.org.getOrgId(), outputString: summary };*/
   }
-
 }
