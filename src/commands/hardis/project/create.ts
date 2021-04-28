@@ -68,10 +68,7 @@ export default class ProjectCreate extends SfdxCommand {
       // Create sfdx project
       projectName = projectRes.projectName.toLowerCase().replace(" ", "_");
     }
-    const createCommand =
-      "sfdx force:project:create" +
-      ` --projectname "${projectName}"` +
-      " --manifest";
+    const createCommand = "sfdx force:project:create" + ` --projectname "${projectName}"` + " --manifest";
     await execCommand(createCommand, this, {
       output: true,
       fail: true,
@@ -86,11 +83,7 @@ export default class ProjectCreate extends SfdxCommand {
 
     // Copy default project files
     uxLog(this, "Copying default files...");
-    await fs.copy(
-      path.join(__dirname, "../../../../defaults/ci", "."),
-      process.cwd(),
-      { overwrite: false }
-    );
+    await fs.copy(path.join(__dirname, "../../../../defaults/ci", "."), process.cwd(), { overwrite: false });
 
     config = await getConfig("project");
     if (config.developmentBranch == null) {
@@ -113,28 +106,9 @@ export default class ProjectCreate extends SfdxCommand {
         "SFDX Project has been created. You can now customize config/project-scratch-def.json file to add required features and settings.\nhttps://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm"
       )
     );
-    uxLog(
-      this,
-      c.cyan(
-        `Then, create a new scratch org using ${c.italic(
-          c.white("sfdx hardis:scratch:create")
-        )}`
-      )
-    );
-    uxLog(
-      this,
-      c.cyan(
-        `It is also recommended to install FFLib using ${c.italic(
-          c.white("sfdx hardis:package:install")
-        )}`
-      )
-    );
-    uxLog(
-      this,
-      c.cyan(
-        "Then, you can stage, commit and make a pull request to developpement branch"
-      )
-    );
+    uxLog(this, c.cyan(`Then, create a new scratch org using ${c.italic(c.white("sfdx hardis:scratch:create"))}`));
+    uxLog(this, c.cyan(`It is also recommended to install FFLib using ${c.italic(c.white("sfdx hardis:package:install"))}`));
+    uxLog(this, c.cyan("Then, you can stage, commit and make a pull request to developpement branch"));
 
     // Return an object to be displayed with --json
     return { outputString: "Created SFDX Project" };

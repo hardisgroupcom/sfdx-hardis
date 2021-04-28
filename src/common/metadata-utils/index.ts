@@ -5,12 +5,7 @@ import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as util from "util";
-import {
-  execCommand,
-  execSfdxJson,
-  filterPackageXml,
-  uxLog,
-} from "../../common/utils";
+import { execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
 const exec = util.promisify(child.exec);
 
@@ -127,11 +122,7 @@ class MetadataUtils {
       Document: {
         folder: "documents",
         nameSuffixList: ["", "-meta.xml"],
-        sfdxNameSuffixList: [
-          ".documentFolder-meta.xml",
-          ".document-meta.xml",
-          ".png",
-        ],
+        sfdxNameSuffixList: [".documentFolder-meta.xml", ".document-meta.xml", ".png"],
         metasInSubFolders: true,
       },
       EmailTemplate: {
@@ -258,15 +249,7 @@ class MetadataUtils {
       StaticResource: {
         folder: "staticresources",
         nameSuffixList: [".resource", ".resource-meta.xml"],
-        sfdxNameSuffixList: [
-          ".resource-meta.xml",
-          ".json",
-          ".txt",
-          ".bin",
-          ".js",
-          ".mp3",
-          ".gif",
-        ],
+        sfdxNameSuffixList: [".resource-meta.xml", ".json", ".txt", ".bin", ".js", ".mp3", ".gif"],
       },
       //      'Translations': { folder: 'translations', nameSuffixList: ['.translation'] }, processed apart, as they need to be filtered
       Workflow: {
@@ -432,10 +415,7 @@ class MetadataUtils {
   }
 
   // List installed packages on a org
-  public static async listInstalledPackages(
-    orgAlias: string = null,
-    commandThis: any
-  ): Promise<any[]> {
+  public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
     let listCommand = "sfdx force:package:installed:list";
     if (orgAlias != null) {
       listCommand += ` -u ${orgAlias}`;
@@ -447,66 +427,34 @@ class MetadataUtils {
   }
 
   // Install package on existing org
-  public static async installPackagesOnOrg(
-    packages: any[],
-    orgAlias: string = null,
-    commandThis: any = null,
-    context = "none"
-  ) {
-    const alreadyInstalled = await MetadataUtils.listInstalledPackages(
-      null,
-      this
-    );
+  public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null, context = "none") {
+    const alreadyInstalled = await MetadataUtils.listInstalledPackages(null, this);
     for (const package1 of packages) {
       if (
-        alreadyInstalled.filter(
-          (installedPackage: any) =>
-            package1.SubscriberPackageVersionId ===
-            installedPackage.SubscriberPackageVersionId
-        ).length === 0
+        alreadyInstalled.filter((installedPackage: any) => package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId)
+          .length === 0
       ) {
         if (context === "scratch" && package1.installOnScratchOrgs === false) {
           uxLog(
             commandThis,
-            c.cyan(
-              `Skip installation of ${c.green(
-                package1.SubscriberPackageName
-              )} as it is configured to not be installed on scratch orgs`
-            )
+            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`)
           );
           continue;
         }
-        if (
-          context === "deploy" &&
-          package1.installDuringDeployments === false
-        ) {
+        if (context === "deploy" && package1.installDuringDeployments === false) {
           uxLog(
             commandThis,
-            c.cyan(
-              `Skip installation of ${c.green(
-                package1.SubscriberPackageName
-              )} as it is configured to not be installed on scratch orgs`
-            )
+            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`)
           );
           continue;
         }
         uxLog(
           commandThis,
-          c.cyan(
-            `Installing package ${c.green(
-              `${package1.SubscriberPackageName || ""} ${
-                package1.SubscriberPackageVersionName || ""
-              }`
-            )}...`
-          )
+          c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName || ""} ${package1.SubscriberPackageVersionName || ""}`)}...`)
         );
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(
-            c.red(
-              `[sfdx-hardis] You must define ${c.bold(
-                "SubscriberPackageVersionId"
-              )} in .sfdx-hardis.yml (in installedPackages property)`
-            )
+            c.red(`[sfdx-hardis] You must define ${c.bold("SubscriberPackageVersionId")} in .sfdx-hardis.yml (in installedPackages property)`)
           );
         }
         const securityType = package1.SecurityType || "AllUsers";
@@ -519,14 +467,7 @@ class MetadataUtils {
           output: true,
         });
       } else {
-        uxLog(
-          commandThis,
-          c.cyan(
-            `Skip installation of ${c.green(
-              package1.SubscriberPackageName
-            )} as it is already installed`
-          )
-        );
+        uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`));
       }
     }
   }
@@ -545,37 +486,20 @@ class MetadataUtils {
     await fs.ensureDir(metadataFolder);
 
     // Build package.xml for all org
-    uxLog(
-      commandThis,
-      c.cyan(
-        `Generating full package.xml from ${c.green(
-          commandThis.org.getUsername()
-        )}...`
-      )
-    );
-    const manifestRes = await exec(
-      "sfdx sfpowerkit:org:manifest:build -o package.xml"
-    );
+    uxLog(commandThis, c.cyan(`Generating full package.xml from ${c.green(commandThis.org.getUsername())}...`));
+    const manifestRes = await exec("sfdx sfpowerkit:org:manifest:build -o package.xml");
     if (debug) {
       uxLog(commandThis, manifestRes.stdout + manifestRes.stderr);
     }
 
     // Filter managed items if requested
     if (options.filterManagedItems) {
-      uxLog(
-        commandThis,
-        c.cyan("Filtering managed items from package.Xml manifest...")
-      );
+      uxLog(commandThis, c.cyan("Filtering managed items from package.Xml manifest..."));
       // List installed packages & collect managed namespaces
-      const installedPackages = fs.existsSync("sfdx-project.json")
-        ? await this.listInstalledPackages(null, commandThis)
-        : [];
+      const installedPackages = fs.existsSync("sfdx-project.json") ? await this.listInstalledPackages(null, commandThis) : [];
       const namespaces = [];
       for (const installedPackage of installedPackages) {
-        if (
-          installedPackage?.SubscriberPackageNamespace !== "" &&
-          installedPackage?.SubscriberPackageNamespace != null
-        ) {
+        if (installedPackage?.SubscriberPackageNamespace !== "" && installedPackage?.SubscriberPackageNamespace != null) {
           namespaces.push(installedPackage.SubscriberPackageNamespace);
         }
       }
@@ -583,20 +507,14 @@ class MetadataUtils {
       // Filter package XML to remove identified metadatas
       const packageXmlToRemove = fs.existsSync("./remove-items-package.xml")
         ? path.resolve("./remove-items-package.xml")
-        : path.resolve(
-            __dirname + "/../../../defaults/remove-items-package.xml"
-          );
+        : path.resolve(__dirname + "/../../../defaults/remove-items-package.xml");
       const removeStandard = options.removeStandard === false ? false : true;
-      const filterNamespaceRes = await filterPackageXml(
-        packageXml,
-        packageXml,
-        {
-          removeNamespaces: namespaces,
-          removeStandard: removeStandard,
-          removeFromPackageXmlFile: packageXmlToRemove,
-          updateApiVersion: CONSTANTS.API_VERSION,
-        }
-      );
+      const filterNamespaceRes = await filterPackageXml(packageXml, packageXml, {
+        removeNamespaces: namespaces,
+        removeStandard: removeStandard,
+        removeFromPackageXmlFile: packageXmlToRemove,
+        updateApiVersion: CONSTANTS.API_VERSION,
+      });
       uxLog(commandThis, filterNamespaceRes.message);
     }
 
@@ -608,10 +526,7 @@ class MetadataUtils {
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog(
-        commandThis,
-        c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`)
-      );
+      uxLog(commandThis, c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`));
       const retrieveCommand =
         "sfdx force:mdapi:retrieve" +
         ` --retrievetargetdir ${metadataFolder}` +

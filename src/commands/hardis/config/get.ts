@@ -16,8 +16,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class DxSources extends SfdxCommand {
   public static title = "Deploy metadata sources to org";
 
-  public static description =
-    "Returns sfdx-hardis project config for a given level";
+  public static description = "Returns sfdx-hardis project config for a given level";
 
   public static examples = ["$ sfdx hardis:project:deploy:sources:metadata"];
 

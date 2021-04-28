@@ -3,16 +3,8 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import {
-  execCommand,
-  getCurrentGitBranch,
-  git,
-  uxLog,
-} from "../../../common/utils";
-import {
-  forceSourcePull,
-  forceSourcePush,
-} from "../../../common/utils/deployUtils";
+import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
+import { forceSourcePull, forceSourcePush } from "../../../common/utils/deployUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { getConfig } from "../../../config";
 
@@ -61,25 +53,15 @@ export default class RefreshTask extends SfdxCommand {
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
     this.noPull = this.flags.nopull || false;
-    uxLog(
-      this,
-      c.cyan(
-        "This command will refresh your git branch and your org with the content of another git branch"
-      )
-    );
+    uxLog(this, c.cyan("This command will refresh your git branch and your org with the content of another git branch"));
     // Verify that the user saved his/her work before merging another branch
     const savePromptRes = await prompts({
       type: "select",
-      message: c.cyanBright(
-        `This is a SENSITIVE OPERATION. Did you run ${c.green(
-          "hardis:work:save"
-        )} BEFORE running this command ?`
-      ),
+      message: c.cyanBright(`This is a SENSITIVE OPERATION. Did you run ${c.green("hardis:work:save")} BEFORE running this command ?`),
       name: "value",
       choices: [
         {
-          title:
-            "Yes I did save my current updates before merging updates from others !",
+          title: "Yes I did save my current updates before merging updates from others !",
           value: true,
         },
         { title: "No, I did not, I will do that right now", value: false },
@@ -106,9 +88,7 @@ export default class RefreshTask extends SfdxCommand {
     }
     const branchRes = await prompts({
       type: "select",
-      message: `Please select the branch that you want to merge in your current branch ${c.green(
-        localBranch
-      )}`,
+      message: `Please select the branch that you want to merge in your current branch ${c.green(localBranch)}`,
       name: "value",
       choices: branchChoices,
     });
@@ -117,12 +97,7 @@ export default class RefreshTask extends SfdxCommand {
     try {
       return await this.runRefresh(localBranch);
     } catch (e) {
-      uxLog(
-        this,
-        c.yellow(
-          "There has been a merge conflict or a technical error, please contact a Developer for help !"
-        )
-      );
+      uxLog(this, c.yellow("There has been a merge conflict or a technical error, please contact a Developer for help !"));
       throw e;
     }
   }
@@ -133,28 +108,21 @@ export default class RefreshTask extends SfdxCommand {
     uxLog(
       this,
       c.cyan(
-        `sfdx-hardis will refresh your local branch ${c.green(
-          localBranch
-        )} and your local scratch org ${c.green(
+        `sfdx-hardis will refresh your local branch ${c.green(localBranch)} and your local scratch org ${c.green(
           this.org.getUsername()
         )} with the latest state of ${c.green(this.mergeBranch)}`
       )
     );
 
     if (localBranch === this.mergeBranch) {
-      throw new SfdxError(
-        "[sfdx-hardis] You can not refresh from the same branch"
-      );
+      throw new SfdxError("[sfdx-hardis] You can not refresh from the same branch");
     }
 
     // Pull from scratch org
     if (this.noPull) {
       uxLog(this, c.cyan(`Skipped pull from scratch org`));
     } else {
-      uxLog(
-        this,
-        c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`)
-      );
+      uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
       await forceSourcePull(this.org.getUsername(), this.debugMode);
     }
 
@@ -162,27 +130,15 @@ export default class RefreshTask extends SfdxCommand {
     uxLog(
       this,
       c.cyan(
-        `Stashing your uncommitted updates in ${c.green(
+        `Stashing your uncommitted updates in ${c.green(localBranch)} before merging ${c.green(this.mergeBranch)} into your local branch ${c.green(
           localBranch
-        )} before merging ${c.green(
-          this.mergeBranch
-        )} into your local branch ${c.green(localBranch)}...`
-      )
-    );
-    const stashResult = await git({ output: true }).stash([
-      "save",
-      `[sfdx-hardis] Stash of ${localBranch}`,
-    ]);
-    const stashed = stashResult.includes("Saved working directory");
-    // Pull most recent version of development branch
-    uxLog(
-      this,
-      c.cyan(
-        `Pulling most recent version of remote branch ${c.green(
-          this.mergeBranch
         )}...`
       )
     );
+    const stashResult = await git({ output: true }).stash(["save", `[sfdx-hardis] Stash of ${localBranch}`]);
+    const stashed = stashResult.includes("Saved working directory");
+    // Pull most recent version of development branch
+    uxLog(this, c.cyan(`Pulling most recent version of remote branch ${c.green(this.mergeBranch)}...`));
     await git({ output: true }).fetch();
     await git({ output: true }).checkout(this.mergeBranch);
     const pullRes = await git({ output: true }).pull();
@@ -194,24 +150,11 @@ export default class RefreshTask extends SfdxCommand {
         output: true,
       })
     ).stdout;
-    const localRef = (
-      await execCommand(
-        `git merge-base ${this.mergeBranch} ${localBranch}`,
-        this,
-        { output: true }
-      )
-    ).stdout;
+    const localRef = (await execCommand(`git merge-base ${this.mergeBranch} ${localBranch}`, this, { output: true })).stdout;
     // Merge into current branch if necessary
     if (pullRes.summary.changes > 0 || mergeRef !== localRef) {
       // Create new commit from merge
-      uxLog(
-        this,
-        c.cyan(
-          `Creating a merge commit of ${c.green(
-            this.mergeBranch
-          )} within ${c.green(localBranch)}...`
-        )
-      );
+      uxLog(this, c.cyan(`Creating a merge commit of ${c.green(this.mergeBranch)} within ${c.green(localBranch)}...`));
       let mergeSummary = await git({ output: true }).merge([this.mergeBranch]);
       while (mergeSummary.failed) {
         const mergeResult = await prompts({
@@ -235,23 +178,11 @@ export default class RefreshTask extends SfdxCommand {
         mergeSummary = await git({ output: true }).merge(["--continue"]);
       }
     } else {
-      uxLog(
-        this,
-        c.cyan(
-          `Local branch ${c.green(
-            localBranch
-          )} is already up to date with ${c.green(this.mergeBranch)}`
-        )
-      );
+      uxLog(this, c.cyan(`Local branch ${c.green(localBranch)} is already up to date with ${c.green(this.mergeBranch)}`));
     }
     // Restoring stash
     if (stashed) {
-      uxLog(
-        this,
-        c.cyan(
-          `Restoring stash into your local branch ${c.green(localBranch)}...`
-        )
-      );
+      uxLog(this, c.cyan(`Restoring stash into your local branch ${c.green(localBranch)}...`));
       await git({ output: true }).stash(["pop"]);
     }
 

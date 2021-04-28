@@ -54,9 +54,7 @@ export default class CallInCallOut extends SfdxCommand {
         type: "INBOUND",
         subType: "SOAP",
         regex: /webservice static/gim,
-        detail: [
-          { name: "webServiceName", regex: /webservice static (.*?){/gims },
-        ],
+        detail: [{ name: "webServiceName", regex: /webservice static (.*?){/gims }],
       },
       {
         type: "INBOUND",
@@ -85,12 +83,7 @@ export default class CallInCallOut extends SfdxCommand {
       }
       // Loop on criteria to find matches in this file
       for (const catcher of catchers) {
-        const catcherMatchResults = await catchMatches(
-          catcher,
-          file,
-          fileText,
-          this
-        );
+        const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
         this.matchResults.push(...catcherMatchResults);
       }
     }
@@ -101,9 +94,7 @@ export default class CallInCallOut extends SfdxCommand {
         type: item.type,
         subType: item.subType,
         fileName: item.fileName,
-        nameSpace: item.fileName.includes("__")
-          ? item.fileName.split("__")[0]
-          : "Custom",
+        nameSpace: item.fileName.includes("__") ? item.fileName.split("__")[0] : "Custom",
         matches: item.matches,
         detail:
           Object.keys(item.detail)

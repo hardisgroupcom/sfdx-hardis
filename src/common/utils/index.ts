@@ -42,30 +42,23 @@ export function git(options: any = { output: false }): SimpleGit {
     function logCommand() {
       if (first) {
         first = false;
-        uxLog(
-          this,
-          `[command] ${c.grey(command)} ${c.grey(gitArgs.join(" "))}`
-        );
+        uxLog(this, `[command] ${c.grey(command)} ${c.grey(gitArgs.join(" "))}`);
       }
     }
   });
 }
 
 export async function createTempDir() {
-  const tmpDir = path.join(
-    os.tmpdir(),
-    "sfdx-hardis-" + Math.random().toString(36).substring(7)
-  );
+  const tmpDir = path.join(os.tmpdir(), "sfdx-hardis-" + Math.random().toString(36).substring(7));
   await fs.ensureDir(tmpDir);
   return tmpDir;
 }
 
 export function isGitRepo() {
-  const isInsideWorkTree = child.spawnSync(
-    "git",
-    ["rev-parse", "--is-inside-work-tree"],
-    { encoding: "utf8", windowsHide: true }
-  );
+  const isInsideWorkTree = child.spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
+    encoding: "utf8",
+    windowsHide: true,
+  });
   return isInsideWorkTree.status === 0;
 }
 
@@ -82,12 +75,7 @@ export async function checkSfdxPlugin(pluginName: string) {
     pluginsStdout = pluginsRes.stdout;
   }
   if (!pluginsStdout.includes(pluginName)) {
-    uxLog(
-      this,
-      c.yellow(
-        `[dependencies] Installing sfdx plugin ${c.green(pluginName)}...`
-      )
-    );
+    uxLog(this, c.yellow(`[dependencies] Installing sfdx plugin ${c.green(pluginName)}...`));
     const installCommand = `echo y|sfdx plugins:install ${pluginName}`;
     await execCommand(installCommand, this, { fail: true, output: false });
   }
@@ -97,9 +85,7 @@ export async function promptInstanceUrl() {
   const orgTypeResponse = await prompts({
     type: "select",
     name: "value",
-    message: c.cyanBright(
-      "Is the org you need to connect a sandbox or another type of org (dev org, enterprise org...)"
-    ),
+    message: c.cyanBright("Is the org you need to connect a sandbox or another type of org (dev org, enterprise org...)"),
     choices: [
       {
         title: "Sandbox or Scratch org",
@@ -118,18 +104,12 @@ export async function promptInstanceUrl() {
 }
 
 // Check if we are in a repo, or create it if missing
-export async function ensureGitRepository(
-  options: any = { init: false, clone: false, cloneUrl: null }
-) {
+export async function ensureGitRepository(options: any = { init: false, clone: false, cloneUrl: null }) {
   if (!isGitRepo()) {
     // Init repo
     if (options.init) {
       await exec("git init -b main");
-      console.info(
-        c.yellow(
-          c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)
-        )
-      );
+      console.info(c.yellow(c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)));
     } else if (options.clone) {
       // Clone repo
       let cloneUrl = options.cloneUrl;
@@ -146,19 +126,11 @@ export async function ensureGitRepository(
       }
       // Git lcone
       await new Promise((resolve) => {
-        crossSpawn("git", ["clone", cloneUrl, "."], { stdio: "inherit" }).on(
-          "close",
-          () => {
-            resolve(null);
-          }
-        );
+        crossSpawn("git", ["clone", cloneUrl, "."], { stdio: "inherit" }).on("close", () => {
+          resolve(null);
+        });
       });
-      uxLog(
-        this,
-        `Git repository cloned. ${c.yellow(
-          "Please run again the same command :)"
-        )}`
-      );
+      uxLog(this, `Git repository cloned. ${c.yellow("Please run again the same command :)")}`);
       process.exit(0);
     } else {
       throw new SfdxError("Developer: please send init or clone as option");
@@ -168,11 +140,7 @@ export async function ensureGitRepository(
   else if (options.mustBeRoot) {
     const gitRepoRoot = await git().revparse(["--show-toplevel"]);
     if (path.resolve(gitRepoRoot) !== path.resolve(process.cwd())) {
-      throw new SfdxError(
-        `You must be at the root of the git repository (${path.resolve(
-          gitRepoRoot
-        )})`
-      );
+      throw new SfdxError(`You must be at the root of the git repository (${path.resolve(gitRepoRoot)})`);
     }
   }
 }
@@ -182,8 +150,7 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   if (git == null) {
     return null;
   }
-  const gitBranch =
-    process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
+  const gitBranch = process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
   if (options.formatted === true) {
     return gitBranch.replace("/", "__");
   }
@@ -196,10 +163,7 @@ export async function gitCheckOutRemote(branchName: string) {
 }
 
 // Get local git branch name
-export async function ensureGitBranch(
-  branchName: string,
-  options: any = { init: false }
-) {
+export async function ensureGitBranch(branchName: string, options: any = { init: false }) {
   if (git == null) {
     if (options.init) {
       await ensureGitRepository({ init: true });
@@ -231,9 +195,7 @@ export async function checkGitClean(options: any) {
   if (gitStatus.files.length > 0) {
     const localUpdates = gitStatus.files
       .map((fileStatus: FileStatusResult) => {
-        return `(${fileStatus.working_dir}) ${getSfdxFileLabel(
-          fileStatus.path
-        )}`;
+        return `(${fileStatus.working_dir}) ${getSfdxFileLabel(fileStatus.path)}`;
       })
       .join("\n");
     if (options.allowStash) {
@@ -241,9 +203,7 @@ export async function checkGitClean(options: any) {
       await execCommand("git stash", this, { output: true, fail: true });
     } else {
       throw new SfdxError(
-        `[sfdx-hardis] Branch ${c.bold(
-          gitStatus.current
-        )} is not clean. You must ${c.bold(
+        `[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold(
           "commit or reset"
         )} the following local updates:\n${c.yellow(localUpdates)}`
       );
@@ -252,9 +212,7 @@ export async function checkGitClean(options: any) {
 }
 
 // Interactive git add
-export async function interactiveGitAdd(
-  options: any = { filter: [], groups: [] }
-) {
+export async function interactiveGitAdd(options: any = { filter: [], groups: [] }) {
   if (git == null) {
     throw new SfdxError("[sfdx-hardis] You must be within a git repository");
   }
@@ -262,11 +220,7 @@ export async function interactiveGitAdd(
   const gitStatus = await git().status();
   let filesFiltered = gitStatus.files
     .filter((fileStatus: FileStatusResult) => {
-      return (
-        (options.filter || []).filter((filterString: string) =>
-          fileStatus.path.includes(filterString)
-        ).length === 0
-      );
+      return (options.filter || []).filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
     })
     .map((fileStatus: FileStatusResult) => {
       if (fileStatus.path.startsWith('"')) {
@@ -294,11 +248,9 @@ export async function interactiveGitAdd(
   if (filesFiltered.length > 0) {
     for (const group of groups) {
       // Extract files matching group regex
-      const matchingFiles = filesFiltered.filter(
-        (fileStatus: FileStatusResult) => {
-          return group.regex.test(fileStatus.path);
-        }
-      );
+      const matchingFiles = filesFiltered.filter((fileStatus: FileStatusResult) => {
+        return group.regex.test(fileStatus.path);
+      });
       if (matchingFiles.length === 0) {
         continue;
       }
@@ -311,15 +263,11 @@ export async function interactiveGitAdd(
         type: "multiselect",
         name: "files",
         message: c.cyanBright(
-          `Please select ${c.red("carefully")} the ${c.bgWhiteBright(
-            c.red(c.bold(group.label.toUpperCase()))
-          )} files you want to commit (save)}`
+          `Please select ${c.red("carefully")} the ${c.bgWhiteBright(c.red(c.bold(group.label.toUpperCase())))} files you want to commit (save)}`
         ),
         choices: matchingFiles.map((fileStatus: FileStatusResult) => {
           return {
-            title: `(${getGitWorkingDirLabel(
-              fileStatus.working_dir
-            )}) ${getSfdxFileLabel(fileStatus.path)}`,
+            title: `(${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`,
             selected: group.defaultSelect || false,
             value: fileStatus,
           };
@@ -331,21 +279,13 @@ export async function interactiveGitAdd(
       // Separate added to removed files
       result.added.push(
         ...selectFilesStatus.files
-          .filter(
-            (fileStatus: FileStatusResult) => fileStatus.working_dir !== "D"
-          )
-          .map((fileStatus: FileStatusResult) =>
-            fileStatus.path.replace('"', "")
-          )
+          .filter((fileStatus: FileStatusResult) => fileStatus.working_dir !== "D")
+          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ""))
       );
       result.removed.push(
         ...selectFilesStatus.files
-          .filter(
-            (fileStatus: FileStatusResult) => fileStatus.working_dir === "D"
-          )
-          .map((fileStatus: FileStatusResult) =>
-            fileStatus.path.replace('"', "")
-          )
+          .filter((fileStatus: FileStatusResult) => fileStatus.working_dir === "D")
+          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ""))
       );
     }
     if (filesFiltered.length > 0) {
@@ -355,9 +295,7 @@ export async function interactiveGitAdd(
           "The following list of files has not been proposed for selection\n" +
             filesFiltered
               .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(
-                  fileStatus.working_dir
-                )}) ${getSfdxFileLabel(fileStatus.path)}`;
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
               })
               .join("\n")
         )
@@ -372,9 +310,7 @@ export async function interactiveGitAdd(
           "\n" +
           group.files
             .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(
-                fileStatus.working_dir
-              )}) ${getSfdxFileLabel(fileStatus.path)}`;
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
             })
             .join("\n") +
           "\n"
@@ -384,9 +320,7 @@ export async function interactiveGitAdd(
     const addFilesResponse = await prompts({
       type: "select",
       name: "addFiles",
-      message: c.cyanBright(
-        `Do you confirm that you want to add the following list of files ?\n${confirmationText}`
-      ),
+      message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${confirmationText}`),
       choices: [
         { title: "Yes, my selection is complete !", value: "yes" },
         { title: "No, I want to select again", value: "no" },
@@ -497,25 +431,12 @@ export async function execCommand(
         options.retry.tryCount = (options.retry.tryCount || 0) + 1;
         if (
           options.retry.tryCount <= (options.retry.retryMaxAttempts || 1) &&
-          (options.retry.retryStringConstraint == null ||
-            (e.stdout + e.stderr).includes(options.retry.retryStringConstraint))
+          (options.retry.retryStringConstraint == null || (e.stdout + e.stderr).includes(options.retry.retryStringConstraint))
         ) {
-          uxLog(
-            commandThis,
-            c.yellow(
-              `Retry command: ${options.retry.tryCount} on ${
-                options.retry.retryMaxAttempts || 1
-              }`
-            )
-          );
+          uxLog(commandThis, c.yellow(`Retry command: ${options.retry.tryCount} on ${options.retry.retryMaxAttempts || 1}`));
           if (options.retry.retryDelay) {
-            uxLog(
-              this,
-              `Waiting ${options.retry.retryDelay} seconds before retrying command`
-            );
-            await new Promise((resolve) =>
-              setTimeout(resolve, options.retry.retryDelay * 1000)
-            );
+            uxLog(this, `Waiting ${options.retry.retryDelay} seconds before retrying command`);
+            await new Promise((resolve) => setTimeout(resolve, options.retry.retryDelay * 1000));
           }
           return await execCommand(command, commandThis, options);
         }
@@ -546,15 +467,10 @@ export async function execCommand(
   try {
     const parsedResult = JSON.parse(commandResult.stdout);
     if (options.fail && parsedResult.status && parsedResult.status > 0) {
-      throw new SfdxError(
-        c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`)
-      );
+      throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
     }
     if (commandResult.stderr && commandResult.stderr.length > 2) {
-      uxLog(
-        this,
-        "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr)
-      );
+      uxLog(this, "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr));
     }
     return parsedResult;
   } catch (e) {
@@ -571,19 +487,12 @@ export async function execCommand(
 /* Ex: force-app/main/default/layouts/Opportunity-Opportunity %28Marketing%29 Layout.layout-meta.xml
    becomes layouts/Opportunity-Opportunity (Marketing Layout).layout-meta.xml */
 export function getSfdxFileLabel(filePath: string) {
-  const cleanStr = decodeURIComponent(
-    filePath
-      .replace("force-app/main/default/", "")
-      .replace("force-app/main/", "")
-      .replace('"', "")
-  );
+  const cleanStr = decodeURIComponent(filePath.replace("force-app/main/default/", "").replace("force-app/main/", "").replace('"', ""));
   const dotNumbers = (filePath.match(/\./g) || []).length;
   if (dotNumbers > 1) {
     const m = /(.*)\/(.*)\..*\..*/.exec(cleanStr);
     if (m && m.length >= 2) {
-      return cleanStr
-        .replace(m[1], c.cyan(m[1]))
-        .replace(m[2], c.bold(c.yellow(m[2])));
+      return cleanStr.replace(m[1], c.cyan(m[1])).replace(m[2], c.bold(c.yellow(m[2])));
     }
   } else {
     const m = /(.*)\/(.*)\..*/.exec(cleanStr);
@@ -595,13 +504,7 @@ export function getSfdxFileLabel(filePath: string) {
 }
 
 function getGitWorkingDirLabel(workingDir) {
-  return workingDir === "?"
-    ? "CREATED"
-    : workingDir === "D"
-    ? "DELETED"
-    : workingDir === "M"
-    ? "UPDATED"
-    : "OOOOOPS";
+  return workingDir === "?" ? "CREATED" : workingDir === "D" ? "DELETED" : workingDir === "M" ? "UPDATED" : "OOOOOPS";
 }
 
 // Filter package XML
@@ -624,35 +527,22 @@ export async function filterPackageXml(
   if ((options.removeNamespaces || []).length > 0) {
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
-        return (
-          options.removeNamespaces.filter((ns: string) => member.startsWith(ns))
-            .length === 0
-        );
+        return options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length === 0;
       });
       return type;
     });
   }
   // Remove from other packageXml file
   if (options.removeFromPackageXmlFile) {
-    const destructiveFileContent = await fs.readFile(
-      options.removeFromPackageXmlFile
-    );
-    const destructiveManifest = await xml2js.parseStringPromise(
-      destructiveFileContent
-    );
+    const destructiveFileContent = await fs.readFile(options.removeFromPackageXmlFile);
+    const destructiveManifest = await xml2js.parseStringPromise(destructiveFileContent);
     manifest.Package.types = manifest.Package.types.map((type: any) => {
-      const destructiveTypes = destructiveManifest.Package.types.filter(
-        (destructiveType: any) => {
-          return destructiveType.name[0] === type.name[0];
-        }
-      );
+      const destructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
+        return destructiveType.name[0] === type.name[0];
+      });
       if (destructiveTypes.length > 0) {
         type.members = type.members.filter((member: string) => {
-          return (
-            destructiveTypes[0].members.filter(
-              (destructiveMember: string) => destructiveMember === member
-            ).length === 0
-          );
+          return destructiveTypes[0].members.filter((destructiveMember: string) => destructiveMember === member).length === 0;
         });
       }
       return type;
@@ -678,9 +568,7 @@ export async function filterPackageXml(
   }
   // Remove metadata types (named, and empty ones)
   manifest.Package.types = manifest.Package.types.filter(
-    (type: any) =>
-      !(options.removeMetadatas || []).includes(type.name[0]) &&
-      (type?.members?.length || 0) > 0
+    (type: any) => !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0
   );
   const builder = new xml2js.Builder();
   const updatedFileContent = builder.buildObject(manifest);
@@ -700,12 +588,7 @@ export async function filterPackageXml(
 }
 
 // Catch matches in files according to criteria
-export async function catchMatches(
-  catcher: any,
-  file: string,
-  fileText: string,
-  commandThis: any
-) {
+export async function catchMatches(catcher: any, file: string, fileText: string, commandThis: any) {
   const matchResults = [];
   if (catcher.regex) {
     // Check if there are matches
@@ -715,17 +598,12 @@ export async function catchMatches(
       const fileName = path.basename(file);
       const detail: any = {};
       for (const detailCrit of catcher.detail) {
-        const detailCritVal = await extractRegexGroups(
-          detailCrit.regex,
-          fileText
-        );
+        const detailCritVal = await extractRegexGroups(detailCrit.regex, fileText);
         if (detailCritVal.length > 0) {
           detail[detailCrit.name] = detailCritVal;
         }
       }
-      const catcherLabel = catcher.regex
-        ? `regex ${catcher.regex.toString()}`
-        : "ERROR";
+      const catcherLabel = catcher.regex ? `regex ${catcher.regex.toString()}` : "ERROR";
       matchResults.push({
         fileName,
         fileText,
@@ -736,10 +614,7 @@ export async function catchMatches(
         catcherLabel,
       });
       if (commandThis.debug) {
-        uxLog(
-          commandThis,
-          `[${fileName}]: Match [${matches}] occurrences of [${catcher.type}/${catcher.name}] with catcher [${catcherLabel}]`
-        );
+        uxLog(commandThis, `[${fileName}]: Match [${matches}] occurrences of [${catcher.type}/${catcher.name}] with catcher [${catcherLabel}]`);
       }
     }
   }
@@ -747,33 +622,20 @@ export async function catchMatches(
 }
 
 // Count matches of a regex
-export async function countRegexMatches(
-  regex: RegExp,
-  text: string
-): Promise<number> {
+export async function countRegexMatches(regex: RegExp, text: string): Promise<number> {
   return ((text || "").match(regex) || []).length;
 }
 
 // Get all captured groups of a regex in a string
-export async function extractRegexGroups(
-  regex: RegExp,
-  text: string
-): Promise<string[]> {
-  const matches = ((text || "").match(regex) || []).map((e) =>
-    e.replace(regex, "$1").trim()
-  );
+export async function extractRegexGroups(regex: RegExp, text: string): Promise<string[]> {
+  const matches = ((text || "").match(regex) || []).map((e) => e.replace(regex, "$1").trim());
   return matches;
   // return ((text || '').matchAll(regex) || []).map(item => item.trim());
 }
 
 // Generate output files
-export async function generateReports(
-  resultSorted: any[],
-  columns: any[],
-  commandThis: any
-): Promise<any[]> {
-  const logFileName =
-    "sfdx-hardis-" + commandThis.id.substr(commandThis.id.lastIndexOf(":") + 1);
+export async function generateReports(resultSorted: any[], columns: any[], commandThis: any): Promise<any[]> {
+  const logFileName = "sfdx-hardis-" + commandThis.id.substr(commandThis.id.lastIndexOf(":") + 1);
   const reportFile = path.resolve(`./hardis-report/${logFileName}.csv`);
   const reportFileExcel = path.resolve(`./hardis-report/${logFileName}.xls`);
   await fs.ensureDir(path.dirname(reportFile));
@@ -799,9 +661,7 @@ export async function generateReports(
 }
 
 export function uxLog(commandThis: any, text: string) {
-  text = text.includes("[sfdx-hardis]")
-    ? text
-    : "[sfdx-hardis]" + (text.startsWith("[") ? "" : " ") + text;
+  text = text.includes("[sfdx-hardis]") ? text : "[sfdx-hardis]" + (text.startsWith("[") ? "" : " ") + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
   } else if (!process.argv.includes("--json")) {
@@ -849,32 +709,18 @@ export async function restoreLocalSfdxInfo() {
 }
 
 // Generate SSL certificate in temporary folder and copy the key in project directory
-export async function generateSSLCertificate(
-  branchName: string,
-  folder: string,
-  commandThis: any
-) {
+export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any) {
   uxLog(commandThis, "Generating SSL certificate...");
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
   const pwd = Math.random().toString(36).slice(-20);
-  await execCommand(
-    `openssl genrsa -des3 -passout "pass:${pwd}" -out server.pass.key 2048`,
-    this,
-    { output: true, fail: true }
-  );
-  await execCommand(
-    `openssl rsa -passin "pass:${pwd}" -in server.pass.key -out server.key`,
-    this,
-    { output: true, fail: true }
-  );
+  await execCommand(`openssl genrsa -des3 -passout "pass:${pwd}" -out server.pass.key 2048`, this, { output: true, fail: true });
+  await execCommand(`openssl rsa -passin "pass:${pwd}" -in server.pass.key -out server.key`, this, { output: true, fail: true });
   await fs.remove("server.pass.key");
   await prompts({
     type: "confirm",
-    message: c.cyanBright(
-      "Now answer the following questions. The answers are not really important :)\nHit ENTER when ready"
-    ),
+    message: c.cyanBright("Now answer the following questions. The answers are not really important :)\nHit ENTER when ready"),
   });
   await new Promise((resolve) => {
     const opensslCommand = "openssl req -new -key server.key -out server.csr";
@@ -882,11 +728,10 @@ export async function generateSSLCertificate(
       resolve(null);
     });
   });
-  await execCommand(
-    "openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt",
-    this,
-    { output: true, fail: true }
-  );
+  await execCommand("openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt", this, {
+    output: true,
+    fail: true,
+  });
   process.chdir(prevDir);
   // Copy certificate key in local project
   await fs.ensureDir(folder);
@@ -907,32 +752,26 @@ export async function generateSSLCertificate(
     type: "confirm",
     name: "value",
     initial: true,
-    message: c.cyanBright(
-      "Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't now)"
-    ),
+    message: c.cyanBright("Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't now)"),
   });
   if (confirmResponse.value === true) {
     uxLog(
       commandThis,
       c.cyanBright(
-        `You must configure CI variable ${c.green(
-          c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-        )} with value ${c.bold(c.green(consumerKey))}`
+        `You must configure CI variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with value ${c.bold(c.green(consumerKey))}`
       )
     );
     uxLog(
       commandThis,
       c.cyanBright(
-        `You must configure CI variable ${c.green(
-          c.bold(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)
-        )} with value ${c.bold(c.green(encryptionKey))}`
+        `You must configure CI variable ${c.green(c.bold(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`))} with value ${c.bold(
+          c.green(encryptionKey)
+        )}`
       )
     );
     await prompts({
       type: "confirm",
-      message: c.cyanBright(
-        "In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done"
-      ),
+      message: c.cyanBright("In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done"),
     });
     // Request info for deployment
     const promptResponses = await prompts([
@@ -940,24 +779,18 @@ export async function generateSSLCertificate(
         type: "text",
         name: "appName",
         initial: "sfdx_hardis",
-        message: c.cyanBright(
-          "How would you like to name the Connected App (ex: sfdx) ?"
-        ),
+        message: c.cyanBright("How would you like to name the Connected App (ex: sfdx) ?"),
       },
       {
         type: "text",
         name: "contactEmail",
-        message: c.cyanBright(
-          "Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"
-        ),
+        message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"),
       },
       {
         type: "text",
         name: "profile",
         initial: "System Administrator",
-        message: c.cyanBright(
-          "What profile will be used for the connected app ? (ex: System Administrator)"
-        ),
+        message: c.cyanBright("What profile will be used for the connected app ? (ex: System Administrator)"),
       },
     ]);
     const crtContent = await fs.readFile(crtFile, "utf8");
@@ -982,9 +815,7 @@ export async function generateSSLCertificate(
       <ipRelaxation>ENFORCE</ipRelaxation>
       <refreshTokenPolicy>infinite</refreshTokenPolicy>
   </oauthPolicy>
-  <profileName>${
-    promptResponses.profile || "System Administrator"
-  }</profileName>
+  <profileName>${promptResponses.profile || "System Administrator"}</profileName>
 </ConnectedApp>
 `;
     const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1001,50 +832,31 @@ export async function generateSSLCertificate(
     const connectedAppDir = path.join(tmpDirMd, "connectedApps");
     await fs.ensureDir(connectedAppDir);
     await fs.writeFile(path.join(tmpDirMd, "package.xml"), packageXml);
-    await fs.writeFile(
-      path.join(connectedAppDir, `${promptResponses.appName}.connectedApp`),
-      connectedAppMetadata
-    );
+    await fs.writeFile(path.join(connectedAppDir, `${promptResponses.appName}.connectedApp`), connectedAppMetadata);
 
     // Deploy metadatas
     try {
       const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
-        testlevel: branchName.includes("production")
-          ? "RunLocalTests"
-          : "NoTestRun",
+        testlevel: branchName.includes("production") ? "RunLocalTests" : "NoTestRun",
         soap: true,
       });
-      console.assert(
-        deployRes.status === 0,
-        c.red("[sfdx-hardis] Failed to deploy metadatas")
-      );
-      uxLog(
-        commandThis,
-        `Successfully deployed ${c.green(
-          promptResponses.appName
-        )} Connected App`
-      );
+      console.assert(deployRes.status === 0, c.red("[sfdx-hardis] Failed to deploy metadatas"));
+      uxLog(commandThis, `Successfully deployed ${c.green(promptResponses.appName)} Connected App`);
       await fs.remove(tmpDirMd);
       await fs.remove(crtFile);
     } catch (e) {
       deployError = true;
       uxLog(
         commandThis,
-        c.red(
-          "Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name"
-        )
+        c.red("Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name")
       );
       uxLog(
         commandThis,
-        c.yellow(`If this is a Test class issue (production env), you may have to create manually connected app ${
-          promptResponses.appName
-        }:
+        c.yellow(`If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName}:
 - Using certificate ${crtFile}
 - Doc: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
-- Once created, update variable ${c.green(
-          c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-        )} with ConsumerKey of the newly created connected app`)
+- Once created, update variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with ConsumerKey of the newly created connected app`)
       );
     }
     // Last manual step
@@ -1052,37 +864,23 @@ export async function generateSSLCertificate(
       await prompts({
         type: "confirm",
         message: c.cyanBright(
-          `You need to give rights to profile ${c.green(
-            "System Administrator"
-          )} (or related Permission Set) on Connected App ${c.green(
+          `You need to give rights to profile ${c.green("System Administrator")} (or related Permission Set) on Connected App ${c.green(
             promptResponses.appName
           )}
-On the page that will open, ${c.green(
-            `find app ${promptResponses.appName}, then click Manage`
-          )}
-On the app managing page, ${c.green(
-            "click Manage profiles, then add profile System Administrator"
-          )} (or related Permission set)
+On the page that will open, ${c.green(`find app ${promptResponses.appName}, then click Manage`)}
+On the app managing page, ${c.green("click Manage profiles, then add profile System Administrator")} (or related Permission set)
 Hit ENTER when you are ready`
         ),
       });
-      await execCommand(
-        "sfdx force:org:open -p lightning/setup/NavigationMenus/home",
-        this
-      );
+      await execCommand("sfdx force:org:open -p lightning/setup/NavigationMenus/home", this);
       await prompts({
         type: "confirm",
-        message: c.cyanBright(
-          `Hit ENTER when the profile right has been manually granted on connected app ${promptResponses.appName}`
-        ),
+        message: c.cyanBright(`Hit ENTER when the profile right has been manually granted on connected app ${promptResponses.appName}`),
       });
     }
   } else {
     // Tell infos to install manually
-    uxLog(
-      commandThis,
-      c.yellow("Now you can configure the sfdx connected app")
-    );
+    uxLog(commandThis, c.yellow("Now you can configure the sfdx connected app"));
     uxLog(
       commandThis,
       `Follow instructions here: ${c.bold(
@@ -1091,23 +889,12 @@ Hit ENTER when you are ready`
     );
     uxLog(
       commandThis,
-      `Use ${c.green(
-        crtFile
-      )} as certificate on Connected App configuration page, ${c.bold(
-        `then delete ${crtFile} for security`
-      )}`
+      `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`
     );
     uxLog(
       commandThis,
-      `- configure CI variable ${c.green(
-        `SFDX_CLIENT_ID_${branchName.toUpperCase()}`
-      )} with value of ConsumerKey on Connected App configuration page`
+      `- configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`
     );
-    uxLog(
-      commandThis,
-      `- configure CI variable ${c.green(
-        `SFDX_CLIENT_KEY_${branchName.toUpperCase()}`
-      )} with value ${c.green(encryptionKey)} key`
-    );
+    uxLog(commandThis, `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(encryptionKey)} key`);
   }
 }

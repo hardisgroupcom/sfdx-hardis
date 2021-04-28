@@ -19,10 +19,7 @@ import { checkConfig, getConfig } from "../../config";
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || "";
-  if (
-    !commandId.startsWith("hardis") ||
-    ["hardis:source:push", "hardis:source:pull"].includes(commandId)
-  ) {
+  if (!commandId.startsWith("hardis") || ["hardis:source:push", "hardis:source:pull"].includes(commandId)) {
     return;
   }
   // skip if during mocha tests
@@ -32,17 +29,11 @@ export const hook = async (options: any) => {
   await restoreLocalSfdxInfo();
   let configInfo = await getConfig("user");
   if (configInfo.skipAuthCheck === true) {
-    uxLog(
-      this,
-      c.yellow("No authentication check, you better know what you are doing ;)")
-    );
+    uxLog(this, c.yellow("No authentication check, you better know what you are doing ;)"));
     return;
   }
   // Manage authentication if DevHub is required but current user is disconnected
-  if (
-    (options.Command && options.Command.supportsDevhubUsername === true) ||
-    options.devHub === true
-  ) {
+  if ((options.Command && options.Command.supportsDevhubUsername === true) || options.devHub === true) {
     let devHubAlias = configInfo.devHubAlias || process.env.DEVHUB_ALIAS;
     if (devHubAlias == null) {
       await checkConfig(options);
@@ -52,11 +43,7 @@ export const hook = async (options: any) => {
     await authOrg(devHubAlias, options);
   }
   // Manage authentication if org is required but current user is disconnected
-  if (
-    ((options.Command && options.Command.requiresUsername === true) ||
-      options.checkAuth === true) &&
-    !(options.devHub === true)
-  ) {
+  if (((options.Command && options.Command.requiresUsername === true) || options.checkAuth === true) && !(options.devHub === true)) {
     const orgAlias = process.env.ORG_ALIAS
       ? process.env.ORG_ALIAS
       : isCI && configInfo.scratchOrgAlias
@@ -78,11 +65,7 @@ async function authOrg(orgAlias: string, options: any) {
   if ((orgAlias || "").startsWith("force://")) {
     const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
     await fs.writeFile(authFile, orgAlias, "utf8");
-    await execCommand(
-      `sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`,
-      this,
-      { fail: true, output: false }
-    );
+    await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, { fail: true, output: false });
     await fs.remove(authFile);
     return;
   }
@@ -103,14 +86,10 @@ async function authOrg(orgAlias: string, options: any) {
     });
     if (
       orgInfoResult.result &&
-      ((orgInfoResult.result.connectedStatus &&
-        orgInfoResult.result.connectedStatus.includes("Connected")) ||
-        (options.scratch &&
-          orgInfoResult.result.connectedStatus.includes("Unknown")) ||
-        (orgInfoResult.result.alias === orgAlias &&
-          orgInfoResult.result.id != null) ||
-        (orgInfoResult.result.username === orgAlias &&
-          orgInfoResult.result.id != null) ||
+      ((orgInfoResult.result.connectedStatus && orgInfoResult.result.connectedStatus.includes("Connected")) ||
+        (options.scratch && orgInfoResult.result.connectedStatus.includes("Unknown")) ||
+        (orgInfoResult.result.alias === orgAlias && orgInfoResult.result.id != null) ||
+        (orgInfoResult.result.username === orgAlias && orgInfoResult.result.id != null) ||
         (isDevHub && orgInfoResult.result.id != null))
     ) {
       // Set as default username or devhubusername
@@ -120,29 +99,23 @@ async function authOrg(orgAlias: string, options: any) {
         )}: ${c.green(orgInfoResult.result.instanceUrl)}`
       );
       if (orgInfoResult.result.expirationDate) {
-        console.log(
-          c.cyan(
-            `[sfdx-hardis] Org expiration date: ${c.yellow(
-              orgInfoResult.result.expirationDate
-            )}`
-          )
-        );
+        console.log(c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
       }
       if (!isCI) {
         console.log(
           c.yellow(
             c.italic(
-              `[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(
-                c.bold("hit CTRL+C")
-              )}, then input ${c.whiteBright(c.bold("sfdx hardis:org:select"))}`
+              `[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold("hit CTRL+C"))}, then input ${c.whiteBright(
+                c.bold("sfdx hardis:org:select")
+              )}`
             )
           )
         );
       }
       if (setDefaultUsername) {
-        const setDefaultUsernameCommand = `sfdx config:set ${
-          isDevHub ? "defaultdevhubusername" : "defaultusername"
-        }=${orgInfoResult.result.username}`;
+        const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? "defaultdevhubusername" : "defaultusername"}=${
+          orgInfoResult.result.username
+        }`;
         await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
       }
       doConnect = false;
@@ -175,8 +148,7 @@ async function authOrg(orgAlias: string, options: any) {
       process.exit(1);
     }
     let instanceUrl =
-      typeof options.Command?.flags?.instanceurl === "string" &&
-      (options.Command?.flags?.instanceurl || "").startsWith("https")
+      typeof options.Command?.flags?.instanceurl === "string" && (options.Command?.flags?.instanceurl || "").startsWith("https")
         ? options.Command.flags.instanceurl
         : (process.env.INSTANCE_URL || "").startsWith("https")
         ? process.env.INSTANCE_URL
@@ -186,9 +158,7 @@ async function authOrg(orgAlias: string, options: any) {
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
-    const usernameArg = isDevHub
-      ? "--setdefaultdevhubusername"
-      : "--setdefaultusername";
+    const usernameArg = isDevHub ? "--setdefaultdevhubusername" : "--setdefaultusername";
     if (crtKeyfile && sfdxClientId && username) {
       // Login with JWT
       const loginCommand =
@@ -205,24 +175,14 @@ async function authOrg(orgAlias: string, options: any) {
       // await fs.remove(crtKeyfile); // Delete private key file from temp folder TODO: move to postrun hook
       logged = jwtAuthRes.status === 0;
       if (!logged) {
-        console.error(
-          c.red(
-            `[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(
-              jwtAuthRes
-            )}`
-          )
-        );
+        console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
         process.exit(1);
       }
     } else if (!isCI) {
       // Login with web auth
       const orgLabel = `org ${orgAlias}`;
       console.warn(
-        c.yellow(
-          c.bold(
-            `[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`
-          )
-        )
+        c.yellow(c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`))
       );
 
       if (isCI) {
@@ -250,44 +210,19 @@ async function authOrg(orgAlias: string, options: any) {
       username = loginResult?.username || "your username";
       instanceUrl = loginResult?.instanceUrl || instanceUrl;
     } else {
-      console.error(
-        c.red(
-          `[sfdx-hardis] Unable to connect to org ${orgAlias} with browser. Please try again :)`
-        )
-      );
+      console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} with browser. Please try again :)`));
     }
     if (logged) {
-      uxLog(
-        this,
-        `Successfully logged to ${c.green(instanceUrl)} with ${c.green(
-          username
-        )}`
-      );
+      uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
       WebSocketClient.sendMessage({ event: "refreshStatus" });
       // Display warning message in case of local usage (not CI), and not login command
       if (!(options?.Command?.id || "").startsWith("hardis:auth:login")) {
-        console.warn(
-          c.yellow(
-            "*********************************************************************"
-          )
-        );
-        console.warn(
-          c.yellow(
-            "*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"
-          )
-        );
-        console.warn(
-          c.yellow(
-            "*********************************************************************"
-          )
-        );
+        console.warn(c.yellow("*********************************************************************"));
+        console.warn(c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
+        console.warn(c.yellow("*********************************************************************"));
       }
     } else {
-      console.error(
-        c.red(
-          "[sfdx-hardis][ERROR] You must be logged to an org to perform this action"
-        )
-      );
+      console.error(c.red("[sfdx-hardis][ERROR] You must be logged to an org to perform this action"));
       process.exit(1); // Exit because we should succeed to connect
     }
   }
@@ -320,11 +255,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
   }
   if (isCI) {
     console.error(
-      c.red(
-        `[sfdx-hardis] You must set env variable ${c.bold(
-          sfdxClientIdVarNameUpper
-        )} with the Consumer Key value defined on SFDX Connected app`
-      )
+      c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientIdVarNameUpper)} with the Consumer Key value defined on SFDX Connected app`)
     );
   }
   return null;
@@ -357,11 +288,7 @@ async function getKey(orgAlias: string, config: any) {
   }
   if (isCI) {
     console.error(
-      c.red(
-        `[sfdx-hardis] You must set env variable ${c.bold(
-          sfdxClientKeyVarNameUpper
-        )} with the value of SSH private key encryption key`
-      )
+      c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientKeyVarNameUpper)} with the value of SSH private key encryption key`)
     );
   }
   return null;
@@ -389,13 +316,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
     }
   }
   if (isCI) {
-    console.error(
-      c.red(
-        `[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join(
-          "\n  -"
-        )}`
-      )
-    );
+    console.error(c.red(`[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join("\n  -")}`));
   }
   return null;
 }

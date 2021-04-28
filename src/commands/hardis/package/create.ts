@@ -49,16 +49,12 @@ export default class PackageCreate extends SfdxCommand {
       {
         type: "text",
         name: "packageName",
-        message: c.cyanBright(
-          `Please input the name of the package (ex: MyPackage)`
-        ),
+        message: c.cyanBright(`Please input the name of the package (ex: MyPackage)`),
       },
       {
         type: "text",
         name: "packagePath",
-        message: c.cyanBright(
-          `Please input the path of the package (ex: sfdx-source/apex-mocks)`
-        ),
+        message: c.cyanBright(`Please input the path of the package (ex: sfdx-source/apex-mocks)`),
       },
       {
         type: "select",
@@ -68,8 +64,7 @@ export default class PackageCreate extends SfdxCommand {
           {
             title: "Managed",
             value: "Managed",
-            description:
-              "Managed packages code is hidden in orgs where it is installed. Suited for AppExchanges packages",
+            description: "Managed packages code is hidden in orgs where it is installed. Suited for AppExchanges packages",
           },
           {
             title: "Unlocked",
@@ -92,14 +87,7 @@ export default class PackageCreate extends SfdxCommand {
       fail: true,
       debug: debugMode,
     });
-    uxLog(
-      this,
-      c.cyan(
-        `Created package Id: ${c.green(
-          packageCreateResult.result.Id
-        )} associated to DevHub ${c.green(this.hubOrg.getUsername())}`
-      )
-    );
+    uxLog(this, c.cyan(`Created package Id: ${c.green(packageCreateResult.result.Id)} associated to DevHub ${c.green(this.hubOrg.getUsername())}`));
 
     // Return an object to be displayed with --json
     return {

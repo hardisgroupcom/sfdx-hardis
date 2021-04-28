@@ -66,9 +66,7 @@ export default class CallInCallOut extends SfdxCommand {
         type: "apiVersion",
         subType: "",
         regex: /<apiVersion>(.*?)<\/apiVersion>/gims,
-        detail: [
-          { name: "apiVersion", regex: /<apiVersion>(.*?)<\/apiVersion>/gims },
-        ],
+        detail: [{ name: "apiVersion", regex: /<apiVersion>(.*?)<\/apiVersion>/gims }],
       },
     ];
     const xmlFiles = await glob(pattern);
@@ -80,12 +78,7 @@ export default class CallInCallOut extends SfdxCommand {
       const fileText = await fs.readFile(file, "utf8");
       // Loop on criteria to find matches in this file
       for (const catcher of catchers) {
-        const catcherMatchResults = await catchMatches(
-          catcher,
-          file,
-          fileText,
-          this
-        );
+        const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
         this.matchResults.push(...catcherMatchResults);
       }
     }
@@ -96,14 +89,9 @@ export default class CallInCallOut extends SfdxCommand {
       return {
         type: item.type,
         fileName: item.fileName,
-        nameSpace: item.fileName.includes("__")
-          ? item.fileName.split("__")[0]
-          : "Custom",
+        nameSpace: item.fileName.includes("__") ? item.fileName.split("__")[0] : "Custom",
         apiVersion: parseFloat(item.detail["apiVersion"]),
-        valid:
-          parseFloat(item.detail["apiVersion"]) > minimumApiVersion
-            ? "yes"
-            : "no",
+        valid: parseFloat(item.detail["apiVersion"]) > minimumApiVersion ? "yes" : "no",
       };
     });
 
@@ -132,35 +120,24 @@ export default class CallInCallOut extends SfdxCommand {
     ];
     const reportFiles = await generateReports(resultSorted, columns, this);
 
-    const numberOfInvalid = result.filter((res: any) => res.valid === "no")
-      .length;
+    const numberOfInvalid = result.filter((res: any) => res.valid === "no").length;
     const numberOfValid = result.length - numberOfInvalid;
 
     if (numberOfInvalid > 0) {
       this.ux.log(
         c.yellow(
-          `[sfdx-hardis] WARNING: Your sources contain ${c.bold(
-            numberOfInvalid
-          )} metadata files with API Version lesser than ${c.bold(
+          `[sfdx-hardis] WARNING: Your sources contain ${c.bold(numberOfInvalid)} metadata files with API Version lesser than ${c.bold(
             minimumApiVersion
           )}`
         )
       );
       if (failIfError) {
-        throw new SfdxError(
-          c.red(
-            `[sfdx-hardis][ERROR] ${c.bold(
-              numberOfInvalid
-            )} metadata files with wrong API version detected`
-          )
-        );
+        throw new SfdxError(c.red(`[sfdx-hardis][ERROR] ${c.bold(numberOfInvalid)} metadata files with wrong API version detected`));
       }
     } else {
       this.ux.log(
         c.green(
-          `[sfdx-hardis] SUCCESS: Your sources contain ${c.bold(
-            numberOfValid
-          )} metadata files with API Version superior to ${c.bold(
+          `[sfdx-hardis] SUCCESS: Your sources contain ${c.bold(numberOfValid)} metadata files with API Version superior to ${c.bold(
             minimumApiVersion
           )}`
         )

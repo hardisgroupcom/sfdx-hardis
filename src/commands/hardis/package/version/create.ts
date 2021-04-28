@@ -51,9 +51,7 @@ export default class PackageVersionCreate extends SfdxCommand {
       {
         type: "select",
         name: "packageSelected",
-        message: c.cyanBright(
-          `Please select a package (this is not a drill, it will create an official new version !)`
-        ),
+        message: c.cyanBright(`Please select a package (this is not a drill, it will create an official new version !)`),
         choices: packageDirectories.map((packageDirectory) => {
           return {
             title: packageDirectory.package || packageDirectory.path,
@@ -64,20 +62,13 @@ export default class PackageVersionCreate extends SfdxCommand {
       {
         type: "text",
         name: "packageInstallationKey",
-        message: c.cyanBright(
-          `Please input an installation password (or let empty)`
-        ),
+        message: c.cyanBright(`Please input an installation password (or let empty)`),
         initial: config.defaultPackageInstallationKey || "",
       },
     ]);
     // Manage user response
-    const pckgDirectory = packageDirectories.filter(
-      (pckgDirectory) => pckgDirectory.name === packageResponse.packageSelected
-    )[0];
-    if (
-      config.defaultPackageInstallationKey !==
-      packageResponse.packageInstallationKey
-    ) {
+    const pckgDirectory = packageDirectories.filter((pckgDirectory) => pckgDirectory.name === packageResponse.packageSelected)[0];
+    if (config.defaultPackageInstallationKey !== packageResponse.packageInstallationKey) {
       await setConfig("project", {
         defaultPackageInstallationKey: packageResponse.packageInstallationKey,
       });
@@ -87,9 +78,7 @@ export default class PackageVersionCreate extends SfdxCommand {
     const createCommand =
       "sfdx force:package:version:create" +
       ` --package "${pckgDirectory.package}"` +
-      (packageResponse.packageInstallationKey
-        ? ` --installationkey "${packageResponse.packageInstallationKey}"`
-        : " --installationkeybypass") +
+      (packageResponse.packageInstallationKey ? ` --installationkey "${packageResponse.packageInstallationKey}"` : " --installationkeybypass") +
       " --codecoverage" +
       " -w 60";
     const createResult = await execSfdxJson(createCommand, this, {

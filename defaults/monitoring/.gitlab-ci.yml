@@ -24,11 +24,11 @@
 
 # Ce fichier ne doit de préférence pas être modifié de façon à faciliter sa mise à jour
 # Pour personnaliser ce pipeline, modifiez le fichier .gitlab-ci-config.yml
-include: 
-- local: '.gitlab-ci-config.yml'
+include:
+  - local: ".gitlab-ci-config.yml"
 
 variables:
-  FORCE_COLOR: '1'
+  FORCE_COLOR: "1"
 
 # Liste ordonnée des étapes du pipeline
 stages:
@@ -65,7 +65,7 @@ backup:
     - ubuntu
   # Conditions d'execution
   except:
-      - master
+    - master
   before_script:
     - git config --global user.name "${GITLAB_USER_NAME}"
     - git config --global user.email "${GITLAB_USER_EMAIL}"
@@ -87,12 +87,12 @@ check_quality:
     - ubuntu
   # Conditions d'execution
   except:
-      - master
+    - master
   image: nvuillam/mega-linter-salesforce:latest
-  script: [ "true" ]
+  script: ["true"]
   allow_failure: true
   variables:
-      # All available variables are described in documentation
+    # All available variables are described in documentation
     # https://nvuillam.github.io/mega-linter/configuration/
     DEFAULT_WORKSPACE: $CI_PROJECT_DIR
     DEFAULT_BRANCH: master

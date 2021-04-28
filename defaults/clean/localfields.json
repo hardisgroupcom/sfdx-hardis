@@ -1,12 +1,12 @@
 {
-    "items": {
-        "CustomField": [
-            "Account.NameLocal",
-            "Contact.FirstNameLocal",
-            "Contact.LastNameLocal",
-            "Lead.CompanyLocal",
-            "Lead.FirstNameLocal",
-            "Lead.LastNameLocal"
-        ]
-    }
+  "items": {
+    "CustomField": [
+      "Account.NameLocal",
+      "Contact.FirstNameLocal",
+      "Contact.LastNameLocal",
+      "Lead.CompanyLocal",
+      "Lead.FirstNameLocal",
+      "Lead.LastNameLocal"
+    ]
+  }
 }

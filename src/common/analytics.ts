@@ -18,10 +18,7 @@ let pkgJson;
 let anonymousUserId;
 
 // Record anonymous statistics for better use. Returns a promise that can be awaited by the caller or not
-export function recordAnonymousEvent(
-  eventType: string,
-  data: any
-): Promise<any> {
+export function recordAnonymousEvent(eventType: string, data: any): Promise<any> {
   debug("Analytics init: " + eventType);
   if (amplitudeClient == null) {
     amplitudeClient = Amplitude.init(AMPLITUDE_TOKEN);
@@ -39,22 +36,13 @@ export function recordAnonymousEvent(
       app_version: data.appVersion,
       os_name: data.osPlatform,
       os_version: data.osRelease,
-      language:
-        process.env.LANG ||
-        process.env.LANGUAGE ||
-        process.env.LC_ALL ||
-        process.env.LC_MESSAGES,
+      language: process.env.LANG || process.env.LANGUAGE || process.env.LC_ALL || process.env.LC_MESSAGES,
       event_type: "command",
       event_properties: eventPayloadFiltered,
       user_id: anonymousUserId,
       ip: "127.0.0.1",
     });
-    debug(
-      "Analytics sent: " +
-        eventType +
-        " " +
-        JSON.stringify(eventPayloadFiltered)
-    );
+    debug("Analytics sent: " + eventType + " " + JSON.stringify(eventPayloadFiltered));
     resolve(true);
   });
 }
@@ -79,26 +67,19 @@ function getPackageJson() {
     pkg = require(packageJsonFileNm);
   } else {
     pkg = { name: "sfdx-essentials", version: "0.0.0" };
-    console.warn(
-      `package.json not found, use default value ${JSON.stringify(pkg)} instead`
-    );
+    console.warn(`package.json not found, use default value ${JSON.stringify(pkg)} instead`);
   }
   return pkg;
 }
 
 // Get unique anonymous user identifier
 function getUuidV4() {
-  const localStorageFileNm = path.resolve(
-    os.homedir() + "/.node-stats/local-storage.json"
-  );
+  const localStorageFileNm = path.resolve(os.homedir() + "/.node-stats/local-storage.json");
   let usrLocalStorage = { anonymousUserId: null };
   if (fs.existsSync(localStorageFileNm)) {
     usrLocalStorage = fs.readJsonSync(localStorageFileNm);
   }
-  if (
-    usrLocalStorage.anonymousUserId &&
-    usrLocalStorage.anonymousUserId != null
-  ) {
+  if (usrLocalStorage.anonymousUserId && usrLocalStorage.anonymousUserId != null) {
     return usrLocalStorage.anonymousUserId;
   }
   const { v4: uuidv4 } = uuid;

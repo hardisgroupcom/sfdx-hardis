@@ -6,14 +6,9 @@ import { execCommand, uxLog } from ".";
 import { prompts } from "./prompts";
 
 // Import data from sfdmu folder
-export async function importData(
-  sfdmuPath: string,
-  commandThis: any,
-  options: any = {}
-) {
+export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
   uxLog(commandThis, c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
-  const targetUsername =
-    options.targetUsername || commandThis.org.getConnection().username;
+  const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
@@ -22,14 +17,9 @@ export async function importData(
 }
 
 // Import data from sfdmu folder
-export async function exportData(
-  sfdmuPath: string,
-  commandThis: any,
-  options: any = {}
-) {
+export async function exportData(sfdmuPath: string, commandThis: any, options: any = {}) {
   uxLog(commandThis, c.cyan(`Exporting data from ${c.green(sfdmuPath)} ...`));
-  const sourceUsername =
-    options.sourceUsername || commandThis.org.getConnection().username;
+  const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
   const dataImportCommand = `sfdx sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
@@ -48,13 +38,9 @@ export async function selectDataWorkspace() {
   const sfdmuFolders = fs
     .readdirSync(dataFolderRoot, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
-    .map((dirent) =>
-      path.resolve(path.join(".", "scripts", "data", dirent.name))
-    );
+    .map((dirent) => path.resolve(path.join(".", "scripts", "data", dirent.name)));
   if (sfdmuFolders.length === 0) {
-    throw new SfdxError(
-      "There is no sfdmu folder in your workspace. Create them using sfdmu: https://help.sfdmu.com/"
-    );
+    throw new SfdxError("There is no sfdmu folder in your workspace. Create them using sfdmu: https://help.sfdmu.com/");
   }
   const sfdmuDirResult = await prompts({
     type: "select",

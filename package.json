@@ -109,6 +109,9 @@
     ]
   },
   "repository": "hardisgroupcom/sfdx-hardis",
+  "prettier": {
+    "printWidth": 150
+  },
   "scripts": {
     "compile": "tsc --watch",
     "lint": "eslint . --ext .ts",

@@ -65,15 +65,7 @@ export default class DxSources extends SfdxCommand {
     await ensureGitRepository({ init: true });
 
     // Retrieve metadatas
-    await MetadataUtils.retrieveMetadatas(
-      packageXml,
-      folder,
-      false,
-      [],
-      {},
-      this,
-      debug
-    );
+    await MetadataUtils.retrieveMetadatas(packageXml, folder, false, [], {}, this, debug);
 
     // Copy to destination
     await fs.copy(path.join(folder, "unpackaged"), path.resolve(folder));
