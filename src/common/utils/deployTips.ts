@@ -216,6 +216,5 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`
 - enable the related permission in the target org
 - or remove references to permission in source XML files`,
     },
-    
   ];
 }
