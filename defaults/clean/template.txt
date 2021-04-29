@@ -29,6 +29,23 @@
                     "values": {{ CustomTab }}
                 }
             ]
+        },
+        {
+            "name": "Dashboards filtering",
+            "description": "Remove user references from dashboards",
+            "folders": [
+                "dashboards"
+            ],
+            "file_extensions": [
+                "xml"
+            ],
+            "exclude_list": [
+                {
+                    "type_tag": "folderShares",
+                    "identifier_tag": "sharedToType",
+                    "values": {{ HardcodedUser }}
+                }
+            ]
         }
     ]
 }

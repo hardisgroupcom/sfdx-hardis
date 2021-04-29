@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.15.0] 2021-04-30
+
+- hardis:project:clean:references : New cleaning module **dashboards** removing reference to users in Dashboards sources
+
 ## [2.14.0] 2021-04-29
 
 - Manage **manifest/packageDeployOnce.xml** : all its items that are already present in target org will not be deployed again
