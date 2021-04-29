@@ -21,11 +21,14 @@ async function managePackageJson(commandId: string) {
     !commandId.startsWith("hardis:project:configure") &&
     !commandId.startsWith("hardis:work") &&
     !commandId.startsWith("hardis:package") &&
-    !commandId.startsWith("hardis:data")
+    !commandId.startsWith("hardis:data") 
   ) {
     return;
   }
   if (commandId.startsWith("hardis:work:task:new")) {
+    return;
+  }
+  if (commandId.includes("config:get")) {
     return;
   }
   if (commandId.includes("configure")) {
