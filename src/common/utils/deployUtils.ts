@@ -175,10 +175,10 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
         deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
         const splitPackageXmlCopyFileName = path.join(tmpDeployDir, path.basename(deploymentItem.packageXmlFile));
         await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
-        deploymentItem.packageXmlFile = splitPackageXmlCopyFileName ;
-        await removePackageXmlContent(mainPackageXmlCopyFileName,deploymentItem.packageXmlFile,false, debugMode);
+        deploymentItem.packageXmlFile = splitPackageXmlCopyFileName;
+        await removePackageXmlContent(mainPackageXmlCopyFileName, deploymentItem.packageXmlFile, false, debugMode);
         if (deployOncePackageXml) {
-          await removePackageXmlContent(deploymentItem.packageXmlFile,deployOncePackageXml,false, debugMode);
+          await removePackageXmlContent(deploymentItem.packageXmlFile, deployOncePackageXml, false, debugMode);
         }
       }
       deploymentItems.push(deploymentItem);
@@ -186,7 +186,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
 
     // Remove packageXmlDeployOnce.xml items that are already present in target org
     if (deployOncePackageXml) {
-      await removePackageXmlContent(mainPackageXmlCopyFileName,deployOncePackageXml,false, debugMode);
+      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOncePackageXml, false, debugMode);
     }
 
     // Sort in requested order
@@ -206,36 +206,46 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
 }
 
 // packageDeployOnce.xml items are deployed only if they are not in the target org
-async function buildDeployOncePackageXml(debugMode=false) {
-  const packageXmlDeployOnce = path.resolve("./manifest/packageDeployOnce.xml"); 
+async function buildDeployOncePackageXml(debugMode = false) {
+  const packageXmlDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
   if (fs.existsSync(packageXmlDeployOnce)) {
-    uxLog(this,'Building packageDeployOnce.xml...');
+    uxLog(this, "Building packageDeployOnce.xml...");
     const packageXmlDeployOnceString = await fs.readFile(packageXmlDeployOnce, "utf8");
     const packageXmlDeployOnceContent = await xml2js.parseStringPromise(packageXmlDeployOnceString);
     // If packageDeployOnce.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
-    if (packageXmlDeployOnceContent && packageXmlDeployOnceContent.Package && packageXmlDeployOnceContent.Package.types && packageXmlDeployOnceContent.Package.types.length > 0) {
+    if (
+      packageXmlDeployOnceContent &&
+      packageXmlDeployOnceContent.Package &&
+      packageXmlDeployOnceContent.Package.types &&
+      packageXmlDeployOnceContent.Package.types.length > 0
+    ) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
       uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching packageDeployOnce.xml ...`));
       const targetOrgPackageXml = path.join(tmpDir, "packageTargetOrg.xml");
-      await execCommand(`sfdx sfpowerkit:org:manifest:build -o ${targetOrgPackageXml}`,this,{fail: true,debug: debugMode, output:false});
+      await execCommand(`sfdx sfpowerkit:org:manifest:build -o ${targetOrgPackageXml}`, this, { fail: true, debug: debugMode, output: false });
       const packageXmlDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
       await fs.copy(packageXmlDeployOnce, packageXmlDeployOnceToUse);
       // Keep in deployOnce.xml only what is necessary to deploy
-      await removePackageXmlContent(packageXmlDeployOnceToUse,targetOrgPackageXml,true,debugMode);
+      await removePackageXmlContent(packageXmlDeployOnceToUse, targetOrgPackageXml, true, debugMode);
       // Check if there is still something in updated packageDeployOnce.xml
       const packageXmlDeployOnceStringNew = await fs.readFile(packageXmlDeployOnceToUse, "utf8");
       const packageXmlDeployOnceContentNew = await xml2js.parseStringPromise(packageXmlDeployOnceStringNew);
-      if (packageXmlDeployOnceContentNew && packageXmlDeployOnceContentNew.Package && packageXmlDeployOnceContentNew.Package.types && packageXmlDeployOnceContentNew.Package.types.length > 0) {
+      if (
+        packageXmlDeployOnceContentNew &&
+        packageXmlDeployOnceContentNew.Package &&
+        packageXmlDeployOnceContentNew.Package.types &&
+        packageXmlDeployOnceContentNew.Package.types.length > 0
+      ) {
         return packageXmlDeployOnceToUse;
       }
     }
   }
-  return null ;
+  return null;
 }
 
 // Remove content of a package.xml file from another package.xml file
-async function removePackageXmlContent(packageXmlFile: string,packageXmlFileToRemove: string,removedOnly=false, debugMode=false) {
+async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToRemove: string, removedOnly = false, debugMode = false) {
   uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}`));
   let removePackageXmlCommand =
     "sfdx essentials:packagexml:remove" +
@@ -244,7 +254,7 @@ async function removePackageXmlContent(packageXmlFile: string,packageXmlFileToRe
     ` --outputfile ${packageXmlFile}` +
     ` --noinsight `;
   if (removedOnly === true) {
-    removePackageXmlCommand+= ' --removedonly';
+    removePackageXmlCommand += " --removedonly";
   }
   await execCommand(removePackageXmlCommand, this, {
     fail: true,

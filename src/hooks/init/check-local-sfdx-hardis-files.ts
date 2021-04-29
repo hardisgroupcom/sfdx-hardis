@@ -21,7 +21,7 @@ async function managePackageJson(commandId: string) {
     !commandId.startsWith("hardis:project:configure") &&
     !commandId.startsWith("hardis:work") &&
     !commandId.startsWith("hardis:package") &&
-    !commandId.startsWith("hardis:data") 
+    !commandId.startsWith("hardis:data")
   ) {
     return;
   }
