@@ -53,14 +53,8 @@ export default class PackageVersionInstall extends SfdxCommand {
 
   /* jscpd:ignore-end */
 
-  protected allPackagesFileName = path.join(
-    __dirname,
-    "./../../../../defaults/packages.json"
-  );
-  protected sfdxProjectJsonFileName = path.join(
-    process.cwd(),
-    "sfdx-project.json"
-  );
+  protected allPackagesFileName = path.join(__dirname, "./../../../../defaults/packages.json");
+  protected sfdxProjectJsonFileName = path.join(process.cwd(), "sfdx-project.json");
 
   public async run(): Promise<AnyJson> {
     const packagesRaw = await fs.readFile(this.allPackagesFileName, "utf8");
@@ -77,11 +71,7 @@ export default class PackageVersionInstall extends SfdxCommand {
       const packageResponse = await prompts({
         type: "select",
         name: "value",
-        message: c.cyanBright(
-          `Please select the package you want to install on org  ${c.green(
-            this.org.getUsername()
-          )}`
-        ),
+        message: c.cyanBright(`Please select the package you want to install on org  ${c.green(this.org.getUsername())}`),
         choices: allPackages,
         initial: 0,
       });
@@ -91,9 +81,7 @@ export default class PackageVersionInstall extends SfdxCommand {
           name: "value",
           message: c.cyanBright(
             "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
-              c.bold(
-                "Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage"
-              )
+              c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
           ),
         });
         packagesToInstall.push({
@@ -101,11 +89,9 @@ export default class PackageVersionInstall extends SfdxCommand {
         });
       } else if (packageResponse.value.bundle) {
         // Package bundle selected
-        const packagesToAdd = packageResponse.value.packages.map(
-          (packageId) => {
-            return packages.filter((pckg) => pckg.package === packageId)[0];
-          }
-        );
+        const packagesToAdd = packageResponse.value.packages.map((packageId) => {
+          return packages.filter((pckg) => pckg.package === packageId)[0];
+        });
         packagesToInstall.push(...packagesToAdd);
       } else {
         // Single package selected
@@ -137,25 +123,9 @@ export default class PackageVersionInstall extends SfdxCommand {
       })
     );
     // Install packages
-    await MetadataUtils.installPackagesOnOrg(
-      packagesToInstallCompleted,
-      null,
-      this,
-      "install"
-    );
-    const installedPackages = await MetadataUtils.listInstalledPackages(
-      null,
-      this
-    );
-    uxLog(
-      this,
-      c.italic(
-        c.grey(
-          "New package list on org:\n" +
-            JSON.stringify(installedPackages, null, 2)
-        )
-      )
-    );
+    await MetadataUtils.installPackagesOnOrg(packagesToInstallCompleted, null, this, "install");
+    const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+    uxLog(this, c.italic(c.grey("New package list on org:\n" + JSON.stringify(installedPackages, null, 2))));
 
     if (!isCI) {
       // Add package installation to project .sfdx-hardis.yml
@@ -164,23 +134,17 @@ export default class PackageVersionInstall extends SfdxCommand {
       let updated = false;
       for (const installedPackage of installedPackages) {
         const matchInstalled = packagesToInstallCompleted.filter(
-          (pckg) =>
-            pckg.SubscriberPackageVersionId ===
-            installedPackage.SubscriberPackageVersionId
+          (pckg) => pckg.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId
         );
         const matchLocal = projectPackages.filter(
-          (projectPackage) =>
-            installedPackage.SubscriberPackageVersionId ===
-            projectPackage.SubscriberPackageVersionId
+          (projectPackage) => installedPackage.SubscriberPackageVersionId === projectPackage.SubscriberPackageVersionId
         );
         if (matchInstalled.length > 0 && matchLocal.length === 0) {
           // Request user about automatic installation during scratch orgs and deployments
           const installResponse = await prompts({
             type: "select",
             name: "value",
-            message: c.cyanBright(
-              `Please select the install configuration for ${installedPackage.SubscriberPackageName}`
-            ),
+            message: c.cyanBright(`Please select the install configuration for ${installedPackage.SubscriberPackageName}`),
             choices: [
               {
                 title: `Install automatically ${installedPackage.SubscriberPackageName} on scratch orgs only`,
@@ -200,26 +164,16 @@ export default class PackageVersionInstall extends SfdxCommand {
               },
             ],
           });
-          installedPackage.installOnScratchOrgs = installResponse.value.includes(
-            "scratch"
-          );
-          installedPackage.installDuringDeployments = installResponse.value.includes(
-            "deploy"
-          );
-          if (
-            installResponse.value !== "none" &&
-            installResponse.value != null
-          ) {
+          installedPackage.installOnScratchOrgs = installResponse.value.includes("scratch");
+          installedPackage.installDuringDeployments = installResponse.value.includes("deploy");
+          if (installResponse.value !== "none" && installResponse.value != null) {
             projectPackages.push(installedPackage);
             updated = true;
           }
         }
       }
       if (updated) {
-        uxLog(
-          this,
-          "Updating project sfdx-hardis config to packages are installed everytime"
-        );
+        uxLog(this, "Updating project sfdx-hardis config to packages are installed everytime");
         await setConfig("project", { installedPackages: projectPackages });
       }
     }

@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.14.0] 2021-04-29
+
+- Manage **manifest/packageDeployOnce.xml** : all its items that are already present in target org will not be deployed again
+
 ## [2.13.4] 2021-04-26
 
 - New deploy tips
@@ -50,7 +54,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.10.3] 2021-04-14
 
-- Allow advanced user to bypass auth check (set `skipAuthCheck:true` in config/user/***.sfdx-hardis.yml)
+- Allow advanced user to bypass auth check (set `skipAuthCheck:true` in config/user/\*\*\*.sfdx-hardis.yml)
 - Optimize check of `force:config:set restDeploy: false`
 - hardis:package:version:create : Store package installation password in project config + fixes
 
@@ -373,7 +377,7 @@ Example:
 
 - New command **hardis:scratch:create**
 - Advanced project initialization using `--shape` argument for `sfdx hardis:org:retrieve:sources:dx`
-- Automatic generation of .sfdx-hardis*.yml configuration files
+- Automatic generation of .sfdx-hardis\*.yml configuration files
 - Automatic update of project package.json to add sfdx-hardis utilities
 
 ## [0.5.10] 2021-02-12
@@ -433,4 +437,3 @@ Example:
 ## [0.0.1] 2021-01-26
 
 - New command **sfdx hardis:org:purge:flow** : Purge Obsolete flow versions to avoid the 50 max versions limit
-

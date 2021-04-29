@@ -94,9 +94,7 @@ export default class OrgSelect extends SfdxCommand {
       return { outputString: "Launched org connection" };
     } else {
       // Set default username
-      const setDefaultUsernameCommand = `sfdx config:set ${
-        devHub ? "defaultdevhubusername" : "defaultusername"
-      }=${orgResponse.org.username}`;
+      const setDefaultUsernameCommand = `sfdx config:set ${devHub ? "defaultdevhubusername" : "defaultusername"}=${orgResponse.org.username}`;
       await execSfdxJson(setDefaultUsernameCommand, this, {
         fail: true,
         output: false,
@@ -111,14 +109,7 @@ export default class OrgSelect extends SfdxCommand {
       }
 
       uxLog(this, c.gray(JSON.stringify(orgResponse.org, null, 2)));
-      uxLog(
-        this,
-        c.cyan(
-          `Selected org ${c.green(orgResponse.org.username)} - ${c.green(
-            orgResponse.org.instanceUrl
-          )}`
-        )
-      );
+      uxLog(this, c.cyan(`Selected org ${c.green(orgResponse.org.username)} - ${c.green(orgResponse.org.instanceUrl)}`));
 
       // Return an object to be displayed with --json
       return { outputString: `Selected org ${orgResponse.org.username}` };

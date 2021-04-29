@@ -6,12 +6,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as glob from "glob-promise";
-import {
-  createTempDir,
-  execCommand,
-  isCI,
-  uxLog,
-} from "../../../../common/utils";
+import { createTempDir, execCommand, isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
 import { getConfig, setConfig } from "../../../../config";
@@ -26,8 +21,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class CleanReferences extends SfdxCommand {
   public static title = "Clean references in dx sources";
 
-  public static description =
-    "Remove unwanted references within sfdx project sources";
+  public static description = "Remove unwanted references within sfdx project sources";
 
   public static examples = [
     "$ sfdx hardis:project:clean:references",
@@ -42,18 +36,11 @@ export default class CleanReferences extends SfdxCommand {
     type: flags.string({
       char: "t",
       description: "Cleaning type",
-      options: [
-        "all",
-        "caseentitlement",
-        "datadotcom",
-        "destructivechanges",
-        "localfields",
-      ],
+      options: ["all", "caseentitlement", "datadotcom", "destructivechanges", "localfields"],
     }),
     config: flags.string({
       char: "c",
-      description:
-        "Path to a JSON config file or a destructiveChanges.xml file",
+      description: "Path to a JSON config file or a destructiveChanges.xml file",
     }),
     debug: flags.boolean({
       char: "d",
@@ -84,8 +71,7 @@ export default class CleanReferences extends SfdxCommand {
     },
     {
       value: "datadotcom",
-      title:
-        "References to Data.com items. https://help.salesforce.com/articleView?id=000320795&type=1&mode=1",
+      title: "References to Data.com items. https://help.salesforce.com/articleView?id=000320795&type=1&mode=1",
     },
     {
       value: "destructivechanges",
@@ -93,8 +79,7 @@ export default class CleanReferences extends SfdxCommand {
     },
     {
       value: "localfields",
-      title:
-        "References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5",
+      title: "References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5",
     },
   ];
 
@@ -121,9 +106,7 @@ export default class CleanReferences extends SfdxCommand {
         const typesResponse = await prompts({
           type: "multiselect",
           name: "value",
-          message: c.cyanBright(
-            "What references do you want to clean from your SFDX project sources ?"
-          ),
+          message: c.cyanBright("What references do you want to clean from your SFDX project sources ?"),
           choices: this.allCleaningTypes,
         });
         this.cleaningTypes = typesResponse.value;
@@ -132,17 +115,13 @@ export default class CleanReferences extends SfdxCommand {
 
     // Prompt user to save choice in configuration
     const autoCleanTypes = config.autoCleanTypes || [];
-    const toAdd = this.cleaningTypes.filter(
-      (type) => !autoCleanTypes.includes(type)
-    );
+    const toAdd = this.cleaningTypes.filter((type) => !autoCleanTypes.includes(type));
     if (toAdd.length > 0 && !isCI && this.flags.type !== "all") {
       const saveResponse = await prompts({
         type: "confirm",
         name: "value",
         default: true,
-        message: c.cyanBright(
-          "Do you want to save this configuration in your project configuration ?"
-        ),
+        message: c.cyanBright("Do you want to save this configuration in your project configuration ?"),
       });
       if (saveResponse.value === true) {
         autoCleanTypes.push(...this.cleaningTypes);
@@ -154,10 +133,7 @@ export default class CleanReferences extends SfdxCommand {
 
     // Process cleaning
     for (const cleaningType of this.cleaningTypes) {
-      uxLog(
-        this,
-        c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)}...`)
-      );
+      uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)}...`));
       const filterConfigFile = await this.getFilterConfigFile(cleaningType);
       const cleanCommand =
         "sfdx essentials:metadata:filter-xml-content" +
@@ -180,14 +156,8 @@ export default class CleanReferences extends SfdxCommand {
         for (const field of this.deleteItems[type]) {
           // Remove custom field and customTranslation
           const [obj, fld] = field.split(".");
-          const patternField =
-            process.cwd() +
-            "/force-app/" +
-            `**/objects/${obj}/fields/${fld}.field-meta.xml`;
-          const patternTranslation =
-            process.cwd() +
-            "/force-app/" +
-            `**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
+          const patternField = process.cwd() + "/force-app/" + `**/objects/${obj}/fields/${fld}.field-meta.xml`;
+          const patternTranslation = process.cwd() + "/force-app/" + `**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
           for (const pattern of [patternField, patternTranslation]) {
             const matchFiles = await glob(pattern, { cwd: process.cwd() });
             for (const removeFile of matchFiles) {
@@ -196,31 +166,20 @@ export default class CleanReferences extends SfdxCommand {
             }
           }
           // Remove field in recordTypes
-          const patternRecordType =
-            process.cwd() +
-            "/force-app/" +
-            `**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
+          const patternRecordType = process.cwd() + "/force-app/" + `**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
           const matchFilesPattern = await glob(patternRecordType, {
             cwd: process.cwd(),
           });
           for (const recordTypeFile of matchFilesPattern) {
             const recordType = await parseXmlFile(recordTypeFile);
             if (recordType?.RecordType.picklistValues) {
-              const updatedPicklistValues = recordType.RecordType.picklistValues.filter(
-                (picklistValue) => {
-                  return picklistValue?.picklist[0] !== fld;
-                }
-              );
-              if (
-                updatedPicklistValues.length !==
-                recordType.RecordType.picklistValues.length
-              ) {
+              const updatedPicklistValues = recordType.RecordType.picklistValues.filter((picklistValue) => {
+                return picklistValue?.picklist[0] !== fld;
+              });
+              if (updatedPicklistValues.length !== recordType.RecordType.picklistValues.length) {
                 recordType.RecordType.picklistValues = updatedPicklistValues;
                 await writeXmlFile(recordTypeFile, recordType);
-                uxLog(
-                  this,
-                  c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`)
-                );
+                uxLog(this, c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
               }
             }
           }
@@ -233,64 +192,33 @@ export default class CleanReferences extends SfdxCommand {
   }
 
   private async getFilterConfigFile(cleaningType) {
-    const templateFile = path.join(
-      path.join(__dirname, "../../../../../defaults/clean", "template.txt")
-    );
+    const templateFile = path.join(path.join(__dirname, "../../../../../defaults/clean", "template.txt"));
     // Read and complete cleaning template
     let templateContent = await fs.readFile(templateFile, "utf8");
-    if (
-      cleaningType === "destructivechanges" ||
-      cleaningType.endsWith(".xml")
-    ) {
+    if (cleaningType === "destructivechanges" || cleaningType.endsWith(".xml")) {
       // destructive changes file
-      const destructiveChangesFile = cleaningType.endsWith(".xml")
-        ? cleaningType
-        : "./manifest/destructiveChanges.xml";
+      const destructiveChangesFile = cleaningType.endsWith(".xml") ? cleaningType : "./manifest/destructiveChanges.xml";
       const destructiveChanges = await parseXmlFile(destructiveChangesFile);
       for (const type of destructiveChanges.Package.types || []) {
         const members = type.members;
-        templateContent = templateContent.replace(
-          new RegExp(`{{ ${type.name[0]} }}`, "g"),
-          JSON.stringify(members, null, 2)
-        );
-        this.deleteItems[type.name[0]] = (
-          this.deleteItems[type.name[0]] || []
-        ).concat(members);
+        templateContent = templateContent.replace(new RegExp(`{{ ${type.name[0]} }}`, "g"), JSON.stringify(members, null, 2));
+        this.deleteItems[type.name[0]] = (this.deleteItems[type.name[0]] || []).concat(members);
       }
     } else {
       // Predefined destructive items file
       const filterConfigFileConfigPath = cleaningType.endsWith(".json")
         ? cleaningType
-        : path.join(
-            path.join(
-              __dirname,
-              "../../../../../defaults/clean",
-              cleaningType + ".json"
-            )
-          );
-      const filterConfigFileConfig = JSON.parse(
-        await fs.readFile(filterConfigFileConfigPath, "utf8")
-      );
+        : path.join(path.join(__dirname, "../../../../../defaults/clean", cleaningType + ".json"));
+      const filterConfigFileConfig = JSON.parse(await fs.readFile(filterConfigFileConfigPath, "utf8"));
       for (const type of Object.keys(filterConfigFileConfig.items)) {
-        templateContent = templateContent.replace(
-          new RegExp(`{{ ${type} }}`, "g"),
-          JSON.stringify(filterConfigFileConfig.items[type], null, 2)
-        );
-        this.deleteItems[type] = (this.deleteItems[type] || []).concat(
-          filterConfigFileConfig.items[type]
-        );
+        templateContent = templateContent.replace(new RegExp(`{{ ${type} }}`, "g"), JSON.stringify(filterConfigFileConfig.items[type], null, 2));
+        this.deleteItems[type] = (this.deleteItems[type] || []).concat(filterConfigFileConfig.items[type]);
       }
     }
     // Create temporary file
     templateContent = templateContent.replace(/{{ .* }}/gm, "[]");
-    const tmpCleanFileName =
-      cleaningType.endsWith(".xml") || cleaningType.endsWith(".json")
-        ? path.basename(cleaningType)
-        : cleaningType;
-    const filterConfigFile = path.join(
-      await createTempDir(),
-      `clean_${tmpCleanFileName}.json`
-    );
+    const tmpCleanFileName = cleaningType.endsWith(".xml") || cleaningType.endsWith(".json") ? path.basename(cleaningType) : cleaningType;
+    const filterConfigFile = path.join(await createTempDir(), `clean_${tmpCleanFileName}.json`);
     await fs.writeFile(filterConfigFile, templateContent);
     return filterConfigFile;
   }

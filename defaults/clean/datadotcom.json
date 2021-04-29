@@ -1,24 +1,24 @@
 {
-    "items": {
-        "CustomField": [
-            "Account.DunsNumber",
-            "Account.DandbCompanyId",
-            "Account.NaicsCode",
-            "Account.NaicsDesc",
-            "Account.OperatingHoursId",
-            "Account.Tradestyle",
-            "Account.YearStarted",
-            "Account.CleanStatus",
-            "Account.Jigsaw",
-            "Lead.CompanyDunsNumber",
-            "Lead.DandbCompanyId",
-            "Lead.CleanStatus",
-            "Lead.Jigsaw",
-            "Contact.CleanStatus",
-            "Contact.Jigsaw",
-            "UserPermissionsJigsawProspectingUser",
-            "UserPreferencesJigsawListUser",
-            "User.JigsawImportLimitOverride"
-        ]
-    }
+  "items": {
+    "CustomField": [
+      "Account.DunsNumber",
+      "Account.DandbCompanyId",
+      "Account.NaicsCode",
+      "Account.NaicsDesc",
+      "Account.OperatingHoursId",
+      "Account.Tradestyle",
+      "Account.YearStarted",
+      "Account.CleanStatus",
+      "Account.Jigsaw",
+      "Lead.CompanyDunsNumber",
+      "Lead.DandbCompanyId",
+      "Lead.CleanStatus",
+      "Lead.Jigsaw",
+      "Contact.CleanStatus",
+      "Contact.Jigsaw",
+      "UserPermissionsJigsawProspectingUser",
+      "UserPreferencesJigsawListUser",
+      "User.JigsawImportLimitOverride"
+    ]
+  }
 }

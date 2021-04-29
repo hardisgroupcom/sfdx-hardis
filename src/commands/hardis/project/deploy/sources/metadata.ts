@@ -7,10 +7,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { createTempDir, execCommand, uxLog } from "../../../../../common/utils";
-import {
-  deployDestructiveChanges,
-  deployMetadatas,
-} from "../../../../../common/utils/deployUtils";
+import { deployDestructiveChanges, deployMetadatas } from "../../../../../common/utils/deployUtils";
 import { getConfig } from "../../../../../config";
 
 // Initialize Messages with the current plugin directory
@@ -49,12 +46,7 @@ export default class DxSources extends SfdxCommand {
     testlevel: flags.enum({
       char: "l",
       default: "RunLocalTests",
-      options: [
-        "NoTestRun",
-        "RunSpecifiedTests",
-        "RunLocalTests",
-        "RunAllTestsInOrg",
-      ],
+      options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
       description: messages.getMessage("testLevel"),
     }),
     debug: flags.boolean({
@@ -97,10 +89,7 @@ export default class DxSources extends SfdxCommand {
 
     // Deploy sources
     const packageXmlFile =
-      packageXml ||
-      process.env.PACKAGE_XML_TO_DEPLOY ||
-      this.configInfo.packageXmlToDeploy ||
-      fs.existsSync("./manifest/package.xml")
+      packageXml || process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
         ? "./manifest/package.xml"
         : fs.existsSync("./package.xml")
         ? "./package.xml"
@@ -110,11 +99,7 @@ export default class DxSources extends SfdxCommand {
       // Filter if necessary
       if (filter) {
         const tmpDir = await createTempDir();
-        const filterCommand =
-          "sfdx essentials:metadata:filter-from-packagexml" +
-          ` -i ${deployDir}` +
-          ` -p ${packageXmlFile}` +
-          ` -o ${tmpDir}`;
+        const filterCommand = "sfdx essentials:metadata:filter-from-packagexml" + ` -i ${deployDir}` + ` -p ${packageXmlFile}` + ` -o ${tmpDir}`;
         deployDir = tmpDir;
         await execCommand(filterCommand, this, {
           output: true,
@@ -133,12 +118,10 @@ export default class DxSources extends SfdxCommand {
       let message = "";
       if (deployRes.status === 0) {
         deployProcessed = true;
-        message =
-          "[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org";
+        message = "[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org";
         this.ux.log(c.green(message));
       } else {
-        message =
-          "[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org";
+        message = "[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org";
         this.ux.log(c.red(deployRes.errorMessage));
       }
     } else {
@@ -156,16 +139,9 @@ export default class DxSources extends SfdxCommand {
         ? "./destructiveChanges.xml"
         : "./config/destructiveChanges.xml";
     if (fs.existsSync(packageDeletedXmlFile)) {
-      await deployDestructiveChanges(
-        packageDeletedXmlFile,
-        { debug: debugMode, check },
-        this
-      );
+      await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {
-      uxLog(
-        this,
-        "No destructivePackage.Xml found so no destructive deployment has been performed"
-      );
+      uxLog(this, "No destructivePackage.Xml found so no destructive deployment has been performed");
     }
 
     return {

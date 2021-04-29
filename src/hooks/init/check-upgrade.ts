@@ -17,24 +17,14 @@ export const hook = async (options: any) => {
     updateCheckInterval: 900, // check every 15 mn
   });
   if (notifier && notifier.update) {
+    console.warn(c.yellow("***********************************************************************************************************************"));
     console.warn(
       c.yellow(
-        "***********************************************************************************************************************"
-      )
-    );
-    console.warn(
-      c.yellow(
-        `WARNING: You are using sfdx-hardis v${
-          notifier.update.current
-        }: Please upgrade to ${notifier.update.latest} by running ${c.green(
+        `WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to ${notifier.update.latest} by running ${c.green(
           "sfdx plugins:install sfdx-hardis"
         )}`
       )
     );
-    console.warn(
-      c.yellow(
-        "***********************************************************************************************************************"
-      )
-    );
+    console.warn(c.yellow("***********************************************************************************************************************"));
   }
 };

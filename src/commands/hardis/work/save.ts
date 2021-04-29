@@ -35,10 +35,7 @@ export default class SaveTask extends SfdxCommand {
 
   public static description = messages.getMessage("completeWorkTask");
 
-  public static examples = [
-    "$ sfdx hardis:work:task:save",
-    "$ sfdx hardis:work:task:save --nopull --nogit --noclean",
-  ];
+  public static examples = ["$ sfdx hardis:work:task:save", "$ sfdx hardis:work:task:save --nopull --nogit --noclean"];
 
   // public static args = [{name: 'file'}];
 
@@ -94,9 +91,7 @@ export default class SaveTask extends SfdxCommand {
     uxLog(
       this,
       c.cyan(
-        `This script will prepare the merge request from your local branch ${c.green(
-          localBranch
-        )} to remote ${c.green(config.developmentBranch)}`
+        `This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(config.developmentBranch)}`
       )
     );
 
@@ -117,16 +112,10 @@ export default class SaveTask extends SfdxCommand {
 
     // Pull from scratch org
     if (this.noPull) {
-      uxLog(
-        this,
-        c.cyan(`[Expert mode] Skipped force:source:pull from scratch org`)
-      );
+      uxLog(this, c.cyan(`[Expert mode] Skipped force:source:pull from scratch org`));
     } else {
       // Pull DX sources
-      uxLog(
-        this,
-        c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`)
-      );
+      uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
       await forceSourcePull(this.org.getUsername(), this.debugMode);
       // Extract data from org
       const dataSources = [
@@ -140,11 +129,7 @@ export default class SaveTask extends SfdxCommand {
           const exportDataRes = await prompts({
             type: "confirm",
             name: "value",
-            message: c.cyan(
-              `Did you update ${c.green(
-                dataSource.label
-              )} and want to export related data ?`
-            ),
+            message: c.cyan(`Did you update ${c.green(dataSource.label)} and want to export related data ?`),
           });
           if (exportDataRes.value === true) {
             await exportData(dataSource.dataPath, this, {
@@ -227,12 +212,7 @@ export default class SaveTask extends SfdxCommand {
       },
     ];
     if (this.noGit) {
-      uxLog(
-        this,
-        c.cyan(
-          `[Expert mode] Skipped interactive git add: must be done manually`
-        )
-      );
+      uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
     } else {
       await interactiveGitAdd({ groups: groups });
     }
@@ -250,28 +230,19 @@ export default class SaveTask extends SfdxCommand {
           ),
         },
       ]);
-      uxLog(
-        this,
-        c.cyan(
-          `Committing files in local git branch ${c.green(currentGitBranch)}...`
-        )
-      );
+      uxLog(this, c.cyan(`Committing files in local git branch ${c.green(currentGitBranch)}...`));
       await git().commit(commitResponse.commitText || "Updated by sfdx-hardis");
     }
 
     // Retrieving info about current branch latest commit and master branch latest commit
-    const logResult = await git().log([
-      `${config.developmentBranch}..${currentGitBranch}`,
-    ]);
+    const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
     const toCommit = logResult.latest;
     const mergeBaseCommand = `git merge-base ${config.developmentBranch} ${currentGitBranch}`;
     const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {
       fail: true,
       debug: this.debugMode,
     });
-    const masterBranchLatestCommit = mergeBaseCommandResult.stdout
-      .replace("\n", "")
-      .replace("\r", "");
+    const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace("\n", "").replace("\r", "");
 
     // Build package.xml delta between most recent commit and developpement
     const localPackageXml = path.join("manifest", "package.xml");
@@ -279,9 +250,7 @@ export default class SaveTask extends SfdxCommand {
     uxLog(
       this,
       c.cyan(
-        `Calculating package.xml diff from [${c.green(
-          config.developmentBranch
-        )}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`
+        `Calculating package.xml diff from [${c.green(config.developmentBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`
       )
     );
     const tmpDir = await createTempDir();
@@ -295,10 +264,7 @@ export default class SaveTask extends SfdxCommand {
     });
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml
-      const localDestructiveChangesXml = path.join(
-        "manifest",
-        "destructiveChanges.xml"
-      );
+      const localDestructiveChangesXml = path.join("manifest", "destructiveChanges.xml");
       if (!fs.existsSync(localDestructiveChangesXml)) {
         // Create default destructiveChanges.xml if not defined
         const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -308,24 +274,12 @@ export default class SaveTask extends SfdxCommand {
 `;
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
       }
-      const diffDestructivePackageXml = path.join(
-        tmpDir,
-        "destructiveChanges",
-        "destructiveChanges.xml"
-      );
-      const destructivePackageXmlDiffStr = await fs.readFile(
-        diffDestructivePackageXml,
-        "utf8"
-      );
+      const diffDestructivePackageXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
+      const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, "utf8");
       uxLog(
         this,
-        c.bold(
-          c.cyan(
-            `destructiveChanges.xml diff to be merged within ${c.green(
-              localDestructiveChangesXml
-            )}:\n`
-          )
-        ) + c.red(destructivePackageXmlDiffStr)
+        c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
+          c.red(destructivePackageXmlDiffStr)
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +
@@ -342,20 +296,9 @@ export default class SaveTask extends SfdxCommand {
       // Upgrade local package.xml
       const diffPackageXml = path.join(tmpDir, "package", "package.xml");
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, "utf8");
-      uxLog(
-        this,
-        c.bold(
-          c.cyan(
-            `package.xml diff to be merged within ${c.green(
-              localPackageXml
-            )}:\n`
-          )
-        ) + c.green(packageXmlDiffStr)
-      );
+      uxLog(this, c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) + c.green(packageXmlDiffStr));
       const appendPackageXmlCommand =
-        "sfdx essentials:packagexml:append" +
-        ` --packagexmls ${localPackageXml},${diffPackageXml}` +
-        ` --outputfile ${localPackageXml}`;
+        "sfdx essentials:packagexml:append" + ` --packagexmls ${localPackageXml},${diffPackageXml}` + ` --outputfile ${localPackageXml}`;
       await execCommand(appendPackageXmlCommand, this, {
         fail: true,
         debug: this.debugMode,
@@ -376,62 +319,35 @@ export default class SaveTask extends SfdxCommand {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(
         this,
-        c.red(
-          `Unable to build git diff. Please call a developer to ${c.yellow(
-            c.bold("update package.xml and destructivePackage.xml manually")
-          )}`
-        )
+        c.red(`Unable to build git diff. Please call a developer to ${c.yellow(c.bold("update package.xml and destructivePackage.xml manually"))}`)
       );
     }
 
     // Commit updates
     const gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
-      uxLog(
-        this,
-        `Committing files in local git branch ${c.green(currentGitBranch)}...`
-      );
-      await git({ output: true }).commit(
-        "[sfdx-hardis] Update package content"
-      );
+      uxLog(this, `Committing files in local git branch ${c.green(currentGitBranch)}...`);
+      await git({ output: true }).commit("[sfdx-hardis] Update package content");
     }
 
     // Apply cleaning defined on project
     if (!this.noClean) {
-      const gitStatusFilesBeforeClean = (await git().status()).files.map(
-        (file) => file.path
-      );
+      const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
       console.log(JSON.stringify(gitStatusFilesBeforeClean, null, 2));
       uxLog(this, c.cyan("Cleaning sfdx project from obsolete references..."));
       // await execCommand("sfdx hardis:project:clean:references --type all", this, { output: true, fail: true, debug: this.debugMode });
       await CleanReferences.run(["--type", "all"]);
       const gitStatusAfterClean = await git().status();
       console.log(JSON.stringify(gitStatusAfterClean, null, 2));
-      const cleanedFiles = gitStatusAfterClean.files
-        .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
-        .map((file) => file.path);
+      const cleanedFiles = gitStatusAfterClean.files.filter((file) => !gitStatusFilesBeforeClean.includes(file.path)).map((file) => file.path);
       if (cleanedFiles.length > 0) {
-        uxLog(
-          this,
-          c.cyan(
-            `Cleaned the following list of files:\n${cleanedFiles.join("\n")}`
-          )
-        );
+        uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join("\n")}`));
         if (!this.noGit) {
           try {
             await git().add(cleanedFiles);
-            await git({ output: true }).commit(
-              "[sfdx-hardis] Clean sfdx project"
-            );
+            await git({ output: true }).commit("[sfdx-hardis] Clean sfdx project");
           } catch (e) {
-            uxLog(
-              this,
-              c.yellow(
-                `There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(
-                  e.message
-                )}`
-              )
-            );
+            uxLog(this, c.yellow(`There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(e.message)}`));
           }
         }
       }
@@ -495,9 +411,7 @@ export default class SaveTask extends SfdxCommand {
             blankPackageXml.Package.types = [];
             for (const type of Object.keys(split.content)) {
               if (type !== split.mainType) {
-                const filteredMembers = split.content[type].filter((member) =>
-                  member.includes(`${mainTypeMember}.`)
-                );
+                const filteredMembers = split.content[type].filter((member) => member.includes(`${mainTypeMember}.`));
                 splitPackageXml.Package.types.push({
                   name: [type],
                   members: filteredMembers,
@@ -522,9 +436,7 @@ export default class SaveTask extends SfdxCommand {
       }
     }
     // Update deployment plan in config
-    deploymentPlan.packages = packages.sort((a, b) =>
-      a.order > b.order ? 1 : -1
-    );
+    deploymentPlan.packages = packages.sort((a, b) => (a.order > b.order ? 1 : -1));
     await setConfig("project", { deploymentPlan: deploymentPlan });
     if (!this.noGit) {
       await git({ output: true }).add(["./config"]);
@@ -532,83 +444,39 @@ export default class SaveTask extends SfdxCommand {
     }
     const gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
-      await git({ output: true }).commit(
-        "[sfdx-hardis] Update deployment plan"
-      );
+      await git({ output: true }).commit("[sfdx-hardis] Update deployment plan");
     }
 
     // Push new commit(s)
-    if (
-      (gitStatus.staged.length > 0 ||
-        gitStatusWithConfig.staged.length > 0 ||
-        gitStatusAfterDeployPlan.staged.length > 0) &&
-      !this.noGit
-    ) {
+    if ((gitStatus.staged.length > 0 || gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) && !this.noGit) {
       const pushResponse = await prompts({
         type: "confirm",
         name: "push",
         default: true,
-        message: c.cyanBright(
-          `Do you want to save your updates on git server ? (git push in remote git branch ${c.green(
-            currentGitBranch
-          )})`
-        ),
+        message: c.cyanBright(`Do you want to save your updates on git server ? (git push in remote git branch ${c.green(currentGitBranch)})`),
       });
       if (pushResponse.push === true) {
-        uxLog(
-          this,
-          c.cyan(
-            `Pushing new commit(s) in remote git branch ${c.green(
-              `origin/${currentGitBranch}`
-            )}...`
-          )
-        );
+        uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));
         const configUSer = await getConfig("user");
         let pushResult: any;
         if (configUSer.canForcePush === true) {
           // Force push if hardis:work:resetselection has been called before
-          pushResult = await git({ output: true }).push([
-            "-u",
-            "origin",
-            currentGitBranch,
-            "--force",
-          ]);
+          pushResult = await git({ output: true }).push(["-u", "origin", currentGitBranch, "--force"]);
           await setConfig("user", { canForcePush: false });
         } else {
-          pushResult = await git({ output: true }).push([
-            "-u",
-            "origin",
-            currentGitBranch,
-          ]);
+          pushResult = await git({ output: true }).push(["-u", "origin", currentGitBranch]);
         }
         // Update merge request info
         if (pushResult && pushResult.remoteMessages) {
           let mergeRequestsStored = configUSer.mergeRequests || [];
-          if (
-            mergeRequestsStored.filter(
-              (mergeRequest) => mergeRequest.branch === currentGitBranch
-            ).length === 1
-          ) {
-            mergeRequestsStored = mergeRequestsStored.map(
-              (mergeRequestStored) => {
-                if (
-                  mergeRequestStored &&
-                  mergeRequestStored.branch === currentGitBranch
-                ) {
-                  return this.updateMergeRequestInfo(
-                    mergeRequestStored,
-                    pushResult
-                  );
-                }
+          if (mergeRequestsStored.filter((mergeRequest) => mergeRequest.branch === currentGitBranch).length === 1) {
+            mergeRequestsStored = mergeRequestsStored.map((mergeRequestStored) => {
+              if (mergeRequestStored && mergeRequestStored.branch === currentGitBranch) {
+                return this.updateMergeRequestInfo(mergeRequestStored, pushResult);
               }
-            );
+            });
           } else {
-            mergeRequestsStored.push(
-              this.updateMergeRequestInfo(
-                { branch: currentGitBranch },
-                pushResult
-              )
-            );
+            mergeRequestsStored.push(this.updateMergeRequestInfo({ branch: currentGitBranch }, pushResult));
           }
           // Update user config file & send Websocket event
           await setConfig("user", { mergeRequests: mergeRequestsStored });
@@ -618,30 +486,9 @@ export default class SaveTask extends SfdxCommand {
     }
 
     // Merge request
-    uxLog(
-      this,
-      c.cyan(
-        `If your work is ${c.bold("completed")}, you can create a ${c.bold(
-          "merge request"
-        )}:`
-      )
-    );
-    uxLog(
-      this,
-      c.cyan(
-        `- click on the link in the upper text, below ${c.italic(
-          "To create a merge request for " + currentGitBranch + ", visit"
-        )}`
-      )
-    );
-    uxLog(
-      this,
-      c.cyan(
-        `- or manually create the merge request on repository UI: ${c.green(
-          gitUrl
-        )}`
-      )
-    );
+    uxLog(this, c.cyan(`If your work is ${c.bold("completed")}, you can create a ${c.bold("merge request")}:`));
+    uxLog(this, c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + currentGitBranch + ", visit")}`));
+    uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(gitUrl)}`));
     // const remote = await git().listRemote();
     // const remoteMergeRequest = `${remote.replace('.git','-/merge_requests/new')}`;
     // await open(remoteMergeRequest, {wait: true});

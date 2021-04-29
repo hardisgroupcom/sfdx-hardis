@@ -16,13 +16,9 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class PackageVersionPromote extends SfdxCommand {
   public static title = "Promote new versions of package(s)";
 
-  public static description =
-    "Promote package(s) version(s): convert it from beta to released";
+  public static description = "Promote package(s) version(s): convert it from beta to released";
 
-  public static examples = [
-    "$ sfdx hardis:package:version:promote",
-    "$ sfdx hardis:package:version:promote --auto",
-  ];
+  public static examples = ["$ sfdx hardis:package:version:promote", "$ sfdx hardis:package:version:promote --auto"];
 
   // public static args = [{name: 'file'}];
 
@@ -30,8 +26,7 @@ export default class PackageVersionPromote extends SfdxCommand {
     auto: flags.boolean({
       char: "d",
       default: false,
-      description:
-        "Auto-detect which versions of which packages need to be promoted",
+      description: "Auto-detect which versions of which packages need to be promoted",
     }),
     debug: flags.boolean({
       char: "d",
@@ -68,20 +63,11 @@ export default class PackageVersionPromote extends SfdxCommand {
     const packagesToPromote = [];
     if (auto) {
       // Promote only packages not promoted yet
-      const packageListRes = await execSfdxJson(
-        "sfdx force:package:version:list --released",
-        this,
-        { output: true, fail: true }
-      );
-      const filteredPackagesToPromote = Object.values(
-        availablePackageAliases
-      ).filter((packageAlias) => {
+      const packageListRes = await execSfdxJson("sfdx force:package:version:list --released", this, { output: true, fail: true });
+      const filteredPackagesToPromote = Object.values(availablePackageAliases).filter((packageAlias) => {
         return (
           packageListRes.result.filter((releasedPackage) => {
-            return (
-              releasedPackage.Alias === packageAlias &&
-              !(releasedPackage.IsReleased === true)
-            );
+            return releasedPackage.Alias === packageAlias && !(releasedPackage.IsReleased === true);
           }).length === 0
         );
       });
@@ -92,14 +78,10 @@ export default class PackageVersionPromote extends SfdxCommand {
         {
           type: "select",
           name: "packageSelected",
-          message: c.cyanBright(
-            `Please select a package (this is not a drill, it will create an official new version !)`
-          ),
-          choices: Object.values(availablePackageAliases).map(
-            (packageAlias) => {
-              return { title: packageAlias, value: packageAlias };
-            }
-          ),
+          message: c.cyanBright(`Please select a package (this is not a drill, it will create an official new version !)`),
+          choices: Object.values(availablePackageAliases).map((packageAlias) => {
+            return { title: packageAlias, value: packageAlias };
+          }),
         },
       ]);
       // Manage user response
@@ -108,14 +90,8 @@ export default class PackageVersionPromote extends SfdxCommand {
 
     // Promote packages
     for (const packageToPromote of packagesToPromote) {
-      uxLog(
-        this,
-        c.cyan(`Promoting version of package ${c.green(packageToPromote)}`)
-      );
-      const promoteCommand =
-        "sfdx force:package:version:promote" +
-        ` --package "${packageToPromote}"` +
-        " --noprompt";
+      uxLog(this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
+      const promoteCommand = "sfdx force:package:version:promote" + ` --package "${packageToPromote}"` + " --noprompt";
       const createResult = await execSfdxJson(promoteCommand, this, {
         fail: true,
         output: true,
@@ -124,11 +100,7 @@ export default class PackageVersionPromote extends SfdxCommand {
       uxLog(
         this,
         c.cyan(
-          `Promoted package version ${c.green(
-            packageToPromote
-          )} with id ${c.green(
-            createResult.result.id
-          )}. It is now installable on production orgs`
+          `Promoted package version ${c.green(packageToPromote)} with id ${c.green(createResult.result.id)}. It is now installable on production orgs`
         )
       );
     }

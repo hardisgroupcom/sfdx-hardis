@@ -1,12 +1,5 @@
 {
-  "ignorePaths": [
-    "**/node_modules/**",
-    "**/vscode-extension/**",
-    "**/.git/**",
-    ".vscode",
-    "package-lock.json",
-    "report"
-  ],
+  "ignorePaths": ["**/node_modules/**", "**/vscode-extension/**", "**/.git/**", ".vscode", "package-lock.json", "report"],
   "language": "en",
   "version": "0.1",
   "words": [
@@ -236,6 +229,7 @@
     "recette",
     "relatedentitytype",
     "remotesites",
+    "removedonly",
     "removepackagexml",
     "resetsave",
     "resetselection",

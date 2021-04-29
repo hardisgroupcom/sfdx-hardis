@@ -11,19 +11,9 @@ import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { MetadataUtils } from "../../../common/metadata-utils";
-import {
-  execCommand,
-  execSfdxJson,
-  getCurrentGitBranch,
-  isCI,
-  uxLog,
-} from "../../../common/utils";
+import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
 import { importData } from "../../../common/utils/dataUtils";
-import {
-  deployMetadatas,
-  forceSourceDeploy,
-  forceSourcePush,
-} from "../../../common/utils/deployUtils";
+import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "../../../common/utils/deployUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
 import { getConfig, setConfig } from "../../../config";
@@ -101,17 +91,11 @@ export default class ScratchCreate extends SfdxCommand {
       await this.initOrgData();
     } catch (e) {
       if (isCI && this.scratchOrgUsername) {
-        await execCommand(
-          `sfdx force:org:delete --noprompt --targetusername ${this.scratchOrgUsername}`,
-          this,
-          { fail: false, output: true }
-        );
-        uxLog(
-          this,
-          c.red(
-            "Deleted scratch org as we are in CI and its creation has failed"
-          )
-        );
+        await execCommand(`sfdx force:org:delete --noprompt --targetusername ${this.scratchOrgUsername}`, this, {
+          fail: false,
+          output: true,
+        });
+        uxLog(this, c.red("Deleted scratch org as we are in CI and its creation has failed"));
       }
       throw e;
     }
@@ -120,11 +104,7 @@ export default class ScratchCreate extends SfdxCommand {
     if (this.scratchOrgPassword) {
       uxLog(
         this,
-        c.cyan(
-          `You can connect to your scratch using username ${c.green(
-            this.scratchOrgUsername
-          )} and password ${c.green(this.scratchOrgPassword)}`
-        )
+        c.cyan(`You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(this.scratchOrgPassword)}`)
       );
     }
 
@@ -138,16 +118,8 @@ export default class ScratchCreate extends SfdxCommand {
   public async initConfig() {
     this.configInfo = await getConfig("user");
     this.gitBranch = await getCurrentGitBranch({ formatted: true });
-    const newScratchName =
-      os.userInfo().username +
-      "-" +
-      this.gitBranch.split("/").pop().slice(0, 15) +
-      "_" +
-      moment().format("YYYY-MM-DD_hh-mm");
-    this.scratchOrgAlias =
-      process.env.SCRATCH_ORG_ALIAS ||
-      (!this.forceNew ? this.configInfo.scratchOrgAlias : null) ||
-      newScratchName;
+    const newScratchName = os.userInfo().username + "-" + this.gitBranch.split("/").pop().slice(0, 15) + "_" + moment().format("YYYY-MM-DD_hh-mm");
+    this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || (!this.forceNew ? this.configInfo.scratchOrgAlias : null) || newScratchName;
     if (isCI && !this.scratchOrgAlias.startsWith("CI-")) {
       this.scratchOrgAlias = "CI-" + this.scratchOrgAlias;
     }
@@ -156,9 +128,7 @@ export default class ScratchCreate extends SfdxCommand {
       const checkRes = await prompts({
         type: "confirm",
         message: c.cyanBright(
-          `You are about to reuse scratch org ${c.green(
-            this.scratchOrgAlias
-          )}. Are you sure that's what you want to do ?\n${c.grey(
+          `You are about to reuse scratch org ${c.green(this.scratchOrgAlias)}. Are you sure that's what you want to do ?\n${c.grey(
             "(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)"
           )}`
         ),
@@ -172,10 +142,7 @@ export default class ScratchCreate extends SfdxCommand {
     this.devHubAlias = process.env.DEVHUB_ALIAS || this.configInfo.devHubAlias;
 
     this.scratchOrgDuration = process.env.SCRATCH_ORG_DURATION || isCI ? 1 : 30;
-    this.userEmail =
-      process.env.USER_EMAIL ||
-      process.env.GITLAB_USER_EMAIL ||
-      this.configInfo.userEmail;
+    this.userEmail = process.env.USER_EMAIL || process.env.GITLAB_USER_EMAIL || this.configInfo.userEmail;
 
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
@@ -196,20 +163,13 @@ export default class ScratchCreate extends SfdxCommand {
   public async createScratchOrg() {
     // Build project-scratch-def-branch-user.json
     uxLog(this, c.cyan("Building custom project-scratch-def.json..."));
-    this.projectScratchDef = JSON.parse(
-      fs.readFileSync("./config/project-scratch-def.json")
-    );
+    this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json"));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
-    this.projectScratchDef.username = `${
-      this.userEmail.split("@")[0]
-    }@hardis-scratch-${this.scratchOrgAlias}.com`;
+    this.projectScratchDef.username = `${this.userEmail.split("@")[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
-    await fs.writeFile(
-      projectScratchDefLocal,
-      JSON.stringify(this.projectScratchDef, null, 2)
-    );
+    await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
     // Check current scratch org
     const orgListResult = await execSfdxJson("sfdx force:org:list", this);
     const matchingScratchOrgs =
@@ -220,14 +180,7 @@ export default class ScratchCreate extends SfdxCommand {
     if (matchingScratchOrgs?.length > 0 && !this.forceNew) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
-      uxLog(
-        this,
-        c.cyan(
-          `Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(
-            this.scratchOrgUsername
-          )}`
-        )
-      );
+      uxLog(this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
       return;
     }
 
@@ -247,9 +200,11 @@ export default class ScratchCreate extends SfdxCommand {
     assert(
       createResult.status === 0,
       c.red(
-        `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(
-          c.bold("sfdx hardis:scratch:create --forcenew")
-        )} ?\n${JSON.stringify(createResult, null, 2)}`
+        `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
+          createResult,
+          null,
+          2
+        )}`
       )
     );
     this.scratchOrgInfo = createResult.result;
@@ -293,80 +248,39 @@ export default class ScratchCreate extends SfdxCommand {
         debug: this.debugMode,
       });
     }
-    uxLog(
-      this,
-      c.cyan(
-        `Created scratch org ${c.green(
-          this.scratchOrgAlias
-        )} with user ${c.green(this.scratchOrgUsername)}`
-      )
-    );
+    uxLog(this, c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
   }
 
   // Install packages
   public async installPackages() {
     const packages = this.configInfo.installedPackages || [];
-    await MetadataUtils.installPackagesOnOrg(
-      packages,
-      this.scratchOrgAlias,
-      this,
-      "scratch"
-    );
+    await MetadataUtils.installPackagesOnOrg(packages, this.scratchOrgAlias, this, "scratch");
   }
 
   // Push or deploy metadatas to the scratch org
   public async initOrgMetadatas() {
-    if (
-      (isCI && process.env.CI_SCRATCH_MODE !== "push") ||
-      process.env.DEBUG_DEPLOY === "true"
-    ) {
+    if ((isCI && process.env.CI_SCRATCH_MODE !== "push") || process.env.DEBUG_DEPLOY === "true") {
       // if CI, use force:source:deploy to make sure package.xml is consistent
-      uxLog(
-        this,
-        c.cyan(
-          `Deploying project sources to scratch org ${c.green(
-            this.scratchOrgAlias
-          )}...`
-        )
-      );
+      uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
       const packageXmlFile =
-        process.env.PACKAGE_XML_TO_DEPLOY ||
-        this.configInfo.packageXmlToDeploy ||
-        fs.existsSync("./manifest/package.xml")
+        process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
           ? "./manifest/package.xml"
           : "./config/package.xml";
-      await forceSourceDeploy(
-        packageXmlFile,
-        false,
-        "NoTestRun",
-        this.debugMode,
-        this,
-        { targetUsername: this.scratchOrgUsername }
-      );
+      await forceSourceDeploy(packageXmlFile, false, "NoTestRun", this.debugMode, this, {
+        targetUsername: this.scratchOrgUsername,
+      });
     } else {
       // Use push for local scratch orgs
       uxLog(
         this,
-        c.cyan(
-          `Pushing project sources to scratch org ${c.green(
-            this.scratchOrgAlias
-          )}... (You can see progress in Setup -> Deployment Status)`
-        )
+        c.cyan(`Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`)
       );
-      const deferSharingCalc = (this.projectScratchDef.features || []).includes(
-        "DeferSharingCalc"
-      );
+      const deferSharingCalc = (this.projectScratchDef.features || []).includes("DeferSharingCalc");
       // Suspend sharing calc if necessary
       if (deferSharingCalc) {
         // Deploy to permission set allowing to update SharingCalc
         await deployMetadatas({
-          deployDir: path.join(
-            path.join(
-              __dirname,
-              "../../../../defaults/utils/deferSharingCalc",
-              "."
-            )
-          ),
+          deployDir: path.join(path.join(__dirname, "../../../../defaults/utils/deferSharingCalc", ".")),
           testlevel: "NoTestRun",
           soap: true,
         });
@@ -400,26 +314,15 @@ export default class ScratchCreate extends SfdxCommand {
     uxLog(this, c.cyan("Assigning Permission Sets..."));
     const permSets = this.configInfo.initPermissionSets || [];
     for (const permSet of permSets) {
-      uxLog(
-        this,
-        c.cyan(`Assigning ${c.bold(permSet.name)} to scratch org user`)
-      );
+      uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name)} to scratch org user`));
       const assignCommand = `sfdx force:user:permset:assign -n ${permSet.name} -u ${this.scratchOrgUsername}`;
       const assignResult = await execSfdxJson(assignCommand, this, {
         fail: false,
         output: false,
         debug: this.debugMode,
       });
-      if (
-        assignResult.status !== 0 &&
-        !assignResult.message.includes("Duplicate")
-      ) {
-        uxLog(
-          this,
-          c.red(
-            `Error assigning to${c.bold(permSet.name)}\n${assignResult.message}`
-          )
-        );
+      if (assignResult.status !== 0 && !assignResult.message.includes("Duplicate")) {
+        uxLog(this, c.red(`Error assigning to${c.bold(permSet.name)}\n${assignResult.message}`));
       }
     }
   }
@@ -428,24 +331,15 @@ export default class ScratchCreate extends SfdxCommand {
   public async initApexScripts() {
     uxLog(this, c.cyan("Running apex initialization scripts..."));
     const allApexScripts = await glob("**/scripts/**/*.apex");
-    const scratchOrgInitApexScripts =
-      this.configInfo.scratchOrgInitApexScripts || [];
+    const scratchOrgInitApexScripts = this.configInfo.scratchOrgInitApexScripts || [];
     // Build ordered list of apex scripts
-    const initApexScripts = scratchOrgInitApexScripts.map(
-      (scriptName: string) => {
-        const matchingScripts = allApexScripts.filter(
-          (apexScript: string) => path.basename(apexScript) === scriptName
-        );
-        if (matchingScripts.length === 0) {
-          throw new SfdxError(
-            c.red(
-              `[sfdx-hardis][ERROR] Unable to find script ${scriptName}.apex`
-            )
-          );
-        }
-        return matchingScripts[0];
+    const initApexScripts = scratchOrgInitApexScripts.map((scriptName: string) => {
+      const matchingScripts = allApexScripts.filter((apexScript: string) => path.basename(apexScript) === scriptName);
+      if (matchingScripts.length === 0) {
+        throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}.apex`));
       }
-    );
+      return matchingScripts[0];
+    });
     // Process apex scripts
     for (const apexScript of initApexScripts) {
       const apexScriptCommand = `sfdx force:apex:execute -f "${apexScript}" -u ${this.scratchOrgAlias}`;
@@ -459,24 +353,14 @@ export default class ScratchCreate extends SfdxCommand {
 
   // Loads data in the org
   public async initOrgData() {
-    const scratchInitDataFolder = path.join(
-      ".",
-      "scripts",
-      "data",
-      "ScratchInit"
-    );
+    const scratchInitDataFolder = path.join(".", "scripts", "data", "ScratchInit");
     if (fs.existsSync(scratchInitDataFolder)) {
       uxLog(this, c.cyan("Loading scratch org initialization data..."));
       await importData(scratchInitDataFolder, this, {
         targetUsername: this.scratchOrgUsername,
       });
     } else {
-      uxLog(
-        this,
-        c.cyan(
-          `No initialization data: Define a sfdmu workspace in ${scratchInitDataFolder} if you need data in your new scratch orgs`
-        )
-      );
+      uxLog(this, c.cyan(`No initialization data: Define a sfdmu workspace in ${scratchInitDataFolder} if you need data in your new scratch orgs`));
     }
   }
 }

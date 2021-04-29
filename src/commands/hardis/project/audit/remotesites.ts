@@ -74,12 +74,7 @@ export default class RemoteSites extends SfdxCommand {
       const fileText = await fs.readFile(file, "utf8");
       // Loop on criteria to find matches in this file
       for (const catcher of catchers) {
-        const catcherMatchResults = await catchMatches(
-          catcher,
-          file,
-          fileText,
-          this
-        );
+        const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
         this.matchResults.push(...catcherMatchResults);
       }
     }
@@ -87,13 +82,9 @@ export default class RemoteSites extends SfdxCommand {
     // Format result
     const result: any[] = this.matchResults.map((item: any) => {
       return {
-        name: item.fileName
-          .replace(".remoteSite-meta.xml", "")
-          .replace(".remoteSite", ""),
+        name: item.fileName.replace(".remoteSite-meta.xml", "").replace(".remoteSite", ""),
         fileName: item.fileName,
-        nameSpace: item.fileName.includes("__")
-          ? item.fileName.split("__")[0]
-          : "Custom",
+        nameSpace: item.fileName.includes("__") ? item.fileName.split("__")[0] : "Custom",
         matches: item.matches,
         url: item.detail?.url ? item.detail.url[0] : "",
         active: item.detail?.active ? "yes" : "no",

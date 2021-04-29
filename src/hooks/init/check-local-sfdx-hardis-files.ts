@@ -28,6 +28,9 @@ async function managePackageJson(commandId: string) {
   if (commandId.startsWith("hardis:work:task:new")) {
     return;
   }
+  if (commandId.includes("config:get")) {
+    return;
+  }
   if (commandId.includes("configure")) {
     return;
   }
@@ -37,44 +40,25 @@ async function managePackageJson(commandId: string) {
     const text = await fs.readFile(packageJsonFile, "utf8");
     const packageJson = JSON.parse(text);
     const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
-    packageJson["scripts"] = Object.assign(
-      packageJson["scripts"],
-      hardisPackageJsonContent["scripts"]
-    );
-    if (
-      JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text)) &&
-      !isCI
-    ) {
+    packageJson["scripts"] = Object.assign(packageJson["scripts"], hardisPackageJsonContent["scripts"]);
+    if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text)) && !isCI) {
       const confirm = await prompts({
         type: "confirm",
         name: "value",
         initial: true,
-        message: c.cyanBright(
-          "Your package.json is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"
-        ),
+        message: c.cyanBright("Your package.json is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"),
       });
       if (confirm.value === true) {
-        await fs.writeFile(
-          packageJsonFile,
-          JSON.stringify(packageJson, null, 2)
-        );
-        console.log(
-          c.cyan("[sfdx-hardis] Updated package.json with sfdx-hardis content")
-        );
+        await fs.writeFile(packageJsonFile, JSON.stringify(packageJson, null, 2));
+        console.log(c.cyan("[sfdx-hardis] Updated package.json with sfdx-hardis content"));
       }
     }
   } else {
     // Create package.json to define sfdx utility scripts
     const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
-    fs.writeFile(
-      packageJsonFile,
-      JSON.stringify(hardisPackageJsonContent, null, 2),
-      () => {
-        console.log(
-          c.cyan("[sfdx-hardis] Created package.json with sfdx-hardis content")
-        );
-      }
-    );
+    fs.writeFile(packageJsonFile, JSON.stringify(hardisPackageJsonContent, null, 2), () => {
+      console.log(c.cyan("[sfdx-hardis] Created package.json with sfdx-hardis content"));
+    });
   }
 }
 
@@ -104,24 +88,15 @@ async function manageGitIgnore(commandId: string) {
     // Remove duplicates
     const gitIgnoreLinesUnique = Array.from(new Set(gitIgnoreLines));
     // Propose user to apply updates
-    if (
-      (updated || gitIgnoreLines.length !== gitIgnoreLinesUnique.length) &&
-      !isCI
-    ) {
+    if ((updated || gitIgnoreLines.length !== gitIgnoreLinesUnique.length) && !isCI) {
       const confirm = await prompts({
         type: "confirm",
         name: "value",
         initial: true,
-        message: c.cyanBright(
-          "Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"
-        ),
+        message: c.cyanBright("Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"),
       });
       if (confirm.value === true || isCI) {
-        await fs.writeFile(
-          gitIgnoreFile,
-          gitIgnoreLinesUnique.join("\n") + "\n",
-          "utf-8"
-        );
+        await fs.writeFile(gitIgnoreFile, gitIgnoreLinesUnique.join("\n") + "\n", "utf-8");
         console.log(c.cyan("[sfdx-hardis] Updated .gitignore"));
       }
     }
@@ -146,24 +121,15 @@ async function manageGitIgnore(commandId: string) {
     // Remove duplicates
     const forceIgnoreLinesUnique = Array.from(new Set(forceIgnoreLines));
     // Propose user to apply updates
-    if (
-      (updated || forceIgnoreLines.length !== forceIgnoreLinesUnique.length) &&
-      !isCI
-    ) {
+    if ((updated || forceIgnoreLines.length !== forceIgnoreLinesUnique.length) && !isCI) {
       const confirm = await prompts({
         type: "confirm",
         name: "value",
         initial: true,
-        message: c.cyanBright(
-          "Your .forceignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"
-        ),
+        message: c.cyanBright("Your .forceignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"),
       });
       if (confirm.value === true || isCI) {
-        await fs.writeFile(
-          forceIgnoreFile,
-          forceIgnoreLinesUnique.join("\n") + "\n",
-          "utf-8"
-        );
+        await fs.writeFile(forceIgnoreFile, forceIgnoreLinesUnique.join("\n") + "\n", "utf-8");
         console.log(c.cyan("[sfdx-hardis] Updated .forceignore"));
       }
     }
@@ -173,10 +139,8 @@ async function manageGitIgnore(commandId: string) {
 async function getSfdxHardisPackageJsonContent() {
   const hardisPackageJsonContent = {
     scripts: {
-      "scratch:push-from-git-to-org":
-        "sfdx force:source:push -g -w 60 --forceoverwrite",
-      "scratch:pull-from-org-to-git":
-        "sfdx force:source:pull -w 60 --forceoverwrite",
+      "scratch:push-from-git-to-org": "sfdx force:source:push -g -w 60 --forceoverwrite",
+      "scratch:pull-from-org-to-git": "sfdx force:source:pull -w 60 --forceoverwrite",
       "work:new": "sfdx hardis:work:new",
       "work:refresh": "sfdx hardis:work:refresh",
       "work:resetselection": "sfdx hardis:work:resetselection",
@@ -197,10 +161,7 @@ async function getSfdxHardisPackageJsonContent() {
   const config = await getConfig("project");
   if (config.activatePackaging) {
     const packagingCommands = await getSfdxHardisPackageJsonContentForPackaging();
-    hardisPackageJsonContent.scripts = Object.assign(
-      hardisPackageJsonContent.scripts,
-      packagingCommands.scripts
-    );
+    hardisPackageJsonContent.scripts = Object.assign(hardisPackageJsonContent.scripts, packagingCommands.scripts);
   }
   return hardisPackageJsonContent;
 }

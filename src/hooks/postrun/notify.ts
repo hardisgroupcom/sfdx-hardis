@@ -18,8 +18,7 @@ export const hook = async (options: any) => {
 
   // Send hook to microsoft ?teams if MS_TEAMS_WEBHOOK_URL env var is set, or msTeamsWebhookUrl in config
   const config = await getConfig("user");
-  const msTeamsWebhookUrl =
-    process.env.MS_TEAMS_WEBHOOK_URL || config.msTeamsWebhookUrl;
+  const msTeamsWebhookUrl = process.env.MS_TEAMS_WEBHOOK_URL || config.msTeamsWebhookUrl;
   if (msTeamsWebhookUrl) {
     const diffFiles = await listChangedFiles();
     // No notif if no updated file
@@ -29,10 +28,8 @@ export const hook = async (options: any) => {
     // Send WebHook
     const webhook = new IncomingWebhook(msTeamsWebhookUrl);
     const jobUrl = process.env.CI_JOB_URL || "Missing CI_JOB_URL variable";
-    const projectName =
-      process.env.CI_PROJECT_NAME || "Missing CI_PROJECT_NAME variable";
-    const branchName =
-      process.env.CI_COMMIT_REF_NAME || "Missing CI_COMMIT_REF_NAME variable";
+    const projectName = process.env.CI_PROJECT_NAME || "Missing CI_PROJECT_NAME variable";
+    const branchName = process.env.CI_COMMIT_REF_NAME || "Missing CI_COMMIT_REF_NAME variable";
     const envName = projectName + "/" + branchName;
     await webhook.send(
       JSON.stringify({

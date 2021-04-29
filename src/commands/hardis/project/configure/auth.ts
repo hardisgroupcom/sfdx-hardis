@@ -3,18 +3,9 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import {
-  generateSSLCertificate,
-  promptInstanceUrl,
-  uxLog,
-} from "../../../../common/utils";
+import { generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
-import {
-  checkConfig,
-  getConfig,
-  setConfig,
-  setInConfigFile,
-} from "../../../../config";
+import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -26,8 +17,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class ConfigureAuth extends SfdxCommand {
   public static title = "Configure authentication";
 
-  public static description =
-    "Configure authentication from git branch to target org";
+  public static description = "Configure authentication from git branch to target org";
 
   public static examples = ["$ sfdx hardis:project:configure:auth"];
 
@@ -58,12 +48,7 @@ export default class ConfigureAuth extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const devHub = this.flags.devhub || false;
-    uxLog(
-      this,
-      c.cyan(
-        "Please login into the org you want to configure the SFDX Authentication"
-      )
-    );
+    uxLog(this, c.cyan("Please login into the org you want to configure the SFDX Authentication"));
     await this.config.runHook("auth", {
       checkAuth: true,
       Command: this,
@@ -78,9 +63,7 @@ export default class ConfigureAuth extends SfdxCommand {
       const branchResponse = await prompts({
         type: "text",
         name: "value",
-        message: c.cyanBright(
-          "What is the name of the git branch you want to configure ? Exemples: developpement,recette,production"
-        ),
+        message: c.cyanBright("What is the name of the git branch you want to configure ? Exemples: developpement,recette,production"),
       });
       branchName = branchResponse.value.replace(/\s/g, "-");
       instanceUrl = await promptInstanceUrl();

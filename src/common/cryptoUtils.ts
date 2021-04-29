@@ -22,11 +22,7 @@ export async function decryptFile(filePath, targetFile, encryptionKey) {
 export function encrypt(text) {
   const iv = crypto.randomBytes(IV_LENGTH);
   const encryptionKey = crypto.randomBytes(16).toString("hex");
-  const cipher = crypto.createCipheriv(
-    "aes-256-cbc",
-    Buffer.from(encryptionKey),
-    iv
-  );
+  const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(encryptionKey), iv);
   let encrypted = cipher.update(text);
 
   encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -41,11 +37,7 @@ export function decrypt(text, encryptionKey) {
   const textParts = text.split(":");
   const iv = Buffer.from(textParts.shift(), "hex");
   const encryptedText = Buffer.from(textParts.join(":"), "hex");
-  const decipher = crypto.createDecipheriv(
-    "aes-256-cbc",
-    Buffer.from(encryptionKey),
-    iv
-  );
+  const decipher = crypto.createDecipheriv("aes-256-cbc", Buffer.from(encryptionKey), iv);
   let decrypted = decipher.update(encryptedText);
 
   decrypted = Buffer.concat([decrypted, decipher.final()]);

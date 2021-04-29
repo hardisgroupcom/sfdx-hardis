@@ -56,37 +56,24 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
 
     // Copying folder structure
     uxLog(this, "Copying default files...");
-    if (
-      fs.existsSync("README.md") &&
-      fs.readFileSync("README.md", "utf8").toString().split("\n").length < 5
-    ) {
+    if (fs.existsSync("README.md") && fs.readFileSync("README.md", "utf8").toString().split("\n").length < 5) {
       // Remove default README if necessary
       await fs.remove("README.md");
     }
-    await fs.copy(
-      path.join(__dirname, "../../../../../defaults/monitoring", "."),
-      process.cwd(),
-      { overwrite: false }
-    );
+    await fs.copy(path.join(__dirname, "../../../../../defaults/monitoring", "."), process.cwd(), { overwrite: false });
 
-    const gitLabInfo = `- If you're using GitLab, ACCESS_TOKEN must be defined in ${c.bold(
-      "Project -> Settings -> Access Token"
-    )}
+    const gitLabInfo = `- If you're using GitLab, ACCESS_TOKEN must be defined in ${c.bold("Project -> Settings -> Access Token")}
     - name: ${c.bold("ACCESS_TOKEN")}
     - scopes: ${c.bold("read_repository, write_repository")}
     - Copy generated token in clipboard (CTRL+C)
-- Then define CI variable ACCESS_TOKEN in ${c.bold(
-      "Project -> Settings -> CI / CD -> Variables"
-    )}
+- Then define CI variable ACCESS_TOKEN in ${c.bold("Project -> Settings -> CI / CD -> Variables")}
     - name: ${c.bold("ACCESS_TOKEN")}
     - value: Paste token previously generated (CTRL+V)
     - Select "Mask variable", unselect "Protected variable"`;
     this.ux.log(c.blue(gitLabInfo));
     await prompts({
       type: "confirm",
-      message: c.cyanBright(
-        "Hit ENTER when done (or if previously done on the same repository)"
-      ),
+      message: c.cyanBright("Hit ENTER when done (or if previously done on the same repository)"),
     });
     const config = await getConfig("project");
     // Get branch name to configure
@@ -95,9 +82,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       type: "text",
       name: "value",
       initial: currentBranch,
-      message: c.cyanBright(
-        "What is the name of the git branch you want to configure ? Exemples: developpement,recette,production"
-      ),
+      message: c.cyanBright("What is the name of the git branch you want to configure ? Exemples: developpement,recette,production"),
     });
     const branchName = branchResponse.value;
 
@@ -105,20 +90,11 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     await ensureGitBranch(branchName);
 
     // Ask to login again in case
-    if (
-      currentBranch != null &&
-      branchName !== currentBranch &&
-      branchName !== "master"
-    ) {
+    if (currentBranch != null && branchName !== currentBranch && branchName !== "master") {
       await execCommand("sfdx auth:logout --noprompt || true", this, {
         fail: true,
       });
-      uxLog(
-        this,
-        c.yellow(
-          "You need to login to new org, please run again the same command :)"
-        )
-      );
+      uxLog(this, c.yellow("You need to login to new org, please run again the same command :)"));
       process.exit(0);
     }
 
@@ -130,9 +106,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       {
         type: "text",
         name: "username",
-        message: c.cyanBright(
-          "What is the username you will use for sfdx in the org you want to monitor ? Example: admin.sfdx@myclient.com"
-        ),
+        message: c.cyanBright("What is the username you will use for sfdx in the org you want to monitor ? Example: admin.sfdx@myclient.com"),
         initial: config.targetUsername,
       },
       {
@@ -151,9 +125,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       {
         targetUsername: usernameMsTeamsResponse.username,
         instanceUrl,
-        msTeamsWebhookUrl: usernameMsTeamsResponse.teamsHook
-          ? usernameMsTeamsResponse.teamsHook
-          : null,
+        msTeamsWebhookUrl: usernameMsTeamsResponse.teamsHook ? usernameMsTeamsResponse.teamsHook : null,
       },
       "./.sfdx-hardis.yml"
     );
@@ -161,43 +133,28 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     // Generate SSL certificate (requires openssl to be installed on computer)
     await generateSSLCertificate(branchName, "./.ssh", this);
 
-    uxLog(
-      this,
-      c.italic("You can customize monitoring by updating .gitlab-ci-config.yml")
-    );
+    uxLog(this, c.italic("You can customize monitoring by updating .gitlab-ci-config.yml"));
 
     // Confirm & push on server
     const confirmPush = await prompts({
       type: "confirm",
       name: "value",
       initial: true,
-      message: c.cyanBright(
-        "Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)"
-      ),
+      message: c.cyanBright("Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)"),
     });
 
     if (confirmPush.value === true) {
       await gitAddCommitPush({
         message: "[sfdx-hardis] Update monitoring configuration",
       });
-      uxLog(
-        this,
-        c.green("Your configuration for org monitoring is now ready :)")
-      );
+      uxLog(this, c.green("Your configuration for org monitoring is now ready :)"));
     } else {
-      uxLog(
-        this,
-        c.yellow(
-          "Please manually git add, commit and push to the remote repository :)"
-        )
-      );
+      uxLog(this, c.yellow("Please manually git add, commit and push to the remote repository :)"));
     }
     uxLog(
       this,
       c.greenBright(
-        `You may schedule monitoring to be automatically run every day. To do that, go in ${c.bold(
-          "Project -> CI -> Schedules -> New schedule"
-        )}`
+        `You may schedule monitoring to be automatically run every day. To do that, go in ${c.bold("Project -> CI -> Schedules -> New schedule")}`
       )
     );
     // Return an object to be displayed with --json

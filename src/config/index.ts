@@ -20,30 +20,16 @@ import { getCurrentGitBranch, isGitRepo, uxLog } from "../common/utils";
 import { prompts } from "../common/utils/prompts";
 
 const moduleName = "sfdx-hardis";
-const projectConfigFiles = [
-  "package.json",
-  `.${moduleName}.yaml`,
-  `.${moduleName}.yml`,
-  `config/.${moduleName}.yaml`,
-  `config/.${moduleName}.yml`,
-];
+const projectConfigFiles = ["package.json", `.${moduleName}.yaml`, `.${moduleName}.yml`, `config/.${moduleName}.yaml`, `config/.${moduleName}.yml`];
 const username = os.userInfo().username;
-const userConfigFiles = [
-  `config/user/.${moduleName}.${username}.yaml`,
-  `config/user/.${moduleName}.${username}.yml`,
-];
+const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 
 async function getBranchConfigFiles() {
   if (!isGitRepo()) {
     return [];
   }
-  const gitBranchFormatted =
-    process.env.CONFIG_BRANCH ||
-    (await getCurrentGitBranch({ formatted: true }));
-  const branchConfigFiles = [
-    `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
-    `config/branches/.${moduleName}.${gitBranchFormatted}.yml`,
-  ];
+  const gitBranchFormatted = process.env.CONFIG_BRANCH || (await getCurrentGitBranch({ formatted: true }));
+  const branchConfigFiles = [`config/branches/.${moduleName}.${gitBranchFormatted}.yaml`, `config/branches/.${moduleName}.${gitBranchFormatted}.yml`];
   return branchConfigFiles;
 }
 
@@ -63,18 +49,9 @@ export const getConfig = async (layer = "user"): Promise<any> => {
 };
 
 // Set data in configuration file
-export const setConfig = async (
-  layer: string,
-  propValues: any
-): Promise<void> => {
+export const setConfig = async (layer: string, propValues: any): Promise<void> => {
   const configSearchPlaces =
-    layer === "project"
-      ? projectConfigFiles
-      : layer === "user"
-      ? userConfigFiles
-      : layer === "branch"
-      ? await getBranchConfigFiles()
-      : [];
+    layer === "project" ? projectConfigFiles : layer === "user" ? userConfigFiles : layer === "branch" ? await getBranchConfigFiles() : [];
   await setInConfigFile(configSearchPlaces, propValues);
 };
 
@@ -92,19 +69,12 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
 }
 
 // Update configuration file
-export async function setInConfigFile(
-  searchPlaces: string[],
-  propValues: any,
-  configFile: string = null
-) {
+export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = null) {
   let explorer = null;
   if (configFile == null) {
     explorer = cosmiconfig(moduleName, { searchPlaces });
     const configExplorer = await explorer.search();
-    configFile =
-      configExplorer != null
-        ? configExplorer.filepath
-        : searchPlaces.slice(-1)[0];
+    configFile = configExplorer != null ? configExplorer.filepath : searchPlaces.slice(-1)[0];
   }
   let doc = {};
   if (fs.existsSync(configFile)) {
@@ -116,14 +86,7 @@ export async function setInConfigFile(
   if (explorer != null) {
     explorer.clearCaches();
   }
-  uxLog(
-    this,
-    c.cyan(
-      `Updated config file ${configFile} with values ${JSON.stringify(
-        propValues
-      )}`
-    )
-  );
+  uxLog(this, c.cyan(`Updated config file ${configFile} with values ${JSON.stringify(propValues)}`));
 }
 
 // Check configuration of project so it works with sfdx-hardis
@@ -145,16 +108,13 @@ export const checkConfig = async (options: any) => {
   ) {
     const configProject = await getConfig("project");
     let projectName = process.env.PROJECT_NAME || configProject.projectName;
-    devHubAliasOk =
-      (process.env.DEVHUB_ALIAS || configProject.devHubAlias) != null;
+    devHubAliasOk = (process.env.DEVHUB_ALIAS || configProject.devHubAlias) != null;
     // If not found, prompt user project name and store it in user config file
     if (projectName == null) {
       const promptResponse = await prompts({
         type: "text",
         name: "value",
-        message: c.cyanBright(
-          "Please input your project name without spaces or special characters (ex: MonClient)"
-        ),
+        message: c.cyanBright("Please input your project name without spaces or special characters (ex: MonClient)"),
         validate: (value: string) => !value.match(/^[0-9a-z]+$/), // check only alphanumeric
       });
       projectName = promptResponse.value;
@@ -167,11 +127,7 @@ export const checkConfig = async (options: any) => {
   }
 
   // Set DevHub username if not set
-  if (
-    devHubAliasOk === false &&
-    options.Command &&
-    options.Command.supportsDevhubUsername === true
-  ) {
+  if (devHubAliasOk === false && options.Command && options.Command.supportsDevhubUsername === true) {
     const configProject = await getConfig("project");
     const devHubAlias = process.env.DEVHUB_ALIAS || configProject.devHubAlias;
     if (devHubAlias == null) {

@@ -75,9 +75,7 @@ export default class DxSources extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     const folder = path.resolve(this.flags.folder || ".");
     const tempFolder = path.resolve(this.flags.tempfolder || "./tmp");
-    const filteredMetadatas = this.flags.filteredmetadatas
-      ? this.flags.filteredmetadatas.split(",")
-      : MetadataUtils.listMetadatasNotManagedBySfdx();
+    const filteredMetadatas = this.flags.filteredmetadatas ? this.flags.filteredmetadatas.split(",") : MetadataUtils.listMetadatasNotManagedBySfdx();
     const shapeFlag = this.flags.shape || false;
     const debug = this.flags.debug || false;
 
@@ -105,30 +103,19 @@ export default class DxSources extends SfdxCommand {
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
       this.ux.log("[sfdx-hardis] Creating SFDX project...");
-      const createProjectRes = await exec(
-        'sfdx force:project:create --projectname "sfdx-project"',
-        { maxBuffer: 1024 * 2000 }
-      );
+      const createProjectRes = await exec('sfdx force:project:create --projectname "sfdx-project"', { maxBuffer: 1024 * 2000 });
       if (debug) {
         this.ux.log(createProjectRes.stdout + createProjectRes.stderr);
       }
     }
 
     // Converting metadatas to sfdx
-    this.ux.log(
-      `[sfdx-hardis] Converting metadatas into SFDX sources in ${c.green(
-        sfdxFolder
-      )}...`
-    );
+    this.ux.log(`[sfdx-hardis] Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`);
     process.chdir(sfdxFolder);
     try {
-      const convertRes = await exec(
-        `sfdx force:mdapi:convert --rootdir ${path.join(
-          metadataFolder,
-          "unpackaged"
-        )} ${debug ? "--verbose" : ""}`,
-        { maxBuffer: 10000 * 10000 }
-      );
+      const convertRes = await exec(`sfdx force:mdapi:convert --rootdir ${path.join(metadataFolder, "unpackaged")} ${debug ? "--verbose" : ""}`, {
+        maxBuffer: 10000 * 10000,
+      });
       if (debug) {
         this.ux.log(convertRes.stdout + convertRes.stderr);
       }
@@ -137,11 +124,7 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Move sfdx sources in main folder
-    this.ux.log(
-      `[sfdx-hardis] Moving temp files to main folder ${c.green(
-        path.resolve(folder)
-      )}...`
-    );
+    this.ux.log(`[sfdx-hardis] Moving temp files to main folder ${c.green(path.resolve(folder))}...`);
     process.chdir(prevCwd);
     await fs.copy(sfdxFolder, path.resolve(folder));
 
@@ -151,53 +134,27 @@ export default class DxSources extends SfdxCommand {
       const packageXmlInConfig = path.resolve(folder) + "/manifest/package.xml"; // '/config/package.xml';
       if (!fs.existsSync(packageXmlInConfig)) {
         await fs.ensureDir(path.dirname(packageXmlInConfig));
-        this.ux.log(
-          `[sfdx-hardis] Copying package.xml manifest ${c.green(
-            packageXmlInConfig
-          )}...`
-        );
+        this.ux.log(`[sfdx-hardis] Copying package.xml manifest ${c.green(packageXmlInConfig)}...`);
         await fs.copy(packageXml, packageXmlInConfig);
       }
       // Store list of installed packages
-      const installedPackages = await MetadataUtils.listInstalledPackages(
-        null,
-        this
-      );
+      const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
       await setConfig("project", {
         installedPackages,
       });
       // Try to get org shape
       const projectScratchDefFile = "./config/project-scratch-def.json";
-      this.ux.log(
-        `[sfdx-hardis] Getting org shape in ${c.green(
-          path.resolve(projectScratchDefFile)
-        )}...`
-      );
-      const shapeFile = path.join(
-        await createTempDir(),
-        "project-scratch-def.json"
-      );
+      this.ux.log(`[sfdx-hardis] Getting org shape in ${c.green(path.resolve(projectScratchDefFile))}...`);
+      const shapeFile = path.join(await createTempDir(), "project-scratch-def.json");
       try {
         await exec(`sfdx force:org:shape:create -f "${shapeFile} -u `);
         const orgShape = await fs.readFile(shapeFile, "utf-8");
-        const projectScratchDef = await fs.readFile(
-          projectScratchDefFile,
-          "utf-8"
-        );
+        const projectScratchDef = await fs.readFile(projectScratchDefFile, "utf-8");
         const newShape = Object.assign(projectScratchDef, orgShape);
-        await fs.writeFile(
-          projectScratchDefFile,
-          JSON.stringify(newShape, null, 2)
-        );
+        await fs.writeFile(projectScratchDefFile, JSON.stringify(newShape, null, 2));
       } catch (e) {
-        this.ux.log(
-          c.yellow("[sfdx-hardis][ERROR] Unable to create org shape")
-        );
-        this.ux.log(
-          c.yellow(
-            "[sfdx-hardis] You need to manually update config/project-scratch-def.json"
-          )
-        );
+        this.ux.log(c.yellow("[sfdx-hardis][ERROR] Unable to create org shape"));
+        this.ux.log(c.yellow("[sfdx-hardis] You need to manually update config/project-scratch-def.json"));
         this.ux.log(
           c.yellow(
             "[sfdx-hardis] See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm"

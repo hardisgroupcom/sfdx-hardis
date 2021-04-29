@@ -53,9 +53,7 @@ function getAllTips() {
     {
       name: "email-template-missing",
       label: "Missing e-mail template",
-      expressionRegex: [
-        /In field: template - no EmailTemplate named (.*) found/gm,
-      ],
+      expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
       tip: `Lightning EmailTemplates must also be imported with metadatas.
 ${c.cyan(
   "If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)"
@@ -99,10 +97,7 @@ You may also have a look to command sfdx hardis:project:clean:references
     {
       name: "custom-field-rights-mandatory",
       label: "Mandatory custom field can not be in a profile/permission set",
-      expressionString: [
-        "You cannot deploy to a required field",
-        "Impossible de déployer vers un champ obligatoire",
-      ],
+      expressionString: ["You cannot deploy to a required field", "Impossible de déployer vers un champ obligatoire"],
       tip: `A custom field declared as mandatory can not have rights defined in Profiles and Permission Sets
 - Search the name of the Object.Field in sfdx folders permissionsets / profiles and remove the entries matching the results
 Example of element to delete:
@@ -125,9 +120,7 @@ Example of element to delete:
     {
       name: "record-type-not-found",
       label: "Record Type not found",
-      expressionRegex: [
-        /In field: recordType - no RecordType named (.*) found/gm,
-      ],
+      expressionRegex: [/In field: recordType - no RecordType named (.*) found/gm],
       tip: `Some element have references to missing record type
 - If the record type is not supposed to exist, perform a search in all files and remove XML elements referring to this record type
 - If the record type is supposed to exist, you may have to create it manually in the target org to make the deployment pass
@@ -136,9 +129,7 @@ Example of element to delete:
     {
       name: "can-not-change-to-formula-field",
       label: "Can not change field type to a formula field",
-      expressionRegex: [
-        /Cannot update a field to a Formula from something else/gm,
-      ],
+      expressionRegex: [/Cannot update a field to a Formula from something else/gm],
       tip: `You need to manually delete or rename the field in the target org to allow the deployment to pass
 - first try to delete the field in the target org
 - if you can't delete it, rename it, then once the deployment done, delete the legacy renamed field it`,
@@ -163,9 +154,7 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
     {
       name: "formula-picklist-issue",
       label: "Formula picklist field issue",
-      expressionString: [
-        "Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions.",
-      ],
+      expressionString: ["Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions."],
       tip: `You probably changed the type of a field that is used in a formula.
 Update the formula to use a field compliant with formulas.
 More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_formulas.htm&type=5`,

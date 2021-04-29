@@ -3,12 +3,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import {
-  execCommand,
-  getCurrentGitBranch,
-  git,
-  uxLog,
-} from "../../../common/utils";
+import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
 import { getConfig, setConfig } from "../../../config";
 
 // Initialize Messages with the current plugin directory
@@ -51,34 +46,18 @@ export default class RebuildSelection extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
     const config = await getConfig("project");
-    uxLog(
-      this,
-      c.cyan(
-        `This script will rebuild selection that you will want to publish to ${c.green(
-          config.developmentBranch
-        )}`
-      )
-    );
+    uxLog(this, c.cyan(`This script will rebuild selection that you will want to publish to ${c.green(config.developmentBranch)}`));
 
     const currentGitBranch = await getCurrentGitBranch();
     if (currentGitBranch === config.developmentBranch) {
-      throw new SfdxError(
-        c.red(
-          "[sfdx-hardis] You can not revert commits of a protected branch !"
-        )
-      );
+      throw new SfdxError(c.red("[sfdx-hardis] You can not revert commits of a protected branch !"));
     }
     // List all commits since the branch creation
-    const logResult = await git().log([
-      `${config.developmentBranch}..${currentGitBranch}`,
-    ]);
+    const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
     const commitstoReset = logResult.all;
     const commitsToResetNumber = commitstoReset.length;
     // Reset commits
-    await git({ output: true }).reset([
-      "--soft",
-      `HEAD~${commitsToResetNumber}`,
-    ]);
+    await git({ output: true }).reset(["--soft", `HEAD~${commitsToResetNumber}`]);
     await setConfig("user", { canForcePush: true });
     // unstage files
     await execCommand("git reset", this, {
@@ -87,10 +66,7 @@ export default class RebuildSelection extends SfdxCommand {
       debug: this.debugMode,
     }); // await git({output:true}).reset(); does not work, let's use direct command
     await git({ output: true }).checkout(["--", "manifest/package.xml"]);
-    await git({ output: true }).checkout([
-      "--",
-      "manifest/destructiveChanges.xml",
-    ]);
+    await git({ output: true }).checkout(["--", "manifest/destructiveChanges.xml"]);
     await git({ output: true }).status();
     uxLog(this, c.cyan("The following items are not available for selection"));
     uxLog(this, c.cyan("Selection has been reset"));

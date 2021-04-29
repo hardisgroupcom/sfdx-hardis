@@ -91,12 +91,9 @@ export default class OrgPurgeFlow extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const prompt = this.flags.prompt === false ? false : true;
-    const statusFilter = this.flags.status
-      ? this.flags.status.split(",")
-      : ["Obsolete"];
+    const statusFilter = this.flags.status ? this.flags.status.split(",") : ["Obsolete"];
     const nameFilter = this.flags.name || null;
-    const allowPurgeFailure =
-      this.flags.allowpurgefailure === false ? false : true;
+    const allowPurgeFailure = this.flags.allowpurgefailure === false ? false : true;
     const debugMode = this.flags.debug || false;
 
     // Check we don't delete active Flows
@@ -105,9 +102,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }
 
     // Build query with name filter if sent
-    let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE Status IN ('${statusFilter.join(
-      "','"
-    )}')`;
+    let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE Status IN ('${statusFilter.join("','")}')`;
     if (nameFilter) {
       query += ` AND MasterLabel LIKE '${nameFilter}%'`;
     }
@@ -116,19 +111,14 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const username = this.org.getUsername();
 
     // const flowQueryResult = await conn.query<Flow>(query,{ });
-    const flowQueryCommand =
-      "sfdx force:data:soql:query " +
-      ` -q "${query}"` +
-      ` --targetusername ${username}` +
-      " --usetoolingapi";
+    const flowQueryCommand = "sfdx force:data:soql:query " + ` -q "${query}"` + ` --targetusername ${username}` + " --usetoolingapi";
     const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
       output: false,
       debug: debugMode,
       fail: true,
     });
 
-    const recordsRaw =
-      flowQueryRes?.result?.records || flowQueryRes.records || [];
+    const recordsRaw = flowQueryRes?.result?.records || flowQueryRes.records || [];
     // Check empty result
     if (recordsRaw.length === 0) {
       const outputString = `[sfdx-hardis] No matching Flow records found with query ${query}`;
@@ -146,12 +136,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
         Status: record.Status,
       };
     });
-    uxLog(
-      this,
-      `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(
-        columnify(records)
-      )}`
-    );
+    uxLog(this, `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(columnify(records))}`);
 
     // Perform deletion
     const deleted = [];
@@ -159,11 +144,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     if (
       !prompt ||
       (await this.ux.confirm(
-        c.bold(
-          `[sfdx-hardis] Are you sure you want to delete this list of records in ${c.green(
-            this.org.getUsername()
-          )} (y/n)?`
-        )
+        c.bold(`[sfdx-hardis] Are you sure you want to delete this list of records in ${c.green(this.org.getUsername())} (y/n)?`)
       ))
     ) {
       for (const record of records) {
@@ -179,13 +160,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
           debug: debugMode,
         });
         if (!(deleteRes.status === 0)) {
-          this.ux.error(
-            c.red(
-              `[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(
-                deleteRes
-              )}`
-            )
-          );
+          this.ux.error(c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
           deleteErrors.push(deleteRes);
         }
         deleted.push(record);
@@ -193,28 +168,16 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }
 
     if (deleteErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There are been errors while deleting ${
-        deleteErrors.length
-      } records: \n${JSON.stringify(deleteErrors)}`;
+      const errMsg = `[sfdx-hardis] There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`;
       if (allowPurgeFailure) {
         uxLog(this, c.yellow(errMsg));
       } else {
-        throw new SfdxError(
-          c.yellow(
-            `There are been errors while deleting ${
-              deleteErrors.length
-            } records: \n${JSON.stringify(deleteErrors)}`
-          )
-        );
+        throw new SfdxError(c.yellow(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`));
       }
     }
 
     const summary =
-      deleted.length > 0
-        ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(
-            deleted
-          )}`
-        : "[sfdx-hardis] No record to delete";
+      deleted.length > 0 ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : "[sfdx-hardis] No record to delete";
     uxLog(this, c.green(summary));
     // Return an object to be displayed with --json
     return { orgId: this.org.getOrgId(), outputString: summary };
