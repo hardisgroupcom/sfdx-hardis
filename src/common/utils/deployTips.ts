@@ -198,8 +198,23 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY`,
       name: "unknown-perm-create-audit-fields",
       label: "Unknown user permission: CreateAuditFields",
       expressionString: ["Unknown user permission: CreateAuditFields"],
-      tip: `You need to enable the "Create audit field" permission 
+      tip: `You need to enable the "Create audit field" permission in the target org
 Please check https://help.salesforce.com/articleView?id=000334139&type=1&mode=1`,
+    },
+    {
+      name: "unknown-perm-field-service-access",
+      label: "Unknown user permission: FieldServiceAccess",
+      expressionString: ["Unknown user permission: FieldServiceAccess"],
+      tip: `You need to enable the "Field Service Access" permission in the target org
+Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`,
+    },
+    {
+      name: "unknown-user-permission",
+      label: "Unknown user permission",
+      expressionString: ["Unknown user permission:"],
+      tip: `You can:
+- enable the related permission in the target org
+- or remove references to permission in source XML files`,
     },
   ];
 }
