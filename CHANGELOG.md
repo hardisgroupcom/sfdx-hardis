@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.15.1] 2021-05-02
+
+- QuickFix hardis:work:save
+
 ## [2.15.0] 2021-04-30
 
 - hardis:project:clean:references : New cleaning module **dashboards** removing reference to users in Dashboards sources

@@ -469,9 +469,9 @@ export default class SaveTask extends SfdxCommand {
         // Update merge request info
         if (pushResult && pushResult.remoteMessages) {
           let mergeRequestsStored = configUSer.mergeRequests || [];
-          if (mergeRequestsStored.filter((mergeRequest) => mergeRequest.branch === currentGitBranch).length === 1) {
+          if (mergeRequestsStored.filter((mergeRequest) => mergeRequest?.branch === currentGitBranch).length === 1) {
             mergeRequestsStored = mergeRequestsStored.map((mergeRequestStored) => {
-              if (mergeRequestStored && mergeRequestStored.branch === currentGitBranch) {
+              if (mergeRequestStored?.branch === currentGitBranch) {
                 return this.updateMergeRequestInfo(mergeRequestStored, pushResult);
               }
             });
