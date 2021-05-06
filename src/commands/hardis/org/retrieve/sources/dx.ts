@@ -10,7 +10,7 @@ import * as util from "util";
 const exec = util.promisify(child.exec);
 
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { createTempDir } from "../../../../../common/utils";
+import { createTempDir, uxLog } from "../../../../../common/utils";
 import { setConfig } from "../../../../../config";
 
 // Initialize Messages with the current plugin directory
@@ -102,7 +102,7 @@ export default class DxSources extends SfdxCommand {
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
-      this.ux.log("[sfdx-hardis] Creating SFDX project...");
+      uxLog(this,"[sfdx-hardis] Creating SFDX project...");
       const createProjectRes = await exec('sfdx force:project:create --projectname "sfdx-project"', { maxBuffer: 1024 * 2000 });
       if (debug) {
         this.ux.log(createProjectRes.stdout + createProjectRes.stderr);
@@ -110,7 +110,7 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Converting metadatas to sfdx
-    this.ux.log(`[sfdx-hardis] Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`);
+    uxLog(this,`[sfdx-hardis] Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`);
     process.chdir(sfdxFolder);
     try {
       const convertRes = await exec(`sfdx force:mdapi:convert --rootdir ${path.join(metadataFolder, "unpackaged")} ${debug ? "--verbose" : ""}`, {
@@ -124,7 +124,7 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Move sfdx sources in main folder
-    this.ux.log(`[sfdx-hardis] Moving temp files to main folder ${c.green(path.resolve(folder))}...`);
+    uxLog(this, `[sfdx-hardis] Moving temp files to main folder ${c.green(path.resolve(folder))}...`);
     process.chdir(prevCwd);
     await fs.copy(sfdxFolder, path.resolve(folder));
 

@@ -34,41 +34,41 @@ function matchesTip(tipDefinition: any, log: string) {
 function getAllTips() {
   return [
     {
-      name: "multiple-sharing-rules",
-      label: "sharing operation already in progress",
-      expressionString: ["sharing operation already in progress"],
-      tip: `You can not deploy multiple SharingRules at the same time. You can either:
-- Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
-- Use sfdx hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json`,
+      name: "can-not-change-to-formula-field",
+      label: "Can not change field type to a formula field",
+      expressionRegex: [/Cannot update a field to a Formula from something else/gm],
+      tip: `You need to manually delete or rename the field in the target org to allow the deployment to pass
+- first try to delete the field in the target org
+- if you can't delete it, rename it, then once the deployment done, delete the legacy renamed field it`,
     },
     {
-      name: "role-below-org-default",
-      label: "Objects rights on a role is below org default",
-      expressionString: ["access level below organization default"],
-      tip: `Your org wide settings default must be lower than the level defined in roles:
-- If you are in a scratch org, it can be fixable using "objectProperties" in project-scratch-def.json (see "Set Object-Level Sharing Settings" paragraph in page https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm)
-- If you are in a sandbox/dev/prod org, you need to update default org wide settings before deployment. See https://www.sfdcpoint.com/salesforce/organization-wide-defaults-owd-in-salesforce/
-            `,
+      name: "can-not-delete-custom-field",
+      label: "Can not delete custom field",
+      context: "destructiveChange",
+      expressionRegex: [/Le champ personnalisé (.*) est utilisé dans (.*)/gm],
+      tip: `A custom field can not be deleted because it is used elsewhere. Remove its references ans try again
+THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed before updated items deployment`,
     },
     {
-      name: "email-template-missing",
-      label: "Missing e-mail template",
-      expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
-      tip: `Lightning EmailTemplates must also be imported with metadatas.
-${c.cyan(
-  "If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)"
-)}
-- Create a file scripts/data/EmailTemplates/export.json:
-{
-    "objects": [
-        {
-            "query": "SELECT id,name,developername,namespaceprefix,foldername,templatestyle,isactive,templatetype,encoding,description,subject,htmlvalue,body,apiversion,markup,uitype,relatedentitytype,isbuildercontent FROM EmailTemplate",
-            "operation": "Upsert",
-            "externalId": "Name"
-        }
-    ]
-}
-- Run sfdx hardis:work:save`,
+      name: "can-not-delete-record-type",
+      label: "Can not delete record type",
+      context: "destructiveChange",
+      expressionString: ["Cannot delete record type through API"],
+      tip: `You need to manually delete record type in target org
+- Edit record type, uncheck "Active"
+- Delete record type`,
+    },
+    {
+      name: "can-not-find-folder",
+      label: "Can not find folder",
+      context: "destructiveChange",
+      expressionString: ["Cannot find folder"],
+      tip: `A folder is probably missing from project.
+- If the folder is existing in sources, add it in related package.xml
+- If the folder is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders -u YOURSOURCEORG`,
+    },
+    { 
+    
     },
     {
       name: "custom-object-not-found",
@@ -109,6 +109,159 @@ Example of element to delete:
 `,
     },
     {
+      name: "duplicate-label",
+      label: "Duplicate label",
+      expressionString: ["Duplicate label:"],
+      tip: `You probably renamed a picklist API name. Please update manually the picklist in the target ogr to avoid to have a duplicate label`,
+    },
+    {
+      name: "email-template-missing",
+      label: "Missing e-mail template",
+      expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
+      tip: `Lightning EmailTemplates must also be imported with metadatas.
+${c.cyan(
+  "If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)"
+)}
+- Create a file scripts/data/EmailTemplates/export.json:
+{
+    "objects": [
+        {
+            "query": "SELECT id,name,developername,namespaceprefix,foldername,templatestyle,isactive,templatetype,encoding,description,subject,htmlvalue,body,apiversion,markup,uitype,relatedentitytype,isbuildercontent FROM EmailTemplate",
+            "operation": "Upsert",
+            "externalId": "Name"
+        }
+    ]
+}
+- Run sfdx hardis:work:save`,
+    },
+    {
+      name: "field-must-not-be-required",
+      label: "Formula picklist field issue",
+      expressionRegex: [/Field:(.*) must not be Required/gm],
+      tip: `You probably made read only a field that was required before.
+Find the field in the layout source XML, then replace Required by Readonly`,
+    },
+    {
+      name: "formula-picklist-issue",
+      label: "Formula picklist field issue",
+      expressionString: ["Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions."],
+      tip: `You probably changed the type of a field that is used in a formula.
+Update the formula to use a field compliant with formulas.
+More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_formulas.htm&type=5`,
+    },
+    {
+      name: "invalid-scope-mine",
+      label: "Invalid scope:Mine, not allowed",
+      expressionString: ["Invalid scope:Mine, not allowed"],
+      tip: `Replace Mine by Everything in the list view SFDX source XML`,
+    },
+    {
+      name: "missing-field-middle-name",
+      label: "Mising field MiddleName",
+      expressionString: ["field MiddleName"],
+      tip: `Quotes must be activated in the target org.
+- Help: https://help.salesforce.com/articleView?id=000332623&type=1&mode=1
+- Scratch org setting: 
+"nameSettings": {
+  "enableMiddleName": true
+}`,
+    },
+    {
+      name: "missing-field-suffix",
+      label: "Mising field Suffix",
+      expressionString: ["field Suffix"],
+      tip: `Quotes must be activated in the target org.
+- Help: https://help.salesforce.com/articleView?id=000332623&type=1&mode=1
+- Scratch org setting: 
+"nameSettings": {
+  "enableNameSuffix": true
+},`,
+    },
+
+    {
+      name: "missing-field-synced-quote-id",
+      label: "Mising field SyncedQuoteId",
+      expressionString: ["field SyncedQuoteId"],
+      tip: `Quotes must be activated in the target org.
+- Help: https://help.salesforce.com/articleView?id=sf.quotes_enable.htm&type=5
+- Scratch org setting: 
+"quoteSettings": {
+  "enableQuote": true
+}`,
+    },
+    {
+      name: "missing-feature-chatter-collaboration-groups",
+      label: "Mising feature Chatter Collaboration Group",
+      expressionString: ["CollaborationGroup"],
+      tip: `Quotes must be activated in the target org.
+- Org: Setup -> Chatter settings -> Allow Records in Groups
+- Scratch org setting: 
+"chatterSettings": {
+  "allowRecordsInChatterGroup": true
+},`,
+    },
+    {
+      name: "missing-feature-enhanced-notes",
+      label: "Mising feature Enhanced notes",
+      expressionString: ["FeedItem.ContentNote"],
+      tip: `Enhanced Notes must be activated in the target org.
+- Org: Setup -> Notes settings -> Enable Notes
+- Scratch org setting: 
+"enhancedNotesSettings": {
+  "enableEnhancedNotes": true
+},`,
+    },
+    {
+      name: "missing-feature-live-agent",
+      label: "Mising feature Live Agent",
+      expressionString: ["FeedItem.ContentNote"],
+      tip: `Live Agent must be activated in the target org.
+- Org: Setup -> Live Aggent Settings -> Enable Live Agent
+- Scratch org feature: LiveAgent`,
+    },
+    {
+      name: "missing-feature-social-customer-service",
+      label: "Missing feature Social Customer Service",
+      expressionString: ["SocialPersona.AreWeFollowing"],
+      tip: `Social Custom Service must be activated in the target org.
+- Org: Setup -> https://help.salesforce.com/articleView?id=sf.social_customer_service_setup_enable.htm&type=5
+- Scratch org feature: SocialCustomerService`,
+    },
+    {
+      name: "missing-feature-translation-workbench",
+      label: "Missing feature Translation Workbench",
+      expressionRegex: [/report-meta.xml(.*)filterlanguage/gm],
+      tip: `Translation workbench must be activated in the target org.
+- Org: Setup -> https://help.salesforce.com/articleView?id=sf.customize_wbench.htm&type=5
+- Scratch org:
+"languageSettings": {
+  "enableTranslationWorkbench":  true,
+  "enableEndUserLanguages": true
+}`,
+    },
+    {
+      name: "missing-sales-team",
+      label: "Mising Sales Team",
+      expressionString: ["related list:RelatedAccountSalesTeam"],
+      tip: `Account Teams must be activated in the target org.
+- Org: Setup -> Account Teams -> Enable
+- Scratch org setting: 
+"accountSettings": {
+  "enableAccountTeams": true
+}
+}`,
+    },
+    {
+      name: "multiple-sharing-rules",
+      label: "sharing operation already in progress",
+      expressionString: ["sharing operation already in progress"],
+      tip: `You can not deploy multiple SharingRules at the same time. You can either:
+- Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
+- Use sfdx hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json,
+- If you are trying to create a scratch org, add DeferSharingCalc in features in project-scratch-def.json
+`,
+    },
+    {
       name: "picklist-value-not-found",
       label: "Picklist value not found",
       expressionRegex: [/Picklist value: (.*) in picklist: (.*) not found/gm],
@@ -127,56 +280,26 @@ Example of element to delete:
 `,
     },
     {
-      name: "can-not-change-to-formula-field",
-      label: "Can not change field type to a formula field",
-      expressionRegex: [/Cannot update a field to a Formula from something else/gm],
-      tip: `You need to manually delete or rename the field in the target org to allow the deployment to pass
-- first try to delete the field in the target org
-- if you can't delete it, rename it, then once the deployment done, delete the legacy renamed field it`,
+      name: "role-below-org-default",
+      label: "Objects rights on a role is below org default",
+      expressionString: ["access level below organization default"],
+      tip: `Your org wide settings default must be lower than the level defined in roles:
+- If you are in a scratch org, it can be fixable using "objectProperties" in project-scratch-def.json (see "Set Object-Level Sharing Settings" paragraph in page https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm)
+- If you are in a sandbox/dev/prod org, you need to update default org wide settings before deployment. See https://www.sfdcpoint.com/salesforce/organization-wide-defaults-owd-in-salesforce/
+            `,
     },
     {
-      name: "can-not-delete-custom-field",
-      label: "Can not delete custom field",
-      context: "destructiveChange",
-      expressionRegex: [/Le champ personnalisé (.*) est utilisé dans (.*)/gm],
-      tip: `A custom field can not be deleted because it is used elsewhere. Remove its references ans try again
-THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed before updated items deployment`,
+      name: "sharing-not-supported",
+      label: "Unsupported sharing configuration",
+      expressionRegex: [/not supported for (.*) since it's org wide default is/gm],
+      tip: `Consistency error between sharing settings and object configuration
+Please check https://salesforce.stackexchange.com/questions/260923/sfdx-deploying-contact-sharing-rules-on-a-fresh-deployment`,
     },
     {
-      name: "can-not-delete-record-type",
-      label: "Can not delete record type",
-      context: "destructiveChange",
-      expressionString: ["Cannot delete record type through API"],
-      tip: `You need to manually delete record type in target org
-- Edit record type, uncheck "Active"
-- Delete record type`,
-    },
-    {
-      name: "formula-picklist-issue",
-      label: "Formula picklist field issue",
-      expressionString: ["Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions."],
-      tip: `You probably changed the type of a field that is used in a formula.
-Update the formula to use a field compliant with formulas.
-More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_formulas.htm&type=5`,
-    },
-    {
-      name: "duplicate-label",
-      label: "Duplicate label",
-      expressionString: ["Duplicate label:"],
-      tip: `You probably renamed a picklist API name. Please update manually the picklist in the target ogr to avoid to have a duplicate label`,
-    },
-    {
-      name: "test-deployment-issue",
-      label: "Can not test item deployment in simulation mode",
-      expressionRegex: [/Test only deployment cannot update/gm],
-      tip: `THIS IS A FALSE POSITIVE
-When effective deployment will happen, it should pass`,
-    },
-    {
-      name: "test-coverage-0-percent",
-      label: "Test classes with 0% coverage",
-      expressionRegex: [/ 0%/gm],
-      tip: `Please make sure that none of the test classes are 0% covered`,
+      name: "sharing-may-be-useless",
+      label: "A sharing rule may be useless",
+      expressionRegex: ["Required field is missing: sharingCriteriaRules"],
+      tip: `Are you sure you need this sharing rule ? You may remove it from the sfdx project`,
     },
     {
       name: "sharing-recalc-lock",
@@ -193,6 +316,19 @@ When effective deployment will happen, it should pass`,
       expressionRegex: [/System.AsyncException: (.*) Apex/gm],
       tip: `This may be a test class implementation issue.
 Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY`,
+    },
+    {
+      name: "test-coverage-0-percent",
+      label: "Test classes with 0% coverage",
+      expressionRegex: [/ 0%/gm],
+      tip: `Please make sure that none of the test classes are 0% covered`,
+    },
+    {
+      name: "test-deployment-issue",
+      label: "Can not test item deployment in simulation mode",
+      expressionRegex: [/Test only deployment cannot update/gm],
+      tip: `THIS IS A FALSE POSITIVE
+When effective deployment will happen, it should pass`,
     },
     {
       name: "unknown-perm-create-audit-fields",

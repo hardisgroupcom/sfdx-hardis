@@ -65,22 +65,24 @@ export default class ProjectCreate extends SfdxCommand {
         name: "projectName",
         message: "What is the name of your project ?",
       });
-      // Create sfdx project
       projectName = projectRes.projectName.toLowerCase().replace(" ", "_");
     }
-    const createCommand = "sfdx force:project:create" + ` --projectname "${projectName}"` + " --manifest";
-    await execCommand(createCommand, this, {
-      output: true,
-      fail: true,
-      debug: this.debugMode,
-    });
+    
+    // Create sfdx project only if not existing
+    if (!fs.existsSync("./sfdx-project.json")) {
+      const createCommand = "sfdx force:project:create" + ` --projectname "${projectName}"` + " --manifest";
+      await execCommand(createCommand, this, {
+        output: true,
+        fail: true,
+        debug: this.debugMode,
+      });
 
-    // Move project files at root
-    await fs.copy(path.join(process.cwd(), projectName), process.cwd(), {
-      overwrite: false,
-    });
-    await fs.rmdir(path.join(process.cwd(), projectName), { recursive: true });
-
+      // Move project files at root
+      await fs.copy(path.join(process.cwd(), projectName), process.cwd(), {
+        overwrite: false,
+      });
+      await fs.rmdir(path.join(process.cwd(), projectName), { recursive: true });
+    }
     // Copy default project files
     uxLog(this, "Copying default files...");
     await fs.copy(path.join(__dirname, "../../../../defaults/ci", "."), process.cwd(), { overwrite: false });
