@@ -70,7 +70,7 @@ export default class ProjectCreate extends SfdxCommand {
       });
       projectName = projectRes.projectName.toLowerCase().replace(" ", "_");
     }
-    
+
     // Create sfdx project only if not existing
     if (!fs.existsSync("./sfdx-project.json")) {
       const createCommand = "sfdx force:project:create" + ` --projectname "${projectName}"` + " --manifest";

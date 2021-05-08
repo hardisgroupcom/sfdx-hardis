@@ -86,7 +86,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   if (explorer != null) {
     explorer.clearCaches();
   }
-  uxLog(this, c.cyan(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues,null,2)}`));
+  uxLog(this, c.cyan(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`));
 }
 
 // Check configuration of project so it works with sfdx-hardis

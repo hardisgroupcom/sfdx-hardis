@@ -92,7 +92,10 @@ export async function forceSourceDeploy(
     }
     // Deployment of type package.xml file
     if (deployment.packageXmlFile) {
-      uxLog(commandThis, c.cyan(`${(check)?'Simulating deployment of':'Deploying'} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`));
+      uxLog(
+        commandThis,
+        c.cyan(`${check ? "Simulating deployment of" : "Deploying"} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`)
+      );
       const deployCommand =
         `sfdx force:source:deploy -x ${deployment.packageXmlFile}` +
         " --wait 60" +

@@ -3,9 +3,9 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import * as fs from 'fs-extra';
+import * as fs from "fs-extra";
 import * as glob from "glob-promise";
-import * as path from 'path';
+import * as path from "path";
 import { uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
@@ -20,9 +20,7 @@ export default class CleanStandardItems extends SfdxCommand {
 
   public static description = "Remove unwanted managed items within sfdx project sources";
 
-  public static examples = [
-    "$ sfdx hardis:project:clean:manageditems",
-  ];
+  public static examples = ["$ sfdx hardis:project:clean:manageditems"];
 
   protected static flagsConfig = {
     debug: flags.boolean({
@@ -44,7 +42,6 @@ export default class CleanStandardItems extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-
   protected debugMode = false;
   protected deleteItems: any = {};
 
@@ -54,16 +51,15 @@ export default class CleanStandardItems extends SfdxCommand {
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Removing unwanted dx managed source files...`));
     /* jscpd:ignore-end */
-    const classesFolder = path.join(process.cwd()+"/force-app/main/default/classes");
-    const findManagedClassesPattern = classesFolder+'/*__*';
+    const classesFolder = path.join(process.cwd() + "/force-app/main/default/classes");
+    const findManagedClassesPattern = classesFolder + "/*__*";
     const matchingCustomFiles = await glob(findManagedClassesPattern, { cwd: process.cwd() });
     for (const matchingCustomFile of matchingCustomFiles) {
-          await fs.remove(matchingCustomFile);
-          uxLog(this,c.cyan(`Removed managed class ${c.yellow(matchingCustomFile)}`));
+      await fs.remove(matchingCustomFile);
+      uxLog(this, c.cyan(`Removed managed class ${c.yellow(matchingCustomFile)}`));
     }
 
     // Return an object to be displayed with --json
     return { outputString: "Cleaned standard items from sfdx project" };
   }
-
 }

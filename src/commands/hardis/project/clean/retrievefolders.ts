@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as path from 'path';
+import * as path from "path";
 import { execCommand, uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
@@ -19,9 +19,7 @@ export default class CleanRetrieveFolders extends SfdxCommand {
 
   public static description = "Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS";
 
-  public static examples = [
-    "$ sfdx hardis:project:clean:retrievefolders",
-  ];
+  public static examples = ["$ sfdx hardis:project:clean:retrievefolders"];
 
   protected static flagsConfig = {
     debug: flags.boolean({
@@ -58,13 +56,13 @@ export default class CleanRetrieveFolders extends SfdxCommand {
       //{ sourceType: "dashboards", mdType: "Dashboard" },
       //{ sourceType: "documents", mdType: "Document" },
       //{ sourceType: "email", mdType: "EmailTemplate" },
-      { sourceType: "reports", mdType: "Report" }
+      { sourceType: "reports", mdType: "Report" },
     ];
 
     // Iterate on types, and for each sub folder found, retrieve its SFDX source from org
     for (const folderType of folderTypes) {
-      const folderDir = rootSourcesFolder + '/' + folderType.sourceType;
-      await this.manageRetrieveFolder(folderDir, folderType)
+      const folderDir = rootSourcesFolder + "/" + folderType.sourceType;
+      await this.manageRetrieveFolder(folderDir, folderType);
     }
 
     // Return an object to be displayed with --json
@@ -77,14 +75,17 @@ export default class CleanRetrieveFolders extends SfdxCommand {
     }
     const folderDirContent = await fs.readdir(folderDir);
     for (const subFolder of folderDirContent) {
-      const subFolderFull = folderDir + '/' + subFolder;
+      const subFolderFull = folderDir + "/" + subFolder;
       if (fs.lstatSync(subFolderFull).isDirectory()) {
         // Retrieve sub folder DX source
-        await execCommand(`sfdx force:source:retrieve -m ${folderType.mdType}:${subFolder}`, this, { fail: true, output: true, debug: this.debugMode });
+        await execCommand(`sfdx force:source:retrieve -m ${folderType.mdType}:${subFolder}`, this, {
+          fail: true,
+          output: true,
+          debug: this.debugMode,
+        });
         // Check for sub folders
-        await this.manageRetrieveFolder(subFolderFull, folderType)
+        await this.manageRetrieveFolder(subFolderFull, folderType);
       }
     }
   }
-
 }

@@ -105,7 +105,7 @@ export default class DxSources extends SfdxCommand {
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
-      uxLog(this,"[sfdx-hardis] Creating SFDX project...");
+      uxLog(this, "[sfdx-hardis] Creating SFDX project...");
       const createProjectRes = await exec('sfdx force:project:create --projectname "sfdx-project"', { maxBuffer: 1024 * 2000 });
       if (debug) {
         this.ux.log(createProjectRes.stdout + createProjectRes.stderr);
@@ -113,7 +113,7 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Converting metadatas to sfdx
-    uxLog(this,`[sfdx-hardis] Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`);
+    uxLog(this, `[sfdx-hardis] Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`);
     process.chdir(sfdxFolder);
     try {
       const convertRes = await exec(`sfdx force:mdapi:convert --rootdir ${path.join(metadataFolder, "unpackaged")} ${debug ? "--verbose" : ""}`, {
