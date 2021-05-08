@@ -43,7 +43,6 @@ export default class CleanStandardItems extends SfdxCommand {
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
-  /* jscpd:ignore-end */
 
   protected debugMode = false;
   protected deleteItems: any = {};
@@ -52,8 +51,8 @@ export default class CleanStandardItems extends SfdxCommand {
     this.debugMode = this.flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing unwanted dx source files...`));
-
+    uxLog(this, c.cyan(`Removing unwanted standard dx source files...`));
+    /* jscpd:ignore-end */
     const sourceRootFolder = path.join(process.cwd() + "/force-app/main/default");
     const objectsFolder = path.join(sourceRootFolder + "/objects");
     const objectsFolderContent = await fs.readdir(objectsFolder);

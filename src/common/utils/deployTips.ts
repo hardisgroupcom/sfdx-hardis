@@ -157,7 +157,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
     },
     {
       name: "missing-field-middle-name",
-      label: "Mising field MiddleName",
+      label: "Missing field MiddleName",
       expressionString: ["field MiddleName"],
       tip: `Quotes must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=000332623&type=1&mode=1
@@ -168,7 +168,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
     },
     {
       name: "missing-field-suffix",
-      label: "Mising field Suffix",
+      label: "Missing field Suffix",
       expressionString: ["field Suffix"],
       tip: `Quotes must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=000332623&type=1&mode=1
@@ -180,7 +180,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 
     {
       name: "missing-field-synced-quote-id",
-      label: "Mising field SyncedQuoteId",
+      label: "Missing field SyncedQuoteId",
       expressionString: ["field SyncedQuoteId"],
       tip: `Quotes must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=sf.quotes_enable.htm&type=5
@@ -191,7 +191,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
     },
     {
       name: "missing-feature-chatter-collaboration-groups",
-      label: "Mising feature Chatter Collaboration Group",
+      label: "Missing feature Chatter Collaboration Group",
       expressionString: ["CollaborationGroup"],
       tip: `Quotes must be activated in the target org.
 - Org: Setup -> Chatter settings -> Allow Records in Groups
@@ -202,7 +202,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
     },
     {
       name: "missing-feature-enhanced-notes",
-      label: "Mising feature Enhanced notes",
+      label: "Missing feature Enhanced notes",
       expressionString: ["FeedItem.ContentNote"],
       tip: `Enhanced Notes must be activated in the target org.
 - Org: Setup -> Notes settings -> Enable Notes
@@ -213,10 +213,10 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
     },
     {
       name: "missing-feature-live-agent",
-      label: "Mising feature Live Agent",
+      label: "Missing feature Live Agent",
       expressionString: ["FeedItem.ContentNote"],
       tip: `Live Agent must be activated in the target org.
-- Org: Setup -> Live Aggent Settings -> Enable Live Agent
+- Org: Setup -> Live Agent Settings -> Enable Live Agent
 - Scratch org feature: LiveAgent`,
     },
     {
@@ -241,7 +241,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
     },
     {
       name: "missing-sales-team",
-      label: "Mising Sales Team",
+      label: "Missing Sales Team",
       expressionString: ["related list:RelatedAccountSalesTeam"],
       tip: `Account Teams must be activated in the target org.
 - Org: Setup -> Account Teams -> Enable

@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanStanrdItems extends SfdxCommand {
+export default class CleanStandardItems extends SfdxCommand {
   public static title = "Clean retrieved managed items in dx sources";
 
   public static description = "Remove unwanted managed items within sfdx project sources";
@@ -43,7 +43,7 @@ export default class CleanStanrdItems extends SfdxCommand {
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
-  /* jscpd:ignore-end */
+
 
   protected debugMode = false;
   protected deleteItems: any = {};
@@ -52,8 +52,8 @@ export default class CleanStanrdItems extends SfdxCommand {
     this.debugMode = this.flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing unwanted dx source files...`));
-
+    uxLog(this, c.cyan(`Removing unwanted dx managed source files...`));
+    /* jscpd:ignore-end */
     const classesFolder = path.join(process.cwd()+"/force-app/main/default/classes");
     const findManagedClassesPattern = classesFolder+'/*__*';
     const matchingCustomFiles = await glob(findManagedClassesPattern, { cwd: process.cwd() });
