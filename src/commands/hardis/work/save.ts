@@ -502,7 +502,7 @@ export default class SaveTask extends SfdxCommand {
 
   private updateMergeRequestInfo(mergeRequestStored, mergeRequestInfo) {
     if (this.debugMode) {
-      console.log(c.grey(JSON.stringify(mergeRequestInfo,null,2)));
+      console.log(c.grey(JSON.stringify(mergeRequestInfo, null, 2)));
     }
     if (mergeRequestInfo?.remoteMessages?.id) {
       mergeRequestStored.id = mergeRequestInfo.remoteMessages.id;
@@ -514,10 +514,10 @@ export default class SaveTask extends SfdxCommand {
     } else {
       delete mergeRequestStored.urlCreate;
     }
-    if (mergeRequestInfo?.remoteMessages?.all[0] && mergeRequestInfo?.remoteMessages?.all[0].includes("View merge request") ) {
+    if (mergeRequestInfo?.remoteMessages?.all[0] && mergeRequestInfo?.remoteMessages?.all[0].includes("View merge request")) {
       mergeRequestStored.url = mergeRequestInfo?.remoteMessages?.all[1];
     } else {
-      delete mergeRequestStored.url ;
+      delete mergeRequestStored.url;
     }
     return mergeRequestStored;
   }
