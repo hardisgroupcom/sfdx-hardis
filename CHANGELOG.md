@@ -11,6 +11,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:project:clean:standarditems : Clean SFDX project from objects with no custom within
 - More deployment error tips
 - New parameter websocket for all commands
+- Indicating in logs when deployment is a simulation
 
 ## [2.15.1] 2021-05-02
 
