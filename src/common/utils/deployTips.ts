@@ -298,7 +298,7 @@ Please check https://salesforce.stackexchange.com/questions/260923/sfdx-deployin
     {
       name: "sharing-may-be-useless",
       label: "A sharing rule may be useless",
-      expressionRegex: ["Required field is missing: sharingCriteriaRules"],
+      expressionString: ["Required field is missing: sharingCriteriaRules"],
       tip: `Are you sure you need this sharing rule ? You may remove it from the sfdx project`,
     },
     {

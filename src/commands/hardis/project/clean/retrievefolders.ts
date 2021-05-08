@@ -29,6 +29,9 @@ export default class CleanRetrieveFolders extends SfdxCommand {
       default: false,
       description: messages.getMessage("debugMode"),
     }),
+    websocket: flags.string({
+      description: messages.getMessage("websocket"),
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -52,9 +55,9 @@ export default class CleanRetrieveFolders extends SfdxCommand {
 
     const rootSourcesFolder = path.join(process.cwd() + "/force-app/main/default");
     const folderTypes = [
-      { sourceType: "dashboards", mdType: "Dashboard" },
-      { sourceType: "documents", mdType: "Document" },
-      { sourceType: "email", mdType: "EmailTemplate" },
+      //{ sourceType: "dashboards", mdType: "Dashboard" },
+      //{ sourceType: "documents", mdType: "Document" },
+      //{ sourceType: "email", mdType: "EmailTemplate" },
       { sourceType: "reports", mdType: "Report" }
     ];
 

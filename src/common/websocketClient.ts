@@ -13,7 +13,8 @@ export class WebSocketClient {
 
   constructor(context: any) {
     this.wsContext = context;
-    this.ws = new WebSocket(`ws://localhost:${PORT}`);
+    const wsHostPort = (context.websocketHostPort) ? `ws://${context.websocketHostPort}` : `ws://localhost:${PORT}`;
+    this.ws = new WebSocket(wsHostPort);
     globalWs = this;
     this.start();
   }

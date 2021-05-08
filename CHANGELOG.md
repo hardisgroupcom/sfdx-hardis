@@ -4,12 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.16.0] 2021-05-06
+## [2.16.0] 2021-05-08
 
 - hardis:project:clean:manageditems : Clean SFDX project from managed classes
 - hardis:project:clean:retrievefolders: Clean/Complete SFDX project with missing folders (dashboard,email,reports)
 - hardis:project:clean:standarditems : Clean SFDX project from objects with no custom within
 - More deployment error tips
+- New parameter websocket for all commands
 
 ## [2.15.1] 2021-05-02
 

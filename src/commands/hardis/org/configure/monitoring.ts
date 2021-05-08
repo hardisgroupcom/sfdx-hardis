@@ -38,6 +38,9 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       default: false,
       description: messages.getMessage("debugMode"),
     }),
+    websocket: flags.string({
+      description: messages.getMessage("websocket"),
+    }),
   };
 
   // Comment this out if your command does not require an org username

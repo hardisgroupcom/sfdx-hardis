@@ -41,5 +41,6 @@
   "statusFilter": "Filter according to Status criteria",
   "tempFolder": "Temporary folder",
   "testLevel": "Level of tests to apply to validate deployment",
+  "websocket": "Websocket host:port for VsCode SFDX Hardis UI integration",
   "withDevHub": "Also connect associated DevHub"
 }
