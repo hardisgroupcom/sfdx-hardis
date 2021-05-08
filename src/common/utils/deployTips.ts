@@ -291,7 +291,8 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       label: "Unsupported sharing configuration",
       expressionRegex: [/not supported for (.*) since it's org wide default is/gm],
       tip: `Consistency error between sharing settings and object configuration
-Please check https://salesforce.stackexchange.com/questions/260923/sfdx-deploying-contact-sharing-rules-on-a-fresh-deployment`,
+Please check https://salesforce.stackexchange.com/questions/260923/sfdx-deploying-contact-sharing-rules-on-a-fresh-deployment
+If you already did that, please try again to run the job`,
     },
     {
       name: "sharing-may-be-useless",

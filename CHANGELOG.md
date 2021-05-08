@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.16.1] 2021-05-09
+
+- hardis:work:save : Fix storage in config file of Merge Request info
+- Update deploy tips
+
 ## [2.16.0] 2021-05-08
 
 - hardis:project:clean:manageditems : Clean SFDX project from managed classes
