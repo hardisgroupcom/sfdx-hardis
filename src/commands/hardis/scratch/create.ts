@@ -243,6 +243,13 @@ export default class ScratchCreate extends SfdxCommand {
           scratchOrgAuthUrl: displayResult.sfdxAuthUrl,
         });
       }
+      // Display org URL
+      const openRes = await execSfdxJson("sfdx force:org:open --urlonly", this, {
+        fail: true,
+        output: false,
+        debug: this.debugMode,
+      });    
+      uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     } else {
       // Open scratch org for user if not in CI
       await execSfdxJson("sfdx force:org:open", this, {
