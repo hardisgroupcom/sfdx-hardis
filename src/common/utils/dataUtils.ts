@@ -9,6 +9,7 @@ import { prompts } from "./prompts";
 export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
   uxLog(commandThis, c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
+  await fs.ensureDir(path.join(sfdmuPath, "logs"));
   const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
@@ -20,6 +21,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
 export async function exportData(sfdmuPath: string, commandThis: any, options: any = {}) {
   uxLog(commandThis, c.cyan(`Exporting data from ${c.green(sfdmuPath)} ...`));
   const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
+  await fs.ensureDir(path.join(sfdmuPath, "logs"));
   const dataImportCommand = `sfdx sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis, {
     fail: true,

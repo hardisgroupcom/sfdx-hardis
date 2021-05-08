@@ -2,6 +2,11 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
+import * as c from "chalk";
+import * as fs from "fs-extra";
+import * as glob from "glob-promise";
+import * as path from "path";
+import { uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -10,30 +15,14 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Login extends SfdxCommand {
-  public static title = "Login";
+export default class CleanStandardItems extends SfdxCommand {
+  public static title = "Clean retrieved managed items in dx sources";
 
-  public static description = messages.getMessage("loginToOrg");
+  public static description = "Remove unwanted managed items within sfdx project sources";
 
-  public static examples = ["$ sfdx hardis:auth:login"];
-
-  // public static args = [{name: 'file'}];
+  public static examples = ["$ sfdx hardis:project:clean:manageditems"];
 
   protected static flagsConfig = {
-    instanceurl: flags.string({
-      char: "r",
-      description: messages.getMessage("instanceUrl"),
-    }),
-    devhub: flags.boolean({
-      char: "h",
-      default: false,
-      description: messages.getMessage("withDevHub"),
-    }),
-    scratchorg: flags.boolean({
-      char: "s",
-      default: false,
-      description: messages.getMessage("scratch"),
-    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -53,19 +42,24 @@ export default class Login extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-  /* jscpd:ignore-end */
+  protected debugMode = false;
+  protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
-    const devHub = this.flags.devhub || false;
-    const scratch = this.flags.scratchorg || false;
-    await this.config.runHook("auth", {
-      checkAuth: !devHub,
-      Command: this,
-      devHub,
-      scratch,
-    });
+    this.debugMode = this.flags.debug || false;
+
+    // Delete standard files when necessary
+    uxLog(this, c.cyan(`Removing unwanted dx managed source files...`));
+    /* jscpd:ignore-end */
+    const classesFolder = path.join(process.cwd() + "/force-app/main/default/classes");
+    const findManagedClassesPattern = classesFolder + "/*__*";
+    const matchingCustomFiles = await glob(findManagedClassesPattern, { cwd: process.cwd() });
+    for (const matchingCustomFile of matchingCustomFiles) {
+      await fs.remove(matchingCustomFile);
+      uxLog(this, c.cyan(`Removed managed class ${c.yellow(matchingCustomFile)}`));
+    }
 
     // Return an object to be displayed with --json
-    return { outputString: "Logged to Salesforce org" };
+    return { outputString: "Cleaned standard items from sfdx project" };
   }
 }

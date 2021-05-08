@@ -45,6 +45,9 @@ export default class ScratchCreate extends SfdxCommand {
       default: false,
       description: messages.getMessage("debugMode"),
     }),
+    websocket: flags.string({
+      description: messages.getMessage("websocket"),
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -240,6 +243,13 @@ export default class ScratchCreate extends SfdxCommand {
           scratchOrgAuthUrl: displayResult.sfdxAuthUrl,
         });
       }
+      // Display org URL
+      const openRes = await execSfdxJson("sfdx force:org:open --urlonly", this, {
+        fail: true,
+        output: false,
+        debug: this.debugMode,
+      });
+      uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     } else {
       // Open scratch org for user if not in CI
       await execSfdxJson("sfdx force:org:open", this, {
