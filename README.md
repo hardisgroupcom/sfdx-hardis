@@ -20,6 +20,7 @@ For the moment, it can :
   - Extract all CallIns and CallOuts from a SFDX project (or metadata) folder. Sort by SOAP, REST, HTTP
   - Extract all remote sites connected to an org. Sort by HTTP / HTTPS and domain
 - Help tools
+  - Convert all profiles into permission sets
   - Purge obsolete flows versions
 
 **sfdx-hardis** partially relies on the following SFDX Open-Source packages
