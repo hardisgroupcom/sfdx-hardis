@@ -75,7 +75,7 @@ export async function checkSfdxPlugin(pluginName: string) {
     pluginsStdout = pluginsRes.stdout;
   }
   if (!pluginsStdout.includes(pluginName)) {
-    uxLog(this, c.yellow(`[dependencies] Installing sfdx plugin ${c.green(pluginName)}...`));
+    uxLog(this, c.yellow(`[dependencies] Installing sfdx plugin ${c.green(pluginName)}... \nIf is stays stuck for too long, please run ${c.green(`sfdx plugins:install ${pluginName}`)})`));
     const installCommand = `echo y|sfdx plugins:install ${pluginName}`;
     await execCommand(installCommand, this, { fail: true, output: false });
   }
