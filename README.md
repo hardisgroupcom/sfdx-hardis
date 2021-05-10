@@ -163,7 +163,7 @@ EXAMPLE
   $ sfdx hardis:auth:login
 ```
 
-_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/auth/login.js)_
+_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/auth/login.js)_
 
 ## `sfdx hardis:config:get [-l <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -192,7 +192,7 @@ EXAMPLE
   $ sfdx hardis:project:deploy:sources:metadata
 ```
 
-_See code: [lib/commands/hardis/config/get.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/config/get.js)_
+_See code: [lib/commands/hardis/config/get.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/config/get.js)_
 
 ## `sfdx hardis:org:configure:monitoring [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -224,7 +224,7 @@ EXAMPLE
   $ sfdx hardis:org:configure:monitoring
 ```
 
-_See code: [lib/commands/hardis/org/configure/monitoring.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/org/configure/monitoring.js)_
+_See code: [lib/commands/hardis/org/configure/monitoring.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/org/configure/monitoring.js)_
 
 ## `sfdx hardis:org:data:export [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -257,7 +257,7 @@ EXAMPLE
   $ sfdx hardis:org:data:export
 ```
 
-_See code: [lib/commands/hardis/org/data/export.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/org/data/export.js)_
+_See code: [lib/commands/hardis/org/data/export.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/org/data/export.js)_
 
 ## `sfdx hardis:org:data:import [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -290,7 +290,7 @@ EXAMPLE
   $ sfdx hardis:org:data:import
 ```
 
-_See code: [lib/commands/hardis/org/data/import.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/org/data/import.js)_
+_See code: [lib/commands/hardis/org/data/import.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/org/data/import.js)_
 
 ## `sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -358,7 +358,7 @@ EXAMPLES
      No record deleted
 ```
 
-_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/org/purge/flow.js)_
+_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/org/purge/flow.js)_
 
 ## `sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-m <string>] [-o] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -402,7 +402,7 @@ EXAMPLE
   $ sfdx hardis:org:retrieve:sources:dx
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/org/retrieve/sources/dx.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/org/retrieve/sources/dx.js)_
 
 ## `sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -438,7 +438,7 @@ EXAMPLE
   $ sfdx hardis:org:retrieve:sources:metadata
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/org/retrieve/sources/metadata.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/org/retrieve/sources/metadata.js)_
 
 ## `sfdx hardis:org:select [-h] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -464,7 +464,7 @@ EXAMPLE
   $ sfdx hardis:org:select
 ```
 
-_See code: [lib/commands/hardis/org/select.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/org/select.js)_
+_See code: [lib/commands/hardis/org/select.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/org/select.js)_
 
 ## `sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -501,7 +501,7 @@ EXAMPLE
   $ sfdx hardis:org:test:apex
 ```
 
-_See code: [lib/commands/hardis/org/test/apex.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/org/test/apex.js)_
+_See code: [lib/commands/hardis/org/test/apex.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/org/test/apex.js)_
 
 ## `sfdx hardis:package:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -533,7 +533,7 @@ EXAMPLE
   $ sfdx hardis:package:create
 ```
 
-_See code: [lib/commands/hardis/package/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/package/create.js)_
+_See code: [lib/commands/hardis/package/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/package/create.js)_
 
 ## `sfdx hardis:package:install [-p] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -568,7 +568,7 @@ EXAMPLE
   $ sfdx hardis:package:install
 ```
 
-_See code: [lib/commands/hardis/package/install.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/package/install.js)_
+_See code: [lib/commands/hardis/package/install.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/package/install.js)_
 
 ## `sfdx hardis:package:version:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -600,7 +600,7 @@ EXAMPLE
   $ sfdx hardis:package:version:create
 ```
 
-_See code: [lib/commands/hardis/package/version/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/package/version/create.js)_
+_See code: [lib/commands/hardis/package/version/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/package/version/create.js)_
 
 ## `sfdx hardis:package:version:list [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -632,7 +632,7 @@ EXAMPLE
   $ sfdx hardis:package:version:list
 ```
 
-_See code: [lib/commands/hardis/package/version/list.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/package/version/list.js)_
+_See code: [lib/commands/hardis/package/version/list.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/package/version/list.js)_
 
 ## `sfdx hardis:package:version:promote [-d] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -668,7 +668,7 @@ EXAMPLES
   $ sfdx hardis:package:version:promote --auto
 ```
 
-_See code: [lib/commands/hardis/package/version/promote.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/package/version/promote.js)_
+_See code: [lib/commands/hardis/package/version/promote.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/package/version/promote.js)_
 
 ## `sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -700,7 +700,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:apiversion
 ```
 
-_See code: [lib/commands/hardis/project/audit/apiversion.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/audit/apiversion.js)_
+_See code: [lib/commands/hardis/project/audit/apiversion.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/audit/apiversion.js)_
 
 ## `sfdx hardis:project:audit:callincallout [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -725,7 +725,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:callouts
 ```
 
-_See code: [lib/commands/hardis/project/audit/callincallout.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/audit/callincallout.js)_
+_See code: [lib/commands/hardis/project/audit/callincallout.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/audit/callincallout.js)_
 
 ## `sfdx hardis:project:audit:remotesites [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -750,7 +750,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:remotesites
 ```
 
-_See code: [lib/commands/hardis/project/audit/remotesites.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/audit/remotesites.js)_
+_See code: [lib/commands/hardis/project/audit/remotesites.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/audit/remotesites.js)_
 
 ## `sfdx hardis:project:clean:manageditems [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -775,7 +775,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:manageditems
 ```
 
-_See code: [lib/commands/hardis/project/clean/manageditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/clean/manageditems.js)_
+_See code: [lib/commands/hardis/project/clean/manageditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/clean/manageditems.js)_
 
 ## `sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -809,7 +809,7 @@ EXAMPLES
   $ sfdx hardis:project:clean:references --config ./somefolder/myDestructivePackage.xml
 ```
 
-_See code: [lib/commands/hardis/project/clean/references.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/clean/references.js)_
+_See code: [lib/commands/hardis/project/clean/references.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/clean/references.js)_
 
 ## `sfdx hardis:project:clean:retrievefolders [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -834,7 +834,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:retrievefolders
 ```
 
-_See code: [lib/commands/hardis/project/clean/retrievefolders.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/clean/retrievefolders.js)_
+_See code: [lib/commands/hardis/project/clean/retrievefolders.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/clean/retrievefolders.js)_
 
 ## `sfdx hardis:project:clean:standarditems [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -859,7 +859,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:standarditems
 ```
 
-_See code: [lib/commands/hardis/project/clean/standarditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/clean/standarditems.js)_
+_See code: [lib/commands/hardis/project/clean/standarditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/clean/standarditems.js)_
 
 ## `sfdx hardis:project:configure:auth [-b] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -885,7 +885,7 @@ EXAMPLE
   $ sfdx hardis:project:configure:auth
 ```
 
-_See code: [lib/commands/hardis/project/configure/auth.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/configure/auth.js)_
+_See code: [lib/commands/hardis/project/configure/auth.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/configure/auth.js)_
 
 ## `sfdx hardis:project:convert:profilestopermsets [-e <array>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -911,7 +911,7 @@ EXAMPLE
   $ sfdx hardis:project:convert:profilestopermsets
 ```
 
-_See code: [lib/commands/hardis/project/convert/profilestopermsets.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/convert/profilestopermsets.js)_
+_See code: [lib/commands/hardis/project/convert/profilestopermsets.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/convert/profilestopermsets.js)_
 
 ## `sfdx hardis:project:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -943,7 +943,7 @@ EXAMPLE
   $ sfdx hardis:project:create
 ```
 
-_See code: [lib/commands/hardis/project/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/create.js)_
+_See code: [lib/commands/hardis/project/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/create.js)_
 
 ## `sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -986,7 +986,7 @@ EXAMPLE
   $ sfdx hardis:project:deploy:sources:dx
 ```
 
-_See code: [lib/commands/hardis/project/deploy/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/deploy/sources/dx.js)_
+_See code: [lib/commands/hardis/project/deploy/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/deploy/sources/dx.js)_
 
 ## `sfdx hardis:project:deploy:sources:metadata [-c] [-p <string>] [-f] [-k <string>] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1033,7 +1033,7 @@ EXAMPLE
   $ sfdx hardis:project:deploy:sources:metadata
 ```
 
-_See code: [lib/commands/hardis/project/deploy/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/project/deploy/sources/metadata.js)_
+_See code: [lib/commands/hardis/project/deploy/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/project/deploy/sources/metadata.js)_
 
 ## `sfdx hardis:scratch:create [-n] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1068,7 +1068,7 @@ EXAMPLE
   $ sfdx hardis:scratch:create
 ```
 
-_See code: [lib/commands/hardis/scratch/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/scratch/create.js)_
+_See code: [lib/commands/hardis/scratch/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/scratch/create.js)_
 
 ## `sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1100,7 +1100,7 @@ EXAMPLE
   $ sfdx hardis:scratch:pull
 ```
 
-_See code: [lib/commands/hardis/scratch/pull.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/scratch/pull.js)_
+_See code: [lib/commands/hardis/scratch/pull.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/scratch/pull.js)_
 
 ## `sfdx hardis:scratch:push [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1132,7 +1132,7 @@ EXAMPLE
   $ sfdx hardis:scratch:push
 ```
 
-_See code: [lib/commands/hardis/scratch/push.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/scratch/push.js)_
+_See code: [lib/commands/hardis/scratch/push.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/scratch/push.js)_
 
 ## `sfdx hardis:work:new [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1164,7 +1164,7 @@ EXAMPLE
   $ sfdx hardis:work:task:new
 ```
 
-_See code: [lib/commands/hardis/work/new.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/work/new.js)_
+_See code: [lib/commands/hardis/work/new.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/work/new.js)_
 
 ## `sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1199,7 +1199,7 @@ EXAMPLE
   $ sfdx hardis:work:refresh
 ```
 
-_See code: [lib/commands/hardis/work/refresh.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/work/refresh.js)_
+_See code: [lib/commands/hardis/work/refresh.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/work/refresh.js)_
 
 ## `sfdx hardis:work:resetselection [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1231,7 +1231,7 @@ EXAMPLE
   $ sfdx hardis:work:resetsave
 ```
 
-_See code: [lib/commands/hardis/work/resetselection.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/work/resetselection.js)_
+_See code: [lib/commands/hardis/work/resetselection.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/work/resetselection.js)_
 
 ## `sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1267,5 +1267,5 @@ EXAMPLES
   $ sfdx hardis:work:task:save --nopull --nogit --noclean
 ```
 
-_See code: [lib/commands/hardis/work/save.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.16.1/lib/commands/hardis/work/save.js)_
+_See code: [lib/commands/hardis/work/save.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.17.0/lib/commands/hardis/work/save.js)_
 <!-- commandsstop -->
