@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.17.2] 2021-05-10 
 
-- Defaut init scratch org using push and not deploy
+- Default init scratch org using push and not deploy
 - QuickFix mergeRequest links local storage
 
 ## [2.17.0] 2021-05-10
