@@ -482,7 +482,7 @@ export default class SaveTask extends SfdxCommand {
             mergeRequestsStored.push(this.updateMergeRequestInfo({ branch: currentGitBranch }, pushResult));
           }
           // Update user config file & send Websocket event
-          await setConfig("user", { mergeRequests: mergeRequestsStored });
+          await setConfig("user", { mergeRequests: mergeRequestsStored.filter((mr: any) => mr !== null) });
           WebSocketClient.sendMessage({ event: "refreshStatus" });
         }
       }
