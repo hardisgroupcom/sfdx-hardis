@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.17.0] 2021-05-10
+
+- New command hardis:project:convert:profilestopermsets to convert all profiles into permission sets
+- hardis:scratch:create : Fix permission set auto assignment when creating a scratch org (use property initPermissionSets in .sfdx-hardis.yml)
+
 ## [2.16.1] 2021-05-09
 
 - hardis:work:save : Fix storage in config file of Merge Request info
