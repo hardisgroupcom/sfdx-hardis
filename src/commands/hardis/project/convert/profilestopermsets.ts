@@ -3,9 +3,9 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from 'chalk';
-import * as fs from 'fs-extra';
-import * as path from 'path';
+import * as c from "chalk";
+import * as fs from "fs-extra";
+import * as path from "path";
 import { execCommand, uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
@@ -26,7 +26,7 @@ export default class ConvertProfilesToPermSets extends SfdxCommand {
     except: flags.array({
       char: "e",
       default: [],
-      description: 'List of filters'
+      description: "List of filters",
     }),
     debug: flags.boolean({
       char: "d",
@@ -51,30 +51,24 @@ export default class ConvertProfilesToPermSets extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     const except = this.flags.except || [];
 
-    uxLog(this,c.cyan('This command will convert profiles into permission sets'))
+    uxLog(this, c.cyan("This command will convert profiles into permission sets"));
 
     const sourceRootFolder = path.join(process.cwd() + "/force-app/main/default");
     const profilesFolder = path.join(sourceRootFolder, "profiles");
     const objectsFolderContent = await fs.readdir(profilesFolder);
     for (const profileFile of objectsFolderContent) {
-      if (profileFile.includes('.profile-meta.xml')) {
-        const profileName = path.basename(profileFile).replace('.profile-meta.xml','');
-        if (except.filter(str => profileName.toLowerCase().includes(str)).length > 0) {
-          continue ;
+      if (profileFile.includes(".profile-meta.xml")) {
+        const profileName = path.basename(profileFile).replace(".profile-meta.xml", "");
+        if (except.filter((str) => profileName.toLowerCase().includes(str)).length > 0) {
+          continue;
         }
-        const psName = 'PS_'+profileName.split(" ").join('_') ;
-        uxLog(this,c.cyan(`Generating Permission set ${c.green(psName)} from profile ${c.green(profileName)}`))
-        const convertCommand = 'sfdx shane:profile:convert'+
-          ` -p "${profileName}"`+
-          ` -n "${psName}"`+
-          ' -e';
-        await execCommand(convertCommand,this,{fail:true,output:true});
-
+        const psName = "PS_" + profileName.split(" ").join("_");
+        uxLog(this, c.cyan(`Generating Permission set ${c.green(psName)} from profile ${c.green(profileName)}`));
+        const convertCommand = "sfdx shane:profile:convert" + ` -p "${profileName}"` + ` -n "${psName}"` + " -e";
+        await execCommand(convertCommand, this, { fail: true, output: true });
       }
     }
 
-    return {
-      
-    };
+    return {};
   }
 }
