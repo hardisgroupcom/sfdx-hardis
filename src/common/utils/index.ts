@@ -12,7 +12,7 @@ const exec = util.promisify(child.exec);
 import { SfdxError } from "@salesforce/core";
 import * as ora from "ora";
 import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
-import { CONSTANTS } from "../../config";
+import { CONSTANTS, getConfig } from "../../config";
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
@@ -300,11 +300,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n")
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n")
         )
       );
     }
@@ -781,16 +781,18 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       message: c.cyanBright("In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done"),
     });
     // Request info for deployment
+    const config = await getConfig("user");
     const promptResponses = await prompts([
       {
         type: "text",
         name: "appName",
-        initial: "sfdx_hardis",
+        initial: (folder === "./.ssh") ? "sfdx_hardis_mon" : "sfdx_hardis",
         message: c.cyanBright("How would you like to name the Connected App (ex: sfdx) ?"),
       },
       {
         type: "text",
         name: "contactEmail",
+        initial: config.userEmail || '',
         message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"),
       },
       {
