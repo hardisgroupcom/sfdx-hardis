@@ -5,6 +5,8 @@ import { prompts } from "../../common/utils/prompts";
 import { getConfig } from "../../config";
 
 export const hook = async (options: any) => {
+
+  process.env.FORCE_COLOR="2";
   // Skip hooks from other commands than hardis:scratch commands
   const commandId = options?.id || "";
 

@@ -678,7 +678,7 @@ export async function generateReports(resultSorted: any[], columns: any[], comma
 
 export function uxLog(commandThis: any, text: string) {
   text = text.includes("[sfdx-hardis]") ? text : "[sfdx-hardis]" + (text.startsWith("[") ? "" : " ") + text;
-  if (commandThis?.ux && !isCI) {
+  if (commandThis?.ux) {
     commandThis.ux.log(text);
   } else if (!process.argv.includes("--json")) {
     console.log(text);
