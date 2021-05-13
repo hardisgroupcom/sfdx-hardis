@@ -307,7 +307,7 @@ export default class ScratchCreate extends SfdxCommand {
           debug: this.debugMode,
         });
       }
-      await forceSourcePush(this.scratchOrgAlias,this, this.debugMode);
+      await forceSourcePush(this.scratchOrgAlias, this, this.debugMode);
       // Resume sharing calc if necessary
       if (deferSharingCalc) {
         await execCommand("sfdx texei:sharingcalc:resume", this, {

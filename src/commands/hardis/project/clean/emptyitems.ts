@@ -3,9 +3,9 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import * as fs from 'fs-extra';
+import * as fs from "fs-extra";
 import * as glob from "glob-promise";
-import * as path from 'path';
+import * as path from "path";
 import { uxLog } from "../../../../common/utils";
 import { parseXmlFile } from "../../../../common/utils/xmlUtils";
 
@@ -26,8 +26,8 @@ export default class CleanEmptyItems extends SfdxCommand {
   protected static flagsConfig = {
     folder: flags.string({
       char: "f",
-      default: 'force-app',
-      description: 'Root folder',
+      default: "force-app",
+      description: "Root folder",
     }),
     debug: flags.boolean({
       char: "d",
@@ -52,7 +52,7 @@ export default class CleanEmptyItems extends SfdxCommand {
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.folder = this.flags.folder || './force-app';
+    this.folder = this.flags.folder || "./force-app";
     this.debugMode = this.flags.debug || false;
 
     // Delete standard files when necessary
@@ -60,10 +60,9 @@ export default class CleanEmptyItems extends SfdxCommand {
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const emptyConstraints = [
-      
       { globPattern: `/**/*.globalValueSetTranslation-meta.xml`, tags: ["GlobalValueSetTranslation", "valueTranslation"] },
       { globPattern: `/**/*.standardValueSet-meta.xml`, tags: ["StandardValueSet", "standardValue"] },
-      { globPattern: `/**/*.sharingRules-meta.xml`, tags: ["SharingRules", "sharingOwnerRules"] }
+      { globPattern: `/**/*.sharingRules-meta.xml`, tags: ["SharingRules", "sharingOwnerRules"] },
     ];
     let counter = 0;
     for (const emptyConstraint of emptyConstraints) {
@@ -71,7 +70,7 @@ export default class CleanEmptyItems extends SfdxCommand {
       const matchingCustomFiles = await glob(findStandardValueSetPattern, { cwd: process.cwd() });
       for (const matchingCustomFile of matchingCustomFiles) {
         const xmlContent = await parseXmlFile(matchingCustomFile);
-        const tag1= xmlContent[emptyConstraint.tags[0]];
+        const tag1 = xmlContent[emptyConstraint.tags[0]];
         if (!(tag1 && tag1[emptyConstraint.tags[1]])) {
           await fs.remove(matchingCustomFile);
           uxLog(this, c.cyan(`Removed empty item ${c.yellow(matchingCustomFile)}`));

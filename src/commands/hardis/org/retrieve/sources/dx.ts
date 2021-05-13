@@ -105,7 +105,7 @@ export default class DxSources extends SfdxCommand {
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
-      uxLog(this,c.cyan("Creating SFDX project..."));
+      uxLog(this, c.cyan("Creating SFDX project..."));
       const createProjectRes = await exec('sfdx force:project:create --projectname "sfdx-project"', { maxBuffer: 1024 * 2000 });
       if (debug) {
         this.ux.log(createProjectRes.stdout + createProjectRes.stderr);
@@ -130,9 +130,9 @@ export default class DxSources extends SfdxCommand {
     uxLog(this, `[sfdx-hardis] Moving temp files to main folder ${c.green(path.resolve(folder))}...`);
     process.chdir(prevCwd);
     // Do not replace files if already defined
-    const filesToNotReplace = ['.gitignore','.forceignore','sfdx-project.json','README.md'];
+    const filesToNotReplace = [".gitignore", ".forceignore", "sfdx-project.json", "README.md"];
     for (const fileToNotReplace of filesToNotReplace) {
-      if (fs.existsSync(path.join(path.resolve(folder),fileToNotReplace)) && fs.existsSync(path.join(sfdxFolder, fileToNotReplace))) {
+      if (fs.existsSync(path.join(path.resolve(folder), fileToNotReplace)) && fs.existsSync(path.join(sfdxFolder, fileToNotReplace))) {
         await fs.remove(path.join(sfdxFolder, fileToNotReplace));
       }
     }

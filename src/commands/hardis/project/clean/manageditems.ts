@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as glob from "glob-promise";
-import * as path from 'path';
+import * as path from "path";
 import { uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
@@ -20,20 +20,18 @@ export default class CleanManagedItems extends SfdxCommand {
 
   public static description = "Remove unwanted managed items within sfdx project sources";
 
-  public static examples = [
-    "$ sfdx hardis:project:clean:manageditems --namespace crta"
-  ];
+  public static examples = ["$ sfdx hardis:project:clean:manageditems --namespace crta"];
 
   protected static flagsConfig = {
     namespace: flags.string({
       char: "n",
-      default: '',
-      description: 'Namespace to remove',
+      default: "",
+      description: "Namespace to remove",
     }),
     folder: flags.string({
       char: "f",
-      default: 'force-app',
-      description: 'Root folder',
+      default: "force-app",
+      description: "Root folder",
     }),
     debug: flags.boolean({
       char: "d",
@@ -59,12 +57,12 @@ export default class CleanManagedItems extends SfdxCommand {
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.namespace = this.flags.namespace || '';
-    this.folder = this.flags.folder || './force-app';
+    this.namespace = this.flags.namespace || "";
+    this.folder = this.flags.folder || "./force-app";
     this.debugMode = this.flags.debug || false;
 
-    if (this.namespace === '') {
-      throw new SfdxError('namespace argument is mandatory');
+    if (this.namespace === "") {
+      throw new SfdxError("namespace argument is mandatory");
     }
 
     // Delete standard files when necessary
@@ -81,14 +79,14 @@ export default class CleanManagedItems extends SfdxCommand {
       if (fs.lstatSync(matchingCustomFile).isDirectory()) {
         const localItems = await this.folderContainsLocalItems(matchingCustomFile);
         if (localItems) {
-          continue ;
+          continue;
         }
       }
       // Keep .object-meta.xml item if there are local custom items defined on it
-      if (matchingCustomFile.endsWith('.object-meta.xml')) {
+      if (matchingCustomFile.endsWith(".object-meta.xml")) {
         const localItems = await this.folderContainsLocalItems(path.dirname(matchingCustomFile));
         if (localItems) {
-          continue ;
+          continue;
         }
       }
       await fs.remove(matchingCustomFile);
@@ -101,9 +99,9 @@ export default class CleanManagedItems extends SfdxCommand {
 
   private async folderContainsLocalItems(folder: string): Promise<boolean> {
     // Do not remove managed folders when there are local custom items defined on it
-    const subFiles = await glob(folder+'/**/*', { cwd: process.cwd() });
-    const standardItems = subFiles.filter(file => {
-      return !fs.lstatSync(file).isDirectory() && !path.basename(file).startsWith(`${this.namespace}__`)
+    const subFiles = await glob(folder + "/**/*", { cwd: process.cwd() });
+    const standardItems = subFiles.filter((file) => {
+      return !fs.lstatSync(file).isDirectory() && !path.basename(file).startsWith(`${this.namespace}__`);
     });
     if (standardItems.length > 0) {
       return true;

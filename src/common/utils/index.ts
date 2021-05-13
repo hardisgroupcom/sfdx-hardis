@@ -300,11 +300,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n")
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n")
         )
       );
     }
@@ -417,10 +417,10 @@ export async function execCommand(
   const output = !process.argv.includes("--json");
   let spinner: any;
   // Complete command with username if necessary
-  if(commandThis && !command.includes(' -u ') && !command.includes(' --targetusername') ) {
+  if (commandThis && !command.includes(" -u ") && !command.includes(" --targetusername")) {
     const username = commandThis?.org?.getUsername();
     if (username) {
-      command += ' --targetusername ' + username;
+      command += " --targetusername " + username;
     }
   }
   // Start spinner
@@ -795,13 +795,13 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       {
         type: "text",
         name: "appName",
-        initial: (folder === "./.ssh") ? "sfdx_hardis_mon" : "sfdx_hardis",
+        initial: folder === "./.ssh" ? "sfdx_hardis_mon" : "sfdx_hardis",
         message: c.cyanBright("How would you like to name the Connected App (ex: sfdx) ?"),
       },
       {
         type: "text",
         name: "contactEmail",
-        initial: config.userEmail || '',
+        initial: config.userEmail || "",
         message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"),
       },
       {
