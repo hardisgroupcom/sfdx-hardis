@@ -448,7 +448,11 @@ class MetadataUtils {
         }
         uxLog(
           commandThis,
-          c.cyan(`Installing package ${c.green(`${c.bold(package1.SubscriberPackageName || "")} - ${c.bold(package1.SubscriberPackageVersionName || "")}`)}...`)
+          c.cyan(
+            `Installing package ${c.green(
+              `${c.bold(package1.SubscriberPackageName || "")} - ${c.bold(package1.SubscriberPackageVersionName || "")}`
+            )}...`
+          )
         );
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(
@@ -485,7 +489,7 @@ class MetadataUtils {
 
     // Build package.xml for all org
     uxLog(commandThis, c.cyan(`Generating full package.xml from ${c.green(commandThis.org.getUsername())}...`));
-    await execCommand("sfdx sfpowerkit:org:manifest:build -o package.xml",this,{output:false,fail:true,debug:debug});
+    await execCommand("sfdx sfpowerkit:org:manifest:build -o package.xml", this, { output: false, fail: true, debug: debug });
 
     // Filter managed items if requested
     if (options.filterManagedItems) {

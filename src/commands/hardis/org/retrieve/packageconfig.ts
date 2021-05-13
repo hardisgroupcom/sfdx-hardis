@@ -43,13 +43,12 @@ export default class RetrievePackageConfig extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-
-      // Retrieve list of installed packages
-      const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-      // Store list in config
-      await setConfig("project", {
-        installedPackages,
-      });
+    // Retrieve list of installed packages
+    const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+    // Store list in config
+    await setConfig("project", {
+      installedPackages,
+    });
 
     const message = `[sfdx-hardis] Successfully retrieved package config`;
     this.ux.log(c.green(message));

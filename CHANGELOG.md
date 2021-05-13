@@ -5,7 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - New commands
-  - **hardis:org:retrieve:packageconfig**: Retrieves .sfdx-hardis.yml property installedPackaged from an existing org 
+  - **hardis:org:retrieve:packageconfig**: Retrieves .sfdx-hardis.yml property installedPackaged from an existing org
   - **hardis:project:clean:emptyitems**: Delete empty items from SFD project
   - **hardis:project:clean:hiddenitems**: Delete hidden items (from managed packages) from SFDX project
 
@@ -15,7 +15,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:project:clean:manageditems: New `--namespace` argument
 - org:retrieve:source:dx : Do not erase .gitignore, .forceignore , README.md and project-scratch-def is already existing locally
 
-## [2.17.2] 2021-05-10 
+## [2.17.2] 2021-05-10
 
 - Default init scratch org using push and not deploy
 - QuickFix mergeRequest links local storage

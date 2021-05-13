@@ -118,8 +118,8 @@ Example of element to delete:
       expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
       tip: `Lightning EmailTemplates must also be imported with metadatas.
 ${c.cyan(
-        "If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)"
-      )}
+  "If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)"
+)}
 - Create a file scripts/data/EmailTemplates/export.json:
 {
     "objects": [
@@ -138,7 +138,7 @@ ${c.cyan(
       expressionString: [
         "Required field is missing: sharingOwnerRules",
         "Required field is missing: standardValue",
-        "Required field is missing: valueTranslation"
+        "Required field is missing: valueTranslation",
       ],
       tip: `You probably retrieved empty items, that must not be included within the SFDX project
 To remove them, please run sfdx:hardis:project:clean:emptyitems`,
@@ -196,9 +196,11 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
     {
       name: "missing-field-synced-quote-id",
       label: "Missing field SyncedQuoteId",
-      expressionString: ["field SyncedQuoteId",
+      expressionString: [
+        "field SyncedQuoteId",
         "Error  force-app/main/default/objects/Quote/Quote.object-meta.xml",
-        "Error  force-app/main/default/objects/Opportunity/fields/SyncedQuoteId.field-meta.xml"],
+        "Error  force-app/main/default/objects/Opportunity/fields/SyncedQuoteId.field-meta.xml",
+      ],
       tip: `Quotes must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=sf.quotes_enable.htm&type=5
 - Scratch org setting: 
@@ -266,7 +268,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 }`,
     },
     {
-      name: "missing-feature-opportinity",
+      name: "missing-feature-opportunity",
       label: "Missing feature Opportunity Teams",
       expressionString: ["OpportunityTeam"],
       tip: `Opportunity Teams must be activated in the target org.
@@ -275,6 +277,13 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 "opportunitySettings": {
   "enableOpportunityTeam": true
 }`,
+    },
+    {
+      name: "missing-feature-workdotcom",
+      label: "Missing Feature Work.Com",
+      expressionString: ["WorkBadgeDefinition"],
+      tip: `Work.com feature must be activated in the target org.
+- Org & Scratch: https://developer.salesforce.com/docs/atlas.en-us.workdotcom_dev_guide.meta/workdotcom_dev_guide/wdc_cc_setup_dev_org.htm`,
     },
     {
       name: "missing-sales-team",
