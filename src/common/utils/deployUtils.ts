@@ -11,19 +11,19 @@ import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 import { prompts } from "./prompts";
 
-export async function forceSourcePush(scratchOrgAlias: string, debug = false) {
+export async function forceSourcePush(scratchOrgAlias: string,commandThis: any, debug = false) {
   try {
     const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
-    await execCommand(pushCommand, this, {
+    await execCommand(pushCommand, commandThis, {
       fail: true,
       output: true,
       debug: debug,
     });
   } catch (e) {
     const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
-    uxLog(this, c.red("Sadly there has been push error(s)"));
-    uxLog(this, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
-    uxLog(this, c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`)));
+    uxLog(commandThis, c.red("Sadly there has been push error(s)"));
+    uxLog(commandThis, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+    uxLog(commandThis, c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`)));
     throw new SfdxError("Deployment failure. Check messages above");
   }
 }

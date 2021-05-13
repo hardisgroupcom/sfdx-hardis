@@ -2,7 +2,9 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { forceSourcePush } from "../../../common/utils/deployUtils";
+import * as c from "chalk";
+import { MetadataUtils } from "../../../../common/metadata-utils";
+import { setConfig } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -11,14 +13,12 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class SourcePush extends SfdxCommand {
-  public static title = "Scratch PUSH";
+export default class RetrievePackageConfig extends SfdxCommand {
+  public static title = "Retrieve package configuration from an org";
 
-  public static description = "Push local updates in git branch to scratch org";
+  public static description = "Retrieve package configuration from an org";
 
-  public static examples = ["$ sfdx hardis:scratch:push"];
-
-  // public static args = [{name: 'file'}];
+  public static examples = ["$ sfdx hardis:org:retrieve:packageconfig"];
 
   protected static flagsConfig = {
     debug: flags.boolean({
@@ -43,9 +43,16 @@ export default class SourcePush extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const debugMode = this.flags.debug || false;
-    await forceSourcePush(this.org.getUsername(),this, debugMode);
-    // Return an object to be displayed with --json
-    return { outputString: "Pushed local git branch in scratch org" };
+
+      // Retrieve list of installed packages
+      const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+      // Store list in config
+      await setConfig("project", {
+        installedPackages,
+      });
+
+    const message = `[sfdx-hardis] Successfully retrieved package config`;
+    this.ux.log(c.green(message));
+    return { orgId: this.org.getOrgId(), outputString: message };
   }
 }

@@ -4,7 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New commands
+  - hardis:org:retrieve:packageconfig: Retrieves .sfdx-hardis.yml property installedPackaged from an existing org 
 - Update default values for JWT connected app creation
+- Manage `--targetusername` to be taken in account for all sfdx hardis commands
+- More deployment tips
+- org:retrieve:source:dx : Do not erase .gitignore, .forceignore , README.md and project-scratch-def is already existing locally
 
 ## [2.17.2] 2021-05-10 
 

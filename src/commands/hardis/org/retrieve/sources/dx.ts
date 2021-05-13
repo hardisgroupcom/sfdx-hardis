@@ -105,7 +105,7 @@ export default class DxSources extends SfdxCommand {
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
-      uxLog(this, "[sfdx-hardis] Creating SFDX project...");
+      uxLog(this,c.cyan("Creating SFDX project..."));
       const createProjectRes = await exec('sfdx force:project:create --projectname "sfdx-project"', { maxBuffer: 1024 * 2000 });
       if (debug) {
         this.ux.log(createProjectRes.stdout + createProjectRes.stderr);
@@ -113,7 +113,7 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Converting metadatas to sfdx
-    uxLog(this, `[sfdx-hardis] Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`);
+    uxLog(this, c.cyan(`Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`));
     process.chdir(sfdxFolder);
     try {
       const convertRes = await exec(`sfdx force:mdapi:convert --rootdir ${path.join(metadataFolder, "unpackaged")} ${debug ? "--verbose" : ""}`, {
@@ -129,6 +129,14 @@ export default class DxSources extends SfdxCommand {
     // Move sfdx sources in main folder
     uxLog(this, `[sfdx-hardis] Moving temp files to main folder ${c.green(path.resolve(folder))}...`);
     process.chdir(prevCwd);
+    // Do not replace files if already defined
+    const filesToNotReplace = ['.gitignore','.forceignore','sfdx-project.json','README.md'];
+    for (const fileToNotReplace of filesToNotReplace) {
+      if (fs.existsSync(path.join(path.resolve(folder),fileToNotReplace)) && fs.existsSync(path.join(sfdxFolder, fileToNotReplace))) {
+        await fs.remove(path.join(sfdxFolder, fileToNotReplace));
+      }
+    }
+    // Copy files
     await fs.copy(sfdxFolder, path.resolve(folder));
 
     // Manage org shape if requested
