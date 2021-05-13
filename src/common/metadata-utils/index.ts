@@ -1,13 +1,10 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
-import * as child from "child_process";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as util from "util";
 import { execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
-const exec = util.promisify(child.exec);
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance

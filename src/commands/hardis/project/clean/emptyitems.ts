@@ -60,6 +60,8 @@ export default class CleanEmptyItems extends SfdxCommand {
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const emptyConstraints = [
+      
+      { globPattern: `/**/*.globalValueSetTranslation-meta.xml`, tags: ["GlobalValueSetTranslation", "valueTranslation"] },
       { globPattern: `/**/*.standardValueSet-meta.xml`, tags: ["StandardValueSet", "standardValue"] },
       { globPattern: `/**/*.sharingRules-meta.xml`, tags: ["SharingRules", "sharingOwnerRules"] }
     ];

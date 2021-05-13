@@ -133,6 +133,17 @@ ${c.cyan(
 - Run sfdx hardis:work:save`,
     },
     {
+      name: "empty-item",
+      label: "Empty source items",
+      expressionString: [
+        "Required field is missing: sharingOwnerRules",
+        "Required field is missing: standardValue",
+        "Required field is missing: valueTranslation"
+      ],
+      tip: `You probably retrieved empty items, that must not be included within the SFDX project
+To remove them, please run sfdx:hardis:project:clean:emptyitems`,
+    },
+    {
       name: "field-must-not-be-required",
       label: "Formula picklist field issue",
       expressionRegex: [/Field:(.*) must not be Required/gm],
