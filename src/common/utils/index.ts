@@ -410,16 +410,25 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  const commandLog = `[sfdx-hardis][command] ${c.bold(c.grey(command))}`;
   let commandResult = null;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = "0";
   const output = !process.argv.includes("--json");
   let spinner: any;
+  // Complete command with username if necessary
+  if(commandThis && !command.includes(' -u ') && !command.includes(' --targetusername') ) {
+    const username = commandThis?.org?.getUsername();
+    if (username) {
+      command += ' --targetusername ' + username;
+    }
+  }
+  // Start spinner
+  const commandLog = `[sfdx-hardis][command] ${c.bold(c.grey(command))}`;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: "moon" }).start();
   }
+  // Run command
   try {
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
     if (spinner) {

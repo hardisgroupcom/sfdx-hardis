@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as glob from "glob-promise";
-import * as path from 'path';
+import * as path from 'path'; 
 import { uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
@@ -15,21 +15,14 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanManagedItems extends SfdxCommand {
-  public static title = "Clean retrieved managed items in dx sources";
+export default class CleanHiddenItems extends SfdxCommand {
+  public static title = "Clean retrieved hidden items in dx sources";
 
-  public static description = "Remove unwanted managed items within sfdx project sources";
+  public static description = "Remove unwanted hidden items within sfdx project sources";
 
-  public static examples = [
-    "$ sfdx hardis:project:clean:manageditems --namespace crta"
-  ];
+  public static examples = ["$ sfdx hardis:project:clean:hiddenitems"];
 
   protected static flagsConfig = {
-    namespace: flags.string({
-      char: "n",
-      default: '',
-      description: 'Namespace to remove',
-    }),
     folder: flags.string({
       char: "f",
       default: 'force-app',
@@ -54,31 +47,34 @@ export default class CleanManagedItems extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
-  protected namespace: string;
-  protected folder: string;
+  protected folder: string ;
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.namespace = this.flags.namespace || '';
-    this.folder = this.flags.folder || './force-app';
+    this.folder = this.flags.folder || './force-app' ;
     this.debugMode = this.flags.debug || false;
 
-    if (this.namespace === '') {
-      throw new SfdxError('namespace argument is mandatory');
-    }
-
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing unwanted dx managed source files with namespace ${c.bold(this.namespace)}...`));
+    uxLog(this, c.cyan(`Removing hidden dx managed source files`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
-    const findManagedPattern = rootFolder + `/**/${this.namespace}__*`;
+    const findManagedPattern = rootFolder + `/**/*.{app,cmp,evt,tokens}`;
     const matchingCustomFiles = await glob(findManagedPattern, { cwd: process.cwd() });
+    let counter = 0 ;
     for (const matchingCustomFile of matchingCustomFiles) {
-      await fs.remove(matchingCustomFile);
-      uxLog(this, c.cyan(`Removed managed item ${c.yellow(matchingCustomFile)}`));
+      const fileContent = await fs.readFile(matchingCustomFile,"utf8");
+      if (fileContent.startsWith('(hidden)')) {
+        const componentFolder = path.dirname(matchingCustomFile);
+        await fs.remove(componentFolder);
+        uxLog(this, c.cyan(`Removed hidden item ${c.yellow(componentFolder)}`));
+        counter++ ;
+      }
     }
 
+    // Summary
+    const msg = `Removed ${c.green(c.bold(counter))} hidden source items`;
+    uxLog(this,c.cyan(msg));
     // Return an object to be displayed with --json
-    return { outputString: "Cleaned managed items from sfdx project" };
+    return { outputString: msg };
   }
 }

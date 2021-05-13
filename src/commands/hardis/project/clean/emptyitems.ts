@@ -1,12 +1,13 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import * as fs from "fs-extra";
+import * as fs from 'fs-extra';
 import * as glob from "glob-promise";
 import * as path from 'path';
 import { uxLog } from "../../../../common/utils";
+import { parseXmlFile } from "../../../../common/utils/xmlUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -15,21 +16,14 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanManagedItems extends SfdxCommand {
-  public static title = "Clean retrieved managed items in dx sources";
+export default class CleanEmptyItems extends SfdxCommand {
+  public static title = "Clean retrieved empty items in dx sources";
 
-  public static description = "Remove unwanted managed items within sfdx project sources";
+  public static description = "Remove unwanted empty items within sfdx project sources";
 
-  public static examples = [
-    "$ sfdx hardis:project:clean:manageditems --namespace crta"
-  ];
+  public static examples = ["$ sfdx hardis:project:clean:emptyitems"];
 
   protected static flagsConfig = {
-    namespace: flags.string({
-      char: "n",
-      default: '',
-      description: 'Namespace to remove',
-    }),
     folder: flags.string({
       char: "f",
       default: 'force-app',
@@ -54,31 +48,42 @@ export default class CleanManagedItems extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
-  protected namespace: string;
   protected folder: string;
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.namespace = this.flags.namespace || '';
     this.folder = this.flags.folder || './force-app';
     this.debugMode = this.flags.debug || false;
 
-    if (this.namespace === '') {
-      throw new SfdxError('namespace argument is mandatory');
-    }
-
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing unwanted dx managed source files with namespace ${c.bold(this.namespace)}...`));
+    uxLog(this, c.cyan(`Removing empty dx managed source files`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
-    const findManagedPattern = rootFolder + `/**/${this.namespace}__*`;
-    const matchingCustomFiles = await glob(findManagedPattern, { cwd: process.cwd() });
-    for (const matchingCustomFile of matchingCustomFiles) {
-      await fs.remove(matchingCustomFile);
-      uxLog(this, c.cyan(`Removed managed item ${c.yellow(matchingCustomFile)}`));
+    const emptyConstraints = [
+      
+      { globPattern: `/**/*.globalValueSetTranslation-meta.xml`, tags: ["GlobalValueSetTranslation", "valueTranslation"] },
+      { globPattern: `/**/*.standardValueSet-meta.xml`, tags: ["StandardValueSet", "standardValue"] },
+      { globPattern: `/**/*.sharingRules-meta.xml`, tags: ["SharingRules", "sharingOwnerRules"] }
+    ];
+    let counter = 0;
+    for (const emptyConstraint of emptyConstraints) {
+      const findStandardValueSetPattern = rootFolder + emptyConstraint.globPattern;
+      const matchingCustomFiles = await glob(findStandardValueSetPattern, { cwd: process.cwd() });
+      for (const matchingCustomFile of matchingCustomFiles) {
+        const xmlContent = await parseXmlFile(matchingCustomFile);
+        const tag1= xmlContent[emptyConstraint.tags[0]];
+        if (!(tag1 && tag1[emptyConstraint.tags[1]])) {
+          await fs.remove(matchingCustomFile);
+          uxLog(this, c.cyan(`Removed empty item ${c.yellow(matchingCustomFile)}`));
+          counter++;
+        }
+      }
     }
 
+    // Summary
+    const msg = `Removed ${c.green(c.bold(counter))} hidden source items`;
+    uxLog(this, c.cyan(msg));
     // Return an object to be displayed with --json
-    return { outputString: "Cleaned managed items from sfdx project" };
+    return { outputString: msg };
   }
 }
