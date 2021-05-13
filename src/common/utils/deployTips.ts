@@ -240,6 +240,17 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 },`,
     },
     {
+      name: "missing-feature-ideas",
+      label: "Missing feature Ideas notes",
+      expressionString: ["Idea.InternalIdeasIdeaRecordType"],
+      tip: `Ideas must be activated in the target org.
+- Org: https://help.salesforce.com/articleView?id=networks_enable_ideas.htm&type=0
+- Scratch org setting: 
+"ideasSettings": {
+  "enableIdeas": true
+}`,
+    },
+    {
       name: "missing-feature-live-agent",
       label: "Missing feature Live Agent",
       expressionString: ["FeedItem.ContentNote"],
