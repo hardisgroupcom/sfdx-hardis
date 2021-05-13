@@ -266,7 +266,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 }`,
     },
     {
-      name: "missing-feature-opportinity",
+      name: "missing-feature-opportunity",
       label: "Missing feature Opportunity Teams",
       expressionString: ["OpportunityTeam"],
       tip: `Opportunity Teams must be activated in the target org.
@@ -275,6 +275,13 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 "opportunitySettings": {
   "enableOpportunityTeam": true
 }`,
+    },
+    {
+      name: "missing-feature-workdotcom",
+      label: "Missing Feature Work.Com",
+      expressionString: ["WorkBadgeDefinition"],
+      tip: `Work.com feature must be activated in the target org.
+- Org & Scratch: https://developer.salesforce.com/docs/atlas.en-us.workdotcom_dev_guide.meta/workdotcom_dev_guide/wdc_cc_setup_dev_org.htm`,
     },
     {
       name: "missing-sales-team",

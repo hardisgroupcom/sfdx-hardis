@@ -103,7 +103,6 @@ export default class CleanManagedItems extends SfdxCommand {
     // Do not remove managed folders when there are local custom items defined on it
     const subFiles = await glob(folder+'/**/*', { cwd: process.cwd() });
     const standardItems = subFiles.filter(file => {
-      console.log(folder+' '+path.basename(file));
       return !fs.lstatSync(file).isDirectory() && !path.basename(file).startsWith(`${this.namespace}__`)
     });
     if (standardItems.length > 0) {
