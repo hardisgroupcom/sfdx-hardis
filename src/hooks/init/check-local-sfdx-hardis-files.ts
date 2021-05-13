@@ -6,9 +6,6 @@ import { getConfig } from "../../config";
 
 export const hook = async (options: any) => {
 
-  if (isCI) {
-    console.log(JSON.stringify(process.env,null,null));
-  }
   // Skip hooks from other commands than hardis:scratch commands
   const commandId = options?.id || "";
 
