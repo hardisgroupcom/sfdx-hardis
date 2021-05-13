@@ -74,11 +74,41 @@ export default class CleanManagedItems extends SfdxCommand {
     const findManagedPattern = rootFolder + `/**/${this.namespace}__*`;
     const matchingCustomFiles = await glob(findManagedPattern, { cwd: process.cwd() });
     for (const matchingCustomFile of matchingCustomFiles) {
+      if (!fs.existsSync(matchingCustomFile)) {
+        continue;
+      }
+      // Do not remove managed folders when there are local custom items defined on it
+      if (fs.lstatSync(matchingCustomFile).isDirectory()) {
+        const localItems = await this.folderContainsLocalItems(matchingCustomFile);
+        if (localItems) {
+          continue ;
+        }
+      }
+      // Keep .object-meta.xml item if there are local custom items defined on it
+      if (matchingCustomFile.endsWith('.object-meta.xml')) {
+        const localItems = await this.folderContainsLocalItems(path.dirname(matchingCustomFile));
+        if (localItems) {
+          continue ;
+        }
+      }
       await fs.remove(matchingCustomFile);
       uxLog(this, c.cyan(`Removed managed item ${c.yellow(matchingCustomFile)}`));
     }
 
     // Return an object to be displayed with --json
     return { outputString: "Cleaned managed items from sfdx project" };
+  }
+
+  private async folderContainsLocalItems(folder: string): Promise<boolean> {
+    // Do not remove managed folders when there are local custom items defined on it
+    const subFiles = await glob(folder+'/**/*', { cwd: process.cwd() });
+    const standardItems = subFiles.filter(file => {
+      console.log(folder+' '+path.basename(file));
+      return !fs.lstatSync(file).isDirectory() && !path.basename(file).startsWith(`${this.namespace}__`)
+    });
+    if (standardItems.length > 0) {
+      return true;
+    }
+    return false;
   }
 }
