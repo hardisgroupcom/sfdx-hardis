@@ -14,6 +14,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - More deployment tips
 - hardis:project:clean:manageditems: New `--namespace` argument
 - org:retrieve:source:dx : Do not erase .gitignore, .forceignore , README.md and project-scratch-def is already existing locally
+- Remove shape temp folder to avoid a force:org:create bug
 
 ## [2.17.2] 2021-05-10
 
