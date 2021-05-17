@@ -188,10 +188,10 @@ export default class ScratchCreate extends SfdxCommand {
     }
 
     // Fix sfdx-cli bug: remove shape.zip if found
-    const tmpShapeFolder = path.join(os.tmpdir(),"shape");
+    const tmpShapeFolder = path.join(os.tmpdir(), "shape");
     if (fs.existsSync(tmpShapeFolder)) {
       await fs.remove(tmpShapeFolder);
-      uxLog(this,c.grey("Deleted "+tmpShapeFolder));
+      uxLog(this, c.grey("Deleted " + tmpShapeFolder));
     }
 
     // Create new scratch org

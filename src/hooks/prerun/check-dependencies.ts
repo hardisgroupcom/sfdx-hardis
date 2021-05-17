@@ -11,7 +11,6 @@ export const hook = async (options: any) => {
     return;
   }
 
-
   // Set only once restDeploy=false to improve performances
   const config = await getConfig("user");
   if (config.restDeployDisabled !== true && !commandId.includes("configure")) {
