@@ -4,9 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.17.3] 2021-05-18
+## [2.18.0] 2021-05-18
 
-- Fix .gitignore automatic update constraint
 - New commands
   - **hardis:org:retrieve:packageconfig**: Retrieves .sfdx-hardis.yml property installedPackaged from an existing org
   - **hardis:project:clean:emptyitems**: Delete empty items from SFD project
@@ -18,6 +17,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:project:clean:manageditems: New `--namespace` argument
 - org:retrieve:source:dx : Do not erase .gitignore, .forceignore , README.md and project-scratch-def is already existing locally
 - Remove shape temp folder to avoid a force:org:create bug
+
+## [2.17.3] 2021-05-18
+
+- Fix .gitignore automatic update constraint
 
 ## [2.17.2] 2021-05-10
 
