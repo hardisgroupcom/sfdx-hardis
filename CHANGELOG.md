@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.17.3] 2021-05-18
 
-- Fix .gitignore automatic update constraint 
+- Fix .gitignore automatic update constraint
 - New commands
   - **hardis:org:retrieve:packageconfig**: Retrieves .sfdx-hardis.yml property installedPackaged from an existing org
   - **hardis:project:clean:emptyitems**: Delete empty items from SFD project
