@@ -133,11 +133,29 @@ ${c.cyan(
 - Run sfdx hardis:work:save`,
     },
     {
+      name: "empty-item",
+      label: "Empty source items",
+      expressionString: [
+        "Required field is missing: sharingOwnerRules",
+        "Required field is missing: standardValue",
+        "Required field is missing: valueTranslation",
+      ],
+      tip: `You probably retrieved empty items, that must not be included within the SFDX project
+To remove them, please run sfdx:hardis:project:clean:emptyitems`,
+    },
+    {
       name: "field-must-not-be-required",
       label: "Formula picklist field issue",
       expressionRegex: [/Field:(.*) must not be Required/gm],
       tip: `You probably made read only a field that was required before.
 Find the field in the layout source XML, then replace Required by Readonly`,
+    },
+    {
+      name: "field-not-available-for-element",
+      label: "Field not available for element",
+      expressionRegex: [/Field (.*) is not available for/gm],
+      tip: `You probably changed the type of a field.
+Find the field in the source XML, and remove the section using it`,
     },
     {
       name: "formula-picklist-issue",
@@ -156,8 +174,8 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
     {
       name: "missing-field-middle-name",
       label: "Missing field MiddleName",
-      expressionString: ["field MiddleName"],
-      tip: `Quotes must be activated in the target org.
+      expressionString: ["field MiddleName", "Variable does not exist: MiddleName"],
+      tip: `MiddleNames must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=000332623&type=1&mode=1
 - Scratch org setting: 
 "nameSettings": {
@@ -168,24 +186,36 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       name: "missing-field-suffix",
       label: "Missing field Suffix",
       expressionString: ["field Suffix"],
-      tip: `Quotes must be activated in the target org.
+      tip: `Suffix must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=000332623&type=1&mode=1
 - Scratch org setting: 
 "nameSettings": {
   "enableNameSuffix": true
 },`,
     },
-
     {
       name: "missing-field-synced-quote-id",
       label: "Missing field SyncedQuoteId",
-      expressionString: ["field SyncedQuoteId"],
+      expressionString: [
+        "field SyncedQuoteId",
+        "Error  force-app/main/default/objects/Quote/Quote.object-meta.xml",
+        "Error  force-app/main/default/objects/Opportunity/fields/SyncedQuoteId.field-meta.xml",
+      ],
       tip: `Quotes must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=sf.quotes_enable.htm&type=5
 - Scratch org setting: 
 "quoteSettings": {
   "enableQuote": true
 }`,
+    },
+    {
+      name: "missing-feature-account-contact-relation",
+      label: "Missing feature ContactToMultipleAccounts",
+      expressionString: ["no CustomObject named AccountContactRelation found"],
+      tip: `Contacts to multiple accounts be activated in the target org.
+- Help: https://help.salesforce.com/articleView?id=sf.shared_contacts_set_up.htm&type=5
+- Scratch org setting: 
+"features": ["ContactsToMultipleAccounts"]`,
     },
     {
       name: "missing-feature-chatter-collaboration-groups",
@@ -208,6 +238,17 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 "enhancedNotesSettings": {
   "enableEnhancedNotes": true
 },`,
+    },
+    {
+      name: "missing-feature-ideas",
+      label: "Missing feature Ideas notes",
+      expressionString: ["Idea.InternalIdeasIdeaRecordType"],
+      tip: `Ideas must be activated in the target org.
+- Org: https://help.salesforce.com/articleView?id=networks_enable_ideas.htm&type=0
+- Scratch org setting: 
+"ideasSettings": {
+  "enableIdeas": true
+}`,
     },
     {
       name: "missing-feature-live-agent",
@@ -236,6 +277,24 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
   "enableTranslationWorkbench":  true,
   "enableEndUserLanguages": true
 }`,
+    },
+    {
+      name: "missing-feature-opportunity",
+      label: "Missing feature Opportunity Teams",
+      expressionString: ["OpportunityTeam"],
+      tip: `Opportunity Teams must be activated in the target org.
+- Org: Setup -> Opportunity Team Settings -> Enable Team Selling
+- Scratch org:
+"opportunitySettings": {
+  "enableOpportunityTeam": true
+}`,
+    },
+    {
+      name: "missing-feature-workdotcom",
+      label: "Missing Feature Work.Com",
+      expressionString: ["WorkBadgeDefinition"],
+      tip: `Work.com feature must be activated in the target org.
+- Org & Scratch: https://developer.salesforce.com/docs/atlas.en-us.workdotcom_dev_guide.meta/workdotcom_dev_guide/wdc_cc_setup_dev_org.htm`,
     },
     {
       name: "missing-sales-team",

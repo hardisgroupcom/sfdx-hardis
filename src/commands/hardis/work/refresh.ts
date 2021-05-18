@@ -190,7 +190,7 @@ export default class RefreshTask extends SfdxCommand {
     }
 
     // Push new branch state to scratch org
-    await forceSourcePush(this.org.getUsername(), this.debugMode);
+    await forceSourcePush(this.org.getUsername(), this, this.debugMode);
 
     // Return an object to be displayed with --json
     return { outputString: "Refreshed the task & org" };

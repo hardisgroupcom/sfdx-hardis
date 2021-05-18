@@ -40,7 +40,7 @@ export default class CleanStandardItems extends SfdxCommand {
   protected static supportsDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  protected static requiresProject = true;
 
   protected debugMode = false;
   protected deleteItems: any = {};

@@ -6,9 +6,20 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.17.3] 2021-05-18
 
-- Fix .gitignore automatic update constraint 
+- Fix .gitignore automatic update constraint
+- New commands
+  - **hardis:org:retrieve:packageconfig**: Retrieves .sfdx-hardis.yml property installedPackaged from an existing org
+  - **hardis:project:clean:emptyitems**: Delete empty items from SFD project
+  - **hardis:project:clean:hiddenitems**: Delete hidden items (from managed packages) from SFDX project
 
-## [2.17.2] 2021-05-10 
+- Update default values for JWT connected app creation
+- Manage `--targetusername` to be taken in account for all sfdx hardis commands
+- More deployment tips
+- hardis:project:clean:manageditems: New `--namespace` argument
+- org:retrieve:source:dx : Do not erase .gitignore, .forceignore , README.md and project-scratch-def is already existing locally
+- Remove shape temp folder to avoid a force:org:create bug
+
+## [2.17.2] 2021-05-10
 
 - Default init scratch org using push and not deploy
 - QuickFix mergeRequest links local storage
