@@ -12,7 +12,7 @@ const exec = util.promisify(child.exec);
 import { SfdxError } from "@salesforce/core";
 import * as ora from "ora";
 import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
-import { CONSTANTS } from "../../config";
+import { CONSTANTS, getConfig } from "../../config";
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
@@ -410,16 +410,25 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  const commandLog = `[sfdx-hardis][command] ${c.bold(c.grey(command))}`;
   let commandResult = null;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = "0";
   const output = !process.argv.includes("--json");
   let spinner: any;
+  // Complete command with username if necessary
+  if (commandThis && !command.includes(" -u ") && !command.includes(" --targetusername")) {
+    const username = commandThis?.org?.getUsername();
+    if (username) {
+      command += " --targetusername " + username;
+    }
+  }
+  // Start spinner
+  const commandLog = `[sfdx-hardis][command] ${c.bold(c.grey(command))}`;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: "moon" }).start();
   }
+  // Run command
   try {
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
     if (spinner) {
@@ -669,9 +678,9 @@ export async function generateReports(resultSorted: any[], columns: any[], comma
 
 export function uxLog(commandThis: any, text: string) {
   text = text.includes("[sfdx-hardis]") ? text : "[sfdx-hardis]" + (text.startsWith("[") ? "" : " ") + text;
-  if (commandThis?.ux) {
+  /*if (commandThis?.ux) {
     commandThis.ux.log(text);
-  } else if (!process.argv.includes("--json")) {
+  } else */ if (!process.argv.includes("--json")) {
     console.log(text);
   }
 }
@@ -781,16 +790,18 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       message: c.cyanBright("In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done"),
     });
     // Request info for deployment
+    const config = await getConfig("user");
     const promptResponses = await prompts([
       {
         type: "text",
         name: "appName",
-        initial: "sfdx_hardis",
+        initial: folder === "./.ssh" ? "sfdx_hardis_mon" : "sfdx_hardis",
         message: c.cyanBright("How would you like to name the Connected App (ex: sfdx) ?"),
       },
       {
         type: "text",
         name: "contactEmail",
+        initial: config.userEmail || "",
         message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"),
       },
       {
