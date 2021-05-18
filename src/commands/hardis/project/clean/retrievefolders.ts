@@ -33,13 +33,13 @@ export default class CleanRetrieveFolders extends SfdxCommand {
   };
 
   // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
+  protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
   protected static supportsDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  protected static requiresProject = true;
   /* jscpd:ignore-end */
 
   protected debugMode = false;
@@ -53,9 +53,9 @@ export default class CleanRetrieveFolders extends SfdxCommand {
 
     const rootSourcesFolder = path.join(process.cwd() + "/force-app/main/default");
     const folderTypes = [
-      //{ sourceType: "dashboards", mdType: "Dashboard" },
-      //{ sourceType: "documents", mdType: "Document" },
-      //{ sourceType: "email", mdType: "EmailTemplate" },
+      { sourceType: "dashboards", mdType: "Dashboard" },
+      { sourceType: "documents", mdType: "Document" },
+      { sourceType: "email", mdType: "EmailTemplate" },
       { sourceType: "reports", mdType: "Report" },
     ];
 

@@ -78,6 +78,11 @@ async function authOrg(orgAlias: string, options: any) {
     if (orgAlias !== "MY_ORG" && (isCI || isDevHub)) {
       orgDisplayCommand += " --targetusername " + orgAlias;
       setDefaultUsername = true;
+    } else {
+      if (process.argv.includes("-u") || process.argv.includes("--targetusername")) {
+        const posUsername = process.argv.indexOf("-u") > -1 ? process.argv.indexOf("-u") + 1 : process.argv.indexOf("--targetusername") + 1;
+        orgDisplayCommand += " --targetusername " + process.argv[posUsername];
+      }
     }
     const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {
       fail: false,

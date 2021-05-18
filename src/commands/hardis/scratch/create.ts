@@ -187,6 +187,13 @@ export default class ScratchCreate extends SfdxCommand {
       return;
     }
 
+    // Fix sfdx-cli bug: remove shape.zip if found
+    const tmpShapeFolder = path.join(os.tmpdir(), "shape");
+    if (fs.existsSync(tmpShapeFolder)) {
+      await fs.remove(tmpShapeFolder);
+      uxLog(this, c.grey("Deleted " + tmpShapeFolder));
+    }
+
     // Create new scratch org
     uxLog(this, c.cyan("Creating new scratch org..."));
     const createCommand =
@@ -307,7 +314,7 @@ export default class ScratchCreate extends SfdxCommand {
           debug: this.debugMode,
         });
       }
-      await forceSourcePush(this.scratchOrgAlias, this.debugMode);
+      await forceSourcePush(this.scratchOrgAlias, this, this.debugMode);
       // Resume sharing calc if necessary
       if (deferSharingCalc) {
         await execCommand("sfdx texei:sharingcalc:resume", this, {

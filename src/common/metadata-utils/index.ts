@@ -1,13 +1,10 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
-import * as child from "child_process";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as util from "util";
 import { execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
-const exec = util.promisify(child.exec);
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -376,6 +373,7 @@ class MetadataUtils {
       "Audience",
       "BlacklistedConsumer",
       "ConnectedApp",
+      "CustomIndex",
       "IframeWhiteListUrlSettings",
       "ManagedContentType",
       "NotificationTypeConfig",
@@ -450,7 +448,11 @@ class MetadataUtils {
         }
         uxLog(
           commandThis,
-          c.cyan(`Installing package ${c.green(`${package1.SubscriberPackageName || ""} ${package1.SubscriberPackageVersionName || ""}`)}...`)
+          c.cyan(
+            `Installing package ${c.green(
+              `${c.bold(package1.SubscriberPackageName || "")} - ${c.bold(package1.SubscriberPackageVersionName || "")}`
+            )}...`
+          )
         );
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(
@@ -487,10 +489,7 @@ class MetadataUtils {
 
     // Build package.xml for all org
     uxLog(commandThis, c.cyan(`Generating full package.xml from ${c.green(commandThis.org.getUsername())}...`));
-    const manifestRes = await exec("sfdx sfpowerkit:org:manifest:build -o package.xml");
-    if (debug) {
-      uxLog(commandThis, manifestRes.stdout + manifestRes.stderr);
-    }
+    await execCommand("sfdx sfpowerkit:org:manifest:build -o package.xml", this, { output: false, fail: true, debug: debug });
 
     // Filter managed items if requested
     if (options.filterManagedItems) {
