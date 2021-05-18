@@ -8,7 +8,7 @@ export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis:scratch commands
   const commandId = options?.id || "";
 
-  if (process.argv.includes("--json")) {
+  if (!process.argv.includes("--json")) {
     await managePackageJson(commandId);
     await manageGitIgnore(commandId);
   }

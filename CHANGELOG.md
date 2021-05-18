@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix .gitignore automatic update constraint
+
 ## [2.17.2] 2021-05-10 
 
 - Default init scratch org using push and not deploy
