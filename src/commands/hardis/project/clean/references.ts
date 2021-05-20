@@ -36,7 +36,7 @@ export default class CleanReferences extends SfdxCommand {
     type: flags.string({
       char: "t",
       description: "Cleaning type",
-      options: ["all", "caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields"],
+      options: ["all", "caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields", "productrequest"],
     }),
     config: flags.string({
       char: "c",
@@ -87,6 +87,10 @@ export default class CleanReferences extends SfdxCommand {
     {
       value: "localfields",
       title: "References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5",
+    },
+    {
+      value: "productrequest",
+      title: "References to ProductRequest object",
     },
   ];
 

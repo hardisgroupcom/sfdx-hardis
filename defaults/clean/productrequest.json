@@ -1,0 +1,15 @@
+{
+  "items": {
+    "CustomField": [
+      "ProductRequest.ShipToAddress",
+      "ProductRequest.ShipmentType",
+      "ProductRequest.Status"
+    ],
+    "CustomObject": [
+      "ProductRequest"
+    ],
+    "CustomTab": [
+      "standard-ProductRequest"
+    ]
+  }
+}
