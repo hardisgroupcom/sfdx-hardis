@@ -264,7 +264,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["ProductRequest"],
       tip: `ProductRequest object is not available in the target org.
 Maybe you would like to clean its references within Profiles / PS using the following command ?
-sfdx hardis:project:clean:references , then select "ProductRequest references"`
+sfdx hardis:project:clean:references , then select "ProductRequest references"`,
     },
     {
       name: "missing-feature-social-customer-service",
