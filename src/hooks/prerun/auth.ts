@@ -91,7 +91,7 @@ async function authOrg(orgAlias: string, options: any) {
     });
     if (
       orgInfoResult.result &&
-      orgInfoResult.result.connectedStatus !== 'RefreshTokenAuthError' && 
+      orgInfoResult.result.connectedStatus !== "RefreshTokenAuthError" &&
       ((orgInfoResult.result.connectedStatus && orgInfoResult.result.connectedStatus.includes("Connected")) ||
         (options.scratch && orgInfoResult.result.connectedStatus.includes("Unknown")) ||
         (orgInfoResult.result.alias === orgAlias && orgInfoResult.result.id != null) ||
