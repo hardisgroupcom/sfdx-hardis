@@ -259,6 +259,14 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 - Scratch org feature: LiveAgent`,
     },
     {
+      name: "missing-feature-product-request",
+      label: "Missing feature Product Request",
+      expressionString: ["ProductRequest"],
+      tip: `ProductRequest object is not available in the target org.
+Maybe you would like to clean its references within Profiles / PS using the following command ?
+sfdx hardis:project:clean:references , then select "ProductRequest references"`
+    },
+    {
       name: "missing-feature-social-customer-service",
       label: "Missing feature Social Customer Service",
       expressionString: ["SocialPersona.AreWeFollowing"],
