@@ -2,7 +2,13 @@
 
 ## [insiders] (master)
 
+## [2.19.0] 2021-05-20
+
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
+
+- Detect when auth token is expired
+- More deploy tips
+- Clean ProductRequest items
 
 ## [2.18.0] 2021-05-18
 
