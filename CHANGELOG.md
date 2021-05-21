@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.20.0] 2021-05-21
+
+- hardis:work:save : Prompt user to pull from scratch org or not before saving
+- Do not update package.json anymore
+
 ## [2.19.0] 2021-05-20
 
 - Detect when auth token is expired

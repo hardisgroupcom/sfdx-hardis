@@ -2,67 +2,17 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import { isCI } from "../../common/utils";
 import { prompts } from "../../common/utils/prompts";
-import { getConfig } from "../../config";
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis:scratch commands
   const commandId = options?.id || "";
 
   if (!process.argv.includes("--json")) {
-    await managePackageJson(commandId);
-    await manageGitIgnore(commandId);
+    await manageGitIgnoreForceIgnore(commandId);
   }
 };
 
-// Add utility scripts if they are not present
-async function managePackageJson(commandId: string) {
-  if (
-    !commandId.startsWith("hardis:scratch") &&
-    !commandId.startsWith("hardis:project:configure") &&
-    !commandId.startsWith("hardis:work") &&
-    !commandId.startsWith("hardis:package") &&
-    !commandId.startsWith("hardis:data")
-  ) {
-    return;
-  }
-  if (commandId.startsWith("hardis:work:task:new")) {
-    return;
-  }
-  if (commandId.includes("config:get")) {
-    return;
-  }
-  if (commandId.includes("configure")) {
-    return;
-  }
-  const packageJsonFile = "./package.json";
-  if (fs.existsSync(packageJsonFile)) {
-    // Update existing package.json to define sfdx utility scripts
-    const text = await fs.readFile(packageJsonFile, "utf8");
-    const packageJson = JSON.parse(text);
-    const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
-    packageJson["scripts"] = Object.assign(packageJson["scripts"], hardisPackageJsonContent["scripts"]);
-    if (JSON.stringify(packageJson) !== JSON.stringify(JSON.parse(text)) && !isCI) {
-      const confirm = await prompts({
-        type: "confirm",
-        name: "value",
-        initial: true,
-        message: c.cyanBright("Your package.json is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"),
-      });
-      if (confirm.value === true) {
-        await fs.writeFile(packageJsonFile, JSON.stringify(packageJson, null, 2));
-        console.log(c.cyan("[sfdx-hardis] Updated package.json with sfdx-hardis content"));
-      }
-    }
-  } else {
-    // Create package.json to define sfdx utility scripts
-    const hardisPackageJsonContent = await getSfdxHardisPackageJsonContent();
-    fs.writeFile(packageJsonFile, JSON.stringify(hardisPackageJsonContent, null, 2), () => {
-      console.log(c.cyan("[sfdx-hardis] Created package.json with sfdx-hardis content"));
-    });
-  }
-}
-
-async function manageGitIgnore(commandId: string) {
+async function manageGitIgnoreForceIgnore(commandId: string) {
   if (!commandId.startsWith("hardis")) {
     return;
   }
@@ -134,47 +84,6 @@ async function manageGitIgnore(commandId: string) {
       }
     }
   }
-}
-
-async function getSfdxHardisPackageJsonContent() {
-  const hardisPackageJsonContent = {
-    scripts: {
-      "scratch:push-from-git-to-org": "sfdx force:source:push -g -w 60 --forceoverwrite",
-      "scratch:pull-from-org-to-git": "sfdx force:source:pull -w 60 --forceoverwrite",
-      "work:new": "sfdx hardis:work:new",
-      "work:refresh": "sfdx hardis:work:refresh",
-      "work:resetselection": "sfdx hardis:work:resetselection",
-      "work:save": "sfdx hardis:work:save",
-      "org:open": "sfdx force:org:open",
-      "org:test:apex": "sfdx hardis:org:test:apex",
-      "org:select": "sfdx hardis:org:select",
-      "scratch:create": "sfdx hardis:scratch:create",
-      "login:reset":
-        "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
-      "configure:auth:deployment": "sfdx hardis:project:configure:auth",
-      "configure:auth:devhub": "sfdx hardis:project:configure:auth --devhub",
-      "package:install": "sfdx hardis:package:install",
-      "data:tree:export": "sfdx hardis:data:tree:export",
-    },
-  };
-  // Manage special commands for packaging projects
-  const config = await getConfig("project");
-  if (config.activatePackaging) {
-    const packagingCommands = await getSfdxHardisPackageJsonContentForPackaging();
-    hardisPackageJsonContent.scripts = Object.assign(hardisPackageJsonContent.scripts, packagingCommands.scripts);
-  }
-  return hardisPackageJsonContent;
-}
-
-async function getSfdxHardisPackageJsonContentForPackaging() {
-  const hardisPackageJsonContent = {
-    scripts: {
-      "package:version:create": "sfdx hardis:package:version:create",
-      "package:version:list": "sfdx hardis:package:version:list",
-      "package:create": "sfdx hardis:package:create",
-    },
-  };
-  return hardisPackageJsonContent;
 }
 
 async function getHardisGitRepoIgnoreContent() {
