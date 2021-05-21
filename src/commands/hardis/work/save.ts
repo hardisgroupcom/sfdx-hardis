@@ -124,9 +124,9 @@ export default class SaveTask extends SfdxCommand {
         name: "value",
         message: c.cyanBright("Do you want to pull the latest updates performed on the scratch org ?"),
         choices: [
-          { title: "Yes, I want to pull latest updates from the scratch org", value: true},
-          { title: "No, I want to save directly from local files on my computer", value: false}
-        ]
+          { title: "Yes, I want to pull latest updates from the scratch org", value: true },
+          { title: "No, I want to save directly from local files on my computer", value: false },
+        ],
       });
       if (pullRes.value === true) {
         // Process force:source:pull
