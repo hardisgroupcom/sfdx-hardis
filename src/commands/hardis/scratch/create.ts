@@ -130,6 +130,7 @@ export default class ScratchCreate extends SfdxCommand {
     if (!isCI && this.scratchOrgAlias !== newScratchName) {
       const checkRes = await prompts({
         type: "confirm",
+        name: "value",
         message: c.cyanBright(
           `You are about to reuse scratch org ${c.green(this.scratchOrgAlias)}. Are you sure that's what you want to do ?\n${c.grey(
             "(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)"
@@ -137,7 +138,7 @@ export default class ScratchCreate extends SfdxCommand {
         ),
         default: false,
       });
-      if (checkRes === false) {
+      if (checkRes.value === false) {
         process.exit(0);
       }
     }

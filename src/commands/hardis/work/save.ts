@@ -113,13 +113,26 @@ export default class SaveTask extends SfdxCommand {
       }
     }
 
-    // Pull from scratch org
+    // Manage force:source:pull from scratch org
     if (this.noPull) {
+      // Skip pull
       uxLog(this, c.cyan(`[Expert mode] Skipped force:source:pull from scratch org`));
     } else {
-      // Pull DX sources
-      uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
-      await forceSourcePull(this.org.getUsername(), this.debugMode);
+      // Request user
+      const pullRes = await prompts({
+        type: "select",
+        name: "value",
+        message: c.cyanBright("Do you want to pull the latest updates performed on the scratch org ?"),
+        choices: [
+          { title: "Yes, I want to pull latest updates from the scratch org", value: true },
+          { title: "No, I want to save directly from local files on my computer", value: false },
+        ],
+      });
+      if (pullRes.value === true) {
+        // Process force:source:pull
+        uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
+        await forceSourcePull(this.org.getUsername(), this.debugMode);
+      }
       // Extract data from org
       const dataSources = [
         {
