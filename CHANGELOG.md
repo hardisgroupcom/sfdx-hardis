@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - hardis:work:save : Prompt user to pull from scratch org or not before saving
 - Do not update package.json anymore
+- hardis:scratch:create : Fix reuse scratch org prompt
 
 ## [2.19.0] 2021-05-20
 
