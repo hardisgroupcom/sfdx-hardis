@@ -177,7 +177,7 @@ export default class ScratchCreate extends SfdxCommand {
     // Check current scratch org
     const orgListResult = await execSfdxJson("sfdx force:org:list", this);
     const matchingScratchOrgs =
-      orgListResult?.result?.scratchOrgs.filter((org: any) => {
+      orgListResult?.result?.scratchOrgs?.filter((org: any) => {
         return org.alias === this.scratchOrgAlias && org.status === "Active";
       }) || [];
     // Reuse existing scratch org

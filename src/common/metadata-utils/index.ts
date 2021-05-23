@@ -404,7 +404,7 @@ class MetadataUtils {
       return orgListResult?.result || [];
     } else if (type === "scratch") {
       return (
-        orgListResult?.result?.scratchOrgs.filter((org: any) => {
+        orgListResult?.result?.scratchOrgs?.filter((org: any) => {
           return org.status === "Active";
         }) || []
       );
