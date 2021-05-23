@@ -61,8 +61,8 @@ export default class OrgSelect extends SfdxCommand {
     // List all local orgs and request to user
     const orgListResult = await MetadataUtils.listLocalOrgs("any");
     const orgList = [
-      ...orgListResult.scratchOrgs,
-      ...orgListResult.nonScratchOrgs,
+      ...(orgListResult?.scratchOrgs || []),
+      ...(orgListResult?.nonScratchOrgs || []),
       { username: "Connect to another org", otherOrg: true },
       { username: "Cancel", cancel: true },
     ];
