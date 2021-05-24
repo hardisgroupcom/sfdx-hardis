@@ -36,7 +36,17 @@ export default class CleanReferences extends SfdxCommand {
     type: flags.string({
       char: "t",
       description: "Cleaning type",
-      options: ["all", "caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields", "productrequest"],
+      options: [
+        "all",
+        "caseentitlement",
+        "dashboards",
+        "datadotcom",
+        "destructivechanges",
+        "idea",
+        "localfields",
+        "locationtrustmeasure",
+        "productrequest"
+      ],
     }),
     config: flags.string({
       char: "c",
@@ -85,8 +95,16 @@ export default class CleanReferences extends SfdxCommand {
       title: "References to destructiveChanges.xml items",
     },
     {
+      value: "idea",
+      title: "References to Idea items",
+    },
+    {
       value: "localfields",
       title: "References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5",
+    },
+    {
+      value: "locationtrustmeasure",
+      title: "References to Location Trust Measure",
     },
     {
       value: "productrequest",

@@ -1,7 +1,7 @@
 {
     "filters": [
         {
-            "name": "PermissionSetsFiltering",
+            "name": "PermissionsFiltering",
             "description": "Remove obsolete references from profiles and permission sets",
             "folders": [
                 "profiles",
@@ -22,6 +22,11 @@
                     "type_tag": "objectPermissions",
                     "identifier_tag": "object",
                     "values": {{ CustomObject }}
+                },
+                {
+                    "type_tag": "recordTypeVisibilities",
+                    "identifier_tag": "recordType",
+                    "values": {{ RecordType }}
                 },
                 {
                     "type_tag": "tabSettings",
