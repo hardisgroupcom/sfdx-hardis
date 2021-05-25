@@ -10,7 +10,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   uxLog(commandThis, c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
-  const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath}`;
+  const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath} --noprompt`;
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,
@@ -22,7 +22,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   uxLog(commandThis, c.cyan(`Exporting data from ${c.green(sfdmuPath)} ...`));
   const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
-  const dataImportCommand = `sfdx sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath}`;
+  const dataImportCommand = `sfdx sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,
