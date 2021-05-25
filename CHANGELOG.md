@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.20.2] 2021-05-25
+
+- Fix call to sfdmu (add --noprompt)
+
 ## [2.20.1] 2021-05-23
 
 - Fix scratch org listing
