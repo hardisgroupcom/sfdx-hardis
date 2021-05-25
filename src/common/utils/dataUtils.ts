@@ -12,7 +12,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
   const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis, {
-    fail: false,
+    fail: true,
     output: true,
   });
 }
@@ -24,7 +24,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
   const dataImportCommand = `sfdx sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis, {
-    fail: false,
+    fail: true,
     output: true,
   });
 }
