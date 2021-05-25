@@ -10,9 +10,9 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   uxLog(commandThis, c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
-  const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath} --canmodify`;
+  const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis, {
-    fail: true,
+    fail: false,
     output: true,
   });
 }
@@ -24,7 +24,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
   const dataImportCommand = `sfdx sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath}`;
   await execCommand(dataImportCommand, commandThis, {
-    fail: true,
+    fail: false,
     output: true,
   });
 }
