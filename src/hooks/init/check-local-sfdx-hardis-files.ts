@@ -30,8 +30,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
       .filter((line) => line !== "");
     let updated = false;
     for (const gitIgnoreMandatoryLine of await getHardisGitRepoIgnoreContent()) {
-      if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine) &&
-        !gitIgnoreLines.includes(`# ${gitIgnoreMandatoryLine}`)) {
+      if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine) && !gitIgnoreLines.includes(`# ${gitIgnoreMandatoryLine}`)) {
         gitIgnoreLines.push(gitIgnoreMandatoryLine);
         updated = true;
       }
@@ -64,8 +63,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
       .filter((line) => line !== "");
     let updated = false;
     for (const forceIgnoreMandatoryLine of await getHardisForceIgnoreContent()) {
-      if (!forceIgnoreLines.includes(forceIgnoreMandatoryLine) &&
-        !forceIgnoreLines.includes(`# ${forceIgnoreMandatoryLine}`)) {
+      if (!forceIgnoreLines.includes(forceIgnoreMandatoryLine) && !forceIgnoreLines.includes(`# ${forceIgnoreMandatoryLine}`)) {
         forceIgnoreLines.push(forceIgnoreMandatoryLine);
         updated = true;
       }

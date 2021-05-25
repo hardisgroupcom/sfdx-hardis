@@ -45,7 +45,7 @@ export default class CleanReferences extends SfdxCommand {
         "idea",
         "localfields",
         "locationtrustmeasure",
-        "productrequest"
+        "productrequest",
       ],
     }),
     config: flags.string({
