@@ -23,6 +23,9 @@ export async function prompts(options) {
         if (question.type === 'select') {
             question.choices.push({title: "-- Exit this script", value: 'exitNow'});
         }
+        if (['select','multiselect'].includes(question.type) && question.optionsPerPage == null) {
+            question.optionsPerPage = 9999
+        }
         questionsReformatted.push(question)
     }
     // Prompt user

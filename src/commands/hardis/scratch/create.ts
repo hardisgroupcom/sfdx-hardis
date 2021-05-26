@@ -12,6 +12,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { MetadataUtils } from '../../../common/metadata-utils';
 import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from '../../../common/utils';
+import { forceSourceDeploy } from '../../../common/utils/deployUtils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
@@ -53,6 +54,9 @@ export default class ScratchCreate extends SfdxCommand {
     // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
     protected static requiresProject = true;
 
+    // List required plugins, their presence will be tested before running the command
+    protected static requiresSfdxPlugins = ['texei-sfdx-plugin'];
+
     protected forceNew = false;
 
     /* jscpd:ignore-end */
@@ -65,6 +69,7 @@ export default class ScratchCreate extends SfdxCommand {
     protected userEmail: string;
 
     protected gitBranch: string;
+    protected projectScratchDef: any;
     protected scratchOrgInfo: any;
     protected scratchOrgUsername: string;
     protected projectName: string;
@@ -120,6 +125,16 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Create a new scratch org or reuse existing one
     public async createScratchOrg() {
+        // Build project-scratch-def-branch-user.json
+        uxLog(this, c.cyan('Building custom project-scratch-def.json...'));
+        this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json'));
+        this.projectScratchDef.orgName = this.scratchOrgAlias;
+        this.projectScratchDef.adminEmail = this.userEmail;
+        this.projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
+        const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
+        await fs.ensureDir(path.dirname(projectScratchDefLocal));
+        await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
+        // Check current scratch org
         const orgListResult = await execSfdxJson('sfdx force:org:list', this);
         const matchingScratchOrgs = (orgListResult?.result?.scratchOrgs.filter((org: any) => {
             return org.alias === this.scratchOrgAlias &&
@@ -132,16 +147,6 @@ export default class ScratchCreate extends SfdxCommand {
             uxLog(this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
             return;
         }
-
-        // Build project-scratch-def-branch-user.json
-        uxLog(this, c.cyan('Building custom project-scratch-def.json...'));
-        const projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json'));
-        projectScratchDef.orgName = this.scratchOrgAlias;
-        projectScratchDef.adminEmail = this.userEmail;
-        projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
-        const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
-        await fs.ensureDir(path.dirname(projectScratchDefLocal));
-        await fs.writeFile(projectScratchDefLocal, JSON.stringify(projectScratchDef, null, 2));
 
         // Create new scratch org
         uxLog(this, c.cyan('Creating new scratch org...'));
@@ -186,20 +191,37 @@ export default class ScratchCreate extends SfdxCommand {
     // Push or deploy metadatas to the scratch org
     public async initOrgMetadatas() {
         if (isCI) {
+            // if CI, use force:source:deploy to make sure package.xml is consistent
+            uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
             const packageXmlFile =
             process.env.PACKAGE_XML_TO_DEPLOY ||
               this.configInfo.packageXmlToDeploy ||
               (fs.existsSync('./manifest/package.xml')) ? './manifest/package.xml' :
               './config/package.xml';
-            // if CI, use force:source:deploy to make sure package.xml is consistent
-            uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
-            const deployCommand = `sfdx force:source:deploy -x ${packageXmlFile} -u ${this.scratchOrgAlias}`;
-            await execCommand(deployCommand, this, { fail: true, output: true, debug: this.debugMode });
-        } else {
+            await forceSourceDeploy(packageXmlFile, false, 'NoTestRun', this.debugMode);
+        } else { 
             // Use push for local scratch orgs
             uxLog(this, c.cyan(`Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`));
+            const deferSharingCalc = (this.projectScratchDef.features || []).includes("DeferSharingCalc");
+            // Suspend sharing calc if necessary
+            if (deferSharingCalc) {
+                // Deploy to permission set allowing to update SharingCalc
+                await MetadataUtils.deployMetadatas({
+                    deployDir: path.join(path.join(__dirname, '../../../../defaults/utils/deferSharingCalc', '.')),
+                    testlevel: 'NoTestRun',
+                    soap: true
+                  });
+                // Assign to permission set allowing to update SharingCalc
+                const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
+                await execSfdxJson(assignCommand, this, { fail: true, output: false, debug: this.debugMode });
+                await execCommand('sfdx texei:sharingcalc:suspend', this, { fail: true, output: true, debug: this.debugMode });
+            }
             const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${this.scratchOrgAlias}`;
             await execCommand(pushCommand, this, { fail: true, output: true, debug: this.debugMode });
+            // Resume sharing calc if necessary
+            if (deferSharingCalc) {
+                await execCommand('sfdx texei:sharingcalc:resume', this, { fail: true, output: true, debug: this.debugMode });
+            }
         }
     }
 

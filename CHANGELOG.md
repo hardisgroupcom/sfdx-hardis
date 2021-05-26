@@ -4,6 +4,54 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.3.0] 2021-03-26
+
+- hardis:work:save: Do not git add manifest files when they have not been updated
+- Select type of org to connect: enhance label
+- Multi-Select default to 9999 items displayed
+- Display tips about deployment failures when they happen
+- Create scratch org: When DeferSharingCalc in features, suspend and resume sharing calc during force:source:push
+- Allow to define a file `manifest/deploymentPlan.json` to split the deployment into separate package.xml files
+
+Example:
+
+```json
+{
+  "packages": [
+    {
+      "label": "SharingRulesAccount",
+      "packageXmlFile": "splits/packageXmlSharingRulesAccount.xml",
+      "order": 10,
+      "waitAfter": 60
+    },
+    {
+      "label": "SharingRulesVisit__c",
+      "packageXmlFile": "splits/packageXmlSharingRulesAccountVisit__c.xml",
+      "order": 10
+    }
+  ]
+}
+```
+
+## [2.2.1] 2021-03-23
+
+- QuickFix 2.2.1
+- Use RunLocalTests when deploying ConnectedApp metadata to production org
+
+## [2.2.0] 2021-03-23
+
+- Enhance security by encrypting SSH private key
+
+## [2.1.7] 2021-03-22
+
+- More categories for Interactive Git Add (Aura,LWC, Tech Config)
+- Auto-update .forceignore
+- Fix `hardis:org:test:apex`
+
+## [2.1.6] 2021-03-20
+
+- Fix org authentication check
+
 ## [2.1.5] 2021-03-19
 
 - Unlimited list of items displayed during interactive git add

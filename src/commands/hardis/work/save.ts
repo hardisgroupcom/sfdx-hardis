@@ -6,7 +6,7 @@ import * as c from 'chalk';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
-import { execCommand, execSfdxJson, getCurrentGitBranch, git, interactiveGitAdd, uxLog } from '../../../common/utils';
+import { execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, interactiveGitAdd, uxLog } from '../../../common/utils';
 import { prompts } from '../../../common/utils/prompts';
 import { getConfig, setConfig } from '../../../config';
 
@@ -65,6 +65,11 @@ export default class SaveTask extends SfdxCommand {
     // Request user to select what he/she wants to commit
     const groups = [
       {
+        label: "Tech config",
+        regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
+        defaultSelect: true
+      },
+      {
         label: "Objects",
         regex: /objects\//i,
         defaultSelect: true
@@ -84,6 +89,16 @@ export default class SaveTask extends SfdxCommand {
         regex: /classes\//i,
         defaultSelect: true
       },
+      {
+        label: "Aura Components",
+        regex: /aura\//i,
+        defaultSelect: true
+      },    
+      {
+        label: "Lightning Web Components",
+        regex: /lwc\//i,
+        defaultSelect: true
+      },      
       {
         label: "Layouts",
         regex: /layouts\//i,
@@ -141,7 +156,9 @@ export default class SaveTask extends SfdxCommand {
         ` --packagexmls ${localDestructiveChangesXml},${diffDestructivePackageXml}` +
         ` --outputfile ${localDestructiveChangesXml}`;
       await execCommand(appendDestructivePackageXmlCommand, this, { fail: true, debug: this.debugMode });
-      await git().add(localDestructiveChangesXml);
+      if (await gitHasLocalUpdates()) {
+        await git().add(localDestructiveChangesXml);
+      }
 
       // Upgrade local package.xml
       const localPackageXml = path.join('manifest', 'package.xml');
@@ -157,7 +174,9 @@ export default class SaveTask extends SfdxCommand {
         ` --removepackagexml ${localDestructiveChangesXml}` +
         ` --outputfile ${localPackageXml}`;
       await execCommand(removePackageXmlCommand, this, { fail: true, debug: this.debugMode });
-      await git().add(localPackageXml);
+      if (await gitHasLocalUpdates()) {
+        await git().add(localPackageXml);
+      }
 
     } else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);

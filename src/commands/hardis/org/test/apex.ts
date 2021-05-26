@@ -3,7 +3,7 @@ import { Messages, SfdxError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as c from 'chalk';
 import * as fs from 'fs-extra';
-import { execSfdxJson, uxLog } from '../../../../common/utils';
+import { execCommand, uxLog } from '../../../../common/utils';
 import { getConfig } from '../../../../config';
 
 // Initialize Messages with the current plugin directory
@@ -62,14 +62,17 @@ export default class OrgTestApex extends SfdxCommand {
       ` --testlevel ${testlevel}` +
       (check ? ' --checkonly' : '') +
       (debugMode ? ' --verbose' : '');
-    const testRes = await execSfdxJson(testCommand, this, { output: false, debug: debugMode, fail: false });
+    const testRes = await execCommand(testCommand, this, { output: true, debug: debugMode, fail: true });
     let message = '';
-    if (testRes.status === 0) {
-      uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
+    const testResStr = testRes.stdout + testRes.stderr ;
+    const outcome = /Outcome *(.*)/.exec(testResStr)[1];
+    if (outcome === 'Passed') {
+      //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = '[sfdx-hardis] Successfully run apex tests on org';
       this.ux.log(c.green(message));
       // Check code coverage (orgWide)
-      const coverageOrgWide = parseFloat(testRes.result.summary.orgWideCoverage.replace('%', ''));
+      //const coverageOrgWide = parseFloat(testRes.result.summary.orgWideCoverage.replace('%', ''));
+      const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(testResStr)[1].replace('%', ''));
       const minCoverageOrgWide =
         process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
         process.env.APEX_TESTS_MIN_COVERAGE ||
@@ -85,7 +88,8 @@ export default class OrgTestApex extends SfdxCommand {
         uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(coverageOrgWide))}% is > to ${c.bold(minCoverageOrgWide)}%`));
       }
       // Check code coverage ()
-      const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
+      // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
+      const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(testResStr)[1].replace('%', ''));
       const minCoverageTestRun =
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
         process.env.APEX_TESTS_MIN_COVERAGE ||
@@ -99,14 +103,11 @@ export default class OrgTestApex extends SfdxCommand {
       } else {
         uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
       }
-
-      if (debugMode) {
-        this.ux.log(c.green(JSON.stringify(testRes.result)));
-      }
     } else {
-      message = '[sfdx-hardis] Test org failure';
-      this.ux.log(c.red(JSON.stringify(testRes.result.summary)));
-      this.ux.log(c.red(JSON.stringify(testRes.result)));
+      message = '[sfdx-hardis] Org apex tests failure';
+      uxLog(this, c.red(message));
+      // uxLog(this, c.red(JSON.stringify(Object.keys(testRes))));
+      throw new SfdxError("[sfdx-hardis] " + message);
     }
     return { orgId: this.org.getOrgId(), outputString: message };
   }
