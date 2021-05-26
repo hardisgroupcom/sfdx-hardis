@@ -114,7 +114,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     
     const username = this.org.getUsername(); 
 
-    await fs.readFileSync(path.join(__dirname,'./apex-freeze.apex'),'utf8');
+    fs.readFileSync(path.join(__dirname,'./apex-freeze.apex'),'utf8');
     const targetFile = path.join(__dirname,'apex-freeze.apex');
     await fs.writeFile(targetFile,apexcode);
   
@@ -138,21 +138,22 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       };
     });
     uxLog(this,
-      `[sfdx-hardis] Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist))}`
+      `[sfdx-hardis] Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist.splice(0,500)))}`
     );
 
 
     userlistraw = [];
-    if (
-      !prompt ||
-      (await this.ux.confirm(
-        c.bold(
-          `[sfdx-hardis] Are you sure you want to unfreeze this list of records in ${c.green(
-            this.org.getUsername()
-          )} (y/n)?`
-        )
-      ))
-    ) {
+    const confirmunfreeze = await prompts({
+      type: "confirm",
+      name: "value",
+      initial: true,
+      message: c.cyanBright(
+        `[sfdx-hardis] Are you sure you want to freeze this list of records in ${c.green(
+          this.org.getUsername()
+        )} (y/n)?`
+      ),
+    });
+    if (confirmunfreeze.value === true) { {
         apexcode = 'list<userLogin> userLoginList = ['+queryUser+']; \n'+
         'Set<Id> userIdList = new Set<Id>();\n'+
         'if(userLoginList != null && userLoginList.size()> 0){\n'+
@@ -164,7 +165,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         'upsert userLoginList;\n'+
         'list<User> userList = [SELECT Id,Name,Profile.Name FROM User WHERE Id IN :userIdList];\n'+
         'system.debug(\'OUTPUTVALUE=\'+JSON.serialize(userList)+\'END_OUTPUTVALUE\'); \n';
-        await fs.readFileSync(path.join(__dirname,'./apex-freeze.apex'),'utf8');
+        fs.readFileSync(path.join(__dirname,'./apex-freeze.apex'),'utf8');
         const targetFile = path.join(__dirname,'apex-freeze.apex');
         await fs.writeFile(targetFile,apexcode);
       
@@ -189,7 +190,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         };
       });
       const summary =
-        `[sfdx-hardis] updated ${c.bold(userlist.length)} user, records:\n${c.yellow(columnify(userlist))}`;
+        `[sfdx-hardis] updated ${c.bold(userlist.length)} user, records:\n${c.yellow(columnify(userlist.splice(0,500)))}`;
   
       uxLog(this,c.green(summary));
       // Return an object to be displayed with --json
