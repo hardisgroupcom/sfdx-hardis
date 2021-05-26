@@ -4,6 +4,251 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.20.3] 2021-05-26
+
+- Set prompt UI timeout to 2h instead of 5mn
+
+## [2.20.2] 2021-05-25
+
+- Fix call to sfdmu (add --noprompt)
+
+## [2.20.1] 2021-05-23
+
+- Fix scratch org listing
+
+## [2.20.0] 2021-05-21
+
+- hardis:work:save : Prompt user to pull from scratch org or not before saving
+- Do not update package.json anymore
+- hardis:scratch:create : Fix reuse scratch org prompt
+
+## [2.19.0] 2021-05-20
+
+- Detect when auth token is expired
+- More deploy tips
+- Clean ProductRequest items
+
+## [2.18.0] 2021-05-18
+
+- New commands
+  - **hardis:org:retrieve:packageconfig**: Retrieves .sfdx-hardis.yml property installedPackaged from an existing org
+  - **hardis:project:clean:emptyitems**: Delete empty items from SFD project
+  - **hardis:project:clean:hiddenitems**: Delete hidden items (from managed packages) from SFDX project
+
+- Update default values for JWT connected app creation
+- Manage `--targetusername` to be taken in account for all sfdx hardis commands
+- More deployment tips
+- hardis:project:clean:manageditems: New `--namespace` argument
+- org:retrieve:source:dx : Do not erase .gitignore, .forceignore , README.md and project-scratch-def is already existing locally
+- Remove shape temp folder to avoid a force:org:create bug
+
+## [2.17.3] 2021-05-18
+
+- Fix .gitignore automatic update constraint
+
+## [2.17.2] 2021-05-10
+
+- Default init scratch org using push and not deploy
+- QuickFix mergeRequest links local storage
+
+## [2.17.0] 2021-05-10
+
+- New command hardis:project:convert:profilestopermsets to convert all profiles into permission sets
+- hardis:scratch:create : Fix permission set auto assignment when creating a scratch org (use property initPermissionSets in .sfdx-hardis.yml)
+
+## [2.16.1] 2021-05-09
+
+- hardis:work:save : Fix storage in config file of Merge Request info
+- Update deploy tips
+
+## [2.16.0] 2021-05-08
+
+- hardis:project:clean:manageditems : Clean SFDX project from managed classes
+- hardis:project:clean:retrievefolders: Clean/Complete SFDX project with missing folders (dashboard,email,reports)
+- hardis:project:clean:standarditems : Clean SFDX project from objects with no custom within
+- More deployment error tips
+- New parameter websocket for all commands
+- Indicating in logs when deployment is a simulation
+
+## [2.15.1] 2021-05-02
+
+- QuickFix hardis:work:save
+
+## [2.15.0] 2021-04-30
+
+- hardis:project:clean:references : New cleaning module **dashboards** removing reference to users in Dashboards sources
+
+## [2.14.0] 2021-04-29
+
+- Manage **manifest/packageDeployOnce.xml** : all its items that are already present in target org will not be deployed again
+
+## [2.13.4] 2021-04-26
+
+- New deploy tips
+- Do not update local files when calling configure commands
+- hardis:work:save : Fix branch update issue
+
+## [2.13.3] 2021-04-23
+
+- Remove PMD rule :
+  - CyclomaticComplexity
+
+## [2.13.2] 2021-04-22
+
+- QuickFix hardis:package:version:promote --auto
+
+## [2.13.0] 2021-04-21
+
+- hardis:work:save
+  - New parameter --nogit for expert developers who want to manage git operations themselves
+  - New parameter --noclean for expert developers who want to manage clean operations themselves
+- Update default Mega-Linter config
+
+## [2.12.0] 2021-04-19
+
+- New variable CI_DEPLOY_QUICK_ACTIONS_DUMMY
+  - set to "true" in CI variables when there are QuickActions dependent of Flows that are later in publication plan
+  - then set again to "false" and the deployment will pass :)
+- hardis:project:clean:references : now deletes obsolete objects and objectTranslations
+- hardis:work:save : More categories in interactive git add
+- Improve authentication check performances
+- New command hardis:config:get to return all config for project, branch or user
+- New deployment errors tips
+
+## [2.11.0] 2021-04-15
+
+- Delete scratch org when its initialization has failed during CI
+- Clean obsolete object fields and objectTranslations
+
+## [2.10.4] 2021-04-15
+
+- Provide password to user when creating new scratch org
+- Update CI default config to allow to not delete scratch orgs (define `CI_DELETE_SCRATCH_ORG: "true"` in gitlab-ci-config.yml)
+- New deploy tips: record type not found, picklist value not found
+
+## [2.10.3] 2021-04-14
+
+- Allow advanced user to bypass auth check (set `skipAuthCheck:true` in config/user/\*\*\*.sfdx-hardis.yml)
+- Optimize check of `force:config:set restDeploy: false`
+- hardis:package:version:create : Store package installation password in project config + fixes
+
+## [2.10.2] 2021-04-14
+
+- hardis:work:refresh : Make sure the user saved his work (commit) before merging another branch in current branch
+
+## [2.10.1] 2021-04-11
+
+- hardis:org:test:apex : Fix regex to new Apex Test results stdout format
+
+## [2.10.0] 2021-04-11
+
+- hardis:work:save : Automatic generation of split package.xml and deploymentPlan in .sfdx-hardis.yml
+- hardis:work:save : Propose to export data when saving
+- Remove duplicates from .gitignore and .forceignore
+- Add chromium in dockerfile
+
+## [2.9.4] 2021-04-09
+
+- Fix refresh
+- Update project cleaning references
+
+## [2.9.3] 2021-04-08
+
+- hardis:work:refresh : allow to refresh from another branch
+
+## [2.9.2] 2021-04-08
+
+- hardis:work:save : Fix issue when trying to stage & commit ignored files after project cleaning
+- hardis:project:configure:auth Improve error message when unable to upload ConnectedApp on production environment
+- Update default Apex PMD ruleset
+- Use replace and not replaceAll for node14 compatibility
+
+## [2.9.1] 2021-04-07
+
+- Clean git reset before save
+- Clean git stash before new task
+
+## [2.9.0] 2021-04-06
+
+- New command **hardis:project:create**
+- Refactor project cleaning and allow to use external config files (destructiveChanges-like.xml or json)
+- Fixes
+  - hardis:work:save : Create destructiveChanges.xml if not existing
+  - hardis:work:save : call forceSourcePull method to propose to update .forceignore if errors are found
+  - hardis:project:configure:auth: call mdapi:deploy with RunLocalTests to manage production environments
+  - authentication: auth only to devHub if --devhub sent
+  - Disable spinner for restDeploy check
+
+## [2.8.5] 2021-04-06
+
+- QuickFix question icon
+
+## [2.8.4] 2021-04-06
+
+- Allow to skip pull before save
+- New deployTip: code coverage items with 0%
+- Fix DevHub auth when credential out of date
+- Use latest sfdx-cli package
+- Init git config only if we are not in CI
+
+## [2.8.3] 2021-04-01
+
+- Fix package creation
+- When using VsCode UI via WebSocket, display selected values in console logs
+
+## [2.8.2] 2021-04-01
+
+- hardis:work:save : reset ongoing merge if existing
+- Fix git reset call
+
+## [2.8.0] 2021-03-31
+
+- Define git user.name and user.email if not set
+- Define VsCode as git merge/diff tool if none is defined
+- Unstash changes (git reset) at the beginning of hardis:work:save
+- Deploy destructive changes after real deployment
+- **hardis:project:clean:references** now works also to remove references to content of manifest/destructiveChanges.xml
+- **hardis:work:save**: Clean sfdx project while saving it
+- Factorize temp directory creation
+
+## [2.7.2] 2021-03-30
+
+- Check user is sure to want to reuse an existing scratch org
+- Fix **hardis:work:refresh**
+
+## [2.7.1] 2021-03-29
+
+- Fix auto-fix of .gitignore and .forceignore
+- Propose to auto-update .force ignore when there is a pull issue
+
+## [2.7.0] 2021-03-29
+
+- Communicate with VsCode SFDX Hardis extension via WebSocket if server is found
+- Send user input prompts to VsCode UI if WebSocket server found
+- Send refreshStatus notifications when context is updated
+- Arrange some messages for better display on UI
+
+## [2.6.0] 2021-03-28
+
+- New command **hardis:project:clean:references** to clean SFDX project from data.com license references
+- **hardis:scratch:create**: Load sfdmu workspace `scripts/data/ScratchInit` if existing in , to initialize scratch org data
+
+## [2.5.0] 2021-03-28
+
+- New command **hardis:source:push**
+- New command **hardis:source:pull**
+- Various mini-fixes
+- Move deploymentPlan.json within .sfdx-hardis.json
+- Retry management for execCommand function. ex: `retry: {retryDelay: 30,retryStringConstraint: 'some string present in output', retryMaxAttempts: 5}`
+
+## [2.4.0] 2021-03-27
+
+- Add sfdmu & sfdx-git-delta in dependencies & Dockerfile
+- Import data with sfdmu
+- Manage data import steps in `deploymentPlan.json`
+- New command **hardis:org:data:export**
+- New command **hardis:org:data:import**
+
 ## [2.3.0] 2021-03-26
 
 - hardis:work:save: Do not git add manifest files when they have not been updated
@@ -156,10 +401,6 @@ Example:
 
 - Guide user to assign rights to Connected App in **sfdx:org:configure:monitoring**
 
-## [1.3.2] 2021-02-24
-
-- Guide user to assign rights to Connected App in **sfdx:org:configure:monitoring**
-
 ## [1.3.1] 2021-02-24
 
 - Manage git clone & push for **sfdx:org:configure:monitoring**
@@ -210,7 +451,7 @@ Example:
 
 - New command **hardis:scratch:create**
 - Advanced project initialization using `--shape` argument for `sfdx hardis:org:retrieve:sources:dx`
-- Automatic generation of .sfdx-hardis*.yml configuration files
+- Automatic generation of .sfdx-hardis\*.yml configuration files
 - Automatic update of project package.json to add sfdx-hardis utilities
 
 ## [0.5.10] 2021-02-12
@@ -270,4 +511,3 @@ Example:
 ## [0.0.1] 2021-01-26
 
 - New command **sfdx hardis:org:purge:flow** : Purge Obsolete flow versions to avoid the 50 max versions limit
-

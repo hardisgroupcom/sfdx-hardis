@@ -1,47 +1,48 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages, SfdxError } from '@salesforce/core';
-import { AnyJson } from '@salesforce/ts-types';
-import * as c from 'chalk';
-import * as fs from 'fs-extra';
-import * as glob from 'glob-promise';
-import * as sortArray from 'sort-array';
-import {
-  catchMatches, generateReports
-} from '../../../../common/utils';
+import { flags, SfdxCommand } from "@salesforce/command";
+import { Messages, SfdxError } from "@salesforce/core";
+import { AnyJson } from "@salesforce/ts-types";
+import * as c from "chalk";
+import * as fs from "fs-extra";
+import * as glob from "glob-promise";
+import * as sortArray from "sort-array";
+import { catchMatches, generateReports } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('sfdx-hardis', 'org');
+const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class CallInCallOut extends SfdxCommand {
-  public static title = 'Audit Metadatas API Version';
+  public static title = "Audit Metadatas API Version";
 
-  public static description = messages.getMessage('auditApiVersion');
+  public static description = messages.getMessage("auditApiVersion");
 
-  public static examples = ['$ sfdx hardis:project:audit:apiversion'];
+  public static examples = ["$ sfdx hardis:project:audit:apiversion"];
 
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
     minimumapiversion: flags.number({
-      char: 'm',
+      char: "m",
       default: 20.0,
-      description: messages.getMessage('minimumApiVersion')
+      description: messages.getMessage("minimumApiVersion"),
     }),
     failiferror: flags.boolean({
-      char: 'f',
+      char: "f",
       default: false,
-      description: messages.getMessage('failIfError')
+      description: messages.getMessage("failIfError"),
     }),
     debug: flags.boolean({
-      char: 'd',
+      char: "d",
       default: false,
-      description: messages.getMessage('debugMode')
-    })
+      description: messages.getMessage("debugMode"),
+    }),
+    websocket: flags.string({
+      description: messages.getMessage("websocket"),
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -62,16 +63,14 @@ export default class CallInCallOut extends SfdxCommand {
     const minimumApiVersion = this.flags.minimumapiversion || false;
     const failIfError = this.flags.failiferror || false;
 
-    const pattern = '**/*.xml';
+    const pattern = "**/*.xml";
     const catchers = [
       {
-        type: 'apiVersion',
-        subType: '',
+        type: "apiVersion",
+        subType: "",
         regex: /<apiVersion>(.*?)<\/apiVersion>/gims,
-        detail: [
-          { name: 'apiVersion', regex: /<apiVersion>(.*?)<\/apiVersion>/gims }
-        ]
-      }
+        detail: [{ name: "apiVersion", regex: /<apiVersion>(.*?)<\/apiVersion>/gims }],
+      },
     ];
     const xmlFiles = await glob(pattern);
     this.matchResults = [];
@@ -79,7 +78,7 @@ export default class CallInCallOut extends SfdxCommand {
     /* jscpd:ignore-start */
     // Loop in files
     for (const file of xmlFiles) {
-      const fileText = await fs.readFile(file, 'utf8');
+      const fileText = await fs.readFile(file, "utf8");
       // Loop on criteria to find matches in this file
       for (const catcher of catchers) {
         const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
@@ -93,18 +92,16 @@ export default class CallInCallOut extends SfdxCommand {
       return {
         type: item.type,
         fileName: item.fileName,
-        nameSpace: item.fileName.includes('__')
-          ? item.fileName.split('__')[0]
-          : 'Custom',
-        apiVersion: parseFloat(item.detail['apiVersion']),
-        valid: (parseFloat(item.detail['apiVersion']) > minimumApiVersion) ? 'yes' : 'no'
+        nameSpace: item.fileName.includes("__") ? item.fileName.split("__")[0] : "Custom",
+        apiVersion: parseFloat(item.detail["apiVersion"]),
+        valid: parseFloat(item.detail["apiVersion"]) > minimumApiVersion ? "yes" : "no",
       };
     });
 
     // Sort array
     const resultSorted = sortArray(result, {
-      by: ['type', 'subType', 'fileName'],
-      order: ['asc', 'asc', 'asc']
+      by: ["type", "subType", "fileName"],
+      order: ["asc", "asc", "asc"],
     });
 
     // Display as table
@@ -118,31 +115,43 @@ export default class CallInCallOut extends SfdxCommand {
 
     // Generate output files
     const columns = [
-      { key: 'type', header: 'IN/OUT' },
-      { key: 'fileName', header: 'Apex' },
-      { key: 'nameSpace', header: 'Namespace' },
-      { key: 'apiVersion', header: 'API Version' },
-      { key: 'valid', header: `Valid ( > ${minimumApiVersion} )`}
+      { key: "type", header: "IN/OUT" },
+      { key: "fileName", header: "Apex" },
+      { key: "nameSpace", header: "Namespace" },
+      { key: "apiVersion", header: "API Version" },
+      { key: "valid", header: `Valid ( > ${minimumApiVersion} )` },
     ];
     const reportFiles = await generateReports(resultSorted, columns, this);
 
-    const numberOfInvalid = result.filter((res: any) => res.valid === 'no').length;
+    const numberOfInvalid = result.filter((res: any) => res.valid === "no").length;
     const numberOfValid = result.length - numberOfInvalid;
 
     if (numberOfInvalid > 0) {
-      this.ux.log(c.yellow(`[sfdx-hardis] WARNING: Your sources contain ${c.bold(numberOfInvalid)} metadata files with API Version lesser than ${c.bold(minimumApiVersion)}`));
+      this.ux.log(
+        c.yellow(
+          `[sfdx-hardis] WARNING: Your sources contain ${c.bold(numberOfInvalid)} metadata files with API Version lesser than ${c.bold(
+            minimumApiVersion
+          )}`
+        )
+      );
       if (failIfError) {
         throw new SfdxError(c.red(`[sfdx-hardis][ERROR] ${c.bold(numberOfInvalid)} metadata files with wrong API version detected`));
       }
     } else {
-      this.ux.log(c.green(`[sfdx-hardis] SUCCESS: Your sources contain ${c.bold(numberOfValid)} metadata files with API Version superior to ${c.bold(minimumApiVersion)}`));
+      this.ux.log(
+        c.green(
+          `[sfdx-hardis] SUCCESS: Your sources contain ${c.bold(numberOfValid)} metadata files with API Version superior to ${c.bold(
+            minimumApiVersion
+          )}`
+        )
+      );
     }
 
     // Return an object to be displayed with --json
     return {
-      outputString: 'Processed apiVersion audit',
+      outputString: "Processed apiVersion audit",
       result: resultSorted,
-      reportFiles
+      reportFiles,
     };
   }
 }

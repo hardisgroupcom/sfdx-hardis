@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
   "description": "Hardis-Group Toolbox for Salesforce DX",
-  "version": "2.3.0",
+  "version": "2.20.3",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "dependencies": {
@@ -13,6 +13,7 @@
     "@salesforce/core": "^2.20.5",
     "@salesforce/ts-sinon": "^1.2.4",
     "@types/mocha": "^8.2.1",
+    "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.17.0",
     "@typescript-eslint/parser": "^4.17.0",
     "axios": "^0.21.1",
@@ -42,6 +43,7 @@
     "tslib": "^2.1.0",
     "typescript": "^4.2.3",
     "update-notifier": "^5.1.0",
+    "ws": "^7.4.4",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
@@ -82,7 +84,8 @@
     "hooks": {
       "init": [
         "./lib/hooks/init/check-upgrade",
-        "./lib/hooks/init/check-local-sfdx-hardis-files"
+        "./lib/hooks/init/check-local-sfdx-hardis-files",
+        "./lib/hooks/init/start-ws-client"
       ],
       "prerun": [
         "./lib/hooks/prerun/auth",
@@ -106,6 +109,9 @@
     ]
   },
   "repository": "hardisgroupcom/sfdx-hardis",
+  "prettier": {
+    "printWidth": 150
+  },
   "scripts": {
     "compile": "tsc --watch",
     "lint": "eslint . --ext .ts",

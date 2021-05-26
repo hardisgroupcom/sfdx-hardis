@@ -18,11 +18,13 @@
   "forceNewScratch": "If an existing scratch org exists, do not reuse it but create a new one",
   "installFFLib": "Install FFLib in current project",
   "instanceUrl": "URL of org instance",
-  "loginToOrg": "Login to salesforce org", 
+  "loginToOrg": "Login to salesforce org",
   "minimumApiVersion": "Minimum allowed API version",
   "nameFilter": "Filter according to Name criteria",
   "newWorkTask": "New work task",
   "orgFreezeUser":"Freeze mass users in org for maintenance or go live purpose",
+  "orgDataExport": "Export data from org using sfdmu",
+  "orgDataImport": "Import data in org using sfdmu",
   "orgPurgeFlow": "Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name",
   "orgUnfreezeUser":"Unfreeze mass users in org after a maintenance or go live",
   "packageCreate": "Create a new package",
@@ -42,5 +44,6 @@
   "statusFilter": "Filter according to Status criteria",
   "tempFolder": "Temporary folder",
   "testLevel": "Level of tests to apply to validate deployment",
+  "websocket": "Websocket host:port for VsCode SFDX Hardis UI integration",
   "withDevHub": "Also connect associated DevHub"
 }
