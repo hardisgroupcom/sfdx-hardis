@@ -7,6 +7,8 @@ import * as c from 'chalk';
 import * as columnify from 'columnify';
 import * as path from 'path';
 import { execSfdxJson, uxLog } from '../../../../common/utils';
+import { executeApex } from "../../../../common/utils/deployUtils";
+import { prompts } from "../../../../common/utils/prompts";
  
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -114,13 +116,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     
     const username = this.org.getUsername(); 
 
-    fs.readFileSync(path.join(__dirname,'./apex-freeze.apex'),'utf8');
-    const targetFile = path.join(__dirname,'apex-freeze.apex');
-    await fs.writeFile(targetFile,apexcode);
-  
-    const apexScriptCommand = `sfdx force:apex:execute -f "${targetFile}" --targetusername ${username}`;
-    const freezeQueryRes = await execSfdxJson(apexScriptCommand, this, { fail: true, output: true, debug: debugMode });
-  
+    const freezeQueryRes = await executeApex(apexcode,'apex-freeze.apex',username,debugMode);
     let logs = freezeQueryRes?.result?.logs || '' ;
   
     let userlistraw= JSON.parse(logs.split('OUTPUTVALUE=')[2].split('END_OUTPUTVALUE')[0]);
@@ -165,13 +161,8 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         'upsert userLoginList;\n'+
         'list<User> userList = [SELECT Id,Name,Profile.Name FROM User WHERE Id IN :userIdList];\n'+
         'system.debug(\'OUTPUTVALUE=\'+JSON.serialize(userList)+\'END_OUTPUTVALUE\'); \n';
-        fs.readFileSync(path.join(__dirname,'./apex-freeze.apex'),'utf8');
-        const targetFile = path.join(__dirname,'apex-freeze.apex');
-        await fs.writeFile(targetFile,apexcode);
-      
-        const apexScriptCommand = `sfdx force:apex:execute -f "${targetFile}" --targetusername ${username}`;
-        const freezeQueryRes = await execSfdxJson(apexScriptCommand, this, { fail: true, output: true, debug: debugMode });
-      
+
+        const freezeQueryRes = await executeApex(apexcode,'apex-freeze.apex',username,debugMode);
         logs = freezeQueryRes?.result?.logs || '' ;
       
         userlistraw= JSON.parse(logs.split('OUTPUTVALUE=')[2].split('END_OUTPUTVALUE')[0]);
@@ -196,5 +187,5 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         return { orgId: this.org.getOrgId(), outputString: summary };
       }
     }
-    
+     
 }
