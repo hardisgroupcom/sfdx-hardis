@@ -91,7 +91,7 @@ export class WebSocketClient {
           clearInterval(interval);
           reject("[sfdx-hardis] No response from UI WebSocket Server");
         }
-      }, 300000);
+      }, 7200000); // 2h timeout
     });
   }
 

@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.20.3] 2021-05-26
+
+- Set prompt UI timeout to 2h instead of 5mn
+
 ## [2.20.2] 2021-05-25
 
 - Fix call to sfdmu (add --noprompt)
