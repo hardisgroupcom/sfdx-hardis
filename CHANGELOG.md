@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.20.4] 2021-05-26
+
+- hardis:project:clean:references: Improve performances for removing files 
+
 ## [2.20.3] 2021-05-26
 
 - Set prompt UI timeout to 2h instead of 5mn
