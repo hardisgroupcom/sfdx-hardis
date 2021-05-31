@@ -418,7 +418,7 @@ async function restoreQuickActions() {
   }
 }
 
-export async function executeApex(apexclassContent: string,apexClassPath: string,targetusername: string,debugMode: Boolean){
+export async function executeApex(apexclassContent: string,apexClassPath: string,targetusername: string,debugMode: boolean){
   fs.readFileSync(path.join(__dirname,'../../Apex/'+apexClassPath),'utf8');
   const targetFile = path.join(__dirname,'../../Apex/'+apexClassPath);
   await fs.writeFile(targetFile,apexclassContent);
