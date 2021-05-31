@@ -2,11 +2,9 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages /*, SfdxError*/ } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as fs from "fs-extra";
 import * as c from "chalk";
 import * as columnify from "columnify";
-import * as path from "path";
-import { execSfdxJson, uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils";
 import { executeApex } from "../../../../common/utils/deployUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -120,15 +118,15 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     const freezeQueryRes = await executeApex(apexcode, "apex-freeze.apex", username, debugMode);
     let logs = freezeQueryRes?.result?.logs || "";
 
-    let userlistraw = JSON.parse(logs.split("OUTPUTVALUE=")[2].split("END_OUTPUTVALUE")[0]);
+    let userlistrawUnfreeze = JSON.parse(logs.split("OUTPUTVALUE=")[2].split("END_OUTPUTVALUE")[0]);
     // Check empty result
-    if (userlistraw.length === 0) {
+    if (userlistrawUnfreeze.length === 0) {
       const outputString = `[sfdx-hardis] No matching user records found for all profile  except ${exceptFilter}`;
       uxLog(this, c.yellow(outputString));
       return { deleted: [], outputString };
     }
 
-    let userlist = userlistraw.map((record: any) => {
+    let userlist = userlistrawUnfreeze.map((record: any) => {
       return {
         Name: record.Name,
         Profile: record.Profile.Name,
@@ -136,14 +134,14 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     });
     uxLog(this, `[sfdx-hardis] Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist.splice(0, 500)))}`);
 
-    userlistraw = [];
-    const confirmunfreeze = await prompts({
+    userlistrawUnfreeze = [];
+    const confirmUnfreeze = await prompts({
       type: "confirm",
       name: "value",
       initial: true,
       message: c.cyanBright(`[sfdx-hardis] Are you sure you want to freeze this list of records in ${c.green(this.org.getUsername())} (y/n)?`),
     });
-    if (confirmunfreeze.value === true) {
+    if (confirmUnfreeze.value === true) {
       {
         apexcode =
           "list<userLogin> userLoginList = [" +

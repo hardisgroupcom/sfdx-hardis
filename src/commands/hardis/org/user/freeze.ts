@@ -2,11 +2,9 @@
 import { flags, SfdxCommand } from '@salesforce/command';
 import { Messages/*, SfdxError*/ } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import * as fs from 'fs-extra';
 import * as c from 'chalk';
 import * as columnify from 'columnify';
-import * as path from 'path';
-import { execSfdxJson, uxLog } from '../../../../common/utils';
+import { uxLog } from '../../../../common/utils';
 import { executeApex } from "../../../../common/utils/deployUtils";
 import { prompts } from "../../../../common/utils/prompts";
  
@@ -18,12 +16,12 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgUnfreezeUser extends SfdxCommand {
-  public static title = 'Unfreeze user in organization';
+  public static title = 'freeze user in organization';
 
   public static description = messages.getMessage('orgUnfreezeUser');
 
   public static examples = [
-    `$ sfdx hardis:org:user:unfreeze --targetusername dimitri.mongey@gmail.com
+    `$ sfdx hardis:org:user:freeze --targetusername dimitri.mongey@gmail.com
   Found 1 records
   Are you sure you want to unfreeze these users (y/n)?: y
   Successfully unfreeze users.
@@ -91,7 +89,6 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       ? this.flags.except.split(',')
       : ['System Administrator'];
     const nameFilter = this.flags.name || null;
-
     const debugMode = this.flags.debug || false;
 
     //select id, isfrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN (\''+exceptFilter+'\') and isactive=true) AND isfrozen=false
@@ -119,15 +116,15 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     const freezeQueryRes = await executeApex(apexcode,'apex-freeze.apex',username,debugMode);
     let logs = freezeQueryRes?.result?.logs || '' ;
   
-    let userlistraw= JSON.parse(logs.split('OUTPUTVALUE=')[2].split('END_OUTPUTVALUE')[0]);
+    let userlistrawFreeze= JSON.parse(logs.split('OUTPUTVALUE=')[2].split('END_OUTPUTVALUE')[0]);
     // Check empty result
-    if (userlistraw.length === 0) {
+    if (userlistrawFreeze.length === 0) {
       const outputString = `[sfdx-hardis] No matching user records found for all profile  except ${exceptFilter}`;
       uxLog(this,c.yellow(outputString));
       return { deleted: [], outputString };
     }
 
-    let userlist = userlistraw.map((record: any) => {
+    let userlist = userlistrawFreeze.map((record: any) => {
       return {
         Name: record.Name,
         Profile: record.Profile.Name

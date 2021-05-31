@@ -419,8 +419,8 @@ async function restoreQuickActions() {
 }
 
 export async function executeApex(apexclassContent: string,apexClassPath: string,targetusername: string,debugMode: Boolean){
-  fs.readFileSync(path.join(__dirname,'./'+apexClassPath),'utf8');
-  const targetFile = path.join(__dirname,apexClassPath);
+  fs.readFileSync(path.join(__dirname,'../../Apex/'+apexClassPath),'utf8');
+  const targetFile = path.join(__dirname,'../../Apex/'+apexClassPath);
   await fs.writeFile(targetFile,apexclassContent);
 
   const apexScriptCommand = `sfdx force:apex:execute -f "${targetFile}" --targetusername ${targetusername}`;
