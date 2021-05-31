@@ -45,12 +45,6 @@ export default class OrgUnfreezeUser extends SfdxCommand {
 
   protected static flagsConfig = {
     // flag with a value (-n, --name=VALUE)
-    prompt: flags.boolean({
-      char: "z",
-      default: true,
-      allowNo: true,
-      description: messages.getMessage("prompt"),
-    }),
     name: flags.string({
       char: "n",
       description: messages.getMessage("nameFilter"),
@@ -84,7 +78,6 @@ export default class OrgUnfreezeUser extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const prompt = this.flags.prompt === false ? false : true;
     const exceptFilter = this.flags.except ? this.flags.except.split(",") : ["System Administrator"];
     const nameFilter = this.flags.name || null;
 
@@ -161,15 +154,15 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         const freezeQueryRes = await executeApex(apexcode, "apex-freeze.apex", username, debugMode);
         logs = freezeQueryRes?.result?.logs || "";
 
-        userlistraw = JSON.parse(logs.split("OUTPUTVALUE=")[2].split("END_OUTPUTVALUE")[0]);
+        userlistrawUnfreeze = JSON.parse(logs.split("OUTPUTVALUE=")[2].split("END_OUTPUTVALUE")[0]);
       }
 
-      if (userlistraw.length === 0) {
+      if (userlistrawUnfreeze.length === 0) {
         const outputString = `[sfdx-hardis] No user has been frozen`;
         uxLog(this, c.green(outputString));
         return { deleted: [], outputString };
       } else {
-        userlist = userlistraw.map((record: any) => {
+        userlist = userlistrawUnfreeze.map((record: any) => {
           return {
             Name: record.Name,
             Profile: record.Profile.Name,
