@@ -7,6 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.20.4] 2021-06-01
 
 - hardis:project:clean:references: Improve performances for removing files 
+- hardis:scratch:create : Shorten scratch org auto-generated name
+- Authenticate to an org: Request user to set alias if not provided
 - Update default gitlab-ci.yml
 
 ## [2.20.3] 2021-05-26
