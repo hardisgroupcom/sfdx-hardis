@@ -161,9 +161,11 @@ export default class CleanReferences extends SfdxCommand {
 
     // Delete files when necessary (in parallel)
     uxLog(this, c.grey(`Removing obsolete files...`));
-    await Promise.all(Object.keys(this.deleteItems).map(async (type) => {
-      await this.manageDeleteRelatedFiles(type);
-    }))
+    await Promise.all(
+      Object.keys(this.deleteItems).map(async (type) => {
+        await this.manageDeleteRelatedFiles(type);
+      })
+    );
 
     uxLog(this, c.green(`Cleaning complete`));
     // Return an object to be displayed with --json
@@ -205,9 +207,11 @@ export default class CleanReferences extends SfdxCommand {
   private async manageDeleteRelatedFiles(type) {
     // Custom fields
     if (type === "CustomField") {
-      await Promise.all(Object.keys(this.deleteItems[type]).map(async (field) => {
-        await this.manageDeleteCustomFieldRelatedFiles(field);
-      }))
+      await Promise.all(
+        Object.keys(this.deleteItems[type]).map(async (field) => {
+          await this.manageDeleteCustomFieldRelatedFiles(field);
+        })
+      );
     }
   }
 
@@ -241,6 +245,5 @@ export default class CleanReferences extends SfdxCommand {
         }
       }
     }
-
   }
 }

@@ -40,7 +40,7 @@ export default class ConfigureAuth extends SfdxCommand {
   };
 
   // Comment this out if your command does not require an org username
-  protected static supportsUsername = true ;
+  protected static supportsUsername = true;
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
