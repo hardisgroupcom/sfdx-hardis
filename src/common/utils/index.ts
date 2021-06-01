@@ -795,7 +795,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"),
       }
     ]);
-    const profile = await promptProfiles(conn,{multiselect:false, message: "What profile will be used for the connected app ? (ex: System Administrator)", initalSelection: ["System Administrator","Administrateur Système"]})
+    const profile = await promptProfiles(conn,{multiselect:false, message: "What profile will be used for the connected app ? (ex: System Administrator)", initialSelection: ["System Administrator","Administrateur Système"]})
     const crtContent = await fs.readFile(crtFile, "utf8");
     // Build ConnectedApp metadata
     const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>

@@ -33,7 +33,7 @@ export async function promptProfiles(conn: any, options: any = { multiselect: fa
       type: "text",
       message: options.message || "Please input profile name",
       name: "value",
-      initial: options?.initalSelection[0] || null,
+      initial: options?.initialSelection[0] || null,
     });
     return options.multiselect ? profilesSelection.value.split(",") : profilesSelection.value;
   }
