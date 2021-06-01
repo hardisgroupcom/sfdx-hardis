@@ -40,6 +40,7 @@ export default class ConfigureAuth extends SfdxCommand {
   };
 
   // Comment this out if your command does not require an org username
+  protected static supportsUsername = true ;
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
@@ -100,7 +101,7 @@ export default class ConfigureAuth extends SfdxCommand {
     // Generate SSL certificate (requires openssl to be installed on computer)
     const certFolder = devHub ? "./config/.jwt" : "./config/branches/.jwt";
     const certName = devHub ? config.devHubAlias : branchName;
-    await generateSSLCertificate(certName, certFolder, this);
+    await generateSSLCertificate(certName, certFolder, this, this.org?.getConnection());
     // Return an object to be displayed with --json
     return { outputString: "Configured branch for authentication" };
   }
