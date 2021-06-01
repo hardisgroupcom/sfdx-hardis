@@ -121,7 +121,7 @@ export default class ScratchCreate extends SfdxCommand {
   public async initConfig() {
     this.configInfo = await getConfig("user");
     this.gitBranch = await getCurrentGitBranch({ formatted: true });
-    const newScratchName = os.userInfo().username + "-" + this.gitBranch.split("/").pop().slice(0, 15) + "_" + moment().format("YYYY-MM-DD_hh-mm");
+    const newScratchName = os.userInfo().username + "-" + this.gitBranch.split("/").pop().slice(0, 15) + "_" + moment().format("YYYYMMDD_hhmm");
     this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || (!this.forceNew ? this.configInfo.scratchOrgAlias : null) || newScratchName;
     if (isCI && !this.scratchOrgAlias.startsWith("CI-")) {
       this.scratchOrgAlias = "CI-" + this.scratchOrgAlias;

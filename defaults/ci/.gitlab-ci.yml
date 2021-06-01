@@ -102,6 +102,9 @@ create_scratch_org:
   only:
     - merge_requests
     - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
   script:
     - sfdx hardis:auth:login --devhub
     - sfdx hardis:scratch:create
@@ -121,6 +124,9 @@ test_apex:
   only:
     - merge_requests
     - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
   needs:
     - job: create_scratch_org
       artifacts: true
@@ -160,7 +166,7 @@ clean:
     - web
   except:
     variables:
-      - $CI_DELETE_SCRATCH_ORG == "false"
+      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
   needs:
     - job: create_scratch_org
     - job: test_apex

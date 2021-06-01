@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.21.0] 2021-06-02
+
+- hardis:project:clean:references: Improve performances for removing files
+- hardis:scratch:create : Shorten scratch org auto-generated name
+- Authenticate to an org: Request user to set alias if not provided
+- Update default gitlab-ci.yml
+- New method promptProfiles
+
 ## [2.20.3] 2021-05-26
 
 - Set prompt UI timeout to 2h instead of 5mn

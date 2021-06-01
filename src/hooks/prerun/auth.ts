@@ -173,8 +173,8 @@ async function authOrg(orgAlias: string, options: any) {
         ` --clientid ${sfdxClientId}` +
         ` --jwtkeyfile ${crtKeyfile}` +
         ` --username ${username}` +
-        ` --setalias ${orgAlias}` +
-        ` --instanceurl ${instanceUrl}`;
+        ` --instanceurl ${instanceUrl}` +
+        (orgAlias !== "MY_ORG" ? ` --setalias ${orgAlias}` : "");
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
       });
@@ -202,12 +202,13 @@ async function authOrg(orgAlias: string, options: any) {
       }
       instanceUrl = await promptInstanceUrl();
 
+      const configInfoUsr = await getConfig("user");
       const loginResult = await execCommand(
         "sfdx auth:web:login" +
           " --setdefaultusername" +
-          ` --setalias ${orgAlias}` +
           (isDevHub ? " --setdefaultdevhubusername" : "") +
-          ` --instanceurl ${instanceUrl}`,
+          ` --instanceurl ${instanceUrl}` +
+          (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : ""),
         this,
         { output: true, fail: true, spinner: false }
       );

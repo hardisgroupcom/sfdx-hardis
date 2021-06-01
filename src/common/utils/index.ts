@@ -16,6 +16,7 @@ import { CONSTANTS } from "../../config";
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
+import { promptProfiles } from "./orgUtils";
 
 let pluginsStdout = null;
 
@@ -716,7 +717,7 @@ export async function restoreLocalSfdxInfo() {
 }
 
 // Generate SSL certificate in temporary folder and copy the key in project directory
-export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any) {
+export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any, conn: any) {
   uxLog(commandThis, "Generating SSL certificate...");
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
@@ -793,13 +794,12 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         name: "contactEmail",
         message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"),
       },
-      {
-        type: "text",
-        name: "profile",
-        initial: "System Administrator",
-        message: c.cyanBright("What profile will be used for the connected app ? (ex: System Administrator)"),
-      },
     ]);
+    const profile = await promptProfiles(conn, {
+      multiselect: false,
+      message: "What profile will be used for the connected app ? (ex: System Administrator)",
+      initialSelection: ["System Administrator", "Administrateur Système"],
+    });
     const crtContent = await fs.readFile(crtFile, "utf8");
     // Build ConnectedApp metadata
     const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
@@ -822,7 +822,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       <ipRelaxation>ENFORCE</ipRelaxation>
       <refreshTokenPolicy>infinite</refreshTokenPolicy>
   </oauthPolicy>
-  <profileName>${promptResponses.profile || "System Administrator"}</profileName>
+  <profileName>${profile || "System Administrator"}</profileName>
 </ConnectedApp>
 `;
     const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
