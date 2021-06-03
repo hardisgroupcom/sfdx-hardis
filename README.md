@@ -125,6 +125,7 @@ sfdx hardis:auth:login --devhub
 * [`sfdx hardis:project:clean:emptyitems [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanemptyitems--f-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:hiddenitems [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanhiddenitems--f-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanmanageditems--n-string--f-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanorgmissingitems--f-string--p-string--t-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanreferences--t-string--c-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:retrievefolders [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanretrievefolders--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:standarditems [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanstandarditems--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -866,6 +867,46 @@ EXAMPLE
 ```
 
 _See code: [lib/commands/hardis/project/clean/manageditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.21.0/lib/commands/hardis/project/clean/manageditems.js)_
+
+## `sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Clean SFDX sources from items present neither in target org nor local package.xml
+
+```
+USAGE
+  $ sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] 
+  [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug
+      Activate debug mode (more logs)
+
+  -f, --folder=folder
+      [default: force-app] Root folder
+
+  -p, --packagexmlfull=packagexmlfull
+      Path to packagexml used for cleaning.
+      Must contain also standard CustomObject and CustomField elements.
+      If not provided, it will be generated from a remote org
+
+  -t, --packagexmltargetorg=packagexmltargetorg
+      Target org username or alias to build package.xml (sfdx must be authenticated).
+      If not provided, will be prompted to the user.
+
+  --json
+      format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)
+      [default: warn] logging level for this command invocation
+
+  --websocket=websocket
+      Websocket host:port for VsCode SFDX Hardis UI integration
+
+EXAMPLE
+  $ sfdx hardis:project:clean:orgmissingitems
+```
+
+_See code: [lib/commands/hardis/project/clean/orgmissingitems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.21.0/lib/commands/hardis/project/clean/orgmissingitems.js)_
 
 ## `sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 

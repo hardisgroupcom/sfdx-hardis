@@ -1,4 +1,10 @@
+import { MetadataUtils } from "../metadata-utils";
 import { prompts } from "./prompts";
+import * as c from "chalk";
+import { execSfdxJson, uxLog } from ".";
+import { WebSocketClient } from "../websocketClient";
+import { setConfig } from "../../config";
+import * as sortArray from "sort-array";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -36,5 +42,69 @@ export async function promptProfiles(conn: any, options: any = { multiselect: fa
       initial: options?.initialSelection[0] || null,
     });
     return options.multiselect ? profilesSelection.value.split(",") : profilesSelection.value;
+  }
+}
+
+export async function promptOrg(commandThis: any, options: any = { devHub: false, setDefault: true }) {
+  // List all local orgs and request to user
+  const orgListResult = await MetadataUtils.listLocalOrgs("any");
+  const orgList = [
+    ...sortArray(orgListResult?.scratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
+    ...sortArray(orgListResult?.nonScratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
+    { username: "Connect to another org", otherOrg: true },
+    { username: "Cancel", cancel: true },
+  ];
+
+  const orgResponse = await prompts({
+    type: "select",
+    name: "org",
+    message: c.cyanBright("Please select an org"),
+    choices: orgList.map((org: any) => {
+      const title = org.username || org.alias || org.instanceUrl;
+      const description = title !== org.instanceUrl ? org.instanceUrl : "";
+      return {
+        title: c.cyan(title),
+        description: description,
+        value: org,
+      };
+    }),
+  });
+
+  // Cancel
+  if (orgResponse.org.cancel === true) {
+    uxLog(commandThis, c.cyan("Cancelled"));
+    process.exit(0);
+  }
+
+  // Connect to new org
+  if (orgResponse.org.otherOrg === true) {
+    await commandThis.config.runHook("auth", {
+      checkAuth: true,
+      Command: commandThis,
+      devHub: options.devHub === true,
+      setDefault: options.setDefault !== false,
+    });
+    return { outputString: "Launched org connection" };
+  } else {
+    if (options.setDefault === true) {
+      // Set default username
+      const setDefaultUsernameCommand = `sfdx config:set ${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${orgResponse.org.username}`;
+      await execSfdxJson(setDefaultUsernameCommand, commandThis, {
+        fail: true,
+        output: false,
+      });
+      WebSocketClient.sendMessage({ event: "refreshStatus" });
+      // Update local user .sfdx-hardis.yml file with response if scratch has been selected
+      if (orgResponse.org.username.includes("scratch")) {
+        await setConfig("user", {
+          scratchOrgAlias: orgResponse.org.username,
+          scratchOrgUsername: orgResponse.org.alias || orgResponse.org.username,
+        });
+      }
+    }
+
+    uxLog(commandThis, c.gray(JSON.stringify(orgResponse.org, null, 2)));
+    uxLog(commandThis, c.cyan(`Selected org ${c.green(orgResponse.org.username)} - ${c.green(orgResponse.org.instanceUrl)}`));
+    return orgResponse.org;
   }
 }
