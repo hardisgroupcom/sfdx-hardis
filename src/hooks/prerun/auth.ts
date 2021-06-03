@@ -164,7 +164,7 @@ async function authOrg(orgAlias: string, options: any) {
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
-    const usernameArg = isDevHub ? "--setdefaultdevhubusername" : "--setdefaultusername";
+    const usernameArg = options.setDefault === false ? "" : isDevHub ? "--setdefaultdevhubusername" : "--setdefaultusername";
     if (crtKeyfile && sfdxClientId && username) {
       // Login with JWT
       const loginCommand =
@@ -205,8 +205,7 @@ async function authOrg(orgAlias: string, options: any) {
       const configInfoUsr = await getConfig("user");
       const loginResult = await execCommand(
         "sfdx auth:web:login" +
-          " --setdefaultusername" +
-          (isDevHub ? " --setdefaultdevhubusername" : "") +
+          (options.setDefault === false ? '': isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
           ` --instanceurl ${instanceUrl}` +
           (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : ""),
         this,

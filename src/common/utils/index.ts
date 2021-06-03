@@ -515,6 +515,34 @@ function getGitWorkingDirLabel(workingDir) {
   return workingDir === "?" ? "CREATED" : workingDir === "D" ? "DELETED" : workingDir === "M" ? "UPDATED" : "OOOOOPS";
 }
 
+// Can be used to merge 2 package.xml content
+export function mergeObjectPropertyLists(obj1: any,obj2: any,options: {sort: true}) {
+  for (const key of Object.keys(obj2)) {
+    if (obj1[key]) {
+      obj1[key].push(...obj2[key]);
+    }
+    else {
+      obj1[key] = obj2[key];
+    }
+    obj1[key] = [...new Set(obj1[key])]; // Make list unique
+    if (options.sort) {
+      obj1[key].sort()
+    }
+  }
+  return obj1 ;
+}
+
+// Can be used to merge 2 package.xml content
+export function removeObjectPropertyLists(obj1: any,objToRemove: any) {
+  for (const key of Object.keys(objToRemove)) {
+    if (obj1[key]) {
+      const itemsToRemove = objToRemove[key];
+      obj1[key] = obj1[key].filter(item => !itemsToRemove.includes(item));
+    }
+  }
+  return obj1 ;
+}
+
 // Filter package XML
 export async function filterPackageXml(
   packageXmlFile: string,

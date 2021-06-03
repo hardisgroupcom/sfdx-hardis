@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.22.0] 2021-06-03
+
+- New command hardis:project:clean:orgmissingitems : Remove elements that are not exsiting in target org (only in ReportType for now)
+- hardis:project:clean:references : Remove cleaned items from package.xml files
+- Externalization of method to select an org (+ reorder of list of displayed orgs)
+
 ## [2.21.0] 2021-06-02
 
 - hardis:project:clean:references: Improve performances for removing files

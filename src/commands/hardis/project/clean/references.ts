@@ -6,9 +6,9 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as glob from "glob-promise";
-import { createTempDir, execCommand, isCI, uxLog } from "../../../../common/utils";
+import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
-import { parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
+import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
 import { getConfig, setConfig } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
@@ -157,6 +157,22 @@ export default class CleanReferences extends SfdxCommand {
         output: false,
         debug: this.debugMode,
       });
+    }
+
+    // Clean package.xml file from deleted items
+    uxLog(this, c.grey(`Cleaning package.xml files...`));
+    const patternPackageXml = process.cwd()+'/**/manifest/**/package*.xml';
+    const packageXmlFiles = await glob(patternPackageXml, {
+      cwd: process.cwd(),
+    });
+    for (const packageXmlFile of packageXmlFiles) {
+      const packageXmlContent = await parsePackageXmlFile(packageXmlFile);
+      const packageXmlContentStr = JSON.stringify(packageXmlContent);
+      const newPackageXmlContent = removeObjectPropertyLists(packageXmlContent,this.deleteItems);
+      if (packageXmlContentStr !== JSON.stringify(newPackageXmlContent)) {
+        await writePackageXmlFile(packageXmlFile,newPackageXmlContent);
+        uxLog(this,c.grey('-- cleaned elements from '+packageXmlFile));
+      }
     }
 
     // Delete files when necessary (in parallel)

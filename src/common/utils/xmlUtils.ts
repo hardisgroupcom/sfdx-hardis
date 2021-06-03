@@ -15,3 +15,26 @@ export async function writeXmlFile(xmlFile: string, xmlObject: any) {
   await fs.ensureDir(path.dirname(xmlFile));
   await fs.writeFile(xmlFile, updatedFileContent);
 }
+
+export async function parsePackageXmlFile(packageXmlFile: string) {
+  const targetOrgPackage = await parseXmlFile(packageXmlFile);
+  const targetOrgContent: any = {};
+  for (const type of targetOrgPackage.Package.types || []) {
+    const mdType = type.name[0];
+    const members = type.members || [];
+    targetOrgContent[mdType] = members;
+  }
+  return targetOrgContent ;
+}
+
+export async function writePackageXmlFile(packageXmlFile: string, packageXmlObject: any) {
+  const packageXmlContent = await parseXmlFile(packageXmlFile);
+  packageXmlContent.Package.types = Object.keys(packageXmlObject).map( typeKey => {
+    const type = {
+      members: packageXmlObject[typeKey],
+      name: [typeKey],
+    }
+    return type ;
+  })
+  await writeXmlFile(packageXmlFile,packageXmlContent);
+}
