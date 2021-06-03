@@ -24,17 +24,17 @@ export async function parsePackageXmlFile(packageXmlFile: string) {
     const members = type.members || [];
     targetOrgContent[mdType] = members;
   }
-  return targetOrgContent ;
+  return targetOrgContent;
 }
 
 export async function writePackageXmlFile(packageXmlFile: string, packageXmlObject: any) {
   const packageXmlContent = await parseXmlFile(packageXmlFile);
-  packageXmlContent.Package.types = Object.keys(packageXmlObject).map( typeKey => {
+  packageXmlContent.Package.types = Object.keys(packageXmlObject).map((typeKey) => {
     const type = {
       members: packageXmlObject[typeKey],
       name: [typeKey],
-    }
-    return type ;
-  })
-  await writeXmlFile(packageXmlFile,packageXmlContent);
+    };
+    return type;
+  });
+  await writeXmlFile(packageXmlFile, packageXmlContent);
 }

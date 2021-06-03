@@ -205,7 +205,7 @@ async function authOrg(orgAlias: string, options: any) {
       const configInfoUsr = await getConfig("user");
       const loginResult = await execCommand(
         "sfdx auth:web:login" +
-          (options.setDefault === false ? '': isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
+          (options.setDefault === false ? "" : isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
           ` --instanceurl ${instanceUrl}` +
           (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : ""),
         this,

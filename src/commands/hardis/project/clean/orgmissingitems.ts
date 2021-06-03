@@ -124,7 +124,7 @@ export default class OrgMissingItems extends SfdxCommand {
       destructiveChangesContent = await parsePackageXmlFile("./manifest/destructiveChanges.xml");
     }
     // Build additional lists
-    const packageXmlAllFields = packageXmlContent["CustomField"].map(customField => customField.split('.')[1]);
+    const packageXmlAllFields = packageXmlContent["CustomField"].map((customField) => customField.split(".")[1]);
     // const destructiveChangesAllFields = (destructiveChangesContent["CustomField"] || []).map(customField => customField.split('.')[1]);
 
     // Clean report types
@@ -147,10 +147,10 @@ export default class OrgMissingItems extends SfdxCommand {
         // Filter columns referring to fields not in package.xml of target org + local package.xml
         section.columns = section.columns.filter((column) => {
           const object = column.table[0];
-          const field = column.field[0].split('.')[0];
+          const field = column.field[0].split(".")[0];
           const objectField = `${object}.${field}`;
           if ((destructiveChangesContent["CustomObject"] || []).includes(object)) {
-            return false ;
+            return false;
           }
           const objectFound = (packageXmlContent["CustomObject"] || []).includes(object);
           const fieldFound = (packageXmlContent["CustomField"] || []).includes(objectField);
@@ -159,7 +159,7 @@ export default class OrgMissingItems extends SfdxCommand {
           if (
             (objectFound && (fieldFound || isStandardTechField || isStandardSubField)) ||
             (object.includes("__r") && (isStandardTechField || isStandardSubField)) ||
-            (object.includes("__r") && packageXmlAllFields.includes(field)) 
+            (object.includes("__r") && packageXmlAllFields.includes(field))
           ) {
             return true;
           } else {

@@ -161,17 +161,17 @@ export default class CleanReferences extends SfdxCommand {
 
     // Clean package.xml file from deleted items
     uxLog(this, c.grey(`Cleaning package.xml files...`));
-    const patternPackageXml = process.cwd()+'/**/manifest/**/package*.xml';
+    const patternPackageXml = process.cwd() + "/**/manifest/**/package*.xml";
     const packageXmlFiles = await glob(patternPackageXml, {
       cwd: process.cwd(),
     });
     for (const packageXmlFile of packageXmlFiles) {
       const packageXmlContent = await parsePackageXmlFile(packageXmlFile);
       const packageXmlContentStr = JSON.stringify(packageXmlContent);
-      const newPackageXmlContent = removeObjectPropertyLists(packageXmlContent,this.deleteItems);
+      const newPackageXmlContent = removeObjectPropertyLists(packageXmlContent, this.deleteItems);
       if (packageXmlContentStr !== JSON.stringify(newPackageXmlContent)) {
-        await writePackageXmlFile(packageXmlFile,newPackageXmlContent);
-        uxLog(this,c.grey('-- cleaned elements from '+packageXmlFile));
+        await writePackageXmlFile(packageXmlFile, newPackageXmlContent);
+        uxLog(this, c.grey("-- cleaned elements from " + packageXmlFile));
       }
     }
 
