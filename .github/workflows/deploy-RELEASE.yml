@@ -29,8 +29,8 @@ jobs:
           # Defaults to the user or organization that owns the workflow file
           scope: "nvuillam"
       - run: yarn
-      - run: tsc
-      - run: yarn publish
+      - run: tsc || true
+      - run: yarn publish || true 
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
