@@ -3,6 +3,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { execCommand, uxLog } from ".";
+import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 
 // Import data from sfdmu folder
@@ -10,7 +11,14 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   uxLog(commandThis, c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
-  const dataImportCommand = `sfdx sfdmu:run --sourceusername csvfile --targetusername ${targetUsername} -p ${sfdmuPath} --noprompt`;
+  const config = await getConfig("branch");
+  const dataImportCommand =
+    "sfdx sfdmu:run" +
+    ` --sourceusername csvfile` +
+    ` --targetusername ${targetUsername}` +
+    ` -p ${sfdmuPath}` +
+    " --noprompt" +
+    (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : "");
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,
