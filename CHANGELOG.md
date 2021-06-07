@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.23.0] 2021-06-07
+
+- Manage installation key for unlocked packages installation
+- Deployment: manage --canmodify SFDMU argument (define sfdmuCanDeploy in sfdx-hardis branch config file)
+
 ## [2.22.0] 2021-06-03
 
 - New command hardis:project:clean:orgmissingitems : Remove elements that are not existing in target org (only in ReportType for now)
