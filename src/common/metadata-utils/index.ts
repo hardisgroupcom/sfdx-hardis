@@ -461,12 +461,12 @@ class MetadataUtils {
         }
         const securityType = package1.SecurityType || "AllUsers";
         let packageInstallCommand =
-          'sfdx force:package:install' +
+          "sfdx force:package:install" +
           ` --package ${package1.SubscriberPackageVersionId}` +
           " --noprompt" +
           ` --securitytype ${securityType}` +
-          " -w 60"+
-          (package1.installationkey != null && package1.installationkey != ''? ` --installationkey ${package1.installationkey}`:'');
+          " -w 60" +
+          (package1.installationkey != null && package1.installationkey != "" ? ` --installationkey ${package1.installationkey}` : "");
         if (orgAlias != null) {
           packageInstallCommand += ` -u ${orgAlias}`;
         }
