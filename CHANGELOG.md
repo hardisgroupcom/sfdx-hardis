@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.24.0] 2021-06-10
+
+- New command **hardis:org:purge:apexlog** to purge all Apex Logs of selected org
+
 ## [2.23.0] 2021-06-07
 
 - Manage installation key for unlocked packages installation
