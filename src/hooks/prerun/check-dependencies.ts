@@ -70,7 +70,7 @@ export const hook = async (options: any) => {
     await checkSfdxPlugin(sfdxPluginName);
   }
 
-  // Check required depend to beencies installed
+  // Check required dependencies installed
   const requiresDependencies = options?.Command?.requiresDependencies || [];
   requiresDependencies.push('git');
   for (const appName of requiresDependencies) {
