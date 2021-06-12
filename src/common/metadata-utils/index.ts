@@ -529,6 +529,14 @@ class MetadataUtils {
     });
     uxLog(commandThis, filterRes.message);
 
+    // Filter package XML to keep only selected Metadata types
+    if (options.keepMetadataTypes) {
+      const filterRes2 = await filterPackageXml(packageXml, packageXml, {
+        keepMetadataTypes: options.keepMetadataTypes,
+      });
+      uxLog(commandThis, filterRes2.message);
+    }
+
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
       uxLog(commandThis, c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`));
