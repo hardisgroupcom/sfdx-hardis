@@ -211,7 +211,7 @@ async function authOrg(orgAlias: string, options: any) {
         this,
         { output: true, fail: true, spinner: false }
       );
-      console.log(JSON.stringify(loginResult, null, 2));
+      uxLog(this,c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
       username = loginResult?.username || "your username";
       instanceUrl = loginResult?.instanceUrl || instanceUrl;

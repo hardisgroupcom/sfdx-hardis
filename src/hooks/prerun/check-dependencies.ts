@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 
 import * as os from "os";
-import { checkSfdxPlugin, git, uxLog, execCommand, isCI, execSfdxJson } from "../../common/utils";
+import { checkSfdxPlugin, git, uxLog, execCommand, isCI, execSfdxJson, checkAppDependency } from "../../common/utils";
 import { getConfig, setConfig } from "../../config";
 
 export const hook = async (options: any) => {
@@ -68,5 +68,12 @@ export const hook = async (options: any) => {
   const requiresSfdxPlugins = options?.Command?.requiresSfdxPlugins || [];
   for (const sfdxPluginName of requiresSfdxPlugins) {
     await checkSfdxPlugin(sfdxPluginName);
+  }
+
+  // Check required depend to beencies installed
+  const requiresDependencies = options?.Command?.requiresDependencies || [];
+  requiresDependencies.push('git');
+  for (const appName of requiresDependencies) {
+    await checkAppDependency(appName);
   }
 };

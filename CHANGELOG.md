@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.25.0] 2021-06-12
+
+- Check dependencies
+  - Improve performances
+  - Check application dependencies (git,openssl)
+
 ## [2.24.0] 2021-06-10
 
 - New command **hardis:org:purge:apexlog** to purge all Apex Logs of selected org

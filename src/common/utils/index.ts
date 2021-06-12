@@ -7,12 +7,13 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import * as util from "util";
+import * as which from "which";
 import * as xml2js from "xml2js";
 const exec = util.promisify(child.exec);
 import { SfdxError } from "@salesforce/core";
 import * as ora from "ora";
 import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
-import { CONSTANTS } from "../../config";
+import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
@@ -72,8 +73,15 @@ export async function gitHasLocalUpdates() {
 export async function checkSfdxPlugin(pluginName: string) {
   // Manage cache of sfdx plugins result
   if (pluginsStdout == null) {
-    const pluginsRes = await exec("sfdx plugins");
-    pluginsStdout = pluginsRes.stdout;
+    const config = await getConfig("user");
+    if (config.sfdxPluginsStdout){
+      pluginsStdout = config.sfdxPluginsStdout;
+    }
+    else {
+      const pluginsRes = await exec("sfdx plugins");
+      pluginsStdout = pluginsRes.stdout;
+      await setConfig("user",{sfdxPluginsStdout: pluginsStdout});
+    }
   }
   if (!pluginsStdout.includes(pluginName)) {
     uxLog(
@@ -87,6 +95,26 @@ export async function checkSfdxPlugin(pluginName: string) {
     const installCommand = `echo y|sfdx plugins:install ${pluginName}`;
     await execCommand(installCommand, this, { fail: true, output: false });
   }
+}
+
+const dependenciesInstallLink = {
+  'git': 'Download installer at https://git-scm.com/downloads',
+  'openssl': 'Run "choco install openssl" in Windows Powershell, or use Git Bash as command line tool'
+}
+
+export async function checkAppDependency(appName) {
+  const config = await getConfig("user");
+  const installedApps = config.installedApps || [];
+  if (installedApps.includes(appName)) {
+    return true ;
+  }
+  which(appName).then(async() => {
+    installedApps.push(appName);
+    await setConfig("user",{installedApps: installedApps})
+  }).catch( err => {
+    uxLog(this,c.red(`You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''}`));
+    process.exit();
+  });
 }
 
 export async function promptInstanceUrl() {
@@ -420,6 +448,9 @@ export async function execCommand(
   let spinner: any;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: "moon" }).start();
+  }
+  else {
+    uxLog(this, commandLog);
   }
   try {
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
