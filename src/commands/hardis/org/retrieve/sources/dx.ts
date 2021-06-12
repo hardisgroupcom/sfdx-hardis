@@ -38,6 +38,10 @@ export default class DxSources extends SfdxCommand {
       default: "./tmp",
       description: messages.getMessage("tempFolder"),
     }),
+    keepmetadatatypes: flags.string({
+      char: "k",
+      description: "Comma separated list of metadatas types that will be the only ones to be retrieved",
+    }),
     filteredmetadatas: flags.string({
       char: "m",
       description: messages.getMessage("filteredMetadatas"),
@@ -78,6 +82,7 @@ export default class DxSources extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     const folder = path.resolve(this.flags.folder || ".");
     const tempFolder = path.resolve(this.flags.tempfolder || "./tmp");
+    const keepMetadataTypes = this.flags.keepmetadatatypes ? this.flags.keepmetadatatypes.split(",") : [];
     const filteredMetadatas = this.flags.filteredmetadatas ? this.flags.filteredmetadatas.split(",") : MetadataUtils.listMetadatasNotManagedBySfdx();
     const shapeFlag = this.flags.shape || false;
     const debug = this.flags.debug || false;
@@ -92,13 +97,17 @@ export default class DxSources extends SfdxCommand {
     await fs.ensureDir(sfdxFolder);
 
     // Retrieve metadatas
+    const retrieveOptions: any = { filterManagedItems: true, removeStandard: false };
+    if (keepMetadataTypes) {
+      retrieveOptions.keepMetadataTypes = keepMetadataTypes;
+    }
     const packageXml = path.resolve(path.join(tempFolder, "package.xml"));
     await MetadataUtils.retrieveMetadatas(
       packageXml,
       metadataFolder,
       true,
       filteredMetadatas,
-      { filterManagedItems: true, removeStandard: false },
+      retrieveOptions,
       this,
       debug
     );
@@ -175,6 +184,7 @@ export default class DxSources extends SfdxCommand {
     }
 
     // Remove temporary files
+    uxLog(this, `Remove temporary folder ${tempFolder} ...`);
     await fs.rmdir(tempFolder, { recursive: true });
 
     // Set bac initial cwd

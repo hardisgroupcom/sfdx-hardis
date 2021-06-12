@@ -74,13 +74,13 @@ export async function checkSfdxPlugin(pluginName: string) {
   // Manage cache of sfdx plugins result
   if (pluginsStdout == null) {
     const config = await getConfig("user");
-    if (config.sfdxPluginsStdout){
+    if (config.sfdxPluginsStdout) {
       pluginsStdout = config.sfdxPluginsStdout;
     }
     else {
       const pluginsRes = await exec("sfdx plugins");
       pluginsStdout = pluginsRes.stdout;
-      await setConfig("user",{sfdxPluginsStdout: pluginsStdout});
+      await setConfig("user", { sfdxPluginsStdout: pluginsStdout });
     }
   }
   if (!pluginsStdout.includes(pluginName)) {
@@ -106,13 +106,13 @@ export async function checkAppDependency(appName) {
   const config = await getConfig("user");
   const installedApps = config.installedApps || [];
   if (installedApps.includes(appName)) {
-    return true ;
+    return true;
   }
-  which(appName).then(async() => {
+  which(appName).then(async () => {
     installedApps.push(appName);
-    await setConfig("user",{installedApps: installedApps})
-  }).catch( err => {
-    uxLog(this,c.red(`You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''}`));
+    await setConfig("user", { installedApps: installedApps })
+  }).catch(err => {
+    uxLog(this, c.red(`You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''}`));
     process.exit();
   });
 }
@@ -329,11 +329,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n")
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n")
         )
       );
     }
@@ -632,6 +632,20 @@ export async function filterPackageXml(
   if (options.updateApiVersion) {
     manifest.Package.version[0] = options.updateApiVersion;
   }
+
+  if (options.keepMetadataTypes && options.keepMetadataTypes.length > 0) {
+    // Remove metadata types (named, and empty ones)
+    manifest.Package.types = manifest.Package.types.filter(
+      (type: any) => {
+        if (options.keepMetadataTypes.includes(type.name[0])) {
+          uxLog(this,c.grey('kept '+type.name[0]));
+          return true;
+        }
+        uxLog(this,c.grey('removed '+type.name[0]));
+        return false;
+      })
+  }
+
   // Remove metadata types (named, and empty ones)
   manifest.Package.types = manifest.Package.types.filter(
     (type: any) => !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0

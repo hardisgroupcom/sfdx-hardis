@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.25.0] 2021-06-12
 
+- New parameter **keepmetadatatypes** for hardis:org:retrieve:sources:dx
 - Check dependencies
   - Improve performances
   - Check application dependencies (git,openssl)
