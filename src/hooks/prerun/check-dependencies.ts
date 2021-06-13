@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 
 import * as os from "os";
-import { checkSfdxPlugin, git, uxLog, execCommand, isCI, execSfdxJson, checkAppDependency } from "../../common/utils";
+import { checkSfdxPlugin, git, uxLog, execCommand, isCI, execSfdxJson, checkAppDependency, isGitRepo } from "../../common/utils";
 import { getConfig, setConfig } from "../../config";
 
 export const hook = async (options: any) => {
@@ -31,7 +31,7 @@ export const hook = async (options: any) => {
 
   /* jscpd:ignore-end */
   // Check Git config and complete it if necessary (asynchronously so the script is not stopped)
-  if (!isCI) {
+  if (!isCI && isGitRepo()) {
     git()
       .listConfig()
       .then(async (gitConfig) => {
