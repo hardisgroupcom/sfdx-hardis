@@ -11,6 +11,7 @@ const exec = util.promisify(child.exec);
 
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { createTempDir, uxLog } from "../../../../../common/utils";
+import { WebSocketClient } from "../../../../../common/websocketClient";
 import { setConfig } from "../../../../../config";
 
 // Initialize Messages with the current plugin directory
@@ -186,6 +187,9 @@ export default class DxSources extends SfdxCommand {
     // Remove temporary files
     uxLog(this, `Remove temporary folder ${tempFolder} ...`);
     await fs.rmdir(tempFolder, { recursive: true });
+
+    // Trigger commands refresh on VsCode WebSocket Client
+    WebSocketClient.sendMessage({ event: "refreshCommands" });
 
     // Set bac initial cwd
     const message = `[sfdx-hardis] Successfully retrieved sfdx project in ${folder}`;
