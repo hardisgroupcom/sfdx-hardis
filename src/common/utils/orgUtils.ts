@@ -1,6 +1,8 @@
 import { MetadataUtils } from "../metadata-utils";
 import { prompts } from "./prompts";
 import * as c from "chalk";
+import * as fs from "fs-extra";
+import * as path from "path";
 import { execSfdxJson, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 import { setConfig } from "../../config";
@@ -88,7 +90,10 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   } else {
     if (options.setDefault === true) {
       // Set default username
-      const setDefaultUsernameCommand = `sfdx config:set ${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${orgResponse.org.username}`;
+      const setDefaultUsernameCommand =
+        `sfdx config:set ` +
+        `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${orgResponse.org.username}` +
+        (!fs.existsSync(path.join(process.cwd(), "sfdx-project.json")) ? " --global" : "");
       await execSfdxJson(setDefaultUsernameCommand, commandThis, {
         fail: true,
         output: false,
