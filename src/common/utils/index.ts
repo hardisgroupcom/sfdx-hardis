@@ -7,15 +7,17 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import * as util from "util";
+import * as which from "which";
 import * as xml2js from "xml2js";
 const exec = util.promisify(child.exec);
 import { SfdxError } from "@salesforce/core";
 import * as ora from "ora";
 import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
-import { CONSTANTS } from "../../config";
+import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
+import { promptProfiles } from "./orgUtils";
 
 let pluginsStdout = null;
 
@@ -71,8 +73,15 @@ export async function gitHasLocalUpdates() {
 export async function checkSfdxPlugin(pluginName: string) {
   // Manage cache of sfdx plugins result
   if (pluginsStdout == null) {
-    const pluginsRes = await exec("sfdx plugins");
-    pluginsStdout = pluginsRes.stdout;
+    const config = await getConfig("user");
+    if (config.sfdxPluginsStdout) {
+      pluginsStdout = config.sfdxPluginsStdout;
+    }
+    else {
+      const pluginsRes = await exec("sfdx plugins");
+      pluginsStdout = pluginsRes.stdout;
+      await setConfig("user", { sfdxPluginsStdout: pluginsStdout });
+    }
   }
   if (!pluginsStdout.includes(pluginName)) {
     uxLog(
@@ -86,6 +95,26 @@ export async function checkSfdxPlugin(pluginName: string) {
     const installCommand = `echo y|sfdx plugins:install ${pluginName}`;
     await execCommand(installCommand, this, { fail: true, output: false });
   }
+}
+
+const dependenciesInstallLink = {
+  'git': 'Download installer at https://git-scm.com/downloads',
+  'openssl': 'Run "choco install openssl" in Windows Powershell, or use Git Bash as command line tool'
+}
+
+export async function checkAppDependency(appName) {
+  const config = await getConfig("user");
+  const installedApps = config.installedApps || [];
+  if (installedApps.includes(appName)) {
+    return true;
+  }
+  which(appName).then(async () => {
+    installedApps.push(appName);
+    await setConfig("user", { installedApps: installedApps })
+  }).catch(err => {
+    uxLog(this, c.red(`You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''}`));
+    process.exit();
+  });
 }
 
 export async function promptInstanceUrl() {
@@ -300,11 +329,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n")
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n")
         )
       );
     }
@@ -420,6 +449,9 @@ export async function execCommand(
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: "moon" }).start();
   }
+  else {
+    uxLog(this, commandLog);
+  }
   try {
     commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
     if (spinner) {
@@ -514,6 +546,33 @@ function getGitWorkingDirLabel(workingDir) {
   return workingDir === "?" ? "CREATED" : workingDir === "D" ? "DELETED" : workingDir === "M" ? "UPDATED" : "OOOOOPS";
 }
 
+// Can be used to merge 2 package.xml content
+export function mergeObjectPropertyLists(obj1: any, obj2: any, options: { sort: true }) {
+  for (const key of Object.keys(obj2)) {
+    if (obj1[key]) {
+      obj1[key].push(...obj2[key]);
+    } else {
+      obj1[key] = obj2[key];
+    }
+    obj1[key] = [...new Set(obj1[key])]; // Make list unique
+    if (options.sort) {
+      obj1[key].sort();
+    }
+  }
+  return obj1;
+}
+
+// Can be used to merge 2 package.xml content
+export function removeObjectPropertyLists(obj1: any, objToRemove: any) {
+  for (const key of Object.keys(objToRemove)) {
+    if (obj1[key]) {
+      const itemsToRemove = objToRemove[key];
+      obj1[key] = obj1[key].filter((item) => !itemsToRemove.includes(item));
+    }
+  }
+  return obj1;
+}
+
 // Filter package XML
 export async function filterPackageXml(
   packageXmlFile: string,
@@ -573,6 +632,20 @@ export async function filterPackageXml(
   if (options.updateApiVersion) {
     manifest.Package.version[0] = options.updateApiVersion;
   }
+
+  if (options.keepMetadataTypes && options.keepMetadataTypes.length > 0) {
+    // Remove metadata types (named, and empty ones)
+    manifest.Package.types = manifest.Package.types.filter(
+      (type: any) => {
+        if (options.keepMetadataTypes.includes(type.name[0])) {
+          uxLog(this,c.grey('kept '+type.name[0]));
+          return true;
+        }
+        uxLog(this,c.grey('removed '+type.name[0]));
+        return false;
+      })
+  }
+
   // Remove metadata types (named, and empty ones)
   manifest.Package.types = manifest.Package.types.filter(
     (type: any) => !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0
@@ -716,7 +789,7 @@ export async function restoreLocalSfdxInfo() {
 }
 
 // Generate SSL certificate in temporary folder and copy the key in project directory
-export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any) {
+export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any, conn: any) {
   uxLog(commandThis, "Generating SSL certificate...");
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
@@ -793,13 +866,12 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         name: "contactEmail",
         message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"),
       },
-      {
-        type: "text",
-        name: "profile",
-        initial: "System Administrator",
-        message: c.cyanBright("What profile will be used for the connected app ? (ex: System Administrator)"),
-      },
     ]);
+    const profile = await promptProfiles(conn, {
+      multiselect: false,
+      message: "What profile will be used for the connected app ? (ex: System Administrator)",
+      initialSelection: ["System Administrator", "Administrateur Système"],
+    });
     const crtContent = await fs.readFile(crtFile, "utf8");
     // Build ConnectedApp metadata
     const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
@@ -822,7 +894,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       <ipRelaxation>ENFORCE</ipRelaxation>
       <refreshTokenPolicy>infinite</refreshTokenPolicy>
   </oauthPolicy>
-  <profileName>${promptResponses.profile || "System Administrator"}</profileName>
+  <profileName>${profile || "System Administrator"}</profileName>
 </ConnectedApp>
 `;
     const packageXml = `<?xml version="1.0" encoding="UTF-8"?>

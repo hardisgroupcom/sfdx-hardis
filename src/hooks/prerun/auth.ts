@@ -164,7 +164,7 @@ async function authOrg(orgAlias: string, options: any) {
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
-    const usernameArg = isDevHub ? "--setdefaultdevhubusername" : "--setdefaultusername";
+    const usernameArg = options.setDefault === false ? "" : isDevHub ? "--setdefaultdevhubusername" : "--setdefaultusername";
     if (crtKeyfile && sfdxClientId && username) {
       // Login with JWT
       const loginCommand =
@@ -173,8 +173,8 @@ async function authOrg(orgAlias: string, options: any) {
         ` --clientid ${sfdxClientId}` +
         ` --jwtkeyfile ${crtKeyfile}` +
         ` --username ${username}` +
-        ` --setalias ${orgAlias}` +
-        ` --instanceurl ${instanceUrl}`;
+        ` --instanceurl ${instanceUrl}` +
+        (orgAlias !== "MY_ORG" ? ` --setalias ${orgAlias}` : "");
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
       });
@@ -202,16 +202,16 @@ async function authOrg(orgAlias: string, options: any) {
       }
       instanceUrl = await promptInstanceUrl();
 
+      const configInfoUsr = await getConfig("user");
       const loginResult = await execCommand(
         "sfdx auth:web:login" +
-          " --setdefaultusername" +
-          ` --setalias ${orgAlias}` +
-          (isDevHub ? " --setdefaultdevhubusername" : "") +
-          ` --instanceurl ${instanceUrl}`,
+          (options.setDefault === false ? "" : isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
+          ` --instanceurl ${instanceUrl}` +
+          (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : ""),
         this,
         { output: true, fail: true, spinner: false }
       );
-      console.log(JSON.stringify(loginResult, null, 2));
+      uxLog(this,c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
       username = loginResult?.username || "your username";
       instanceUrl = loginResult?.instanceUrl || instanceUrl;

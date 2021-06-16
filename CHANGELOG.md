@@ -4,6 +4,48 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.25.3] 2021-06-14
+
+- Fix bug when selecting an org from outside a SFDX project folder
+
+## [2.25.2] 2021-06-14
+
+- Refresh VsCode Sfdx Hardis UI when creating / loading a SFDX Project
+
+## [2.25.1] 2021-06-13
+
+- Check if folder is a git repo before updating git config
+
+## [2.25.0] 2021-06-12
+
+- New parameter **keepmetadatatypes** for hardis:org:retrieve:sources:dx
+- Check dependencies
+  - Improve performances
+  - Check application dependencies (git,openssl)
+
+## [2.24.0] 2021-06-10
+
+- New command **hardis:org:purge:apexlog** to purge all Apex Logs of selected org
+
+## [2.23.0] 2021-06-07
+
+- Manage installation key for unlocked packages installation
+- Deployment: manage --canmodify SFDMU argument (define sfdmuCanDeploy in sfdx-hardis branch config file)
+
+## [2.22.0] 2021-06-03
+
+- New command hardis:project:clean:orgmissingitems : Remove elements that are not existing in target org (only in ReportType for now)
+- hardis:project:clean:references : Remove cleaned items from package.xml files
+- Externalization of method to select an org (+ reorder of list of displayed orgs)
+
+## [2.21.0] 2021-06-02
+
+- hardis:project:clean:references: Improve performances for removing files
+- hardis:scratch:create : Shorten scratch org auto-generated name
+- Authenticate to an org: Request user to set alias if not provided
+- Update default gitlab-ci.yml
+- New method promptProfiles
+
 ## [2.20.3] 2021-05-26
 
 - Set prompt UI timeout to 2h instead of 5mn

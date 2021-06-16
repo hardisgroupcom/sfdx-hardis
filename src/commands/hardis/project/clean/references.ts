@@ -6,9 +6,9 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as glob from "glob-promise";
-import { createTempDir, execCommand, isCI, uxLog } from "../../../../common/utils";
+import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
-import { parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
+import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
 import { getConfig, setConfig } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
@@ -159,45 +159,31 @@ export default class CleanReferences extends SfdxCommand {
       });
     }
 
-    // Delete files when necessary
-    uxLog(this, c.grey(`Removing obsolete files...`));
-    for (const type of Object.keys(this.deleteItems)) {
-      // Custom fields
-      if (type === "CustomField") {
-        for (const field of this.deleteItems[type]) {
-          // Remove custom field and customTranslation
-          const [obj, fld] = field.split(".");
-          const patternField = process.cwd() + "/force-app/" + `**/objects/${obj}/fields/${fld}.field-meta.xml`;
-          const patternTranslation = process.cwd() + "/force-app/" + `**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
-          for (const pattern of [patternField, patternTranslation]) {
-            const matchFiles = await glob(pattern, { cwd: process.cwd() });
-            for (const removeFile of matchFiles) {
-              await fs.remove(removeFile);
-              uxLog(this, c.grey(`Removed file ${removeFile}`));
-            }
-          }
-          // Remove field in recordTypes
-          const patternRecordType = process.cwd() + "/force-app/" + `**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
-          const matchFilesPattern = await glob(patternRecordType, {
-            cwd: process.cwd(),
-          });
-          for (const recordTypeFile of matchFilesPattern) {
-            const recordType = await parseXmlFile(recordTypeFile);
-            if (recordType?.RecordType.picklistValues) {
-              const updatedPicklistValues = recordType.RecordType.picklistValues.filter((picklistValue) => {
-                return picklistValue?.picklist[0] !== fld;
-              });
-              if (updatedPicklistValues.length !== recordType.RecordType.picklistValues.length) {
-                recordType.RecordType.picklistValues = updatedPicklistValues;
-                await writeXmlFile(recordTypeFile, recordType);
-                uxLog(this, c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
-              }
-            }
-          }
-        }
+    // Clean package.xml file from deleted items
+    uxLog(this, c.grey(`Cleaning package.xml files...`));
+    const patternPackageXml = process.cwd() + "/**/manifest/**/package*.xml";
+    const packageXmlFiles = await glob(patternPackageXml, {
+      cwd: process.cwd(),
+    });
+    for (const packageXmlFile of packageXmlFiles) {
+      const packageXmlContent = await parsePackageXmlFile(packageXmlFile);
+      const packageXmlContentStr = JSON.stringify(packageXmlContent);
+      const newPackageXmlContent = removeObjectPropertyLists(packageXmlContent, this.deleteItems);
+      if (packageXmlContentStr !== JSON.stringify(newPackageXmlContent)) {
+        await writePackageXmlFile(packageXmlFile, newPackageXmlContent);
+        uxLog(this, c.grey("-- cleaned elements from " + packageXmlFile));
       }
     }
 
+    // Delete files when necessary (in parallel)
+    uxLog(this, c.grey(`Removing obsolete files...`));
+    await Promise.all(
+      Object.keys(this.deleteItems).map(async (type) => {
+        await this.manageDeleteRelatedFiles(type);
+      })
+    );
+
+    uxLog(this, c.green(`Cleaning complete`));
     // Return an object to be displayed with --json
     return { outputString: "Cleaned references from sfdx project" };
   }
@@ -232,5 +218,48 @@ export default class CleanReferences extends SfdxCommand {
     const filterConfigFile = path.join(await createTempDir(), `clean_${tmpCleanFileName}.json`);
     await fs.writeFile(filterConfigFile, templateContent);
     return filterConfigFile;
+  }
+
+  private async manageDeleteRelatedFiles(type) {
+    // Custom fields
+    if (type === "CustomField") {
+      await Promise.all(
+        Object.keys(this.deleteItems[type]).map(async (field) => {
+          await this.manageDeleteCustomFieldRelatedFiles(field);
+        })
+      );
+    }
+  }
+
+  private async manageDeleteCustomFieldRelatedFiles(field: string) {
+    // Remove custom field and customTranslation
+    const [obj, fld] = field.split(".");
+    const patternField = process.cwd() + "/force-app/" + `**/objects/${obj}/fields/${fld}.field-meta.xml`;
+    const patternTranslation = process.cwd() + "/force-app/" + `**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
+    for (const pattern of [patternField, patternTranslation]) {
+      const matchFiles = await glob(pattern, { cwd: process.cwd() });
+      for (const removeFile of matchFiles) {
+        await fs.remove(removeFile);
+        uxLog(this, c.grey(`Removed file ${removeFile}`));
+      }
+    }
+    // Remove field in recordTypes
+    const patternRecordType = process.cwd() + "/force-app/" + `**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
+    const matchFilesPattern = await glob(patternRecordType, {
+      cwd: process.cwd(),
+    });
+    for (const recordTypeFile of matchFilesPattern) {
+      const recordType = await parseXmlFile(recordTypeFile);
+      if (recordType?.RecordType.picklistValues) {
+        const updatedPicklistValues = recordType.RecordType.picklistValues.filter((picklistValue) => {
+          return picklistValue?.picklist[0] !== fld;
+        });
+        if (updatedPicklistValues.length !== recordType.RecordType.picklistValues.length) {
+          recordType.RecordType.picklistValues = updatedPicklistValues;
+          await writeXmlFile(recordTypeFile, recordType);
+          uxLog(this, c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
+        }
+      }
+    }
   }
 }

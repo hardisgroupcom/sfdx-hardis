@@ -53,6 +53,8 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
   protected static requiresProject = false;
   /* jscpd:ignore-end */
 
+  protected static requiresDependencies = ['openssl'];
+
   public async run(): Promise<AnyJson> {
     // Clone repository if there is not
     await ensureGitRepository({ clone: true });
@@ -134,7 +136,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     );
 
     // Generate SSL certificate (requires openssl to be installed on computer)
-    await generateSSLCertificate(branchName, "./.ssh", this);
+    await generateSSLCertificate(branchName, "./.ssh", this, this.org.getConnection());
 
     uxLog(this, c.italic("You can customize monitoring by updating .gitlab-ci-config.yml"));
 

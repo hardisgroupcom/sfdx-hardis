@@ -8,6 +8,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { getConfig, setConfig } from "../../../config";
+import { WebSocketClient } from "../../../common/websocketClient";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -114,6 +115,9 @@ export default class ProjectCreate extends SfdxCommand {
     uxLog(this, c.cyan(`Then, create a new scratch org using ${c.italic(c.white("sfdx hardis:scratch:create"))}`));
     uxLog(this, c.cyan(`It is also recommended to install FFLib using ${c.italic(c.white("sfdx hardis:package:install"))}`));
     uxLog(this, c.cyan("Then, you can stage, commit and make a pull request to developpement branch"));
+
+    // Trigger commands refresh on VsCode WebSocket Client
+    WebSocketClient.sendMessage({ event: "refreshCommands" });
 
     // Return an object to be displayed with --json
     return { outputString: "Created SFDX Project" };

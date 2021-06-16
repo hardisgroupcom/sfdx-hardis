@@ -460,7 +460,13 @@ class MetadataUtils {
           );
         }
         const securityType = package1.SecurityType || "AllUsers";
-        let packageInstallCommand = `sfdx force:package:install --package ${package1.SubscriberPackageVersionId} --noprompt --securitytype ${securityType} -w 60`;
+        let packageInstallCommand =
+          "sfdx force:package:install" +
+          ` --package ${package1.SubscriberPackageVersionId}` +
+          " --noprompt" +
+          ` --securitytype ${securityType}` +
+          " -w 60" +
+          (package1.installationkey != null && package1.installationkey != "" ? ` --installationkey ${package1.installationkey}` : "");
         if (orgAlias != null) {
           packageInstallCommand += ` -u ${orgAlias}`;
         }
@@ -522,6 +528,14 @@ class MetadataUtils {
       removeMetadatas: filteredMetadatas,
     });
     uxLog(commandThis, filterRes.message);
+
+    // Filter package XML to keep only selected Metadata types
+    if (options.keepMetadataTypes) {
+      const filterRes2 = await filterPackageXml(packageXml, packageXml, {
+        keepMetadataTypes: options.keepMetadataTypes,
+      });
+      uxLog(commandThis, filterRes2.message);
+    }
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
