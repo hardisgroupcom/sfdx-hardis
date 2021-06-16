@@ -21,8 +21,6 @@ ENV PATH="/node_modules/.bin:${PATH}"
 
 ARG SFDX_HARDIS_VERSION=latest
 
-RUN 
-
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache sfdx-cli -g && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
