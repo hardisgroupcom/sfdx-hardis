@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.26.0] 2021-06-16
+
+- New command hardis:project:generate:gitdelta to generate the package.xml calculated between two commits
+- New command hardis:org:connect to connect to an org without selecting it (can be used to refresh expired token)
+- Propose choice to to skip .gitignore & .forceignore files auto-update
+- Define triggerNotification on Command class to trigger MsTeams notifs
+- Update org type selection message
+
 ## [2.25.3] 2021-06-14
 
 - Fix bug when selecting an org from outside a SFDX project folder
