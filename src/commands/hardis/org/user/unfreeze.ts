@@ -21,23 +21,24 @@ export default class OrgUnfreezeUser extends SfdxCommand {
   public static description = messages.getMessage("orgUnfreezeUser");
 
   public static examples = [
-    `$ sfdx hardis:org:user:unfreeze --targetusername dimitri.mongey@gmail.com
-  Found 1 records
-  Are you sure you want to unfreeze these users (y/n)?: y
-  Successfully unfreeze users.
-  updated the following list of records:
-  ID                 MASTERLABEL PROFIL ISFROZEN
-  30109000000kX7uAAE TestFlow    2         true
+    `$ sfdx hardis:org:user:unfreeze --targetusername dimitri.monge@gmail.com
+    [sfdx-hardis]  Found 1 records:
+    NAME              PROFILE  
+    Dimitri Monge     Utilisateur standard
+    ? 🦙   Are you sure you want to unfreeze this list of records in dimitri.monge@gmail.com (y/n)? ☑ Yes
+    ....
+    ....
+
+    [sfdx-hardis]  updated 1 user, records:
+    NAME              PROFILE
+    Dimitri Monge     Utilisateur standard
   `,
-    `$ sfdx hardis:org:user:unfreeze --targetusername dimirtri.monge@gmail.com --except ""
-  Found 4 records:
-  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
-  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
-  30109000000kX8EAAU TestFlow    6             test flowwww InvalidDraft
-  30109000000kX8AAAU TestFlow    5             test flowwww InvalidDraft
-  30109000000kX89AAE TestFlow    4             test flowwww Draft
-  Are you sure you want to delete this list of records (y/n)?: n
-  No record deleted
+    `$ sfdx hardis:org:user:unfreeze --targetusername dimitri.monge@gmail.com
+    [sfdx-hardis]  Found 1 records:
+    NAME                  PROFILE
+    Dimitri Monge         Utilisateur standard
+    √ 🦙   Are you sure you want to unfreeze this list of records in dimitri.monge@gmail.com (y/n)? » ☓ No
+    [sfdx-hardis]  No user has been unfrozen
   `,
   ];
 
@@ -50,14 +51,9 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       description: messages.getMessage("nameFilter"),
     }),
     except: flags.string({
-      char: "s",
-      default: "system administrator",
+      char: "e",
+      default: "system administrator,Administrateur système",
       description: messages.getMessage("exceptFilter"),
-    }),
-    instanceurl: flags.string({
-      char: "r",
-      default: "https://login.saleforce.com",
-      description: messages.getMessage("instanceUrl"),
     }),
     debug: flags.boolean({
       char: "d",
@@ -114,7 +110,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     let userlistrawUnfreeze = JSON.parse(logs.split("OUTPUTVALUE=")[2].split("END_OUTPUTVALUE")[0]);
     // Check empty result
     if (userlistrawUnfreeze.length === 0) {
-      const outputString = `[sfdx-hardis] No matching user records found for all profile  except ${exceptFilter}`;
+      const outputString = `No matching user records found for all profile  except ${exceptFilter}`;
       uxLog(this, c.yellow(outputString));
       return { deleted: [], outputString };
     }
@@ -125,14 +121,14 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         Profile: record.Profile.Name,
       };
     });
-    uxLog(this, `[sfdx-hardis] Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist.splice(0, 500)))}`);
+    uxLog(this, `Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist.splice(0, 500)))}`);
 
     userlistrawUnfreeze = [];
     const confirmUnfreeze = await prompts({
       type: "confirm",
       name: "value",
       initial: true,
-      message: c.cyanBright(`[sfdx-hardis] Are you sure you want to freeze this list of records in ${c.green(this.org.getUsername())} (y/n)?`),
+      message: c.cyanBright(`Are you sure you want to freeze this list of records in ${c.green(this.org.getUsername())} (y/n)?`),
     });
     if (confirmUnfreeze.value === true) {
       {
@@ -158,7 +154,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       }
 
       if (userlistrawUnfreeze.length === 0) {
-        const outputString = `[sfdx-hardis] No user has been frozen`;
+        const outputString = ` No user has been unfrozen`;
         uxLog(this, c.green(outputString));
         return { deleted: [], outputString };
       } else {
@@ -168,7 +164,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
             Profile: record.Profile.Name,
           };
         });
-        const summary = `[sfdx-hardis] updated ${c.bold(userlist.length)} user, records:\n${c.yellow(columnify(userlist.splice(0, 500)))}`;
+        const summary = ` updated ${c.bold(userlist.length)} user, records:\n${c.yellow(columnify(userlist.splice(0, 500)))}`;
 
         uxLog(this, c.green(summary));
         // Return an object to be displayed with --json
