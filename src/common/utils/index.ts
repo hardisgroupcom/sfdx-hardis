@@ -76,8 +76,7 @@ export async function checkSfdxPlugin(pluginName: string) {
     const config = await getConfig("user");
     if (config.sfdxPluginsStdout) {
       pluginsStdout = config.sfdxPluginsStdout;
-    }
-    else {
+    } else {
       const pluginsRes = await exec("sfdx plugins");
       pluginsStdout = pluginsRes.stdout;
       await setConfig("user", { sfdxPluginsStdout: pluginsStdout });
@@ -98,9 +97,9 @@ export async function checkSfdxPlugin(pluginName: string) {
 }
 
 const dependenciesInstallLink = {
-  'git': 'Download installer at https://git-scm.com/downloads',
-  'openssl': 'Run "choco install openssl" in Windows Powershell, or use Git Bash as command line tool'
-}
+  git: "Download installer at https://git-scm.com/downloads",
+  openssl: 'Run "choco install openssl" in Windows Powershell, or use Git Bash as command line tool',
+};
 
 export async function checkAppDependency(appName) {
   const config = await getConfig("user");
@@ -108,13 +107,15 @@ export async function checkAppDependency(appName) {
   if (installedApps.includes(appName)) {
     return true;
   }
-  which(appName).then(async () => {
-    installedApps.push(appName);
-    await setConfig("user", { installedApps: installedApps })
-  }).catch(err => {
-    uxLog(this, c.red(`You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''}`));
-    process.exit();
-  });
+  which(appName)
+    .then(async () => {
+      installedApps.push(appName);
+      await setConfig("user", { installedApps: installedApps });
+    })
+    .catch(() => {
+      uxLog(this, c.red(`You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ""}`));
+      process.exit();
+    });
 }
 
 export async function promptInstanceUrl() {
@@ -124,12 +125,12 @@ export async function promptInstanceUrl() {
     message: c.cyanBright("Is the org you need to connect a sandbox or another type of org (dev org, enterprise org...)"),
     choices: [
       {
-        title: "Sandbox or Scratch org",
+        title: "Sandbox or Scratch org (test.salesforce.com)",
         description: "The org I want to connect is a sandbox",
         value: "https://test.salesforce.com",
       },
       {
-        title: "Other (Dev org, Enterprise org...)",
+        title: "Other: Dev, Enterprise or DevHub org... (login.salesforce.com)",
         description: "The org I want to connect is NOT a sandbox",
         value: "https://login.salesforce.com",
       },
@@ -191,6 +192,29 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
     return gitBranch.replace("/", "__");
   }
   return gitBranch;
+}
+
+// Select git branch and checkout & pull if requested
+export async function selectGitBranch(options: { remote: true; checkOutPull: boolean } = { remote: true, checkOutPull: false }) {
+  const gitBranchOptions = ["--list"];
+  if (options.remote) {
+    gitBranchOptions.push('-r');
+  }
+  const branches = await git().branch(gitBranchOptions);
+  const branchResp = await prompts({
+    type: "select",
+    name: "value",
+    message: "Please select a Git branch",
+    choices: branches.all.map((branchName) => {
+      return { title: branchName.replace('origin/',''), value: branchName.replace('origin/','') };
+    }),
+  });
+  const branch = branchResp.value ;
+  // Checkout & pull if requested
+  if (options.checkOutPull) {
+    await gitCheckOutRemote(branch);
+  }
+  return branch;
 }
 
 export async function gitCheckOutRemote(branchName: string) {
@@ -329,11 +353,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n")
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n")
         )
       );
     }
@@ -448,8 +472,7 @@ export async function execCommand(
   let spinner: any;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: "moon" }).start();
-  }
-  else {
+  } else {
     uxLog(this, commandLog);
   }
   try {
@@ -635,15 +658,14 @@ export async function filterPackageXml(
 
   if (options.keepMetadataTypes && options.keepMetadataTypes.length > 0) {
     // Remove metadata types (named, and empty ones)
-    manifest.Package.types = manifest.Package.types.filter(
-      (type: any) => {
-        if (options.keepMetadataTypes.includes(type.name[0])) {
-          uxLog(this,c.grey('kept '+type.name[0]));
-          return true;
-        }
-        uxLog(this,c.grey('removed '+type.name[0]));
-        return false;
-      })
+    manifest.Package.types = manifest.Package.types.filter((type: any) => {
+      if (options.keepMetadataTypes.includes(type.name[0])) {
+        uxLog(this, c.grey("kept " + type.name[0]));
+        return true;
+      }
+      uxLog(this, c.grey("removed " + type.name[0]));
+      return false;
+    });
   }
 
   // Remove metadata types (named, and empty ones)

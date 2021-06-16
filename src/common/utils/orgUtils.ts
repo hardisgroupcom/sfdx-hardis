@@ -72,14 +72,16 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
     }),
   });
 
+  let org = orgResponse.org ;
+
   // Cancel
-  if (orgResponse.org.cancel === true) {
+  if (org.cancel === true) {
     uxLog(commandThis, c.cyan("Cancelled"));
     process.exit(0);
   }
 
   // Connect to new org
-  if (orgResponse.org.otherOrg === true) {
+  if (org.otherOrg === true) {
     await commandThis.config.runHook("auth", {
       checkAuth: true,
       Command: commandThis,
@@ -87,29 +89,37 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
       setDefault: options.setDefault !== false,
     });
     return { outputString: "Launched org connection" };
-  } else {
-    if (options.setDefault === true) {
-      // Set default username
-      const setDefaultUsernameCommand =
-        `sfdx config:set ` +
-        `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${orgResponse.org.username}` +
-        (!fs.existsSync(path.join(process.cwd(), "sfdx-project.json")) ? " --global" : "");
-      await execSfdxJson(setDefaultUsernameCommand, commandThis, {
-        fail: true,
-        output: false,
-      });
-      WebSocketClient.sendMessage({ event: "refreshStatus" });
-      // Update local user .sfdx-hardis.yml file with response if scratch has been selected
-      if (orgResponse.org.username.includes("scratch")) {
-        await setConfig("user", {
-          scratchOrgAlias: orgResponse.org.username,
-          scratchOrgUsername: orgResponse.org.alias || orgResponse.org.username,
-        });
-      }
-    }
-
-    uxLog(commandThis, c.gray(JSON.stringify(orgResponse.org, null, 2)));
-    uxLog(commandThis, c.cyan(`Selected org ${c.green(orgResponse.org.username)} - ${c.green(orgResponse.org.instanceUrl)}`));
-    return orgResponse.org;
   }
+
+  // Token is expired: login again to refresh it
+  if (org?.connectedStatus === 'RefreshTokenAuthError') {
+    uxLog(this,c.yellow(`Your authentication is expired. Please login again in the web browser`));
+    const loginCommand = "sfdx auth:web:login" +
+    ` --instanceurl ${org.instanceUrl}`;
+    const loginResult = await execSfdxJson(loginCommand, this, {fail:true, output:true});
+    org = loginResult.result ;
+  }
+
+  if (options.setDefault === true) {
+    // Set default username
+    const setDefaultUsernameCommand =
+      `sfdx config:set ` +
+      `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${org.username}` +
+      (!fs.existsSync(path.join(process.cwd(), "sfdx-project.json")) ? " --global" : "");
+    await execSfdxJson(setDefaultUsernameCommand, commandThis, {
+      fail: true,
+      output: false,
+    });
+    WebSocketClient.sendMessage({ event: "refreshStatus" });
+    // Update local user .sfdx-hardis.yml file with response if scratch has been selected
+    if (org.username.includes("scratch")) {
+      await setConfig("user", {
+        scratchOrgAlias: org.username,
+        scratchOrgUsername: org.alias || org.username,
+      });
+    }
+  }
+  uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
+  uxLog(commandThis, c.cyan(`Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
+  return orgResponse.org;
 }
