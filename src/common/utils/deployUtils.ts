@@ -287,7 +287,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
   const deployDelete =
     `sfdx force:mdapi:deploy -d ${tmpDir}` +
     " --wait 60" +
-    " --testlevel NoTestRun" +
+    ` --testlevel ${options.testLevel || 'NoTestRun'}` +
     " --ignorewarnings" + // So it does not fail in case metadata is already deleted
     (options.check ? " --checkonly" : "") +
     (options.debug ? " --verbose" : "");

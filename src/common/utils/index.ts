@@ -18,6 +18,7 @@ import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
 import { promptProfiles } from "./orgUtils";
+import { WebSocketClient } from "../websocketClient";
 
 let pluginsStdout = null;
 
@@ -213,6 +214,7 @@ export async function selectGitBranch(options: { remote: true; checkOutPull: boo
   // Checkout & pull if requested
   if (options.checkOutPull) {
     await gitCheckOutRemote(branch);
+    WebSocketClient.sendMessage({ event: "refreshStatus" });
   }
   return branch;
 }

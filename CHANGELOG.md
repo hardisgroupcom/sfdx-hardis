@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.26.1] 2021-06-17
+
+- Take in account testLevel from `.sfdx-hardis.yml` in deployments
+
 ## [2.26.0] 2021-06-16
 
 - New command hardis:project:generate:gitdelta to generate the package.xml calculated between two commits
