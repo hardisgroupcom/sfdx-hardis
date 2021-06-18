@@ -5,13 +5,22 @@ import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
 import * as xml2js from "xml2js";
-import { createTempDir, execCommand, isCI, uxLog } from ".";
-import { CONSTANTS, getConfig } from "../../config";
+import { createTempDir, execCommand, getCurrentGitBranch, isCI, uxLog } from ".";
+import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 import { prompts } from "./prompts";
+import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 
+// Push sources to org
+// For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false) {
+  const config = await getConfig("user");
+  const currentBranch = await getCurrentGitBranch();
+  let arrangedFiles = [];
+  if (!(config[`tmp_${currentBranch}_pushed`] === true)) {
+    arrangedFiles = await arrangeFilesBefore(commandThis);
+  }
   try {
     const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
     await execCommand(pushCommand, commandThis, {
@@ -19,7 +28,19 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       output: true,
       debug: debug,
     });
+    if (arrangedFiles.length > 0) {
+      await restoreArrangedFiles(arrangedFiles, commandThis);
+      await execCommand(pushCommand, commandThis, {
+        fail: true,
+        output: true,
+        debug: debug,
+      });
+      const configToSet = {};
+      configToSet[`tmp_${currentBranch}_pushed`] = true ;
+      await setConfig("user",configToSet);
+    }
   } catch (e) {
+    await restoreArrangedFiles(arrangedFiles, commandThis);
     const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(commandThis, c.red("Sadly there has been push error(s)"));
     uxLog(commandThis, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
@@ -287,7 +308,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
   const deployDelete =
     `sfdx force:mdapi:deploy -d ${tmpDir}` +
     " --wait 60" +
-    ` --testlevel ${options.testLevel || 'NoTestRun'}` +
+    ` --testlevel ${options.testLevel || "NoTestRun"}` +
     " --ignorewarnings" + // So it does not fail in case metadata is already deleted
     (options.check ? " --checkonly" : "") +
     (options.debug ? " --verbose" : "");

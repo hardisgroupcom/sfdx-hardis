@@ -10,7 +10,7 @@ export async function arrangeFilesBefore(commandThis: any, options: any = {}) {
   const tempDir = await createTempDir();
   const arrangedFiles = [];
   const arrangedLookupFields = await removeLookupFilters(tempDir,commandThis,options);
-  arrangedFiles.push(arrangedLookupFields);
+  arrangedFiles.push(...arrangedLookupFields);
   return arrangedFiles;
 }
 
