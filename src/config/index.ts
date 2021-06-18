@@ -50,6 +50,10 @@ export const getConfig = async (layer = "user"): Promise<any> => {
 
 // Set data in configuration file
 export const setConfig = async (layer: string, propValues: any): Promise<void> => {
+  if (layer === 'user' && fs.readdirSync(process.cwd()).length === 0) {
+    uxLog(this,c.grey('Skip update user config file because current directory is empty'));
+    return ;
+  } 
   const configSearchPlaces =
     layer === "project" ? projectConfigFiles : layer === "user" ? userConfigFiles : layer === "branch" ? await getBranchConfigFiles() : [];
   await setInConfigFile(configSearchPlaces, propValues);
