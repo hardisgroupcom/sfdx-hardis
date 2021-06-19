@@ -4,10 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.27.4] 2021-06-19
+## [2.27.0] 2021-06-19
 
 - Clean Lookup filters before force:source:push, then restore them and push again
 - Rename DeferSharingCalc permission set into SfdxHardisDeferSharingCalc
+- New Deployment tips
 
 ## [2.26.4] 2021-06-18
 
