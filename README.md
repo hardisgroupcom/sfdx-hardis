@@ -100,6 +100,16 @@ Alternative for DevHub
 sfdx hardis:auth:login --devhub
 ```
 
+## Contributing
+
+Anyone is welcome to contribute to this sfdx-hardis
+
+- Fork this repo and clone it
+- Run `yarn` to install dependencies
+- Run `sfdx plugins:link` to link the local sfds-hardis to SFDX
+- Run `tsc --watch`to transpile typescript
+- Debug commands using `NODE_OPTIONS=--inspect-brk sfdx hardis:somecommand -someparameter somevalue`
+
 ## Commands
 
 <!-- commands -->

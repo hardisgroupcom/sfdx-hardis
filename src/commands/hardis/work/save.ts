@@ -274,7 +274,7 @@ export default class SaveTask extends SfdxCommand {
       toCommit ? toCommit.hash : masterBranchLatestCommit
     } --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
-      output: false,
+      output: true,
       fail: false,
       debug: this.debugMode,
     });
@@ -335,7 +335,7 @@ export default class SaveTask extends SfdxCommand {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(
         this,
-        c.red(`Unable to build git diff. Please call a developer to ${c.yellow(c.bold("update package.xml and destructivePackage.xml manually"))}`)
+        c.red(`Unable to build git diff.${c.yellow(c.bold("Please update package.xml and destructiveChanges.xml manually"))}`)
       );
     }
 
@@ -370,12 +370,12 @@ export default class SaveTask extends SfdxCommand {
     }
 
     // Build deployment plan splits
-    let splitConfig = this.getSeparateDeploymentsConfig();
+    let splitConfig = await this.getSeparateDeploymentsConfig();
     const packageXml = await parseXmlFile(localPackageXml);
     for (const type of packageXml.Package.types || []) {
       const typeName = type.name[0];
       splitConfig = splitConfig.map((split) => {
-        if (split.types.includes(typeName)) {
+        if (split.types.includes(typeName) && type.members[0] !== '*') {
           split.content[typeName] = type.members;
         }
         return split;
@@ -535,7 +535,11 @@ export default class SaveTask extends SfdxCommand {
     return mergeRequestStored;
   }
 
-  private getSeparateDeploymentsConfig() {
+  private async getSeparateDeploymentsConfig() {
+    const config = await getConfig("project");
+    if (config.separateDeploymentsConfig || config.separateDeploymentsConfig === false) {
+      return config.separateDeploymentConfig || [] ;
+    }
     const separateDeploymentConfig = [
       {
         types: ["EmailTemplate"],

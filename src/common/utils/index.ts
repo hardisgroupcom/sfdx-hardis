@@ -279,6 +279,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     throw new SfdxError("[sfdx-hardis] You must be within a git repository");
   }
   // List all files and arrange their format
+  const config = await getConfig("project");
   const gitStatus = await git().status();
   let filesFiltered = gitStatus.files
     .filter((fileStatus: FileStatusResult) => {
@@ -290,6 +291,10 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       }
       if (fileStatus.path.endsWith('"')) {
         fileStatus.path = fileStatus.path.slice(0, -1);
+      }
+      if (config.gitRootFolderPrefix) {
+        uxLog(this,c.red(fileStatus.path));
+        fileStatus.path = fileStatus.path.replace(config.gitRootFolderPrefix,"");
       }
       return fileStatus;
     });
