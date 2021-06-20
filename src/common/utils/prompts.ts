@@ -38,7 +38,7 @@ export async function prompts(options) {
   if (WebSocketClient.isAlive()) {
     // Use UI prompt
     for (const question of questionsReformatted) {
-      uxLog(this, c.cyan(question.message) + c.white(" ↑↑↑↑↑↑↑↑"));
+      uxLog(this, c.cyan(question.message) + c.white(" ↑↑ Look up in VsCode ↑↑"));
       const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
       answers = Object.assign(answers, questionAnswer);
       uxLog(this, c.grey(JSON.stringify(answers)));
