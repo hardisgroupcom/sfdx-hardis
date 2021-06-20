@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as path from "path";
-import { createTempDir, ensureGitRepository, execCommand, git, selectGitBranch, uxLog } from "../../../../common/utils";
+import { createTempDir, ensureGitRepository, execCommand, getGitRepoRoot, git, selectGitBranch, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
@@ -86,6 +86,7 @@ export default class GenerateGitDelta extends SfdxCommand {
       output: true,
       fail: true,
       debug: this.debugMode,
+      cwd: (await getGitRepoRoot())
     });
 
     const diffPackageXml = path.join(tmpDir, "package", "package.xml");

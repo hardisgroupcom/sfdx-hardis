@@ -10,6 +10,7 @@ import {
   execCommand,
   execSfdxJson,
   getCurrentGitBranch,
+  getGitRepoRoot,
   git,
   gitHasLocalUpdates,
   interactiveGitAdd,
@@ -277,6 +278,7 @@ export default class SaveTask extends SfdxCommand {
       output: true,
       fail: false,
       debug: this.debugMode,
+      cwd: (await getGitRepoRoot())
     });
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml

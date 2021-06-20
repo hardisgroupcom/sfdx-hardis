@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Manage `gitRootFolderPrefix` config property, in case the root of git repository is at a parent level than sfdx project root
 - Allow to override separate deployments using config property `separateDeploymentsConfig`
 - Set git config core.quotepath to false to manage special characters in git files / folders
+- Run sfdx git delta at the root of the git repository
 - Rename DeferSharingCalc permission set into SfdxHardisDeferSharingCalc
 - New Deployment tips
 - Contributing documentation

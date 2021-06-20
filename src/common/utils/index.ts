@@ -176,11 +176,16 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
   }
   // Check if root
   else if (options.mustBeRoot) {
-    const gitRepoRoot = await git().revparse(["--show-toplevel"]);
+    const gitRepoRoot = await getGitRepoRoot();
     if (path.resolve(gitRepoRoot) !== path.resolve(process.cwd())) {
       throw new SfdxError(`You must be at the root of the git repository (${path.resolve(gitRepoRoot)})`);
     }
   }
+}
+
+export async function getGitRepoRoot() {
+  const gitRepoRoot = await git().revparse(["--show-toplevel"]);
+  return gitRepoRoot;
 }
 
 // Get local git branch name
@@ -482,8 +487,12 @@ export async function execCommand(
   } else {
     uxLog(this, commandLog);
   }
+  const execOptions: any =  { maxBuffer: 10000 * 10000 };
+  if (options.cwd) {
+    execOptions.cwd = options.cwd;
+  }
   try {
-    commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
+    commandResult = await exec(command, execOptions);
     if (spinner) {
       spinner.succeed();
     }
