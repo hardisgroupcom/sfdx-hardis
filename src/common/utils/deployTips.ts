@@ -172,6 +172,13 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       tip: `Replace Mine by Everything in the list view SFDX source XML`,
     },
     {
+      name: "marketing-user-issue",
+      label: "Campaign can not be updated",
+      expressionString: [`The object "Campaign" can't be updated`],
+      tip: `Add "MarketingUser" in project-scratch-def.json features
+If it is already done, you may manually check "MarketingUser" field on the scratch org user`,
+    },
+    {
       name: "missing-field-middle-name",
       label: "Missing field MiddleName",
       expressionString: ["field MiddleName", "Variable does not exist: MiddleName"],

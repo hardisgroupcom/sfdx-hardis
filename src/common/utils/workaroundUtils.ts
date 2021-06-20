@@ -10,7 +10,7 @@ export async function arrangeFilesBefore(commandThis: any, options: any = {}) {
   const tempDir = await createTempDir();
   const arrangedFiles = [];
   const arrangedLookupFields = await removeLookupFilters(tempDir,commandThis,options);
-  arrangedFiles.push(arrangedLookupFields);
+  arrangedFiles.push(...arrangedLookupFields);
   return arrangedFiles;
 }
 
@@ -20,6 +20,10 @@ export async function removeLookupFilters(tempDir: string,commandThis: any, opti
   const findFieldsPattern = (options.rootFolder || '.') + `/**/objects/**/fields/**.field-meta.xml`;
   const matchingFieldFiles = await glob(findFieldsPattern, { cwd: process.cwd() });
   for (const fieldFile of matchingFieldFiles) {
+    // skip if managed field
+    if ((path.basename(fieldFile).match(/__/g) || []).length === 2) {
+      continue ;
+    }
     const fieldXml = await parseXmlFile(fieldFile);
     if (fieldXml?.CustomField?.lookupFilter) {
       const backupFile = path.join(tempDir,fieldFile);

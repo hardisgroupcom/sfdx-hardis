@@ -4,6 +4,17 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.27.0] 2021-06-20
+
+- Clean Lookup filters before force:source:push, then restore them and push again
+- Manage `gitRootFolderPrefix` config property, in case the root of git repository is at a parent level than sfdx project root
+- Allow to override separate deployments using config property `separateDeploymentsConfig`
+- Set git config core.quotepath to false to manage special characters in git files / folders
+- Run sfdx git delta at the root of the git repository
+- Rename DeferSharingCalc permission set into SfdxHardisDeferSharingCalc
+- New Deployment tips
+- Contributing documentation
+
 ## [2.26.4] 2021-06-18
 
 - Do not write user config when current folder is empty
