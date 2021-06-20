@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.27.0] 2021-06-19
+## [2.27.0] 2021-06-20
 
 - Clean Lookup filters before force:source:push, then restore them and push again
 - Manage `gitRootFolderPrefix` config property, in case the root of git repository is at a parent level than sfdx project root
