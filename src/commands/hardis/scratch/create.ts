@@ -87,6 +87,7 @@ export default class ScratchCreate extends SfdxCommand {
     await this.initConfig();
     await this.createScratchOrg();
     try {
+      await this.updateScratchOrgUser();
       await this.installPackages();
       await this.initOrgMetadatas();
       await this.initPermissionSetAssignments();
@@ -269,6 +270,26 @@ export default class ScratchCreate extends SfdxCommand {
     uxLog(this, c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
   }
 
+  // Update scratch org user
+  public async updateScratchOrgUser() {
+    const config = await getConfig("user");
+    // Update scratch org main user
+    uxLog(this, c.cyan("Update / fix scratch org user " + this.scratchOrgUsername));
+    const userQueryCommand = `sfdx force:data:record:get -s User -w "Username=${this.scratchOrgUsername}" -u ${this.scratchOrgAlias}`;
+    const userQueryRes = await execSfdxJson(userQueryCommand, this, { fail: true, output: true, debug: this.debugMode });
+    let updatedUserValues = `LastName='SFDX-HARDIS' FirstName='Scratch Org'`;
+    // Fix country value is State & Country picklist activated
+    if ((this.projectScratchDef.features || []).includes("StateAndCountryPicklist") && userQueryRes.result.CountryCode == null) {
+      updatedUserValues += ` CountryCode='${config.defaultCountryCode || "FR"}' Country='${config.defaultCountry || "France"}'`;
+    }
+    if ((this.projectScratchDef.features || []).includes("MarketingUser") && userQueryRes.result.UserPermissionsMarketingUser === false) {
+      // Make sure MarketingUser is checked on scratch org user if it is supposed to be
+      updatedUserValues += " UserPermissionsMarketingUser=true";
+    }
+    const userUpdateCommand = `sfdx force:data:record:update -s User -i ${userQueryRes.result.Id} -v "${updatedUserValues}" -u ${this.scratchOrgAlias}`;
+    await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
+  }
+
   // Install packages
   public async installPackages() {
     const packages = this.configInfo.installedPackages || [];
@@ -277,23 +298,7 @@ export default class ScratchCreate extends SfdxCommand {
 
   // Push or deploy metadatas to the scratch org
   public async initOrgMetadatas() {
-    const config = await getConfig("user");
-    // Update scratch org main user
-    uxLog(this, c.cyan("Update / fix scratch org user "+this.scratchOrgUsername));
-    const userQueryCommand = `sfdx force:data:record:get -s User -w "Username=${this.scratchOrgUsername}" -u ${this.scratchOrgAlias}`;
-    const userQueryRes = await execSfdxJson(userQueryCommand, this, { fail: true, output: true, debug: this.debugMode });
-    let updatedUserValues = `LastName='SFDX-HARDIS' FirstName='Scratch Org'`;
-    // Fix country value
-    if ((this.projectScratchDef.features || []).includes("StateAndCountryPicklist") && userQueryRes.result.Country.length > 3) {
-      updatedUserValues+= ` Country='${config.defaultCountry || 'France'}'`;
-    }
-    if ((this.projectScratchDef.features || []).includes("MarketingUser") && userQueryRes.result.UserPermissionsMarketingUser === false) {
-      // Make sure MarketingUser is checked on scratch org user if it is supposed to be
-      updatedUserValues+= " UserPermissionsMarketingUser=true";
-    }
-    const userUpdateCommand = `sfdx force:data:record:update -s User -i ${userQueryRes.result.Id} -v "${updatedUserValues}" -u ${this.scratchOrgAlias}`;
-    await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
-    // Push or deploy according to config (default: push)
+     // Push or deploy according to config (default: push)
     if ((isCI && process.env.CI_SCRATCH_MODE === "deploy") || process.env.DEBUG_DEPLOY === "true") {
       // if CI, use force:source:deploy to make sure package.xml is consistent
       uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
