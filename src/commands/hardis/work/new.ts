@@ -65,7 +65,7 @@ export default class NewTask extends SfdxCommand {
       {
         type: "text",
         name: "targetBranch",
-        message: c.cyanBright("What will be the target branch of your new task ?"),
+        message: c.cyanBright("What will be the target branch of your new task ? (the branch where you will make your merge request after the task is completed)"),
         initial: config.developmentBranch || "developpement",
       },
       {
@@ -100,10 +100,7 @@ export default class NewTask extends SfdxCommand {
     ]);
 
     const targetBranch = response.targetBranch || "developpement";
-    // Update config if necessary
-    if (config.developmentBranch !== targetBranch) {
-      await setConfig("project", { developmentBranch: targetBranch });
-    }
+
     // Checkout development main branch
     const branchName = `${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(targetBranch)} on server...`));
@@ -113,6 +110,11 @@ export default class NewTask extends SfdxCommand {
     // Create new branch
     uxLog(this, c.cyan(`Creating new branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
+
+    // Update config if necessary
+    if (config.developmentBranch !== targetBranch) {
+      await setConfig("project", { developmentBranch: targetBranch });
+    }
 
     // Select/Create scratch org
     const currentOrg = await MetadataUtils.getCurrentOrg("scratch");
