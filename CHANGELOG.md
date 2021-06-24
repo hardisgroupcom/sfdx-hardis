@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.28.0] 2021-06-23
+- CI: Check Docker image security with [trivy](https://github.com/aquasecurity/trivy)
+- Avoid git error when development branch is updated
+
 ## [2.27.1] 2021-06-21
 
 - Fix CountryCode when updating scratch org user. Default FR - France, can be updated with config defaultCountry and defaultCountryCode in .sfdx-hardis.yml
