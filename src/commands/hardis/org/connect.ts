@@ -2,7 +2,9 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
+import { execCommand, isCI } from "../../../common/utils";
 import { promptOrg } from "../../../common/utils/orgUtils";
+import { prompts } from "../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -14,7 +16,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class OrgSelect extends SfdxCommand {
   public static title = "Connect to an org";
 
-  public static description = "Connect to an org without setting it as default username"
+  public static description = "Connect to an org without setting it as default username";
 
   public static examples = ["$ sfdx hardis:org:connect"];
 
@@ -47,7 +49,21 @@ export default class OrgSelect extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
 
+    // Prompt org to connect to
     const org = await promptOrg(this, { devHub: false, setDefault: false });
+
+    // Prompt user if he/she wants to open org in Web Browser
+    if (!isCI) {
+      const openRes = await prompts({
+        type: "confirm",
+        name: "value",
+        message: "Do you want to open this org in Web Browser ?",
+      });
+      if (openRes.value === true) {
+        const openCommand = `sfdx force:org:open --targetusername ${org.username}`;
+        await execCommand(openCommand, this, { fail: true, output: true, debug: this.debugMode });
+      }
+    }
 
     // Return an object to be displayed with --json
     return { outputString: `Connected to org ${org.username}` };
