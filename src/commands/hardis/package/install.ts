@@ -9,8 +9,8 @@ import * as path from "path";
 // import * as packages from '../../../../defaults/packages.json'
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { isCI, uxLog } from "../../../common/utils";
+import { managePackageConfig } from "../../../common/utils/orgUtils";
 import { prompts } from "../../../common/utils/prompts";
-import { getConfig, setConfig } from "../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -131,54 +131,8 @@ export default class PackageVersionInstall extends SfdxCommand {
     uxLog(this, c.italic(c.grey("New package list on org:\n" + JSON.stringify(installedPackages, null, 2))));
 
     if (!isCI) {
-      // Add package installation to project .sfdx-hardis.yml
-      const config = await getConfig("project");
-      const projectPackages = config.installedPackages || [];
-      let updated = false;
-      for (const installedPackage of installedPackages) {
-        const matchInstalled = packagesToInstallCompleted.filter(
-          (pckg) => pckg.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId
-        );
-        const matchLocal = projectPackages.filter(
-          (projectPackage) => installedPackage.SubscriberPackageVersionId === projectPackage.SubscriberPackageVersionId
-        );
-        if (matchInstalled.length > 0 && matchLocal.length === 0) {
-          // Request user about automatic installation during scratch orgs and deployments
-          const installResponse = await prompts({
-            type: "select",
-            name: "value",
-            message: c.cyanBright(`Please select the install configuration for ${installedPackage.SubscriberPackageName}`),
-            choices: [
-              {
-                title: `Install automatically ${installedPackage.SubscriberPackageName} on scratch orgs only`,
-                value: "scratch",
-              },
-              {
-                title: `Deploy automatically ${installedPackage.SubscriberPackageName} on integration/production orgs only`,
-                value: "deploy",
-              },
-              {
-                title: `Both: Install & deploy automatically ${installedPackage.SubscriberPackageName}`,
-                value: "scratch-deploy",
-              },
-              {
-                title: `Do not configure ${installedPackage.SubscriberPackageName} installation / deployment`,
-                value: "none",
-              },
-            ],
-          });
-          installedPackage.installOnScratchOrgs = installResponse.value.includes("scratch");
-          installedPackage.installDuringDeployments = installResponse.value.includes("deploy");
-          if (installResponse.value !== "none" && installResponse.value != null) {
-            projectPackages.push(installedPackage);
-            updated = true;
-          }
-        }
-      }
-      if (updated) {
-        uxLog(this, "Updating project sfdx-hardis config to packages are installed everytime");
-        await setConfig("project", { installedPackages: projectPackages });
-      }
+      // Manage package install config storage
+      await managePackageConfig(installedPackages,packagesToInstallCompleted);
     }
 
     /* disabled until sfdx multiple package deployment is working >_<
