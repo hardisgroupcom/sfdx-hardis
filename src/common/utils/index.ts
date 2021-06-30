@@ -494,11 +494,11 @@ export async function execCommand(
   try {
     commandResult = await exec(command, execOptions);
     if (spinner) {
-      spinner.succeed();
+      spinner.succeed(commandLog);
     }
   } catch (e) {
     if (spinner) {
-      spinner.fail();
+      spinner.fail(commandLog);
     }
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json

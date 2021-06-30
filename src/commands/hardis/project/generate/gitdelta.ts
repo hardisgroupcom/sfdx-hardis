@@ -4,7 +4,16 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as path from "path";
-import { createTempDir, ensureGitRepository, execCommand, getGitRepoRoot, git, selectGitBranch, uxLog } from "../../../../common/utils";
+import {
+  createTempDir,
+  ensureGitRepository,
+  execCommand,
+  getGitRepoRoot,
+  git,
+  gitCheckOutRemote,
+  selectGitBranch,
+  uxLog,
+} from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
@@ -22,6 +31,15 @@ export default class GenerateGitDelta extends SfdxCommand {
   public static examples = ["$ sfdx hardis:project:generate:gitdelta"];
 
   protected static flagsConfig = {
+    branch: flags.string({
+      description: "Git branch to use to generate delta",
+    }),
+    fromcommit: flags.string({
+      description: "Hash of commit to start from",
+    }),
+    tocommit: flags.string({
+      description: "Hash of commit to stop at",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -46,47 +64,60 @@ export default class GenerateGitDelta extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    let gitBranch = this.flags.branch || null;
+    let fromCommit = this.flags.fromcommit || null;
+    let toCommit = this.flags.fromcommit || null;
     this.debugMode = this.flags.debugMode || false;
     // Check git repo
     await ensureGitRepository();
 
     // Select git branch
-    const currentGitBranch = await selectGitBranch({remote: true,checkOutPull:true});
+    if (gitBranch === null) {
+      gitBranch = await selectGitBranch({ remote: true, checkOutPull: true });
+    } else {
+      await gitCheckOutRemote(gitBranch);
+    }
 
-    // Retrieving info about current branch latest commit and master branch latest commit
-    const logResult = await git().log([`${currentGitBranch}..${currentGitBranch}`]);
-    const toCommit = logResult.latest;
-    const mergeBaseCommand = `git merge-base ${currentGitBranch} ${currentGitBranch}`;
-    const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {
-      fail: true,
-      debug: this.debugMode,
-    });
-    const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace("\n", "").replace("\r", "");
+    // List branch commits
+    const branchCommits = await git().log(['--first-parent']);
+    const branchCommitsChoices = branchCommits.all.map((commit) => {
+      return {
+        title: commit.message,
+        description: `${commit.author_name} on ${new Date(commit.date).toLocaleString()}`,
+        value: commit,
+      };
+    })
 
-    // Prompt user with default values
-    const commitsResp = await prompts([
-      {
-        type: "text",
-        name: "commitFrom",
-        message: "Please input the commit hash that you want to start from",
-        initial: masterBranchLatestCommit
-      },
-      {
-        type: "text",
-        name: "commitTo",
-        message: "Please input the commit hash that you want to go to",
-        initial: toCommit || masterBranchLatestCommit
-      },
-    ]);
+    // Prompt fromCommit
+    if (fromCommit === null) {
+      const commitFromResp = await prompts({
+        type: "select",
+        name: "value",
+        message: "Please select the commit that you want to start from",
+        choices: branchCommitsChoices
+      });
+      fromCommit = commitFromResp.value.hash;
+    }
+
+    // Prompt toCommit
+    if (toCommit === null) {
+      const commitToResp = await prompts({
+        type: "select",
+        name: "value",
+        message: "Please select the commit hash that you want to go to",
+        choices: branchCommitsChoices
+      });
+      toCommit = commitToResp.value.hash;
+    }
 
     // Generate package.xml & destructiveChanges.xml using sfdx git delta
     const tmpDir = await createTempDir();
-    const packageXmlCommand = `sfdx sgd:source:delta` + ` --from ${commitsResp.commitFrom}` + ` --to ${commitsResp.commitTo} --output ${tmpDir}`;
+    const packageXmlCommand = `sfdx sgd:source:delta` + ` --from ${fromCommit}` + ` --to ${toCommit} --output ${tmpDir}`;
     await execCommand(packageXmlCommand, this, {
       output: true,
       fail: true,
       debug: this.debugMode,
-      cwd: (await getGitRepoRoot())
+      cwd: await getGitRepoRoot(),
     });
 
     const diffPackageXml = path.join(tmpDir, "package", "package.xml");
