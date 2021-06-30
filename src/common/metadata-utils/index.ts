@@ -420,6 +420,7 @@ class MetadataUtils {
     }
     const alreadyInstalled = await execSfdxJson(listCommand, commandThis, {
       fail: true,
+      output:true
     });
     return alreadyInstalled?.result || [];
   }

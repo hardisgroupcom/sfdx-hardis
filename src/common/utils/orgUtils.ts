@@ -5,7 +5,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { execSfdxJson, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
-import { setConfig } from "../../config";
+import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
 
 export async function listProfiles(conn: any) {
@@ -72,7 +72,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
     }),
   });
 
-  let org = orgResponse.org ;
+  let org = orgResponse.org;
 
   // Cancel
   if (org.cancel === true) {
@@ -92,12 +92,11 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   }
 
   // Token is expired: login again to refresh it
-  if (org?.connectedStatus === 'RefreshTokenAuthError') {
-    uxLog(this,c.yellow(`Your authentication is expired. Please login again in the web browser`));
-    const loginCommand = "sfdx auth:web:login" +
-    ` --instanceurl ${org.instanceUrl}`;
-    const loginResult = await execSfdxJson(loginCommand, this, {fail:true, output:true});
-    org = loginResult.result ;
+  if (org?.connectedStatus === "RefreshTokenAuthError") {
+    uxLog(this, c.yellow(`Your authentication is expired. Please login again in the web browser`));
+    const loginCommand = "sfdx auth:web:login" + ` --instanceurl ${org.instanceUrl}`;
+    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: true });
+    org = loginResult.result;
   }
 
   if (options.setDefault === true) {
@@ -122,4 +121,55 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
   uxLog(commandThis, c.cyan(`Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
   return orgResponse.org;
+}
+
+// Add package installation to project .sfdx-hardis.yml
+export async function managePackageConfig(installedPackages, packagesToInstallCompleted) {
+  const config = await getConfig("project");
+  const projectPackages = config.installedPackages || [];
+  let updated = false;
+  for (const installedPackage of installedPackages) {
+    const matchInstalled = packagesToInstallCompleted.filter(
+      (pckg) => pckg.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId
+    );
+    const matchLocal = projectPackages.filter(
+      (projectPackage) => installedPackage.SubscriberPackageVersionId === projectPackage.SubscriberPackageVersionId
+    );
+    if (matchInstalled.length > 0 && matchLocal.length === 0) {
+      // Request user about automatic installation during scratch orgs and deployments
+      const installResponse = await prompts({
+        type: "select",
+        name: "value",
+        message: c.cyanBright(`Please select the install configuration for ${installedPackage.SubscriberPackageName}`),
+        choices: [
+          {
+            title: `Install automatically ${installedPackage.SubscriberPackageName} on scratch orgs only`,
+            value: "scratch",
+          },
+          {
+            title: `Deploy automatically ${installedPackage.SubscriberPackageName} on integration/production orgs only`,
+            value: "deploy",
+          },
+          {
+            title: `Both: Install & deploy automatically ${installedPackage.SubscriberPackageName}`,
+            value: "scratch-deploy",
+          },
+          {
+            title: `Do not configure ${installedPackage.SubscriberPackageName} installation / deployment`,
+            value: "none",
+          },
+        ],
+      });
+      installedPackage.installOnScratchOrgs = installResponse.value.includes("scratch");
+      installedPackage.installDuringDeployments = installResponse.value.includes("deploy");
+      if (installResponse.value !== "none" && installResponse.value != null) {
+        projectPackages.push(installedPackage);
+        updated = true;
+      }
+    }
+  }
+  if (updated) {
+    uxLog(this, "Updated package configuration in sfdx-hardis config");
+    await setConfig("project", { installedPackages: projectPackages });
+  }
 }

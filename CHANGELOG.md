@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.30.0] 2021-06-30
+
+- Update hardis:org:retrieve:packageconfig so it allows to select an org, and to update sfdx-hardis configuration
+
 ## [2.29.0] 2021-06-29
 
 - New command hardis:org:retrieve:sources:dx2 to assist call to force:source:retrieve using a package.xml file

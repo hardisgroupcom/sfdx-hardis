@@ -4,7 +4,8 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../../common/metadata-utils";
-import { setConfig } from "../../../../config";
+import { managePackageConfig, promptOrg } from "../../../../common/utils/orgUtils";
+import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -32,23 +33,37 @@ export default class RetrievePackageConfig extends SfdxCommand {
   };
 
   // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-
+  protected static supportsUsername = true;
+  protected static requiresUsername = false;
   // Comment this out if your command does not support a hub org username
   // protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  protected static requiresProject = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    let targetUsername = this.flags.targetusername || null;
+
+    // Prompt for organization if not sent
+    if (targetUsername == null) {
+      const org = await promptOrg(this, { setDefault: false });
+      targetUsername = org.username ;
+    }
+
     // Retrieve list of installed packages
-    const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+    const installedPackages = await MetadataUtils.listInstalledPackages(targetUsername, this);
+
     // Store list in config
-    await setConfig("project", {
-      installedPackages,
+    const updateConfigRes = await prompts({
+      type: "confirm",
+      name: "value",
+      message: c.cyanBright("Do you want to update your project configuration with this list of packages ?")
     });
+    if (updateConfigRes.value === true) {
+      await managePackageConfig(installedPackages,installedPackages)
+    }
 
     const message = `[sfdx-hardis] Successfully retrieved package config`;
     this.ux.log(c.green(message));
