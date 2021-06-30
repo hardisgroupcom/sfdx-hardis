@@ -53,7 +53,7 @@ export const setConfig = async (layer: string, propValues: any): Promise<void> =
   if (layer === 'user' && fs.readdirSync(process.cwd()).length === 0) {
     uxLog(this,c.grey('Skip update user config file because current directory is empty'));
     return ;
-  } 
+  }
   const configSearchPlaces =
     layer === "project" ? projectConfigFiles : layer === "user" ? userConfigFiles : layer === "branch" ? await getBranchConfigFiles() : [];
   await setInConfigFile(configSearchPlaces, propValues);
@@ -90,7 +90,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   if (explorer != null) {
     explorer.clearCaches();
   }
-  uxLog(this, c.cyan(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`));
+  uxLog(this, c.magentaBright(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`));
 }
 
 // Check configuration of project so it works with sfdx-hardis

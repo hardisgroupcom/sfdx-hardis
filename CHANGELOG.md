@@ -4,7 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.29.0] 2021-06-29
+
+- New command hardis:org:retrieve:sources:dx2 to assist call to force:source:retrieve using a package.xml file
+- Improve hardis:project:generate:gitdelta by allowing to select commits from their description
+- Use magenta to display config file updates
+
 ## [2.28.0] 2021-06-23
+
 - CI: Check Docker image security with [trivy](https://github.com/aquasecurity/trivy)
 - Avoid git error when development branch is updated
 
