@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.31.0] 2021-07-02
 
-- New command **hardis:scratch:delete** to delete scratch orgs locally referenced
+- New command **hardis:scratch:delete** to delete scratch orgs locally referenced.
 
 ## [2.30.1] 2021-06-30
 

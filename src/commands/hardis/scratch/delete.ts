@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { execCommand, execSfdxJson, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
-import * as c from 'chalk';
+import * as c from "chalk";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class ScratchDelete extends SfdxCommand {
-  public static title = "Delete scratch orgs(a)";
+  public static title = "Delete scratch orgs(s)";
 
   public static description = "Deletes a scratch org";
 
@@ -37,7 +37,7 @@ export default class ScratchDelete extends SfdxCommand {
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
-  // protected static supportsDevhubUsername = true;
+  protected static supportsDevhubUsername = true;
 
   /* jscpd:ignore-end */
 
@@ -45,11 +45,20 @@ export default class ScratchDelete extends SfdxCommand {
     const debugMode = this.flags.debug || false;
 
     // List all scratch orgs referenced on local computer
-    const orgListRequest = 'sfdx force:org:list';
-    const orgListResult = await execSfdxJson(orgListRequest,this,{fail: true,output:false,debug: debugMode});
-    const scratchOrgChoices = orgListResult.result.scratchOrgs.map( scratchInfo => {
-      return {title: scratchInfo.username, value: scratchInfo}
-    });
+    const orgListRequest = "sfdx force:org:list";
+    const hubOrgUsername = this.hubOrg.getUsername();
+    const orgListResult = await execSfdxJson(orgListRequest, this, { fail: true, output: false, debug: debugMode });
+    const scratchOrgChoices = orgListResult.result.scratchOrgs
+      .filter((scratchInfo) => {
+        return scratchInfo.devHubUsername === hubOrgUsername;
+      })
+      .map((scratchInfo) => {
+        return {
+          title: scratchInfo.username,
+          detail: `${scratchInfo.instanceUrl}, last used on ${new Date(scratchInfo.lastUsed).toLocaleDateString()}`,
+          value: scratchInfo,
+        };
+      });
 
     // Request user which scratch he/she wants to delete
     const scratchToDeleteRes = await prompts({
@@ -61,9 +70,9 @@ export default class ScratchDelete extends SfdxCommand {
 
     // Delete scratch orgs
     for (const scratchOrgToDelete of scratchToDeleteRes.value) {
-      const deleteCommand = `sfdx force:org:delete --targetusername ${scratchOrgToDelete.username}`;
-      await execCommand(deleteCommand,this,{fail:false,debug:debugMode,output:true});
-      uxLog(this,c.cyan(`Scratch org ${c.green(scratchOrgToDelete)} has been deleted`));
+      const deleteCommand = `sfdx force:org:delete --noprompt --targetusername ${scratchOrgToDelete.username}`;
+      await execCommand(deleteCommand, this, { fail: false, debug: debugMode, output: true });
+      uxLog(this, c.cyan(`Scratch org ${c.green(scratchOrgToDelete.username)} at ${scratchOrgToDelete.instanceUrl} has been deleted`));
     }
 
     // Return an object to be displayed with --json
