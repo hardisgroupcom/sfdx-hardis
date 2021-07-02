@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.31.0] 2021-07-02
+
+- New command **hardis:scratch:delete** to delete scratch orgs locally referenced.
+
 ## [2.30.1] 2021-06-30
 
 - hardis:org:connect : Propose user to open org in browser if not in CI
