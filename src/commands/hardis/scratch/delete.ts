@@ -5,6 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { execCommand, execSfdxJson, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
 import * as c from "chalk";
+import * as sortArray from "sort-array";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -48,14 +49,18 @@ export default class ScratchDelete extends SfdxCommand {
     const orgListRequest = "sfdx force:org:list";
     const hubOrgUsername = this.hubOrg.getUsername();
     const orgListResult = await execSfdxJson(orgListRequest, this, { fail: true, output: false, debug: debugMode });
-    const scratchOrgChoices = orgListResult.result.scratchOrgs
+    const scratchOrgsSorted = sortArray(orgListResult?.result?.scratchOrgs || [], {
+      by: ["username", "alias", "instanceUrl"],
+      order: ["asc", "asc", "asc"],
+    });
+    const scratchOrgChoices = scratchOrgsSorted
       .filter((scratchInfo) => {
         return scratchInfo.devHubUsername === hubOrgUsername;
       })
       .map((scratchInfo) => {
         return {
           title: scratchInfo.username,
-          detail: `${scratchInfo.instanceUrl}, last used on ${new Date(scratchInfo.lastUsed).toLocaleDateString()}`,
+          description: `${scratchInfo.instanceUrl}, last used on ${new Date(scratchInfo.lastUsed).toLocaleDateString()}`,
           value: scratchInfo,
         };
       });
