@@ -175,6 +175,7 @@
         "hardisprojectgenerategitdelta",
         "hardisprojectworktasknew",
         "hardisscratchcreate",
+        "hardisscratchdelete",
         "hardisscratchpull",
         "hardisscratchpush",
         "hardisworknew",
