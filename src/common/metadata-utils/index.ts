@@ -398,14 +398,14 @@ class MetadataUtils {
   }
 
   // List local orgs for user
-  public static async listLocalOrgs(type = "any") {
+  public static async listLocalOrgs(type = "any",options: any = {}) {
     const orgListResult = await execSfdxJson("sfdx force:org:list", this);
     if (type === "any") {
       return orgListResult?.result || [];
     } else if (type === "scratch") {
       return (
         orgListResult?.result?.scratchOrgs?.filter((org: any) => {
-          return org.status === "Active";
+          return org.status === "Active" && ((options.devHubUsername && org.devHubUsername !== options.devHubUsername)? false: true);
         }) || []
       );
     }

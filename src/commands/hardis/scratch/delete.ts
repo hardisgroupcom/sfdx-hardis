@@ -69,7 +69,7 @@ export default class ScratchDelete extends SfdxCommand {
     const scratchToDeleteRes = await prompts({
       type: "multiselect",
       name: "value",
-      message: c.cyanBright("What references do you want to clean from your SFDX project sources ?"),
+      message: c.cyanBright("Please select the list of scratch orgs you want to delete"),
       choices: scratchOrgChoices,
     });
 

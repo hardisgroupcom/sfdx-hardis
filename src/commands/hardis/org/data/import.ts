@@ -3,6 +3,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
+import { uxLog } from "../../../../common/utils";
 import { importData, selectDataWorkspace } from "../../../../common/utils/dataUtils";
 
 // Initialize Messages with the current plugin directory
@@ -63,8 +64,8 @@ export default class DataExport extends SfdxCommand {
     });
 
     // Set bac initial cwd
-    const message = `[sfdx-hardis] Successfully imported data from sfdmu workspace ${sfdmuPath}`;
-    this.ux.log(c.green(message));
+    const message = `[sfdx-hardis] Successfully imported data from sfdmu workspace ${c.bold(sfdmuPath)}`;
+    uxLog(this, c.green(message));
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 }

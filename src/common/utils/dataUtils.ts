@@ -8,7 +8,9 @@ import { prompts } from "./prompts";
 
 // Import data from sfdmu folder
 export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
-  uxLog(commandThis, c.cyan(`Importing data from ${c.green(sfdmuPath)} ...`));
+  const dtl = await getDataWorkspaceDetail(sfdmuPath);
+  uxLog(commandThis, c.cyan(`Importing data from ${c.green(dtl.full_label)} ...`));
+  uxLog(commandThis, c.italic(c.grey(dtl.description)));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
   const config = await getConfig("branch");
@@ -27,7 +29,9 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
 
 // Export data from sfdmu folder
 export async function exportData(sfdmuPath: string, commandThis: any, options: any = {}) {
-  uxLog(commandThis, c.cyan(`Exporting data from ${c.green(sfdmuPath)} ...`));
+  const dtl = await getDataWorkspaceDetail(sfdmuPath);
+  uxLog(commandThis, c.cyan(`Exporting data from ${c.green(dtl.full_label)} ...`));
+  uxLog(commandThis, c.italic(c.grey(dtl.description)));
   const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
   const dataImportCommand = `sfdx sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;
@@ -56,9 +60,30 @@ export async function selectDataWorkspace() {
     type: "select",
     name: "value",
     message: c.cyanBright("Please select a data workspace to export"),
-    choices: sfdmuFolders.map((sfdmuFolder) => {
-      return { title: sfdmuFolder, value: sfdmuFolder };
+    choices: sfdmuFolders.map(async (sfdmuFolder) => {
+      const dtl = await getDataWorkspaceDetail(sfdmuFolder);
+      return {
+        title: dtl.full_label,
+        description: dtl.description,
+        value: sfdmuFolder,
+      };
     }),
   });
   return sfdmuDirResult.value;
+}
+
+export async function getDataWorkspaceDetail(dataWorkspace: string) {
+  const exportFile = path.join(dataWorkspace, "export.json");
+  if (!fs.existsSync(exportFile)) {
+    throw new SfdxError(c.red(`Your SFDMU folder ${c.bold(dataWorkspace)} must contain an ${c.bold("export.json")} configuration file`));
+  }
+  const exportFileJson = JSON.parse(await fs.readFile(exportFile, "utf8"));
+  const folderName = dataWorkspace.match(/([^/]*)\/*$/)[1];
+  const hardisLabel = exportFileJson.sfdxHardisLabel || folderName;
+  const hardisDescription = exportFileJson.sfdxHardisDescription || dataWorkspace;
+  return {
+    full_label: `${folderName}${folderName != hardisLabel ?`: ${hardisLabel}`: ''}`,
+    label: hardisLabel,
+    description: hardisDescription,
+  };
 }
