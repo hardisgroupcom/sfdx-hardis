@@ -3,7 +3,9 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
+import { isCI, uxLog } from "../../../../common/utils";
 import { exportData, selectDataWorkspace } from "../../../../common/utils/dataUtils";
+import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -41,7 +43,7 @@ export default class DataExport extends SfdxCommand {
   // protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  protected static requiresProject = false;
 
   // List required plugins, their presence will be tested before running the command
   protected static requiresSfdxPlugins = ["sfdmu"];
@@ -57,14 +59,20 @@ export default class DataExport extends SfdxCommand {
       sfdmuPath = await selectDataWorkspace();
     }
 
+    // Select org
+    let orgUsername = this.org.getUsername();
+    if (!isCI) {
+      orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
+    }
+
     // Export data from org
     await exportData(sfdmuPath, this, {
-      sourceUsername: this.org.getUsername(),
+      sourceUsername: orgUsername,
     });
 
-    // Set bac initial cwd
-    const message = `[sfdx-hardis] Successfully exported data from sfdmu workspace ${sfdmuPath}`;
-    this.ux.log(c.green(message));
-    return { orgId: this.org.getOrgId(), outputString: message };
+    // Output message
+    const message = `Successfully exported data from sfdmu project ${c.green(sfdmuPath)} from org ${c.green(orgUsername)}`;
+    uxLog(this,c.cyan(message));
+    return { outputString: message };
   }
 }

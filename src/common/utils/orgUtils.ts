@@ -123,6 +123,20 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   return orgResponse.org;
 }
 
+export async function promptOrgUsernameDefault(commandThis: any,defaultOrg: string, options: any = { devHub: false, setDefault: true }) {
+  const defaultOrgRes = await prompts({
+    type: "confirm",
+    message: `Do you want to use org ${defaultOrg}`
+  });
+  if (defaultOrgRes.value === true) {
+    return defaultOrg;
+  }
+  else {
+    const selectedOrg = await promptOrg(commandThis, options);
+    return selectedOrg.username ;
+  }
+}
+
 // Add package installation to project .sfdx-hardis.yml
 export async function managePackageConfig(installedPackages, packagesToInstallCompleted) {
   const config = await getConfig("project");
