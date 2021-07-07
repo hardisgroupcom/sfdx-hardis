@@ -59,7 +59,7 @@ export default class DataExport extends SfdxCommand {
       sfdmuPath = await selectDataWorkspace();
     }
 
-    // Select org
+    // Select org that will be used to export records
     let orgUsername = this.org.getUsername();
     if (!isCI) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });

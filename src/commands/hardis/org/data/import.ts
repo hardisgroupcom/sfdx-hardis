@@ -52,14 +52,13 @@ export default class DataExport extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     let sfdmuPath = this.flags.path || null;
-    //const debugMode = this.flags.debug || false;
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
       sfdmuPath = await selectDataWorkspace();
     }
 
-    // Select org
+    // Select org that where records will be imported
     let orgUsername = this.org.getUsername();
     if (!isCI) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });

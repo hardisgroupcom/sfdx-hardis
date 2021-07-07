@@ -10,6 +10,7 @@
     "**/.github/**",
     "**/.idea/**",
     "**/report/**",
+    "**/org/data/import.ts",
     "**/README.md",
     "**/commands/hardis/work/**"
   ]
