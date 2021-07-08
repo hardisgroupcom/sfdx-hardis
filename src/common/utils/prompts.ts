@@ -24,6 +24,10 @@ export async function prompts(options) {
       ];
       question.initial = question.initial === false ? 1 : 0;
     }
+    // Default output value "value"
+    if (question.name === null || question.name === undefined) {
+      question.name = "value";
+    }
     // Add exit option when possible
     if (question.type === "select") {
       question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });

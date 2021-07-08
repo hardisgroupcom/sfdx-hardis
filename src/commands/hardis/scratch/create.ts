@@ -177,9 +177,10 @@ export default class ScratchCreate extends SfdxCommand {
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
     // Check current scratch org
     const orgListResult = await execSfdxJson("sfdx force:org:list", this);
+    const hubOrgUsername = this.hubOrg.getUsername();
     const matchingScratchOrgs =
       orgListResult?.result?.scratchOrgs?.filter((org: any) => {
-        return org.alias === this.scratchOrgAlias && org.status === "Active";
+        return org.alias === this.scratchOrgAlias && org.status === "Active" && org.devHubUsername === hubOrgUsername;
       }) || [];
     // Reuse existing scratch org
     if (matchingScratchOrgs?.length > 0 && !this.forceNew) {
@@ -276,7 +277,7 @@ export default class ScratchCreate extends SfdxCommand {
     // Update scratch org main user
     uxLog(this, c.cyan("Update / fix scratch org user " + this.scratchOrgUsername));
     const userQueryCommand = `sfdx force:data:record:get -s User -w "Username=${this.scratchOrgUsername}" -u ${this.scratchOrgAlias}`;
-    const userQueryRes = await execSfdxJson(userQueryCommand, this, { fail: true, output: true, debug: this.debugMode });
+    const userQueryRes = await execSfdxJson(userQueryCommand, this, { fail: true, output: false, debug: this.debugMode });
     let updatedUserValues = `LastName='SFDX-HARDIS' FirstName='Scratch Org'`;
     // Fix country value is State & Country picklist activated
     if ((this.projectScratchDef.features || []).includes("StateAndCountryPicklist") && userQueryRes.result.CountryCode == null) {
@@ -393,6 +394,7 @@ export default class ScratchCreate extends SfdxCommand {
 
   // Loads data in the org
   public async initOrgData() {
+    // ScratchInit folder (accounts, etc...)
     const scratchInitDataFolder = path.join(".", "scripts", "data", "ScratchInit");
     if (fs.existsSync(scratchInitDataFolder)) {
       uxLog(this, c.cyan("Loading scratch org initialization data..."));
@@ -402,5 +404,20 @@ export default class ScratchCreate extends SfdxCommand {
     } else {
       uxLog(this, c.cyan(`No initialization data: Define a sfdmu workspace in ${scratchInitDataFolder} if you need data in your new scratch orgs`));
     }
+
+    // Import data packages
+    const config = await getConfig("user");
+    const dataPackages = config.dataPackages || [];
+    for (const dataPackage of dataPackages) {
+      if (dataPackage.importInScratchOrgs === true) {
+        await importData(dataPackage.dataPath, this, {
+          targetUsername: this.scratchOrgUsername,
+        });
+      }
+      else {
+        uxLog(this,c.grey(`Skipped import of ${dataPackage.dataPath} as importInScratchOrgs is not defined to true in .sfdx-hardis.yml`));
+      }
+    }
+
   }
 }

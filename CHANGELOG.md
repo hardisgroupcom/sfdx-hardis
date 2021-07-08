@@ -4,6 +4,25 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.31.1] 2021-07-06
+
+- **hardis:scratch:create**: Initialize data using SFDMU, if defined in .sfdx-hardis.json `dataPackages` property with `importInScratchOrgs: true`
+  - Example
+
+```yaml
+dataPackages:
+  - dataPath: scripts/data/LightningSchedulerConfig
+    importInScratchOrgs: true
+```
+
+- Propose to update or not default target git branch
+- List target git branches if defined in .sfdx-hardis.json `availableTargetBranches` property
+- **hardis:scratch:delete**: Propose only scratch orgs related to currently selected Dev Hub
+- New command **hardis:org:configure:data** to initialize a SFDMU project, sfdx-hardis flavored
+- Display data package label & description, from SFDMU folder config.json properties `sfdxHardisLabel` and `sfdxHardisDescription`
+- **hardis:org:data:import** & **hardis:org:data:import**: Allow to select current org or another when running data import/export commands
+- Display Dev Hub username when listing orgs for selection
+
 ## [2.31.1] 2021-07-02
 
 - **hardis:scratch:delete** : Display instanceUrl & last usage of scratch orgs displayed before deletion

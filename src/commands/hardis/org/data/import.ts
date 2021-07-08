@@ -3,7 +3,9 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
+import { isCI, uxLog } from "../../../../common/utils";
 import { importData, selectDataWorkspace } from "../../../../common/utils/dataUtils";
+import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -41,7 +43,7 @@ export default class DataExport extends SfdxCommand {
   // protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  protected static requiresProject = false;
 
   // List required plugins, their presence will be tested before running the command
   protected static requiresSfdxPlugins = ["sfdmu"];
@@ -50,21 +52,26 @@ export default class DataExport extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     let sfdmuPath = this.flags.path || null;
-    //const debugMode = this.flags.debug || false;
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
       sfdmuPath = await selectDataWorkspace();
     }
 
+    // Select org that where records will be imported
+    let orgUsername = this.org.getUsername();
+    if (!isCI) {
+      orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
+    }
+
     // Export data from org
     await importData(sfdmuPath, this, {
-      targetUsername: this.org.getUsername(),
+      targetUsername: orgUsername,
     });
 
-    // Set bac initial cwd
-    const message = `[sfdx-hardis] Successfully imported data from sfdmu workspace ${sfdmuPath}`;
-    this.ux.log(c.green(message));
-    return { orgId: this.org.getOrgId(), outputString: message };
+    // Output message
+    const message = `Successfully import data from sfdmu project ${c.green(sfdmuPath)} into org ${c.green(orgUsername)}`;
+    uxLog(this,c.cyan(message));
+    return { outputString: message };
   }
 }
