@@ -1,0 +1,2 @@
+# hardis:project:configure:auth
+

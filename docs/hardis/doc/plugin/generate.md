@@ -1,0 +1,2 @@
+# hardis:doc:plugin:generate
+
