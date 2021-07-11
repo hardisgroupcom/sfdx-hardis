@@ -2,7 +2,7 @@
     "$id": "http://github.com/hardisgroupcom/sfdx-hardis.json",
     "$schema": "http://json-schema.org/draft-07/schema",
     "additionalProperties": false,
-    "description": "Descriptor definition for Mega-Linter",
+    "description": "Configuration file definition for sfdx-hardis Salesforce DX plugin",
     "properties": {
         "autoCleanTypes": {
             "$id": "#/properties/autoCleanTypes",
@@ -187,6 +187,6 @@
             "type": "string"
         }        
     },
-    "title": "Mega-Linter descriptor",
+    "title": "sfdx-hardis configuration",
     "type": "object"
 }
