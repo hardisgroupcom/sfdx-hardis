@@ -75,7 +75,7 @@ export default class DocPluginGenerate extends SfdxCommand {
     await fs.copy(path.join(__dirname, "../../../../../defaults/mkdocs", "."), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
       uxLog(this, c.blue('Base mkdocs files copied in your sfdx plugin folder'));
-      uxLog(this, c.yellow('You should probably manually update mkdocs.yml with your plugin information'));
+      uxLog(this, c.yellow('You should probably manually update mkdocs.yml and build-deploy-docs.yml with your repo & plugin information'));
     }
 
     // Update mkdocs nav items

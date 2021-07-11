@@ -16,6 +16,7 @@ jobs:
           node-version: "12.x"
       - run: npm i sfdx-cli -g
       - run: echo y|sfdx plugins:install sfdx-hardis@alpha
+      - run: tsc
       - run: sfdx hardis:doc:plugin:generate
       # Deploy docs with mkdocs-material
       - uses: actions/setup-python@v2
