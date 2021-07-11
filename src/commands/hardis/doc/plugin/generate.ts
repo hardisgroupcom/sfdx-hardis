@@ -101,7 +101,9 @@ export default class DocPluginGenerate extends SfdxCommand {
 
   // Generate markdown doc for a single command
   public async generateCommandDoc(command: any) {
-    const lines = [];
+    const lines = [
+      "<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->"
+    ];
     // Title
     const titleLines = [
       `# ${command.id}`,

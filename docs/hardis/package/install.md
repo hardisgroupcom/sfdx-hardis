@@ -1,3 +1,4 @@
+<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:install
 
 ## Description
