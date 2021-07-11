@@ -1,0 +1,192 @@
+{
+    "$id": "http://github.com/hardisgroupcom/sfdx-hardis.json",
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "additionalProperties": false,
+    "description": "Descriptor definition for Mega-Linter",
+    "properties": {
+        "autoCleanTypes": {
+            "$id": "#/properties/autoCleanTypes",
+            "description": "When saving a sfdx-hardis task, the list of cleanings will be automatically applied to sfdx sources",
+            "examples": [
+                [
+                    "destructivechanges"
+                ]
+            ],
+            "items": {
+                "type": "string"
+            },
+            "title": "Auto-Cleaning types",
+            "type": "array"
+        },
+        "developmentBranch": {
+            "$id": "#/properties/developmentBranch",
+            "default": "developpement",
+            "description": "When creating a new sfdx-hardis task, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
+            "examples": [
+                "developpement",
+                "dev_lot2",
+                "hotfixes"
+            ],
+            "title": "Defaut pull/merge request target org",
+            "type": "string"
+        },
+        "deploymentPlan": {
+            "$id": "#/properties/deploymentPlan",
+            "description": "Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments",
+            "examples": [
+                {
+                    "deploymentPlan": {
+                      "packages": [
+                        {
+                          "label": "Import EmailTemplate records",
+                          "dataPath": "scripts/data/EmailTemplate",
+                          "order": -21
+                        },
+                        {
+                          "label": "Deploy EmailTemplate",
+                          "packageXmlFile": "manifest/splits/packageXmlEmails.xml",
+                          "order": -20
+                        },
+                        {
+                          "label": "Deploy Flow-Workflow",
+                          "packageXmlFile": "manifest/splits/packageXmlFlowWorkflow.xml",
+                          "order": 6
+                        }
+                      ]
+                    }
+                  }
+            ],
+            "title": "Deployment plan",
+            "type": "object"
+        },
+        "devHubAlias": {
+            "$id": "#/properties/devHubAlias",
+            "default": "",
+            "description": "Dev Hub alias, usually DevHub_ProjectName",
+            "examples": [
+                "DevHub_MyClientMyProject",
+                "DevHub_GoogleGmail",
+                "DevHub_AppleIWatch"
+            ],
+            "title": "Dev Hub org alias",
+            "type": "string"
+        },
+        "devHubUsername": {
+            "$id": "#/properties/devHubUsername",
+            "default": "",
+            "description": "Dev Hub username, used to authenticate to DevHub from CI jobs",
+            "examples": [
+                "cicd-user@myclient.com",
+                "scratch-user@google.fr",
+                "scratch-user@apple.fr"
+            ],
+            "title": "Dev Hub Username",
+            "type": "string"
+        },
+        "initPermissionSets": {
+            "$id": "#/properties/initPermissionSets",
+            "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets",
+            "examples": [
+                [
+                    {
+                        "name": "MyPermissionSet"
+                    },
+                    {
+                        "name": "MyPermissionSetGroup"
+                    }
+                ]
+            ],
+            "items": {
+                "type": "object"
+            },
+            "title": "Initial Permission Sets",
+            "type": "array"
+        },
+        "installedPackages": {
+            "$id": "#/properties/installedPackages",
+            "description": "Defines the list of packages installed on the project. Use ",
+            "examples": [
+                [
+                    {
+                      "Id": "0A30N000000ALWrSAO",
+                      "SubscriberPackageId": "033b0000000Pf2AAAS",
+                      "SubscriberPackageName": "Declarative Lookup Rollup Summaries Tool",
+                      "SubscriberPackageNamespace": "dlrs",
+                      "SubscriberPackageVersionId": "04t0N000000IyYrQAK",
+                      "SubscriberPackageVersionName": "2.11",
+                      "SubscriberPackageVersionNumber": "2.11.0.1",
+                      "installOnScratchOrgs": false,
+                      "installDuringDeployments": true
+                    },
+                    {
+                      "Id": "0A35r000000GveVCAS",
+                      "SubscriberPackageId": "0330o000000B3vIAAS",
+                      "SubscriberPackageName": "Files Attachment Notes",
+                      "SubscriberPackageNamespace": "fan_astrea",
+                      "SubscriberPackageVersionId": "04t0o000003nRWAAA2",
+                      "SubscriberPackageVersionName": "Summer2021",
+                      "SubscriberPackageVersionNumber": "1.22.0.2",
+                      "installOnScratchOrgs": true,
+                      "installDuringDeployments": true
+                    }
+                  ]
+            ],
+            "items": {
+                "type": "object"
+            },
+            "title": "Installed Packages",
+            "type": "array"
+        },
+        "instanceUrl": {
+            "$id": "#/properties/instanceUrl",
+            "default": "",
+            "description": "Salesforce instance URL used by CI for deployment or backups",
+            "examples": [
+                "https://myclient.force.com",
+                "https://google.force.com",
+                "https://apple.force.com"
+            ],
+            "title": "Instance URL",
+            "type": "string"
+        },
+        "projectName": {
+            "$id": "#/properties/projectName",
+            "default": "",
+            "description": "Identifier for the project (can be the client and project)",
+            "examples": [
+                "MyClientMyProject",
+                "GoogleGmail",
+                "AppleIWatch"
+            ],
+            "title": "Project Name",
+            "type": "string"
+        },
+        "targetUsername": {
+            "$id": "#/properties/targetUsername",
+            "default": "",
+            "description": "Salesforce username used by CI for deployment or backups",
+            "examples": [
+                "deployments@myclient.com",
+                "deployments@google.fr",
+                "deployments@apple.com"
+            ],
+            "title": "Target Username",
+            "type": "string"
+        },
+        "upgradeGitIgnoreForceIgnore": {
+            "$id": "#/properties/upgradeGitIgnoreForceIgnore",
+            "default": "",
+            "description": "Defines if sfdx-hardis will propose to upgrade local .gitignore and .forceignore files",
+            "enum": [
+                "never"
+              ],
+            "examples": [
+                "never"
+            ],
+            "title": "Upgrade .gitignore & .forceignore",
+            "type": "string"
+        }        
+    },
+    "title": "Mega-Linter descriptor",
+    "type": "object"
+}
