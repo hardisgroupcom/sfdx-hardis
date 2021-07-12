@@ -27,6 +27,7 @@ After the first run, you need to update manually:
 
 - mkdocs.yml
 - .github/workflows/build-deploy-docs.yml
+- docs/javascripts/gtag.js , if you want Google Analytics tracking
 
 Then, activate Github pages, with "gh_pages" as target branch
 
