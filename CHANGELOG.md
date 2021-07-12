@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.41.0] 2021-07-11
 
 - Add [JSON Schema](https://www.schemastore.org/json/) for `.sfdx-hardis.yml` configuration files
+- Automatic SFDX Plugin documentation generation for any SFDX Plugin
 
 ## [2.40.0] 2021-07-08
 

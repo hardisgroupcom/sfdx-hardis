@@ -10,6 +10,9 @@ export const hook = async (options: any) => {
   if (!commandId.startsWith("hardis")) {
     return;
   }
+  if (commandId.startsWith("hardis:doc")) {
+    return;
+  }
 
   // Set only once restDeploy=false to improve performances
   const config = await getConfig("user");
