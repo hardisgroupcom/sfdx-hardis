@@ -1,0 +1,119 @@
+site_name: Sfdx-Hardis
+site_url: https://hardisgroupcom.github.io/sfdx-hardis
+repo_url: https://github.com/hardisgroupco/sfdx-hardis
+edit_uri: tree/master/docs
+site_author: Nicolas Vuillamy
+site_description: Salesforce DX Plugin by Hardis Group.
+copyright: >-
+  Copyright &copy; 2021 <a href="https://github.com/nvuillam">Nicolas
+  Vuillamy</a>
+theme:
+  name: material
+  custom_dir: docs/overrides
+  features:
+    - navigation.instant
+  logo: assets/images/salesforce-logo.png
+  favicon: assets/images/salesforce-icon.png
+  palette:
+    primary: light blue
+markdown_extensions:
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.snippets:
+      base_path: docs
+      check_paths: true
+  - mdx_truly_sane_lists
+  - attr_list
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
+  - javascripts/tables.js
+  - javascripts/gtag.js
+extra_css:
+  - stylesheets/extra.css
+extra:
+  social:
+    - icon: fontawesome/regular/question-circle
+      link: https://github.com/hardisgroupcom/sfdx-hardis/issues
+      title: Need help ? Post an issue :)
+    - icon: fontawesome/brands/github
+      link: https://github.com/hardisgroupcom/sfdx-hardis
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/nvuillam/mega-linter
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/NicolasVuillamy
+  generator: false
+nav:
+  - Home: index.md
+  - Commands:
+      hardis:
+        auth:
+          login: hardis/auth/login.md
+        config:
+          get: hardis/config/get.md
+        doc:
+          plugin:
+            generate: hardis/doc/plugin/generate.md
+        org:
+          configure:
+            data: hardis/org/configure/data.md
+            monitoring: hardis/org/configure/monitoring.md
+          connect: hardis/org/connect.md
+          data:
+            export: hardis/org/data/export.md
+            import: hardis/org/data/import.md
+          purge:
+            apexlog: hardis/org/purge/apexlog.md
+            flow: hardis/org/purge/flow.md
+          retrieve:
+            packageconfig: hardis/org/retrieve/packageconfig.md
+            sources:
+              dx: hardis/org/retrieve/sources/dx.md
+              dx2: hardis/org/retrieve/sources/dx2.md
+              metadata: hardis/org/retrieve/sources/metadata.md
+          select: hardis/org/select.md
+          test:
+            apex: hardis/org/test/apex.md
+        package:
+          create: hardis/package/create.md
+          install: hardis/package/install.md
+          version:
+            create: hardis/package/version/create.md
+            list: hardis/package/version/list.md
+            promote: hardis/package/version/promote.md
+        project:
+          audit:
+            apiversion: hardis/project/audit/apiversion.md
+            callincallout: hardis/project/audit/callincallout.md
+            remotesites: hardis/project/audit/remotesites.md
+          clean:
+            emptyitems: hardis/project/clean/emptyitems.md
+            hiddenitems: hardis/project/clean/hiddenitems.md
+            manageditems: hardis/project/clean/manageditems.md
+            orgmissingitems: hardis/project/clean/orgmissingitems.md
+            references: hardis/project/clean/references.md
+            retrievefolders: hardis/project/clean/retrievefolders.md
+            standarditems: hardis/project/clean/standarditems.md
+          configure:
+            auth: hardis/project/configure/auth.md
+          convert:
+            profilestopermsets: hardis/project/convert/profilestopermsets.md
+          create: hardis/project/create.md
+          deploy:
+            sources:
+              dx: hardis/project/deploy/sources/dx.md
+              metadata: hardis/project/deploy/sources/metadata.md
+          generate:
+            gitdelta: hardis/project/generate/gitdelta.md
+        scratch:
+          create: hardis/scratch/create.md
+          delete: hardis/scratch/delete.md
+          pull: hardis/scratch/pull.md
+          push: hardis/scratch/push.md
+        work:
+          new: hardis/work/new.md
+          refresh: hardis/work/refresh.md
+          resetselection: hardis/work/resetselection.md
+          save: hardis/work/save.md
+  - License: license.md
+  - Changelog: CHANGELOG.md

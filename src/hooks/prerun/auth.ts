@@ -19,7 +19,7 @@ import { checkConfig, getConfig } from "../../config";
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || "";
-  if (!commandId.startsWith("hardis") || ["hardis:source:push", "hardis:source:pull"].includes(commandId)) {
+  if (!commandId.startsWith("hardis") || ["hardis:doc:plugin:generate","hardis:source:push", "hardis:source:pull"].includes(commandId)) {
     return;
   }
   // skip if during mocha tests
