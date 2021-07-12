@@ -133,7 +133,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     for (const command of sortArray(config.commands,{by: ["id"],order: ["asc"]})) {
       const section = command.id.split(":")[0] + ":" + command.id.split(":")[1];
       if (section !== currentSection) {
-        lines.push(...["", `### ${section}`, "", "|Command|Description|", "|:------|:----------|"]);
+        lines.push(...["", `### ${section}`, "", "|:------|:----------|"]);
         currentSection = section;
       }
       const commandInstance = command.load();
