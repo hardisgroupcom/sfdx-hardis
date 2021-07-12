@@ -22,10 +22,13 @@ export default class DocPluginGenerate extends SfdxCommand {
   public static title = "Generate SFDX Plugin Documentation";
 
   public static description = `Generate Markdown documentation ready for HTML conversion with mkdocs
+
 After the first run, you need to update manually:
 - mkdocs.yml
 - .github/workflows/build-deploy-docs.yml
+
 Then, activate Github pages, with "gh_pages" as target branch
+
 At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages
 `;
 
