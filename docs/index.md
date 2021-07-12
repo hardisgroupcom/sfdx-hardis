@@ -10,21 +10,25 @@ Hardis-Group Toolbox for Salesforce DX
 
 ### hardis:auth
 
+|Command|Title|
 |:------|:----------|
 |[**hardis:auth:login**](hardis/auth/login.md)|Login|
 
 ### hardis:config
 
+|Command|Title|
 |:------|:----------|
 |[**hardis:config:get**](hardis/config/get.md)|Deploy metadata sources to org|
 
 ### hardis:doc
 
+|Command|Title|
 |:------|:----------|
 |[**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)|Generate SFDX Plugin Documentation|
 
 ### hardis:org
 
+|Command|Title|
 |:------|:----------|
 |[**hardis:org:configure:data**](hardis/org/configure/data.md)|Configure Data project|
 |[**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)|Configure org monitoring|
@@ -42,6 +46,7 @@ Hardis-Group Toolbox for Salesforce DX
 
 ### hardis:package
 
+|Command|Title|
 |:------|:----------|
 |[**hardis:package:create**](hardis/package/create.md)|Create a new package|
 |[**hardis:package:install**](hardis/package/install.md)|Install packages in an org|
@@ -51,6 +56,7 @@ Hardis-Group Toolbox for Salesforce DX
 
 ### hardis:project
 
+|Command|Title|
 |:------|:----------|
 |[**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)|Audit Metadatas API Version|
 |[**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)|Audit CallIns and CallOuts|
@@ -71,6 +77,7 @@ Hardis-Group Toolbox for Salesforce DX
 
 ### hardis:scratch
 
+|Command|Title|
 |:------|:----------|
 |[**hardis:scratch:create**](hardis/scratch/create.md)|Create and initialize scratch org|
 |[**hardis:scratch:delete**](hardis/scratch/delete.md)|Delete scratch orgs(s)|
@@ -79,6 +86,7 @@ Hardis-Group Toolbox for Salesforce DX
 
 ### hardis:work
 
+|Command|Title|
 |:------|:----------|
 |[**hardis:work:new**](hardis/work/new.md)|New work task|
 |[**hardis:work:refresh**](hardis/work/refresh.md)|Refresh work task|
