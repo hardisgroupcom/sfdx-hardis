@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.41.0] 2021-07-11
+## [2.41.1] 2021-07-12
+
+- Quickfix default mkdocs.yml
+
+## [2.41.0] 2021-07-12
 
 - Add [JSON Schema](https://www.schemastore.org/json/) for `.sfdx-hardis.yml` configuration files
 - Automatic SFDX Plugin documentation generation for any SFDX Plugin
