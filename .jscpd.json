@@ -9,6 +9,7 @@
     "**/*cache*/**",
     "**/.github/**",
     "**/.idea/**",
+    "**/docs/**",
     "**/mkdocs/**",
     "**/report/**",
     "**/org/data/import.ts",
