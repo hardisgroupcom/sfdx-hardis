@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.41.2] 2021-07-12
+
+- QuickFix case when title is not set (use first line of description)
+
 ## [2.41.1] 2021-07-12
 
 - Quickfix default mkdocs.yml

@@ -80,7 +80,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     uxLog(this, yaml.dump(commandsNav));
 
     // Generate index.md
-    await this.generateIndexDoc(config,commandsLinks);
+    await this.generateIndexDoc(config, commandsLinks);
 
     // Copy default files (mkdocs.yml and other files can be updated by the sfdx plugin developer later)
     const mkdocsYmlFile = path.join(process.cwd(), "mkdocs.yml");
@@ -116,7 +116,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
   }
 
   // Generate index file
-  private async generateIndexDoc(config: any,commandsLinks: any) {
+  private async generateIndexDoc(config: any, commandsLinks: any) {
     const lines = [
       "<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->",
       "",
@@ -130,20 +130,20 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     ];
     // Build commands section
     let currentSection = "";
-    for (const command of sortArray(config.commands,{by: ["id"],order: ["asc"]})) {
+    for (const command of sortArray(config.commands, { by: ["id"], order: ["asc"] })) {
       const section = command.id.split(":")[0] + ":" + command.id.split(":")[1];
       if (section !== currentSection) {
         lines.push(...["", `### ${section}`, "", "|Command|Title|", "|:------|:----------|"]);
         currentSection = section;
       }
       const commandInstance = command.load();
-      lines.push(...[`|[**${command.id}**](${commandsLinks[command.id]})|${commandInstance.title}|`]);
+      const title = commandInstance.title ? commandInstance.title : commandInstance.description ? commandInstance.description.split("\n")[0] : "";
+      lines.push(...[`|[**${command.id}**](${commandsLinks[command.id]})|${title}|`]);
     }
     // write in index.md
-    const indexMdFile = path.join(process.cwd(),"docs","index.md");
+    const indexMdFile = path.join(process.cwd(), "docs", "index.md");
     const indexMdString = lines.join("\n") + "\n";
     await fs.writeFile(indexMdFile, indexMdString);
-
   }
 
   // Generate markdown doc for a single command
