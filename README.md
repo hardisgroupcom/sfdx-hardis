@@ -12,6 +12,8 @@
 
 Toolbox for Salesforce DX, by [Hardis-Group](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
 
+[**See Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis/)
+
 This toolbox contains commands than can be run locally or from CI.
 For the moment, it can :
 
