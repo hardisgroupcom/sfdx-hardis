@@ -9,10 +9,10 @@ export const hook = async (options: any) => {
   if (!commandId.startsWith("hardis")) {
     return;
   }
-  if (commandId.startsWith('hardis:doc')) {
-    return ;
+  if (commandId.startsWith("hardis:doc")) {
+    return;
   }
-  
+
   // Close WebSocketClient if existing
   if (globalThis.webSocketClient) {
     globalThis.webSocketClient.dispose();

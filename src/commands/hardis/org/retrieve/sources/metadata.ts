@@ -58,7 +58,7 @@ export default class DxSources extends SfdxCommand {
   protected static requiresSfdxPlugins = ["sfdx-essentials"];
 
   // Trigger notification(s) to MsTeams channel
-  protected static triggerNotification = true ;
+  protected static triggerNotification = true;
 
   /* jscpd:ignore-end */
 

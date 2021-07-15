@@ -53,7 +53,7 @@ export const hook = async (options: any) => {
           uxLog(this, `Defined ${email} as git user.email` + (email === "default@hardis-group.com") ? " (temporary)" : "");
         }
         // Manage special characters in git file / folder names
-        if (allConfigs["core.quotepath"] == null || allConfigs["core.quotepath"] == "true" ) {
+        if (allConfigs["core.quotepath"] == null || allConfigs["core.quotepath"] == "true") {
           await git({ output: true }).addConfig("core.quotepath", "false");
           uxLog(this, `Defined "false" as git core.quotepath`);
         }
@@ -80,7 +80,7 @@ export const hook = async (options: any) => {
 
   // Check required dependencies installed
   const requiresDependencies = options?.Command?.requiresDependencies || [];
-  requiresDependencies.push('git');
+  requiresDependencies.push("git");
   for (const appName of requiresDependencies) {
     await checkAppDependency(appName);
   }

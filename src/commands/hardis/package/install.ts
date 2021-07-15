@@ -132,7 +132,7 @@ export default class PackageVersionInstall extends SfdxCommand {
 
     if (!isCI) {
       // Manage package install config storage
-      await managePackageConfig(installedPackages,packagesToInstallCompleted);
+      await managePackageConfig(installedPackages, packagesToInstallCompleted);
     }
 
     /* disabled until sfdx multiple package deployment is working >_<

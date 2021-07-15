@@ -278,7 +278,7 @@ export default class SaveTask extends SfdxCommand {
       output: true,
       fail: false,
       debug: this.debugMode,
-      cwd: (await getGitRepoRoot())
+      cwd: await getGitRepoRoot(),
     });
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml
@@ -335,10 +335,7 @@ export default class SaveTask extends SfdxCommand {
       }
     } else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
-      uxLog(
-        this,
-        c.red(`Unable to build git diff.${c.yellow(c.bold("Please update package.xml and destructiveChanges.xml manually"))}`)
-      );
+      uxLog(this, c.red(`Unable to build git diff.${c.yellow(c.bold("Please update package.xml and destructiveChanges.xml manually"))}`));
     }
 
     // Commit updates
@@ -377,7 +374,7 @@ export default class SaveTask extends SfdxCommand {
     for (const type of packageXml.Package.types || []) {
       const typeName = type.name[0];
       splitConfig = splitConfig.map((split) => {
-        if (split.types.includes(typeName) && type.members[0] !== '*') {
+        if (split.types.includes(typeName) && type.members[0] !== "*") {
           split.content[typeName] = type.members;
         }
         return split;
@@ -540,7 +537,7 @@ export default class SaveTask extends SfdxCommand {
   private async getSeparateDeploymentsConfig() {
     const config = await getConfig("project");
     if (config.separateDeploymentsConfig || config.separateDeploymentsConfig === false) {
-      return config.separateDeploymentConfig || [] ;
+      return config.separateDeploymentConfig || [];
     }
     const separateDeploymentConfig = [
       {

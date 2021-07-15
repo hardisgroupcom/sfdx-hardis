@@ -3,8 +3,8 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import * as fs from 'fs-extra';
-import * as path from 'path';
+import * as fs from "fs-extra";
+import * as path from "path";
 import { execCommand, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -18,12 +18,9 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class OrgPurgeFlow extends SfdxCommand {
   public static title = "Purge Apex Logs";
 
-  public static description = "Purge apex logs in selected org"
+  public static description = "Purge apex logs in selected org";
 
-  public static examples = [
-    `$ sfdx hardis:org:purge:apexlog`,
-    `$ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com`
-  ];
+  public static examples = [`$ sfdx hardis:org:purge:apexlog`, `$ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com`];
 
   // public static args = [{name: 'file'}];
 
@@ -61,9 +58,9 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const debugMode = this.flags.debug || false;
 
     // Build apex logs query
-    const tempDir = './tmp';
+    const tempDir = "./tmp";
     await fs.ensureDir(tempDir);
-    const apexLogsToDeleteCsv = path.join(tempDir,"ApexLogsToDelete_"+Math.random()+'.csv');
+    const apexLogsToDeleteCsv = path.join(tempDir, "ApexLogsToDelete_" + Math.random() + ".csv");
     const queryCommand = `sfdx force:data:soql:query -q "SELECT Id FROM ApexLog" -r "csv" > "${apexLogsToDeleteCsv}"`;
     await execCommand(queryCommand, this, {
       output: true,
@@ -71,11 +68,11 @@ export default class OrgPurgeFlow extends SfdxCommand {
       fail: true,
     });
 
-    const extractFile = (await fs.readFile(apexLogsToDeleteCsv,"utf8")).toString();
-    const apexLogsNumber = extractFile.split("\n").filter(line => line.length > 0).length;
+    const extractFile = (await fs.readFile(apexLogsToDeleteCsv, "utf8")).toString();
+    const apexLogsNumber = extractFile.split("\n").filter((line) => line.length > 0).length;
 
     if (apexLogsNumber === 0) {
-      uxLog(this,c.cyan(`There are no Apex Logs to delete in org ${c.green(this.org.getUsername())}`));
+      uxLog(this, c.cyan(`There are no Apex Logs to delete in org ${c.green(this.org.getUsername())}`));
       return {};
     }
 
@@ -84,10 +81,10 @@ export default class OrgPurgeFlow extends SfdxCommand {
       const confirmRes = await prompts({
         type: "confirm",
         name: "value",
-        message: `Do you want to delete ${c.bold(apexLogsNumber)} Apex Logs of org ${c.green(this.org.getUsername())} ?`
+        message: `Do you want to delete ${c.bold(apexLogsNumber)} Apex Logs of org ${c.green(this.org.getUsername())} ?`,
       });
       if (confirmRes.value === false) {
-        return {} ;
+        return {};
       }
     }
 
@@ -96,10 +93,10 @@ export default class OrgPurgeFlow extends SfdxCommand {
     await execCommand(deleteCommand, this, {
       output: true,
       debug: debugMode,
-      fail: true,      
+      fail: true,
     });
 
-    uxLog(this,c.green(`Successfully deleted ${c.bold(apexLogsNumber)} Apex Logs in org ${c.bold(this.org.getUsername())}`));
+    uxLog(this, c.green(`Successfully deleted ${c.bold(apexLogsNumber)} Apex Logs in org ${c.bold(this.org.getUsername())}`));
 
     // Return an object to be displayed with --json
     return { orgId: this.org.getOrgId() };

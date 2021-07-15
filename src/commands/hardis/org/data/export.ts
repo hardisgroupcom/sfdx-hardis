@@ -72,7 +72,7 @@ export default class DataExport extends SfdxCommand {
 
     // Output message
     const message = `Successfully exported data from sfdmu project ${c.green(sfdmuPath)} from org ${c.green(orgUsername)}`;
-    uxLog(this,c.cyan(message));
+    uxLog(this, c.cyan(message));
     return { outputString: message };
   }
 }

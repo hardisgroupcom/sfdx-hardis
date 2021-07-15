@@ -58,7 +58,7 @@ export async function selectDataWorkspace() {
     throw new SfdxError("There is no sfdmu folder in your workspace. Create them using sfdmu: https://help.sfdmu.com/");
   }
   const choices: any = [];
-  for (const sfdmuFolder of sfdmuFolders){
+  for (const sfdmuFolder of sfdmuFolders) {
     const dtl = await getDataWorkspaceDetail(sfdmuFolder);
     choices.push({
       title: dtl.full_label,
@@ -70,7 +70,7 @@ export async function selectDataWorkspace() {
     type: "select",
     name: "value",
     message: c.cyanBright("Please select a data workspace to export"),
-    choices: choices
+    choices: choices,
   });
   return sfdmuDirResult.value;
 }
@@ -85,7 +85,7 @@ export async function getDataWorkspaceDetail(dataWorkspace: string) {
   const hardisLabel = exportFileJson.sfdxHardisLabel || folderName;
   const hardisDescription = exportFileJson.sfdxHardisDescription || dataWorkspace;
   return {
-    full_label: `[${folderName}]${folderName != hardisLabel ?`: ${hardisLabel}`: ''}`,
+    full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ""}`,
     label: hardisLabel,
     description: hardisDescription,
   };
