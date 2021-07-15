@@ -299,7 +299,7 @@ export default class ScratchCreate extends SfdxCommand {
 
   // Push or deploy metadatas to the scratch org
   public async initOrgMetadatas() {
-     // Push or deploy according to config (default: push)
+    // Push or deploy according to config (default: push)
     if ((isCI && process.env.CI_SCRATCH_MODE === "deploy") || process.env.DEBUG_DEPLOY === "true") {
       // if CI, use force:source:deploy to make sure package.xml is consistent
       uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
@@ -413,11 +413,9 @@ export default class ScratchCreate extends SfdxCommand {
         await importData(dataPackage.dataPath, this, {
           targetUsername: this.scratchOrgUsername,
         });
-      }
-      else {
-        uxLog(this,c.grey(`Skipped import of ${dataPackage.dataPath} as importInScratchOrgs is not defined to true in .sfdx-hardis.yml`));
+      } else {
+        uxLog(this, c.grey(`Skipped import of ${dataPackage.dataPath} as importInScratchOrgs is not defined to true in .sfdx-hardis.yml`));
       }
     }
-
   }
 }

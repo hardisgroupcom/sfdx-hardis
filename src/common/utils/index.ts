@@ -204,7 +204,7 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
 export async function selectGitBranch(options: { remote: true; checkOutPull: boolean } = { remote: true, checkOutPull: false }) {
   const gitBranchOptions = ["--list"];
   if (options.remote) {
-    gitBranchOptions.push('-r');
+    gitBranchOptions.push("-r");
   }
   const branches = await git().branch(gitBranchOptions);
   const branchResp = await prompts({
@@ -212,10 +212,10 @@ export async function selectGitBranch(options: { remote: true; checkOutPull: boo
     name: "value",
     message: "Please select a Git branch",
     choices: branches.all.map((branchName) => {
-      return { title: branchName.replace('origin/',''), value: branchName.replace('origin/','') };
+      return { title: branchName.replace("origin/", ""), value: branchName.replace("origin/", "") };
     }),
   });
-  const branch = branchResp.value ;
+  const branch = branchResp.value;
   // Checkout & pull if requested
   if (options.checkOutPull) {
     await gitCheckOutRemote(branch);
@@ -298,8 +298,8 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         fileStatus.path = fileStatus.path.slice(0, -1);
       }
       if (config.gitRootFolderPrefix) {
-        uxLog(this,c.red(fileStatus.path));
-        fileStatus.path = fileStatus.path.replace(config.gitRootFolderPrefix,"");
+        uxLog(this, c.red(fileStatus.path));
+        fileStatus.path = fileStatus.path.replace(config.gitRootFolderPrefix, "");
       }
       return fileStatus;
     });
@@ -487,7 +487,7 @@ export async function execCommand(
   } else {
     uxLog(this, commandLog);
   }
-  const execOptions: any =  { maxBuffer: 10000 * 10000 };
+  const execOptions: any = { maxBuffer: 10000 * 10000 };
   if (options.cwd) {
     execOptions.cwd = options.cwd;
   }

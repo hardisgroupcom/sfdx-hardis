@@ -49,7 +49,7 @@ export default class RetrievePackageConfig extends SfdxCommand {
     // Prompt for organization if not sent
     if (targetUsername == null) {
       const org = await promptOrg(this, { setDefault: false });
-      targetUsername = org.username ;
+      targetUsername = org.username;
     }
 
     // Retrieve list of installed packages
@@ -59,10 +59,10 @@ export default class RetrievePackageConfig extends SfdxCommand {
     const updateConfigRes = await prompts({
       type: "confirm",
       name: "value",
-      message: c.cyanBright("Do you want to update your project configuration with this list of packages ?")
+      message: c.cyanBright("Do you want to update your project configuration with this list of packages ?"),
     });
     if (updateConfigRes.value === true) {
-      await managePackageConfig(installedPackages,installedPackages)
+      await managePackageConfig(installedPackages, installedPackages);
     }
 
     const message = `[sfdx-hardis] Successfully retrieved package config`;

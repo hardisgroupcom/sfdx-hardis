@@ -1,10 +1,10 @@
-import * as c from 'chalk';
+import * as c from "chalk";
 import * as util from "util";
 import * as WebSocket from "ws";
 import { isCI, uxLog } from "./utils";
 
 let globalWs: WebSocketClient | null;
-let isWsOpen = false ;
+let isWsOpen = false;
 
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 
@@ -20,10 +20,9 @@ export class WebSocketClient {
       this.ws = new WebSocket(wsHostPort);
       globalWs = this;
       this.start();
-    } catch(err) {
-      uxLog(this,c.yellow('Warning: Unable to start WebSocket client on '+wsHostPort));
+    } catch (err) {
+      uxLog(this, c.yellow("Warning: Unable to start WebSocket client on " + wsHostPort));
     }
-
   }
 
   static isAlive(): boolean {
@@ -42,7 +41,7 @@ export class WebSocketClient {
 
   start() {
     this.ws.on("open", () => {
-      isWsOpen = true ;
+      isWsOpen = true;
       this.ws.send(
         JSON.stringify({
           event: "initClient",

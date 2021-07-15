@@ -6,7 +6,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 
-import {  execCommand, uxLog } from "../../../../../common/utils";
+import { execCommand, uxLog } from "../../../../../common/utils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { prompts } from "../../../../../common/utils/prompts";
 
@@ -61,7 +61,7 @@ export default class DxSources2 extends SfdxCommand {
     // Prompt for organization if not sent
     if (targetUsername == null) {
       const org = await promptOrg(this, { setDefault: false });
-      targetUsername = org.username ;
+      targetUsername = org.username;
     }
 
     // Prompt for package.xml if not sent
@@ -78,13 +78,13 @@ export default class DxSources2 extends SfdxCommand {
     if (!fs.existsSync(packageXml)) {
       throw new SfdxError(c.red("Package.xml file not found at " + packageXml));
     }
-    // Copy package.xml in /tmp if provided value is not withing project
+    // Copy package.xml in /tmp if provided value is not within project
     if (!path.resolve(packageXml).includes(path.resolve(process.cwd()))) {
       const packageXmlTmp = path.join(process.cwd(), "tmp", "retrievePackage.xml");
       await fs.ensureDir(path.dirname(packageXmlTmp));
       await fs.copy(packageXml, packageXmlTmp);
-      uxLog(this,c.grey(`Copied ${packageXml} to ${packageXmlTmp}`));
-      packageXml =  path.relative(process.cwd(), packageXmlTmp);
+      uxLog(this, c.grey(`Copied ${packageXml} to ${packageXmlTmp}`));
+      packageXml = path.relative(process.cwd(), packageXmlTmp);
     }
 
     // Retrieve sources
@@ -93,7 +93,7 @@ export default class DxSources2 extends SfdxCommand {
 
     // Set bac initial cwd
     const message = `[sfdx-hardis] Successfully retrieved sfdx sources from ${c.bold(targetUsername)} using ${c.bold(packageXml)}`;
-    uxLog(this,c.green(message));
+    uxLog(this, c.green(message));
     return { outputString: message };
   }
 }

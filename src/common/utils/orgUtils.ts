@@ -51,7 +51,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   // List all local orgs and request to user
   const orgListResult = await MetadataUtils.listLocalOrgs("any");
   const orgList = [
-    ...sortArray(orgListResult?.scratchOrgs || [], { by: ["devHubUsername","username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
+    ...sortArray(orgListResult?.scratchOrgs || [], { by: ["devHubUsername", "username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     ...sortArray(orgListResult?.nonScratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     { username: "Connect to another org", otherOrg: true },
     { username: "Cancel", cancel: true },
@@ -62,8 +62,8 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
     name: "org",
     message: c.cyanBright("Please select an org"),
     choices: orgList.map((org: any) => {
-      const title = (org.username || org.alias || org.instanceUrl);
-      const description = (title !== org.instanceUrl ? org.instanceUrl : "")+(org.devHubUsername?` (Hub: ${org.devHubUsername})`:'');
+      const title = org.username || org.alias || org.instanceUrl;
+      const description = (title !== org.instanceUrl ? org.instanceUrl : "") + (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : "");
       return {
         title: c.cyan(title),
         description: description || "-",
@@ -123,17 +123,16 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   return orgResponse.org;
 }
 
-export async function promptOrgUsernameDefault(commandThis: any,defaultOrg: string, options: any = { devHub: false, setDefault: true }) {
+export async function promptOrgUsernameDefault(commandThis: any, defaultOrg: string, options: any = { devHub: false, setDefault: true }) {
   const defaultOrgRes = await prompts({
     type: "confirm",
-    message: `Do you want to use org ${defaultOrg}`
+    message: `Do you want to use org ${defaultOrg}`,
   });
   if (defaultOrgRes.value === true) {
     return defaultOrg;
-  }
-  else {
+  } else {
     const selectedOrg = await promptOrg(commandThis, options);
-    return selectedOrg.username ;
+    return selectedOrg.username;
   }
 }
 

@@ -103,15 +103,7 @@ export default class DxSources extends SfdxCommand {
       retrieveOptions.keepMetadataTypes = keepMetadataTypes;
     }
     const packageXml = path.resolve(path.join(tempFolder, "package.xml"));
-    await MetadataUtils.retrieveMetadatas(
-      packageXml,
-      metadataFolder,
-      true,
-      filteredMetadatas,
-      retrieveOptions,
-      this,
-      debug
-    );
+    await MetadataUtils.retrieveMetadatas(packageXml, metadataFolder, true, filteredMetadatas, retrieveOptions, this, debug);
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {

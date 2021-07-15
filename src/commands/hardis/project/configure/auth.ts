@@ -49,7 +49,7 @@ export default class ConfigureAuth extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-  protected static requiresDependencies = ['openssl'];
+  protected static requiresDependencies = ["openssl"];
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {

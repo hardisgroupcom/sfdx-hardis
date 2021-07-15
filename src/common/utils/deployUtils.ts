@@ -36,8 +36,8 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
         debug: debug,
       });
       const configToSet = {};
-      configToSet[`tmp_${currentBranch}_pushed`] = true ;
-      await setConfig("user",configToSet);
+      configToSet[`tmp_${currentBranch}_pushed`] = true;
+      await setConfig("user", configToSet);
     }
   } catch (e) {
     await restoreArrangedFiles(arrangedFiles, commandThis);

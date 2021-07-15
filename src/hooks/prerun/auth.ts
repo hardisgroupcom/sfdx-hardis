@@ -19,7 +19,7 @@ import { checkConfig, getConfig } from "../../config";
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || "";
-  if (!commandId.startsWith("hardis") || ["hardis:doc:plugin:generate","hardis:source:push", "hardis:source:pull"].includes(commandId)) {
+  if (!commandId.startsWith("hardis") || ["hardis:doc:plugin:generate", "hardis:source:push", "hardis:source:pull"].includes(commandId)) {
     return;
   }
   // skip if during mocha tests
@@ -211,7 +211,7 @@ async function authOrg(orgAlias: string, options: any) {
         this,
         { output: true, fail: true, spinner: false }
       );
-      uxLog(this,c.grey(JSON.stringify(loginResult, null, 2)));
+      uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
       username = loginResult?.username || "your username";
       instanceUrl = loginResult?.instanceUrl || instanceUrl;

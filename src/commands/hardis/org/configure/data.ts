@@ -3,7 +3,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import * as fs from 'fs-extra';
+import * as fs from "fs-extra";
 import * as pascalcase from "pascalcase";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils";
@@ -75,44 +75,44 @@ export default class ConfigureData extends SfdxCommand {
         type: "confirm",
         name: "importInScratchOrgs",
         message: c.cyanBright("Do you want this SFDMU config to be used to import data when initializing a new scratch org ?"),
-        default: false
+        default: false,
       },
     ]);
 
     // Collect / reformat data
-    const dataPath = pascalcase(resp.dataPath) ;
-    const sfdxHardisLabel = resp.sfdxHardisLabel ;
-    const sfdxHardisDescription = resp.sfdxHardisDescription ;
-    const importInScratchOrgs = resp.importInScratchOrgs ;
+    const dataPath = pascalcase(resp.dataPath);
+    const sfdxHardisLabel = resp.sfdxHardisLabel;
+    const sfdxHardisDescription = resp.sfdxHardisDescription;
+    const importInScratchOrgs = resp.importInScratchOrgs;
     const sfdmuConfig = {
       sfdxHardisLabel: sfdxHardisLabel,
       sfdxHardisDescription: sfdxHardisDescription,
       objects: [
         {
-          "query": "SELECT all FROM Account WHERE Name='sfdx-hardis'",
-          "operation": "Upsert",
-          "externalId": "Name"
+          query: "SELECT all FROM Account WHERE Name='sfdx-hardis'",
+          operation: "Upsert",
+          externalId: "Name",
         },
-      ]
-    }
+      ],
+    };
 
     // Check if not already existing
-    const sfdmuProjectFolder = path.join(dataFolderRoot,dataPath);
+    const sfdmuProjectFolder = path.join(dataFolderRoot, dataPath);
     if (fs.existsSync(sfdmuProjectFolder)) {
       throw new SfdxError(`[sfdx-hardis]${c.red(`Folder ${c.bold(sfdmuProjectFolder)} already exists`)}`);
     }
 
     // Create folder & export.json
     await fs.ensureDir(sfdmuProjectFolder);
-    const exportJsonFile = path.join(sfdmuProjectFolder,"export.json");
-    await fs.writeFile(exportJsonFile,JSON.stringify(sfdmuConfig,null,2));
+    const exportJsonFile = path.join(sfdmuProjectFolder, "export.json");
+    await fs.writeFile(exportJsonFile, JSON.stringify(sfdmuConfig, null, 2));
 
     // Manage dataPackages if importInScratchOrgs is true
     if (importInScratchOrgs === true) {
       const config = await getConfig("project");
       const dataPackages = config.dataPackages || [];
-      dataPackages.push({dataPath: sfdmuProjectFolder.replace(/\\/g, "/"), importInScratchOrgs: true});
-      await setConfig("project",{dataPackages: dataPackages});
+      dataPackages.push({ dataPath: sfdmuProjectFolder.replace(/\\/g, "/"), importInScratchOrgs: true });
+      await setConfig("project", { dataPackages: dataPackages });
     }
 
     // Trigger command to open SFDMU config file in VsCode extension

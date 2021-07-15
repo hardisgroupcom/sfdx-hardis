@@ -58,7 +58,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           console.log(c.cyan("[sfdx-hardis] Updated .gitignore"));
         }
         if (confirm.value === "never") {
-          await setConfig("project",{skipUpdateGitIgnore: true})
+          await setConfig("project", { skipUpdateGitIgnore: true });
         }
       }
     }
@@ -103,7 +103,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           console.log(c.cyan("[sfdx-hardis] Updated .forceignore"));
         }
         if (confirm.value === "never") {
-          await setConfig("project",{skipUpdateForceIgnore: true})
+          await setConfig("project", { skipUpdateForceIgnore: true });
         }
       }
     }

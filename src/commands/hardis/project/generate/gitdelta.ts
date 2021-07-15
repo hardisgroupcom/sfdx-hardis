@@ -79,14 +79,14 @@ export default class GenerateGitDelta extends SfdxCommand {
     }
 
     // List branch commits
-    const branchCommits = await git().log(['--first-parent']);
+    const branchCommits = await git().log(["--first-parent"]);
     const branchCommitsChoices = branchCommits.all.map((commit) => {
       return {
         title: commit.message,
         description: `${commit.author_name} on ${new Date(commit.date).toLocaleString()}`,
         value: commit,
       };
-    })
+    });
 
     // Prompt fromCommit
     if (fromCommit === null) {
@@ -94,7 +94,7 @@ export default class GenerateGitDelta extends SfdxCommand {
         type: "select",
         name: "value",
         message: "Please select the commit that you want to start from",
-        choices: branchCommitsChoices
+        choices: branchCommitsChoices,
       });
       fromCommit = commitFromResp.value.hash;
     }
@@ -105,7 +105,7 @@ export default class GenerateGitDelta extends SfdxCommand {
         type: "select",
         name: "value",
         message: "Please select the commit hash that you want to go to",
-        choices: branchCommitsChoices
+        choices: branchCommitsChoices,
       });
       toCommit = commitToResp.value.hash;
     }
