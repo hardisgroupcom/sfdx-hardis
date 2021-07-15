@@ -36,25 +36,25 @@
             "examples": [
                 {
                     "deploymentPlan": {
-                      "packages": [
-                        {
-                          "label": "Import EmailTemplate records",
-                          "dataPath": "scripts/data/EmailTemplate",
-                          "order": -21
-                        },
-                        {
-                          "label": "Deploy EmailTemplate",
-                          "packageXmlFile": "manifest/splits/packageXmlEmails.xml",
-                          "order": -20
-                        },
-                        {
-                          "label": "Deploy Flow-Workflow",
-                          "packageXmlFile": "manifest/splits/packageXmlFlowWorkflow.xml",
-                          "order": 6
-                        }
-                      ]
+                        "packages": [
+                            {
+                                "label": "Import EmailTemplate records",
+                                "dataPath": "scripts/data/EmailTemplate",
+                                "order": -21
+                            },
+                            {
+                                "label": "Deploy EmailTemplate",
+                                "packageXmlFile": "manifest/splits/packageXmlEmails.xml",
+                                "order": -20
+                            },
+                            {
+                                "label": "Deploy Flow-Workflow",
+                                "packageXmlFile": "manifest/splits/packageXmlFlowWorkflow.xml",
+                                "order": 6
+                            }
+                        ]
                     }
-                  }
+                }
             ],
             "title": "Deployment plan",
             "type": "object"
@@ -88,16 +88,12 @@
             "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets",
             "examples": [
                 [
-                    {
-                        "name": "MyPermissionSet"
-                    },
-                    {
-                        "name": "MyPermissionSetGroup"
-                    }
+                    "MyPermissionSet",
+                    "MyPermissionSetGroup"
                 ]
             ],
             "items": {
-                "type": "object"
+                "type": "string"
             },
             "title": "Initial Permission Sets",
             "type": "array"
@@ -108,28 +104,28 @@
             "examples": [
                 [
                     {
-                      "Id": "0A30N000000ALWrSAO",
-                      "SubscriberPackageId": "033b0000000Pf2AAAS",
-                      "SubscriberPackageName": "Declarative Lookup Rollup Summaries Tool",
-                      "SubscriberPackageNamespace": "dlrs",
-                      "SubscriberPackageVersionId": "04t0N000000IyYrQAK",
-                      "SubscriberPackageVersionName": "2.11",
-                      "SubscriberPackageVersionNumber": "2.11.0.1",
-                      "installOnScratchOrgs": false,
-                      "installDuringDeployments": true
+                        "Id": "0A30N000000ALWrSAO",
+                        "SubscriberPackageId": "033b0000000Pf2AAAS",
+                        "SubscriberPackageName": "Declarative Lookup Rollup Summaries Tool",
+                        "SubscriberPackageNamespace": "dlrs",
+                        "SubscriberPackageVersionId": "04t0N000000IyYrQAK",
+                        "SubscriberPackageVersionName": "2.11",
+                        "SubscriberPackageVersionNumber": "2.11.0.1",
+                        "installOnScratchOrgs": false,
+                        "installDuringDeployments": true
                     },
                     {
-                      "Id": "0A35r000000GveVCAS",
-                      "SubscriberPackageId": "0330o000000B3vIAAS",
-                      "SubscriberPackageName": "Files Attachment Notes",
-                      "SubscriberPackageNamespace": "fan_astrea",
-                      "SubscriberPackageVersionId": "04t0o000003nRWAAA2",
-                      "SubscriberPackageVersionName": "Summer2021",
-                      "SubscriberPackageVersionNumber": "1.22.0.2",
-                      "installOnScratchOrgs": true,
-                      "installDuringDeployments": true
+                        "Id": "0A35r000000GveVCAS",
+                        "SubscriberPackageId": "0330o000000B3vIAAS",
+                        "SubscriberPackageName": "Files Attachment Notes",
+                        "SubscriberPackageNamespace": "fan_astrea",
+                        "SubscriberPackageVersionId": "04t0o000003nRWAAA2",
+                        "SubscriberPackageVersionName": "Summer2021",
+                        "SubscriberPackageVersionNumber": "1.22.0.2",
+                        "installOnScratchOrgs": true,
+                        "installDuringDeployments": true
                     }
-                  ]
+                ]
             ],
             "items": {
                 "type": "object"
@@ -161,6 +157,20 @@
             "title": "Project Name",
             "type": "string"
         },
+        "skipUpdateForceIgnore": {
+            "$id": "#/properties/skipUpdateForceIgnore",
+            "default": false,
+            "description": "Defines if sfdx-hardis will propose to upgrade local .forceignore file",
+            "title": "Skip update .forceignore file",
+            "type": "boolean"
+        },
+        "skipUpdateGitIgnore": {
+            "$id": "#/properties/skipUpdateGitIgnore",
+            "default": false,
+            "description": "Defines if sfdx-hardis will propose to upgrade local .gitignore file",
+            "title": "Skip update .gitignore file",
+            "type": "boolean"
+        },
         "targetUsername": {
             "$id": "#/properties/targetUsername",
             "default": "",
@@ -172,20 +182,7 @@
             ],
             "title": "Target Username",
             "type": "string"
-        },
-        "upgradeGitIgnoreForceIgnore": {
-            "$id": "#/properties/upgradeGitIgnoreForceIgnore",
-            "default": "",
-            "description": "Defines if sfdx-hardis will propose to upgrade local .gitignore and .forceignore files",
-            "enum": [
-                "never"
-              ],
-            "examples": [
-                "never"
-            ],
-            "title": "Upgrade .gitignore & .forceignore",
-            "type": "string"
-        }        
+        }
     },
     "title": "sfdx-hardis configuration",
     "type": "object"
