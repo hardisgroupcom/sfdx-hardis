@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.42.0] 2021-07-12
+
+- New command sfdx hardis:project:lint
+- Update .sfdx-hardis.yml configuration JsonSchema
+
 ## [2.41.2] 2021-07-12
 
 - QuickFix case when title is not set (use first line of description)
