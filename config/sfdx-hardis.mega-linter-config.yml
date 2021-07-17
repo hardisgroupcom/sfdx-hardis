@@ -12,7 +12,7 @@ DISABLE:
   - SPELL # Uncomment to enable checks of spelling mistakes # - SPELL # Uncomment to disable checks of spelling mistakes
   - XML
 SHOW_ELAPSED_TIME: true
-FILTER_REGEX_EXCLUDE: (\.vscode)
+FILTER_REGEX_EXCLUDE: (\.vscode|staticresources)
 PRE_COMMANDS:
   - command: mkdir -p "${DEFAULT_WORKSPACE}/config" && wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/config/pmd-ruleset.xml"
     continue_if_failed: false
