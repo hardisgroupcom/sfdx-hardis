@@ -19,7 +19,7 @@ export default class ProjectCreate extends SfdxCommand {
 
   public static description = "Apply syntactic analysis (linters) on the repository sources, using Mega-Linter";
 
-  public static examples = ["$ sfdx hardis:project:lint","$ sfdx hardis:project:lint --fix"]
+  public static examples = ["$ sfdx hardis:project:lint", "$ sfdx hardis:project:lint --fix"];
 
   protected static flagsConfig = {
     fix: flags.boolean({
@@ -47,40 +47,42 @@ export default class ProjectCreate extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-  protected fix = false ;
+  protected fix = false;
   protected debugMode = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.fix = this.flags.fix || false ;
+    this.fix = this.flags.fix || false;
     this.debugMode = this.flags.debugMode || false;
 
     // Check if Mega-Linter is configured
-    if (!fs.existsSync('.mega-linter.yml')) {
+    if (!fs.existsSync(".mega-linter.yml")) {
       if (isCI) {
-        throw new SfdxError(c.red('[sfdx-hardis] You must run sfdx hardis:project:lint locally to install Mega-Linter configuration before being able to run it from CI'));
-      }
-      else {
+        throw new SfdxError(
+          c.red(
+            "[sfdx-hardis] You must run sfdx hardis:project:lint locally to install Mega-Linter configuration before being able to run it from CI"
+          )
+        );
+      } else {
         // Configure Mega-Linter (yeoman generator)
-        uxLog(this,c.cyan("Mega-Linter needs to be configured. Please select Salesforce flavor in the following wizard"));
+        uxLog(this, c.cyan("Mega-Linter needs to be configured. Please select Salesforce flavor in the following wizard"));
         const megaLinter = new MegaLinterRunner();
-        const installRes = megaLinter.run({install:true});
-        console.assert(installRes.status === 0,"Mega-Linter configuration incomplete")
+        const installRes = megaLinter.run({ install: true });
+        console.assert(installRes.status === 0, "Mega-Linter configuration incomplete");
       }
     }
 
     // Run MegaLinter
     const megaLinter = new MegaLinterRunner();
-    const megaLinterOptions = {flavor: "salesforce", fix: this.fix};
+    const megaLinterOptions = { flavor: "salesforce", fix: this.fix };
     const res = await megaLinter.run(megaLinterOptions);
     process.exitCode = res.status;
 
     if (res.status === 0) {
-      uxLog(this,c.green(`Mega-Linter has been successful`));
-    }
-    else {
-      uxLog(this,c.red(`Mega-Linter found error(s)`));
+      uxLog(this, c.green(`Mega-Linter has been successful`));
+    } else {
+      uxLog(this, c.red(`Mega-Linter found error(s)`));
     }
 
     // Return an object to be displayed with --json

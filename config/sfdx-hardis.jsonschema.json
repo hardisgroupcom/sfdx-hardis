@@ -160,19 +160,19 @@
       "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets",
       "examples": [["MyPermissionSet", "MyPermissionSetGroup"]],
       "items": {
-          "$id": "#/properties/initPermissionSets/items",
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Permission Set or Permission Set Group",
-          "properties": {
-            "name": {
-              "$Id": "#/properties/initPermissionSets/items/properties/name",
-              "description": "Permission Set or Permission Set Group name",
-              "examples": [["MyPermissionSet", "MyPermissionSetGroup","MyPermissionSetGroup2"]],
-              "title": "Name",
-              "type": "string"
-            }
+        "$id": "#/properties/initPermissionSets/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Permission Set or Permission Set Group",
+        "properties": {
+          "name": {
+            "$Id": "#/properties/initPermissionSets/items/properties/name",
+            "description": "Permission Set or Permission Set Group name",
+            "examples": [["MyPermissionSet", "MyPermissionSetGroup", "MyPermissionSetGroup2"]],
+            "title": "Name",
+            "type": "string"
           }
+        }
       },
       "title": "Initial Permission Sets",
       "type": "array"
