@@ -160,7 +160,19 @@
       "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets",
       "examples": [["MyPermissionSet", "MyPermissionSetGroup"]],
       "items": {
-        "type": "string"
+          "$id": "#/properties/initPermissionSets/items",
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Permission Set or Permission Set Group",
+          "properties": {
+            "name": {
+              "$Id": "#/properties/initPermissionSets/items/properties/name",
+              "description": "Permission Set or Permission Set Group name",
+              "examples": [["MyPermissionSet", "MyPermissionSetGroup","MyPermissionSetGroup2"]],
+              "title": "Name",
+              "type": "string"
+            }
+          }
       },
       "title": "Initial Permission Sets",
       "type": "array"
@@ -271,6 +283,14 @@
       "description": "Salesforce instance URL used by CI for deployment or backups",
       "examples": ["https://myclient.force.com", "https://google.force.com", "https://apple.force.com"],
       "title": "Instance URL",
+      "type": "string"
+    },
+    "msTeamsWebhookUrl": {
+      "$id": "#/properties/msTeamsWebhookUrl",
+      "default": "",
+      "description": "Url of the Ms Teams channel Web Hook that can be used to send notifications",
+      "examples": ["https://my.msteams.webhook.url"],
+      "title": "MsTeams WebHook Url",
       "type": "string"
     },
     "projectName": {
