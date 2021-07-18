@@ -67,8 +67,9 @@ export default class ProjectCreate extends SfdxCommand {
       } else {
         // Configure Mega-Linter (yeoman generator)
         uxLog(this, c.cyan("Mega-Linter needs to be configured. Please select Salesforce flavor in the following wizard"));
+        uxLog(this, c.cyan(`If you have an issue, run the following command at the root folder of your repository: ${c.bold("npx mega-linter-runner --install")}`));
         const megaLinter = new MegaLinterRunner();
-        const installRes = megaLinter.run({ install: true });
+        const installRes = await megaLinter.run({ install: true });
         console.assert(installRes.status === 0, "Mega-Linter configuration incomplete");
       }
     }

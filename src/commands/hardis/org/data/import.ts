@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DataExport extends SfdxCommand {
+export default class DataImport extends SfdxCommand {
   public static title = "Import data";
 
   public static description = messages.getMessage("orgDataImport");
