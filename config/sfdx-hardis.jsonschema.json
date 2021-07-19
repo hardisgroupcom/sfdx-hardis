@@ -161,7 +161,7 @@
       "examples": [["MyPermissionSet", "MyPermissionSetGroup"]],
       "items": {
         "$id": "#/properties/initPermissionSets/items",
-        "type": ["object","string"],
+        "type": ["object", "string"],
         "additionalProperties": false,
         "description": "Permission Set or Permission Set Group",
         "properties": {
