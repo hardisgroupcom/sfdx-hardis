@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.42.1] 2021-07-19
+
+- Fix data import & export commands when spaces in folder names
+
 ## [2.42.0] 2021-07-12
 
 - New command sfdx hardis:project:lint
