@@ -153,6 +153,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectdeploysourcesdx--c--l-notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg--p-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:deploy:sources:metadata [-c] [-p <string>] [-f] [-k <string>] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectdeploysourcesmetadata--c--p-string--f--k-string--l-notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:generate:gitdelta [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectgenerategitdelta---branch-string---fromcommit-string---tocommit-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectlint--f--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:scratch:create [-n] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchcreate--n--d---websocket-string--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:scratch:delete [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchdelete--d---websocket-string--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchpull--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -240,9 +241,13 @@ OPTIONS
 
 DESCRIPTION
   After the first run, you need to update manually:
+
   - mkdocs.yml
   - .github/workflows/build-deploy-docs.yml
+  - docs/javascripts/gtag.js , if you want Google Analytics tracking
+
   Then, activate Github pages, with "gh_pages" as target branch
+
   At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it 
   in GitHub pages
 
@@ -1393,6 +1398,40 @@ EXAMPLE
 ```
 
 _See code: [lib/commands/hardis/project/generate/gitdelta.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.42.1/lib/commands/hardis/project/generate/gitdelta.js)_
+
+## `sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Apply syntactic analysis (linters) on the repository sources, using Mega-Linter
+
+```
+USAGE
+  $ sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+  -f, --fix                                                                         Apply linters fixes
+
+  -u, --targetusername=targetusername                                               username or alias for the target
+                                                                                    org; overrides default target org
+
+  --apiversion=apiversion                                                           override the api version used for
+                                                                                    api requests made by this command
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+  --websocket=websocket                                                             Websocket host:port for VsCode SFDX
+                                                                                    Hardis UI integration
+
+EXAMPLES
+  $ sfdx hardis:project:lint
+  $ sfdx hardis:project:lint --fix
+```
+
+_See code: [lib/commands/hardis/project/lint.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.42.1/lib/commands/hardis/project/lint.js)_
 
 ## `sfdx hardis:scratch:create [-n] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
