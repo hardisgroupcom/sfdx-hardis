@@ -1,1 +1,1631 @@
-{"version":"2.42.1","commands":{"hardis:auth:login":{"id":"hardis:auth:login","description":"Login to salesforce org","usage":"<%= command.id %> [-r <string>] [-h] [-s] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:auth:login"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"instanceurl":{"name":"instanceurl","type":"option","char":"r","description":"URL of org instance"},"devhub":{"name":"devhub","type":"boolean","char":"h","description":"Also connect associated DevHub","allowNo":false},"scratchorg":{"name":"scratchorg","type":"boolean","char":"s","description":"Scratch org","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:config:get":{"id":"hardis:config:get","description":"Returns sfdx-hardis project config for a given level","usage":"<%= command.id %> [-l <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:deploy:sources:metadata"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"level":{"name":"level","type":"option","char":"l","description":"project,branch or user","options":["project","branch","user"],"default":"project"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:connect":{"id":"hardis:org:connect","description":"Connect to an org without setting it as default username","usage":"<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:connect"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:select":{"id":"hardis:org:select","description":"Interactive org selection for user","usage":"<%= command.id %> [-h] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:select"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"devhub":{"name":"devhub","type":"boolean","char":"h","description":"Also connect associated DevHub","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:package:create":{"id":"hardis:package:create","description":"Create a new package","usage":"<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:package:create"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetdevhubusername":{"name":"targetdevhubusername","type":"option","char":"v","description":"username or alias for the dev hub org; overrides default dev hub org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:package:install":{"id":"hardis:package:install","description":"Install a package","usage":"<%= command.id %> [-p] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:package:install"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"package":{"name":"package","type":"boolean","char":"p","description":"Package Version Id to install (04t...)","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:create":{"id":"hardis:project:create","description":"Create a new SFDX Project","usage":"<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:create"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetdevhubusername":{"name":"targetdevhubusername","type":"option","char":"v","description":"username or alias for the dev hub org; overrides default dev hub org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:lint":{"id":"hardis:project:lint","description":"Apply syntactic analysis (linters) on the repository sources, using Mega-Linter","usage":"<%= command.id %> [-f] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:lint","$ sfdx hardis:project:lint --fix"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"fix":{"name":"fix","type":"boolean","char":"f","description":"Apply linters fixes","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:scratch:create":{"id":"hardis:scratch:create","description":"Create and initialize a scratch org so it is ready to use","usage":"<%= command.id %> [-n] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:scratch:create"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetdevhubusername":{"name":"targetdevhubusername","type":"option","char":"v","description":"username or alias for the dev hub org; overrides default dev hub org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"forcenew":{"name":"forcenew","type":"boolean","char":"n","description":"If an existing scratch org exists, do not reuse it but create a new one","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:scratch:delete":{"id":"hardis:scratch:delete","description":"Deletes a scratch org","usage":"<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:scratch:delete"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetdevhubusername":{"name":"targetdevhubusername","type":"option","char":"v","description":"username or alias for the dev hub org; overrides default dev hub org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:scratch:pull":{"id":"hardis:scratch:pull","description":"Pull scratch org updates from scratch org to local git branch","usage":"<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:scratch:pull"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:scratch:push":{"id":"hardis:scratch:push","description":"Push local updates in git branch to scratch org","usage":"<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:scratch:push"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:work:new":{"id":"hardis:work:new","description":"New work task","usage":"<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:work:task:new"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetdevhubusername":{"name":"targetdevhubusername","type":"option","char":"v","description":"username or alias for the dev hub org; overrides default dev hub org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:work:refresh":{"id":"hardis:work:refresh","description":"Make my local branch and my scratch org up to date with the most recent sources","usage":"<%= command.id %> [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:work:refresh"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"nopull":{"name":"nopull","type":"boolean","char":"n","description":"No scratch pull before save (careful if you use that!)","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:work:resetselection":{"id":"hardis:work:resetselection","description":"Process again the selection of the items that you want to publish to upper level","usage":"<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:work:resetsave"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:work:save":{"id":"hardis:work:save","description":"When a work task is completed, guide user to create a merge request","usage":"<%= command.id %> [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:work:task:save","$ sfdx hardis:work:task:save --nopull --nogit --noclean"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"nopull":{"name":"nopull","type":"boolean","char":"n","description":"No scratch pull before save","allowNo":false},"nogit":{"name":"nogit","type":"boolean","char":"g","description":"No automated git operations","allowNo":false},"noclean":{"name":"noclean","type":"boolean","char":"c","description":"No cleaning of local sources","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:doc:plugin:generate":{"id":"hardis:doc:plugin:generate","description":"Generate Markdown documentation ready for HTML conversion with mkdocs\n\nAfter the first run, you need to update manually:\n\n- mkdocs.yml\n- .github/workflows/build-deploy-docs.yml\n- docs/javascripts/gtag.js , if you want Google Analytics tracking\n\nThen, activate Github pages, with \"gh_pages\" as target branch\n\nAt each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages\n","usage":"<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:doc:plugin:generate"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:configure:data":{"id":"hardis:org:configure:data","description":"Configure Data Export/Import with a SFDMU Project","usage":"<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:configure:data"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:configure:monitoring":{"id":"hardis:org:configure:monitoring","description":"Configure monitoring of an org","usage":"<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:configure:monitoring"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:data:export":{"id":"hardis:org:data:export","description":"Export data from org using sfdmu","usage":"<%= command.id %> [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:data:export"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"path":{"name":"path","type":"option","char":"p","description":"Path to the sfdmu workspace folder"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:data:import":{"id":"hardis:org:data:import","description":"Import data in org using sfdmu","usage":"<%= command.id %> [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:data:import"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"path":{"name":"path","type":"option","char":"p","description":"Path to the sfdmu workspace folder"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:purge:apexlog":{"id":"hardis:org:purge:apexlog","description":"Purge apex logs in selected org","usage":"<%= command.id %> [-z] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:purge:apexlog","$ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"prompt":{"name":"prompt","type":"boolean","char":"z","description":"Prompt for confirmation (true by default, use --no-prompt to skip)","allowNo":true},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:purge:flow":{"id":"hardis:org:purge:flow","description":"Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name","usage":"<%= command.id %> [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com\n  Found 1 records:\n  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS\n  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete\n  Are you sure you want to delete this list of records (y/n)?: y\n  Successfully deleted record: 30109000000kX7uAAE.\n  Deleted the following list of records:\n  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS\n  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete\n  ","$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status \"Obsolete,Draft,InvalidDraft --name TestFlow\"\n  Found 4 records:\n  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS\n  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete\n  30109000000kX8EAAU TestFlow    6             test flowwww InvalidDraft\n  30109000000kX8AAAU TestFlow    5             test flowwww InvalidDraft\n  30109000000kX89AAE TestFlow    4             test flowwww Draft\n  Are you sure you want to delete this list of records (y/n)?: n\n  No record deleted\n  "],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"prompt":{"name":"prompt","type":"boolean","char":"z","description":"Prompt for confirmation (true by default, use --no-prompt to skip)","allowNo":true},"name":{"name":"name","type":"option","char":"n","description":"Filter according to Name criteria"},"status":{"name":"status","type":"option","char":"s","description":"Filter according to Status criteria","default":"Obsolete"},"allowpurgefailure":{"name":"allowpurgefailure","type":"boolean","char":"f","description":"Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable","allowNo":true},"instanceurl":{"name":"instanceurl","type":"option","char":"r","description":"URL of org instance","default":"https://login.saleforce.com"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:retrieve:packageconfig":{"id":"hardis:org:retrieve:packageconfig","description":"Retrieve package configuration from an org","usage":"<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:retrieve:packageconfig"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:test:apex":{"id":"hardis:org:test:apex","description":"Run apex test cases on org","usage":"<%= command.id %> [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:test:apex"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"testlevel":{"name":"testlevel","type":"option","char":"l","description":"Level of tests to apply to validate deployment","helpValue":"(NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg)","options":["NoTestRun","RunSpecifiedTests","RunLocalTests","RunAllTestsInOrg"],"default":"RunLocalTests"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:package:version:create":{"id":"hardis:package:version:create","description":"Create a new version of an unlocked package","usage":"<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:package:version:create"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetdevhubusername":{"name":"targetdevhubusername","type":"option","char":"v","description":"username or alias for the dev hub org; overrides default dev hub org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:package:version:list":{"id":"hardis:package:version:list","description":"List versions of unlocked package","usage":"<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:package:version:list"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetdevhubusername":{"name":"targetdevhubusername","type":"option","char":"v","description":"username or alias for the dev hub org; overrides default dev hub org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:package:version:promote":{"id":"hardis:package:version:promote","description":"Promote package(s) version(s): convert it from beta to released","usage":"<%= command.id %> [-d] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:package:version:promote","$ sfdx hardis:package:version:promote --auto"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetdevhubusername":{"name":"targetdevhubusername","type":"option","char":"v","description":"username or alias for the dev hub org; overrides default dev hub org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"auto":{"name":"auto","type":"boolean","char":"d","description":"Auto-detect which versions of which packages need to be promoted","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:audit:apiversion":{"id":"hardis:project:audit:apiversion","description":"Audit API version","usage":"<%= command.id %> [-m <number>] [-f] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:audit:apiversion"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"minimumapiversion":{"name":"minimumapiversion","type":"option","char":"m","description":"Minimum allowed API version","default":20},"failiferror":{"name":"failiferror","type":"boolean","char":"f","description":"Fails (exit code 1) if an error is found","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:audit:callincallout":{"id":"hardis:project:audit:callincallout","description":"Generate list of callIn and callouts from sfdx project","usage":"<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:audit:callouts"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:audit:remotesites":{"id":"hardis:project:audit:remotesites","description":"Generate list of remote sites","usage":"<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:audit:remotesites"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:clean:emptyitems":{"id":"hardis:project:clean:emptyitems","description":"Remove unwanted empty items within sfdx project sources","usage":"<%= command.id %> [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:clean:emptyitems"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"folder":{"name":"folder","type":"option","char":"f","description":"Root folder","default":"force-app"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:clean:hiddenitems":{"id":"hardis:project:clean:hiddenitems","description":"Remove unwanted hidden items within sfdx project sources","usage":"<%= command.id %> [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:clean:hiddenitems"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"folder":{"name":"folder","type":"option","char":"f","description":"Root folder","default":"force-app"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:clean:manageditems":{"id":"hardis:project:clean:manageditems","description":"Remove unwanted managed items within sfdx project sources","usage":"<%= command.id %> [-n <string>] [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:clean:manageditems --namespace crta"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"namespace":{"name":"namespace","type":"option","char":"n","description":"Namespace to remove","default":""},"folder":{"name":"folder","type":"option","char":"f","description":"Root folder","default":"force-app"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:clean:orgmissingitems":{"id":"hardis:project:clean:orgmissingitems","description":"Clean SFDX sources from items present neither in target org nor local package.xml","usage":"<%= command.id %> [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:clean:orgmissingitems"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"folder":{"name":"folder","type":"option","char":"f","description":"Root folder","default":"force-app"},"packagexmlfull":{"name":"packagexmlfull","type":"option","char":"p","description":"Path to packagexml used for cleaning.\nMust contain also standard CustomObject and CustomField elements.\nIf not provided, it will be generated from a remote org"},"packagexmltargetorg":{"name":"packagexmltargetorg","type":"option","char":"t","description":"Target org username or alias to build package.xml (sfdx must be authenticated).\nIf not provided, will be prompted to the user."},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:clean:references":{"id":"hardis:project:clean:references","description":"Remove unwanted references within sfdx project sources","usage":"<%= command.id %> [-t <string>] [-c <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:clean:references","$ sfdx hardis:project:clean:references --type all","$ sfdx hardis:project:clean:references --config ./cleaning/myconfig.json","$ sfdx hardis:project:clean:references --config ./somefolder/myDestructivePackage.xml"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"type":{"name":"type","type":"option","char":"t","description":"Cleaning type","options":["all","caseentitlement","dashboards","datadotcom","destructivechanges","localfields","productrequest"]},"config":{"name":"config","type":"option","char":"c","description":"Path to a JSON config file or a destructiveChanges.xml file"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:clean:retrievefolders":{"id":"hardis:project:clean:retrievefolders","description":"Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS","usage":"<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:clean:retrievefolders"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:clean:standarditems":{"id":"hardis:project:clean:standarditems","description":"Remove unwanted standard items within sfdx project sources","usage":"<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:clean:standarditems"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:configure:auth":{"id":"hardis:project:configure:auth","description":"Configure authentication from git branch to target org","usage":"<%= command.id %> [-b] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:configure:auth"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"devhub":{"name":"devhub","type":"boolean","char":"b","description":"Configure project DevHub","allowNo":false},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:convert:profilestopermsets":{"id":"hardis:project:convert:profilestopermsets","description":"Creates permission sets from existing profiles, with id PS_PROFILENAME","usage":"<%= command.id %> [-e <array>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:convert:profilestopermsets"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"except":{"name":"except","type":"option","char":"e","description":"List of filters","default":[]},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:generate:gitdelta":{"id":"hardis:project:generate:gitdelta","description":"Generate package.xml git delta between 2 commits","usage":"<%= command.id %> [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:generate:gitdelta"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"branch":{"name":"branch","type":"option","description":"Git branch to use to generate delta"},"fromcommit":{"name":"fromcommit","type":"option","description":"Hash of commit to start from"},"tocommit":{"name":"tocommit","type":"option","description":"Hash of commit to stop at"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:retrieve:sources:dx":{"id":"hardis:org:retrieve:sources:dx","description":"Retrieve Salesforce DX project from org","usage":"<%= command.id %> [-f <string>] [-t <string>] [-k <string>] [-m <string>] [-o] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:retrieve:sources:dx"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"folder":{"name":"folder","type":"option","char":"f","description":"Folder","default":"."},"tempfolder":{"name":"tempfolder","type":"option","char":"t","description":"Temporary folder","default":"./tmp"},"keepmetadatatypes":{"name":"keepmetadatatypes","type":"option","char":"k","description":"Comma separated list of metadatas types that will be the only ones to be retrieved"},"filteredmetadatas":{"name":"filteredmetadatas","type":"option","char":"m","description":"Comma separated list of Metadatas keys to remove from PackageXml file"},"shape":{"name":"shape","type":"boolean","char":"o","description":"Updates project-scratch-def.json from org shape","allowNo":false},"instanceurl":{"name":"instanceurl","type":"option","char":"r","description":"URL of org instance"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:retrieve:sources:dx2":{"id":"hardis:org:retrieve:sources:dx2","description":"Retrieve Salesforce DX project from org","usage":"<%= command.id %> [-x <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:retrieve:sources:dx2"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"packagexml":{"name":"packagexml","type":"option","char":"x","description":"Path to package.xml file"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:org:retrieve:sources:metadata":{"id":"hardis:org:retrieve:sources:metadata","description":"Retrieve Salesforce DX project from org","usage":"<%= command.id %> [-f <string>] [-p <string>] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:org:retrieve:sources:metadata"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"folder":{"name":"folder","type":"option","char":"f","description":"Folder","default":"."},"packagexml":{"name":"packagexml","type":"option","char":"p","description":"Path to package.xml manifest file"},"instanceurl":{"name":"instanceurl","type":"option","char":"r","description":"URL of org instance"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:deploy:sources:dx":{"id":"hardis:project:deploy:sources:dx","description":"Deploy SFDX project sources to org","usage":"<%= command.id %> [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:deploy:sources:dx"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"check":{"name":"check","type":"boolean","char":"c","description":"Only checks the deployment, there is no impact on target org","allowNo":false},"testlevel":{"name":"testlevel","type":"option","char":"l","description":"Level of tests to apply to validate deployment","helpValue":"(NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg)","options":["NoTestRun","RunSpecifiedTests","RunLocalTests","RunAllTestsInOrg"],"default":"RunLocalTests"},"packagexml":{"name":"packagexml","type":"option","char":"p","description":"Path to package.xml containing what you want to deploy in target org"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]},"hardis:project:deploy:sources:metadata":{"id":"hardis:project:deploy:sources:metadata","description":"Deploy metadatas to source org","usage":"<%= command.id %> [-c] [-p <string>] [-f] [-k <string>] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]","pluginName":"sfdx-hardis","pluginType":"core","aliases":[],"examples":["$ sfdx hardis:project:deploy:sources:metadata"],"flags":{"json":{"name":"json","type":"boolean","description":"format output as json","allowNo":false},"loglevel":{"name":"loglevel","type":"option","description":"logging level for this command invocation","required":false,"helpValue":"(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)","options":["trace","debug","info","warn","error","fatal","TRACE","DEBUG","INFO","WARN","ERROR","FATAL"],"default":"warn"},"targetusername":{"name":"targetusername","type":"option","char":"u","description":"username or alias for the target org; overrides default target org"},"apiversion":{"name":"apiversion","type":"option","description":"override the api version used for api requests made by this command"},"check":{"name":"check","type":"boolean","char":"c","description":"Only checks the deployment, there is no impact on target org","allowNo":false},"packagexml":{"name":"packagexml","type":"option","char":"p","description":"Path to package.xml file to deploy"},"filter":{"name":"filter","type":"boolean","char":"f","description":"Filter metadatas before deploying","allowNo":false},"destructivepackagexml":{"name":"destructivepackagexml","type":"option","char":"k","description":"Path to destructiveChanges.xml file to deploy"},"testlevel":{"name":"testlevel","type":"option","char":"l","description":"Level of tests to apply to validate deployment","helpValue":"(NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg)","options":["NoTestRun","RunSpecifiedTests","RunLocalTests","RunAllTestsInOrg"],"default":"RunLocalTests"},"debug":{"name":"debug","type":"boolean","char":"d","description":"Activate debug mode (more logs)","allowNo":false},"websocket":{"name":"websocket","type":"option","description":"Websocket host:port for VsCode SFDX Hardis UI integration"}},"args":[]}}}
+{
+  "version": "2.42.1",
+  "commands": {
+    "hardis:auth:login": {
+      "id": "hardis:auth:login",
+      "description": "Login to salesforce org",
+      "usage": "<%= command.id %> [-r <string>] [-h] [-s] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:auth:login"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "instanceurl": { "name": "instanceurl", "type": "option", "char": "r", "description": "URL of org instance" },
+        "devhub": { "name": "devhub", "type": "boolean", "char": "h", "description": "Also connect associated DevHub", "allowNo": false },
+        "scratchorg": { "name": "scratchorg", "type": "boolean", "char": "s", "description": "Scratch org", "allowNo": false },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:config:get": {
+      "id": "hardis:config:get",
+      "description": "Returns sfdx-hardis project config for a given level",
+      "usage": "<%= command.id %> [-l <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:deploy:sources:metadata"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "level": {
+          "name": "level",
+          "type": "option",
+          "char": "l",
+          "description": "project,branch or user",
+          "options": ["project", "branch", "user"],
+          "default": "project"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:connect": {
+      "id": "hardis:org:connect",
+      "description": "Connect to an org without setting it as default username",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:connect"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:select": {
+      "id": "hardis:org:select",
+      "description": "Interactive org selection for user",
+      "usage": "<%= command.id %> [-h] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:select"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "devhub": { "name": "devhub", "type": "boolean", "char": "h", "description": "Also connect associated DevHub", "allowNo": false },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:package:create": {
+      "id": "hardis:package:create",
+      "description": "Create a new package",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:package:create"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetdevhubusername": {
+          "name": "targetdevhubusername",
+          "type": "option",
+          "char": "v",
+          "description": "username or alias for the dev hub org; overrides default dev hub org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:package:install": {
+      "id": "hardis:package:install",
+      "description": "Install a package",
+      "usage": "<%= command.id %> [-p] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:package:install"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "package": { "name": "package", "type": "boolean", "char": "p", "description": "Package Version Id to install (04t...)", "allowNo": false },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:create": {
+      "id": "hardis:project:create",
+      "description": "Create a new SFDX Project",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:create"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetdevhubusername": {
+          "name": "targetdevhubusername",
+          "type": "option",
+          "char": "v",
+          "description": "username or alias for the dev hub org; overrides default dev hub org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:lint": {
+      "id": "hardis:project:lint",
+      "description": "Apply syntactic analysis (linters) on the repository sources, using Mega-Linter",
+      "usage": "<%= command.id %> [-f] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:lint", "$ sfdx hardis:project:lint --fix"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "fix": { "name": "fix", "type": "boolean", "char": "f", "description": "Apply linters fixes", "allowNo": false },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:scratch:create": {
+      "id": "hardis:scratch:create",
+      "description": "Create and initialize a scratch org so it is ready to use",
+      "usage": "<%= command.id %> [-n] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:scratch:create"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetdevhubusername": {
+          "name": "targetdevhubusername",
+          "type": "option",
+          "char": "v",
+          "description": "username or alias for the dev hub org; overrides default dev hub org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "forcenew": {
+          "name": "forcenew",
+          "type": "boolean",
+          "char": "n",
+          "description": "If an existing scratch org exists, do not reuse it but create a new one",
+          "allowNo": false
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:scratch:delete": {
+      "id": "hardis:scratch:delete",
+      "description": "Deletes a scratch org",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:scratch:delete"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetdevhubusername": {
+          "name": "targetdevhubusername",
+          "type": "option",
+          "char": "v",
+          "description": "username or alias for the dev hub org; overrides default dev hub org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:scratch:pull": {
+      "id": "hardis:scratch:pull",
+      "description": "Pull scratch org updates from scratch org to local git branch",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:scratch:pull"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:scratch:push": {
+      "id": "hardis:scratch:push",
+      "description": "Push local updates in git branch to scratch org",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:scratch:push"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:work:new": {
+      "id": "hardis:work:new",
+      "description": "New work task",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:work:task:new"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetdevhubusername": {
+          "name": "targetdevhubusername",
+          "type": "option",
+          "char": "v",
+          "description": "username or alias for the dev hub org; overrides default dev hub org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:work:refresh": {
+      "id": "hardis:work:refresh",
+      "description": "Make my local branch and my scratch org up to date with the most recent sources",
+      "usage": "<%= command.id %> [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:work:refresh"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "nopull": {
+          "name": "nopull",
+          "type": "boolean",
+          "char": "n",
+          "description": "No scratch pull before save (careful if you use that!)",
+          "allowNo": false
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:work:resetselection": {
+      "id": "hardis:work:resetselection",
+      "description": "Process again the selection of the items that you want to publish to upper level",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:work:resetsave"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:work:save": {
+      "id": "hardis:work:save",
+      "description": "When a work task is completed, guide user to create a merge request",
+      "usage": "<%= command.id %> [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:work:task:save", "$ sfdx hardis:work:task:save --nopull --nogit --noclean"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "nopull": { "name": "nopull", "type": "boolean", "char": "n", "description": "No scratch pull before save", "allowNo": false },
+        "nogit": { "name": "nogit", "type": "boolean", "char": "g", "description": "No automated git operations", "allowNo": false },
+        "noclean": { "name": "noclean", "type": "boolean", "char": "c", "description": "No cleaning of local sources", "allowNo": false },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:doc:plugin:generate": {
+      "id": "hardis:doc:plugin:generate",
+      "description": "Generate Markdown documentation ready for HTML conversion with mkdocs\n\nAfter the first run, you need to update manually:\n\n- mkdocs.yml\n- .github/workflows/build-deploy-docs.yml\n- docs/javascripts/gtag.js , if you want Google Analytics tracking\n\nThen, activate Github pages, with \"gh_pages\" as target branch\n\nAt each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages\n",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:doc:plugin:generate"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:configure:data": {
+      "id": "hardis:org:configure:data",
+      "description": "Configure Data Export/Import with a SFDMU Project",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:configure:data"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:configure:monitoring": {
+      "id": "hardis:org:configure:monitoring",
+      "description": "Configure monitoring of an org",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:configure:monitoring"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:data:export": {
+      "id": "hardis:org:data:export",
+      "description": "Export data from org using sfdmu",
+      "usage": "<%= command.id %> [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:data:export"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "path": { "name": "path", "type": "option", "char": "p", "description": "Path to the sfdmu workspace folder" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:data:import": {
+      "id": "hardis:org:data:import",
+      "description": "Import data in org using sfdmu",
+      "usage": "<%= command.id %> [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:data:import"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "path": { "name": "path", "type": "option", "char": "p", "description": "Path to the sfdmu workspace folder" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:purge:apexlog": {
+      "id": "hardis:org:purge:apexlog",
+      "description": "Purge apex logs in selected org",
+      "usage": "<%= command.id %> [-z] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:purge:apexlog", "$ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "prompt": {
+          "name": "prompt",
+          "type": "boolean",
+          "char": "z",
+          "description": "Prompt for confirmation (true by default, use --no-prompt to skip)",
+          "allowNo": true
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:purge:flow": {
+      "id": "hardis:org:purge:flow",
+      "description": "Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name",
+      "usage": "<%= command.id %> [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com\n  Found 1 records:\n  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS\n  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete\n  Are you sure you want to delete this list of records (y/n)?: y\n  Successfully deleted record: 30109000000kX7uAAE.\n  Deleted the following list of records:\n  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS\n  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete\n  ",
+        "$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status \"Obsolete,Draft,InvalidDraft --name TestFlow\"\n  Found 4 records:\n  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS\n  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete\n  30109000000kX8EAAU TestFlow    6             test flowwww InvalidDraft\n  30109000000kX8AAAU TestFlow    5             test flowwww InvalidDraft\n  30109000000kX89AAE TestFlow    4             test flowwww Draft\n  Are you sure you want to delete this list of records (y/n)?: n\n  No record deleted\n  "
+      ],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "prompt": {
+          "name": "prompt",
+          "type": "boolean",
+          "char": "z",
+          "description": "Prompt for confirmation (true by default, use --no-prompt to skip)",
+          "allowNo": true
+        },
+        "name": { "name": "name", "type": "option", "char": "n", "description": "Filter according to Name criteria" },
+        "status": { "name": "status", "type": "option", "char": "s", "description": "Filter according to Status criteria", "default": "Obsolete" },
+        "allowpurgefailure": {
+          "name": "allowpurgefailure",
+          "type": "boolean",
+          "char": "f",
+          "description": "Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable",
+          "allowNo": true
+        },
+        "instanceurl": {
+          "name": "instanceurl",
+          "type": "option",
+          "char": "r",
+          "description": "URL of org instance",
+          "default": "https://login.saleforce.com"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:retrieve:packageconfig": {
+      "id": "hardis:org:retrieve:packageconfig",
+      "description": "Retrieve package configuration from an org",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:retrieve:packageconfig"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:test:apex": {
+      "id": "hardis:org:test:apex",
+      "description": "Run apex test cases on org",
+      "usage": "<%= command.id %> [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:test:apex"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "testlevel": {
+          "name": "testlevel",
+          "type": "option",
+          "char": "l",
+          "description": "Level of tests to apply to validate deployment",
+          "helpValue": "(NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg)",
+          "options": ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
+          "default": "RunLocalTests"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:package:version:create": {
+      "id": "hardis:package:version:create",
+      "description": "Create a new version of an unlocked package",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:package:version:create"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetdevhubusername": {
+          "name": "targetdevhubusername",
+          "type": "option",
+          "char": "v",
+          "description": "username or alias for the dev hub org; overrides default dev hub org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:package:version:list": {
+      "id": "hardis:package:version:list",
+      "description": "List versions of unlocked package",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:package:version:list"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetdevhubusername": {
+          "name": "targetdevhubusername",
+          "type": "option",
+          "char": "v",
+          "description": "username or alias for the dev hub org; overrides default dev hub org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:package:version:promote": {
+      "id": "hardis:package:version:promote",
+      "description": "Promote package(s) version(s): convert it from beta to released",
+      "usage": "<%= command.id %> [-d] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:package:version:promote", "$ sfdx hardis:package:version:promote --auto"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetdevhubusername": {
+          "name": "targetdevhubusername",
+          "type": "option",
+          "char": "v",
+          "description": "username or alias for the dev hub org; overrides default dev hub org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "auto": {
+          "name": "auto",
+          "type": "boolean",
+          "char": "d",
+          "description": "Auto-detect which versions of which packages need to be promoted",
+          "allowNo": false
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:audit:apiversion": {
+      "id": "hardis:project:audit:apiversion",
+      "description": "Audit API version",
+      "usage": "<%= command.id %> [-m <number>] [-f] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:audit:apiversion"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "minimumapiversion": {
+          "name": "minimumapiversion",
+          "type": "option",
+          "char": "m",
+          "description": "Minimum allowed API version",
+          "default": 20
+        },
+        "failiferror": {
+          "name": "failiferror",
+          "type": "boolean",
+          "char": "f",
+          "description": "Fails (exit code 1) if an error is found",
+          "allowNo": false
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:audit:callincallout": {
+      "id": "hardis:project:audit:callincallout",
+      "description": "Generate list of callIn and callouts from sfdx project",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:audit:callouts"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:audit:remotesites": {
+      "id": "hardis:project:audit:remotesites",
+      "description": "Generate list of remote sites",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:audit:remotesites"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:clean:emptyitems": {
+      "id": "hardis:project:clean:emptyitems",
+      "description": "Remove unwanted empty items within sfdx project sources",
+      "usage": "<%= command.id %> [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:clean:emptyitems"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "folder": { "name": "folder", "type": "option", "char": "f", "description": "Root folder", "default": "force-app" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:clean:hiddenitems": {
+      "id": "hardis:project:clean:hiddenitems",
+      "description": "Remove unwanted hidden items within sfdx project sources",
+      "usage": "<%= command.id %> [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:clean:hiddenitems"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "folder": { "name": "folder", "type": "option", "char": "f", "description": "Root folder", "default": "force-app" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:clean:manageditems": {
+      "id": "hardis:project:clean:manageditems",
+      "description": "Remove unwanted managed items within sfdx project sources",
+      "usage": "<%= command.id %> [-n <string>] [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:clean:manageditems --namespace crta"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "namespace": { "name": "namespace", "type": "option", "char": "n", "description": "Namespace to remove", "default": "" },
+        "folder": { "name": "folder", "type": "option", "char": "f", "description": "Root folder", "default": "force-app" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:clean:orgmissingitems": {
+      "id": "hardis:project:clean:orgmissingitems",
+      "description": "Clean SFDX sources from items present neither in target org nor local package.xml",
+      "usage": "<%= command.id %> [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:clean:orgmissingitems"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "folder": { "name": "folder", "type": "option", "char": "f", "description": "Root folder", "default": "force-app" },
+        "packagexmlfull": {
+          "name": "packagexmlfull",
+          "type": "option",
+          "char": "p",
+          "description": "Path to packagexml used for cleaning.\nMust contain also standard CustomObject and CustomField elements.\nIf not provided, it will be generated from a remote org"
+        },
+        "packagexmltargetorg": {
+          "name": "packagexmltargetorg",
+          "type": "option",
+          "char": "t",
+          "description": "Target org username or alias to build package.xml (sfdx must be authenticated).\nIf not provided, will be prompted to the user."
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:clean:references": {
+      "id": "hardis:project:clean:references",
+      "description": "Remove unwanted references within sfdx project sources",
+      "usage": "<%= command.id %> [-t <string>] [-c <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "$ sfdx hardis:project:clean:references",
+        "$ sfdx hardis:project:clean:references --type all",
+        "$ sfdx hardis:project:clean:references --config ./cleaning/myconfig.json",
+        "$ sfdx hardis:project:clean:references --config ./somefolder/myDestructivePackage.xml"
+      ],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "type": {
+          "name": "type",
+          "type": "option",
+          "char": "t",
+          "description": "Cleaning type",
+          "options": ["all", "caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields", "productrequest"]
+        },
+        "config": { "name": "config", "type": "option", "char": "c", "description": "Path to a JSON config file or a destructiveChanges.xml file" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:clean:retrievefolders": {
+      "id": "hardis:project:clean:retrievefolders",
+      "description": "Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:clean:retrievefolders"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:clean:standarditems": {
+      "id": "hardis:project:clean:standarditems",
+      "description": "Remove unwanted standard items within sfdx project sources",
+      "usage": "<%= command.id %> [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:clean:standarditems"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:configure:auth": {
+      "id": "hardis:project:configure:auth",
+      "description": "Configure authentication from git branch to target org",
+      "usage": "<%= command.id %> [-b] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:configure:auth"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "devhub": { "name": "devhub", "type": "boolean", "char": "b", "description": "Configure project DevHub", "allowNo": false },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:convert:profilestopermsets": {
+      "id": "hardis:project:convert:profilestopermsets",
+      "description": "Creates permission sets from existing profiles, with id PS_PROFILENAME",
+      "usage": "<%= command.id %> [-e <array>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:convert:profilestopermsets"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "except": { "name": "except", "type": "option", "char": "e", "description": "List of filters", "default": [] },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:generate:gitdelta": {
+      "id": "hardis:project:generate:gitdelta",
+      "description": "Generate package.xml git delta between 2 commits",
+      "usage": "<%= command.id %> [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:generate:gitdelta"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "branch": { "name": "branch", "type": "option", "description": "Git branch to use to generate delta" },
+        "fromcommit": { "name": "fromcommit", "type": "option", "description": "Hash of commit to start from" },
+        "tocommit": { "name": "tocommit", "type": "option", "description": "Hash of commit to stop at" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:retrieve:sources:dx": {
+      "id": "hardis:org:retrieve:sources:dx",
+      "description": "Retrieve Salesforce DX project from org",
+      "usage": "<%= command.id %> [-f <string>] [-t <string>] [-k <string>] [-m <string>] [-o] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:retrieve:sources:dx"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "folder": { "name": "folder", "type": "option", "char": "f", "description": "Folder", "default": "." },
+        "tempfolder": { "name": "tempfolder", "type": "option", "char": "t", "description": "Temporary folder", "default": "./tmp" },
+        "keepmetadatatypes": {
+          "name": "keepmetadatatypes",
+          "type": "option",
+          "char": "k",
+          "description": "Comma separated list of metadatas types that will be the only ones to be retrieved"
+        },
+        "filteredmetadatas": {
+          "name": "filteredmetadatas",
+          "type": "option",
+          "char": "m",
+          "description": "Comma separated list of Metadatas keys to remove from PackageXml file"
+        },
+        "shape": {
+          "name": "shape",
+          "type": "boolean",
+          "char": "o",
+          "description": "Updates project-scratch-def.json from org shape",
+          "allowNo": false
+        },
+        "instanceurl": { "name": "instanceurl", "type": "option", "char": "r", "description": "URL of org instance" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:retrieve:sources:dx2": {
+      "id": "hardis:org:retrieve:sources:dx2",
+      "description": "Retrieve Salesforce DX project from org",
+      "usage": "<%= command.id %> [-x <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:retrieve:sources:dx2"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "packagexml": { "name": "packagexml", "type": "option", "char": "x", "description": "Path to package.xml file" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:org:retrieve:sources:metadata": {
+      "id": "hardis:org:retrieve:sources:metadata",
+      "description": "Retrieve Salesforce DX project from org",
+      "usage": "<%= command.id %> [-f <string>] [-p <string>] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:org:retrieve:sources:metadata"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "folder": { "name": "folder", "type": "option", "char": "f", "description": "Folder", "default": "." },
+        "packagexml": { "name": "packagexml", "type": "option", "char": "p", "description": "Path to package.xml manifest file" },
+        "instanceurl": { "name": "instanceurl", "type": "option", "char": "r", "description": "URL of org instance" },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:deploy:sources:dx": {
+      "id": "hardis:project:deploy:sources:dx",
+      "description": "Deploy SFDX project sources to org",
+      "usage": "<%= command.id %> [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:deploy:sources:dx"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "check": {
+          "name": "check",
+          "type": "boolean",
+          "char": "c",
+          "description": "Only checks the deployment, there is no impact on target org",
+          "allowNo": false
+        },
+        "testlevel": {
+          "name": "testlevel",
+          "type": "option",
+          "char": "l",
+          "description": "Level of tests to apply to validate deployment",
+          "helpValue": "(NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg)",
+          "options": ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
+          "default": "RunLocalTests"
+        },
+        "packagexml": {
+          "name": "packagexml",
+          "type": "option",
+          "char": "p",
+          "description": "Path to package.xml containing what you want to deploy in target org"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    },
+    "hardis:project:deploy:sources:metadata": {
+      "id": "hardis:project:deploy:sources:metadata",
+      "description": "Deploy metadatas to source org",
+      "usage": "<%= command.id %> [-c] [-p <string>] [-f] [-k <string>] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]",
+      "pluginName": "sfdx-hardis",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": ["$ sfdx hardis:project:deploy:sources:metadata"],
+      "flags": {
+        "json": { "name": "json", "type": "boolean", "description": "format output as json", "allowNo": false },
+        "loglevel": {
+          "name": "loglevel",
+          "type": "option",
+          "description": "logging level for this command invocation",
+          "required": false,
+          "helpValue": "(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)",
+          "options": ["trace", "debug", "info", "warn", "error", "fatal", "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"],
+          "default": "warn"
+        },
+        "targetusername": {
+          "name": "targetusername",
+          "type": "option",
+          "char": "u",
+          "description": "username or alias for the target org; overrides default target org"
+        },
+        "apiversion": {
+          "name": "apiversion",
+          "type": "option",
+          "description": "override the api version used for api requests made by this command"
+        },
+        "check": {
+          "name": "check",
+          "type": "boolean",
+          "char": "c",
+          "description": "Only checks the deployment, there is no impact on target org",
+          "allowNo": false
+        },
+        "packagexml": { "name": "packagexml", "type": "option", "char": "p", "description": "Path to package.xml file to deploy" },
+        "filter": { "name": "filter", "type": "boolean", "char": "f", "description": "Filter metadatas before deploying", "allowNo": false },
+        "destructivepackagexml": {
+          "name": "destructivepackagexml",
+          "type": "option",
+          "char": "k",
+          "description": "Path to destructiveChanges.xml file to deploy"
+        },
+        "testlevel": {
+          "name": "testlevel",
+          "type": "option",
+          "char": "l",
+          "description": "Level of tests to apply to validate deployment",
+          "helpValue": "(NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg)",
+          "options": ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
+          "default": "RunLocalTests"
+        },
+        "debug": { "name": "debug", "type": "boolean", "char": "d", "description": "Activate debug mode (more logs)", "allowNo": false },
+        "websocket": { "name": "websocket", "type": "option", "description": "Websocket host:port for VsCode SFDX Hardis UI integration" }
+      },
+      "args": []
+    }
+  }
+}
