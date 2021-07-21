@@ -301,6 +301,14 @@
       "title": "Project Name",
       "type": "string"
     },
+    "sfdmuCanModify": {
+      "$id": "#/properties/sfdmuCanModify",
+      "default": "",
+      "description": "Instance host name to allow SFDMU to deploy data in a production org",
+      "examples": ["myproject.force.com"],
+      "title": "SFDMU can modify",
+      "type": "string"
+    },
     "skipUpdateForceIgnore": {
       "$id": "#/properties/skipUpdateForceIgnore",
       "default": false,
