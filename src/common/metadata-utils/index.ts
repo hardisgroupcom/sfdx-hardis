@@ -471,10 +471,12 @@ class MetadataUtils {
         if (orgAlias != null) {
           packageInstallCommand += ` -u ${orgAlias}`;
         }
+        console.time(`Install package ${package1.SubscriberPackageName}`);
         await execCommand(packageInstallCommand, this, {
           fail: true,
           output: true,
         });
+        console.timeEnd(`Install package ${package1.SubscriberPackageName}`);
       } else {
         uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`));
       }

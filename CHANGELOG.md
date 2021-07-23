@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Better split of elements during hardis:work:save
+- Elapsed time for long running commands
+
 ## [2.42.2] 2021-07-20
 
 - Use relative path for sfdmu data import/export

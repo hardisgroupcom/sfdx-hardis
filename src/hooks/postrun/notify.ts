@@ -6,6 +6,7 @@ import { getConfig } from "../../config";
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || "";
+  console.timeEnd(`${options?.Command?.id} execution time`);
   if (!commandId.startsWith("hardis")) {
     return;
   }

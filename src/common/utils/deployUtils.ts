@@ -15,6 +15,7 @@ import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false) {
+  console.time('force:source:push');
   const config = await getConfig("user");
   const currentBranch = await getCurrentGitBranch();
   let arrangedFiles = [];
@@ -39,6 +40,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       configToSet[`tmp_${currentBranch}_pushed`] = true;
       await setConfig("user", configToSet);
     }
+    console.timeEnd('force:source:push');
   } catch (e) {
     await restoreArrangedFiles(arrangedFiles, commandThis);
     const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
@@ -48,6 +50,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       commandThis,
       c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`))
     );
+    console.timeEnd('force:source:push');
     throw new SfdxError("Deployment failure. Check messages above");
   }
 }
@@ -102,12 +105,14 @@ export async function forceSourceDeploy(
   commandThis: any = this,
   options = {}
 ): Promise<any> {
+  console.time('all deployments');
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode);
   const messages = [];
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Process items of deployment plan
   for (const deployment of splitDeployments) {
+    console.time(`deploy ${deployment.label}`);
     let message = "";
     // Wait before deployment item process if necessary
     if (deployment.waitBefore) {
@@ -143,6 +148,7 @@ export async function forceSourceDeploy(
           commandThis,
           c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`))
         );
+        console.timeEnd(`deploy ${deployment.label}`);
         throw new SfdxError("Deployment failure. Check messages above");
       }
       // Display deployment status
@@ -157,6 +163,7 @@ export async function forceSourceDeploy(
       if (deployment.packageXmlFile.includes("mainPackage.xml")) {
         await restoreQuickActions();
       }
+      console.timeEnd(`deploy ${deployment.label}`);
     }
     // Deployment of type data import
     if (deployment.dataPath) {
@@ -170,6 +177,7 @@ export async function forceSourceDeploy(
     }
     messages.push(message);
   }
+  console.timeEnd('all deployments');
   return { messages };
 }
 

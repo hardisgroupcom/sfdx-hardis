@@ -294,7 +294,9 @@ export default class ScratchCreate extends SfdxCommand {
   // Install packages
   public async installPackages() {
     const packages = this.configInfo.installedPackages || [];
+    console.time("Install all packages");
     await MetadataUtils.installPackagesOnOrg(packages, this.scratchOrgAlias, this, "scratch");
+    console.timeEnd("Install all packages");
   }
 
   // Push or deploy metadatas to the scratch org
