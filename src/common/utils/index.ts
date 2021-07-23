@@ -594,7 +594,7 @@ export function elapseEnd(text: string, commandThis: any = this) {
   if (elapseAll[text]) {
     const elapsed = Number(process.hrtime.bigint() - elapseAll[text]);
     const ms = elapsed / 1000000;
-    uxLog(commandThis, c.grey(c.italic(text + " " + moment().startOf('day').milliseconds(ms).format("H:mm:ss.SSS"))));
+    uxLog(commandThis, c.grey(c.italic(text + " " + moment().startOf("day").milliseconds(ms).format("H:mm:ss.SSS"))));
     delete elapseAll[text];
   }
 }
