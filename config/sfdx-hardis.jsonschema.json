@@ -15,6 +15,14 @@
       "title": "Auto-Cleaning types",
       "type": "array"
     },
+    "apexTestsMinCoverageOrgWide": {
+      "$id": "#/properties/apexTestsMinCoverageOrgWide",
+      "default": 75.0,
+      "description": "Minimum percentage of apex code coverage accepted",
+      "examples": [80.0, 95.0],
+      "title": "Minimum apex test coverage %",
+      "type": "number"
+    },
     "dataPackages": {
       "$id": "#/properties/dataPackages",
       "description": "List of data packages",
@@ -42,12 +50,19 @@
       "title": "Data packages",
       "type": "array"
     },
+    "defaultPackageInstallationKey": {
+      "$id": "#/properties/defaultPackageInstallationKey",
+      "description": "When generating a new package version protected with password, use this value as default package installation key",
+      "examples": ["hardis", "myPassword", "dFGGF43656YfdFDG{{{dhgfh:::;FSEDSFd78"],
+      "title": "Defaut package installation key",
+      "type": "string"
+    },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
       "default": "developpement",
       "description": "When creating a new sfdx-hardis task, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
       "examples": ["developpement", "dev_lot2", "hotfixes"],
-      "title": "Defaut pull/merge request target org",
+      "title": "Default pull/merge request target org",
       "type": "string"
     },
     "deploymentPlan": {

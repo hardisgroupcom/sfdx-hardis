@@ -4,7 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.43.0] 2021-07-20
+## [2.43.1] 2021-07-23
+
+- Update deployTips
+- Update json schema
+
+## [2.43.0] 2021-07-22
 
 - Better split of elements during hardis:work:save
 - Display elapsed time for long running commands
