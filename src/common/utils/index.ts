@@ -19,6 +19,7 @@ import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
 import { promptProfiles } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
+import moment = require("moment");
 
 let pluginsStdout = null;
 
@@ -593,9 +594,8 @@ export function elapseEnd(text: string, commandThis: any = this) {
   if (elapseAll[text]) {
     const elapsed = process.hrtime.bigint();
     const number = Number(elapsed);
-    const milliseconds = number / 1000000;
     const seconds = number / 1000000000;
-    uxLog(commandThis, c.grey(c.italic(text + " - "+ seconds + ':' + milliseconds+"s")));
+    uxLog(commandThis, c.grey(c.italic(text + " " + moment().startOf('day').seconds(seconds).format("H:mm:ss.SSS"))));
     delete elapseAll[text];
   }
 }
