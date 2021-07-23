@@ -5,6 +5,7 @@ import * as path from "path";
 import { decryptFile } from "../../common/cryptoUtils";
 import {
   createTempDir,
+  elapseStart,
   execCommand,
   execSfdxJson,
   getCurrentGitBranch,
@@ -19,6 +20,11 @@ import { checkConfig, getConfig } from "../../config";
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || "";
+
+  if (commandId.startsWith("hardis")) {
+    elapseStart(`${options?.Command?.id} execution time`);
+  }
+
   if (!commandId.startsWith("hardis") || ["hardis:doc:plugin:generate", "hardis:source:push", "hardis:source:pull"].includes(commandId)) {
     return;
   }

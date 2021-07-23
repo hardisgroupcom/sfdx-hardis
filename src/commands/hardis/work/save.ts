@@ -161,73 +161,7 @@ export default class SaveTask extends SfdxCommand {
     const currentGitBranch = await getCurrentGitBranch();
 
     // Request user to select what he/she wants to commit
-    const groups = [
-      {
-        label: "Tech config (recommended)",
-        regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
-        defaultSelect: true,
-      },
-      {
-        label: "Objects",
-        regex: /objects\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Picklists",
-        regex: /(standardValueSets|globalValueSets)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Tabs",
-        regex: /tabs\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Classes/Triggers",
-        regex: /(classes|triggers)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Aura/LWC Components",
-        regex: /(aura|lwc)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Emails",
-        regex: /email\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Flows, Workflows, Path Assistants",
-        regex: /(flows|workflows|pathAssistants)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Layouts",
-        regex: /layouts\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Object Translations",
-        regex: /objectTranslations\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Permissionsets",
-        regex: /permissionsets\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Profiles (not recommended, use Permission Sets instead)",
-        regex: /profiles\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Other",
-        regex: /(.*?)/i,
-        defaultSelect: false,
-      },
-    ];
+    const groups = this.describeGroups();
     if (this.noGit) {
       uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
     } else {
@@ -288,7 +222,7 @@ export default class SaveTask extends SfdxCommand {
         const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
   <version>51.0</version>
-</Package>        
+</Package>
 `;
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
       }
@@ -583,5 +517,81 @@ export default class SaveTask extends SfdxCommand {
       packages.push(item);
     }
     return packages;
+  }
+
+  private describeGroups() {
+    const groups = [
+      {
+        label: "Data (SFDMU projects)",
+        regex: /scripts\/data/i,
+        defaultSelect: true,
+      },
+      {
+        label: "Tech config (recommended)",
+        regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
+        defaultSelect: true,
+      },
+      {
+        label: "Objects",
+        regex: /objects\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Picklists",
+        regex: /(standardValueSets|globalValueSets)\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Tabs",
+        regex: /tabs\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Classes/Triggers",
+        regex: /(classes|triggers)\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Aura/LWC Components",
+        regex: /(aura|lwc)\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Emails",
+        regex: /email\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Flows, Workflows, Path Assistants",
+        regex: /(flows|workflows|pathAssistants)\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Layouts",
+        regex: /layouts\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Object Translations",
+        regex: /objectTranslations\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Permissionsets",
+        regex: /permissionsets\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Profiles (not recommended, use Permission Sets instead)",
+        regex: /profiles\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Other",
+        regex: /(.*?)/i,
+        defaultSelect: false,
+      },
+    ];
+    return groups;
   }
 }

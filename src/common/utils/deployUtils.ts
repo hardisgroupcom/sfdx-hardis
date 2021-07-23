@@ -5,7 +5,7 @@ import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
 import * as xml2js from "xml2js";
-import { createTempDir, execCommand, getCurrentGitBranch, isCI, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, getCurrentGitBranch, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
@@ -15,6 +15,7 @@ import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false) {
+  elapseStart("force:source:push");
   const config = await getConfig("user");
   const currentBranch = await getCurrentGitBranch();
   let arrangedFiles = [];
@@ -39,6 +40,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       configToSet[`tmp_${currentBranch}_pushed`] = true;
       await setConfig("user", configToSet);
     }
+    elapseEnd("force:source:push");
   } catch (e) {
     await restoreArrangedFiles(arrangedFiles, commandThis);
     const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
@@ -48,6 +50,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       commandThis,
       c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`))
     );
+    elapseEnd("force:source:push");
     throw new SfdxError("Deployment failure. Check messages above");
   }
 }
@@ -102,12 +105,14 @@ export async function forceSourceDeploy(
   commandThis: any = this,
   options = {}
 ): Promise<any> {
+  elapseStart("all deployments");
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode);
   const messages = [];
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Process items of deployment plan
   for (const deployment of splitDeployments) {
+    elapseStart(`deploy ${deployment.label}`);
     let message = "";
     // Wait before deployment item process if necessary
     if (deployment.waitBefore) {
@@ -143,6 +148,7 @@ export async function forceSourceDeploy(
           commandThis,
           c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`))
         );
+        elapseEnd(`deploy ${deployment.label}`);
         throw new SfdxError("Deployment failure. Check messages above");
       }
       // Display deployment status
@@ -157,6 +163,7 @@ export async function forceSourceDeploy(
       if (deployment.packageXmlFile.includes("mainPackage.xml")) {
         await restoreQuickActions();
       }
+      elapseEnd(`deploy ${deployment.label}`);
     }
     // Deployment of type data import
     if (deployment.dataPath) {
@@ -170,6 +177,7 @@ export async function forceSourceDeploy(
     }
     messages.push(message);
   }
+  elapseEnd("all deployments");
   return { messages };
 }
 

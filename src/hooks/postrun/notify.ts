@@ -1,6 +1,6 @@
 import * as changedGitFiles from "changed-git-files";
 import { IncomingWebhook } from "ms-teams-webhook";
-import { isGitRepo } from "../../common/utils";
+import { elapseEnd, isGitRepo } from "../../common/utils";
 import { getConfig } from "../../config";
 
 export const hook = async (options: any) => {
@@ -9,6 +9,7 @@ export const hook = async (options: any) => {
   if (!commandId.startsWith("hardis")) {
     return;
   }
+  elapseEnd(`${options?.Command?.id} execution time`);
   if (commandId.startsWith("hardis:doc")) {
     return;
   }

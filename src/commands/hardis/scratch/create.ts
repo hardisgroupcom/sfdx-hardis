@@ -11,7 +11,7 @@ import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { MetadataUtils } from "../../../common/metadata-utils";
-import { execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
+import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
 import { importData } from "../../../common/utils/dataUtils";
 import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "../../../common/utils/deployUtils";
 import { prompts } from "../../../common/utils/prompts";
@@ -83,7 +83,7 @@ export default class ScratchCreate extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
     this.forceNew = this.flags.forcenew || false;
-
+    elapseStart(`Create and initialize scratch org`);
     await this.initConfig();
     await this.createScratchOrg();
     try {
@@ -94,6 +94,7 @@ export default class ScratchCreate extends SfdxCommand {
       await this.initApexScripts();
       await this.initOrgData();
     } catch (e) {
+      elapseEnd(`Create and initialize scratch org`);
       if (isCI && this.scratchOrgUsername) {
         await execCommand(`sfdx force:org:delete --noprompt --targetusername ${this.scratchOrgUsername}`, this, {
           fail: false,
@@ -111,7 +112,7 @@ export default class ScratchCreate extends SfdxCommand {
         c.cyan(`You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(this.scratchOrgPassword)}`)
       );
     }
-
+    elapseEnd(`Create and initialize scratch org`);
     // Return an object to be displayed with --json
     return {
       outputString: "Created and initialized scratch org",
@@ -294,7 +295,9 @@ export default class ScratchCreate extends SfdxCommand {
   // Install packages
   public async installPackages() {
     const packages = this.configInfo.installedPackages || [];
+    elapseStart("Install all packages");
     await MetadataUtils.installPackagesOnOrg(packages, this.scratchOrgAlias, this, "scratch");
+    elapseEnd("Install all packages");
   }
 
   // Push or deploy metadatas to the scratch org

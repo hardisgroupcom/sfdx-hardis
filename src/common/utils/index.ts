@@ -19,6 +19,7 @@ import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
 import { promptProfiles } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
+import moment = require("moment");
 
 let pluginsStdout = null;
 
@@ -583,6 +584,19 @@ export function getSfdxFileLabel(filePath: string) {
 
 function getGitWorkingDirLabel(workingDir) {
   return workingDir === "?" ? "CREATED" : workingDir === "D" ? "DELETED" : workingDir === "M" ? "UPDATED" : "OOOOOPS";
+}
+
+const elapseAll = {};
+export function elapseStart(text) {
+  elapseAll[text] = process.hrtime.bigint();
+}
+export function elapseEnd(text: string, commandThis: any = this) {
+  if (elapseAll[text]) {
+    const elapsed = Number(process.hrtime.bigint() - elapseAll[text]);
+    const ms = elapsed / 1000000;
+    uxLog(commandThis, c.grey(c.italic(text + " " + moment().startOf("day").milliseconds(ms).format("H:mm:ss.SSS"))));
+    delete elapseAll[text];
+  }
 }
 
 // Can be used to merge 2 package.xml content
