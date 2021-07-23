@@ -2,7 +2,7 @@ import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execCommand, uxLog } from ".";
+import { elapseEnd, elapseStart, execCommand, uxLog } from ".";
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 
@@ -23,12 +23,12 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     ` -p ${sfdmuPath}` +
     " --noprompt" +
     (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : "");
-  console.time(`import ${dtl.full_label}`);
+  elapseStart(`import ${dtl.full_label}`);
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,
   });
-  console.timeEnd(`import ${dtl.full_label}`);
+  elapseEnd(`import ${dtl.full_label}`);
 }
 
 // Export data from sfdmu folder

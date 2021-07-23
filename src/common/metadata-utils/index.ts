@@ -3,7 +3,7 @@ import * as c from "chalk";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
+import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
 
 class MetadataUtils {
@@ -471,12 +471,12 @@ class MetadataUtils {
         if (orgAlias != null) {
           packageInstallCommand += ` -u ${orgAlias}`;
         }
-        console.time(`Install package ${package1.SubscriberPackageName}`);
+        elapseStart(`Install package ${package1.SubscriberPackageName}`);
         await execCommand(packageInstallCommand, this, {
           fail: true,
           output: true,
         });
-        console.timeEnd(`Install package ${package1.SubscriberPackageName}`);
+        elapseEnd(`Install package ${package1.SubscriberPackageName}`);
       } else {
         uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`));
       }

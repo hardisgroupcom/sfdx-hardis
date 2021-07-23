@@ -585,6 +585,21 @@ function getGitWorkingDirLabel(workingDir) {
   return workingDir === "?" ? "CREATED" : workingDir === "D" ? "DELETED" : workingDir === "M" ? "UPDATED" : "OOOOOPS";
 }
 
+const elapseAll = {};
+export function elapseStart(text) {
+  elapseAll[text] = process.hrtime.bigint();
+}
+export function elapseEnd(text: string, commandThis: any = this) {
+  if (elapseAll[text]) {
+    const elapsed = process.hrtime.bigint();
+    const number = Number(elapsed);
+    const milliseconds = number / 1000000;
+    const seconds = number / 1000000000;
+    uxLog(commandThis, c.grey(c.italic(text + " - "+ seconds + ':' + milliseconds+"s")));
+    delete elapseAll[text];
+  }
+}
+
 // Can be used to merge 2 package.xml content
 export function mergeObjectPropertyLists(obj1: any, obj2: any, options: { sort: true }) {
   for (const key of Object.keys(obj2)) {
