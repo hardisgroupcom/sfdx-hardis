@@ -592,6 +592,6 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: false,
       },
     ];
-    return groups ;
+    return groups;
   }
 }

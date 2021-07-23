@@ -15,7 +15,7 @@ import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false) {
-  console.time('force:source:push');
+  console.time("force:source:push");
   const config = await getConfig("user");
   const currentBranch = await getCurrentGitBranch();
   let arrangedFiles = [];
@@ -40,7 +40,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       configToSet[`tmp_${currentBranch}_pushed`] = true;
       await setConfig("user", configToSet);
     }
-    console.timeEnd('force:source:push');
+    console.timeEnd("force:source:push");
   } catch (e) {
     await restoreArrangedFiles(arrangedFiles, commandThis);
     const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
@@ -50,7 +50,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       commandThis,
       c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`))
     );
-    console.timeEnd('force:source:push');
+    console.timeEnd("force:source:push");
     throw new SfdxError("Deployment failure. Check messages above");
   }
 }
@@ -105,7 +105,7 @@ export async function forceSourceDeploy(
   commandThis: any = this,
   options = {}
 ): Promise<any> {
-  console.time('all deployments');
+  console.time("all deployments");
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode);
   const messages = [];
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
@@ -177,7 +177,7 @@ export async function forceSourceDeploy(
     }
     messages.push(message);
   }
-  console.timeEnd('all deployments');
+  console.timeEnd("all deployments");
   return { messages };
 }
 
