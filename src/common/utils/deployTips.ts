@@ -45,10 +45,7 @@ function getAllTips() {
       name: "can-not-delete-custom-field",
       label: "Can not delete custom field",
       context: "destructiveChange",
-      expressionRegex: [
-        /This (.*) is referenced elsewhere in salesforce.com/gm,
-        /Le champ personnalisé (.*) est utilisé dans (.*)/gm
-      ],
+      expressionRegex: [/This (.*) is referenced elsewhere in salesforce.com/gm, /Le champ personnalisé (.*) est utilisé dans (.*)/gm],
       tip: `A custom field can not be deleted because it is used elsewhere. Remove its references ans try again
 THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed separately from updated items deployment check`,
     },
