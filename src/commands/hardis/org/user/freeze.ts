@@ -91,29 +91,15 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     }
     queryUser +=') AND isfrozen=false';
 
-  /*  let apexcode = 'list<userLogin> userLoginList = ['+queryUser+']; \n'+
-    'Set<Id> userIdList = new Set<Id>();\n'+
-    'if(userLoginList != null && userLoginList.size()> 0){\n'+
-        'for(UserLogin userfromList : userLoginList){\n'+
-            'userIdList.add(userfromList.UserId);\n'+
-        '}\n'+
-    '}\n'+
-    'list<User> userList = [SELECT Id,Name,Profile.Name FROM User WHERE Id IN :userIdList];\n'+
-    'system.debug(\'OUTPUTVALUE=\'+JSON.serialize(userList)+\'END_OUTPUTVALUE\'); \n';
-    
-    const username = this.org.getUsername();  */
-
-  //  const freezeQueryRes = await executeApex(apexcode,'apex-freeze.apex',username,debugMode);
-   // let logs = freezeQueryRes?.result?.logs || '' ;
    let userlistrawFreeze;
    let userList;
    const userIdList=[];
    const conn = this.org.getConnection();
    await conn.query(queryUser, null,function(err:any, result:any) {
     if (err) { return console.log(err); }
-    console.log("total : " + result.totalSize);
-    console.log("fetched : " + result.records.length);
-    console.log("records : " + JSON.stringify(result.records));
+    console.log("total freeze: " + result.totalSize);
+    console.log("fetched freeze: " + result.records.length);
+    console.log("records freeze: " + JSON.stringify(result.records));
     userList = result.records;
    });
 
@@ -121,9 +107,9 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       await userList.forEach(function (record :any){
         userIdList.push('\''+record.UserId+'\'');
       });
-    await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,function(err:any, result:any) {
+    await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,function(err:any, resultfreeze:any) {
         if (err) { return console.log(err); }
-        userlistrawFreeze = result.records;
+        userlistrawFreeze = resultfreeze.records;
       });
 
     }
@@ -159,9 +145,9 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     });
     if (confirmfreeze.value === true) {
 
-      await userList.forEach(function (record :any){
-        record.IsFrozen = true;
-        delete record.UserId;
+      await userList.forEach(function (freezerecord :any){
+        freezerecord.IsFrozen = true;
+        delete freezerecord.UserId;
       });
       console.log('userList '+JSON.stringify(userList));
       await conn.sobject("UserLogin").update(userList, function(err, ret) {
@@ -169,22 +155,6 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         console.log('Updated Successfully : ' + JSON.stringify(ret));
 
       });
-      /*  apexcode = 'list<userLogin> userLoginList = ['+queryUser+']; \n'+
-        'Set<Id> userIdList = new Set<Id>();\n'+
-        'if(userLoginList != null && userLoginList.size()> 0){\n'+
-            'for(UserLogin userfromList : userLoginList){\n'+
-                'userfromList.isFrozen = true;\n'+
-                'userIdList.add(userfromList.UserId);\n'+
-            '}\n'+
-        '}\n'+
-        'upsert userLoginList;\n'+
-        'list<User> userList = [SELECT Id,Name,Profile.Name FROM User WHERE Id IN :userIdList];\n'+
-        'system.debug(\'OUTPUTVALUE=\'+JSON.serialize(userList)+\'END_OUTPUTVALUE\'); \n';*/
-
-  //      const freezeQueryRes = await executeApex(apexcode,'apex-freeze.apex',username,debugMode);
-        //logs = freezeQueryRes?.result?.logs || '' ;
-      
-        //userlistrawFreeze= JSON.parse(logs.split('OUTPUTVALUE=')[2].split('END_OUTPUTVALUE')[0]);
 
     }
     if (userlistrawFreeze.length === 0) {

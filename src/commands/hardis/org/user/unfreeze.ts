@@ -87,9 +87,9 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     const conn = this.org.getConnection();
     await conn.query(queryUser, null,function(err:any, result:any) {
      if (err) { return console.log(err); }
-     console.log("total : " + result.totalSize);
-     console.log("fetched : " + result.records.length);
-     console.log("records : " + JSON.stringify(result.records));
+     console.log("total unfreeze : " + result.totalSize);
+     console.log("fetched unfreeze: " + result.records.length);
+     console.log("records unfreeze: " + JSON.stringify(result.records));
      userList = result.records;
     });
  
@@ -97,9 +97,9 @@ export default class OrgUnfreezeUser extends SfdxCommand {
        await userList.forEach(function (record :any){
          userIdList.push('\''+record.UserId+'\'');
        });
-     await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,function(err:any, result:any) {
+     await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,function(err:any, resultunfreeze:any) {
          if (err) { return console.log(err); }
-         userlistrawUnfreeze = result.records;
+         userlistrawUnfreeze = resultunfreeze.records;
        });
  
      }
@@ -131,9 +131,9 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     });
     if (confirmUnfreeze.value === true) {
       {
-        await userList.forEach(function (record :any){
-          record.IsFrozen = false;
-          delete record.UserId;
+        await userList.forEach(function (unfreezeRecord :any){
+          unfreezeRecord.IsFrozen = false;
+          delete unfreezeRecord.UserId;
         });
         console.log('userList '+JSON.stringify(userList));
         await conn.sobject("UserLogin").update(userList, function(err, ret) {
