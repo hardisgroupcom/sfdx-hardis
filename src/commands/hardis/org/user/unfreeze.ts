@@ -85,12 +85,12 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     let userListUnfreeze;
     const userIdList=[];
     const conn = this.org.getConnection();
-    await conn.query(queryUserUnfreeze, null,function(err:any, result:any) {
+    await conn.query(queryUserUnfreeze, null,function(err:any, resultunfreeze:any) {
      if (err) { return console.log(err); }
-     console.log("total unfreeze : " + result.totalSize);
-     console.log("fetched unfreeze: " + result.records.length);
-     console.log("records unfreeze: " + JSON.stringify(result.records));
-     userListUnfreeze = result.records;
+     console.log("total unfreeze : " + resultunfreeze.totalSize);
+     console.log("fetched unfreeze: " + resultunfreeze.records.length);
+     console.log("records unfreeze: " + JSON.stringify(resultunfreeze.records));
+     userListUnfreeze = resultunfreeze.records;
     });
  
      if(userListUnfreeze.length>0){
