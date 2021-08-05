@@ -5,7 +5,6 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as columnify from "columnify";
 import { uxLog } from "../../../../common/utils";
-import { executeApex } from "../../../../common/utils/deployUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
@@ -54,12 +53,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       char: "e",
       default: "system administrator,Administrateur système",
       description: messages.getMessage("exceptFilter"),
-    }),
-    debug: flags.boolean({
-      char: "d",
-      default: false,
-      description: messages.getMessage("debugMode"),
-    }),
+    })
   };
 
   // Comment this out if your command does not require an org username
@@ -77,7 +71,6 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     const exceptFilter = this.flags.except ? this.flags.except.split(",") : ["System Administrator"];
     const nameFilter = this.flags.name || null;
 
-    const debugMode = this.flags.debug || false;
 
     //select id, isfrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN (\''+exceptFilter+'\') and isactive=true) AND isfrozen=false
     // Build query with name filter if sent
@@ -88,28 +81,33 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       queryUser += " AND Name LIKE '%" + nameFilter + "%'";
     }
     queryUser += ") AND isfrozen=true";
+    let userlistrawUnfreeze;
+    let userList;
+    const userIdList=[];
+    const conn = this.org.getConnection();
+    await conn.query(queryUser, null,function(err:any, result:any) {
+     if (err) { return console.log(err); }
+     console.log("total : " + result.totalSize);
+     console.log("fetched : " + result.records.length);
+     console.log("records : " + JSON.stringify(result.records));
+     userList = result.records;
+    });
+ 
+     if(userList.length>0){
+       await userList.forEach(function (record :any){
+         userIdList.push('\''+record.UserId+'\'');
+       });
+     await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,function(err:any, result:any) {
+         if (err) { return console.log(err); }
+         userlistrawUnfreeze = result.records;
+       });
+ 
+     }
+ 
+     console.log("userlistrawunFreeze : " + JSON.stringify(userlistrawUnfreeze));
 
-    let apexcode =
-      "list<userLogin> userLoginList = [" +
-      queryUser +
-      "]; \n" +
-      "Set<Id> userIdList = new Set<Id>();\n" +
-      "if(userLoginList != null && userLoginList.size()> 0){\n" +
-      "for(UserLogin userfromList : userLoginList){\n" +
-      "userIdList.add(userfromList.UserId);\n" +
-      "}\n" +
-      "}\n" +
-      "list<User> userList = [SELECT Id,Name,Profile.Name FROM User WHERE Id IN :userIdList];\n" +
-      "system.debug('OUTPUTVALUE='+JSON.serialize(userList)+'END_OUTPUTVALUE'); \n";
-
-    const username = this.org.getUsername();
-
-    const freezeQueryRes = await executeApex(apexcode, "apex-freeze.apex", username, debugMode);
-    let logs = freezeQueryRes?.result?.logs || "";
-
-    let userlistrawUnfreeze = JSON.parse(logs.split("OUTPUTVALUE=")[2].split("END_OUTPUTVALUE")[0]);
     // Check empty result
-    if (userlistrawUnfreeze.length === 0) {
+    if (!userlistrawUnfreeze || userlistrawUnfreeze.length === 0) {
       const outputString = `No matching user records found for all profile  except ${exceptFilter}`;
       uxLog(this, c.yellow(outputString));
       return { deleted: [], outputString };
@@ -128,29 +126,21 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       type: "confirm",
       name: "value",
       initial: true,
-      message: c.cyanBright(`Are you sure you want to freeze this list of records in ${c.green(this.org.getUsername())} (y/n)?`),
+      
+      message: c.cyanBright(`Are you sure you want to unfreeze this list of records in ${c.green(this.org.getUsername())} (y/n)?`),
     });
     if (confirmUnfreeze.value === true) {
       {
-        apexcode =
-          "list<userLogin> userLoginList = [" +
-          queryUser +
-          "]; \n" +
-          "Set<Id> userIdList = new Set<Id>();\n" +
-          "if(userLoginList != null && userLoginList.size()> 0){\n" +
-          "for(UserLogin userfromList : userLoginList){\n" +
-          "userfromList.isFrozen = false;\n" +
-          "userIdList.add(userfromList.UserId);\n" +
-          "}\n" +
-          "}\n" +
-          "upsert userLoginList;\n" +
-          "list<User> userList = [SELECT Id,Name,Profile.Name FROM User WHERE Id IN :userIdList];\n" +
-          "system.debug('OUTPUTVALUE='+JSON.serialize(userList)+'END_OUTPUTVALUE'); \n";
-
-        const freezeQueryRes = await executeApex(apexcode, "apex-freeze.apex", username, debugMode);
-        logs = freezeQueryRes?.result?.logs || "";
-
-        userlistrawUnfreeze = JSON.parse(logs.split("OUTPUTVALUE=")[2].split("END_OUTPUTVALUE")[0]);
+        await userList.forEach(function (record :any){
+          record.IsFrozen = false;
+          delete record.UserId;
+        });
+        console.log('userList '+JSON.stringify(userList));
+        await conn.sobject("UserLogin").update(userList, function(err, ret) {
+          if (err || !ret.success) { return console.error(err, ret); }
+          console.log('Updated Successfully : ' + JSON.stringify(ret));
+  
+        });
       }
 
       if (userlistrawUnfreeze.length === 0) {
