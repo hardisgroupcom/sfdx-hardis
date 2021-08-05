@@ -10,7 +10,6 @@ import { CONSTANTS, getConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 import { prompts } from "./prompts";
-import { execSfdxJson } from './index';
 
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false) {
   try {
@@ -417,16 +416,3 @@ async function restoreQuickActions() {
     }
   }
 }
-
-export async function executeApex(apexclassContent: string,apexClassPath: string,targetusername: string,debugMode: boolean){
-  fs.readFileSync(path.join(__dirname,'../../Apex/'+apexClassPath),'utf8');
-  const targetFile = path.join(__dirname,'../../Apex/'+apexClassPath);
-  await fs.writeFile(targetFile,apexclassContent);
-
-  const apexScriptCommand = `sfdx force:apex:execute -f "${targetFile}" --targetusername ${targetusername}`;
-  const freezeQueryRes = await execSfdxJson(apexScriptCommand, this, { fail: true, output: true, debug: debugMode });
-  return freezeQueryRes;
-
-}
-
-// 
