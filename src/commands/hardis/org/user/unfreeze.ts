@@ -74,18 +74,18 @@ export default class OrgUnfreezeUser extends SfdxCommand {
 
     //select id, isfrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN (\''+exceptFilter+'\') and isactive=true) AND isfrozen=false
     // Build query with name filter if sent
-    let queryUser = `select id, isFrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN ('${exceptFilter.join(
+    let queryUserUnfreeze = `select id, isFrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN ('${exceptFilter.join(
       "','"
     )}') and isactive=true`;
     if (nameFilter) {
-      queryUser += " AND Name LIKE '%" + nameFilter + "%'";
+      queryUserUnfreeze += " AND Name LIKE '%" + nameFilter + "%'";
     }
-    queryUser += ") AND isfrozen=true";
+    queryUserUnfreeze += ") AND isfrozen=true";
     let userlistrawUnfreeze;
     let userListUnfreeze;
     const userIdList=[];
     const conn = this.org.getConnection();
-    await conn.query(queryUser, null,function(err:any, result:any) {
+    await conn.query(queryUserUnfreeze, null,function(err:any, result:any) {
      if (err) { return console.log(err); }
      console.log("total unfreeze : " + result.totalSize);
      console.log("fetched unfreeze: " + result.records.length);
