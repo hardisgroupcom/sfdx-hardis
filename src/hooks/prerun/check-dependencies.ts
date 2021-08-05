@@ -10,6 +10,9 @@ export const hook = async (options: any) => {
   if (!commandId.startsWith("hardis")) {
     return;
   }
+  if (commandId.startsWith("hardis:doc")) {
+    return;
+  }
 
   // Set only once restDeploy=false to improve performances
   const config = await getConfig("user");
@@ -49,6 +52,11 @@ export const hook = async (options: any) => {
           await git({ output: true }).addConfig("user.email", email);
           uxLog(this, `Defined ${email} as git user.email` + (email === "default@hardis-group.com") ? " (temporary)" : "");
         }
+        // Manage special characters in git file / folder names
+        if (allConfigs["core.quotepath"] == null || allConfigs["core.quotepath"] == "true") {
+          await git({ output: true }).addConfig("core.quotepath", "false");
+          uxLog(this, `Defined "false" as git core.quotepath`);
+        }
         // Merge tool
         if (allConfigs["merge.tool"] == null) {
           await git({ output: true }).addConfig("merge.tool", "vscode");
@@ -72,7 +80,7 @@ export const hook = async (options: any) => {
 
   // Check required dependencies installed
   const requiresDependencies = options?.Command?.requiresDependencies || [];
-  requiresDependencies.push('git');
+  requiresDependencies.push("git");
   for (const appName of requiresDependencies) {
     await checkAppDependency(appName);
   }

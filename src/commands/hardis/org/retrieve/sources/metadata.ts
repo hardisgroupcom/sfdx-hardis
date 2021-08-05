@@ -57,6 +57,9 @@ export default class DxSources extends SfdxCommand {
   // List required plugins, their presence will be tested before running the command
   protected static requiresSfdxPlugins = ["sfdx-essentials"];
 
+  // Trigger notification(s) to MsTeams channel
+  protected static triggerNotification = true;
+
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {

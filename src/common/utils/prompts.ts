@@ -24,6 +24,10 @@ export async function prompts(options) {
       ];
       question.initial = question.initial === false ? 1 : 0;
     }
+    // Default output value "value"
+    if (question.name === null || question.name === undefined) {
+      question.name = "value";
+    }
     // Add exit option when possible
     if (question.type === "select") {
       question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });
@@ -38,7 +42,7 @@ export async function prompts(options) {
   if (WebSocketClient.isAlive()) {
     // Use UI prompt
     for (const question of questionsReformatted) {
-      uxLog(this, c.cyan(question.message) + c.white(" ↑↑↑↑↑↑↑↑"));
+      uxLog(this, c.cyan(question.message) + c.white(" ↑↑ Look up in VsCode ↑↑"));
       const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
       answers = Object.assign(answers, questionAnswer);
       uxLog(this, c.grey(JSON.stringify(answers)));

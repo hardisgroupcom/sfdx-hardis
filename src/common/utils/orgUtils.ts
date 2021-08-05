@@ -5,7 +5,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { execSfdxJson, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
-import { setConfig } from "../../config";
+import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
 
 export async function listProfiles(conn: any) {
@@ -51,7 +51,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   // List all local orgs and request to user
   const orgListResult = await MetadataUtils.listLocalOrgs("any");
   const orgList = [
-    ...sortArray(orgListResult?.scratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
+    ...sortArray(orgListResult?.scratchOrgs || [], { by: ["devHubUsername", "username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     ...sortArray(orgListResult?.nonScratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     { username: "Connect to another org", otherOrg: true },
     { username: "Cancel", cancel: true },
@@ -63,23 +63,25 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
     message: c.cyanBright("Please select an org"),
     choices: orgList.map((org: any) => {
       const title = org.username || org.alias || org.instanceUrl;
-      const description = title !== org.instanceUrl ? org.instanceUrl : "";
+      const description = (title !== org.instanceUrl ? org.instanceUrl : "") + (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : "");
       return {
         title: c.cyan(title),
-        description: description,
+        description: description || "-",
         value: org,
       };
     }),
   });
 
+  let org = orgResponse.org;
+
   // Cancel
-  if (orgResponse.org.cancel === true) {
+  if (org.cancel === true) {
     uxLog(commandThis, c.cyan("Cancelled"));
     process.exit(0);
   }
 
   // Connect to new org
-  if (orgResponse.org.otherOrg === true) {
+  if (org.otherOrg === true) {
     await commandThis.config.runHook("auth", {
       checkAuth: true,
       Command: commandThis,
@@ -87,29 +89,100 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
       setDefault: options.setDefault !== false,
     });
     return { outputString: "Launched org connection" };
-  } else {
-    if (options.setDefault === true) {
-      // Set default username
-      const setDefaultUsernameCommand =
-        `sfdx config:set ` +
-        `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${orgResponse.org.username}` +
-        (!fs.existsSync(path.join(process.cwd(), "sfdx-project.json")) ? " --global" : "");
-      await execSfdxJson(setDefaultUsernameCommand, commandThis, {
-        fail: true,
-        output: false,
+  }
+
+  // Token is expired: login again to refresh it
+  if (org?.connectedStatus === "RefreshTokenAuthError") {
+    uxLog(this, c.yellow(`Your authentication is expired. Please login again in the web browser`));
+    const loginCommand = "sfdx auth:web:login" + ` --instanceurl ${org.instanceUrl}`;
+    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: true });
+    org = loginResult.result;
+  }
+
+  if (options.setDefault === true) {
+    // Set default username
+    const setDefaultUsernameCommand =
+      `sfdx config:set ` +
+      `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${org.username}` +
+      (!fs.existsSync(path.join(process.cwd(), "sfdx-project.json")) ? " --global" : "");
+    await execSfdxJson(setDefaultUsernameCommand, commandThis, {
+      fail: true,
+      output: false,
+    });
+    WebSocketClient.sendMessage({ event: "refreshStatus" });
+    // Update local user .sfdx-hardis.yml file with response if scratch has been selected
+    if (org.username.includes("scratch")) {
+      await setConfig("user", {
+        scratchOrgAlias: org.username,
+        scratchOrgUsername: org.alias || org.username,
       });
-      WebSocketClient.sendMessage({ event: "refreshStatus" });
-      // Update local user .sfdx-hardis.yml file with response if scratch has been selected
-      if (orgResponse.org.username.includes("scratch")) {
-        await setConfig("user", {
-          scratchOrgAlias: orgResponse.org.username,
-          scratchOrgUsername: orgResponse.org.alias || orgResponse.org.username,
-        });
+    }
+  }
+  uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
+  uxLog(commandThis, c.cyan(`Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
+  return orgResponse.org;
+}
+
+export async function promptOrgUsernameDefault(commandThis: any, defaultOrg: string, options: any = { devHub: false, setDefault: true }) {
+  const defaultOrgRes = await prompts({
+    type: "confirm",
+    message: `Do you want to use org ${defaultOrg}`,
+  });
+  if (defaultOrgRes.value === true) {
+    return defaultOrg;
+  } else {
+    const selectedOrg = await promptOrg(commandThis, options);
+    return selectedOrg.username;
+  }
+}
+
+// Add package installation to project .sfdx-hardis.yml
+export async function managePackageConfig(installedPackages, packagesToInstallCompleted) {
+  const config = await getConfig("project");
+  const projectPackages = config.installedPackages || [];
+  let updated = false;
+  for (const installedPackage of installedPackages) {
+    const matchInstalled = packagesToInstallCompleted.filter(
+      (pckg) => pckg.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId
+    );
+    const matchLocal = projectPackages.filter(
+      (projectPackage) => installedPackage.SubscriberPackageVersionId === projectPackage.SubscriberPackageVersionId
+    );
+    if (matchInstalled.length > 0 && matchLocal.length === 0) {
+      // Request user about automatic installation during scratch orgs and deployments
+      const installResponse = await prompts({
+        type: "select",
+        name: "value",
+        message: c.cyanBright(`Please select the install configuration for ${installedPackage.SubscriberPackageName}`),
+        choices: [
+          {
+            title: `Install automatically ${installedPackage.SubscriberPackageName} on scratch orgs only`,
+            value: "scratch",
+          },
+          {
+            title: `Deploy automatically ${installedPackage.SubscriberPackageName} on integration/production orgs only`,
+            value: "deploy",
+          },
+          {
+            title: `Both: Install & deploy automatically ${installedPackage.SubscriberPackageName}`,
+            value: "scratch-deploy",
+          },
+          {
+            title: `Do not configure ${installedPackage.SubscriberPackageName} installation / deployment`,
+            value: "none",
+          },
+        ],
+      });
+      installedPackage.installOnScratchOrgs = installResponse.value.includes("scratch");
+      installedPackage.installDuringDeployments = installResponse.value.includes("deploy");
+      if (installResponse.value !== "none" && installResponse.value != null) {
+        projectPackages.push(installedPackage);
+        updated = true;
       }
     }
-
-    uxLog(commandThis, c.gray(JSON.stringify(orgResponse.org, null, 2)));
-    uxLog(commandThis, c.cyan(`Selected org ${c.green(orgResponse.org.username)} - ${c.green(orgResponse.org.instanceUrl)}`));
-    return orgResponse.org;
+  }
+  if (updated) {
+    uxLog(this, "Updated package configuration in sfdx-hardis config");
+    await setConfig("project", { installedPackages: projectPackages });
   }
 }

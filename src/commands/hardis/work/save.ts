@@ -10,6 +10,7 @@ import {
   execCommand,
   execSfdxJson,
   getCurrentGitBranch,
+  getGitRepoRoot,
   git,
   gitHasLocalUpdates,
   interactiveGitAdd,
@@ -160,73 +161,7 @@ export default class SaveTask extends SfdxCommand {
     const currentGitBranch = await getCurrentGitBranch();
 
     // Request user to select what he/she wants to commit
-    const groups = [
-      {
-        label: "Tech config (recommended)",
-        regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
-        defaultSelect: true,
-      },
-      {
-        label: "Objects",
-        regex: /objects\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Picklists",
-        regex: /(standardValueSets|globalValueSets)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Tabs",
-        regex: /tabs\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Classes/Triggers",
-        regex: /(classes|triggers)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Aura/LWC Components",
-        regex: /(aura|lwc)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Emails",
-        regex: /email\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Flows, Workflows, Path Assistants",
-        regex: /(flows|workflows|pathAssistants)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Layouts",
-        regex: /layouts\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Object Translations",
-        regex: /objectTranslations\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Permissionsets",
-        regex: /permissionsets\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Profiles (not recommended, use Permission Sets instead)",
-        regex: /profiles\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Other",
-        regex: /(.*?)/i,
-        defaultSelect: false,
-      },
-    ];
+    const groups = this.describeGroups();
     if (this.noGit) {
       uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
     } else {
@@ -274,9 +209,10 @@ export default class SaveTask extends SfdxCommand {
       toCommit ? toCommit.hash : masterBranchLatestCommit
     } --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
-      output: false,
+      output: true,
       fail: false,
       debug: this.debugMode,
+      cwd: await getGitRepoRoot(),
     });
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml
@@ -286,7 +222,7 @@ export default class SaveTask extends SfdxCommand {
         const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
   <version>51.0</version>
-</Package>        
+</Package>
 `;
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
       }
@@ -333,10 +269,7 @@ export default class SaveTask extends SfdxCommand {
       }
     } else {
       uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
-      uxLog(
-        this,
-        c.red(`Unable to build git diff. Please call a developer to ${c.yellow(c.bold("update package.xml and destructivePackage.xml manually"))}`)
-      );
+      uxLog(this, c.red(`Unable to build git diff.${c.yellow(c.bold("Please update package.xml and destructiveChanges.xml manually"))}`));
     }
 
     // Commit updates
@@ -370,12 +303,12 @@ export default class SaveTask extends SfdxCommand {
     }
 
     // Build deployment plan splits
-    let splitConfig = this.getSeparateDeploymentsConfig();
+    let splitConfig = await this.getSeparateDeploymentsConfig();
     const packageXml = await parseXmlFile(localPackageXml);
     for (const type of packageXml.Package.types || []) {
       const typeName = type.name[0];
       splitConfig = splitConfig.map((split) => {
-        if (split.types.includes(typeName)) {
+        if (split.types.includes(typeName) && type.members[0] !== "*") {
           split.content[typeName] = type.members;
         }
         return split;
@@ -535,7 +468,11 @@ export default class SaveTask extends SfdxCommand {
     return mergeRequestStored;
   }
 
-  private getSeparateDeploymentsConfig() {
+  private async getSeparateDeploymentsConfig() {
+    const config = await getConfig("project");
+    if (config.separateDeploymentsConfig || config.separateDeploymentsConfig === false) {
+      return config.separateDeploymentConfig || [];
+    }
     const separateDeploymentConfig = [
       {
         types: ["EmailTemplate"],
@@ -580,5 +517,81 @@ export default class SaveTask extends SfdxCommand {
       packages.push(item);
     }
     return packages;
+  }
+
+  private describeGroups() {
+    const groups = [
+      {
+        label: "Data (SFDMU projects)",
+        regex: /scripts\/data/i,
+        defaultSelect: true,
+      },
+      {
+        label: "Tech config (recommended)",
+        regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
+        defaultSelect: true,
+      },
+      {
+        label: "Objects",
+        regex: /objects\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Picklists",
+        regex: /(standardValueSets|globalValueSets)\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Tabs",
+        regex: /tabs\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Classes/Triggers",
+        regex: /(classes|triggers)\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Aura/LWC Components",
+        regex: /(aura|lwc)\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Emails",
+        regex: /email\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Flows, Workflows, Path Assistants",
+        regex: /(flows|workflows|pathAssistants)\//i,
+        defaultSelect: true,
+      },
+      {
+        label: "Layouts",
+        regex: /layouts\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Object Translations",
+        regex: /objectTranslations\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Permissionsets",
+        regex: /permissionsets\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Profiles (not recommended, use Permission Sets instead)",
+        regex: /profiles\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Other",
+        regex: /(.*?)/i,
+        defaultSelect: false,
+      },
+    ];
+    return groups;
   }
 }

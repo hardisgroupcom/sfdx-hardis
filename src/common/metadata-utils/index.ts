@@ -3,7 +3,7 @@ import * as c from "chalk";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
+import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
 
 class MetadataUtils {
@@ -398,14 +398,14 @@ class MetadataUtils {
   }
 
   // List local orgs for user
-  public static async listLocalOrgs(type = "any") {
+  public static async listLocalOrgs(type = "any", options: any = {}) {
     const orgListResult = await execSfdxJson("sfdx force:org:list", this);
     if (type === "any") {
       return orgListResult?.result || [];
     } else if (type === "scratch") {
       return (
         orgListResult?.result?.scratchOrgs?.filter((org: any) => {
-          return org.status === "Active";
+          return org.status === "Active" && (options.devHubUsername && org.devHubUsername !== options.devHubUsername ? false : true);
         }) || []
       );
     }
@@ -420,6 +420,7 @@ class MetadataUtils {
     }
     const alreadyInstalled = await execSfdxJson(listCommand, commandThis, {
       fail: true,
+      output: true,
     });
     return alreadyInstalled?.result || [];
   }
@@ -470,10 +471,12 @@ class MetadataUtils {
         if (orgAlias != null) {
           packageInstallCommand += ` -u ${orgAlias}`;
         }
+        elapseStart(`Install package ${package1.SubscriberPackageName}`);
         await execCommand(packageInstallCommand, this, {
           fail: true,
           output: true,
         });
+        elapseEnd(`Install package ${package1.SubscriberPackageName}`);
       } else {
         uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`));
       }

@@ -18,6 +18,8 @@ import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas } from "./deployUtils";
 import { promptProfiles } from "./orgUtils";
+import { WebSocketClient } from "../websocketClient";
+import moment = require("moment");
 
 let pluginsStdout = null;
 
@@ -76,8 +78,7 @@ export async function checkSfdxPlugin(pluginName: string) {
     const config = await getConfig("user");
     if (config.sfdxPluginsStdout) {
       pluginsStdout = config.sfdxPluginsStdout;
-    }
-    else {
+    } else {
       const pluginsRes = await exec("sfdx plugins");
       pluginsStdout = pluginsRes.stdout;
       await setConfig("user", { sfdxPluginsStdout: pluginsStdout });
@@ -98,9 +99,9 @@ export async function checkSfdxPlugin(pluginName: string) {
 }
 
 const dependenciesInstallLink = {
-  'git': 'Download installer at https://git-scm.com/downloads',
-  'openssl': 'Run "choco install openssl" in Windows Powershell, or use Git Bash as command line tool'
-}
+  git: "Download installer at https://git-scm.com/downloads",
+  openssl: 'Run "choco install openssl" in Windows Powershell, or use Git Bash as command line tool',
+};
 
 export async function checkAppDependency(appName) {
   const config = await getConfig("user");
@@ -108,13 +109,15 @@ export async function checkAppDependency(appName) {
   if (installedApps.includes(appName)) {
     return true;
   }
-  which(appName).then(async () => {
-    installedApps.push(appName);
-    await setConfig("user", { installedApps: installedApps })
-  }).catch(err => {
-    uxLog(this, c.red(`You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''}`));
-    process.exit();
-  });
+  which(appName)
+    .then(async () => {
+      installedApps.push(appName);
+      await setConfig("user", { installedApps: installedApps });
+    })
+    .catch(() => {
+      uxLog(this, c.red(`You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ""}`));
+      process.exit();
+    });
 }
 
 export async function promptInstanceUrl() {
@@ -124,12 +127,12 @@ export async function promptInstanceUrl() {
     message: c.cyanBright("Is the org you need to connect a sandbox or another type of org (dev org, enterprise org...)"),
     choices: [
       {
-        title: "Sandbox or Scratch org",
+        title: "Sandbox or Scratch org (test.salesforce.com)",
         description: "The org I want to connect is a sandbox",
         value: "https://test.salesforce.com",
       },
       {
-        title: "Other (Dev org, Enterprise org...)",
+        title: "Other: Dev, Enterprise or DevHub org... (login.salesforce.com)",
         description: "The org I want to connect is NOT a sandbox",
         value: "https://login.salesforce.com",
       },
@@ -174,11 +177,16 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
   }
   // Check if root
   else if (options.mustBeRoot) {
-    const gitRepoRoot = await git().revparse(["--show-toplevel"]);
+    const gitRepoRoot = await getGitRepoRoot();
     if (path.resolve(gitRepoRoot) !== path.resolve(process.cwd())) {
       throw new SfdxError(`You must be at the root of the git repository (${path.resolve(gitRepoRoot)})`);
     }
   }
+}
+
+export async function getGitRepoRoot() {
+  const gitRepoRoot = await git().revparse(["--show-toplevel"]);
+  return gitRepoRoot;
 }
 
 // Get local git branch name
@@ -191,6 +199,30 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
     return gitBranch.replace("/", "__");
   }
   return gitBranch;
+}
+
+// Select git branch and checkout & pull if requested
+export async function selectGitBranch(options: { remote: true; checkOutPull: boolean } = { remote: true, checkOutPull: false }) {
+  const gitBranchOptions = ["--list"];
+  if (options.remote) {
+    gitBranchOptions.push("-r");
+  }
+  const branches = await git().branch(gitBranchOptions);
+  const branchResp = await prompts({
+    type: "select",
+    name: "value",
+    message: "Please select a Git branch",
+    choices: branches.all.map((branchName) => {
+      return { title: branchName.replace("origin/", ""), value: branchName.replace("origin/", "") };
+    }),
+  });
+  const branch = branchResp.value;
+  // Checkout & pull if requested
+  if (options.checkOutPull) {
+    await gitCheckOutRemote(branch);
+    WebSocketClient.sendMessage({ event: "refreshStatus" });
+  }
+  return branch;
 }
 
 export async function gitCheckOutRemote(branchName: string) {
@@ -253,6 +285,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     throw new SfdxError("[sfdx-hardis] You must be within a git repository");
   }
   // List all files and arrange their format
+  const config = await getConfig("project");
   const gitStatus = await git().status();
   let filesFiltered = gitStatus.files
     .filter((fileStatus: FileStatusResult) => {
@@ -264,6 +297,10 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       }
       if (fileStatus.path.endsWith('"')) {
         fileStatus.path = fileStatus.path.slice(0, -1);
+      }
+      if (config.gitRootFolderPrefix) {
+        uxLog(this, c.red(fileStatus.path));
+        fileStatus.path = fileStatus.path.replace(config.gitRootFolderPrefix, "");
       }
       return fileStatus;
     });
@@ -329,11 +366,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n")
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n")
         )
       );
     }
@@ -448,18 +485,21 @@ export async function execCommand(
   let spinner: any;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: "moon" }).start();
-  }
-  else {
+  } else {
     uxLog(this, commandLog);
   }
+  const execOptions: any = { maxBuffer: 10000 * 10000 };
+  if (options.cwd) {
+    execOptions.cwd = options.cwd;
+  }
   try {
-    commandResult = await exec(command, { maxBuffer: 10000 * 10000 });
+    commandResult = await exec(command, execOptions);
     if (spinner) {
-      spinner.succeed();
+      spinner.succeed(commandLog);
     }
   } catch (e) {
     if (spinner) {
-      spinner.fail();
+      spinner.fail(commandLog);
     }
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
@@ -544,6 +584,19 @@ export function getSfdxFileLabel(filePath: string) {
 
 function getGitWorkingDirLabel(workingDir) {
   return workingDir === "?" ? "CREATED" : workingDir === "D" ? "DELETED" : workingDir === "M" ? "UPDATED" : "OOOOOPS";
+}
+
+const elapseAll = {};
+export function elapseStart(text) {
+  elapseAll[text] = process.hrtime.bigint();
+}
+export function elapseEnd(text: string, commandThis: any = this) {
+  if (elapseAll[text]) {
+    const elapsed = Number(process.hrtime.bigint() - elapseAll[text]);
+    const ms = elapsed / 1000000;
+    uxLog(commandThis, c.grey(c.italic(text + " " + moment().startOf("day").milliseconds(ms).format("H:mm:ss.SSS"))));
+    delete elapseAll[text];
+  }
 }
 
 // Can be used to merge 2 package.xml content
@@ -635,15 +688,14 @@ export async function filterPackageXml(
 
   if (options.keepMetadataTypes && options.keepMetadataTypes.length > 0) {
     // Remove metadata types (named, and empty ones)
-    manifest.Package.types = manifest.Package.types.filter(
-      (type: any) => {
-        if (options.keepMetadataTypes.includes(type.name[0])) {
-          uxLog(this,c.grey('kept '+type.name[0]));
-          return true;
-        }
-        uxLog(this,c.grey('removed '+type.name[0]));
-        return false;
-      })
+    manifest.Package.types = manifest.Package.types.filter((type: any) => {
+      if (options.keepMetadataTypes.includes(type.name[0])) {
+        uxLog(this, c.grey("kept " + type.name[0]));
+        return true;
+      }
+      uxLog(this, c.grey("removed " + type.name[0]));
+      return false;
+    });
   }
 
   // Remove metadata types (named, and empty ones)

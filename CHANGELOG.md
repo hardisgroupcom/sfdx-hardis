@@ -4,6 +4,118 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.43.1] 2021-07-23
+
+- Update deployTips
+- Update json schema
+
+## [2.43.0] 2021-07-22
+
+- Better split of elements during hardis:work:save
+- Display elapsed time for long running commands
+
+## [2.42.2] 2021-07-20
+
+- Use relative path for sfdmu data import/export
+
+## [2.42.1] 2021-07-19
+
+- Fix data import & export commands when spaces in folder names
+
+## [2.42.0] 2021-07-12
+
+- New command sfdx hardis:project:lint
+- Update .sfdx-hardis.yml configuration JsonSchema
+
+## [2.41.2] 2021-07-12
+
+- QuickFix case when title is not set (use first line of description)
+
+## [2.41.1] 2021-07-12
+
+- Quickfix default mkdocs.yml
+
+## [2.41.0] 2021-07-12
+
+- Add [JSON Schema](https://www.schemastore.org/json/) for `.sfdx-hardis.yml` configuration files
+- Automatic SFDX Plugin documentation generation for any SFDX Plugin
+
+## [2.40.0] 2021-07-08
+
+- **hardis:scratch:create**: Initialize data using SFDMU, if defined in .sfdx-hardis.json `dataPackages` property with `importInScratchOrgs: true`
+  - Example
+
+```yaml
+dataPackages:
+  - dataPath: scripts/data/LightningSchedulerConfig
+    importInScratchOrgs: true
+```
+
+- Propose to update or not default target git branch
+- List target git branches if defined in .sfdx-hardis.json `availableTargetBranches` property
+- **hardis:scratch:delete**: Propose only scratch orgs related to currently selected Dev Hub
+- New command **hardis:org:configure:data** to initialize a SFDMU project, sfdx-hardis flavored
+- Display data package label & description, from SFDMU folder config.json properties `sfdxHardisLabel` and `sfdxHardisDescription`
+- **hardis:org:data:import** & **hardis:org:data:import**: Allow to select current org or another when running data import/export commands
+- Display Dev Hub username when listing orgs for selection
+
+## [2.31.1] 2021-07-02
+
+- **hardis:scratch:delete** : Display instanceUrl & last usage of scratch orgs displayed before deletion
+
+## [2.31.0] 2021-07-02
+
+- New command **hardis:scratch:delete** to delete scratch orgs locally referenced.
+
+## [2.30.1] 2021-06-30
+
+- hardis:org:connect : Propose user to open org in browser if not in CI
+
+## [2.30.0] 2021-06-30
+
+- Update hardis:org:retrieve:packageconfig so it allows to select an org, and to update sfdx-hardis configuration
+
+## [2.29.0] 2021-06-29
+
+- New command hardis:org:retrieve:sources:dx2 to assist call to force:source:retrieve using a package.xml file
+- Improve hardis:project:generate:gitdelta by allowing to select commits from their description
+- Use magenta to display config file updates
+
+## [2.28.0] 2021-06-23
+
+- CI: Check Docker image security with [trivy](https://github.com/aquasecurity/trivy)
+- Avoid git error when development branch is updated
+
+## [2.27.1] 2021-06-21
+
+- Fix CountryCode when updating scratch org user. Default FR - France, can be updated with config defaultCountry and defaultCountryCode in .sfdx-hardis.yml
+
+## [2.27.0] 2021-06-20
+
+- Clean Lookup filters before force:source:push, then restore them and push again
+- Manage `gitRootFolderPrefix` config property, in case the root of git repository is at a parent level than sfdx project root
+- Allow to override separate deployments using config property `separateDeploymentsConfig`
+- Set git config core.quotepath to false to manage special characters in git files / folders
+- Run sfdx git delta at the root of the git repository
+- Rename DeferSharingCalc permission set into SfdxHardisDeferSharingCalc
+- New Deployment tips
+- Contributing documentation
+
+## [2.26.4] 2021-06-18
+
+- Do not write user config when current folder is empty
+
+## [2.26.1] 2021-06-17
+
+- Take in account testLevel from `.sfdx-hardis.yml` in deployments
+## [2.26.0] 2021-06-16
+
+- New command hardis:project:generate:gitdelta to generate the package.xml calculated between two commits
+- New command hardis:org:connect to connect to an org without selecting it (can be used to refresh expired token)
+- Propose choice to to skip .gitignore & .forceignore files auto-update
+- Define triggerNotification on Command class to trigger MsTeams notifs
+- Update org type selection message
+
 ## [2.25.3] 2021-06-14
 
 - Fix bug when selecting an org from outside a SFDX project folder

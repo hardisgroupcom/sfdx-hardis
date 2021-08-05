@@ -59,13 +59,21 @@ export default class NewTask extends SfdxCommand {
     await checkGitClean({ allowStash: true });
 
     const config = await getConfig("project");
+    const availableTargetBranches = config.availableTargetBranches || null;
 
     // Request info to build branch name. ex features/config/MYTASK
     const response = await prompts([
       {
-        type: "text",
+        type: availableTargetBranches ? "select" : "text",
         name: "targetBranch",
-        message: c.cyanBright("What will be the target branch of your new task ?"),
+        message: c.cyanBright(
+          "What will be the target branch of your new task ? (the branch where you will make your merge request after the task is completed)"
+        ),
+        choices: availableTargetBranches
+          ? availableTargetBranches.map((branch) => {
+              return { title: branch, value: branch };
+            })
+          : [],
         initial: config.developmentBranch || "developpement",
       },
       {
@@ -100,10 +108,7 @@ export default class NewTask extends SfdxCommand {
     ]);
 
     const targetBranch = response.targetBranch || "developpement";
-    // Update config if necessary
-    if (config.developmentBranch !== targetBranch) {
-      await setConfig("project", { developmentBranch: targetBranch });
-    }
+
     // Checkout development main branch
     const branchName = `${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(targetBranch)} on server...`));
@@ -114,10 +119,24 @@ export default class NewTask extends SfdxCommand {
     uxLog(this, c.cyan(`Creating new branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
 
+    // Update config if necessary
+    if (config.developmentBranch !== targetBranch) {
+      const updateDefaultBranchRes = await prompts({
+        type: "confirm",
+        name: "value",
+        message: c.cyanBright(`Do you want to update the default development branch to ${c.green(targetBranch)} ?`),
+        default: false,
+      });
+      if (updateDefaultBranchRes.value === true) {
+        await setConfig("project", { developmentBranch: targetBranch });
+      }
+    }
+
     // Select/Create scratch org
     const currentOrg = await MetadataUtils.getCurrentOrg("scratch");
     if (currentOrg == null) {
-      const scratchOrgList = await MetadataUtils.listLocalOrgs("scratch");
+      const hubOrgUsername = this?.hubOrg?.getUsername();
+      const scratchOrgList = await MetadataUtils.listLocalOrgs("scratch", { devHubUsername: hubOrgUsername });
       const scratchResponse = await prompts({
         type: "select",
         name: "value",

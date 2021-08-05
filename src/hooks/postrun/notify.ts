@@ -1,12 +1,16 @@
 import * as changedGitFiles from "changed-git-files";
 import { IncomingWebhook } from "ms-teams-webhook";
-import { isGitRepo } from "../../common/utils";
+import { elapseEnd, isGitRepo } from "../../common/utils";
 import { getConfig } from "../../config";
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || "";
   if (!commandId.startsWith("hardis")) {
+    return;
+  }
+  elapseEnd(`${options?.Command?.id} execution time`);
+  if (commandId.startsWith("hardis:doc")) {
     return;
   }
 
@@ -19,7 +23,7 @@ export const hook = async (options: any) => {
   // Send hook to microsoft ?teams if MS_TEAMS_WEBHOOK_URL env var is set, or msTeamsWebhookUrl in config
   const config = await getConfig("user");
   const msTeamsWebhookUrl = process.env.MS_TEAMS_WEBHOOK_URL || config.msTeamsWebhookUrl;
-  if (msTeamsWebhookUrl) {
+  if (msTeamsWebhookUrl && options?.Command?.triggerNotification === true) {
     const diffFiles = await listChangedFiles();
     // No notif if no updated file
     if (diffFiles.length === 0) {

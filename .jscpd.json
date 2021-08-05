@@ -9,7 +9,10 @@
     "**/*cache*/**",
     "**/.github/**",
     "**/.idea/**",
+    "**/docs/**",
+    "**/mkdocs/**",
     "**/report/**",
+    "**/org/data/import.ts",
     "**/README.md",
     "**/commands/hardis/work/**"
   ]

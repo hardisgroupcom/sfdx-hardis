@@ -45,9 +45,9 @@ function getAllTips() {
       name: "can-not-delete-custom-field",
       label: "Can not delete custom field",
       context: "destructiveChange",
-      expressionRegex: [/Le champ personnalisé (.*) est utilisé dans (.*)/gm],
+      expressionRegex: [/This (.*) is referenced elsewhere in salesforce.com/gm, /Le champ personnalisé (.*) est utilisé dans (.*)/gm],
       tip: `A custom field can not be deleted because it is used elsewhere. Remove its references ans try again
-THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed before updated items deployment`,
+THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed separately from updated items deployment check`,
     },
     {
       name: "can-not-delete-record-type",
@@ -172,12 +172,19 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       tip: `Replace Mine by Everything in the list view SFDX source XML`,
     },
     {
+      name: "marketing-user-issue",
+      label: "Campaign can not be updated",
+      expressionString: [`The object "Campaign" can't be updated`],
+      tip: `Add "MarketingUser" in project-scratch-def.json features
+If it is already done, you may manually check "MarketingUser" field on the scratch org user`,
+    },
+    {
       name: "missing-field-middle-name",
       label: "Missing field MiddleName",
       expressionString: ["field MiddleName", "Variable does not exist: MiddleName"],
       tip: `MiddleNames must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=000332623&type=1&mode=1
-- Scratch org setting: 
+- Scratch org setting:
 "nameSettings": {
   "enableMiddleName": true
 }`,
@@ -188,7 +195,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["field Suffix"],
       tip: `Suffix must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=000332623&type=1&mode=1
-- Scratch org setting: 
+- Scratch org setting:
 "nameSettings": {
   "enableNameSuffix": true
 },`,
@@ -203,7 +210,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       ],
       tip: `Quotes must be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=sf.quotes_enable.htm&type=5
-- Scratch org setting: 
+- Scratch org setting:
 "quoteSettings": {
   "enableQuote": true
 }`,
@@ -214,7 +221,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["no CustomObject named AccountContactRelation found"],
       tip: `Contacts to multiple accounts be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=sf.shared_contacts_set_up.htm&type=5
-- Scratch org setting: 
+- Scratch org setting:
 "features": ["ContactsToMultipleAccounts"]`,
     },
     {
@@ -223,7 +230,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["CollaborationGroup"],
       tip: `Quotes must be activated in the target org.
 - Org: Setup -> Chatter settings -> Allow Records in Groups
-- Scratch org setting: 
+- Scratch org setting:
 "chatterSettings": {
   "allowRecordsInChatterGroup": true
 },`,
@@ -234,7 +241,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["FeedItem.ContentNote"],
       tip: `Enhanced Notes must be activated in the target org.
 - Org: Setup -> Notes settings -> Enable Notes
-- Scratch org setting: 
+- Scratch org setting:
 "enhancedNotesSettings": {
   "enableEnhancedNotes": true
 },`,
@@ -245,7 +252,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["Idea.InternalIdeasIdeaRecordType"],
       tip: `Ideas must be activated in the target org.
 - Org: https://help.salesforce.com/articleView?id=networks_enable_ideas.htm&type=0
-- Scratch org setting: 
+- Scratch org setting:
 "ideasSettings": {
   "enableIdeas": true
 }`,
@@ -310,7 +317,7 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
       expressionString: ["related list:RelatedAccountSalesTeam"],
       tip: `Account Teams must be activated in the target org.
 - Org: Setup -> Account Teams -> Enable
-- Scratch org setting: 
+- Scratch org setting:
 "accountSettings": {
   "enableAccountTeams": true
 }

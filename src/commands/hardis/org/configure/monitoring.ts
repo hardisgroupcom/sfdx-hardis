@@ -53,7 +53,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
   protected static requiresProject = false;
   /* jscpd:ignore-end */
 
-  protected static requiresDependencies = ['openssl'];
+  protected static requiresDependencies = ["openssl"];
 
   public async run(): Promise<AnyJson> {
     // Clone repository if there is not

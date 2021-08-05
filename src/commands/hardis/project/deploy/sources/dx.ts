@@ -63,7 +63,7 @@ export default class DxSources extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     this.configInfo = await getConfig("branch");
     const check = this.flags.check || false;
-    const testlevel = this.flags.testlevel || "RunLocalTests";
+    const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
     const packageXml = this.flags.packagexml || null;
     this.debugMode = this.flags.debug || false;
 
@@ -89,7 +89,15 @@ export default class DxSources extends SfdxCommand {
         ? "./manifest/destructiveChanges.xml"
         : "./config/destructiveChanges.xml";
     if (fs.existsSync(packageDeletedXmlFile)) {
-      await deployDestructiveChanges(packageDeletedXmlFile, { debug: this.debugMode, check }, this);
+      await deployDestructiveChanges(
+        packageDeletedXmlFile,
+        {
+          debug: this.debugMode,
+          check: check,
+          testLevel: testlevel,
+        },
+        this
+      );
     } else {
       uxLog(this, "No destructivePackage.Xml found so no destructive deployment has been performed");
     }

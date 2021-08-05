@@ -1,0 +1,352 @@
+{
+  "$id": "http://github.com/hardisgroupcom/sfdx-hardis.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "additionalProperties": false,
+  "description": "Configuration file definition for sfdx-hardis Salesforce DX plugin",
+  "properties": {
+    "autoCleanTypes": {
+      "$id": "#/properties/autoCleanTypes",
+      "description": "When saving a sfdx-hardis task, the list of cleanings will be automatically applied to sfdx sources",
+      "examples": [["dashboards", "datadotcom", "destructivechanges"]],
+      "items": {
+        "type": "string",
+        "enum": ["caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields", "productrequest"]
+      },
+      "title": "Auto-Cleaning types",
+      "type": "array"
+    },
+    "apexTestsMinCoverageOrgWide": {
+      "$id": "#/properties/apexTestsMinCoverageOrgWide",
+      "default": 75.0,
+      "description": "Minimum percentage of apex code coverage accepted",
+      "examples": [80.0, 95.0],
+      "title": "Minimum apex test coverage %",
+      "type": "number"
+    },
+    "dataPackages": {
+      "$id": "#/properties/dataPackages",
+      "description": "List of data packages",
+      "items": {
+        "$id": "#/properties/dataPackages/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Data package",
+        "properties": {
+          "dataPath": {
+            "$id": "#/properties/dataPackages/items/properties/dataPath",
+            "description": "Path to SFDMU project",
+            "title": "SFDMU Data project path",
+            "type": "string"
+          },
+          "importInScratchOrgs": {
+            "$id": "#/properties/dataPackages/items/properties/importInScratchOrgs",
+            "description": "Path to SFDMU project",
+            "title": "SFDMU Data project path",
+            "type": "boolean"
+          }
+        },
+        "required": ["dataPath", "importInScratchOrgs"]
+      },
+      "title": "Data packages",
+      "type": "array"
+    },
+    "defaultPackageInstallationKey": {
+      "$id": "#/properties/defaultPackageInstallationKey",
+      "description": "When generating a new package version protected with password, use this value as default package installation key",
+      "examples": ["hardis", "myPassword", "dFGGF43656YfdFDG{{{dhgfh:::;FSEDSFd78"],
+      "title": "Defaut package installation key",
+      "type": "string"
+    },
+    "developmentBranch": {
+      "$id": "#/properties/developmentBranch",
+      "default": "developpement",
+      "description": "When creating a new sfdx-hardis task, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
+      "examples": ["developpement", "dev_lot2", "hotfixes"],
+      "title": "Default pull/merge request target org",
+      "type": "string"
+    },
+    "deploymentPlan": {
+      "$id": "#/properties/deploymentPlan",
+      "description": "Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments",
+      "examples": [
+        {
+          "packages": [
+            {
+              "label": "Import EmailTemplate records",
+              "dataPath": "scripts/data/EmailTemplate",
+              "order": -21
+            },
+            {
+              "label": "Deploy EmailTemplate",
+              "packageXmlFile": "manifest/splits/packageXmlEmails.xml",
+              "order": -20
+            },
+            {
+              "label": "Deploy Flow-Workflow",
+              "packageXmlFile": "manifest/splits/packageXmlFlowWorkflow.xml",
+              "order": 6
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "packages": {
+          "$id": "#/properties/deploymentPlan/properties/packages",
+          "description": "During deployment, main package.xml will be split into these packages. Can also contain data packages",
+          "examples": [
+            [
+              {
+                "label": "Import EmailTemplate records",
+                "dataPath": "scripts/data/EmailTemplate",
+                "order": -21
+              },
+              {
+                "label": "Deploy EmailTemplate",
+                "packageXmlFile": "manifest/splits/packageXmlEmails.xml",
+                "order": -20
+              }
+            ]
+          ],
+          "items": {
+            "$id": "#/properties/install/properties/packages/items",
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Source or data package to deploy",
+            "properties": {
+              "dataPath": {
+                "$id": "#/properties/install/properties/packages/items/dataPath",
+                "examples": ["scripts/data/EmailTemplate"],
+                "title": "Path to SFDMU data project to deploy",
+                "type": "string"
+              },
+              "label": {
+                "$id": "#/properties/install/properties/packages/items/label",
+                "examples": ["Deploy EmailTemplate", "Import EmailTemplate records"],
+                "title": "Source or data package label",
+                "type": "string"
+              },
+              "order": {
+                "$id": "#/properties/install/properties/packages/items/order",
+                "examples": [-20, 13, 50],
+                "title": "Execution order in deployment plan",
+                "type": "number"
+              },
+              "packageXmlFile": {
+                "$id": "#/properties/install/properties/packages/items/packageXmlFile",
+                "examples": ["manifest/splits/packageXmlEmails.xml"],
+                "title": "Path to package.xml file to use for deployment",
+                "type": "string"
+              },
+              "waitAfter": {
+                "$id": "#/properties/install/properties/packages/items/waitAfter",
+                "description": "Delay to wait before installing the next package",
+                "examples": [10, 20],
+                "title": "Wait after install (seconds)",
+                "type": "number"
+              }
+            }
+          },
+          "required": ["label", "order"],
+          "title": "List of packages to deploy",
+          "type": "array"
+        }
+      },
+      "title": "Deployment plan",
+      "type": "object"
+    },
+    "devHubAlias": {
+      "$id": "#/properties/devHubAlias",
+      "default": "",
+      "description": "Dev Hub alias, usually DevHub_ProjectName",
+      "examples": ["DevHub_MyClientMyProject", "DevHub_GoogleGmail", "DevHub_AppleIWatch"],
+      "title": "Dev Hub org alias",
+      "type": "string"
+    },
+    "devHubUsername": {
+      "$id": "#/properties/devHubUsername",
+      "default": "",
+      "description": "Dev Hub username, used to authenticate to DevHub from CI jobs",
+      "examples": ["cicd-user@myclient.com", "scratch-user@google.fr", "scratch-user@apple.fr"],
+      "title": "Dev Hub Username",
+      "type": "string"
+    },
+    "initPermissionSets": {
+      "$id": "#/properties/initPermissionSets",
+      "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets",
+      "examples": [["MyPermissionSet", "MyPermissionSetGroup"]],
+      "items": {
+        "$id": "#/properties/initPermissionSets/items",
+        "type": ["object", "string"],
+        "additionalProperties": false,
+        "description": "Permission Set or Permission Set Group",
+        "properties": {
+          "name": {
+            "$Id": "#/properties/initPermissionSets/items/properties/name",
+            "description": "Permission Set or Permission Set Group name",
+            "examples": [["MyPermissionSet", "MyPermissionSetGroup", "MyPermissionSetGroup2"]],
+            "title": "Name",
+            "type": "string"
+          }
+        }
+      },
+      "title": "Initial Permission Sets",
+      "type": "array"
+    },
+    "installedPackages": {
+      "$id": "#/properties/installedPackages",
+      "description": "Defines the list of packages installed on the project. Use ",
+      "examples": [
+        [
+          {
+            "Id": "0A30N000000ALWrSAO",
+            "SubscriberPackageId": "033b0000000Pf2AAAS",
+            "SubscriberPackageName": "Declarative Lookup Rollup Summaries Tool",
+            "SubscriberPackageNamespace": "dlrs",
+            "SubscriberPackageVersionId": "04t0N000000IyYrQAK",
+            "SubscriberPackageVersionName": "2.11",
+            "SubscriberPackageVersionNumber": "2.11.0.1",
+            "installOnScratchOrgs": false,
+            "installDuringDeployments": true
+          },
+          {
+            "Id": "0A35r000000GveVCAS",
+            "SubscriberPackageId": "0330o000000B3vIAAS",
+            "SubscriberPackageName": "Files Attachment Notes",
+            "SubscriberPackageNamespace": "fan_astrea",
+            "SubscriberPackageVersionId": "04t0o000003nRWAAA2",
+            "SubscriberPackageVersionName": "Summer2021",
+            "SubscriberPackageVersionNumber": "1.22.0.2",
+            "installOnScratchOrgs": true,
+            "installDuringDeployments": true
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/installedPackages/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Salesforce package info (managed, unlocked or unmanaged)",
+        "properties": {
+          "Id": {
+            "$Id": "#/properties/install/properties/packages/items/Id",
+            "examples": ["0A35r000000GveVCAS"],
+            "title": "(unused) PackageId",
+            "type": "string"
+          },
+          "SubscriberPackageId": {
+            "$Id": "#/properties/install/properties/packages/items/SubscriberPackageId",
+            "examples": ["033b0000000Pf2AAAS"],
+            "title": "Subscriber Package Id",
+            "type": "string"
+          },
+          "SubscriberPackageName": {
+            "$Id": "#/properties/install/properties/packages/items/SubscriberPackageName",
+            "examples": ["Files Attachment Notes"],
+            "title": "Subscriber Package Name",
+            "type": "string"
+          },
+          "SubscriberPackageNamespace": {
+            "$Id": "#/properties/install/properties/packages/items/SubscriberPackageNamespace",
+            "examples": ["fan_astrea"],
+            "title": "Subscriber Package NameSpace",
+            "type": ["string", "null"]
+          },
+          "SubscriberPackageVersionId": {
+            "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionId",
+            "examples": ["04t0o000003nRWAAA2"],
+            "title": "Subscriber Version Id (IMPORTANT)",
+            "type": "string"
+          },
+          "SubscriberPackageVersionName": {
+            "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionName",
+            "examples": ["Summer2021"],
+            "title": "Subscriber Version Name",
+            "type": "string"
+          },
+          "SubscriberPackageVersionNumber": {
+            "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionNumber",
+            "examples": ["1.22.0.2"],
+            "title": "Subscriber Version Number",
+            "type": "string"
+          },
+          "installDuringDeployments": {
+            "$Id": "#/properties/install/properties/packages/items/installDuringDeployments",
+            "default": false,
+            "description": "If true, during deployments this package will be installed in target org if not installed yet",
+            "examples": [true, false],
+            "title": "Install during deployments",
+            "type": "boolean"
+          },
+          "installOnScratchOrgs": {
+            "$Id": "#/properties/install/properties/packages/items/installOnScratchOrgs",
+            "default": false,
+            "description": "If true, this package will be installed when creating a new scratch org with sfdx-hardis",
+            "examples": [true, false],
+            "title": "Install on scratch orgs",
+            "type": "boolean"
+          }
+        },
+        "required": ["SubscriberPackageVersionId"],
+        "title": "Salesforce package"
+      },
+      "title": "Installed Packages",
+      "type": "array"
+    },
+    "instanceUrl": {
+      "$id": "#/properties/instanceUrl",
+      "default": "",
+      "description": "Salesforce instance URL used by CI for deployment or backups",
+      "examples": ["https://myclient.force.com", "https://google.force.com", "https://apple.force.com"],
+      "title": "Instance URL",
+      "type": "string"
+    },
+    "msTeamsWebhookUrl": {
+      "$id": "#/properties/msTeamsWebhookUrl",
+      "default": "",
+      "description": "Url of the Ms Teams channel Web Hook that can be used to send notifications",
+      "examples": ["https://my.msteams.webhook.url"],
+      "title": "MsTeams WebHook Url",
+      "type": "string"
+    },
+    "projectName": {
+      "$id": "#/properties/projectName",
+      "default": "",
+      "description": "Identifier for the project (can be the client and project)",
+      "examples": ["MyClientMyProject", "GoogleGmail", "AppleIWatch"],
+      "title": "Project Name",
+      "type": "string"
+    },
+    "sfdmuCanModify": {
+      "$id": "#/properties/sfdmuCanModify",
+      "default": "",
+      "description": "Instance host name to allow SFDMU to deploy data in a production org",
+      "examples": ["myproject.force.com"],
+      "title": "SFDMU can modify",
+      "type": "string"
+    },
+    "skipUpdateForceIgnore": {
+      "$id": "#/properties/skipUpdateForceIgnore",
+      "default": false,
+      "description": "Defines if sfdx-hardis will propose to upgrade local .forceignore file",
+      "title": "Skip update .forceignore file",
+      "type": "boolean"
+    },
+    "skipUpdateGitIgnore": {
+      "$id": "#/properties/skipUpdateGitIgnore",
+      "default": false,
+      "description": "Defines if sfdx-hardis will propose to upgrade local .gitignore file",
+      "title": "Skip update .gitignore file",
+      "type": "boolean"
+    },
+    "targetUsername": {
+      "$id": "#/properties/targetUsername",
+      "default": "",
+      "description": "Salesforce username used by CI for deployment or backups",
+      "examples": ["deployments@myclient.com", "deployments@google.fr", "deployments@apple.com"],
+      "title": "Target Username",
+      "type": "string"
+    }
+  },
+  "title": "sfdx-hardis configuration",
+  "type": "object"
+}
