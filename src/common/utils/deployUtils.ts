@@ -5,7 +5,7 @@ import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
 import * as xml2js from "xml2js";
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, getCurrentGitBranch, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
@@ -107,6 +107,7 @@ export async function forceSourceDeploy(
 ): Promise<any> {
   elapseStart("all deployments");
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode);
+  const sharingRulesToDeploy = await getChangedSharingRules(debugMode, options);
   const messages = [];
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
@@ -120,7 +121,11 @@ export async function forceSourceDeploy(
       await new Promise((resolve) => setTimeout(resolve, deployment.waitBefore * 1000));
     }
     // Deployment of type package.xml file
-    if (deployment.packageXmlFile) {
+    // for sharing rules, deploy only if sources are different than target org
+    if (deployment.packageXmlFile &&
+      (!deployment.label.includes("SharingRules") ||
+      sharingRulesToDeploy.includes(deployment.label.split(" - ")[1]))
+    ) {
       uxLog(
         commandThis,
         c.cyan(`${check ? "Simulating deployment of" : "Deploying"} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`)
@@ -280,38 +285,39 @@ async function buildDeployOncePackageXml(debugMode = false) {
 }
 
 // packageDeployOnChange.xml items are deployed only if they have changed in target org
-export async function buildDeployOnChangePackageXml() {
+export async function getChangedSharingRules(debugMode: boolean, options: any = {}) {
+  // get array of objects api name that need to be deploy
+  const objToDeploy = [];
   const packageDeployOnChangePath = "./manifest/packageDeployOnChange.xml";
-  if(!fs.existsSync(packageDeployOnChangePath)) {
-    return;
+  if(!fs.existsSync(packageDeployOnChangePath) || !options.targetUsername) {
+    return objToDeploy;
   }
-  // TODO dynamic username and check options values
-  await execCommand(`sfdx force:source:retrieve -x ${packageDeployOnChangePath} -u HrteamPc`, this, {
+  await execCommand(`sfdx force:source:retrieve -x ${packageDeployOnChangePath} -u HrteamPc`,
+    this, {
     fail: true,
     output: true,
-    debug: this.debugMode,
+    debug: debugMode,
   });
 
+  console.log('statussss');
   const gitStatus = await git().status();
-  // if no changes, stop process
-  if(gitStatus.files.length === 0) {
-    return;
-  }
-  await git().add("--all");
-  const tmpDir = await createTempDir();
-  const packageXmlCommand = `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}`;
-  const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
-    output: true,
-    fail: false,
-    debug: this.debugMode,
-    cwd: await getGitRepoRoot(),
-  });
-  console.log(packageXmlResult);
+  console.log(gitStatus);
 
-  // discard unstaged files
-  // await git().reset();
-  // // discard untracked files
-  // await git().clean("fd");
+  const regex = new RegExp("sharingRules/([A-Za-z_]+)");
+
+  for(const file of gitStatus.files) {
+    const match = regex.exec(file.path);
+    if(match !== null) {
+      const memberName = match[1];
+      objToDeploy.push(memberName);
+    }
+  }
+
+  // discard untracked files
+  await git().checkout(".");
+  await git().clean("fd");
+
+  return objToDeploy;
 }
 
 // Remove content of a package.xml file from another package.xml file
