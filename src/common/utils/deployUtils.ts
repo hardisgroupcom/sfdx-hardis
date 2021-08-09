@@ -5,7 +5,7 @@ import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
 import * as xml2js from "xml2js";
-import { createTempDir, elapseEnd, elapseStart, execCommand, getCurrentGitBranch, isCI, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
@@ -277,6 +277,41 @@ async function buildDeployOncePackageXml(debugMode = false) {
     }
   }
   return null;
+}
+
+// packageDeployOnChange.xml items are deployed only if they have changed in target org
+export async function buildDeployOnChangePackageXml() {
+  const packageDeployOnChangePath = "./manifest/packageDeployOnChange.xml";
+  if(!fs.existsSync(packageDeployOnChangePath)) {
+    return;
+  }
+  // TODO dynamic username and check options values
+  await execCommand(`sfdx force:source:retrieve -x ${packageDeployOnChangePath} -u HrteamPc`, this, {
+    fail: true,
+    output: true,
+    debug: this.debugMode,
+  });
+
+  const gitStatus = await git().status();
+  // if no changes, stop process
+  if(gitStatus.files.length === 0) {
+    return;
+  }
+  await git().add("--all");
+  const tmpDir = await createTempDir();
+  const packageXmlCommand = `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}`;
+  const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
+    output: true,
+    fail: false,
+    debug: this.debugMode,
+    cwd: await getGitRepoRoot(),
+  });
+  console.log(packageXmlResult);
+
+  // discard unstaged files
+  // await git().reset();
+  // // discard untracked files
+  // await git().clean("fd");
 }
 
 // Remove content of a package.xml file from another package.xml file
