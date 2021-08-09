@@ -292,17 +292,14 @@ export async function getChangedSharingRules(debugMode: boolean, options: any = 
   if(!fs.existsSync(packageDeployOnChangePath) || !options.targetUsername) {
     return objToDeploy;
   }
-  await execCommand(`sfdx force:source:retrieve -x ${packageDeployOnChangePath} -u HrteamPc`,
+  await execCommand(`sfdx force:source:retrieve -x ${packageDeployOnChangePath} -u ${options.targetUsername}`,
     this, {
     fail: true,
     output: true,
     debug: debugMode,
   });
 
-  console.log('statussss');
   const gitStatus = await git().status();
-  console.log(gitStatus);
-
   const regex = new RegExp("sharingRules/([A-Za-z_]+)");
 
   for(const file of gitStatus.files) {
