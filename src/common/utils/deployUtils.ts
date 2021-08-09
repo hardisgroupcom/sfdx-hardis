@@ -122,9 +122,9 @@ export async function forceSourceDeploy(
     }
     // Deployment of type package.xml file
     // for sharing rules, deploy only if sources are different than target org
-    if (deployment.packageXmlFile &&
-      (!deployment.label.includes("SharingRules") ||
-      sharingRulesToDeploy.includes(deployment.label.split(" - ")[1]))
+    if (
+      deployment.packageXmlFile &&
+      (!deployment.label.includes("SharingRules") || sharingRulesToDeploy.includes(deployment.label.split(" - ")[1]))
     ) {
       uxLog(
         commandThis,
@@ -289,11 +289,10 @@ export async function getChangedSharingRules(debugMode: boolean, options: any = 
   // get array of objects api name that need to be deploy
   const objToDeploy = [];
   const packageDeployOnChangePath = "./manifest/packageDeployOnChange.xml";
-  if(!fs.existsSync(packageDeployOnChangePath) || !options.targetUsername) {
+  if (!fs.existsSync(packageDeployOnChangePath) || !options.targetUsername) {
     return objToDeploy;
   }
-  await execCommand(`sfdx force:source:retrieve -x ${packageDeployOnChangePath} -u ${options.targetUsername}`,
-    this, {
+  await execCommand(`sfdx force:source:retrieve -x ${packageDeployOnChangePath} -u ${options.targetUsername}`, this, {
     fail: true,
     output: true,
     debug: debugMode,
@@ -302,9 +301,9 @@ export async function getChangedSharingRules(debugMode: boolean, options: any = 
   const gitStatus = await git().status();
   const regex = new RegExp("sharingRules/([A-Za-z_]+)");
 
-  for(const file of gitStatus.files) {
+  for (const file of gitStatus.files) {
     const match = regex.exec(file.path);
-    if(match !== null) {
+    if (match !== null) {
       const memberName = match[1];
       objToDeploy.push(memberName);
     }
