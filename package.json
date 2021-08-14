@@ -37,7 +37,7 @@
     "open": "^8.0.2",
     "ora": "^5.3.0",
     "pascalcase": "^1.0.0",
-    "prompts": "^2.4.0",
+    "prompts": "^2.4.1",
     "psl": "^1.8.0",
     "read-pkg-up": "^7.0.1",
     "set-value": "^4.0.0",

@@ -132,7 +132,7 @@ export async function promptInstanceUrl() {
         value: "https://test.salesforce.com",
       },
       {
-        title: "Other: Dev, Enterprise or DevHub org... (login.salesforce.com)",
+        title: "Other: Dev, Enterprise or DevHub org (login.salesforce.com)",
         description: "The org I want to connect is NOT a sandbox",
         value: "https://login.salesforce.com",
       },
