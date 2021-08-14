@@ -12,20 +12,7 @@
 
 Toolbox for Salesforce DX, by [Hardis-Group](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
 
-[**See Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis/)
-
-This toolbox contains commands than can be run locally or from CI.
-For the moment, it can :
-
-- BackUp / Monitoring tools
-  - Retrieve all metadatas of an org
-  - Retrieve all metadatas of an org and convert them into a Salesforce DX Project
-- Audit tools
-  - Extract all CallIns and CallOuts from a SFDX project (or metadata) folder. Sort by SOAP, REST, HTTP
-  - Extract all remote sites connected to an org. Sort by HTTP / HTTPS and domain
-- Help tools
-  - Convert all profiles into permission sets
-  - Purge obsolete flows versions
+[**Please See the list of commands in Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis)
 
 **sfdx-hardis** partially relies on the following SFDX Open-Source packages
 
