@@ -6,7 +6,7 @@ import axios from "axios";
 import * as fs from "fs-extra";
 import * as c from "chalk";
 import * as os from "os";
-import * as ObjectsToCsv from 'objects-to-csv';
+import * as ObjectsToCsv from "objects-to-csv";
 import path = require("path");
 import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
 
@@ -67,35 +67,36 @@ export default class LegacyApi extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const mode = this.flags.mode || "jsforce"
+    const mode = this.flags.mode || "jsforce";
     this.debugMode = this.flags.debug || false;
-    if (mode === 'jsforce') {
+    if (mode === "jsforce") {
       return await this.runJsForce();
-    }
-    else {
+    } else {
       return await this.runApex();
     }
   }
 
   // Refactoring of Philippe Ozil's apex script with JsForce queries
   private async runJsForce() {
-    const eventType = this.flags.eventtype || 'ApiTotalUsage';
+    const eventType = this.flags.eventtype || "ApiTotalUsage";
     const limit = this.flags.limit || null;
 
-    const limitConstraint = limit ? ` LIMIT ${limit}`:'';
+    const limitConstraint = limit ? ` LIMIT ${limit}` : "";
     const conn = this.org.getConnection();
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
-    const logCountRes = await conn.query(`SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`+ limitConstraint);
+    const logCountRes = await conn.query(`SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'` + limitConstraint);
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
-      uxLog(this, c.green('This indicates that no legacy APIs were called during the log retention window.'));
+      uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
       return { status: 0 };
     }
-    uxLog(this, 'Found ' + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`);
+    uxLog(this, "Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`);
 
     // Fetch EventLogFiles with ApiTotalUsage entries
-    const eventLogRes: any = await conn.query(`SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY CreatedDate DESC`+limitConstraint);
+    const eventLogRes: any = await conn.query(
+      `SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY CreatedDate DESC` + limitConstraint
+    );
 
     // Collect legacy api calls from logs
     const allDeadApiCalls = [];
@@ -103,9 +104,24 @@ export default class LegacyApi extends SfdxCommand {
     const allEndOfSupportApiCalls = [];
     for (const eventLogFile of eventLogRes.records) {
       const { deadApiCalls, soonDeprecatedApiCalls, endOfSupportApiCalls } = await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
-      allDeadApiCalls.push(...deadApiCalls.map(item => { item.SFDX_HARDIS_SEVERITY = 'ERROR'; return item; }));
-      allSoonDeprecatedApiCalls.push(...soonDeprecatedApiCalls.map(item => { item.SFDX_HARDIS_SEVERITY = 'WARNING'; return item; }));
-      allEndOfSupportApiCalls.push(...endOfSupportApiCalls.map(item => { item.SFDX_HARDIS_SEVERITY = 'INFO'; return item; }));
+      allDeadApiCalls.push(
+        ...deadApiCalls.map((item) => {
+          item.SFDX_HARDIS_SEVERITY = "ERROR";
+          return item;
+        })
+      );
+      allSoonDeprecatedApiCalls.push(
+        ...soonDeprecatedApiCalls.map((item) => {
+          item.SFDX_HARDIS_SEVERITY = "WARNING";
+          return item;
+        })
+      );
+      allEndOfSupportApiCalls.push(
+        ...endOfSupportApiCalls.map((item) => {
+          item.SFDX_HARDIS_SEVERITY = "INFO";
+          return item;
+        })
+      );
     }
 
     // Build command result
@@ -115,8 +131,7 @@ export default class LegacyApi extends SfdxCommand {
       msg = "Found legacy API versions calls in logs";
       statusCode = 1;
       uxLog(this, c.red(c.bold(msg)));
-    }
-    else if (allEndOfSupportApiCalls.length > 0) {
+    } else if (allEndOfSupportApiCalls.length > 0) {
       msg = "Found API versions calls in logs that will not be supported anymore in the future";
       statusCode = 0;
       uxLog(this, c.yellow(c.bold(msg)));
@@ -126,10 +141,10 @@ export default class LegacyApi extends SfdxCommand {
 
     // Build output CSV file
     const tmpDir = await createTempDir();
-    const csvLogFile = path.join(tmpDir, "legacy-api-for-"+this.org.getUsername()+".csv");
-    const csv = new ObjectsToCsv(allDeadApiCalls.concat(allSoonDeprecatedApiCalls,allEndOfSupportApiCalls));
+    const csvLogFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
+    const csv = new ObjectsToCsv(allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls));
     await csv.toDisk(csvLogFile);
-    uxLog(this,c.cyan(`Please see detailed log in ${c.bold(csvLogFile)}`))
+    uxLog(this, c.cyan(`Please see detailed log in ${c.bold(csvLogFile)}`));
 
     // Return an object to be displayed with --json
     return { status: statusCode, message: msg, csvLogFile: csvLogFile };
@@ -145,13 +160,11 @@ export default class LegacyApi extends SfdxCommand {
       const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : null;
       // const apiType = logEntry.API_TYPE || null ;
       const apiFamily = logEntry.API_FAMILY || null;
-      if (['SOAP', 'REST', 'Bulk'].includes(apiFamily) && apiVersion <= 7.0) {
+      if (["SOAP", "REST", "Bulk"].includes(apiFamily) && apiVersion <= 7.0) {
         deadApiCalls.push(logEntry);
-      }
-      else if (['SOAP', 'REST', 'Bulk'].includes(apiFamily) && apiVersion <= 20.0) {
+      } else if (["SOAP", "REST", "Bulk"].includes(apiFamily) && apiVersion <= 20.0) {
         soonDeprecatedApiCalls.push(logEntry);
-      }
-      else if (['SOAP', 'REST', 'Bulk'].includes(apiFamily) && apiVersion <= 30.0) {
+      } else if (["SOAP", "REST", "Bulk"].includes(apiFamily) && apiVersion <= 30.0) {
         endOfSupportApiCalls.push(logEntry);
       }
     }
