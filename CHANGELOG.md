@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.44.0] 2021-08-14
+
+- New command **hardis:org:diagnose:legacyapi** : Detect [use of deprecated API versions](https://help.salesforce.com/articleView?id=000351312&type=1&mode=1&language=en_US) in production org
+
 ## [2.43.1] 2021-07-23
 
 - Update deployTips

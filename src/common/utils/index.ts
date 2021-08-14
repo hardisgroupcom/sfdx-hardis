@@ -132,7 +132,7 @@ export async function promptInstanceUrl() {
         value: "https://test.salesforce.com",
       },
       {
-        title: "Other: Dev, Enterprise or DevHub org... (login.salesforce.com)",
+        title: "Other: Dev, Enterprise or DevHub org (login.salesforce.com)",
         description: "The org I want to connect is NOT a sandbox",
         value: "https://login.salesforce.com",
       },
@@ -366,11 +366,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n")
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n")
         )
       );
     }

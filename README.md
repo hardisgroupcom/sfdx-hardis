@@ -124,6 +124,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:org:connect [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgconnect--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:data:export [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdataexport--p-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:data:import [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdataimport--p-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:org:diagnose:legacyapi [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdiagnoselegacyapi--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:purge:apexlog [-z] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeapexlog--z--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string--f--r-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:packageconfig [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievepackageconfig--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -404,6 +405,41 @@ EXAMPLE
 ```
 
 _See code: [lib/commands/hardis/org/data/import.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.43.1/lib/commands/hardis/org/data/import.js)_
+
+## `sfdx hardis:org:diagnose:legacyapi [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Checks if an org uses a deprecated API version
+
+```
+USAGE
+  $ sfdx hardis:org:diagnose:legacyapi [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+
+  -u, --targetusername=targetusername                                               username or alias for the target
+                                                                                    org; overrides default target org
+
+  --apiversion=apiversion                                                           override the api version used for
+                                                                                    api requests made by this command
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+  --websocket=websocket                                                             Websocket host:port for VsCode SFDX
+                                                                                    Hardis UI integration
+
+DESCRIPTION
+  More info at https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1
+
+EXAMPLE
+  $ sfdx hardis:org:diagnose:legacyapi
+```
+
+_See code: [lib/commands/hardis/org/diagnose/legacyapi.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.43.1/lib/commands/hardis/org/diagnose/legacyapi.js)_
 
 ## `sfdx hardis:org:purge:apexlog [-z] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
