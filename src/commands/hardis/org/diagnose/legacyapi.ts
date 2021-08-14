@@ -38,6 +38,10 @@ export default class LegacyApi extends SfdxCommand {
       default: "ApiTotalUsage",
       description: "Type of EventLogFile event to analyze",
     }),
+    limit: flags.number({
+      char: "l",
+      description: "Number of latest EventLogFile events to analyze",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -76,10 +80,13 @@ export default class LegacyApi extends SfdxCommand {
   // Refactoring of Philippe Ozil's apex script with JsForce queries
   private async runJsForce() {
     const eventType = this.flags.eventtype || 'ApiTotalUsage';
+    const limit = this.flags.limit || null;
+
+    const limitConstraint = limit ? ` LIMIT ${limit}`:'';
     const conn = this.org.getConnection();
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
-    const logCountRes = await conn.query(`SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`);
+    const logCountRes = await conn.query(`SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`+ limitConstraint);
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
       uxLog(this, c.green('This indicates that no legacy APIs were called during the log retention window.'));
@@ -88,7 +95,7 @@ export default class LegacyApi extends SfdxCommand {
     uxLog(this, 'Found ' + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`);
 
     // Fetch EventLogFiles with ApiTotalUsage entries
-    const eventLogRes: any = await conn.query(`SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY CreatedDate DESC`);
+    const eventLogRes: any = await conn.query(`SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY CreatedDate DESC`+limitConstraint);
 
     // Collect legacy api calls from logs
     const allDeadApiCalls = [];
@@ -102,15 +109,15 @@ export default class LegacyApi extends SfdxCommand {
     }
 
     // Build command result
-    let msg = "No deprecated API call has been found in the latest 99 ApiTotalUsage logs";
+    let msg = "No deprecated API call has been found in ApiTotalUsage logs";
     let statusCode = 0;
     if (allDeadApiCalls.length > 0 || allSoonDeprecatedApiCalls.length > 0) {
-      msg = "Found legacy API versions in logs";
+      msg = "Found legacy API versions calls in logs";
       statusCode = 1;
       uxLog(this, c.red(c.bold(msg)));
     }
     else if (allEndOfSupportApiCalls.length > 0) {
-      msg = "Found API versions in logs that will not be supported anymore in the future";
+      msg = "Found API versions calls in logs that will not be supported anymore in the future";
       statusCode = 0;
       uxLog(this, c.yellow(c.bold(msg)));
     } else {
@@ -138,13 +145,13 @@ export default class LegacyApi extends SfdxCommand {
       const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : null;
       // const apiType = logEntry.API_TYPE || null ;
       const apiFamily = logEntry.API_FAMILY || null;
-      if (['SOAP', 'REST', 'BULK'].includes(apiFamily) && apiVersion <= 7.0) {
+      if (['SOAP', 'REST', 'API', 'BULK'].includes(apiFamily) && apiVersion <= 7.0) {
         deadApiCalls.push(logEntry);
       }
-      else if (['SOAP', 'REST', 'BULK'].includes(apiFamily) && apiVersion <= 20.0) {
+      else if (['SOAP', 'REST','API', 'BULK'].includes(apiFamily) && apiVersion <= 20.0) {
         soonDeprecatedApiCalls.push(logEntry);
       }
-      else if (['SOAP', 'REST', 'BULK'].includes(apiFamily) && apiVersion <= 30.0) {
+      else if (['SOAP', 'REST','API', 'BULK'].includes(apiFamily) && apiVersion <= 30.0) {
         endOfSupportApiCalls.push(logEntry);
       }
     }
