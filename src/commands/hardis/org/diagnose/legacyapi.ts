@@ -40,6 +40,7 @@ export default class LegacyApi extends SfdxCommand {
     }),
     limit: flags.number({
       char: "l",
+      default: 999,
       description: "Number of latest EventLogFile events to analyze",
     }),
     debug: flags.boolean({
@@ -63,6 +64,11 @@ export default class LegacyApi extends SfdxCommand {
 
   protected debugMode = false;
   protected apexSCannerCodeUrl = "https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex";
+  protected legacyApiDescriptors = [
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 1.0, maxApiVersion: 6.0, severity: "ERROR" },
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "WARNING" },
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "INFO" },
+  ]
 
   /* jscpd:ignore-end */
 
@@ -79,19 +85,22 @@ export default class LegacyApi extends SfdxCommand {
   // Refactoring of Philippe Ozil's apex script with JsForce queries
   private async runJsForce() {
     const eventType = this.flags.eventtype || "ApiTotalUsage";
-    const limit = this.flags.limit || null;
+    const limit = this.flags.limit || 999;
 
     const limitConstraint = limit ? ` LIMIT ${limit}` : "";
     const conn = this.org.getConnection();
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
-    const logCountRes = await conn.query(`SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'` + limitConstraint);
+    const logCountRes = await conn.query(`SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`);
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
       uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
       return { status: 0 };
     }
     uxLog(this, "Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`);
+    if (logCountRes.totalSize > limit) {
+      uxLog(this,c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`));
+    }
 
     // Fetch EventLogFiles with ApiTotalUsage entries
     const eventLogRes: any = await conn.query(
@@ -157,15 +166,23 @@ export default class LegacyApi extends SfdxCommand {
     const endOfSupportApiCalls = [];
     const logEntries = await conn.request(logFileUrl);
     for (const logEntry of logEntries) {
-      const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : null;
+      const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : parseFloat("999.0");
       // const apiType = logEntry.API_TYPE || null ;
       const apiFamily = logEntry.API_FAMILY || null;
-      if (["SOAP", "REST", "Bulk"].includes(apiFamily) && apiVersion <= 7.0) {
-        deadApiCalls.push(logEntry);
-      } else if (["SOAP", "REST", "Bulk"].includes(apiFamily) && apiVersion <= 20.0) {
-        soonDeprecatedApiCalls.push(logEntry);
-      } else if (["SOAP", "REST", "Bulk"].includes(apiFamily) && apiVersion <= 30.0) {
-        endOfSupportApiCalls.push(logEntry);
+      for (const legacyApiDescriptor of this.legacyApiDescriptors) {
+        if (legacyApiDescriptor.apiFamily.includes(apiFamily) && legacyApiDescriptor.minApiVersion <= apiVersion && legacyApiDescriptor.maxApiVersion >= apiVersion) {
+          if (legacyApiDescriptor.severity === 'ERROR') {
+            deadApiCalls.push(logEntry);
+          }
+          else if (legacyApiDescriptor.severity === "WARNING") {
+            soonDeprecatedApiCalls.push(logEntry);
+          }
+          else {
+            // severity === 'INFO'
+            endOfSupportApiCalls.push(logEntry);
+          }
+          break;
+        }
       }
     }
     return { deadApiCalls, soonDeprecatedApiCalls, endOfSupportApiCalls };
