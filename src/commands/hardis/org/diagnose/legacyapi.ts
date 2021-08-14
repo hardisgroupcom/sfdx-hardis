@@ -3,9 +3,9 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import axios from "axios";
-import * as fs from 'fs-extra'
-import * as c from 'chalk';
-import * as os from 'os';
+import * as fs from "fs-extra";
+import * as c from "chalk";
+import * as os from "os";
 import path = require("path");
 import { execCommand, uxLog } from "../../../../common/utils";
 
@@ -19,7 +19,8 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class LegacyApi extends SfdxCommand {
   public static title = "Check for legacy API use";
 
-  public static description = "Checks if an org uses a deprecated API version\nMore info at https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1";
+  public static description =
+    "Checks if an org uses a deprecated API version\nMore info at https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1";
 
   public static examples = ["$ sfdx hardis:org:diagnose:legacyapi"];
 
@@ -46,23 +47,22 @@ export default class LegacyApi extends SfdxCommand {
   protected static requiresProject = false;
 
   protected debugMode = false;
-  protected apexSCannerCodeUrl = 'https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex';
+  protected apexSCannerCodeUrl = "https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex";
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
 
-
     // Get Legacy API scanner apex code
-    const tmpApexFile = path.join(os.tmpdir(), new Date().toJSON().slice(0, 10), 'legacy-api-scanner.apex');
+    const tmpApexFile = path.join(os.tmpdir(), new Date().toJSON().slice(0, 10), "legacy-api-scanner.apex");
     if (!fs.existsSync(tmpApexFile)) {
       uxLog(this, c.grey("Downloaded latest legacy API scanner script from " + this.apexSCannerCodeUrl));
       await fs.ensureDir(path.dirname(tmpApexFile));
       const response = await axios({
         method: "get",
         url: this.apexSCannerCodeUrl,
-        responseType: "stream"
+        responseType: "stream",
       });
       response.data.pipe(fs.createWriteStream(tmpApexFile));
     }
@@ -81,8 +81,7 @@ export default class LegacyApi extends SfdxCommand {
       msg = "Found legacy API versions in logs";
       statusCode = 1;
       uxLog(this, c.red(c.bold(msg)));
-    }
-    else {
+    } else {
       uxLog(this, c.green(msg));
     }
 
