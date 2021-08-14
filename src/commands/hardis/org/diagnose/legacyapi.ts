@@ -145,13 +145,13 @@ export default class LegacyApi extends SfdxCommand {
       const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : null;
       // const apiType = logEntry.API_TYPE || null ;
       const apiFamily = logEntry.API_FAMILY || null;
-      if (['SOAP', 'REST', 'API', 'BULK'].includes(apiFamily) && apiVersion <= 7.0) {
+      if (['SOAP', 'REST', 'Bulk'].includes(apiFamily) && apiVersion <= 7.0) {
         deadApiCalls.push(logEntry);
       }
-      else if (['SOAP', 'REST','API', 'BULK'].includes(apiFamily) && apiVersion <= 20.0) {
+      else if (['SOAP', 'REST', 'Bulk'].includes(apiFamily) && apiVersion <= 20.0) {
         soonDeprecatedApiCalls.push(logEntry);
       }
-      else if (['SOAP', 'REST','API', 'BULK'].includes(apiFamily) && apiVersion <= 30.0) {
+      else if (['SOAP', 'REST', 'Bulk'].includes(apiFamily) && apiVersion <= 30.0) {
         endOfSupportApiCalls.push(logEntry);
       }
     }
