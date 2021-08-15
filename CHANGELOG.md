@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.45.0] 2021-08-14
+
+- Refactor **hardis:org:diagnose:legacyapi** with jsforce to handle more log entries
+- Do not display `git branch -v` in logs
+
 ## [2.44.0] 2021-08-14
 
 - New command **hardis:org:diagnose:legacyapi** : Detect [use of deprecated API versions](https://help.salesforce.com/articleView?id=000351312&type=1&mode=1&language=en_US) in production org

@@ -46,7 +46,9 @@ export function git(options: any = { output: false }): SimpleGit {
     function logCommand() {
       if (first) {
         first = false;
-        uxLog(this, `[command] ${c.grey(command)} ${c.grey(gitArgs.join(" "))}`);
+        if (!(gitArgs && gitArgs[0] && gitArgs[0] === "branch" && gitArgs[1] && gitArgs[1] === "-v")) {
+          uxLog(this, `[command] ${c.grey(command)} ${c.grey(gitArgs.join(" "))}`);
+        }
       }
     }
   });
