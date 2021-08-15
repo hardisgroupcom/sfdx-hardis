@@ -68,7 +68,7 @@ export default class LegacyApi extends SfdxCommand {
     { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 1.0, maxApiVersion: 6.0, severity: "ERROR", deprecationRelease: "Winter 19" },
     { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "WARNING", deprecationRelease: "Summer 21" },
     { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "INFO", deprecationRelease: "Summer 22" },
-  ]
+  ];
 
   /* jscpd:ignore-end */
 
@@ -155,16 +155,18 @@ export default class LegacyApi extends SfdxCommand {
       // const apiType = logEntry.API_TYPE || null ;
       const apiFamily = logEntry.API_FAMILY || null;
       for (const legacyApiDescriptor of this.legacyApiDescriptors) {
-        if (legacyApiDescriptor.apiFamily.includes(apiFamily) && legacyApiDescriptor.minApiVersion <= apiVersion && legacyApiDescriptor.maxApiVersion >= apiVersion) {
-          logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease ;
+        if (
+          legacyApiDescriptor.apiFamily.includes(apiFamily) &&
+          legacyApiDescriptor.minApiVersion <= apiVersion &&
+          legacyApiDescriptor.maxApiVersion >= apiVersion
+        ) {
+          logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease;
           logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
-          if (legacyApiDescriptor.severity === 'ERROR') {
+          if (legacyApiDescriptor.severity === "ERROR") {
             deadApiCalls.push(logEntry);
-          }
-          else if (legacyApiDescriptor.severity === "WARNING") {
+          } else if (legacyApiDescriptor.severity === "WARNING") {
             soonDeprecatedApiCalls.push(logEntry);
-          }
-          else {
+          } else {
             // severity === 'INFO'
             endOfSupportApiCalls.push(logEntry);
           }
