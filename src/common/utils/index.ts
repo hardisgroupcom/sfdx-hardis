@@ -46,7 +46,9 @@ export function git(options: any = { output: false }): SimpleGit {
     function logCommand() {
       if (first) {
         first = false;
-        uxLog(this, `[command] ${c.grey(command)} ${c.grey(gitArgs.join(" "))}`);
+        if (!(gitArgs && gitArgs[0] && gitArgs[0] === "branch" && gitArgs[1] && gitArgs[1] === '-v')) {
+          uxLog(this, `[command] ${c.grey(command)} ${c.grey(gitArgs.join(" "))}`);
+        }
       }
     }
   });
@@ -366,11 +368,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n")
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n")
         )
       );
     }

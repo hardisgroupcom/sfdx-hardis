@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.45.0] 2021-08-14
 
 - Refactor **hardis:org:diagnose:legacyapi** with jsforce to handle more log entries
+- Do not display `git branch -v` in logs
 
 ## [2.44.0] 2021-08-14
 

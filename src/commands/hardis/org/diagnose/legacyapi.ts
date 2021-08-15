@@ -65,9 +65,9 @@ export default class LegacyApi extends SfdxCommand {
   protected debugMode = false;
   protected apexSCannerCodeUrl = "https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex";
   protected legacyApiDescriptors = [
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 1.0, maxApiVersion: 6.0, severity: "ERROR" },
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "WARNING" },
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "INFO" },
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 1.0, maxApiVersion: 6.0, severity: "ERROR", deprecationRelease: "Winter 19" },
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "WARNING", deprecationRelease: "Summer 21" },
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "INFO", deprecationRelease: "Summer 22" },
   ]
 
   /* jscpd:ignore-end */
@@ -99,7 +99,7 @@ export default class LegacyApi extends SfdxCommand {
     }
     uxLog(this, "Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`);
     if (logCountRes.totalSize > limit) {
-      uxLog(this,c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`));
+      uxLog(this, c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`));
     }
 
     // Fetch EventLogFiles with ApiTotalUsage entries
@@ -113,24 +113,9 @@ export default class LegacyApi extends SfdxCommand {
     const allEndOfSupportApiCalls = [];
     for (const eventLogFile of eventLogRes.records) {
       const { deadApiCalls, soonDeprecatedApiCalls, endOfSupportApiCalls } = await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
-      allDeadApiCalls.push(
-        ...deadApiCalls.map((item) => {
-          item.SFDX_HARDIS_SEVERITY = "ERROR";
-          return item;
-        })
-      );
-      allSoonDeprecatedApiCalls.push(
-        ...soonDeprecatedApiCalls.map((item) => {
-          item.SFDX_HARDIS_SEVERITY = "WARNING";
-          return item;
-        })
-      );
-      allEndOfSupportApiCalls.push(
-        ...endOfSupportApiCalls.map((item) => {
-          item.SFDX_HARDIS_SEVERITY = "INFO";
-          return item;
-        })
-      );
+      allDeadApiCalls.push(...deadApiCalls);
+      allSoonDeprecatedApiCalls.push(...soonDeprecatedApiCalls);
+      allEndOfSupportApiCalls.push(...endOfSupportApiCalls);
     }
 
     // Build command result
@@ -171,6 +156,8 @@ export default class LegacyApi extends SfdxCommand {
       const apiFamily = logEntry.API_FAMILY || null;
       for (const legacyApiDescriptor of this.legacyApiDescriptors) {
         if (legacyApiDescriptor.apiFamily.includes(apiFamily) && legacyApiDescriptor.minApiVersion <= apiVersion && legacyApiDescriptor.maxApiVersion >= apiVersion) {
+          logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease ;
+          logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
           if (legacyApiDescriptor.severity === 'ERROR') {
             deadApiCalls.push(logEntry);
           }
