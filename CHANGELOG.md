@@ -4,8 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.46.0] 2021-08-16
+
 - Allow to run git delta command on local updates
 - Update labels of hardis:data commands
+- New technical command: hardis:work:ws , to call VsCode Extension refresh from CLI
 
 ## [2.45.0] 2021-08-15
 
