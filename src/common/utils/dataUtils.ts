@@ -45,7 +45,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   });
 }
 
-export async function selectDataWorkspace() {
+export async function selectDataWorkspace(opts = {selectDataLabel: "Please select a data workspace to export"}) {
   if (!fs.existsSync(dataFolderRoot)) {
     throw new SfdxError(
       "There is no sfdmu root folder 'scripts/data' in your workspace. Create it and define sfdmu exports using sfdmu: https://help.sfdmu.com/"
@@ -73,7 +73,7 @@ export async function selectDataWorkspace() {
   const sfdmuDirResult = await prompts({
     type: "select",
     name: "value",
-    message: c.cyanBright("Please select a data workspace to export"),
+    message: c.cyanBright(opts.selectDataLabel),
     choices: choices,
   });
   return sfdmuDirResult.value;

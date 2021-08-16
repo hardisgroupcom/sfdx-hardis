@@ -56,7 +56,7 @@ export default class DataExport extends SfdxCommand {
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
-      sfdmuPath = await selectDataWorkspace();
+      sfdmuPath = await selectDataWorkspace({selectDataLabel: "Please select a data workspace to EXPORT"});
     }
 
     // Select org that will be used to export records

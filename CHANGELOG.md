@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Allow to run git delta command on local updates
+- Update labels of hardis:data commands
+
 ## [2.45.0] 2021-08-15
 
 - Refactor **hardis:org:diagnose:legacyapi** with jsforce to handle more log entries

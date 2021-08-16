@@ -13,3 +13,5 @@ sfdx-hardis-*.tgz
 .nyc_output/
 
 site/
+
+config/user/
