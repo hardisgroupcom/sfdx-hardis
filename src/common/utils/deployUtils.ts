@@ -329,7 +329,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   });
 
   // Now that the diff is computed, we can discard staged items and undo changes
-  await git().reset(['--hard'])
+  await git().reset(["--hard"]);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");

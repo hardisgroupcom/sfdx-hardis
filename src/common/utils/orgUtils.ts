@@ -152,7 +152,12 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
         }
         return projectPackage;
       });
-      uxLog(this, c.cyan(`Updated package ${c.green(installedPackage.SubscriberPackageName)} with version id ${c.green(installedPackage.SubscriberPackageVersionId)}`));
+      uxLog(
+        this,
+        c.cyan(
+          `Updated package ${c.green(installedPackage.SubscriberPackageName)} with version id ${c.green(installedPackage.SubscriberPackageVersionId)}`
+        )
+      );
       updated = true;
     } else if (matchInstalled.length > 0 && matchLocal.length === 0) {
       // Request user about automatic installation during scratch orgs and deployments
