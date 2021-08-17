@@ -195,7 +195,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
   const config = await getConfig("user");
   // Build list of package.xml according to plan
   if (config.deploymentPlan && !check) {
-    // Copy main package.xml
+    // Copy main package.xml so it can be dynamically updated before deployment
     const tmpDeployDir = await createTempDir();
     const mainPackageXmlCopyFileName = path.join(tmpDeployDir, "mainPackage.xml");
     await fs.copy(packageXmlFile, mainPackageXmlCopyFileName);
@@ -205,17 +205,22 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
       order: 0,
     };
     const deploymentItems = [mainPackageXmlItem];
-    // Remove other package.xml items from main package.xml
+
+    // Work on deploymentPlan packages before deploying them
     for (const deploymentItem of config.deploymentPlan.packages) {
       if (deploymentItem.packageXmlFile) {
+        // Copy deployment in temp packageXml file so it can be updated using packageDeployOnce and packageDeployOnChange
         deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
         const splitPackageXmlCopyFileName = path.join(tmpDeployDir, path.basename(deploymentItem.packageXmlFile));
         await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
         deploymentItem.packageXmlFile = splitPackageXmlCopyFileName;
+        // Remove split of packageXml content from main package.xml
         await removePackageXmlContent(mainPackageXmlCopyFileName, deploymentItem.packageXmlFile, false, debugMode);
+        // Remove packageDeployOnce.xml items that are already present in target org
         if (deployOncePackageXml) {
           await removePackageXmlContent(deploymentItem.packageXmlFile, deployOncePackageXml, false, debugMode);
         }
+        // Remove packageDeployOnChange.xml items that are not different in target org
         if (deployOnChangePackageXml) {
           await removePackageXmlContent(deploymentItem.packageXmlFile, deployOnChangePackageXml, false, debugMode);
         }
@@ -223,9 +228,13 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
       deploymentItems.push(deploymentItem);
     }
 
-    // Remove packageXmlDeployOnce.xml items that are already present in target org
+    // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
     if (deployOncePackageXml) {
       await removePackageXmlContent(mainPackageXmlCopyFileName, deployOncePackageXml, false, debugMode);
+    }
+    //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
+    if (deployOnChangePackageXml) {
+      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOnChangePackageXml, false, debugMode);
     }
 
     // Sort in requested order
@@ -246,17 +255,17 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
 
 // packageDeployOnce.xml items are deployed only if they are not in the target org
 async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
-  const packageXmlDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
-  if (fs.existsSync(packageXmlDeployOnce)) {
+  const packageDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
+  if (fs.existsSync(packageDeployOnce)) {
     uxLog(this, "Building packageDeployOnce.xml...");
-    const packageXmlDeployOnceString = await fs.readFile(packageXmlDeployOnce, "utf8");
-    const packageXmlDeployOnceContent = await xml2js.parseStringPromise(packageXmlDeployOnceString);
+    const packageDeployOnceString = await fs.readFile(packageDeployOnce, "utf8");
+    const packageDeployOnceContent = await xml2js.parseStringPromise(packageDeployOnceString);
     // If packageDeployOnce.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (
-      packageXmlDeployOnceContent &&
-      packageXmlDeployOnceContent.Package &&
-      packageXmlDeployOnceContent.Package.types &&
-      packageXmlDeployOnceContent.Package.types.length > 0
+      packageDeployOnceContent &&
+      packageDeployOnceContent.Package &&
+      packageDeployOnceContent.Package.types &&
+      packageDeployOnceContent.Package.types.length > 0
     ) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
@@ -267,20 +276,20 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
         this,
         { fail: true, debug: debugMode, output: false }
       );
-      const packageXmlDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
-      await fs.copy(packageXmlDeployOnce, packageXmlDeployOnceToUse);
+      const packageDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
+      await fs.copy(packageDeployOnce, packageDeployOnceToUse);
       // Keep in deployOnce.xml only what is necessary to deploy
-      await removePackageXmlContent(packageXmlDeployOnceToUse, targetOrgPackageXml, true, debugMode);
+      await removePackageXmlContent(packageDeployOnceToUse, targetOrgPackageXml, true, debugMode);
       // Check if there is still something in updated packageDeployOnce.xml
-      const packageXmlDeployOnceStringNew = await fs.readFile(packageXmlDeployOnceToUse, "utf8");
-      const packageXmlDeployOnceContentNew = await xml2js.parseStringPromise(packageXmlDeployOnceStringNew);
+      const packageDeployOnceStringNew = await fs.readFile(packageDeployOnceToUse, "utf8");
+      const packageDeployOnceContentNew = await xml2js.parseStringPromise(packageDeployOnceStringNew);
       if (
-        packageXmlDeployOnceContentNew &&
-        packageXmlDeployOnceContentNew.Package &&
-        packageXmlDeployOnceContentNew.Package.types &&
-        packageXmlDeployOnceContentNew.Package.types.length > 0
+        packageDeployOnceContentNew &&
+        packageDeployOnceContentNew.Package &&
+        packageDeployOnceContentNew.Package.types &&
+        packageDeployOnceContentNew.Package.types.length > 0
       ) {
-        return packageXmlDeployOnceToUse;
+        return packageDeployOnceToUse;
       }
     }
   }
