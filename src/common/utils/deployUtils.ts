@@ -106,7 +106,7 @@ export async function forceSourceDeploy(
   options = {}
 ): Promise<any> {
   elapseStart("all deployments");
-  const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode);
+  const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
   const messages = [];
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
@@ -182,7 +182,7 @@ export async function forceSourceDeploy(
 }
 
 // In some case we can not deploy the whole package.xml, so let's split it before :)
-async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean, debugMode: boolean): Promise<any[]> {
+async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean, debugMode: boolean, options: any = {}): Promise<any[]> {
   const packageXmlString = await fs.readFile(packageXmlFile, "utf8");
   const packageXml = await xml2js.parseStringPromise(packageXmlString);
   // Check for empty package.xml
@@ -190,8 +190,8 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     uxLog(this, "Empty package.xml: nothing to deploy");
     return [];
   }
-  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode);
-  const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode);
+  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
+  const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   const config = await getConfig("user");
   // Build list of package.xml according to plan
   if (config.deploymentPlan && !check) {
