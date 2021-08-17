@@ -5,7 +5,7 @@ import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
 import * as xml2js from "xml2js";
-import { createTempDir, elapseEnd, elapseStart, execCommand, getCurrentGitBranch, git, isCI, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
@@ -107,7 +107,6 @@ export async function forceSourceDeploy(
 ): Promise<any> {
   elapseStart("all deployments");
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode);
-  const sharingRulesToDeploy = await getChangedSharingRules(debugMode, options);
   const messages = [];
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
@@ -121,11 +120,7 @@ export async function forceSourceDeploy(
       await new Promise((resolve) => setTimeout(resolve, deployment.waitBefore * 1000));
     }
     // Deployment of type package.xml file
-    // for sharing rules, deploy only if sources are different than target org
-    if (
-      deployment.packageXmlFile &&
-      (!deployment.label.includes("SharingRules") || sharingRulesToDeploy.includes(deployment.label.split(" - ")[1]))
-    ) {
+    if (deployment.packageXmlFile) {
       uxLog(
         commandThis,
         c.cyan(`${check ? "Simulating deployment of" : "Deploying"} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`)
@@ -171,7 +166,7 @@ export async function forceSourceDeploy(
       elapseEnd(`deploy ${deployment.label}`);
     }
     // Deployment of type data import
-    if (deployment.dataPath) {
+    else if (deployment.dataPath) {
       const dataPath = path.resolve(deployment.dataPath);
       await importData(dataPath, commandThis, options);
     }
@@ -196,6 +191,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     return [];
   }
   const deployOncePackageXml = await buildDeployOncePackageXml(debugMode);
+  const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode);
   const config = await getConfig("user");
   // Build list of package.xml according to plan
   if (config.deploymentPlan && !check) {
@@ -219,6 +215,9 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
         await removePackageXmlContent(mainPackageXmlCopyFileName, deploymentItem.packageXmlFile, false, debugMode);
         if (deployOncePackageXml) {
           await removePackageXmlContent(deploymentItem.packageXmlFile, deployOncePackageXml, false, debugMode);
+        }
+        if (deployOnChangePackageXml) {
+          await removePackageXmlContent(deploymentItem.packageXmlFile, deployOnChangePackageXml, false, debugMode);
         }
       }
       deploymentItems.push(deploymentItem);
@@ -246,7 +245,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
 }
 
 // packageDeployOnce.xml items are deployed only if they are not in the target org
-async function buildDeployOncePackageXml(debugMode = false) {
+async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
   const packageXmlDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
   if (fs.existsSync(packageXmlDeployOnce)) {
     uxLog(this, "Building packageDeployOnce.xml...");
@@ -263,7 +262,11 @@ async function buildDeployOncePackageXml(debugMode = false) {
       // Build target org package.xml
       uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching packageDeployOnce.xml ...`));
       const targetOrgPackageXml = path.join(tmpDir, "packageTargetOrg.xml");
-      await execCommand(`sfdx sfpowerkit:org:manifest:build -o ${targetOrgPackageXml}`, this, { fail: true, debug: debugMode, output: false });
+      await execCommand(
+        `sfdx sfpowerkit:org:manifest:build -o ${targetOrgPackageXml}` + (options.targetUsername ? ` -u ${options.targetUsername}` : ""),
+        this,
+        { fail: true, debug: debugMode, output: false }
+      );
       const packageXmlDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
       await fs.copy(packageXmlDeployOnce, packageXmlDeployOnceToUse);
       // Keep in deployOnce.xml only what is necessary to deploy
@@ -285,35 +288,54 @@ async function buildDeployOncePackageXml(debugMode = false) {
 }
 
 // packageDeployOnChange.xml items are deployed only if they have changed in target org
-export async function getChangedSharingRules(debugMode: boolean, options: any = {}) {
-  // get array of objects api name that need to be deploy
-  const objToDeploy = [];
+export async function buildDeployOnChangePackageXml(debugMode: boolean, options: any = {}) {
+  // Check if packageDeployOnChange.xml is defined
   const packageDeployOnChangePath = "./manifest/packageDeployOnChange.xml";
-  if (!fs.existsSync(packageDeployOnChangePath) || !options.targetUsername) {
-    return objToDeploy;
+  if (!fs.existsSync(packageDeployOnChangePath)) {
+    return null;
   }
-  await execCommand(`sfdx force:source:retrieve -x ${packageDeployOnChangePath} -u ${options.targetUsername}`, this, {
-    fail: true,
+
+  // Retrieve sfdx sources in local git repo
+  await execCommand(
+    `sfdx force:source:retrieve -x ${packageDeployOnChangePath}` + (options.targetUsername ? ` -u ${options.targetUsername}` : ""),
+    this,
+    {
+      fail: true,
+      output: true,
+      debug: debugMode,
+    }
+  );
+
+  // Stage updates so sfdx git delta can build diff package.xml
+  await git().add("--all");
+
+  // Generate package.xml git delta
+  const tmpDir = await createTempDir();
+  const packageXmlGitDeltaCommand = `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}`;
+  const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
     output: true,
-    debug: debugMode,
+    fail: false,
+    debug: this.debugMode,
+    cwd: await getGitRepoRoot(),
   });
 
-  const gitStatus = await git().status();
-  const regex = new RegExp("sharingRules/([A-Za-z_]+)");
-
-  for (const file of gitStatus.files) {
-    const match = regex.exec(file.path);
-    if (match !== null) {
-      const memberName = match[1];
-      objToDeploy.push(memberName);
-    }
-  }
-
-  // discard untracked files
+  // Discard staged items
   await git().checkout(".");
   await git().clean("fd");
 
-  return objToDeploy;
+  // Check git delta is ok
+  const diffPackageXml = path.join(tmpDir, "package", "package.xml");
+  if (gitDeltaCommandRes?.status !== 0 || !fs.existsSync(diffPackageXml)) {
+    throw new SfdxError("Error while running sfdx git delta:\n" + JSON.stringify(gitDeltaCommandRes));
+  }
+
+  // Remove from original packageDeployOnChange the items that has not been updated
+  const packageXmlDeployOnChangeToUse = path.join(tmpDir, "packageDeployOnChange.xml");
+  await fs.copy(packageDeployOnChangePath, packageXmlDeployOnChangeToUse);
+  await removePackageXmlContent(packageXmlDeployOnChangeToUse, diffPackageXml, false, debugMode);
+
+  // Return result
+  return packageXmlDeployOnChangeToUse;
 }
 
 // Remove content of a package.xml file from another package.xml file

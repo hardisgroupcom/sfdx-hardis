@@ -48,12 +48,12 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           initial: true,
           message: c.cyanBright("Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"),
           choices: [
-            { title: "Yes", value: true },
-            { title: "No  ", value: false },
+            { title: "Yes", value: "true" },
+            { title: "No  ", value: "false" },
             { title: "Never ask again  ", value: "never" },
           ],
         });
-        if (confirm.value === true || isCI) {
+        if (confirm.value === "true" || isCI) {
           await fs.writeFile(gitIgnoreFile, gitIgnoreLinesUnique.join("\n") + "\n", "utf-8");
           console.log(c.cyan("[sfdx-hardis] Updated .gitignore"));
         }
@@ -92,13 +92,13 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           initial: true,
           message: c.cyanBright("Your .forceignore is deprecated, do you agree to upgrade it ?"),
           choices: [
-            { title: "Yes", value: true },
-            { title: "No  ", value: false },
+            { title: "Yes", value: "true" },
+            { title: "No  ", value: "false" },
             { title: "Never ask again  ", value: "never" },
           ],
         });
         /* jscpd:ignore-end */
-        if (confirm.value === true || isCI) {
+        if (confirm.value === "true" || isCI) {
           await fs.writeFile(forceIgnoreFile, forceIgnoreLinesUnique.join("\n") + "\n", "utf-8");
           console.log(c.cyan("[sfdx-hardis] Updated .forceignore"));
         }
