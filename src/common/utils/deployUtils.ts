@@ -324,13 +324,12 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
     output: true,
     fail: false,
-    debug: this.debugMode,
+    debug: debugMode,
     cwd: await getGitRepoRoot(),
   });
 
-  // Discard staged items
-  await git().checkout(".");
-  await git().clean("fd");
+  // Now that the diff is computed, we can discard staged items and undo changes
+  await git().reset(['--hard'])
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
