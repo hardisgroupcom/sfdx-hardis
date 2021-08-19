@@ -49,7 +49,7 @@ export async function isPackageXmlEmpty(packageXmlFile: string, options: {ignore
     packageXmlContent.Package.types.length > 0
   ) {
     if (options.ignoreStandaloneParentItems === true) {
-      // Check if onlt contains SharingRule without SharingOwnerRule
+      // Check if only contains SharingRule without SharingOwnerRule
       if (packageXmlContent.Package.types.length === 1 &&
           packageXmlContent.Package.types[0].name === 'SharingRules'
         ) {
