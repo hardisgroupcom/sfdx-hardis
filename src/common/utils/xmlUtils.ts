@@ -38,3 +38,22 @@ export async function writePackageXmlFile(packageXmlFile: string, packageXmlObje
   });
   await writeXmlFile(packageXmlFile, packageXmlContent);
 }
+
+// Check if a package.xml is empty
+export async function isPackageXmlEmpty(
+  packageXmlFile: string,
+  options: { ignoreStandaloneParentItems: boolean } = { ignoreStandaloneParentItems: false }
+) {
+  const packageXmlContent = await parseXmlFile(packageXmlFile);
+  if (packageXmlContent && packageXmlContent.Package && packageXmlContent.Package.types && packageXmlContent.Package.types.length > 0) {
+    if (options.ignoreStandaloneParentItems === true) {
+      // Check if only contains SharingRule without SharingOwnerRule
+      if (packageXmlContent.Package.types.length === 1 && packageXmlContent.Package.types[0].name[0] === "SharingRules") {
+        return true;
+      }
+    }
+    // no standalone parent items found package.xml is considered not empty
+    return false;
+  }
+  return true;
+}

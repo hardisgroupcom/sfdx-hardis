@@ -12,7 +12,8 @@
       "port": 9229,
       "localRoot": "${workspaceFolder}",
       "remoteRoot": "${workspaceFolder}",
-      "stopOnEntry": false
+      "stopOnEntry": false,
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "name": "Run All Tests",

@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.47.0] 2021-08-19
+
+- New feature: use packageDeployOnChange.xml, to skip deployment of items that has not been updated since last update
+- Create docker images with sfdx-cli@stable version
+  - alpha-sfdx-stable
+  - beta-sfdx-stable
+  - latest-sfdx-stable
+
 ## [2.46.0] 2021-08-16
 
 - Allow to run git delta command on local updates
