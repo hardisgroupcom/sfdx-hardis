@@ -48,7 +48,7 @@ export async function isPackageXmlEmpty(
   if (packageXmlContent && packageXmlContent.Package && packageXmlContent.Package.types && packageXmlContent.Package.types.length > 0) {
     if (options.ignoreStandaloneParentItems === true) {
       // Check if only contains SharingRule without SharingOwnerRule
-      if (packageXmlContent.Package.types.length === 1 && packageXmlContent.Package.types[0].name === "SharingRules") {
+      if (packageXmlContent.Package.types.length === 1 && packageXmlContent.Package.types[0].name[0] === "SharingRules") {
         return true;
       }
     }
