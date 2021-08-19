@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.47.1] 2021-08-19
+
+- Use --permissivediff to call sfdx-git-delta if the argument is available
+- Manage env vars SKIP_PACKAGE_DEPLOY_ON_CHANGE and SKIP_PACKAGE_DEPLOY_ONCE . If set to true, related packageDeployOnChange.xml and packageDeployOnce.xml are ignored
+- Define locally method to remove package.xml from another, to improve performances
+
 ## [2.47.0] 2021-08-19
 
 - New feature: use packageDeployOnChange.xml, to skip deployment of items that has not been updated since last update

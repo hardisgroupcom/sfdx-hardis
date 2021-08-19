@@ -10,7 +10,7 @@ import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
-import { isPackageXmlEmpty } from "./xmlUtils";
+import { isPackageXmlEmpty, removePackageXmlFilesContent } from "./xmlUtils";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -268,6 +268,10 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
 
 // packageDeployOnce.xml items are deployed only if they are not in the target org
 async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
+  if (process.env.SKIP_PACKAGE_DEPLOY_ONCE === "true") {
+    uxLog(this, c.yellow("Skipped packageDeployOnce.xml management because of env variable SKIP_PACKAGE_DEPLOY_ONCE='true'"));
+    return null;
+  }
   const packageDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
   if (fs.existsSync(packageDeployOnce)) {
     uxLog(this, "Building packageDeployOnce.xml...");
@@ -297,6 +301,10 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
 
 // packageDeployOnChange.xml items are deployed only if they have changed in target org
 export async function buildDeployOnChangePackageXml(debugMode: boolean, options: any = {}) {
+  if (process.env.SKIP_PACKAGE_DEPLOY_ON_CHANGE === "true") {
+    uxLog(this, c.yellow("Skipped packageDeployOnChange.xml management because of env variable SKIP_PACKAGE_DEPLOY_ON_CHANGE='true'"));
+    return null;
+  }
   // Check if packageDeployOnChange.xml is defined
   const packageDeployOnChangePath = "./manifest/packageDeployOnChange.xml";
   if (!fs.existsSync(packageDeployOnChangePath)) {
@@ -319,7 +327,9 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
-  const packageXmlGitDeltaCommand = `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}`;
+  const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: debugMode })).stdout;
+  const packageXmlGitDeltaCommand =
+    `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}` + (sgdHelp.includes("--permissivediff") ? " --permissivediff" : "");
   const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
     output: true,
     fail: false,
@@ -347,8 +357,8 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
 // Remove content of a package.xml file from another package.xml file
 async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToRemove: string, removedOnly = false, debugMode = false) {
-  uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}`));
-  let removePackageXmlCommand =
+  uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}...`));
+  /* let removePackageXmlCommand =
     "sfdx essentials:packagexml:remove" +
     ` --packagexml ${packageXmlFile}` +
     ` --removepackagexml ${packageXmlFileToRemove}` +
@@ -360,6 +370,11 @@ async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToR
   await execCommand(removePackageXmlCommand, this, {
     fail: true,
     debug: debugMode,
+  }); */
+  await removePackageXmlFilesContent(packageXmlFile, packageXmlFileToRemove, {
+    outputXmlFile: packageXmlFile,
+    logFlag: debugMode,
+    removedOnly: removedOnly,
   });
 }
 
