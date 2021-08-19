@@ -111,13 +111,20 @@ export async function forceSourceDeploy(
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Process items of deployment plan
-  uxLog(this,c.cyan("Processing split deployments build from deployment plan..."));
-  uxLog(this,c.whiteBright(JSON.stringify(splitDeployments,null,2)));
+  uxLog(this, c.cyan("Processing split deployments build from deployment plan..."));
+  uxLog(this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
   for (const deployment of splitDeployments) {
     elapseStart(`deploy ${deployment.label}`);
     // Skip this deployment items if there is nothing to deploy in package.xml
-    if (deployment.packageXmlFile && (await isPackageXmlEmpty(deployment.packageXmlFile,{ignoreStandaloneParentItems: true}))) {
-      uxLog(commandThis,c.cyan(`Skipped ${c.bold(deployment.label)} deployment because package.xml is empty or contains only standalone parent items.\n${c.grey(c.italic('This may be related to filtering using packageDeployOnce.xml or packageDeployOnChange.xml'))}`))
+    if (deployment.packageXmlFile && (await isPackageXmlEmpty(deployment.packageXmlFile, { ignoreStandaloneParentItems: true }))) {
+      uxLog(
+        commandThis,
+        c.cyan(
+          `Skipped ${c.bold(deployment.label)} deployment because package.xml is empty or contains only standalone parent items.\n${c.grey(
+            c.italic("This may be related to filtering using packageDeployOnce.xml or packageDeployOnChange.xml")
+          )}`
+        )
+      );
       elapseEnd(`deploy ${deployment.label}`);
       continue;
     }
@@ -192,7 +199,7 @@ export async function forceSourceDeploy(
 // In some case we can not deploy the whole package.xml, so let's split it before :)
 async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean, debugMode: boolean, options: any = {}): Promise<any[]> {
   // Check for empty package.xml
-  if ((await isPackageXmlEmpty(packageXmlFile))) {
+  if (await isPackageXmlEmpty(packageXmlFile)) {
     uxLog(this, "Empty package.xml: nothing to deploy");
     return [];
   }
@@ -265,7 +272,7 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
   if (fs.existsSync(packageDeployOnce)) {
     uxLog(this, "Building packageDeployOnce.xml...");
     // If packageDeployOnce.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
-    if (! (await isPackageXmlEmpty(packageDeployOnce))   ) {
+    if (!(await isPackageXmlEmpty(packageDeployOnce))) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
       uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching packageDeployOnce.xml ...`));
@@ -280,7 +287,7 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
       // Keep in deployOnce.xml only what is necessary to deploy
       await removePackageXmlContent(packageDeployOnceToUse, targetOrgPackageXml, true, debugMode);
       // Check if there is still something in updated packageDeployOnce.xml
-      if ( ! (await isPackageXmlEmpty(packageDeployOnceToUse))) {
+      if (!(await isPackageXmlEmpty(packageDeployOnceToUse))) {
         return packageDeployOnceToUse;
       }
     }
