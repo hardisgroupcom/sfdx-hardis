@@ -4,13 +4,13 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import * as xml2js from "xml2js";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
+import { isPackageXmlEmpty } from "./xmlUtils";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -111,8 +111,16 @@ export async function forceSourceDeploy(
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Process items of deployment plan
+  uxLog(this,c.cyan("Processing split deployments build from deployment plan..."));
+  uxLog(this,c.whiteBright(JSON.stringify(splitDeployments,null,2)));
   for (const deployment of splitDeployments) {
     elapseStart(`deploy ${deployment.label}`);
+    // Skip this deployment items if there is nothing to deploy in package.xml
+    if (deployment.packageXmlFile && (await isPackageXmlEmpty(deployment.packageXmlFile,{ignoreStandaloneParentItems: true}))) {
+      uxLog(commandThis,c.cyan(`Skipped ${c.bold(deployment.label)} deployment because package.xml is empty or contains only standalone parent items.\n${c.grey(c.italic('This may be related to filtering using packageDeployOnce.xml or packageDeployOnChange.xml'))}`))
+      elapseEnd(`deploy ${deployment.label}`);
+      continue;
+    }
     let message = "";
     // Wait before deployment item process if necessary
     if (deployment.waitBefore) {
@@ -183,10 +191,8 @@ export async function forceSourceDeploy(
 
 // In some case we can not deploy the whole package.xml, so let's split it before :)
 async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean, debugMode: boolean, options: any = {}): Promise<any[]> {
-  const packageXmlString = await fs.readFile(packageXmlFile, "utf8");
-  const packageXml = await xml2js.parseStringPromise(packageXmlString);
   // Check for empty package.xml
-  if (!(packageXml && packageXml.Package && packageXml.Package.types && packageXml.Package.types.length > 0)) {
+  if ((await isPackageXmlEmpty(packageXmlFile))) {
     uxLog(this, "Empty package.xml: nothing to deploy");
     return [];
   }
@@ -258,15 +264,8 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
   const packageDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
   if (fs.existsSync(packageDeployOnce)) {
     uxLog(this, "Building packageDeployOnce.xml...");
-    const packageDeployOnceString = await fs.readFile(packageDeployOnce, "utf8");
-    const packageDeployOnceContent = await xml2js.parseStringPromise(packageDeployOnceString);
     // If packageDeployOnce.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
-    if (
-      packageDeployOnceContent &&
-      packageDeployOnceContent.Package &&
-      packageDeployOnceContent.Package.types &&
-      packageDeployOnceContent.Package.types.length > 0
-    ) {
+    if (! (await isPackageXmlEmpty(packageDeployOnce))   ) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
       uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching packageDeployOnce.xml ...`));
@@ -281,14 +280,7 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
       // Keep in deployOnce.xml only what is necessary to deploy
       await removePackageXmlContent(packageDeployOnceToUse, targetOrgPackageXml, true, debugMode);
       // Check if there is still something in updated packageDeployOnce.xml
-      const packageDeployOnceStringNew = await fs.readFile(packageDeployOnceToUse, "utf8");
-      const packageDeployOnceContentNew = await xml2js.parseStringPromise(packageDeployOnceStringNew);
-      if (
-        packageDeployOnceContentNew &&
-        packageDeployOnceContentNew.Package &&
-        packageDeployOnceContentNew.Package.types &&
-        packageDeployOnceContentNew.Package.types.length > 0
-      ) {
+      if ( ! (await isPackageXmlEmpty(packageDeployOnceToUse))) {
         return packageDeployOnceToUse;
       }
     }
@@ -354,7 +346,7 @@ async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToR
     ` --packagexml ${packageXmlFile}` +
     ` --removepackagexml ${packageXmlFileToRemove}` +
     ` --outputfile ${packageXmlFile}` +
-    ` --noinsight `;
+    ` --noinsight`;
   if (removedOnly === true) {
     removePackageXmlCommand += " --removedonly";
   }
