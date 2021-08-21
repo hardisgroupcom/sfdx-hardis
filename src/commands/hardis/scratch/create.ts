@@ -40,6 +40,11 @@ export default class ScratchCreate extends SfdxCommand {
       default: false,
       description: messages.getMessage("forceNewScratch"),
     }),
+    pool: flags.boolean({
+      char: "d",
+      default: false,
+      description: "Creates the scratch org for a scratch org pool",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -67,6 +72,7 @@ export default class ScratchCreate extends SfdxCommand {
   /* jscpd:ignore-end */
 
   protected debugMode = false;
+  protected pool = false ;
   protected configInfo: any;
   protected devHubAlias: string;
   protected scratchOrgAlias: string;
@@ -81,6 +87,7 @@ export default class ScratchCreate extends SfdxCommand {
   protected projectName: string;
 
   public async run(): Promise<AnyJson> {
+    this.pool = this.flags.pool || false;
     this.debugMode = this.flags.debug || false;
     this.forceNew = this.flags.forcenew || false;
     elapseStart(`Create and initialize scratch org`);
@@ -89,10 +96,12 @@ export default class ScratchCreate extends SfdxCommand {
     try {
       await this.updateScratchOrgUser();
       await this.installPackages();
-      await this.initOrgMetadatas();
-      await this.initPermissionSetAssignments();
-      await this.initApexScripts();
-      await this.initOrgData();
+      if (this.pool === false) {
+        await this.initOrgMetadatas();
+        await this.initPermissionSetAssignments();
+        await this.initApexScripts();
+        await this.initOrgData();
+      }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
       if (isCI && this.scratchOrgUsername) {
@@ -115,6 +124,11 @@ export default class ScratchCreate extends SfdxCommand {
     elapseEnd(`Create and initialize scratch org`);
     // Return an object to be displayed with --json
     return {
+      status: 0,
+      scratchOrgAlias: this.scratchOrgAlias,
+      scratchOrgInfo: this.scratchOrgInfo,
+      scratchOrgUsername: this.scratchOrgUsername,
+      scratchOrgPassword: this.scratchOrgPassword,
       outputString: "Created and initialized scratch org",
     };
   }
