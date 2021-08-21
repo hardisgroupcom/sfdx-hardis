@@ -50,7 +50,7 @@ export const getConfig = async (layer = "user"): Promise<any> => {
 
 // Set data in configuration file
 export const setConfig = async (layer: string, propValues: any): Promise<void> => {
-  if (layer === "user" && ((fs.readdirSync(process.cwd()).length === 0) || (!isGitRepo()))) {
+  if (layer === "user" && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
     uxLog(this, c.grey("Skip update user config file because current directory is not a salesforce project"));
     return;
   }
