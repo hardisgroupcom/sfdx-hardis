@@ -5,7 +5,9 @@ import * as path from "path";
 import { getConfig } from "../../config";
 import { SfdxError } from "@salesforce/core";
 import { uxLog } from ".";
+import axios from "axios";
 
+let keyValueUrl = null ;
 let poolStorageLocalFileName = null;
 
 export async function getPoolConfig() {
@@ -21,9 +23,17 @@ export async function getPoolStorage() {
     !["keyvalue.xyz", "localtest"].includes(poolConfig.storageService)) {
     throw new SfdxError(c.red('poolConfig.storageService must be set with one of the following values:\n- keyvalue.xyz\n- localtest"'));
   }
+  // keyvalue.xyz
   else if (poolConfig.storageService === "keyvalue.xyz") {
-    throw new Error("Storage using keyvalue.xyz not implemented yet");
+    await getKeyValueXyzUrl();
+    const response = await axios({
+      method: "get",
+      url: keyValueUrl,
+      responseType: "json",
+    });
+    return response.data || {}
   }
+  // local json file for tests
   else if (poolConfig.storageService === "localtest") {
     await getPoolStorageLocalFileName();
     if (fs.existsSync(poolStorageLocalFileName)) {
@@ -37,7 +47,13 @@ export async function getPoolStorage() {
 export async function setPoolStorage(poolStorage: any) {
   const poolConfig = await getPoolConfig();
   if (poolConfig.storageService === "keyvalue.xyz") {
-    throw new Error("Storage using keyvalue.xyz not implemented yet");
+    await getKeyValueXyzUrl();
+    await axios({
+      method: "post",
+      url: keyValueUrl,
+      responseType: "json",
+      data: poolStorage
+    });
   }
   else if (poolConfig.storageService === "localtest") {
     await getPoolStorageLocalFileName();
@@ -54,17 +70,6 @@ export async function addScratchOrgToPool(scratchOrg: any) {
   await setPoolStorage(poolStorage);
 }
 
-// Build local storage file name
-async function getPoolStorageLocalFileName(): Promise<string> {
-  if (poolStorageLocalFileName == null) {
-    const config = await getConfig("project");
-    const projectName = config.projectName || 'default';
-    poolStorageLocalFileName = path.join(os.homedir(), "poolStorage_" + projectName);
-    uxLog(this,c.grey("Local test storage: "+poolStorageLocalFileName));
-  }
-  return poolStorageLocalFileName;
-}
-
 // Fetch a scratch org
 export async function fetchScratchOrg() {
   const poolStorage = await getPoolStorage();
@@ -77,4 +82,30 @@ export async function fetchScratchOrg() {
     return scratchOrg;
   }
   return null;
+}
+
+// Build local storage file name
+async function getPoolStorageLocalFileName(): Promise<string> {
+  if (poolStorageLocalFileName == null) {
+    const config = await getConfig("project");
+    const projectName = config.projectName || 'default';
+    poolStorageLocalFileName = path.join(os.homedir(), "poolStorage_" + projectName + ".json");
+    uxLog(this, c.grey("Local test storage: " + poolStorageLocalFileName));
+  }
+  return poolStorageLocalFileName;
+}
+
+// Build keyvalue.xyz URL
+async function getKeyValueXyzUrl(): Promise<string> {
+  if (keyValueUrl == null) {
+    const config = await getConfig("project");
+    const projectName = config.projectName || 'default';
+    const apiKey = config.keyValueXyzApiKey || process.env.KEY_VALUE_XYZ_API_KEY ;
+    if (apiKey === null) {
+      throw new SfdxError(c.red("You need to define an keyvalue.xyz apiKey in config.keyValueXyzApiKey or env var KEY_VALUE_XYZ_API_KEY"));
+    }
+    keyValueUrl = `https://api.keyvalue.xyz/${apiKey}/pool_${projectName}`;
+    uxLog(this, c.grey("keyvalue.xyz url: "+keyValueUrl));
+  }
+  return keyValueUrl;
 }

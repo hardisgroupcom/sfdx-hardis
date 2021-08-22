@@ -14,6 +14,7 @@ import { MetadataUtils } from "../../../common/metadata-utils";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
 import { importData } from "../../../common/utils/dataUtils";
 import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "../../../common/utils/deployUtils";
+import { fetchScratchOrg } from "../../../common/utils/poolUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
 import { getConfig, setConfig } from "../../../config";
@@ -210,6 +211,14 @@ export default class ScratchCreate extends SfdxCommand {
       uxLog(this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
       return;
     }
+    // Try to fetch a scratch org from the pool
+    if (this.pool === false && this.configInfo.poolConfig) {
+      const scratchOrgFromPool = await fetchScratchOrg();
+      this.scratchOrgInfo = scratchOrgFromPool;
+      this.scratchOrgUsername = this.scratchOrgInfo.username;
+      uxLog(this, c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
+      return;      
+    }
 
     // Fix sfdx-cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), "shape");
@@ -241,8 +250,6 @@ export default class ScratchCreate extends SfdxCommand {
         )}`
       )
     );
-    console.log("createREsult: "+JSON.stringify(createResult));
-    console.log(JSON.stringify(this.scratchOrgInfo));
     this.scratchOrgInfo = createResult.result ;
     this.scratchOrgUsername = this.scratchOrgInfo.username;
     await setConfig("user", {
