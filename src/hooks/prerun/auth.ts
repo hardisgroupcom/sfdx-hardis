@@ -105,16 +105,16 @@ async function authOrg(orgAlias: string, options: any) {
         (isDevHub && orgInfoResult.result.id != null))
     ) {
       // Set as default username or devhubusername
-      console.log(
+      uxLog(this,
         `[sfdx-hardis] You are already ${c.green("connected")} to org ${c.green(
           orgInfoResult.result.alias || orgInfoResult.result.username
         )}: ${c.green(orgInfoResult.result.instanceUrl)}`
       );
       if (orgInfoResult.result.expirationDate) {
-        console.log(c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
+        uxLog(this,c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
       }
       if (!isCI) {
-        console.log(
+        uxLog(this, 
           c.yellow(
             c.italic(
               `[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold("hit CTRL+C"))}, then input ${c.whiteBright(

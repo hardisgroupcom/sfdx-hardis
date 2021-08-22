@@ -85,6 +85,7 @@ export default class ScratchCreate extends SfdxCommand {
   protected scratchOrgInfo: any;
   protected scratchOrgUsername: string;
   protected scratchOrgPassword: string;
+  protected scratchOrgSfdxAuthUrl: string ;
   protected projectName: string;
 
   public async run(): Promise<AnyJson> {
@@ -130,6 +131,7 @@ export default class ScratchCreate extends SfdxCommand {
       scratchOrgInfo: this.scratchOrgInfo,
       scratchOrgUsername: this.scratchOrgUsername,
       scratchOrgPassword: this.scratchOrgPassword,
+      scratchOrgSfdxAuthUrl: this.scratchOrgSfdxAuthUrl,
       outputString: "Created and initialized scratch org",
     };
   }
@@ -214,10 +216,14 @@ export default class ScratchCreate extends SfdxCommand {
     // Try to fetch a scratch org from the pool
     if (this.pool === false && this.configInfo.poolConfig) {
       const scratchOrgFromPool = await fetchScratchOrg();
-      this.scratchOrgInfo = scratchOrgFromPool;
-      this.scratchOrgUsername = this.scratchOrgInfo.username;
-      uxLog(this, c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
-      return;      
+      if (scratchOrgFromPool) {
+        this.scratchOrgAlias = scratchOrgFromPool.scratchOrgAlias;
+        this.scratchOrgInfo = scratchOrgFromPool.scratchOrgInfo;
+        this.scratchOrgUsername = scratchOrgFromPool.scratchOrgUsername;
+        this.scratchOrgPassword = scratchOrgFromPool.scratchOrgPassword;
+        uxLog(this, c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
+        return;
+      }
     }
 
     // Fix sfdx-cli bug: remove shape.zip if found
@@ -250,7 +256,7 @@ export default class ScratchCreate extends SfdxCommand {
         )}`
       )
     );
-    this.scratchOrgInfo = createResult.result ;
+    this.scratchOrgInfo = createResult.result;
     this.scratchOrgUsername = this.scratchOrgInfo.username;
     await setConfig("user", {
       scratchOrgAlias: this.scratchOrgAlias,
@@ -270,7 +276,7 @@ export default class ScratchCreate extends SfdxCommand {
     // Trigger a status refresh on VsCode WebSocket Client
     WebSocketClient.sendMessage({ event: "refreshStatus" });
 
-    if (isCI) {
+    if (isCI || this.pool === true) {
       // Try to store sfdxAuthUrl for scratch org reuse during CI
       const displayOrgCommand = `sfdx force:org:display -u ${this.scratchOrgAlias} --verbose`;
       const displayResult = await execSfdxJson(displayOrgCommand, this, {
@@ -282,6 +288,7 @@ export default class ScratchCreate extends SfdxCommand {
         await setConfig("user", {
           scratchOrgAuthUrl: displayResult.sfdxAuthUrl,
         });
+        this.scratchOrgSfdxAuthUrl = displayResult.sfdxAuthUrl;
       }
       // Display org URL
       const openRes = await execSfdxJson("sfdx force:org:open --urlonly", this, {

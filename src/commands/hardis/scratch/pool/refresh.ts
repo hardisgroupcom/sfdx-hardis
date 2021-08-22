@@ -1,7 +1,6 @@
 /* jscpd:ignore-start */
 import { spawn } from "child_process";
 import * as c from 'chalk';
-import * as StdOutParser from 'generic-stdout-parser';
 import * as which from 'which';
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
@@ -9,6 +8,9 @@ import { AnyJson } from "@salesforce/ts-types";
 import { addScratchOrgToPool, getPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
 import { uxLog } from "../../../../common/utils";
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const stripAnsi2 = require("strip-ansi");
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -90,17 +92,19 @@ export default class ScratchPoolRefresh extends SfdxCommand {
         child.stdout.on('data', (data) => {
           stdout += data.toString();
           if (this.debugMode === true) {
-            console.log(data.toString());
+            uxLog(this, data.toString());
           }
         });
         // Handle end of command
         child.on('close', async (code) => {
           uxLog(this, c.grey(`[pool] hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
           let result: any = {};
+          stdout = stripAnsi2(stdout);
           try {
-            result = new StdOutParser(stdout).parse()
+            result = JSON.parse(stdout);
           } catch (e) {
-            result.rawLog = stdout
+            result.rawLog = stdout;
+            uxLog(this,c.yellow("Error parsing stdout: "+stdout));
           }
           await addScratchOrgToPool(result);
           resolve({ code, result: result });
@@ -110,8 +114,11 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     }
     // Away parallel scratch org creations are completed
     const createResults = await Promise.all(subProcesses);
+    if (this.debugMode) {
+      uxLog(this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));
+    }
 
     // Return an object to be displayed with --json
-    return { outputString: "Refreshed scratch orgs pool", createResult: createResults };
+    return { outputString: "Refreshed scratch orgs pool", createResults: createResults };
   }
 }

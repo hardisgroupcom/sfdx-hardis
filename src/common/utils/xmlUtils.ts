@@ -135,7 +135,7 @@ export async function removePackageXmlFilesContent(
   }
   // display in logs if requested
   if (logFlag) {
-    console.log("Package.xml remove results :\n" + util.inspect(packageXmlMetadatasTypeLs, false, null));
+    uxLog(this, "Package.xml remove results :\n" + util.inspect(packageXmlMetadatasTypeLs, false, null));
   }
 
   // Write in output file if required
@@ -143,7 +143,7 @@ export async function removePackageXmlFilesContent(
     parsedPackageXml.Package.types = packageXmlMetadatasTypeLs;
     await writeXmlFile(outputXmlFile, parsedPackageXml);
     if (logFlag) {
-      console.log("Generated package.xml file: " + outputXmlFile);
+      uxLog(this, "Generated package.xml file: " + outputXmlFile);
     }
   }
   return packageXmlMetadatasTypeLs;
