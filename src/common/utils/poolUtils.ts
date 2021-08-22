@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from "path";
 import { getConfig } from "../../config";
 import { SfdxError } from "@salesforce/core";
-import { uxLog } from ".";
+import { createTempDir, execSfdxJson, uxLog } from ".";
 import axios from "axios";
 
 let keyValueUrl = null;
@@ -115,7 +115,13 @@ export async function fetchScratchOrg() {
     // Remove and save
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage);
-    return scratchOrg;
+    // Authenticate to scratch org
+    const tmpAuthFile = path.join((await createTempDir()), "authFile.json");
+    await fs.writeFile(tmpAuthFile, JSON.stringify(scratchOrg.authFileJson), "utf8");
+    const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile}`;
+    const authRes = await execSfdxJson(authCommand, this, { fail: true, output: true });
+    await fs.unlink(tmpAuthFile);
+    return authRes.status === 0 ? scratchOrg : null;
   }
   return null;
 }

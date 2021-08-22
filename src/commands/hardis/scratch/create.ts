@@ -86,6 +86,7 @@ export default class ScratchCreate extends SfdxCommand {
   protected scratchOrgUsername: string;
   protected scratchOrgPassword: string;
   protected scratchOrgSfdxAuthUrl: string ;
+  protected authFileJson: any;
   protected projectName: string;
 
   public async run(): Promise<AnyJson> {
@@ -132,6 +133,7 @@ export default class ScratchCreate extends SfdxCommand {
       scratchOrgUsername: this.scratchOrgUsername,
       scratchOrgPassword: this.scratchOrgPassword,
       scratchOrgSfdxAuthUrl: this.scratchOrgSfdxAuthUrl,
+      authFileJson: this.authFileJson,
       outputString: "Created and initialized scratch org",
     };
   }
@@ -289,6 +291,12 @@ export default class ScratchCreate extends SfdxCommand {
           scratchOrgAuthUrl: displayResult.sfdxAuthUrl,
         });
         this.scratchOrgSfdxAuthUrl = displayResult.sfdxAuthUrl;
+      }
+      if (this.pool) {
+        await setConfig("user", {
+          authFileJson: displayResult,
+        });
+        this.authFileJson = displayResult;
       }
       // Display org URL
       const openRes = await execSfdxJson("sfdx force:org:open --urlonly", this, {
