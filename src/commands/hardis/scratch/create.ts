@@ -72,7 +72,7 @@ export default class ScratchCreate extends SfdxCommand {
   /* jscpd:ignore-end */
 
   protected debugMode = false;
-  protected pool = false ;
+  protected pool = false;
   protected configInfo: any;
   protected devHubAlias: string;
   protected scratchOrgAlias: string;
@@ -138,12 +138,15 @@ export default class ScratchCreate extends SfdxCommand {
     this.configInfo = await getConfig("user");
     this.gitBranch = await getCurrentGitBranch({ formatted: true });
     const newScratchName = os.userInfo().username + "-" + this.gitBranch.split("/").pop().slice(0, 15) + "_" + moment().format("YYYYMMDD_hhmm");
-    this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || (!this.forceNew ? this.configInfo.scratchOrgAlias : null) || newScratchName;
+    this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || ((!this.forceNew) && this.pool === false ? this.configInfo.scratchOrgAlias : null) || newScratchName;
     if (isCI && !this.scratchOrgAlias.startsWith("CI-")) {
       this.scratchOrgAlias = "CI-" + this.scratchOrgAlias;
     }
+    if (this.pool === true) {
+      this.scratchOrgAlias = "P-" + Math.random().toString(36).substr(2, 2) + this.scratchOrgAlias;
+    }
     // Verify that the user wants to resume scratch org creation
-    if (!isCI && this.scratchOrgAlias !== newScratchName) {
+    if (!isCI && this.scratchOrgAlias !== newScratchName && this.pool === false) {
       const checkRes = await prompts({
         type: "confirm",
         name: "value",
@@ -161,11 +164,14 @@ export default class ScratchCreate extends SfdxCommand {
     this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;
     this.devHubAlias = process.env.DEVHUB_ALIAS || this.configInfo.devHubAlias;
 
-    this.scratchOrgDuration = process.env.SCRATCH_ORG_DURATION || isCI ? 1 : 30;
+    this.scratchOrgDuration = (process.env.SCRATCH_ORG_DURATION || isCI) && this.pool === false ? 1 : 30;
     this.userEmail = process.env.USER_EMAIL || process.env.GITLAB_USER_EMAIL || this.configInfo.userEmail;
 
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
+      if (this.pool === true) {
+        throw new SfdxError(c.red('You need to define userEmail property in .sfdx-hardis.yml'));
+      }
       const promptResponse = await prompts({
         type: "text",
         name: "value",
@@ -198,7 +204,7 @@ export default class ScratchCreate extends SfdxCommand {
         return org.alias === this.scratchOrgAlias && org.status === "Active" && org.devHubUsername === hubOrgUsername;
       }) || [];
     // Reuse existing scratch org
-    if (matchingScratchOrgs?.length > 0 && !this.forceNew) {
+    if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool === false) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
       uxLog(this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
@@ -207,7 +213,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Fix sfdx-cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), "shape");
-    if (fs.existsSync(tmpShapeFolder)) {
+    if (fs.existsSync(tmpShapeFolder) && this.pool === false) {
       await fs.remove(tmpShapeFolder);
       uxLog(this, c.grey("Deleted " + tmpShapeFolder));
     }
@@ -226,7 +232,7 @@ export default class ScratchCreate extends SfdxCommand {
       debug: this.debugMode,
     });
     assert(
-      createResult.status === 0,
+      createResult.status === 0 && createResult.result,
       c.red(
         `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
           createResult,
@@ -235,7 +241,9 @@ export default class ScratchCreate extends SfdxCommand {
         )}`
       )
     );
-    this.scratchOrgInfo = createResult.result;
+    console.log("createREsult: "+JSON.stringify(createResult));
+    console.log(JSON.stringify(this.scratchOrgInfo));
+    this.scratchOrgInfo = createResult.result ;
     this.scratchOrgUsername = this.scratchOrgInfo.username;
     await setConfig("user", {
       scratchOrgAlias: this.scratchOrgAlias,
