@@ -157,10 +157,12 @@ export default class LegacyApi extends SfdxCommand {
 
     // Return an object to be displayed with --json
     return {
-      status: statusCode, message: msg, csvLogFile: csvLogFile,
+      status: statusCode,
+      message: msg,
+      csvLogFile: csvLogFile,
       allDeadApiCalls,
       allSoonDeprecatedApiCalls,
-      allEndOfSupportApiCalls
+      allEndOfSupportApiCalls,
     };
   }
 
