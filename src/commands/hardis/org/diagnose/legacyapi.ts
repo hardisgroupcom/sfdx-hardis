@@ -6,7 +6,7 @@ import axios from "axios";
 import * as fs from "fs-extra";
 import * as c from "chalk";
 import * as os from "os";
-import * as ObjectsToCsv from "objects-to-csv";
+import * as Papa from "papaparse";
 import path = require("path");
 import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
 
@@ -135,13 +135,35 @@ export default class LegacyApi extends SfdxCommand {
 
     // Build output CSV file
     const tmpDir = await createTempDir();
-    const csvLogFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
-    const csv = new ObjectsToCsv(allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls));
-    await csv.toDisk(csvLogFile);
-    uxLog(this, c.cyan(`Please see detailed log in ${c.bold(csvLogFile)}`));
+    let csvLogFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
+    try {
+      const allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
+      const csvText = Papa.unparse(allErrors);
+      await fs.writeFile(csvLogFile, csvText, "utf8");
+      uxLog(this, c.cyan(`Please see detailed log in ${c.bold(csvLogFile)}`));
+    } catch (e) {
+      uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
+      csvLogFile = null;
+    }
+
+    // Debug or manage CSV file generation error
+    if (this.debugMode || csvLogFile == null) {
+      uxLog(this, c.grey(c.bold("Dead API calls:") + JSON.stringify(allDeadApiCalls, null, 2)));
+      uxLog(this, c.grey(c.bold("Deprecated API calls:") + JSON.stringify(allSoonDeprecatedApiCalls, null, 2)));
+      uxLog(this, c.grey(c.bold("End of support API calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
+    }
+
+    process.exitCode = statusCode;
 
     // Return an object to be displayed with --json
-    return { status: statusCode, message: msg, csvLogFile: csvLogFile };
+    return {
+      status: statusCode,
+      message: msg,
+      csvLogFile: csvLogFile,
+      allDeadApiCalls,
+      allSoonDeprecatedApiCalls,
+      allEndOfSupportApiCalls,
+    };
   }
 
   // GET csv log file and check for legacy API calls within

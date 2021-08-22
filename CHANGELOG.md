@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.47.2] 2021-08-21
+
+- Fix hardis:org:diagnose:legacyapi (display raw logs when CSV builder is crashing) , using papaparse instead of objects-to-csv package
+
 ## [2.47.1] 2021-08-19
 
 - Use --permissivediff to call sfdx-git-delta if the argument is available
