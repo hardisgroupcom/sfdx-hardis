@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from "path";
 import { getConfig } from "../../config";
 import { SfdxError } from "@salesforce/core";
+import { uxLog } from ".";
 
 let poolStorageLocalFileName = null;
 
@@ -59,6 +60,21 @@ async function getPoolStorageLocalFileName(): Promise<string> {
     const config = await getConfig("project");
     const projectName = config.projectName || 'default';
     poolStorageLocalFileName = path.join(os.homedir(), "poolStorage_" + projectName);
+    uxLog(this,c.grey("Local test storage: "+poolStorageLocalFileName));
   }
   return poolStorageLocalFileName;
+}
+
+// Fetch a scratch org
+export async function fetchScratchOrg() {
+  const poolStorage = await getPoolStorage();
+  const scratchOrgs: Array<any> = poolStorage.scratchOrgs;
+  if (scratchOrgs.length > 0) {
+    const scratchOrg = scratchOrgs.pop();
+    // Remove and save
+    poolStorage.scratchOrgs = scratchOrgs;
+    await setPoolStorage(poolStorage);
+    return scratchOrg;
+  }
+  return null;
 }

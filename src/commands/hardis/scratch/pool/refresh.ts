@@ -5,7 +5,7 @@ import * as which from 'which';
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { getPoolStorage } from "../../../../common/utils/poolUtils";
+import { addScratchOrgToPool, getPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
 import { uxLog } from "../../../../common/utils";
 
@@ -89,7 +89,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
           }
         });
         // Handle end of command
-        child.on('close', (code) => {
+        child.on('close',async (code) => {
           uxLog(this, c.grey(`[pool] hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
           let result: any = {} ;
           try {
@@ -97,6 +97,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
           } catch (e) {
             result.rawLog = stdout
           }
+          await addScratchOrgToPool(result);
           resolve({code,result: result});
         });
       });
