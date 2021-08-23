@@ -118,6 +118,14 @@ export default class LegacyApi extends SfdxCommand {
       allEndOfSupportApiCalls.push(...endOfSupportApiCalls);
     }
 
+    // Display summary
+    const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red ;
+    const deprecatedColor = allSoonDeprecatedApiCalls.length === 0 ? c.green : c.red ;
+    const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.red ;
+    uxLog(this, deadColor(`Dead API calls: ${c.bold(allDeadApiCalls.length)} (${this.legacyApiDescriptors[0].deprecationRelease})`));
+    uxLog(this, deprecatedColor(`Deprecated API calls: ${c.bold(allSoonDeprecatedApiCalls.length)} (${this.legacyApiDescriptors[1].deprecationRelease})`));
+    uxLog(this, endOfSupportColor(`End of support API calls: ${c.bold(allEndOfSupportApiCalls.length)} (${this.legacyApiDescriptors[2].deprecationRelease})`));
+
     // Build command result
     let msg = "No deprecated API call has been found in ApiTotalUsage logs";
     let statusCode = 0;
