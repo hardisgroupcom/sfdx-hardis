@@ -83,7 +83,10 @@ export async function fetchScratchOrg() {
     const authRes = await execSfdxJson(authCommand, this, { fail: true, output: true });
     // Set alias
     const setAliasCommand = `sfdx force:alias:set ${scratchOrg.scratchOrgAlias}=${scratchOrg.scratchOrgUsername}`;
-    await execCommand(setAliasCommand, this, { fail: false, output: true });
+    await execCommand(setAliasCommand, this, { fail: true, output: true });
+    // Set default username
+    const setDefaultUsernameCommand = `sfdx config:set defaultusername=${scratchOrg.scratchOrgUsername}`;
+    await execCommand(setDefaultUsernameCommand, this, { fail: true, output: true });
     // Remvoe temp auth file
     await fs.unlink(tmpAuthFile);
     // Return scratch org
