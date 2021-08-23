@@ -110,7 +110,7 @@ Example of element to delete:
       name: "duplicate-label",
       label: "Duplicate label",
       expressionString: ["Duplicate label:"],
-      tip: `You probably renamed a picklist API name. Please update manually the picklist in the target ogr to avoid to have a duplicate label`,
+      tip: `You probably renamed a picklist API name. Please update manually the picklist in the target org to avoid to have a duplicate label`,
     },
     {
       name: "email-template-missing",
