@@ -47,7 +47,7 @@ export async function setPoolStorage(value: any) {
 export async function addScratchOrgToPool(scratchOrg: any, options: { position: string } = { position: "last" }) {
   const poolStorage = await getPoolStorage();
   // Valid scratch orgs
-  if (scratchOrg.result) {
+  if (scratchOrg.status === 0) {
     const scratchOrgs = poolStorage.scratchOrgs || [];
     if (options.position === "first") {
       scratchOrgs.push(scratchOrg);
@@ -80,7 +80,9 @@ export async function fetchScratchOrg() {
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage);
     // Authenticate to scratch org
-    const tmpAuthFile = path.join(await createTempDir(), "authFile.json");
+    uxLog(this,"[pool] "+c.cyan("Authenticating to scratch org from pool..."));
+    const authTempDir = await createTempDir();
+    const tmpAuthFile = path.join(authTempDir, "authFile.json");
     await fs.writeFile(tmpAuthFile, JSON.stringify(scratchOrg.authFileJson), "utf8");
     const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile}`;
     const authRes = await execSfdxJson(authCommand, this, { fail: true, output: true });

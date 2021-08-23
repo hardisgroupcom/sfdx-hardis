@@ -108,12 +108,12 @@ export default class ScratchCreate extends SfdxCommand {
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      uxLog(this,c.grey("Error: "+e.message+"\n"+e.stack));
+      uxLog(this, c.grey("Error: " + e.message + "\n" + e.stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
-        uxLog(this, "[pool] "+c.yellow("Put back scratch org in the scratch orgs pool. ") + c.grey({ result: this.scratchOrgFromPool }));
-        await addScratchOrgToPool({ result: this.scratchOrgFromPool }, { position: "first" });
+        uxLog(this, "[pool] " + c.yellow("Put back scratch org in the scratch orgs pool. ") + c.grey({ result: this.scratchOrgFromPool }));
+        await addScratchOrgToPool(this.scratchOrgFromPool, { position: "first" });
       } else if (isCI && this.scratchOrgUsername) {
         await execCommand(`sfdx force:org:delete --noprompt --targetusername ${this.scratchOrgUsername}`, this, {
           fail: false,
