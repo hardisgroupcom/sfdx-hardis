@@ -7,6 +7,7 @@ import * as fs from "fs-extra";
 import * as c from "chalk";
 import * as os from "os";
 import * as Papa from "papaparse";
+import * as Pivot from 'quick-pivot';
 import path = require("path");
 import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
 
@@ -91,23 +92,26 @@ export default class LegacyApi extends SfdxCommand {
     const conn = this.org.getConnection();
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
-    const logCountRes = await conn.query(`SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`);
+    const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
+    uxLog(this, c.grey("Query: " + c.italic(logCountQuery)));
+    const logCountRes = await conn.query(logCountQuery);
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
       uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
       return { status: 0 };
     }
-    uxLog(this, "Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`);
+    uxLog(this,c.grey( "Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
     if (logCountRes.totalSize > limit) {
       uxLog(this, c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`));
     }
 
     // Fetch EventLogFiles with ApiTotalUsage entries
-    const eventLogRes: any = await conn.query(
-      `SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY CreatedDate DESC` + limitConstraint
-    );
+    const logCollectQuery = `SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY CreatedDate DESC` + limitConstraint;
+    uxLog(this, c.grey("Query: " + c.italic(logCollectQuery)));
+    const eventLogRes: any = await conn.query(logCollectQuery);
 
     // Collect legacy api calls from logs
+    uxLog(this, c.grey("Calling org API to get CSV content of each EventLogFile record, then parse and analyze it...");
     const allDeadApiCalls = [];
     const allSoonDeprecatedApiCalls = [];
     const allEndOfSupportApiCalls = [];
@@ -117,14 +121,28 @@ export default class LegacyApi extends SfdxCommand {
       allSoonDeprecatedApiCalls.push(...soonDeprecatedApiCalls);
       allEndOfSupportApiCalls.push(...endOfSupportApiCalls);
     }
+    const allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
 
     // Display summary
-    const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red ;
-    const deprecatedColor = allSoonDeprecatedApiCalls.length === 0 ? c.green : c.red ;
-    const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.red ;
-    uxLog(this, deadColor(`Dead API calls: ${c.bold(allDeadApiCalls.length)} (${this.legacyApiDescriptors[0].deprecationRelease})`));
-    uxLog(this, deprecatedColor(`Deprecated API calls: ${c.bold(allSoonDeprecatedApiCalls.length)} (${this.legacyApiDescriptors[1].deprecationRelease})`));
-    uxLog(this, endOfSupportColor(`End of support API calls: ${c.bold(allEndOfSupportApiCalls.length)} (${this.legacyApiDescriptors[2].deprecationRelease})`));
+    const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red;
+    const deprecatedColor = allSoonDeprecatedApiCalls.length === 0 ? c.green : c.red;
+    const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.red;
+    uxLog(this,c.cyan("Results:"));
+    uxLog(this, deadColor(`- Dead API calls           : ${c.bold(allDeadApiCalls.length)} (${this.legacyApiDescriptors[0].deprecationRelease})`));
+    uxLog(this, deprecatedColor(`- Deprecated API calls     : ${c.bold(allSoonDeprecatedApiCalls.length)} (${this.legacyApiDescriptors[1].deprecationRelease})`));
+    uxLog(this, endOfSupportColor(`- End of support API calls : ${c.bold(allEndOfSupportApiCalls.length)} (${this.legacyApiDescriptors[2].deprecationRelease})`));
+
+    // Build pivot table summary
+    const rowsToPivot = ['API_RESOURCE'];
+    const colsToPivot = ['API_VERSION', 'API_FAMILY'];
+    const aggregationDimension = 'SFDX_HARDIS_NUMBER_CALLS';
+    const aggregator = 'count';
+    try {
+      const pivot = new Pivot(allErrors, rowsToPivot, colsToPivot, aggregationDimension, aggregator);
+      console.log('pivot.data', pivot.data, 'pivot.data.table', pivot.data.table);
+    } catch (e) {
+      uxLog(this, c.yellow("Unable to make pivot table from results aggregates\n") + c.grey(e.message + "\n" + e.stack));
+    }
 
     // Build command result
     let msg = "No deprecated API call has been found in ApiTotalUsage logs";
@@ -145,7 +163,6 @@ export default class LegacyApi extends SfdxCommand {
     const tmpDir = await createTempDir();
     let csvLogFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
     try {
-      const allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
       const csvText = Papa.unparse(allErrors);
       await fs.writeFile(csvLogFile, csvText, "utf8");
       uxLog(this, c.cyan(`Please see detailed log in ${c.bold(csvLogFile)}`));
