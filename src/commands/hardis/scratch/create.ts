@@ -108,6 +108,7 @@ export default class ScratchCreate extends SfdxCommand {
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
+      uxLog(this,c.grey("Error: "+e.message+"\n"+e.stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
