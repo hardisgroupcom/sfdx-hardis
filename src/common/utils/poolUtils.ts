@@ -35,8 +35,10 @@ export async function getPoolStorage() {
 export async function setPoolStorage(value: any) {
   const providerInitialized = await initializeProvider();
   if (providerInitialized) {
-    uxLog(this, c.grey(`Update poolstorage value: ${JSON.stringify(value)}`));
-    return keyValueProvider.setValue(null, value);
+    uxLog(this, "[pool] " + c.grey(`Updating poolstorage value...`));
+    const valueSetRes = keyValueProvider.setValue(null, value);
+    uxLog(this, c.grey("[pool] " + `Updated poolstorage value`));
+    return valueSetRes;
   }
   return null;
 }
