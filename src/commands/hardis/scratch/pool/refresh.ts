@@ -103,8 +103,8 @@ export default class ScratchPoolRefresh extends SfdxCommand {
           try {
             result = JSON.parse(stdout);
           } catch (e) {
-            result.rawLog = stdout;
-            uxLog(this,c.yellow("Error parsing stdout: "+stdout));
+            result = { result: { status: 1, rawLog: stdout } };
+            uxLog(this, c.yellow("Error parsing stdout: " + stdout));
           }
           await addScratchOrgToPool(result.result);
           resolve({ code, result: result });
