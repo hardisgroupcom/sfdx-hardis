@@ -189,6 +189,8 @@
     "hardisprojectworktasknew",
     "hardisscratchcreate",
     "hardisscratchdelete",
+    "hardisscratchpoolconfigure",
+    "hardisscratchpoolrefresh",
     "hardisscratchpull",
     "hardisscratchpush",
     "hardisworknew",
