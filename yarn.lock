@@ -4753,11 +4753,6 @@ queue-microtask@^1.2.2:
   resolved "https://registry.yarnpkg.com/queue-microtask/-/queue-microtask-1.2.2.tgz#abf64491e6ecf0f38a6502403d4cda04f372dfd3"
   integrity sha512-dB15eXv3p2jDlbOiNLyMabYg1/sXvppd8DP2J3EOCQ0AkuSXCW2tP7mnVouVLJKgUMY6yP0kcQDVpLCN13h4Xg==
 
-quick-pivot@^2.7.0:
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/quick-pivot/-/quick-pivot-2.7.0.tgz#c9055022ff998a4be0e9c43c011d8a0b989c3939"
-  integrity sha512-HoWeNQ4G6nvy5nhLiOQlUI5SfHbSWR4ecivyOMbj9rg1ia+be92S2LCN90xpkKo4BfobFGjYAFtlH+XqedHR4g==
-
 randombytes@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/randombytes/-/randombytes-2.1.0.tgz#df6f84372f0270dc65cdf6291349ab7a473d4f2a"

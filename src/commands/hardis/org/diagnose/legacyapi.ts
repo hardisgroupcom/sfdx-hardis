@@ -7,8 +7,8 @@ import * as fs from "fs-extra";
 import * as c from "chalk";
 import * as os from "os";
 import * as Papa from "papaparse";
-import * as Pivot from 'quick-pivot';
 import path = require("path");
+import * as sortArray from "sort-array";
 import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
@@ -70,6 +70,7 @@ export default class LegacyApi extends SfdxCommand {
     { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "WARNING", deprecationRelease: "Summer 21" },
     { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "INFO", deprecationRelease: "Summer 22" },
   ];
+  protected statistics: Array<any> = [];
 
   /* jscpd:ignore-end */
 
@@ -100,7 +101,7 @@ export default class LegacyApi extends SfdxCommand {
       uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
       return { status: 0 };
     }
-    uxLog(this,c.grey( "Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
+    uxLog(this, c.grey("Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
     if (logCountRes.totalSize > limit) {
       uxLog(this, c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`));
     }
@@ -111,7 +112,7 @@ export default class LegacyApi extends SfdxCommand {
     const eventLogRes: any = await conn.query(logCollectQuery);
 
     // Collect legacy api calls from logs
-    uxLog(this, c.grey("Calling org API to get CSV content of each EventLogFile record, then parse and analyze it...");
+    uxLog(this, c.grey("Calling org API to get CSV content of each EventLogFile record, then parse and analyze it..."));
     const allDeadApiCalls = [];
     const allSoonDeprecatedApiCalls = [];
     const allEndOfSupportApiCalls = [];
@@ -123,26 +124,59 @@ export default class LegacyApi extends SfdxCommand {
     }
     const allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
 
+    try {
+      // Build statistics 
+      this.statistics = [];
+      for (const eventLogRecord of allErrors) {
+        // Get entry in current stats
+        const keyCurrentValFilter = this.statistics.filter(stat => stat.API_VERSION === eventLogRecord.API_VERSION && stat.API_FAMILY === eventLogRecord.API_FAMILY);
+        const keyCurrentVal = keyCurrentValFilter.length > 0 ? keyCurrentValFilter[0] : { API_VERSION: eventLogRecord.API_VERSION, API_FAMILY: eventLogRecord.API_FAMILY, apiResources: [] };
+        // Increment counter
+        const apiResourceName = eventLogRecord.API_RESOURCE || "unknown";
+        keyCurrentVal.apiResources[apiResourceName] = keyCurrentVal.apiResources[apiResourceName] || {};
+        keyCurrentVal.apiResources[apiResourceName].counter = (keyCurrentVal.apiResources[apiResourceName].counter || 0) + 1;
+        // Update statistics variable
+        if (keyCurrentValFilter.length > 0) {
+          this.statistics = this.statistics.map(stat => {
+            if (stat.API_VERSION === eventLogRecord.API_VERSION && stat.API_FAMILY === eventLogRecord.API_FAMILY) {
+              return keyCurrentVal;
+            }
+            return stat;
+          });
+        }
+        else {
+          this.statistics.push(keyCurrentVal);
+        }
+      }
+      // Sort statistics array
+      this.statistics = sortArray(this.statistics, {
+        by: ["API_VERSION", "API_FAMILY"],
+        order: ["asc", "asc"],
+      });
+      this.statistics = this.statistics.map(stat => {
+        stat.API_RESOURCES_COUNT = Object.keys(stat.apiResources)
+          .map(apiResource => apiResource + ": " + stat.apiResources[apiResource].counter)
+          .join("\n");
+        delete stat.apiResources;
+        return stat;
+      })
+      uxLog(this, "");
+      uxLog(this, c.cyan("Statistics:"));
+      console.table(this.statistics);
+    } catch (e) {
+      uxLog(this, c.yellow("Error while building statistics.\n") + c.grey(e.msg + "\n" + e.stack));
+    }
+
     // Display summary
     const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red;
     const deprecatedColor = allSoonDeprecatedApiCalls.length === 0 ? c.green : c.red;
     const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.red;
-    uxLog(this,c.cyan("Results:"));
-    uxLog(this, deadColor(`- Dead API calls           : ${c.bold(allDeadApiCalls.length)} (${this.legacyApiDescriptors[0].deprecationRelease})`));
-    uxLog(this, deprecatedColor(`- Deprecated API calls     : ${c.bold(allSoonDeprecatedApiCalls.length)} (${this.legacyApiDescriptors[1].deprecationRelease})`));
-    uxLog(this, endOfSupportColor(`- End of support API calls : ${c.bold(allEndOfSupportApiCalls.length)} (${this.legacyApiDescriptors[2].deprecationRelease})`));
-
-    // Build pivot table summary
-    const rowsToPivot = ['API_RESOURCE'];
-    const colsToPivot = ['API_VERSION', 'API_FAMILY'];
-    const aggregationDimension = 'SFDX_HARDIS_NUMBER_CALLS';
-    const aggregator = 'count';
-    try {
-      const pivot = new Pivot(allErrors, rowsToPivot, colsToPivot, aggregationDimension, aggregator);
-      console.log('pivot.data', pivot.data, 'pivot.data.table', pivot.data.table);
-    } catch (e) {
-      uxLog(this, c.yellow("Unable to make pivot table from results aggregates\n") + c.grey(e.message + "\n" + e.stack));
-    }
+    uxLog(this, "");
+    uxLog(this, c.cyan("Results:"));
+    uxLog(this, deadColor(`- Dead API version calls           : ${c.bold(allDeadApiCalls.length)} (${this.legacyApiDescriptors[0].deprecationRelease})`));
+    uxLog(this, deprecatedColor(`- Deprecated API version calls     : ${c.bold(allSoonDeprecatedApiCalls.length)} (${this.legacyApiDescriptors[1].deprecationRelease})`));
+    uxLog(this, endOfSupportColor(`- End of support API version calls : ${c.bold(allEndOfSupportApiCalls.length)} (${this.legacyApiDescriptors[2].deprecationRelease})`));
+    uxLog(this, "");
 
     // Build command result
     let msg = "No deprecated API call has been found in ApiTotalUsage logs";
@@ -165,7 +199,7 @@ export default class LegacyApi extends SfdxCommand {
     try {
       const csvText = Papa.unparse(allErrors);
       await fs.writeFile(csvLogFile, csvText, "utf8");
-      uxLog(this, c.cyan(`Please see detailed log in ${c.bold(csvLogFile)}`));
+      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(csvLogFile)}`)));
     } catch (e) {
       uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
       csvLogFile = null;
@@ -173,9 +207,9 @@ export default class LegacyApi extends SfdxCommand {
 
     // Debug or manage CSV file generation error
     if (this.debugMode || csvLogFile == null) {
-      uxLog(this, c.grey(c.bold("Dead API calls:") + JSON.stringify(allDeadApiCalls, null, 2)));
-      uxLog(this, c.grey(c.bold("Deprecated API calls:") + JSON.stringify(allSoonDeprecatedApiCalls, null, 2)));
-      uxLog(this, c.grey(c.bold("End of support API calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
+      uxLog(this, c.grey(c.bold("Dead API version calls:") + JSON.stringify(allDeadApiCalls, null, 2)));
+      uxLog(this, c.grey(c.bold("Deprecated API version calls:") + JSON.stringify(allSoonDeprecatedApiCalls, null, 2)));
+      uxLog(this, c.grey(c.bold("End of support API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
     }
 
     process.exitCode = statusCode;
@@ -201,6 +235,13 @@ export default class LegacyApi extends SfdxCommand {
       const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : parseFloat("999.0");
       // const apiType = logEntry.API_TYPE || null ;
       const apiFamily = logEntry.API_FAMILY || null;
+
+      // TMP
+      logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = this.legacyApiDescriptors[1].deprecationRelease;
+      logEntry.SFDX_HARDIS_SEVERITY = this.legacyApiDescriptors[1].severity;
+      soonDeprecatedApiCalls.push(logEntry);
+      continue;
+
       for (const legacyApiDescriptor of this.legacyApiDescriptors) {
         if (
           legacyApiDescriptor.apiFamily.includes(apiFamily) &&
