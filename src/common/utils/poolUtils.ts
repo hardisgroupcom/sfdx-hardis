@@ -35,8 +35,10 @@ export async function getPoolStorage() {
 export async function setPoolStorage(value: any) {
   const providerInitialized = await initializeProvider();
   if (providerInitialized) {
-    uxLog(this, c.grey(`Update poolstorage value: ${JSON.stringify(value)}`));
-    return keyValueProvider.setValue(null, value);
+    uxLog(this, "[pool] " + c.grey(`Updating poolstorage value...`));
+    const valueSetRes = keyValueProvider.setValue(null, value);
+    uxLog(this, "[pool] "+c.grey(`Updated poolstorage value`));
+    return valueSetRes;
   }
   return null;
 }
@@ -45,7 +47,7 @@ export async function setPoolStorage(value: any) {
 export async function addScratchOrgToPool(scratchOrg: any, options: { position: string } = { position: "last" }) {
   const poolStorage = await getPoolStorage();
   // Valid scratch orgs
-  if (scratchOrg.result) {
+  if (scratchOrg.status === 0) {
     const scratchOrgs = poolStorage.scratchOrgs || [];
     if (options.position === "first") {
       scratchOrgs.push(scratchOrg);
@@ -67,9 +69,10 @@ export async function addScratchOrgToPool(scratchOrg: any, options: { position: 
 export async function fetchScratchOrg() {
   const poolStorage = await getPoolStorage();
   if (poolStorage === null) {
-    uxLog(this, c.yellow("No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth"));
+    uxLog(this,"[pool] "+ c.yellow("No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth"));
     return null;
   }
+  uxLog(this,"[pool] "+c.cyan("Trying to fetch a scratch org from scratch orgs pool to improve performances"));
   const scratchOrgs: Array<any> = poolStorage.scratchOrgs;
   if (scratchOrgs.length > 0) {
     const scratchOrg = scratchOrgs.shift();
@@ -77,7 +80,9 @@ export async function fetchScratchOrg() {
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage);
     // Authenticate to scratch org
-    const tmpAuthFile = path.join(await createTempDir(), "authFile.json");
+    uxLog(this,"[pool] "+c.cyan("Authenticating to scratch org from pool..."));
+    const authTempDir = await createTempDir();
+    const tmpAuthFile = path.join(authTempDir, "authFile.json");
     await fs.writeFile(tmpAuthFile, JSON.stringify(scratchOrg.authFileJson), "utf8");
     const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile}`;
     const authRes = await execSfdxJson(authCommand, this, { fail: true, output: true });
@@ -87,12 +92,12 @@ export async function fetchScratchOrg() {
     // Set default username
     const setDefaultUsernameCommand = `sfdx config:set defaultusername=${scratchOrg.scratchOrgUsername}`;
     await execCommand(setDefaultUsernameCommand, this, { fail: true, output: true });
-    // Remvoe temp auth file
+    // Remove temp auth file
     await fs.unlink(tmpAuthFile);
     // Return scratch org
     return authRes.status === 0 ? scratchOrg : null;
   }
-  uxLog(this, c.yellow(`No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchsOrgsNumber")} or schedule call to ${c.white("sfdx hardis:scratch:pool:refresh")} more often in CI`));
+  uxLog(this, "[pool]" + c.yellow(`No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchsOrgsNumber")} or schedule call to ${c.white("sfdx hardis:scratch:pool:refresh")} more often in CI`));
   return null;
 }
 
@@ -101,6 +106,9 @@ export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInt
 }
 
 async function initializeProvider() {
+  if (keyValueProvider) {
+    return true ;
+  }
   const poolConfig = await getPoolConfig();
   if (poolConfig.storageService) {
     keyValueProvider = await instanciateProvider(poolConfig.storageService);
@@ -112,7 +120,7 @@ async function initializeProvider() {
       if (isCI) {
         throw e;
       }
-      uxLog(this, c.grey("Provider initialization error: " + e.message));
+      uxLog(this, "[pool] "+c.grey("Provider initialization error: " + e.message));
       // If manual, let's ask the user if he/she has credentials to input
       const resp = await prompts({
         type: "confirm",
