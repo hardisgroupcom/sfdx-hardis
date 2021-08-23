@@ -125,26 +125,30 @@ export default class LegacyApi extends SfdxCommand {
     const allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
 
     try {
-      // Build statistics 
+      // Build statistics
       this.statistics = [];
       for (const eventLogRecord of allErrors) {
         // Get entry in current stats
-        const keyCurrentValFilter = this.statistics.filter(stat => stat.API_VERSION === eventLogRecord.API_VERSION && stat.API_FAMILY === eventLogRecord.API_FAMILY);
-        const keyCurrentVal = keyCurrentValFilter.length > 0 ? keyCurrentValFilter[0] : { API_VERSION: eventLogRecord.API_VERSION, API_FAMILY: eventLogRecord.API_FAMILY, apiResources: [] };
+        const keyCurrentValFilter = this.statistics.filter(
+          (stat) => stat.API_VERSION === eventLogRecord.API_VERSION && stat.API_FAMILY === eventLogRecord.API_FAMILY
+        );
+        const keyCurrentVal =
+          keyCurrentValFilter.length > 0
+            ? keyCurrentValFilter[0]
+            : { API_VERSION: eventLogRecord.API_VERSION, API_FAMILY: eventLogRecord.API_FAMILY, apiResources: [] };
         // Increment counter
         const apiResourceName = eventLogRecord.API_RESOURCE || "unknown";
         keyCurrentVal.apiResources[apiResourceName] = keyCurrentVal.apiResources[apiResourceName] || {};
         keyCurrentVal.apiResources[apiResourceName].counter = (keyCurrentVal.apiResources[apiResourceName].counter || 0) + 1;
         // Update statistics variable
         if (keyCurrentValFilter.length > 0) {
-          this.statistics = this.statistics.map(stat => {
+          this.statistics = this.statistics.map((stat) => {
             if (stat.API_VERSION === eventLogRecord.API_VERSION && stat.API_FAMILY === eventLogRecord.API_FAMILY) {
               return keyCurrentVal;
             }
             return stat;
           });
-        }
-        else {
+        } else {
           this.statistics.push(keyCurrentVal);
         }
       }
@@ -153,13 +157,13 @@ export default class LegacyApi extends SfdxCommand {
         by: ["API_VERSION", "API_FAMILY"],
         order: ["asc", "asc"],
       });
-      this.statistics = this.statistics.map(stat => {
+      this.statistics = this.statistics.map((stat) => {
         stat.API_RESOURCES_COUNT = Object.keys(stat.apiResources)
-          .map(apiResource => apiResource + ": " + stat.apiResources[apiResource].counter)
+          .map((apiResource) => apiResource + ": " + stat.apiResources[apiResource].counter)
           .join("\n");
         delete stat.apiResources;
         return stat;
-      })
+      });
       uxLog(this, "");
       uxLog(this, c.cyan("Statistics:"));
       console.table(this.statistics);
@@ -173,9 +177,22 @@ export default class LegacyApi extends SfdxCommand {
     const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.red;
     uxLog(this, "");
     uxLog(this, c.cyan("Results:"));
-    uxLog(this, deadColor(`- Dead API version calls           : ${c.bold(allDeadApiCalls.length)} (${this.legacyApiDescriptors[0].deprecationRelease})`));
-    uxLog(this, deprecatedColor(`- Deprecated API version calls     : ${c.bold(allSoonDeprecatedApiCalls.length)} (${this.legacyApiDescriptors[1].deprecationRelease})`));
-    uxLog(this, endOfSupportColor(`- End of support API version calls : ${c.bold(allEndOfSupportApiCalls.length)} (${this.legacyApiDescriptors[2].deprecationRelease})`));
+    uxLog(
+      this,
+      deadColor(`- Dead API version calls           : ${c.bold(allDeadApiCalls.length)} (${this.legacyApiDescriptors[0].deprecationRelease})`)
+    );
+    uxLog(
+      this,
+      deprecatedColor(
+        `- Deprecated API version calls     : ${c.bold(allSoonDeprecatedApiCalls.length)} (${this.legacyApiDescriptors[1].deprecationRelease})`
+      )
+    );
+    uxLog(
+      this,
+      endOfSupportColor(
+        `- End of support API version calls : ${c.bold(allEndOfSupportApiCalls.length)} (${this.legacyApiDescriptors[2].deprecationRelease})`
+      )
+    );
     uxLog(this, "");
 
     // Build command result
