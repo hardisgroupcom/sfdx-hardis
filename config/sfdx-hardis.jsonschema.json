@@ -308,6 +308,27 @@
       "title": "MsTeams WebHook Url",
       "type": "string"
     },
+    "poolConfig": {
+      "$id": "#/properties/poolConfig",
+      "description": "Configuration allowing to generate and fetch scratch orgs from scratch org pool",
+      "examples": [{ "maxScratchsOrgsNumber": 10,"storageService": "kvdb.io"}],
+      "title": "Scratch org pool configuration",
+      "type": "object",
+      "properties": {
+        "maxScratchsOrgsNumber": {
+          "$id": "#/properties/poolConfig/maxScratchsOrgsNumber",
+          "description": "Maximum number of active scratch orgs in the scratch org pool",
+          "title": "Maximum number of scratch orgs",
+          "type": "number"
+        },
+        "storageService": {
+          "$id": "#/properties/poolConfig/storageService",
+          "description": "Remote service allowing to store scratch org pool details",
+          "title": "Storage service for scratch org pool",
+          "type": "string"
+        }
+      }
+    },
     "projectName": {
       "$id": "#/properties/projectName",
       "default": "",
