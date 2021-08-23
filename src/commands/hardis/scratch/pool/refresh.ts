@@ -112,7 +112,8 @@ export default class ScratchPoolRefresh extends SfdxCommand {
       });
       subProcesses.push(spawnPromise);
     }
-    // Away parallel scratch org creations are completed
+
+    // Await parallel scratch org creations are completed
     const createResults = await Promise.all(subProcesses);
     if (this.debugMode) {
       uxLog(this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));

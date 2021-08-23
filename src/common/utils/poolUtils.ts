@@ -1,104 +1,59 @@
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as os from 'os';
 import * as path from "path";
 import { getConfig } from "../../config";
+import { createTempDir, execSfdxJson, isCI, uxLog } from ".";
+import { KeyValueProviderInterface } from "./keyValueUtils";
+import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz";
+import { KvdbIoProvider } from "../keyValueProviders/kvdbIo";
+import { LocalTestProvider } from "../keyValueProviders/localtest";
 import { SfdxError } from "@salesforce/core";
-import { createTempDir, execSfdxJson, uxLog } from ".";
-import axios from "axios";
+import { prompts } from "./prompts";
 
-let keyValueUrl = null;
-let keyValueSecret = null;
-let poolStorageLocalFileName = null;
+let keyValueProvider: KeyValueProviderInterface;
 
 export async function getPoolConfig() {
   const config = await getConfig("branch");
   return config.poolConfig || null;
 }
 
+export async function hasPoolConfig() {
+  const poolConfig = await getPoolConfig();
+  return poolConfig !== null;
+}
+
 // Read scratch org pool remote storage
 export async function getPoolStorage() {
-  const poolConfig = await getPoolConfig();
-  if (poolConfig == null ||
-    poolConfig.storageService == null ||
-    !["kvdb.io", "keyvalue.xyz", "localtest"].includes(poolConfig.storageService)) {
-    throw new SfdxError(c.red('poolConfig.storageService must be set with one of the following values:\n- keyvalue.xyz\n- localtest"'));
+  const providerInitialized = await initializeProvider();
+  if (providerInitialized) {
+    return keyValueProvider.getValue(null);
   }
-  // kvdb.io
-  else if (poolConfig.storageService === 'kvdb.io') {
-    await getKvdbIoUrl();
-    const response = await axios({
-      method: "get",
-      url: keyValueUrl,
-      responseType: "json",
-      headers: {
-        "Authorization": "Bearer " + keyValueSecret
-      }
-    });
-    return response.data
-  }
-  // keyvalue.xyz
-  else if (poolConfig.storageService === "keyvalue.xyz") {
-    await getKeyValueXyzUrl();
-    const response = await axios({
-      method: "get",
-      url: keyValueUrl,
-      responseType: "json",
-    });
-    return response.data || {}
-  }
-  // local json file for tests
-  else if (poolConfig.storageService === "localtest") {
-    await getPoolStorageLocalFileName();
-    if (fs.existsSync(poolStorageLocalFileName)) {
-      return fs.readJsonSync(poolStorageLocalFileName);
-    }
-    return {}
-  }
+  return null;
 }
 
 // Write scratch org pool remote storage
-export async function setPoolStorage(poolStorage: any) {
-  const poolConfig = await getPoolConfig();
-  // kvdb.io
-  if (poolConfig.storageService === "kvdb.io") {
-    await getKvdbIoUrl();
-    await axios({
-      method: "post",
-      url: keyValueUrl,
-      responseType: "json",
-      data: JSON.stringify(poolStorage),
-      headers: {
-        "Authorization": "Bearer " + keyValueSecret
-      }
-    });
+export async function setPoolStorage(value: any) {
+  const providerInitialized = await initializeProvider();
+  if (providerInitialized) {
+    uxLog(this, c.grey(`Update poolstorage value: ${JSON.stringify(value)}`));
+    return keyValueProvider.setValue(null, value);
   }
-  // keyvalue.xyz
-  else if (poolConfig.storageService === "keyvalue.xyz") {
-    await getKeyValueXyzUrl();
-    await axios({
-      method: "post",
-      url: keyValueUrl,
-      responseType: "json",
-      data: poolStorage
-    });
-  }
-  else if (poolConfig.storageService === "localtest") {
-    await getPoolStorageLocalFileName();
-    await fs.writeFile(poolStorageLocalFileName, JSON.stringify(poolStorage, null, 2), "utf8");
-  }
+  return null;
 }
 
 // Write scratch org pool remote storage
-export async function addScratchOrgToPool(scratchOrg: any) {
+export async function addScratchOrgToPool(scratchOrg: any, options: { position: string } = { position: "last" }) {
   const poolStorage = await getPoolStorage();
   if (scratchOrg.result) {
     const scratchOrgs = poolStorage.scratchOrgs || [];
-    scratchOrgs.push(scratchOrg.result);
+    if (options.position === "first") {
+      scratchOrgs.push(scratchOrg);
+    } else {
+      scratchOrgs.unshift(scratchOrg);
+    }
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage);
-  }
-  else {
+  } else {
     const scratchOrgErrors = poolStorage.scratchOrgErrors || [];
     scratchOrgErrors.push(scratchOrg);
     poolStorage.scratchOrgErrors = scratchOrgErrors;
@@ -109,14 +64,18 @@ export async function addScratchOrgToPool(scratchOrg: any) {
 // Fetch a scratch org
 export async function fetchScratchOrg() {
   const poolStorage = await getPoolStorage();
+  if (poolStorage === null) {
+    uxLog(this, c.yellow("No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth"));
+    return null;
+  }
   const scratchOrgs: Array<any> = poolStorage.scratchOrgs;
   if (scratchOrgs.length > 0) {
-    const scratchOrg = scratchOrgs.pop();
+    const scratchOrg = scratchOrgs.shift();
     // Remove and save
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage);
     // Authenticate to scratch org
-    const tmpAuthFile = path.join((await createTempDir()), "authFile.json");
+    const tmpAuthFile = path.join(await createTempDir(), "authFile.json");
     await fs.writeFile(tmpAuthFile, JSON.stringify(scratchOrg.authFileJson), "utf8");
     const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile}`;
     const authRes = await execSfdxJson(authCommand, this, { fail: true, output: true });
@@ -126,45 +85,43 @@ export async function fetchScratchOrg() {
   return null;
 }
 
-// Build local storage file name
-async function getPoolStorageLocalFileName(): Promise<string> {
-  if (poolStorageLocalFileName == null) {
-    const config = await getConfig("project");
-    const projectName = config.projectName || 'default';
-    poolStorageLocalFileName = path.join(os.homedir(), "poolStorage_" + projectName + ".json");
-    uxLog(this, c.grey("Local test storage: " + poolStorageLocalFileName));
-  }
-  return poolStorageLocalFileName;
+export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInterface>> {
+  return [KvdbIoProvider, KeyValueXyzProvider, LocalTestProvider].map((cls) => new cls());
 }
 
-// Build keyvalue.xyz URL
-async function getKeyValueXyzUrl(): Promise<string> {
-  if (keyValueUrl == null) {
-    const config = await getConfig("user");
-    const projectName = config.projectName || 'default';
-    const apiKey = config.keyValueXyzApiKey || process.env.KEY_VALUE_XYZ_API_KEY;
-    if (apiKey === null) {
-      throw new SfdxError(c.red("You need to define a keyvalue.xyz apiKey in config.keyValueXyzApiKey or env var KEY_VALUE_XYZ_API_KEY"));
+async function initializeProvider() {
+  const poolConfig = await getPoolConfig();
+  if (poolConfig.storageService) {
+    keyValueProvider = await instanciateProvider(poolConfig.storageService, true);
+    try {
+      await keyValueProvider.initialize();
+      return true;
+    } catch (e) {
+      // in CI, we should always be able to initialize the provider
+      if (isCI) {
+        throw e;
+      }
+      uxLog(this, c.grey("Provider initialization error: " + e.message));
+      // If manual, let's ask the user if he/she has credentials to input
+      const resp = await prompts({
+        type: "confirm",
+        message: "Scratch org pool credentials are missing, do you want to configure them ?",
+      });
+      if (resp.value === true) {
+        await keyValueProvider.userAuthenticate();
+        await keyValueProvider.initialize();
+        return true;
+      }
+      return false;
     }
-    keyValueUrl = `https://api.keyvalue.xyz/${apiKey}/pool_${projectName}`;
-    uxLog(this, c.grey("keyvalue.xyz url: " + keyValueUrl));
   }
-  return keyValueUrl;
 }
 
-// Build keyvalue.xyz URL
-async function getKvdbIoUrl(): Promise<string> {
-  if (keyValueUrl == null) {
-    const config = await getConfig("user");
-    const projectName = config.projectName || 'default';
-    const kvdbIoBucketId = config.kvdbIoBucketId || process.env.KVDB_IO_BUCKET_ID;
-    const kvdbIoSecretKey = config.kvdbIoSecretKey || process.env.KVDB_IO_SECRET_KEY;
-    if (kvdbIoBucketId === null) {
-      throw new SfdxError(c.red("You need to define an keyvalue.xyz apiKey in config.kvdbIoBucketId or env var KVDB_IO_BUCKET_ID"));
-    }
-    keyValueUrl = `https://kvdb.io/${kvdbIoBucketId}/pool_${projectName}`;
-    keyValueSecret = kvdbIoSecretKey;
-    uxLog(this, c.grey("kvdb.io url: " + keyValueUrl));
+export async function instanciateProvider(storageService: string, initialize = false) {
+  const providerClasses = await listKeyValueProviders();
+  const providerClassRes = providerClasses.filter((cls) => cls.name === storageService);
+  if (providerClassRes.length === 0) {
+    throw new SfdxError(c.red("Unable to find class for storage provider " + storageService));
   }
-  return keyValueUrl;
+  return providerClassRes[0];
 }

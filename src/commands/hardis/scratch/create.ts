@@ -14,7 +14,7 @@ import { MetadataUtils } from "../../../common/metadata-utils";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
 import { importData } from "../../../common/utils/dataUtils";
 import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "../../../common/utils/deployUtils";
-import { fetchScratchOrg } from "../../../common/utils/poolUtils";
+import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
 import { getConfig, setConfig } from "../../../config";
@@ -85,9 +85,10 @@ export default class ScratchCreate extends SfdxCommand {
   protected scratchOrgInfo: any;
   protected scratchOrgUsername: string;
   protected scratchOrgPassword: string;
-  protected scratchOrgSfdxAuthUrl: string ;
+  protected scratchOrgSfdxAuthUrl: string;
   protected authFileJson: any;
   protected projectName: string;
+  protected scratchOrgFromPool: any;
 
   public async run(): Promise<AnyJson> {
     this.pool = this.flags.pool || false;
@@ -107,7 +108,11 @@ export default class ScratchCreate extends SfdxCommand {
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      if (isCI && this.scratchOrgUsername) {
+      if (isCI && this.scratchOrgFromPool) {
+        this.scratchOrgFromPool.failures = (this.scratchOrgFromPool.failures || []).push(JSON.stringify(e, null, 2));
+        await addScratchOrgToPool({ result: this.scratchOrgFromPool }, { position: "first" });
+        uxLog(this, c.yellow("Put back scratch org in the scratch orgs pool. ") + c.grey({ result: this.scratchOrgFromPool }));
+      } else if (isCI && this.scratchOrgUsername) {
         await execCommand(`sfdx force:org:delete --noprompt --targetusername ${this.scratchOrgUsername}`, this, {
           fail: false,
           output: true,
@@ -143,12 +148,13 @@ export default class ScratchCreate extends SfdxCommand {
     this.configInfo = await getConfig("user");
     this.gitBranch = await getCurrentGitBranch({ formatted: true });
     const newScratchName = os.userInfo().username + "-" + this.gitBranch.split("/").pop().slice(0, 15) + "_" + moment().format("YYYYMMDD_hhmm");
-    this.scratchOrgAlias = process.env.SCRATCH_ORG_ALIAS || ((!this.forceNew) && this.pool === false ? this.configInfo.scratchOrgAlias : null) || newScratchName;
+    this.scratchOrgAlias =
+      process.env.SCRATCH_ORG_ALIAS || (!this.forceNew && this.pool === false ? this.configInfo.scratchOrgAlias : null) || newScratchName;
     if (isCI && !this.scratchOrgAlias.startsWith("CI-")) {
       this.scratchOrgAlias = "CI-" + this.scratchOrgAlias;
     }
     if (this.pool === true) {
-      this.scratchOrgAlias = "P-" + Math.random().toString(36).substr(2, 2) + this.scratchOrgAlias;
+      this.scratchOrgAlias = "PO-" + Math.random().toString(36).substr(2, 2) + this.scratchOrgAlias;
     }
     // Verify that the user wants to resume scratch org creation
     if (!isCI && this.scratchOrgAlias !== newScratchName && this.pool === false) {
@@ -175,7 +181,7 @@ export default class ScratchCreate extends SfdxCommand {
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
       if (this.pool === true) {
-        throw new SfdxError(c.red('You need to define userEmail property in .sfdx-hardis.yml'));
+        throw new SfdxError(c.red("You need to define userEmail property in .sfdx-hardis.yml"));
       }
       const promptResponse = await prompts({
         type: "text",
@@ -217,12 +223,12 @@ export default class ScratchCreate extends SfdxCommand {
     }
     // Try to fetch a scratch org from the pool
     if (this.pool === false && this.configInfo.poolConfig) {
-      const scratchOrgFromPool = await fetchScratchOrg();
-      if (scratchOrgFromPool) {
-        this.scratchOrgAlias = scratchOrgFromPool.scratchOrgAlias;
-        this.scratchOrgInfo = scratchOrgFromPool.scratchOrgInfo;
-        this.scratchOrgUsername = scratchOrgFromPool.scratchOrgUsername;
-        this.scratchOrgPassword = scratchOrgFromPool.scratchOrgPassword;
+      this.scratchOrgFromPool = await fetchScratchOrg();
+      if (this.scratchOrgFromPool) {
+        this.scratchOrgAlias = this.scratchOrgFromPool.scratchOrgAlias;
+        this.scratchOrgInfo = this.scratchOrgFromPool.scratchOrgInfo;
+        this.scratchOrgUsername = this.scratchOrgFromPool.scratchOrgUsername;
+        this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
         uxLog(this, c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
         return;
       }
