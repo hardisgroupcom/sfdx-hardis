@@ -8,6 +8,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Initialize configuration with hardis:scratch:pool:configure
   - Fetch a new scratch org from the pool when requesting creation of a new scratch org
 
+## [2.47.3] 2021-08-23
+
+- hardis:org:diagnose:legacyapi: Add more summary and statistics
+
 ## [2.47.2] 2021-08-23
 
 - Fix hardis:org:diagnose:legacyapi (display raw logs when CSV builder is crashing) , using papaparse instead of objects-to-csv package
