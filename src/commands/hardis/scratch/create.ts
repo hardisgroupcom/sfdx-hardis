@@ -386,7 +386,7 @@ export default class ScratchCreate extends SfdxCommand {
           debug: this.debugMode,
         });
         await execCommand("sfdx texei:sharingcalc:suspend", this, {
-          fail: true,
+          fail: false,
           output: true,
           debug: this.debugMode,
         });
@@ -395,7 +395,7 @@ export default class ScratchCreate extends SfdxCommand {
       // Resume sharing calc if necessary
       if (deferSharingCalc) {
         await execCommand("sfdx texei:sharingcalc:resume", this, {
-          fail: true,
+          fail: false,
           output: true,
           debug: this.debugMode,
         });
