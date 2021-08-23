@@ -253,12 +253,6 @@ export default class LegacyApi extends SfdxCommand {
       // const apiType = logEntry.API_TYPE || null ;
       const apiFamily = logEntry.API_FAMILY || null;
 
-      // TMP
-      logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = this.legacyApiDescriptors[1].deprecationRelease;
-      logEntry.SFDX_HARDIS_SEVERITY = this.legacyApiDescriptors[1].severity;
-      soonDeprecatedApiCalls.push(logEntry);
-      continue;
-
       for (const legacyApiDescriptor of this.legacyApiDescriptors) {
         if (
           legacyApiDescriptor.apiFamily.includes(apiFamily) &&
