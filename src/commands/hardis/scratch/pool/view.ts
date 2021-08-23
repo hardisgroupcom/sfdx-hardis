@@ -49,7 +49,7 @@ export default class ScratchPoolView extends SfdxCommand {
     // Get pool configuration
     const config = await getConfig("project");
     const poolConfig = config.poolConfig || {};
-    uxLog(this,"Pool config: "+c.grey(JSON.stringify(poolConfig,null,2)));
+    uxLog(this, "Pool config: " + c.grey(JSON.stringify(poolConfig, null, 2)));
 
     // Missing scratch orgs pool configuration
     if (!poolConfig.storageService) {
@@ -65,7 +65,12 @@ export default class ScratchPoolView extends SfdxCommand {
     // Query pool storage
     const poolStorage = await getPoolStorage();
     uxLog(this, "Pool storage: " + c.grey(JSON.stringify(poolStorage, null, 2)));
+
+    const scratchOrgs = poolStorage.scratchOrgs || [];
+    const availableNumber = scratchOrgs.length;
+
     // Display logs
+    uxLog(this, c.cyan(`There are ${c.bold(availableNumber)} available scratch orgs`));
 
     // Return an object to be displayed with --json
     return { outputString: "Viewed scratch org pool", poolStorage: poolStorage };
