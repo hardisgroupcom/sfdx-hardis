@@ -50,14 +50,14 @@ export class KvdbIoProvider implements KeyValueProviderInterface {
     if (this.kvdbIoUrl == null) {
       const config = await getConfig("user");
       const kvdbIoBucketId = config.kvdbIoBucketId || process.env.KVDB_IO_BUCKET_ID;
-      if (kvdbIoBucketId === null) {
+      if (kvdbIoBucketId == null) {
         throw new SfdxError(c.red("You need to define an kvdb.io apiKey in config.kvdbIoBucketId or CI env var KVDB_IO_BUCKET_ID"));
       }
       const kvdbIoSecretKey = config.kvdbIoSecretKey || process.env.KVDB_IO_SECRET_KEY;
-      if (kvdbIoSecretKey === null) {
+      if (kvdbIoSecretKey == null) {
         throw new SfdxError(c.red("You need to define an kvdb.io secretKey in config.kvdbIoSecretKey or CI env var KVDB_IO_SECRET_KEY"));
       }
-      if (key === null) {
+      if (key == null) {
         const projectName = config.projectName || "default";
         key = `pool_${projectName}`;
       }

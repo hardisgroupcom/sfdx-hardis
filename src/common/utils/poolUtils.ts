@@ -2,7 +2,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { getConfig } from "../../config";
-import { createTempDir, execSfdxJson, isCI, uxLog } from ".";
+import { createTempDir, execCommand, execSfdxJson, isCI, uxLog } from ".";
 import { KeyValueProviderInterface } from "./keyValueUtils";
 import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz";
 import { KvdbIoProvider } from "../keyValueProviders/kvdbIo";
@@ -44,6 +44,7 @@ export async function setPoolStorage(value: any) {
 // Write scratch org pool remote storage
 export async function addScratchOrgToPool(scratchOrg: any, options: { position: string } = { position: "last" }) {
   const poolStorage = await getPoolStorage();
+  // Valid scratch orgs
   if (scratchOrg.result) {
     const scratchOrgs = poolStorage.scratchOrgs || [];
     if (options.position === "first") {
@@ -54,6 +55,7 @@ export async function addScratchOrgToPool(scratchOrg: any, options: { position: 
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage);
   } else {
+    // Store scratch creation errors
     const scratchOrgErrors = poolStorage.scratchOrgErrors || [];
     scratchOrgErrors.push(scratchOrg);
     poolStorage.scratchOrgErrors = scratchOrgErrors;
@@ -79,9 +81,15 @@ export async function fetchScratchOrg() {
     await fs.writeFile(tmpAuthFile, JSON.stringify(scratchOrg.authFileJson), "utf8");
     const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile}`;
     const authRes = await execSfdxJson(authCommand, this, { fail: true, output: true });
+    // Set alias
+    const setAliasCommand = `sfdx force:alias:set ${scratchOrg.scratchOrgAlias}=${scratchOrg.scratchOrgUsername}`;
+    await execCommand(setAliasCommand, this, { fail: false, output: true });
+    // Remvoe temp auth file
     await fs.unlink(tmpAuthFile);
+    // Return scratch org
     return authRes.status === 0 ? scratchOrg : null;
   }
+  uxLog(this, c.yellow(`No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchsOrgsNumber")} or schedule call to ${c.white("sfdx hardis:scratch:pool:refresh")} more often in CI`));
   return null;
 }
 
@@ -92,7 +100,7 @@ export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInt
 async function initializeProvider() {
   const poolConfig = await getPoolConfig();
   if (poolConfig.storageService) {
-    keyValueProvider = await instanciateProvider(poolConfig.storageService, true);
+    keyValueProvider = await instanciateProvider(poolConfig.storageService);
     try {
       await keyValueProvider.initialize();
       return true;
@@ -117,7 +125,7 @@ async function initializeProvider() {
   }
 }
 
-export async function instanciateProvider(storageService: string, initialize = false) {
+export async function instanciateProvider(storageService: string) {
   const providerClasses = await listKeyValueProviders();
   const providerClassRes = providerClasses.filter((cls) => cls.name === storageService);
   if (providerClassRes.length === 0) {

@@ -147,6 +147,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:scratch:pool:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchpoolcreate--d---websocket-string--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchpoollocalauth--d---websocket-string--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchpoolrefresh--d---websocket-string--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchpoolview--d---websocket-string--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchpull--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:scratch:push [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisscratchpush--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:work:new [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisworknew--d---websocket-string--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -1635,6 +1636,38 @@ EXAMPLE
 ```
 
 _See code: [lib/commands/hardis/scratch/pool/refresh.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.47.2/lib/commands/hardis/scratch/pool/refresh.js)_
+
+## `sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Displays all stored content of project scratch org pool if defined
+
+```
+USAGE
+  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+
+  -v, --targetdevhubusername=targetdevhubusername                                   username or alias for the dev hub
+                                                                                    org; overrides default dev hub org
+
+  --apiversion=apiversion                                                           override the api version used for
+                                                                                    api requests made by this command
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+  --websocket=websocket                                                             Websocket host:port for VsCode SFDX
+                                                                                    Hardis UI integration
+
+EXAMPLE
+  $ sfdx hardis:scratch:pool:view
+```
+
+_See code: [lib/commands/hardis/scratch/pool/view.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.47.2/lib/commands/hardis/scratch/pool/view.js)_
 
 ## `sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 

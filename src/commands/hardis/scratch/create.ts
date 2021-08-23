@@ -109,7 +109,8 @@ export default class ScratchCreate extends SfdxCommand {
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
       if (isCI && this.scratchOrgFromPool) {
-        this.scratchOrgFromPool.failures = (this.scratchOrgFromPool.failures || []).push(JSON.stringify(e, null, 2));
+        this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
+        this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
         await addScratchOrgToPool({ result: this.scratchOrgFromPool }, { position: "first" });
         uxLog(this, c.yellow("Put back scratch org in the scratch orgs pool. ") + c.grey({ result: this.scratchOrgFromPool }));
       } else if (isCI && this.scratchOrgUsername) {
