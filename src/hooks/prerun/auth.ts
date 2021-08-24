@@ -78,9 +78,11 @@ async function authOrg(orgAlias: string, options: any) {
   if (authUrl.startsWith("force://")) {
     const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
     await fs.writeFile(authFile, authUrl, "utf8");
-    const authCommand = `sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername` + (!orgAlias.includes("force://") ? ` --setalias ${orgAlias}` : '');
+    const authCommand = `sfdx auth:sfdxurl:store -f ${authFile}` +
+      (isDevHub ? ` --setdefaultdevhubusername` : ` --setdefaultusername`) +
+      (!orgAlias.includes("force://") ? ` --setalias ${orgAlias}` : '');
     await execCommand(authCommand, this, { fail: true, output: false });
-    uxLog(this, c.grey("Successfully logged using sfdxAuthUrl"));
+    uxLog(this, c.cyan("Successfully logged using sfdxAuthUrl"));
     await fs.remove(authFile);
     return;
   }
