@@ -74,7 +74,7 @@ async function authOrg(orgAlias: string, options: any) {
     // Check if we are already authenticated
     let orgDisplayCommand = "sfdx force:org:display";
     let setDefaultUsername = false;
-    if (orgAlias !== "MY_ORG" && (isCI || isDevHub)) {
+    if (orgAlias !== "MY_ORG" && (isCI || isDevHub) && !orgAlias.includes("force://")) {
       orgDisplayCommand += " --targetusername " + orgAlias;
       setDefaultUsername = true;
     } else {
@@ -140,7 +140,7 @@ async function authOrg(orgAlias: string, options: any) {
     if (isDevHub) {
       authUrl = process.env[authUrlVarName] || process.env[authUrlVarNameUpper] || process.env.SFDX_AUTH_URL_DEV_HUB || orgAlias || "";
     }
-    if (authUrl.startsWith("force://")) {
+    if (authUrl.includes("force://")) {
       const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
       await fs.writeFile(authFile, authUrl, "utf8");
       const authCommand =

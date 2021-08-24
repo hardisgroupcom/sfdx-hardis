@@ -1,7 +1,7 @@
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { getConfig } from "../../config";
+import { getConfig, setConfig } from "../../config";
 import { createTempDir, execSfdxJson, isCI, uxLog } from ".";
 import { KeyValueProviderInterface } from "./keyValueUtils";
 import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz";
@@ -105,6 +105,10 @@ export async function fetchScratchOrg() {
     }
     // Remove temp auth file
     await fs.unlink(tmpAuthFile);
+    // Store sfdxAuthUrl for next step if we are in CI
+    if (isCI) {
+      await setConfig("user", { sfdxAuthUrl: authFileContent });
+    }
     // Display org URL
     const openRes = await execSfdxJson(`sfdx force:org:open --urlonly -u ${scratchOrg.scratchOrgAlias}`, this, { fail: false, output: true });
     uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
