@@ -37,7 +37,7 @@ export async function setPoolStorage(value: any) {
   if (providerInitialized) {
     uxLog(this, "[pool] " + c.grey(`Updating poolstorage value...`));
     const valueSetRes = keyValueProvider.setValue(null, value);
-    uxLog(this, "[pool] "+c.grey(`Updated poolstorage value`));
+    uxLog(this, "[pool] " + c.grey(`Updated poolstorage value`));
     return valueSetRes;
   }
   return null;
@@ -69,10 +69,10 @@ export async function addScratchOrgToPool(scratchOrg: any, options: { position: 
 export async function fetchScratchOrg() {
   const poolStorage = await getPoolStorage();
   if (poolStorage === null) {
-    uxLog(this,"[pool] "+ c.yellow("No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth"));
+    uxLog(this, "[pool] " + c.yellow("No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth"));
     return null;
   }
-  uxLog(this,"[pool] "+c.cyan("Trying to fetch a scratch org from scratch orgs pool to improve performances"));
+  uxLog(this, "[pool] " + c.cyan("Trying to fetch a scratch org from scratch orgs pool to improve performances"));
   const scratchOrgs: Array<any> = poolStorage.scratchOrgs;
   if (scratchOrgs.length > 0) {
     const scratchOrg = scratchOrgs.shift();
@@ -80,27 +80,46 @@ export async function fetchScratchOrg() {
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage);
     // Authenticate to scratch org
-    uxLog(this,"[pool] "+c.cyan("Authenticating to scratch org from pool..."));
+    uxLog(this, "[pool] " + c.cyan("Authenticating to scratch org from pool..."));
     const authTempDir = await createTempDir();
     const tmpAuthFile = path.join(authTempDir, "authFile.txt");
-    const authFileContent = scratchOrg.scratchOrgSfdxAuthUrl || (scratchOrg.authFileJson ? JSON.stringify(scratchOrg.authFileJson) : null) ;
+    const authFileContent = scratchOrg.scratchOrgSfdxAuthUrl || (scratchOrg.authFileJson ? JSON.stringify(scratchOrg.authFileJson) : null);
     if (authFileContent == null) {
-      uxLog(this,c.yellow(`[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername} (missing sfdxAuthUrl)`));
-      return null ;
+      uxLog(
+        this,
+        c.yellow(`[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername} (missing sfdxAuthUrl)`)
+      );
+      return null;
     }
-    await fs.writeFile(tmpAuthFile,authFileContent, "utf8");
+    await fs.writeFile(tmpAuthFile, authFileContent, "utf8");
     const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile} --setdefaultusername --setalias ${scratchOrg.scratchOrgAlias}`;
     const authRes = await execSfdxJson(authCommand, this, { fail: false, output: true });
     if (authRes.status !== 0) {
-      uxLog(this,c.yellow(`[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername}\n${c.grey(JSON.stringify(authRes))}`));
-      return null ;
+      uxLog(
+        this,
+        c.yellow(
+          `[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername}\n${c.grey(JSON.stringify(authRes))}`
+        )
+      );
+      return null;
     }
     // Remove temp auth file
     await fs.unlink(tmpAuthFile);
+    // Display org URL
+    const openRes = await execSfdxJson(`sfdx force:org:open --urlonly -u ${scratchOrg.scratchOrgAlias}`, this, { fail: false, output: true });
+    uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     // Return scratch org
-    return scratchOrg ;
+    return scratchOrg;
   }
-  uxLog(this, "[pool]" + c.yellow(`No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchsOrgsNumber")} or schedule call to ${c.white("sfdx hardis:scratch:pool:refresh")} more often in CI`));
+  uxLog(
+    this,
+    "[pool]" +
+      c.yellow(
+        `No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchsOrgsNumber")} or schedule call to ${c.white(
+          "sfdx hardis:scratch:pool:refresh"
+        )} more often in CI`
+      )
+  );
   return null;
 }
 
@@ -110,7 +129,7 @@ export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInt
 
 async function initializeProvider() {
   if (keyValueProvider) {
-    return true ;
+    return true;
   }
   const poolConfig = await getPoolConfig();
   if (poolConfig.storageService) {
@@ -123,7 +142,7 @@ async function initializeProvider() {
       if (isCI) {
         throw e;
       }
-      uxLog(this, "[pool] "+c.grey("Provider initialization error: " + e.message));
+      uxLog(this, "[pool] " + c.grey("Provider initialization error: " + e.message));
       // If manual, let's ask the user if he/she has credentials to input
       const resp = await prompts({
         type: "confirm",

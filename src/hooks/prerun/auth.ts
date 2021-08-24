@@ -53,39 +53,21 @@ export const hook = async (options: any) => {
     const orgAlias = process.env.ORG_ALIAS
       ? process.env.ORG_ALIAS
       : isCI && configInfo.scratchOrgAlias
-        ? configInfo.scratchOrgAlias
-        : isCI && options.scratch && configInfo.sfdxAuthUrl
-          ? configInfo.sfdxAuthUrl
-          : isCI
-            ? await getCurrentGitBranch({ formatted: true })
-            : commandId === "hardis:auth:login" && configInfo.orgAlias
-              ? configInfo.orgAlias
-              : configInfo.scratchOrgAlias || "MY_ORG"; // Can be null and it's ok if we're not in scratch org context
+      ? configInfo.scratchOrgAlias
+      : isCI && options.scratch && configInfo.sfdxAuthUrl
+      ? configInfo.sfdxAuthUrl
+      : isCI
+      ? await getCurrentGitBranch({ formatted: true })
+      : commandId === "hardis:auth:login" && configInfo.orgAlias
+      ? configInfo.orgAlias
+      : configInfo.scratchOrgAlias || "MY_ORG"; // Can be null and it's ok if we're not in scratch org context
     await authOrg(orgAlias, options);
   }
 };
 
-// Authorize an org manually or with JWT
+// Authorize an org with sfdxAuthUrl, manually or with JWT
 async function authOrg(orgAlias: string, options: any) {
   const isDevHub = orgAlias.includes("DevHub");
-  // Manage auth with sfdxAuthUrl (CI & scratch org only)
-  const authUrlVarName = `SFDX_AUTH_URL_${orgAlias}`;
-  const authUrlVarNameUpper = `SFDX_AUTH_URL_${orgAlias.toUpperCase()}`;
-  let authUrl = process.env[authUrlVarName] || process.env[authUrlVarNameUpper] || orgAlias || "";
-  if (isDevHub) {
-    authUrl = process.env[authUrlVarName] || process.env[authUrlVarNameUpper] || process.env.SFDX_AUTH_URL_DEV_HUB || orgAlias || "";
-  }
-  if (authUrl.startsWith("force://")) {
-    const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
-    await fs.writeFile(authFile, authUrl, "utf8");
-    const authCommand = `sfdx auth:sfdxurl:store -f ${authFile}` +
-      (isDevHub ? ` --setdefaultdevhubusername` : ` --setdefaultusername`) +
-      (!orgAlias.includes("force://") ? ` --setalias ${orgAlias}` : '');
-    await execCommand(authCommand, this, { fail: true, output: false });
-    uxLog(this, c.cyan("Successfully logged using sfdxAuthUrl"));
-    await fs.remove(authFile);
-    return;
-  }
 
   let doConnect = true;
   if (!options.checkAuth) {
@@ -116,7 +98,8 @@ async function authOrg(orgAlias: string, options: any) {
         (isDevHub && orgInfoResult.result.id != null))
     ) {
       // Set as default username or devhubusername
-      uxLog(this,
+      uxLog(
+        this,
         `[sfdx-hardis] You are already ${c.green("connected")} to org ${c.green(
           orgInfoResult.result.alias || orgInfoResult.result.username
         )}: ${c.green(orgInfoResult.result.instanceUrl)}`
@@ -125,7 +108,8 @@ async function authOrg(orgAlias: string, options: any) {
         uxLog(this, c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
       }
       if (!isCI) {
-        uxLog(this,
+        uxLog(
+          this,
           c.yellow(
             c.italic(
               `[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold("hit CTRL+C"))}, then input ${c.whiteBright(
@@ -136,8 +120,9 @@ async function authOrg(orgAlias: string, options: any) {
         );
       }
       if (setDefaultUsername) {
-        const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? "defaultdevhubusername" : "defaultusername"}=${orgInfoResult.result.username
-          }`;
+        const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? "defaultdevhubusername" : "defaultusername"}=${
+          orgInfoResult.result.username
+        }`;
         await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
       }
       doConnect = false;
@@ -147,13 +132,34 @@ async function authOrg(orgAlias: string, options: any) {
   if (doConnect) {
     let logged = false;
     const config = await getConfig("user");
+
+    // Manage auth with sfdxAuthUrl (CI & scratch org only)
+    const authUrlVarName = `SFDX_AUTH_URL_${orgAlias}`;
+    const authUrlVarNameUpper = `SFDX_AUTH_URL_${orgAlias.toUpperCase()}`;
+    let authUrl = process.env[authUrlVarName] || process.env[authUrlVarNameUpper] || orgAlias || "";
+    if (isDevHub) {
+      authUrl = process.env[authUrlVarName] || process.env[authUrlVarNameUpper] || process.env.SFDX_AUTH_URL_DEV_HUB || orgAlias || "";
+    }
+    if (authUrl.startsWith("force://")) {
+      const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
+      await fs.writeFile(authFile, authUrl, "utf8");
+      const authCommand =
+        `sfdx auth:sfdxurl:store -f ${authFile}` +
+        (isDevHub ? ` --setdefaultdevhubusername` : ` --setdefaultusername`) +
+        (!orgAlias.includes("force://") ? ` --setalias ${orgAlias}` : "");
+      await execCommand(authCommand, this, { fail: true, output: false });
+      uxLog(this, c.cyan("Successfully logged using sfdxAuthUrl"));
+      await fs.remove(authFile);
+      return;
+    }
+
     // Get auth variables, with priority CLI arguments, environment variables, then .hardis-sfdx.yml config file
     let username =
       typeof options.Command.flags?.targetusername === "string"
         ? options.Command.flags?.targetusername
         : process.env.TARGET_USERNAME || isDevHub
-          ? config.devHubUsername
-          : config.targetUsername;
+        ? config.devHubUsername
+        : config.targetUsername;
     if (username == null && isCI) {
       const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
       console.error(
@@ -162,8 +168,8 @@ async function authOrg(orgAlias: string, options: any) {
             isDevHub
               ? "devHubUsername in .sfdx-hardis.yml"
               : options.scratch
-                ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
-                : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`
+              ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
+              : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`
           )} `
         )
       );
@@ -173,10 +179,10 @@ async function authOrg(orgAlias: string, options: any) {
       typeof options.Command?.flags?.instanceurl === "string" && (options.Command?.flags?.instanceurl || "").startsWith("https")
         ? options.Command.flags.instanceurl
         : (process.env.INSTANCE_URL || "").startsWith("https")
-          ? process.env.INSTANCE_URL
-          : config.instanceUrl
-            ? config.instanceUrl
-            : "https://login.salesforce.com";
+        ? process.env.INSTANCE_URL
+        : config.instanceUrl
+        ? config.instanceUrl
+        : "https://login.salesforce.com";
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
@@ -221,9 +227,9 @@ async function authOrg(orgAlias: string, options: any) {
       const configInfoUsr = await getConfig("user");
       const loginResult = await execCommand(
         "sfdx auth:web:login" +
-        (options.setDefault === false ? "" : isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
-        ` --instanceurl ${instanceUrl}` +
-        (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : ""),
+          (options.setDefault === false ? "" : isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
+          ` --instanceurl ${instanceUrl}` +
+          (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : ""),
         this,
         { output: true, fail: true, spinner: false }
       );
