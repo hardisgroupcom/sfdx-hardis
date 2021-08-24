@@ -81,7 +81,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
         const commandArgs = ['hardis:scratch:create', '--pool', '--json'];
         const sfdxPath = await which('sfdx');
         const child = spawn(sfdxPath || 'sfdx', commandArgs, { cwd: process.cwd(), env: process.env });
-        uxLog(this, c.grey(`[pool] hardis:scratch:create (${i}) started`));
+        uxLog(this, "[pool] " + c.grey(`hardis:scratch:create (${i}) started`));
         // handle errors
         child.on('error', (err) => {
           resolve({ code: 1, result: { error: err } });
@@ -97,7 +97,11 @@ export default class ScratchPoolRefresh extends SfdxCommand {
         });
         // Handle end of command
         child.on('close', async (code) => {
-          uxLog(this, c.grey(`[pool] hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
+          const colorFunc = code === 0 ? c.green : c.red;
+          uxLog(this, "[pool] " + colorFunc(`hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
+          if (code !== 0) {
+            uxLog(this, c.grey(stdout));
+          }
           let result: any = {};
           stdout = stripAnsi2(stdout);
           try {
