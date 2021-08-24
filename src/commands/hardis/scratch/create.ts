@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { AuthInfo, Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { assert } from "console";
@@ -294,11 +294,26 @@ export default class ScratchCreate extends SfdxCommand {
         output: false,
         debug: this.debugMode,
       });
-      if (displayResult.sfdxAuthUrl) {
+      if (displayResult.result.sfdxAuthUrl) {
         await setConfig("user", {
-          scratchOrgAuthUrl: displayResult.sfdxAuthUrl,
+          scratchOrgSfdxAuthUrl: displayResult.result.sfdxAuthUrl,
         });
-        this.scratchOrgSfdxAuthUrl = displayResult.sfdxAuthUrl;
+        this.scratchOrgSfdxAuthUrl = displayResult.result.sfdxAuthUrl;
+      }
+      else {
+        // Try to get sfdxAuthUrl with workaround
+        try {
+          const authInfo = await AuthInfo.create({ username: displayResult.result.username });
+          this.scratchOrgSfdxAuthUrl = authInfo.getSfdxAuthUrl();
+          displayResult.result.sfdxAuthUrl = this.scratchOrgSfdxAuthUrl ;
+          await setConfig("user", {
+            scratchOrgSfdxAuthUrl: this.scratchOrgSfdxAuthUrl,
+          });
+        }
+        catch (error) {
+          uxLog(this, c.yellow(`Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using auth:sfdxurl or auth:web will have access token and enabled for autoLogin`));
+          this.scratchOrgSfdxAuthUrl = null;
+        }
       }
       if (this.pool) {
         await setConfig("user", {
