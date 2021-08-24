@@ -311,7 +311,7 @@ export default class ScratchCreate extends SfdxCommand {
           });
         }
         catch (error) {
-          uxLog(this, c.yellow(`Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using auth:sfdxurl or auth:web will have access token and enabled for autoLogin`));
+          uxLog(this, c.yellow(`Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using auth:sfdxurl or auth:web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sfdx hardis:scratch:pool:refresh`));
           this.scratchOrgSfdxAuthUrl = null;
         }
       }

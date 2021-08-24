@@ -84,18 +84,12 @@ export async function fetchScratchOrg() {
     const authTempDir = await createTempDir();
     const tmpAuthFile = path.join(authTempDir, "authFile.json");
     await fs.writeFile(tmpAuthFile, JSON.stringify(scratchOrg.authFileJson), "utf8");
-    const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile}`;
+    const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile} --setdefaultusername --setalias ${scratchOrg.scratchOrgAlias}`;
     const authRes = await execSfdxJson(authCommand, this, { fail: false, output: true });
     if (authRes.status !== 0) {
       uxLog(this,c.yellow(`[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername}\n${c.grey(JSON.stringify(authRes))}`));
       return null ;
     }
-    // Set alias
-    const setAliasCommand = `sfdx force:alias:set ${scratchOrg.scratchOrgAlias}=${scratchOrg.scratchOrgUsername}`;
-    await execCommand(setAliasCommand, this, { fail: true, output: true });
-    // Set default username
-    const setDefaultUsernameCommand = `sfdx config:set defaultusername=${scratchOrg.scratchOrgUsername}`;
-    await execCommand(setDefaultUsernameCommand, this, { fail: true, output: true });
     // Remove temp auth file
     await fs.unlink(tmpAuthFile);
     // Return scratch org

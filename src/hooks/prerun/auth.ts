@@ -68,10 +68,15 @@ export const hook = async (options: any) => {
 // Authorize an org manually or with JWT
 async function authOrg(orgAlias: string, options: any) {
   // Manage auth with sfdxAuthUrl (CI & scratch org only)
-  if ((orgAlias || "").startsWith("force://")) {
+  const authUrlVarName = `SFDX_AUTH_URL_${orgAlias}`;
+  const authUrlVarNameUpper = `SFDX_AUTH_URL_${orgAlias.toUpperCase()}`;
+  const authUrl = process.env[authUrlVarName] || process.env[authUrlVarNameUpper] || process.env.SFDX_AUTH_URL_DEV_HUB || orgAlias || "";
+  if (authUrl.startsWith("force://")) {
     const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
-    await fs.writeFile(authFile, orgAlias, "utf8");
-    await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, { fail: true, output: false });
+    await fs.writeFile(authFile, authUrl, "utf8");
+    const authCommand = `sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername` +(!orgAlias.includes("force://")?` --setalias ${orgAlias}`:'');
+    await execCommand(authCommand, this, { fail: true, output: false });
+    uxLog(this,c.grey("Successfully logged using sfdxAuthUrl"));
     await fs.remove(authFile);
     return;
   }

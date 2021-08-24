@@ -106,7 +106,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
             result = { result: { status: 1, rawLog: stdout } };
             uxLog(this, c.yellow("Error parsing stdout: " + stdout));
           }
-          await addScratchOrgToPool(result.result);
+          await addScratchOrgToPool(result.result || result);
           resolve({ code, result: result });
         });
       });
