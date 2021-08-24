@@ -59,7 +59,7 @@ export default class ScratchPoolView extends SfdxCommand {
           `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
         )
       );
-      return { outputString: "Scratch org pool configuration to create" };
+      return { status:1, outputString: "Scratch org pool configuration to create" };
     }
 
     // Query pool storage
@@ -73,6 +73,12 @@ export default class ScratchPoolView extends SfdxCommand {
     uxLog(this, c.cyan(`There are ${c.bold(availableNumber)} available scratch orgs`));
 
     // Return an object to be displayed with --json
-    return { outputString: "Viewed scratch org pool", poolStorage: poolStorage };
+    return {
+      status: 0,
+      outputString: "Viewed scratch org pool",
+      poolStorage: poolStorage,
+      availableScratchOrgs: availableNumber,
+      maxScratchOrgs: poolConfig.maxScratchsOrgsNumber,
+    };
   }
 }
