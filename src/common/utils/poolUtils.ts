@@ -85,7 +85,11 @@ export async function fetchScratchOrg() {
     const tmpAuthFile = path.join(authTempDir, "authFile.json");
     await fs.writeFile(tmpAuthFile, JSON.stringify(scratchOrg.authFileJson), "utf8");
     const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile}`;
-    const authRes = await execSfdxJson(authCommand, this, { fail: true, output: true });
+    const authRes = await execSfdxJson(authCommand, this, { fail: false, output: true });
+    if (authRes.status !== 0) {
+      uxLog(this,c.yellow(`[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername}\n${c.grey(JSON.stringify(authRes))}`));
+      return null ;
+    }
     // Set alias
     const setAliasCommand = `sfdx force:alias:set ${scratchOrg.scratchOrgAlias}=${scratchOrg.scratchOrgUsername}`;
     await execCommand(setAliasCommand, this, { fail: true, output: true });
@@ -95,7 +99,7 @@ export async function fetchScratchOrg() {
     // Remove temp auth file
     await fs.unlink(tmpAuthFile);
     // Return scratch org
-    return authRes.status === 0 ? scratchOrg : null;
+    return scratchOrg ;
   }
   uxLog(this, "[pool]" + c.yellow(`No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchsOrgsNumber")} or schedule call to ${c.white("sfdx hardis:scratch:pool:refresh")} more often in CI`));
   return null;
