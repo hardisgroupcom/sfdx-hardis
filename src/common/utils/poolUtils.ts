@@ -2,7 +2,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { getConfig } from "../../config";
-import { createTempDir, execCommand, execSfdxJson, isCI, uxLog } from ".";
+import { createTempDir, execSfdxJson, isCI, uxLog } from ".";
 import { KeyValueProviderInterface } from "./keyValueUtils";
 import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz";
 import { KvdbIoProvider } from "../keyValueProviders/kvdbIo";
