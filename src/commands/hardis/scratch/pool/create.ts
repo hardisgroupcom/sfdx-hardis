@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 import * as c from "chalk";
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
+import { AuthInfo, Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getConfig, setConfig } from "../../../../config";
 import { prompts } from "../../../../common/utils/prompts";
@@ -61,7 +61,7 @@ export default class ScratchPoolCreate extends SfdxCommand {
 If you really want to replace it, please remove poolConfig property from .sfdx-hardis.yml and run again this command`
         )
       );
-      return {outputString: "Scratch org pool configuration already existing" };
+      return { outputString: "Scratch org pool configuration already existing" };
     }
 
     const allProviders = await listKeyValueProviders();
@@ -92,7 +92,22 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
     const provider = await instanciateProvider(response.storageService);
     await provider.userSetup();
 
+    const authInfo = await AuthInfo.create({ username: this.hubOrg.getUsername() });
+    const sfdxAuthUrl = authInfo.getSfdxAuthUrl();
+    if (sfdxAuthUrl) {
+      uxLog(this, c.cyan(`You need to define CI masked variable ${c.green("SFDX_AUTH_URL_DEV_HUB")} = ${c.green(sfdxAuthUrl)}`));
+    } else {
+      uxLog(
+        this,
+        c.yellow(
+          `You'll probably need to define CI masked variable ${c.green(
+            "SFDX_AUTH_URL_DEV_HUB"
+          )} with content of sfdxAuthUrl that you can retrieve with ${c.white("sfdx force:org:display -u YOURDEVHUBUSERNAME --verbose --json")}`
+        )
+      );
+    }
+
     // Return an object to be displayed with --json
-    return  {outputString: "Configured scratch orgs pool" };
+    return { outputString: "Configured scratch orgs pool" };
   }
 }
