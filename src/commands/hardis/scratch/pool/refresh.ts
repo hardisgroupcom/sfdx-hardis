@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 import { spawn } from "child_process";
-import * as c from 'chalk';
-import * as which from 'which';
+import * as c from "chalk";
+import * as which from "which";
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
@@ -58,7 +58,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     const config = await getConfig("project");
     if (config.poolConfig == null) {
       uxLog(this, c.yellow("Configuration file must contain a poolConfig property") + "\n" + c.grey(JSON.stringify(config, null, 2)));
-      return { outputString: "Configuration file must contain a poolConfig property" }
+      return { outputString: "Configuration file must contain a poolConfig property" };
     }
     const maxScratchsOrgsNumber = config.poolConfig.maxScratchsOrgsNumber || 5;
     uxLog(this, c.grey("Pool config: " + JSON.stringify(config.poolConfig)));
@@ -73,34 +73,39 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     // Create new scratch orgs
     const numberOfOrgsToCreate = maxScratchsOrgsNumber - scratchOrgs.length;
     uxLog(this, c.cyan("Creating " + numberOfOrgsToCreate + " scratch orgs..."));
+    let numberCreated = 0;
+    let numberfailed = 0;
     const subProcesses = [];
     for (let i = 0; i < numberOfOrgsToCreate; i++) {
       // eslint-disable-next-line no-async-promise-executor
       const spawnPromise = new Promise(async (resolve) => {
         // Run scratch:create command asynchronously
-        const commandArgs = ['hardis:scratch:create', '--pool', '--json'];
-        const sfdxPath = await which('sfdx');
-        const child = spawn(sfdxPath || 'sfdx', commandArgs, { cwd: process.cwd(), env: process.env });
+        const commandArgs = ["hardis:scratch:create", "--pool", "--json"];
+        const sfdxPath = await which("sfdx");
+        const child = spawn(sfdxPath || "sfdx", commandArgs, { cwd: process.cwd(), env: process.env });
         uxLog(this, "[pool] " + c.grey(`hardis:scratch:create (${i}) started`));
         // handle errors
-        child.on('error', (err) => {
+        child.on("error", (err) => {
           resolve({ code: 1, result: { error: err } });
-          throw err
+          throw err;
         });
         // Store data
-        let stdout = '';
-        child.stdout.on('data', (data) => {
+        let stdout = "";
+        child.stdout.on("data", (data) => {
           stdout += data.toString();
           if (this.debugMode === true) {
             uxLog(this, data.toString());
           }
         });
         // Handle end of command
-        child.on('close', async (code) => {
+        child.on("close", async (code) => {
           const colorFunc = code === 0 ? c.green : c.red;
           uxLog(this, "[pool] " + colorFunc(`hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
           if (code !== 0) {
             uxLog(this, c.grey(stdout));
+            numberfailed++;
+          } else {
+            numberCreated++;
           }
           let result: any = {};
           stdout = stripAnsi2(stdout);
@@ -120,10 +125,12 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     // Await parallel scratch org creations are completed
     const createResults = await Promise.all(subProcesses);
     if (this.debugMode) {
-      uxLog(this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));
+      uxLog(this, c.grey("Create results: \n" + JSON.stringify(createResults, null, 2)));
     }
 
+    const colorFunc = numberCreated === numberOfOrgsToCreate ? c.green : numberCreated === 0 ? c.red : c.yellow;
+    uxLog(this, "[pool] " + colorFunc(`Created ${c.bold(numberCreated)} scratch orgs (${c.bold(numberfailed)} creations(s) failed)`));
     // Return an object to be displayed with --json
-    return { outputString: "Refreshed scratch orgs pool", createResults: createResults };
+    return { outputString: "Refreshed scratch orgs pool", createResults: createResults, numberCreated: numberCreated, numberFailed: numberfailed };
   }
 }

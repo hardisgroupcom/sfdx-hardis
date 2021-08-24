@@ -82,8 +82,13 @@ export async function fetchScratchOrg() {
     // Authenticate to scratch org
     uxLog(this,"[pool] "+c.cyan("Authenticating to scratch org from pool..."));
     const authTempDir = await createTempDir();
-    const tmpAuthFile = path.join(authTempDir, "authFile.json");
-    await fs.writeFile(tmpAuthFile, JSON.stringify(scratchOrg.authFileJson), "utf8");
+    const tmpAuthFile = path.join(authTempDir, "authFile.txt");
+    const authFileContent = scratchOrg.scratchOrgSfdxAuthUrl || (scratchOrg.authFileJson ? JSON.stringify(scratchOrg.authFileJson) : null) ;
+    if (authFileContent == null) {
+      uxLog(this,c.yellow(`[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername} (missing sfdxAuthUrl)`));
+      return null ;
+    }
+    await fs.writeFile(tmpAuthFile,authFileContent, "utf8");
     const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile} --setdefaultusername --setalias ${scratchOrg.scratchOrgAlias}`;
     const authRes = await execSfdxJson(authCommand, this, { fail: false, output: true });
     if (authRes.status !== 0) {
