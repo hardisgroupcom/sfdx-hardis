@@ -48,7 +48,7 @@ export class RedisProvider implements KeyValueProviderInterface {
         const projectName = config.projectName || "default";
         this.redisKey = `pool${projectName}`;
       }
-      this.keyv = new Keyv(redisAuthUrl, { disable_resubscribing: true, autoResubscribe: false, maxRetriesPerRequest: 1 });
+      this.keyv = new Keyv(redisAuthUrl, { disable_resubscribing: true, autoResubscribe: false, maxRetriesPerRequest: 10 });
       this.keyv.on("error", (err) => {
         if (this.authError === false) {
           this.keyv = null;
