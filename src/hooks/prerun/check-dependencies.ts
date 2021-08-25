@@ -10,7 +10,7 @@ export const hook = async (options: any) => {
   if (!commandId.startsWith("hardis")) {
     return;
   }
-  if (commandId.startsWith("hardis:doc")) {
+  if (commandId.startsWith("hardis:doc") || commandId.startsWith("hardis:org:files") || commandId.startsWith("hardis:org:data")) {
     return;
   }
 
