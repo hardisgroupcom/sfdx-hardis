@@ -73,7 +73,7 @@ export async function fetchScratchOrg() {
     return null;
   }
   uxLog(this, "[pool] " + c.cyan("Trying to fetch a scratch org from scratch orgs pool to improve performances"));
-  const scratchOrgs: Array<any> = poolStorage.scratchOrgs;
+  const scratchOrgs: Array<any> = poolStorage.scratchOrgs || [];
   if (scratchOrgs.length > 0) {
     const scratchOrg = scratchOrgs.shift();
     // Remove and save
