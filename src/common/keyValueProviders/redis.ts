@@ -13,31 +13,31 @@ export class RedisProvider implements KeyValueProviderInterface {
   keyv = null;
   redisKey = null;
   authError = false;
-  inProgress = false;
 
   async initialize() {
-    await this.manageRedisAuth(null);
-    return this.keyv !== null;
+    await this.manageRedisAuth("init");
+    const connectionOk =  this.keyv !== null;
+    await this.disconnectRedis();
+    return connectionOk;
+
   }
 
   async getValue(key: string | null = null) {
     await this.manageRedisAuth(key);
-    this.inProgress = true;
     const value = await this.keyv.get(this.redisKey);
-    this.inProgress = false;
+    await this.disconnectRedis();
     return value;
   }
 
   async setValue(key: string | null = null, value: any) {
     await this.manageRedisAuth(key);
-    this.inProgress = true;
     await this.keyv.set(this.redisKey, value);
-    this.inProgress = false;
+    await this.disconnectRedis();
     return true;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async manageRedisAuth(_key: string | null = null) {
+  async manageRedisAuth(key: string | null = null) {
     if (this.keyv == null) {
       const config = await getConfig("user");
       const redisAuthUrl = config.redisAuthUrl || process.env.REDIS_AUTH_URL;
@@ -50,31 +50,18 @@ export class RedisProvider implements KeyValueProviderInterface {
       }
       this.keyv = new Keyv(redisAuthUrl, { disable_resubscribing: true, autoResubscribe: false, maxRetriesPerRequest: 10 });
       this.keyv.on("error", (err) => {
-        if (this.authError === false) {
-          this.keyv = null;
-          this.authError = true;
-          uxLog(this, "[pool]" + c.red("Redis connection Error :" + err));
-        }
+        uxLog(this, "[pool]" + c.red("Redis connection Error :" + err));
       });
-      uxLog(this, c.grey("Authenticated to Redis"));
-      // Disconnect every 5 seconds to avoid to prevent sfdx command to exit
-      await this.scheduleEndRedisConnection();
+      uxLog(this, c.grey("[pool] Requested redis connection"));
     }
   }
 
-  async scheduleEndRedisConnection() {
-    setTimeout(async () => {
-      if (this.inProgress === false) {
-        if (this.keyv?.opts?.store?.redis) {
-          // Kill redis connection
-          this.keyv.opts.store.redis.disconnect();
-          this.keyv = null ;
-        }
-      } else {
-        // If a get or a set is in progress, retry later
-        await this.scheduleEndRedisConnection();
-      }
-    }, 3000);
+  async disconnectRedis() {
+    if (this.keyv?.opts?.store?.redis) {
+      // Kill redis connection
+      this.keyv.opts.store.redis.disconnect();
+      this.keyv = null;
+    }
   }
 
   async userSetup() {
