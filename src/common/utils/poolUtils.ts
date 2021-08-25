@@ -9,6 +9,7 @@ import { KvdbIoProvider } from "../keyValueProviders/kvdbIo";
 import { LocalTestProvider } from "../keyValueProviders/localtest";
 import { SfdxError } from "@salesforce/core";
 import { prompts } from "./prompts";
+import { RedisProvider } from "../keyValueProviders/redis";
 
 let keyValueProvider: KeyValueProviderInterface;
 
@@ -128,7 +129,7 @@ export async function fetchScratchOrg() {
 }
 
 export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInterface>> {
-  return [KvdbIoProvider, KeyValueXyzProvider, LocalTestProvider].map((cls) => new cls());
+  return [RedisProvider, KvdbIoProvider, KeyValueXyzProvider, LocalTestProvider].map((cls) => new cls());
 }
 
 async function initializeProvider() {

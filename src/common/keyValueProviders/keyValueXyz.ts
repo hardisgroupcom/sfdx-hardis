@@ -8,7 +8,7 @@ import { prompts } from "../utils/prompts";
 
 export class KeyValueXyzProvider implements KeyValueProviderInterface {
   name = "keyvalue.xyz";
-  description = "keyvalue.xyz external service (api token, no auth)";
+  description = "keyvalue.xyz external service (api token, no auth). Seems down for now.";
   keyValueUrl = null;
 
   async initialize() {
@@ -65,7 +65,7 @@ export class KeyValueXyzProvider implements KeyValueProviderInterface {
     const keyValueXyzApiKey = resp.data;
     await setConfig("user", { keyValueXyzApiKey: keyValueXyzApiKey });
     uxLog(this, c.cyan("Created new keyvalue.xyz API key and stored in local untracked config"));
-    uxLog(this, c.yellow(`In future CI config, set protected variable ${c.bold(c.green("KEY_VALUE_XYZ_API_KEY = " + keyValueXyzApiKey))}`));
+    uxLog(this, c.yellow(`In CI config, set protected variable ${c.bold(c.green("KEY_VALUE_XYZ_API_KEY = " + keyValueXyzApiKey))}`));
     return true;
   }
 

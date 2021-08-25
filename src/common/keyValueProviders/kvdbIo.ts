@@ -10,7 +10,7 @@ import { prompts } from "../utils/prompts";
 
 export class KvdbIoProvider implements KeyValueProviderInterface {
   name = "kvdb.io";
-  description = "kvdb.io external service (api token, auth with Bearer)";
+  description = "kvdb.io external service (api token, auth with Bearer). Requires paid plan, or renewing config every 2 weeks";
   kvdbIoUrl = null;
   kvdbIoSecretKey = null;
 
