@@ -12,9 +12,6 @@ sfdx-hardis-*.tgz
 
 .nyc_output/
 
-.cache/
+site/
+
 config/user/
-hardis-report/
-tmp/
-**/siteDotComSites/*.site
-force-app/main/default/appMenus/AppSwitcher.appMenu-meta.xml

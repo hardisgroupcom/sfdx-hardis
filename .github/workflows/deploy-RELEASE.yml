@@ -63,3 +63,28 @@ jobs:
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
+
+  push_to_registry_sfdx_stable:
+    name: Push Docker image to Docker Hub (with sfdx-cli@stable version)
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Publish latest to Registry
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: hardisgroupcom/sfdx-hardis
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          buildargs: SFDX_HARDIS_VERSION=latest,SFDX_CLI_VERSION=stable
+          tags: "latest-sfdx-stable"
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-stable"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"

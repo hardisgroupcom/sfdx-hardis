@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
   "description": "Hardis-Group Toolbox for Salesforce DX",
-  "version": "2.43.1",
+  "version": "2.47.3",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "dependencies": {
@@ -36,8 +36,9 @@
     "ms-teams-webhook": "^1.0.4",
     "open": "^8.0.2",
     "ora": "^5.3.0",
+    "papaparse": "^5.3.1",
     "pascalcase": "^1.0.0",
-    "prompts": "^2.4.0",
+    "prompts": "^2.4.1",
     "psl": "^1.8.0",
     "read-pkg-up": "^7.0.1",
     "set-value": "^4.0.0",

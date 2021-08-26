@@ -90,22 +90,32 @@ export default class GenerateGitDelta extends SfdxCommand {
 
     // Prompt fromCommit
     if (fromCommit === null) {
+      const headItem = {
+        title: "HEAD",
+        description: `Current git HEAD`,
+        value: { hash: "HEAD" },
+      };
       const commitFromResp = await prompts({
         type: "select",
         name: "value",
         message: "Please select the commit that you want to start from",
-        choices: branchCommitsChoices,
+        choices: [headItem, ...branchCommitsChoices],
       });
       fromCommit = commitFromResp.value.hash;
     }
 
     // Prompt toCommit
     if (toCommit === null) {
+      const currentItem = {
+        title: "current",
+        description: `Local files not committed yet`,
+        value: { hash: "*" },
+      };
       const commitToResp = await prompts({
         type: "select",
         name: "value",
         message: "Please select the commit hash that you want to go to",
-        choices: branchCommitsChoices,
+        choices: [currentItem, ...branchCommitsChoices],
       });
       toCommit = commitToResp.value.hash;
     }

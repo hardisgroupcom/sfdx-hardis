@@ -4,6 +4,43 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.47.3] 2021-08-23
+
+- hardis:org:diagnose:legacyapi: Add more summary and statistics
+
+## [2.47.2] 2021-08-23
+
+- Fix hardis:org:diagnose:legacyapi (display raw logs when CSV builder is crashing) , using papaparse instead of objects-to-csv package
+
+## [2.47.1] 2021-08-19
+
+- Use --permissivediff to call sfdx-git-delta if the argument is available
+- Manage env vars SKIP_PACKAGE_DEPLOY_ON_CHANGE and SKIP_PACKAGE_DEPLOY_ONCE . If set to true, related packageDeployOnChange.xml and packageDeployOnce.xml are ignored
+- Define locally method to remove package.xml from another, to improve performances
+
+## [2.47.0] 2021-08-19
+
+- New feature: use packageDeployOnChange.xml, to skip deployment of items that has not been updated since last update
+- Create docker images with sfdx-cli@stable version
+  - alpha-sfdx-stable
+  - beta-sfdx-stable
+  - latest-sfdx-stable
+
+## [2.46.0] 2021-08-16
+
+- Allow to run git delta command on local updates
+- Update labels of hardis:data commands
+- New technical command: hardis:work:ws , to call VsCode Extension refresh from CLI
+
+## [2.45.0] 2021-08-15
+
+- Refactor **hardis:org:diagnose:legacyapi** with jsforce to handle more log entries
+- Do not display `git branch -v` in logs
+
+## [2.44.0] 2021-08-14
+
+- New command **hardis:org:diagnose:legacyapi** : Detect [use of deprecated API versions](https://help.salesforce.com/articleView?id=000351312&type=1&mode=1&language=en_US) in production org
+
 ## [2.43.1] 2021-07-23
 
 - Update deployTips

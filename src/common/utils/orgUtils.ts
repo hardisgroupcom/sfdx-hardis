@@ -139,36 +139,47 @@ export async function promptOrgUsernameDefault(commandThis: any, defaultOrg: str
 // Add package installation to project .sfdx-hardis.yml
 export async function managePackageConfig(installedPackages, packagesToInstallCompleted) {
   const config = await getConfig("project");
-  const projectPackages = config.installedPackages || [];
+  let projectPackages = config.installedPackages || [];
   let updated = false;
   for (const installedPackage of installedPackages) {
-    const matchInstalled = packagesToInstallCompleted.filter(
-      (pckg) => pckg.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId
-    );
-    const matchLocal = projectPackages.filter(
-      (projectPackage) => installedPackage.SubscriberPackageVersionId === projectPackage.SubscriberPackageVersionId
-    );
-    if (matchInstalled.length > 0 && matchLocal.length === 0) {
+    const matchInstalled = packagesToInstallCompleted.filter((pckg) => pckg.SubscriberPackageId === installedPackage.SubscriberPackageId);
+    const matchLocal = projectPackages.filter((projectPackage) => installedPackage.SubscriberPackageId === projectPackage.SubscriberPackageId);
+    // Upgrade version of already installed package
+    if (matchInstalled.length > 0 && matchLocal.length > 0) {
+      projectPackages = projectPackages.map((projectPackage) => {
+        if (installedPackage.SubscriberPackageId === projectPackage.SubscriberPackageId) {
+          projectPackage = Object.assign(projectPackage, installedPackage);
+        }
+        return projectPackage;
+      });
+      uxLog(
+        this,
+        c.cyan(
+          `Updated package ${c.green(installedPackage.SubscriberPackageName)} with version id ${c.green(installedPackage.SubscriberPackageVersionId)}`
+        )
+      );
+      updated = true;
+    } else if (matchInstalled.length > 0 && matchLocal.length === 0) {
       // Request user about automatic installation during scratch orgs and deployments
       const installResponse = await prompts({
         type: "select",
         name: "value",
-        message: c.cyanBright(`Please select the install configuration for ${installedPackage.SubscriberPackageName}`),
+        message: c.cyanBright(`Please select the install configuration for ${c.bold(installedPackage.SubscriberPackageName)}`),
         choices: [
           {
-            title: `Install automatically ${installedPackage.SubscriberPackageName} on scratch orgs only`,
+            title: `Install automatically ${c.bold(installedPackage.SubscriberPackageName)} on scratch orgs only`,
             value: "scratch",
           },
           {
-            title: `Deploy automatically ${installedPackage.SubscriberPackageName} on integration/production orgs only`,
+            title: `Deploy automatically ${c.bold(installedPackage.SubscriberPackageName)} on integration/production orgs only`,
             value: "deploy",
           },
           {
-            title: `Both: Install & deploy automatically ${installedPackage.SubscriberPackageName}`,
+            title: `Both: Install & deploy automatically ${c.bold(installedPackage.SubscriberPackageName)}`,
             value: "scratch-deploy",
           },
           {
-            title: `Do not configure ${installedPackage.SubscriberPackageName} installation / deployment`,
+            title: `Do not configure ${c.bold(installedPackage.SubscriberPackageName)} installation / deployment`,
             value: "none",
           },
         ],

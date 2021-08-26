@@ -4,13 +4,13 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import * as xml2js from "xml2js";
-import { createTempDir, elapseEnd, elapseStart, execCommand, getCurrentGitBranch, isCI, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
+import { isPackageXmlEmpty, removePackageXmlFilesContent } from "./xmlUtils";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -106,13 +106,28 @@ export async function forceSourceDeploy(
   options = {}
 ): Promise<any> {
   elapseStart("all deployments");
-  const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode);
+  const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
   const messages = [];
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Process items of deployment plan
+  uxLog(this, c.cyan("Processing split deployments build from deployment plan..."));
+  uxLog(this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
   for (const deployment of splitDeployments) {
     elapseStart(`deploy ${deployment.label}`);
+    // Skip this deployment items if there is nothing to deploy in package.xml
+    if (deployment.packageXmlFile && (await isPackageXmlEmpty(deployment.packageXmlFile, { ignoreStandaloneParentItems: true }))) {
+      uxLog(
+        commandThis,
+        c.cyan(
+          `Skipped ${c.bold(deployment.label)} deployment because package.xml is empty or contains only standalone parent items.\n${c.grey(
+            c.italic("This may be related to filtering using packageDeployOnce.xml or packageDeployOnChange.xml")
+          )}`
+        )
+      );
+      elapseEnd(`deploy ${deployment.label}`);
+      continue;
+    }
     let message = "";
     // Wait before deployment item process if necessary
     if (deployment.waitBefore) {
@@ -166,7 +181,7 @@ export async function forceSourceDeploy(
       elapseEnd(`deploy ${deployment.label}`);
     }
     // Deployment of type data import
-    if (deployment.dataPath) {
+    else if (deployment.dataPath) {
       const dataPath = path.resolve(deployment.dataPath);
       await importData(dataPath, commandThis, options);
     }
@@ -182,19 +197,18 @@ export async function forceSourceDeploy(
 }
 
 // In some case we can not deploy the whole package.xml, so let's split it before :)
-async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean, debugMode: boolean): Promise<any[]> {
-  const packageXmlString = await fs.readFile(packageXmlFile, "utf8");
-  const packageXml = await xml2js.parseStringPromise(packageXmlString);
+async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean, debugMode: boolean, options: any = {}): Promise<any[]> {
   // Check for empty package.xml
-  if (!(packageXml && packageXml.Package && packageXml.Package.types && packageXml.Package.types.length > 0)) {
+  if (await isPackageXmlEmpty(packageXmlFile)) {
     uxLog(this, "Empty package.xml: nothing to deploy");
     return [];
   }
-  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode);
+  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
+  const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   const config = await getConfig("user");
   // Build list of package.xml according to plan
   if (config.deploymentPlan && !check) {
-    // Copy main package.xml
+    // Copy main package.xml so it can be dynamically updated before deployment
     const tmpDeployDir = await createTempDir();
     const mainPackageXmlCopyFileName = path.join(tmpDeployDir, "mainPackage.xml");
     await fs.copy(packageXmlFile, mainPackageXmlCopyFileName);
@@ -204,24 +218,36 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
       order: 0,
     };
     const deploymentItems = [mainPackageXmlItem];
-    // Remove other package.xml items from main package.xml
+
+    // Work on deploymentPlan packages before deploying them
     for (const deploymentItem of config.deploymentPlan.packages) {
       if (deploymentItem.packageXmlFile) {
+        // Copy deployment in temp packageXml file so it can be updated using packageDeployOnce and packageDeployOnChange
         deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
         const splitPackageXmlCopyFileName = path.join(tmpDeployDir, path.basename(deploymentItem.packageXmlFile));
         await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
         deploymentItem.packageXmlFile = splitPackageXmlCopyFileName;
+        // Remove split of packageXml content from main package.xml
         await removePackageXmlContent(mainPackageXmlCopyFileName, deploymentItem.packageXmlFile, false, debugMode);
+        // Remove packageDeployOnce.xml items that are already present in target org
         if (deployOncePackageXml) {
           await removePackageXmlContent(deploymentItem.packageXmlFile, deployOncePackageXml, false, debugMode);
+        }
+        // Remove packageDeployOnChange.xml items that are not different in target org
+        if (deployOnChangePackageXml) {
+          await removePackageXmlContent(deploymentItem.packageXmlFile, deployOnChangePackageXml, false, debugMode);
         }
       }
       deploymentItems.push(deploymentItem);
     }
 
-    // Remove packageXmlDeployOnce.xml items that are already present in target org
+    // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
     if (deployOncePackageXml) {
       await removePackageXmlContent(mainPackageXmlCopyFileName, deployOncePackageXml, false, debugMode);
+    }
+    //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
+    if (deployOnChangePackageXml) {
+      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOnChangePackageXml, false, debugMode);
     }
 
     // Sort in requested order
@@ -241,59 +267,114 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
 }
 
 // packageDeployOnce.xml items are deployed only if they are not in the target org
-async function buildDeployOncePackageXml(debugMode = false) {
-  const packageXmlDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
-  if (fs.existsSync(packageXmlDeployOnce)) {
+async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
+  if (process.env.SKIP_PACKAGE_DEPLOY_ONCE === "true") {
+    uxLog(this, c.yellow("Skipped packageDeployOnce.xml management because of env variable SKIP_PACKAGE_DEPLOY_ONCE='true'"));
+    return null;
+  }
+  const packageDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
+  if (fs.existsSync(packageDeployOnce)) {
     uxLog(this, "Building packageDeployOnce.xml...");
-    const packageXmlDeployOnceString = await fs.readFile(packageXmlDeployOnce, "utf8");
-    const packageXmlDeployOnceContent = await xml2js.parseStringPromise(packageXmlDeployOnceString);
     // If packageDeployOnce.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
-    if (
-      packageXmlDeployOnceContent &&
-      packageXmlDeployOnceContent.Package &&
-      packageXmlDeployOnceContent.Package.types &&
-      packageXmlDeployOnceContent.Package.types.length > 0
-    ) {
+    if (!(await isPackageXmlEmpty(packageDeployOnce))) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
       uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching packageDeployOnce.xml ...`));
       const targetOrgPackageXml = path.join(tmpDir, "packageTargetOrg.xml");
-      await execCommand(`sfdx sfpowerkit:org:manifest:build -o ${targetOrgPackageXml}`, this, { fail: true, debug: debugMode, output: false });
-      const packageXmlDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
-      await fs.copy(packageXmlDeployOnce, packageXmlDeployOnceToUse);
+      await execCommand(
+        `sfdx sfpowerkit:org:manifest:build -o ${targetOrgPackageXml}` + (options.targetUsername ? ` -u ${options.targetUsername}` : ""),
+        this,
+        { fail: true, debug: debugMode, output: false }
+      );
+      const packageDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
+      await fs.copy(packageDeployOnce, packageDeployOnceToUse);
       // Keep in deployOnce.xml only what is necessary to deploy
-      await removePackageXmlContent(packageXmlDeployOnceToUse, targetOrgPackageXml, true, debugMode);
+      await removePackageXmlContent(packageDeployOnceToUse, targetOrgPackageXml, true, debugMode);
       // Check if there is still something in updated packageDeployOnce.xml
-      const packageXmlDeployOnceStringNew = await fs.readFile(packageXmlDeployOnceToUse, "utf8");
-      const packageXmlDeployOnceContentNew = await xml2js.parseStringPromise(packageXmlDeployOnceStringNew);
-      if (
-        packageXmlDeployOnceContentNew &&
-        packageXmlDeployOnceContentNew.Package &&
-        packageXmlDeployOnceContentNew.Package.types &&
-        packageXmlDeployOnceContentNew.Package.types.length > 0
-      ) {
-        return packageXmlDeployOnceToUse;
+      if (!(await isPackageXmlEmpty(packageDeployOnceToUse))) {
+        return packageDeployOnceToUse;
       }
     }
   }
   return null;
 }
 
+// packageDeployOnChange.xml items are deployed only if they have changed in target org
+export async function buildDeployOnChangePackageXml(debugMode: boolean, options: any = {}) {
+  if (process.env.SKIP_PACKAGE_DEPLOY_ON_CHANGE === "true") {
+    uxLog(this, c.yellow("Skipped packageDeployOnChange.xml management because of env variable SKIP_PACKAGE_DEPLOY_ON_CHANGE='true'"));
+    return null;
+  }
+  // Check if packageDeployOnChange.xml is defined
+  const packageDeployOnChangePath = "./manifest/packageDeployOnChange.xml";
+  if (!fs.existsSync(packageDeployOnChangePath)) {
+    return null;
+  }
+
+  // Retrieve sfdx sources in local git repo
+  await execCommand(
+    `sfdx force:source:retrieve -x ${packageDeployOnChangePath}` + (options.targetUsername ? ` -u ${options.targetUsername}` : ""),
+    this,
+    {
+      fail: true,
+      output: true,
+      debug: debugMode,
+    }
+  );
+
+  // Stage updates so sfdx git delta can build diff package.xml
+  await git().add("--all");
+
+  // Generate package.xml git delta
+  const tmpDir = await createTempDir();
+  const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: debugMode })).stdout;
+  const packageXmlGitDeltaCommand =
+    `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}` + (sgdHelp.includes("--permissivediff") ? " --permissivediff" : "");
+  const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
+    output: true,
+    fail: false,
+    debug: debugMode,
+    cwd: await getGitRepoRoot(),
+  });
+
+  // Now that the diff is computed, we can discard staged items and undo changes
+  await git().reset(["--hard"]);
+
+  // Check git delta is ok
+  const diffPackageXml = path.join(tmpDir, "package", "package.xml");
+  if (gitDeltaCommandRes?.status !== 0 || !fs.existsSync(diffPackageXml)) {
+    throw new SfdxError("Error while running sfdx git delta:\n" + JSON.stringify(gitDeltaCommandRes));
+  }
+
+  // Remove from original packageDeployOnChange the items that has not been updated
+  const packageXmlDeployOnChangeToUse = path.join(tmpDir, "packageDeployOnChange.xml");
+  await fs.copy(packageDeployOnChangePath, packageXmlDeployOnChangeToUse);
+  await removePackageXmlContent(packageXmlDeployOnChangeToUse, diffPackageXml, false, debugMode);
+
+  // Return result
+  return packageXmlDeployOnChangeToUse;
+}
+
 // Remove content of a package.xml file from another package.xml file
 async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToRemove: string, removedOnly = false, debugMode = false) {
-  uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}`));
-  let removePackageXmlCommand =
+  uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}...`));
+  /* let removePackageXmlCommand =
     "sfdx essentials:packagexml:remove" +
     ` --packagexml ${packageXmlFile}` +
     ` --removepackagexml ${packageXmlFileToRemove}` +
     ` --outputfile ${packageXmlFile}` +
-    ` --noinsight `;
+    ` --noinsight`;
   if (removedOnly === true) {
     removePackageXmlCommand += " --removedonly";
   }
   await execCommand(removePackageXmlCommand, this, {
     fail: true,
     debug: debugMode,
+  }); */
+  await removePackageXmlFilesContent(packageXmlFile, packageXmlFileToRemove, {
+    outputXmlFile: packageXmlFile,
+    logFlag: debugMode,
+    removedOnly: removedOnly,
   });
 }
 
