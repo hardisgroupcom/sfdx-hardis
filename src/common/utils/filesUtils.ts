@@ -123,14 +123,6 @@ export class FilesExporter {
     const lastRecordsToProcess = [...this.recordsChunk];
     this.recordsChunk = [];
     await this.processRecordsChunk(lastRecordsToProcess);
-
-    /*
-    await PromisePool.withConcurrency(10)
-      .for(records)
-      .process(async (record) => {
-        await this.processRecord(record);
-      });
-      */
   }
 
   private async addToRecordsChunk(record: any) {
@@ -163,8 +155,13 @@ export class FilesExporter {
     // Download files
     await PromisePool.withConcurrency(10)
       .for(contentVersions.records)
-      .process(async (contentVersion) => {
-        await this.downloadContentVersionFile(contentVersion, records, contentDocumentLinks);
+      .process(async (contentVersion: any) => {
+        try {
+          await this.downloadContentVersionFile(contentVersion, records, contentDocumentLinks.records);
+        } catch (e) {
+          this.filesErrors++;
+          uxLog(this, c.red("Download file error: " + contentVersion.Title + "\n" + e));
+        }
       });
   }
 
@@ -174,6 +171,7 @@ export class FilesExporter {
       (contentDocumentLink) => contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId
     )[0];
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
+    // Build record output files folder
     const parentRecordFolderForFiles = path.resolve(
       path.join(this.exportedFilesFolder, parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id)
     );
@@ -190,6 +188,8 @@ export class FilesExporter {
       this.filesIgnoredExisting++;
       return;
     }
+    // Create directory if not existing
+    await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
     const fetchUrl = this.conn.instanceUrl + contentVersion.VersionData;
     try {
