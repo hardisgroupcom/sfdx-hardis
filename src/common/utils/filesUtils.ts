@@ -68,7 +68,7 @@ export class FilesExporter {
     const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
     uxLog(this, c.grey("Query: " + c.italic(countSoqlQuery)));
     const countSoqlQueryRes = await this.conn.query(countSoqlQuery);
-    const estimatedApiCalls = countSoqlQueryRes.totalSize * 2;
+    const estimatedApiCalls = (countSoqlQueryRes.totalSize / this.recordsChunkSize) * 2;
     this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used ? (this.conn as any).limitInfo.apiUsage.used - 1 : this.apiUsedBefore;
     this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
     // Check if there are enough API calls available
