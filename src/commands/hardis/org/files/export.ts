@@ -75,7 +75,7 @@ export default class FilesExport extends SfdxCommand {
         message: c.cyanBright("Do you want to use default configuration for " + exportConfigInitial.label + " ?"),
       });
       if (defaultConfigRes.value !== true) {
-        const exportConfig = await promptFilesExportConfiguration(exportConfigInitial,true);
+        const exportConfig = await promptFilesExportConfiguration(exportConfigInitial, true);
         exportOptions.exportConfig = exportConfig;
       }
     }

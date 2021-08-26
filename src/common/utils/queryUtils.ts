@@ -13,14 +13,14 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
 export async function bulkQuery(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(this, c.grey("SOQL BULK: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
   const records = [];
-  return new Promise((resolve,reject) => {
+  return new Promise((resolve, reject) => {
     const job = conn.bulk.query(soqlQuery);
     job
       .on("record", async (record) => {
         records.push(record);
       })
       .on("error", (err) => {
-        uxLog(this,c.red("Bulk query error:" + err));
+        uxLog(this, c.red("Bulk query error:" + err));
         reject(err);
         throw new SfdxError(c.red("Bulk query error:" + err));
       })
