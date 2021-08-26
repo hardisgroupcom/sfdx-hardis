@@ -68,7 +68,7 @@ export class FilesExporter {
     const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
     uxLog(this, c.grey("Query: " + c.italic(countSoqlQuery)));
     const countSoqlQueryRes = await this.conn.query(countSoqlQuery);
-    const estimatedApiCalls = (countSoqlQueryRes.totalSize / this.recordsChunkSize) * 2;
+    const estimatedApiCalls = Math.round((countSoqlQueryRes.totalSize / this.recordsChunkSize) * 2);
     this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used ? (this.conn as any).limitInfo.apiUsage.used - 1 : this.apiUsedBefore;
     this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
     // Check if there are enough API calls available
@@ -122,7 +122,9 @@ export class FilesExporter {
     // Process last chunk
     const lastRecordsToProcess = [...this.recordsChunk];
     this.recordsChunk = [];
-    await this.processRecordsChunk(lastRecordsToProcess);
+    if (lastRecordsToProcess.length > 0) {
+      await this.processRecordsChunk(lastRecordsToProcess);
+    }
   }
 
   private async addToRecordsChunk(record: any) {
@@ -144,6 +146,10 @@ export class FilesExporter {
     uxLog(this, c.grey("Query: " + c.italic(linkedEntityInQuery)));
     const contentDocumentLinks = await this.conn.query(linkedEntityInQuery);
     this.totalSoqlRequests++;
+    if (contentDocumentLinks.records.length === 0) {
+      uxLog(this, c.grey("Nothing to process in this chunk"));
+      return;
+    }
 
     // Retrieve all ContentVersion related to ContentDocumentLink
     const contentDocIdIn = contentDocumentLinks.records.map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`).join(",");
