@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { uxLog } from "../../../../common/utils";
-import { exportFiles, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
+import { FilesExporter, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
 
 
 // Initialize Messages with the current plugin directory
@@ -25,6 +25,16 @@ export default class FilesExport extends SfdxCommand {
     path: flags.string({
       char: "p",
       description: "Path to the file export project",
+    }),
+    chunksize: flags.number({
+      char: "c",
+      description: "Number of records to add in a chunk before it is processed",
+      default: 5000
+    }),
+    polltimeout: flags.number({
+      char: "t",
+      description: "Timeout in MS for Bulk API calls",
+      default: 300000
     }),
     debug: flags.boolean({
       char: "d",
@@ -49,6 +59,8 @@ export default class FilesExport extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     let filesPath = this.flags.path || null;
+    const recordsChunkSize = this.flags.chunksize;
+    const pollTimeout = this.flags.polltimeout || 300000 ;
     //const debugMode = this.flags.debug || false;
 
     // Identify files workspace if not defined
@@ -57,7 +69,8 @@ export default class FilesExport extends SfdxCommand {
     }
 
     // Export files from org
-    const exportResult = await exportFiles(filesPath, this.org.getConnection(), this,);
+    const exportOptions = { pollTimeout: pollTimeout, recordsChunkSize: recordsChunkSize};
+    const exportResult = await new FilesExporter(filesPath, this.org.getConnection(), exportOptions,this).processExport();
 
     // Output message
     const message = `Successfully exported files from project ${c.green(filesPath)} from org ${c.green(this.org.getUsername())}`;

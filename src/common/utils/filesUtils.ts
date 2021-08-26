@@ -1,174 +1,241 @@
-import { SfdxError } from "@salesforce/core";
+import { Connection, SfdxError } from "@salesforce/core";
 import PromisePool = require("@supercharge/promise-pool/dist");
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as fetch from "node-fetch";
 import * as path from "path";
-import { uxLog } from ".";
+import { isCI, uxLog } from ".";
 import { prompts } from "./prompts";
 
 export const filesFolderRoot = path.join(".", "scripts", "files");
 
-// Initialize stats variables
-let totalSoqlRequests = 0;
-let totalParentRecords = 0;
-let parentRecordsWithFiles = 0;
-let recordsIgnored = 0;
-let filesDownloaded = 0;
-let filesErrors = 0;
-let filesIgnoredType = 0;
-let filesIgnoredExisting = 0;
-let apiLimit = 0;
-let apiUsedBefore = 0;
+export class FilesExporter {
+  private filesPath: string;
+  private conn: Connection;
+  private pollTimeout: number;
+  private recordsChunkSize: number;
+  private commandThis: any;
 
-function initStats() {
-  // Initialize stats variables
-  totalSoqlRequests = 0;
-  totalParentRecords = 0;
-  parentRecordsWithFiles = 0;
-  recordsIgnored = 0;
-  filesDownloaded = 0;
-  filesErrors = 0;
-  filesIgnoredType = 0;
-  filesIgnoredExisting = 0;
-  apiLimit = null;
-  apiUsedBefore = null;
-}
+  private fetchOptions: any;
+  private dtl: any; // export config
+  private exportedFilesFolder: string;
+  private recordsChunk: any[] = [];
+  private recordChunksNumber = 0;
 
-// Export data from files folder
-export async function exportFiles(filesPath: string, conn: any, commandThis: any) {
-  initStats();
-  const dtl = await getFilesWorkspaceDetail(filesPath);
-  uxLog(commandThis, c.cyan(`Exporting files from ${c.green(dtl.full_label)} ...`));
-  uxLog(commandThis, c.italic(c.grey(dtl.description)));
+  private totalSoqlRequests = 0;
+  private totalParentRecords = 0;
+  private parentRecordsWithFiles = 0;
+  private recordsIgnored = 0;
+  private filesDownloaded = 0;
+  private filesErrors = 0;
+  private filesIgnoredType = 0;
+  private filesIgnoredExisting = 0;
+  private apiUsedBefore = null;
+  private apiLimit = null;
 
-  // Make sure export folder for files is existing
-  const exportedFilesFolder = path.join(filesPath, "export");
-  await fs.ensureDir(exportedFilesFolder);
-
-  // Build fetch options for HTTP calls to retrieve document files
-  const fetchOptions = {
-    method: "GET",
-    headers: {
-      Authorization: "Bearer " + conn.accessToken,
-      "Content-Type": "blob",
-    },
-  };
-
-  // Query parent records using SOQL defined in export.json file
-  const records = [];
-  uxLog(this, c.grey("Bulk query: " + c.italic(dtl.soqlQuery)));
-  totalSoqlRequests++;
-  await new Promise((resolve) => {
-    conn.bulk
-      .query(dtl.soqlQuery)
-      .on("record", async (record) => {
-        const parentRecordFolderForFiles = path.join(exportedFilesFolder, record[dtl.outputFolderNameField] || record.Id);
-        if (dtl.overwriteParentRecords !== true && fs.existsSync(parentRecordFolderForFiles)) {
-          uxLog(this, c.grey(`Skipped record - ${record[dtl.outputFolderNameField] || record.Id} - Already existing`));
-          recordsIgnored++;
-          return;
-        }
-        records.push(record);
-      })
-      .on("error", (err) => {
-        uxLog(this, "Bulk query error:" + err);
-      })
-      .on("end", () => {
-        resolve(true);
-      });
-  });
-
-  await PromisePool.withConcurrency(10)
-    .for(records)
-    .process(async (record) => {
-      await processRecord(record, exportedFilesFolder, dtl, conn, fetchOptions);
-    });
-
-  // Display stats
-  const apiCallsRemaining = (conn?.limitInfo?.apiUsage?.limit || 0) - (conn?.limitInfo?.apiUsage?.used || 0);
-  uxLog(this, c.cyan(`API limit: ${c.bold(conn?.limitInfo?.apiUsage?.limit)}`));
-  uxLog(this, c.cyan(`API used before process: ${c.bold(apiUsedBefore)}`));
-  uxLog(this, c.cyan(`API used after process: ${c.bold(conn?.limitInfo?.apiUsage?.used)}`));
-  uxLog(this, c.cyan(`API calls remaining for today: ${c.bold(apiCallsRemaining)}`));
-  uxLog(this, c.cyan(`Total SOQL requests: ${c.bold(totalSoqlRequests)}`));
-  uxLog(this, c.cyan(`Total parent records found: ${c.bold(totalParentRecords)}`));
-  uxLog(this, c.cyan(`Total parent records with files: ${c.bold(parentRecordsWithFiles)}`));
-  uxLog(this, c.cyan(`Total parent records ignored because already existing: ${c.bold(recordsIgnored)}`));
-  uxLog(this, c.cyan(`Total files downloaded: ${c.bold(filesDownloaded)}`));
-  uxLog(this, c.cyan(`Total file download errors: ${c.bold(filesErrors)}`));
-  uxLog(this, c.cyan(`Total file skipped because of type constraint: ${c.bold(filesIgnoredType)}`));
-  uxLog(this, c.cyan(`Total file skipped because previously downloaded: ${c.bold(filesIgnoredExisting)}`));
-
-  return {
-    totalParentRecords,
-    parentRecordsWithFiles,
-    filesDownloaded,
-    filesErrors,
-    recordsIgnored,
-    filesIgnoredType,
-    filesIgnoredExisting,
-    apiLimit,
-    apiUsedBefore,
-    apiUsedAfter: conn.limitInfo.apiUsage.used,
-    apiCallsRemaining,
-  };
-}
-
-async function processRecord(parentRecord: any, exportedFilesFolder, dtl, conn, fetchOptions) {
-  totalParentRecords++;
-  // Create output folder for parent record
-  const parentRecordFolderForFiles = path.join(exportedFilesFolder, parentRecord[dtl.outputFolderNameField] || parentRecord.Id);
-  await fs.ensureDir(parentRecordFolderForFiles);
-
-  // List all documents related to the parent record
-  const contentDocumentSoql = `SELECT ContentDocumentId FROM ContentDocumentLink WHERE LinkedEntityId='${parentRecord.Id}'`;
-  uxLog(this, c.grey("Query: " + c.italic(contentDocumentSoql)));
-  const contentDocumentLinks: any = await conn.query(contentDocumentSoql);
-  totalSoqlRequests++;
-
-  // Get initial API Limit
-  if (apiUsedBefore == null) {
-    apiUsedBefore = conn?.limitInfo?.apiUsage?.used ? conn.limitInfo.apiUsage.used - 1 : apiUsedBefore;
+  constructor(filesPath: string, conn: Connection, options: { pollTimeout?: number; recordsChunkSize?: number }, commandThis: any) {
+    this.filesPath = filesPath;
+    this.conn = conn;
+    this.pollTimeout = options?.pollTimeout || 300000;
+    this.recordsChunkSize = options?.recordsChunkSize || 5000;
+    this.commandThis = commandThis;
+    // Build fetch options for HTTP calls to retrieve document files
+    this.fetchOptions = {
+      method: "GET",
+      headers: {
+        Authorization: "Bearer " + this.conn.accessToken,
+        "Content-Type": "blob",
+      },
+    };
   }
 
-  if (contentDocumentLinks.records.length > 0) {
-    parentRecordsWithFiles++;
-    // Retrieve documents content
-    const contentDocIdIn = contentDocumentLinks.records.map((contentDocumentLink) => `'${contentDocumentLink.ContentDocumentId}'`).join(",");
-    const contentVersionSoql = `SELECT ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,VersionData FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
-    uxLog(this, c.grey("Query: " + c.italic(contentVersionSoql)));
-    const contentVersions: any = await conn.query(contentVersionSoql);
-    totalSoqlRequests++;
+  async processExport() {
+    // Get config
+    this.dtl = await getFilesWorkspaceDetail(this.filesPath);
+    uxLog(this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
+    // Make sure export folder for files is existing
+    this.exportedFilesFolder = path.join(this.filesPath, "export");
+    await fs.ensureDir(this.exportedFilesFolder);
 
-    // Fetch files in output folder
-    for (const contentVersion of contentVersions.records) {
-      const outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title);
-      // Check file extension
-      if (dtl.fileTypes !== "all" && !dtl.fileTypes.includes(contentVersion.FileType)) {
-        uxLog(this, c.grey(`Skipped - ${outputFile.replace(exportedFilesFolder, "")} - File type ignored`));
-        filesIgnoredType++;
-        continue;
-      }
-      // Check file overwrite
-      if (dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
-        uxLog(this, c.yellow(`Skipped - ${outputFile.replace(exportedFilesFolder, "")} - File already existing`));
-        filesIgnoredExisting++;
-        continue;
-      }
-      // Download file locally
-      const fetchUrl = conn.instanceUrl + contentVersion.VersionData;
-      try {
-        const fetchRes = await fetch(fetchUrl, fetchOptions);
-        fetchRes.body.pipe(fs.createWriteStream(outputFile));
-        uxLog(this, c.green(`Success - ${outputFile.replace(exportedFilesFolder, "")}`));
-        filesDownloaded++;
-      } catch (err) {
-        // Download failure
-        uxLog(this, c.red(`Error   - ${outputFile.replace(exportedFilesFolder, "")} - ${err}`));
-        filesErrors++;
+    await this.calculateApiConsumption();
+    await this.processParentRecords();
+    return await this.buildResult();
+  }
+
+  // Calculate API consumption
+  private async calculateApiConsumption() {
+    const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
+    uxLog(this, c.grey("Query: " + c.italic(countSoqlQuery)));
+    const countSoqlQueryRes = await this.conn.query(countSoqlQuery);
+    const estimatedApiCalls = countSoqlQueryRes.totalSize * 2;
+    this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used ? (this.conn as any).limitInfo.apiUsage.used - 1 : this.apiUsedBefore;
+    this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
+    // Check if there are enough API calls available
+    if (this.apiLimit - this.apiUsedBefore < estimatedApiCalls + 1000) {
+      throw new SfdxError(
+        `You don't have enough API calls available (${c.bold(this.apiLimit - this.apiUsedBefore)}) to perform this export that could consume ${c.bold(
+          estimatedApiCalls
+        )} API calls`
+      );
+    }
+    // Request user confirmation
+    if (!isCI) {
+      const warningMessage = c.yellow(
+        `This export of files could consume up to ${c.bold(estimatedApiCalls)} API calls on the ${
+          this.apiLimit
+        } remaining API calls. Do you want to proceed ?`
+      );
+      const promptRes = await prompts({ type: "confirm", message: warningMessage });
+      if (promptRes.value !== true) {
+        throw new SfdxError("Command cancelled by user");
       }
     }
+  }
+
+  private async processParentRecords() {
+    // Query parent records using SOQL defined in export.json file
+    uxLog(this, c.grey("Bulk query: " + c.italic(this.dtl.soqlQuery)));
+    this.totalSoqlRequests++;
+    this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
+    await new Promise((resolve) => {
+      this.conn.bulk
+        .query(this.dtl.soqlQuery)
+        .on("record", async (record) => {
+          this.totalParentRecords++;
+          const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, record[this.dtl.outputFolderNameField] || record.Id));
+          if (this.dtl.overwriteParentRecords !== true && fs.existsSync(parentRecordFolderForFiles)) {
+            uxLog(this, c.grey(`Skipped record - ${record[this.dtl.outputFolderNameField] || record.Id} - Record files already downloaded`));
+            this.recordsIgnored++;
+            return;
+          }
+          await this.addToRecordsChunk(record);
+        })
+        .on("error", (err) => {
+          throw new SfdxError(c.red("Bulk query error:" + err));
+        })
+        .on("end", () => {
+          resolve(true);
+        });
+    });
+
+    // Process last chunk
+    const lastRecordsToProcess = [...this.recordsChunk];
+    this.recordsChunk = [];
+    await this.processRecordsChunk(lastRecordsToProcess);
+
+    /*
+    await PromisePool.withConcurrency(10)
+      .for(records)
+      .process(async (record) => {
+        await this.processRecord(record);
+      });
+      */
+  }
+
+  private async addToRecordsChunk(record: any) {
+    this.recordsChunk.push(record);
+    // If chunk size is reached , process the chunk of records
+    if (this.recordsChunk.length === this.recordsChunkSize) {
+      const recordsToProcess = [...this.recordsChunk];
+      this.recordsChunk = [];
+      await this.processRecordsChunk(recordsToProcess);
+    }
+  }
+
+  private async processRecordsChunk(records: any[]) {
+    this.recordChunksNumber++;
+    uxLog(this, c.cyan("Processing parent records chunk #" + this.recordChunksNumber));
+    // Request all ContentDocumentLink related to all records of the chunk
+    const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(",");
+    const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
+    uxLog(this, c.grey("Query: " + c.italic(linkedEntityInQuery)));
+    const contentDocumentLinks = await this.conn.query(linkedEntityInQuery);
+    this.totalSoqlRequests++;
+
+    // Retrieve all ContentVersion related to ContentDocumentLink
+    const contentDocIdIn = contentDocumentLinks.records.map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`).join(",");
+    const contentVersionSoql = `SELECT ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,VersionData FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
+    uxLog(this, c.grey("Query: " + c.italic(contentVersionSoql)));
+    const contentVersions = await this.conn.query(contentVersionSoql);
+    this.totalSoqlRequests++;
+
+    // Download files
+    await PromisePool.withConcurrency(10)
+      .for(contentVersions.records)
+      .process(async (contentVersion) => {
+        await this.downloadContentVersionFile(contentVersion, records, contentDocumentLinks);
+      });
+  }
+
+  private async downloadContentVersionFile(contentVersion, records, contentDocumentLinks) {
+    // Retrieve initial record to build output files folder name
+    const contentDocumentLink = contentDocumentLinks.filter(
+      (contentDocumentLink) => contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId
+    )[0];
+    const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
+    const parentRecordFolderForFiles = path.resolve(
+      path.join(this.exportedFilesFolder, parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id)
+    );
+    const outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title);
+    // Check file extension
+    if (this.dtl.fileTypes !== "all" && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
+      uxLog(this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, "")} - File type ignored`));
+      this.filesIgnoredType++;
+      return;
+    }
+    // Check file overwrite
+    if (this.dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
+      uxLog(this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, "")} - File already existing`));
+      this.filesIgnoredExisting++;
+      return;
+    }
+    // Download file locally
+    const fetchUrl = this.conn.instanceUrl + contentVersion.VersionData;
+    try {
+      const fetchRes = await fetch(fetchUrl, this.fetchOptions);
+      fetchRes.body.pipe(fs.createWriteStream(outputFile));
+      uxLog(this, c.green(`Success - ${outputFile.replace(this.exportedFilesFolder, "")}`));
+      this.filesDownloaded++;
+    } catch (err) {
+      // Download failure
+      uxLog(this, c.red(`Error   - ${outputFile.replace(this.exportedFilesFolder, "")} - ${err}`));
+      this.filesErrors++;
+    }
+  }
+
+  // Build stats & result
+  private async buildResult() {
+    const connAny = this.conn as any;
+    const apiCallsRemaining = connAny?.limitInfo?.apiUsage?.used
+      ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
+      : null;
+    uxLog(this, c.cyan(`API limit: ${c.bold(connAny?.limitInfo?.apiUsage?.limit || null)}`));
+    uxLog(this, c.cyan(`API used before process: ${c.bold(this.apiUsedBefore)}`));
+    uxLog(this, c.cyan(`API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`));
+    uxLog(this, c.cyan(`API calls remaining for today: ${c.bold(apiCallsRemaining)}`));
+    uxLog(this, c.cyan(`Total SOQL requests: ${c.bold(this.totalSoqlRequests)}`));
+    uxLog(this, c.cyan(`Total parent records found: ${c.bold(this.totalParentRecords)}`));
+    uxLog(this, c.cyan(`Total parent records with files: ${c.bold(this.parentRecordsWithFiles)}`));
+    uxLog(this, c.cyan(`Total parent records ignored because already existing: ${c.bold(this.recordsIgnored)}`));
+    uxLog(this, c.cyan(`Total files downloaded: ${c.bold(this.filesDownloaded)}`));
+    uxLog(this, c.cyan(`Total file download errors: ${c.bold(this.filesErrors)}`));
+    uxLog(this, c.cyan(`Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`));
+    uxLog(this, c.cyan(`Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`));
+
+    return {
+      totalParentRecords: this.totalParentRecords,
+      parentRecordsWithFiles: this.parentRecordsWithFiles,
+      filesDownloaded: this.filesDownloaded,
+      filesErrors: this.filesErrors,
+      recordsIgnored: this.recordsIgnored,
+      filesIgnoredType: this.filesIgnoredType,
+      filesIgnoredExisting: this.filesIgnoredExisting,
+      apiLimit: connAny?.limitInfo?.apiUsage?.limit || null,
+      apiUsedBefore: this.apiUsedBefore,
+      apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
+      apiCallsRemaining,
+    };
   }
 }
 
@@ -204,20 +271,20 @@ export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please se
   return filesDirResult.value;
 }
 
-export async function getFilesWorkspaceDetail(dataWorkspace: string) {
-  const exportFile = path.join(dataWorkspace, "export.json");
+export async function getFilesWorkspaceDetail(filesWorkspace: string) {
+  const exportFile = path.join(filesWorkspace, "export.json");
   if (!fs.existsSync(exportFile)) {
-    uxLog(this, c.yellow(`Your File export folder ${c.bold(dataWorkspace)} must contain an ${c.bold("export.json")} configuration file`));
+    uxLog(this, c.yellow(`Your File export folder ${c.bold(filesWorkspace)} must contain an ${c.bold("export.json")} configuration file`));
     return null;
   }
   const exportFileJson = JSON.parse(await fs.readFile(exportFile, "utf8"));
-  const folderName = dataWorkspace.replace(/\\/g, "/").match(/([^/]*)\/*$/)[1];
+  const folderName = filesWorkspace.replace(/\\/g, "/").match(/([^/]*)\/*$/)[1];
   const hardisLabel = exportFileJson.sfdxHardisLabel || folderName;
-  const hardisDescription = exportFileJson.sfdxHardisDescription || dataWorkspace;
+  const hardisDescription = exportFileJson.sfdxHardisDescription || filesWorkspace;
   const soqlQuery = exportFileJson.soqlQuery || "";
   const fileTypes = exportFileJson.fileTypes || "all";
   const outputFolderNameField = exportFileJson.outputFolderNameField || "Name";
-  const overwriteParentRecords = exportFileJson.overwriteParentRecords || true;
+  const overwriteParentRecords = exportFileJson.overwriteParentRecords === false ? false : exportFileJson.overwriteParentRecords || true;
   const overwriteFiles = exportFileJson.overwriteFiles || false;
   return {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ""}`,
