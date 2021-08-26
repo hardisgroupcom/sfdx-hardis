@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.48.0] 2021-08-27
 
 - New command **hardis:org:files:export** to download all files (ContentVersion) attached to records (ex: Opportunity)
+- Generate text log file in hardis-report/commands when sfdx-hardis is not run from CI
 
 ## [2.47.3] 2021-08-23
 
