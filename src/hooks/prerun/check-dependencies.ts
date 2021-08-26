@@ -16,7 +16,7 @@ export const hook = async (options: any) => {
 
   // Set only once restDeploy=false to improve performances
   const config = await getConfig("user");
-  if (commandId.includes("deploy") || commandId.includes('scratch:create')) {
+  if (commandId.includes("deploy") || commandId.includes("scratch:create")) {
     if (config.restDeployDisabled !== true && !commandId.includes("configure")) {
       execSfdxJson("sfdx config:get restDeploy", {
         output: false,
