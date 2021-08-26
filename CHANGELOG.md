@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.48.0] 2021-08-27
+
+- New command **hardis:org:files:export** to download all files (ContentVersion) attached to records (ex: Opportunity)
+
 ## [2.47.3] 2021-08-23
 
 - hardis:org:diagnose:legacyapi: Add more summary and statistics

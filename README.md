@@ -450,7 +450,7 @@ USAGE
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
-  -c, --chunksize=chunksize                                                         [default: 500] Number of records to
+  -c, --chunksize=chunksize                                                         [default: 1000] Number of records to
                                                                                     add in a chunk before it is
                                                                                     processed
 
