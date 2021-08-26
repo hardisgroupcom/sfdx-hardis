@@ -5,7 +5,9 @@ import * as fs from "fs-extra";
 import * as fetch from "node-fetch";
 import * as path from "path";
 import { isCI, uxLog } from ".";
+import { CONSTANTS } from "../../config";
 import { prompts } from "./prompts";
+import { bulkQuery, soqlQuery } from "./queryUtils";
 
 export const filesFolderRoot = path.join(".", "scripts", "files");
 
@@ -20,6 +22,12 @@ export class FilesExporter {
   private dtl: any; // export config
   private exportedFilesFolder: string;
   private recordsChunk: any[] = [];
+
+  private recordsChunkQueue: any[] = [];
+  private recordsChunkQueueRunning = false;
+  private queueInterval: any;
+  private bulkApiRecordsEnded = false;
+
   private recordChunksNumber = 0;
 
   private totalSoqlRequests = 0;
@@ -59,16 +67,18 @@ export class FilesExporter {
     await fs.ensureDir(this.exportedFilesFolder);
 
     await this.calculateApiConsumption();
+    this.startQueue();
     await this.processParentRecords();
+    await this.queueCompleted();
     return await this.buildResult();
   }
 
   // Calculate API consumption
   private async calculateApiConsumption() {
     const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
-    uxLog(this, c.grey("Query: " + c.italic(countSoqlQuery)));
-    const countSoqlQueryRes = await this.conn.query(countSoqlQuery);
-    const estimatedApiCalls = Math.round((countSoqlQueryRes.totalSize / this.recordsChunkSize) * 2);
+    this.totalSoqlRequests++ ;
+    const countSoqlQueryRes = await soqlQuery(countSoqlQuery,this.conn);
+    const estimatedApiCalls = Math.round((countSoqlQueryRes.totalSize / this.recordsChunkSize) * 2) + 1;
     this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used ? (this.conn as any).limitInfo.apiUsage.used - 1 : this.apiUsedBefore;
     this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
     // Check if there are enough API calls available
@@ -81,10 +91,10 @@ export class FilesExporter {
     }
     // Request user confirmation
     if (!isCI) {
-      const warningMessage = c.yellow(
-        `This export of files could consume up to ${c.bold(estimatedApiCalls)} API calls on the ${
-          this.apiLimit
-        } remaining API calls. Do you want to proceed ?`
+      const warningMessage = c.cyanBright(
+        `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records and consume up to ${c.bold(
+          c.yellow(estimatedApiCalls)
+        )} API calls on the ${c.bold(c.yellow(this.apiLimit - this.apiUsedBefore))} remaining API calls. Do you want to proceed ?`
       );
       const promptRes = await prompts({ type: "confirm", message: warningMessage });
       if (promptRes.value !== true) {
@@ -93,38 +103,65 @@ export class FilesExporter {
     }
   }
 
+  // Run chunks one by one, and don't wait to have all the records fetched to start it
+  private startQueue() {
+    this.queueInterval = setInterval(async () => {
+      if (this.recordsChunkQueueRunning === false && this.recordsChunkQueue.length > 0) {
+        this.recordsChunkQueueRunning = true;
+        const recordChunk = this.recordsChunkQueue.shift();
+        await this.processRecordsChunk(recordChunk);
+        this.recordsChunkQueueRunning = false;
+        // Manage last chunk
+      } else if (this.bulkApiRecordsEnded === true && this.recordsChunkQueue.length === 0 && this.recordsChunk.length > 0) {
+        const recordsToProcess = [...this.recordsChunk];
+        this.recordsChunk = [];
+        this.recordsChunkQueue.push(recordsToProcess);
+      }
+    }, 1000);
+  }
+
+  // Wait for the queue to be completed
+  private async queueCompleted() {
+    await new Promise((resolve) => {
+      const completeCheckInterval = setInterval(async () => {
+        if (
+          this.bulkApiRecordsEnded === true &&
+          this.recordsChunkQueueRunning === false &&
+          this.recordsChunkQueue.length === 0 &&
+          this.recordsChunk.length === 0
+        ) {
+          clearInterval(completeCheckInterval);
+          resolve(true);
+        }
+      }, 1000);
+    });
+    clearInterval(this.queueInterval);
+    this.queueInterval = null;
+  }
+
   private async processParentRecords() {
     // Query parent records using SOQL defined in export.json file
     uxLog(this, c.grey("Bulk query: " + c.italic(this.dtl.soqlQuery)));
     this.totalSoqlRequests++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
-    await new Promise((resolve) => {
-      this.conn.bulk
-        .query(this.dtl.soqlQuery)
-        .on("record", async (record) => {
-          this.totalParentRecords++;
-          const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, record[this.dtl.outputFolderNameField] || record.Id));
-          if (this.dtl.overwriteParentRecords !== true && fs.existsSync(parentRecordFolderForFiles)) {
-            uxLog(this, c.grey(`Skipped record - ${record[this.dtl.outputFolderNameField] || record.Id} - Record files already downloaded`));
-            this.recordsIgnored++;
-            return;
-          }
-          await this.addToRecordsChunk(record);
-        })
-        .on("error", (err) => {
-          throw new SfdxError(c.red("Bulk query error:" + err));
-        })
-        .on("end", () => {
-          resolve(true);
-        });
-    });
-
-    // Process last chunk
-    const lastRecordsToProcess = [...this.recordsChunk];
-    this.recordsChunk = [];
-    if (lastRecordsToProcess.length > 0) {
-      await this.processRecordsChunk(lastRecordsToProcess);
-    }
+    await this.conn.bulk
+      .query(this.dtl.soqlQuery)
+      .on("record", async (record) => {
+        this.totalParentRecords++;
+        const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, record[this.dtl.outputFolderNameField] || record.Id));
+        if (this.dtl.overwriteParentRecords !== true && fs.existsSync(parentRecordFolderForFiles)) {
+          uxLog(this, c.grey(`Skipped record - ${record[this.dtl.outputFolderNameField] || record.Id} - Record files already downloaded`));
+          this.recordsIgnored++;
+          return;
+        }
+        await this.addToRecordsChunk(record);
+      })
+      .on("error", (err) => {
+        throw new SfdxError(c.red("Bulk query error:" + err));
+      })
+      .on("end", () => {
+        this.bulkApiRecordsEnded = true;
+      });
   }
 
   private async addToRecordsChunk(record: any) {
@@ -133,33 +170,31 @@ export class FilesExporter {
     if (this.recordsChunk.length === this.recordsChunkSize) {
       const recordsToProcess = [...this.recordsChunk];
       this.recordsChunk = [];
-      await this.processRecordsChunk(recordsToProcess);
+      this.recordsChunkQueue.push(recordsToProcess);
     }
   }
 
   private async processRecordsChunk(records: any[]) {
     this.recordChunksNumber++;
-    uxLog(this, c.cyan("Processing parent records chunk #" + this.recordChunksNumber));
+    uxLog(this, c.cyan(`Processing parent records chunk #${this.recordChunksNumber} (${records.length} records) ...`));
     // Request all ContentDocumentLink related to all records of the chunk
     const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(",");
     const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
-    uxLog(this, c.grey("Query: " + c.italic(linkedEntityInQuery)));
-    const contentDocumentLinks = await this.conn.query(linkedEntityInQuery);
-    this.totalSoqlRequests++;
+    this.totalSoqlRequests++ ;
+    const contentDocumentLinks = await bulkQuery(linkedEntityInQuery,this.conn);
     if (contentDocumentLinks.records.length === 0) {
-      uxLog(this, c.grey("Nothing to process in this chunk"));
+      uxLog(this, c.grey("No ContentDocumentLinks found for the parent records in this chunk"));
       return;
     }
 
     // Retrieve all ContentVersion related to ContentDocumentLink
     const contentDocIdIn = contentDocumentLinks.records.map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`).join(",");
-    const contentVersionSoql = `SELECT ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,VersionData FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
-    uxLog(this, c.grey("Query: " + c.italic(contentVersionSoql)));
-    const contentVersions = await this.conn.query(contentVersionSoql);
-    this.totalSoqlRequests++;
+    const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
+    this.totalSoqlRequests++ ;
+    const contentVersions = await bulkQuery(contentVersionSoql,this.conn);
 
     // Download files
-    await PromisePool.withConcurrency(10)
+    await PromisePool.withConcurrency(5)
       .for(contentVersions.records)
       .process(async (contentVersion: any) => {
         try {
@@ -197,7 +232,7 @@ export class FilesExporter {
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
-    const fetchUrl = this.conn.instanceUrl + contentVersion.VersionData;
+    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}.0/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     try {
       const fetchRes = await fetch(fetchUrl, this.fetchOptions);
       fetchRes.body.pipe(fs.createWriteStream(outputFile));
@@ -243,6 +278,7 @@ export class FilesExporter {
       apiCallsRemaining,
     };
   }
+
 }
 
 export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please select a files folder to export" }) {

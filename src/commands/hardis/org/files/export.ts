@@ -29,7 +29,7 @@ export default class FilesExport extends SfdxCommand {
     chunksize: flags.number({
       char: "c",
       description: "Number of records to add in a chunk before it is processed",
-      default: 5000
+      default: 1000
     }),
     polltimeout: flags.number({
       char: "t",
@@ -60,7 +60,7 @@ export default class FilesExport extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     let filesPath = this.flags.path || null;
     const recordsChunkSize = this.flags.chunksize;
-    const pollTimeout = this.flags.polltimeout || 300000 ;
+    const pollTimeout = this.flags.polltimeout ;
     //const debugMode = this.flags.debug || false;
 
     // Identify files workspace if not defined
