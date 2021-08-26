@@ -19,7 +19,7 @@ export class FilesExporter {
   private commandThis: any;
 
   private fetchOptions: any;
-  private dtl: any; // export config
+  private dtl: any = null; // export config
   private exportedFilesFolder: string;
   private recordsChunk: any[] = [];
 
@@ -41,12 +41,20 @@ export class FilesExporter {
   private apiUsedBefore = null;
   private apiLimit = null;
 
-  constructor(filesPath: string, conn: Connection, options: { pollTimeout?: number; recordsChunkSize?: number }, commandThis: any) {
+  constructor(
+    filesPath: string,
+    conn: Connection,
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any },
+    commandThis: any
+  ) {
     this.filesPath = filesPath;
     this.conn = conn;
     this.pollTimeout = options?.pollTimeout || 300000;
     this.recordsChunkSize = options?.recordsChunkSize || 5000;
     this.commandThis = commandThis;
+    if (options.exportConfig) {
+      this.dtl = options.exportConfig;
+    }
     // Build fetch options for HTTP calls to retrieve document files
     this.fetchOptions = {
       method: "GET",
@@ -59,7 +67,9 @@ export class FilesExporter {
 
   async processExport() {
     // Get config
-    this.dtl = await getFilesWorkspaceDetail(this.filesPath);
+    if (this.dtl === null) {
+      this.dtl = await getFilesWorkspaceDetail(this.filesPath);
+    }
     uxLog(this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
     uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
     // Make sure export folder for files is existing
@@ -76,8 +86,8 @@ export class FilesExporter {
   // Calculate API consumption
   private async calculateApiConsumption() {
     const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
-    this.totalSoqlRequests++ ;
-    const countSoqlQueryRes = await soqlQuery(countSoqlQuery,this.conn);
+    this.totalSoqlRequests++;
+    const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
     const estimatedApiCalls = Math.round((countSoqlQueryRes.totalSize / this.recordsChunkSize) * 2) + 1;
     this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used ? (this.conn as any).limitInfo.apiUsage.used - 1 : this.apiUsedBefore;
     this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
@@ -180,8 +190,8 @@ export class FilesExporter {
     // Request all ContentDocumentLink related to all records of the chunk
     const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(",");
     const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
-    this.totalSoqlRequests++ ;
-    const contentDocumentLinks = await bulkQuery(linkedEntityInQuery,this.conn);
+    this.totalSoqlRequests++;
+    const contentDocumentLinks = await bulkQuery(linkedEntityInQuery, this.conn);
     if (contentDocumentLinks.records.length === 0) {
       uxLog(this, c.grey("No ContentDocumentLinks found for the parent records in this chunk"));
       return;
@@ -190,8 +200,8 @@ export class FilesExporter {
     // Retrieve all ContentVersion related to ContentDocumentLink
     const contentDocIdIn = contentDocumentLinks.records.map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`).join(",");
     const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
-    this.totalSoqlRequests++ ;
-    const contentVersions = await bulkQuery(contentVersionSoql,this.conn);
+    this.totalSoqlRequests++;
+    const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
 
     // Download files
     await PromisePool.withConcurrency(5)
@@ -278,7 +288,6 @@ export class FilesExporter {
       apiCallsRemaining,
     };
   }
-
 }
 
 export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please select a files folder to export" }) {
@@ -338,4 +347,65 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
     overwriteParentRecords: overwriteParentRecords,
     overwriteFiles: overwriteFiles,
   };
+}
+
+export async function promptFilesExportConfiguration(filesExportConfig: any, override = false) {
+  const questions = [];
+  if (override === false) {
+    questions.push(
+      ...[
+        {
+          type: "text",
+          name: "sfdxHardisLabel",
+          message: "Please input a label of the files export configuration",
+          initial: filesExportConfig.sfdxHardisLabel,
+        },
+        {
+          type: "text",
+          name: "sfdxHardisDescription",
+          message: "Please input a description of the files export configuration",
+          initial: filesExportConfig.sfdxHardisDescription,
+        },
+      ]
+    );
+  }
+  questions.push(
+    ...[
+      {
+        type: "text",
+        name: "soqlQuery",
+        message: "Please input the main SOQL Query to fetch the parent records of files (ContentVersions). Ex: SELECT Id,Name from Opportunity",
+        initial: filesExportConfig.soqlQuery,
+      },
+      {
+        type: "text",
+        name: "outputFolderNameField",
+        message: "Please input the field to use to build the name of the folder containing downloaded files",
+        initial: filesExportConfig.outputFolderNameField,
+      },
+      {
+        type: "confirm",
+        name: "overwriteParentRecords",
+        message: "Do you want to try to download files attached to a parent records whose folder is already existing in local folders ?",
+        initial: filesExportConfig.outputFolderNameField,
+      },
+      {
+        type: "confirm",
+        name: "overwriteFiles",
+        message: "Do you want to overwrite file that has already been previously downloaded ?",
+        initial: filesExportConfig.outputFolderNameField,
+      },
+    ]
+  );
+
+  const resp = await prompts(questions);
+  const filesConfig = Object.assign(filesExportConfig, {
+    sfdxHardisLabel: resp.sfdxHardisLabel || filesExportConfig.sfdxHardisLabel,
+    sfdxHardisDescription: resp.sfdxHardisDescription || filesExportConfig.sfdxHardisDescription,
+    soqlQuery: resp.soqlQuery,
+    outputFolderNameField: resp.outputFolderNameField,
+    overwriteParentRecords: resp.overwriteParentRecords,
+    overwriteFiles: resp.overwriteFiles,
+  });
+  return filesConfig;
 }

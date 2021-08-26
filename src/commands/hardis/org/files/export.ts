@@ -4,8 +4,8 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { uxLog } from "../../../../common/utils";
-import { FilesExporter, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
-
+import { FilesExporter, getFilesWorkspaceDetail, promptFilesExportConfiguration, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
+import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -29,12 +29,12 @@ export default class FilesExport extends SfdxCommand {
     chunksize: flags.number({
       char: "c",
       description: "Number of records to add in a chunk before it is processed",
-      default: 1000
+      default: 1000,
     }),
     polltimeout: flags.number({
       char: "t",
       description: "Timeout in MS for Bulk API calls",
-      default: 300000
+      default: 300000,
     }),
     debug: flags.boolean({
       char: "d",
@@ -60,17 +60,29 @@ export default class FilesExport extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     let filesPath = this.flags.path || null;
     const recordsChunkSize = this.flags.chunksize;
-    const pollTimeout = this.flags.polltimeout ;
+    const pollTimeout = this.flags.polltimeout;
     //const debugMode = this.flags.debug || false;
+
+    const exportOptions: any = { pollTimeout: pollTimeout, recordsChunkSize: recordsChunkSize };
 
     // Identify files workspace if not defined
     if (filesPath == null) {
       filesPath = await selectFilesWorkspace({ selectFilesLabel: "Please select a files workspace to EXPORT" });
+      const exportConfigInitial = await getFilesWorkspaceDetail(filesPath);
+      // Request to use defaut config or to override it for this run
+      const defaultConfigRes = await prompts({
+        type: "confirm",
+        message: c.cyanBright("Do you want to use default configuration for " + exportConfigInitial.label + " ?"),
+      });
+      if (defaultConfigRes.value !== true) {
+        const exportConfig = await promptFilesExportConfiguration(exportConfigInitial,true);
+        exportOptions.exportConfig = exportConfig;
+      }
     }
 
     // Export files from org
-    const exportOptions = { pollTimeout: pollTimeout, recordsChunkSize: recordsChunkSize};
-    const exportResult = await new FilesExporter(filesPath, this.org.getConnection(), exportOptions,this).processExport();
+
+    const exportResult = await new FilesExporter(filesPath, this.org.getConnection(), exportOptions, this).processExport();
 
     // Output message
     const message = `Successfully exported files from project ${c.green(filesPath)} from org ${c.green(this.org.getUsername())}`;

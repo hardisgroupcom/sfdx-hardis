@@ -4,6 +4,10 @@ import { elapseEnd, isGitRepo } from "../../common/utils";
 import { getConfig } from "../../config";
 
 export const hook = async (options: any) => {
+  if (globalThis.hardisLogFileStream) {
+    globalThis.hardisLogFileStream.end();
+  }
+
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || "";
   if (!commandId.startsWith("hardis")) {
