@@ -6,6 +6,7 @@ import { getConfig } from "../../config";
 export const hook = async (options: any) => {
   if (globalThis.hardisLogFileStream) {
     globalThis.hardisLogFileStream.end();
+    globalThis.hardisLogFileStream = null ;
   }
 
   // Skip hooks from other commands than hardis commands

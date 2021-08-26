@@ -12,7 +12,8 @@ export const hook = async (options: any) => {
   await fs.ensureDir(reportsDir);
   const commandsLogFolder = path.join(reportsDir, "commands");
   await fs.ensureDir(commandsLogFolder);
-  const logFileName = new Date().toUTCString() + "-" + commandId;
-  const hardisLogFile = path.join(commandsLogFolder, logFileName);
+  const logFileName = (new Date().toJSON().slice(0, 19) + "-" + commandId + ".log").replace(/:/g, "-");
+  const hardisLogFile = path.resolve(path.join(commandsLogFolder, logFileName));
   globalThis.hardisLogFileStream = fs.createWriteStream(hardisLogFile, { flags: "a" });
+  globalThis.hardisLogFileStream.write(process.argv.join(" "));
 };
