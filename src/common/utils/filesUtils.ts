@@ -242,9 +242,12 @@ export class FilesExporter {
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
-    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}.0/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     try {
       const fetchRes = await fetch(fetchUrl, this.fetchOptions);
+      if (fetchRes.ok !== true) {
+        throw new SfdxError(`Fetch error - ${fetchUrl} - + ${fetchRes.body}`);
+      }
       fetchRes.body.pipe(fs.createWriteStream(outputFile));
       uxLog(this, c.green(`Success - ${outputFile.replace(this.exportedFilesFolder, "")}`));
       this.filesDownloaded++;
