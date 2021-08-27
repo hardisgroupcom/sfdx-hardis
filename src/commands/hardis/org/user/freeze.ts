@@ -77,7 +77,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     //const profiles = await promptProfiles(this.org.getConnection(),{multiselect: true, initialSelection: ["System Administrator","Administrateur Système"], message: 'Please select the profiles that will NOT be frozen'});
     const exceptFilter = this.flags.except
       ? this.flags.except.split(',')
-      : ['System Administrator'];
+      : ['System Administrator','Administrateur système'];
     const nameFilter = this.flags.name || null;
     //const debugMode = this.flags.debug || false;
 
@@ -95,13 +95,23 @@ export default class OrgUnfreezeUser extends SfdxCommand {
    let userList;
    const userIdList=[];
    const conn = this.org.getConnection();
-   await conn.query(queryUser, null,function(err:any, result:any) {
-    if (err) { return console.log(err); }
-    console.log("total freeze: " + result.totalSize);
-    console.log("fetched freeze: " + result.records.length);
-    console.log("records freeze: " + JSON.stringify(result.records));
+   try {
+    const result = await conn.query(queryUser, null, null);
+    uxLog(this, "total freeze: " + result.totalSize);
+    uxLog(this, "fetched freeze: " + result.records.length);
+    uxLog(this, "records freeze: " + JSON.stringify(result.records));
     userList = result.records;
-   });
+  } catch (e) {
+    uxLog(this, e);
+    return;
+  }
+      /*function(err:any, result:any) {
+    if (err) { return uxLog(this,err); }
+    uxLog(this,"total freeze: " + result.totalSize);
+    uxLog(this,"fetched freeze: " + result.records.length);
+    uxLog(this,"records freeze: " + JSON.stringify(result.records));
+    userList = result.records;
+   }); */
 
     if(userList.length>0){
       for (const record of userList) {
@@ -109,15 +119,15 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       }  
       try{ 
       const resultfreeze = await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,null);
-      console.log(JSON.stringify(resultfreeze));
+      uxLog(this,JSON.stringify(resultfreeze));
       userlistrawFreeze = resultfreeze.records;
       } catch(e){
-        console.log(e);
+        uxLog(this,e);
         return;
       }
     }
 
-    console.log("userlistrawFreeze : " + JSON.stringify(userlistrawFreeze));
+    uxLog(this,"userlistrawFreeze : " + JSON.stringify(userlistrawFreeze));
     // Check empty result
     if (!userlistrawFreeze || userlistrawFreeze.length === 0) {
       const outputString = ` No matching user records found for all profile  except ${exceptFilter}`;
@@ -135,7 +145,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       ` Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist.splice(0,500)))}`
     );
 
-    userlistrawFreeze = [];
+    const userlistFreezeResult = [];
     const confirmfreeze = await prompts({
       type: "confirm",
       name: "value",
@@ -152,10 +162,18 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         delete freezerecord.UserId;
       }
 
-      console.log('userList '+JSON.stringify(userList));
+      uxLog(this,'userList '+JSON.stringify(userList));
       try {
-        const ret = await conn.sobject("UserLogin").update(userList, null);
-        console.log('Updated Successfully : ' + JSON.stringify(ret));
+        const retList : any[]= await (conn as any).sobject("UserLogin").update(userList, null);
+        uxLog(this,'result : ' + JSON.stringify(retList));
+        for (const result of retList){
+          for (const userrawFreeze of userlistrawFreeze){
+            if(result.id ==  userrawFreeze.Id && result.success){
+              userlistFreezeResult.push(userrawFreeze);
+              break;
+            }
+          }
+        }
       } catch (error) {
         console.error(error, JSON.stringify(error));
         return;
@@ -163,12 +181,12 @@ export default class OrgUnfreezeUser extends SfdxCommand {
      
 
     }
-    if (userlistrawFreeze.length === 0) {
+    if (userlistFreezeResult.length === 0) {
       const outputString  = ` No user has been frozen`;
       uxLog(this,c.green(outputString));
       return { userlist: [], outputString }; 
     }else{
-        userlist = userlistrawFreeze.map((record: any) => {
+        userlist = userlistFreezeResult.map((record: any) => {
           return {
             Name: record.Name,
             Profile: record.Profile.Name

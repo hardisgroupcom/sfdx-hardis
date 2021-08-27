@@ -68,7 +68,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const exceptFilter = this.flags.except ? this.flags.except.split(",") : ["System Administrator"];
+    const exceptFilter = this.flags.except ? this.flags.except.split(",") : ["System Administrator",'Administrateur système'];
     const nameFilter = this.flags.name || null;
 
 
@@ -86,10 +86,10 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     const userIdList=[];
     const conn = this.org.getConnection();
     await conn.query(queryUserUnfreeze, null,function(err:any, resultunfreeze:any) {
-     if (err) { return console.log(err); }
-     console.log("total unfreeze : " + resultunfreeze.totalSize);
-     console.log("fetched unfreeze: " + resultunfreeze.records.length);
-     console.log("records unfreeze: " + JSON.stringify(resultunfreeze.records));
+     if (err) { return uxLog(this,err); }
+     uxLog(this,"total unfreeze : " + resultunfreeze.totalSize);
+     uxLog(this,"fetched unfreeze: " + resultunfreeze.records.length);
+     uxLog(this,"records unfreeze: " + JSON.stringify(resultunfreeze.records));
      userListUnfreeze = resultunfreeze.records;
     });
  
@@ -99,15 +99,15 @@ export default class OrgUnfreezeUser extends SfdxCommand {
        }
        try{
         const resultunfreeze = await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,null);
-        console.log(JSON.stringify(resultunfreeze));
+        uxLog(this,JSON.stringify(resultunfreeze));
         userlistrawUnfreeze = resultunfreeze.records;
         } catch(e){
-          console.log(e);
+          uxLog(this,e);
           return;
         } 
      }
  
-     console.log("userlistrawunFreeze : " + JSON.stringify(userlistrawUnfreeze));
+     uxLog(this,"userlistrawunFreeze : " + JSON.stringify(userlistrawUnfreeze));
 
     // Check empty result
     if (!userlistrawUnfreeze || userlistrawUnfreeze.length === 0) {
@@ -124,7 +124,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     });
     uxLog(this, `Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist.splice(0, 500)))}`);
 
-    userlistrawUnfreeze = [];
+    const userlistrawUnfreezeResult = [];
     const confirmUnfreeze = await prompts({
       type: "confirm",
       name: "value",
@@ -138,22 +138,30 @@ export default class OrgUnfreezeUser extends SfdxCommand {
           unfreezeRecord.IsFrozen = false;
           delete unfreezeRecord.UserId;
         }
-        console.log('userListUnfreeze '+JSON.stringify(userListUnfreeze));
+        uxLog(this,'userListUnfreeze '+JSON.stringify(userListUnfreeze));
         try {
-          const ret = await conn.sobject("UserLogin").update(userListUnfreeze, null);
-          console.log('Updated Successfully : ' + JSON.stringify(ret));
+          const retList :any[] = await (conn as any).sobject("UserLogin").update(userListUnfreeze, null);
+          uxLog(this,'result : ' + JSON.stringify(retList));
+          for (const result of retList){
+            for (const userrawFreeze of userlistrawUnfreeze){
+              if(result.id ==  userrawFreeze.Id && result.success){
+                userlistrawUnfreezeResult.push(userrawFreeze);
+                break;
+              }
+            }
+          }
         } catch (error) {
           console.error(error, JSON.stringify(error));
           return;
         }
       }
 
-      if (userlistrawUnfreeze.length === 0) {
+      if (userlistrawUnfreezeResult.length === 0) {
         const outputString = ` No user has been unfrozen`;
         uxLog(this, c.green(outputString));
         return { deleted: [], outputString };
       } else {
-        userlist = userlistrawUnfreeze.map((record: any) => {
+        userlist = userlistrawUnfreezeResult.map((record: any) => {
           return {
             Name: record.Name,
             Profile: record.Profile.Name,
