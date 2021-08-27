@@ -50,7 +50,7 @@ export class FilesExporter {
     this.filesPath = filesPath;
     this.conn = conn;
     this.pollTimeout = options?.pollTimeout || 300000;
-    this.recordsChunkSize = options?.recordsChunkSize || 5000;
+    this.recordsChunkSize = options?.recordsChunkSize || 1000;
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
