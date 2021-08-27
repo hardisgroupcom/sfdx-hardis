@@ -12,6 +12,7 @@
     "@salesforce/command": "^3.1.0",
     "@salesforce/core": "^2.20.5",
     "@salesforce/ts-sinon": "^1.2.4",
+    "@supercharge/promise-pool": "^1.7.0",
     "@types/mocha": "^8.2.1",
     "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.17.0",
@@ -34,6 +35,7 @@
     "mega-linter-runner": "^4.39.0",
     "moment": "^2.29.1",
     "ms-teams-webhook": "^1.0.4",
+    "node-fetch": "^2.6.1",
     "open": "^8.0.2",
     "ora": "^5.3.0",
     "papaparse": "^5.3.1",
@@ -88,6 +90,7 @@
     "bin": "sfdx",
     "hooks": {
       "init": [
+        "./lib/hooks/init/log",
         "./lib/hooks/init/check-upgrade",
         "./lib/hooks/init/check-local-sfdx-hardis-files",
         "./lib/hooks/init/start-ws-client"

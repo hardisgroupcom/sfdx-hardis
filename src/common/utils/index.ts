@@ -6,6 +6,7 @@ import * as csvStringify from "csv-stringify/lib/sync";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
+import stripAnsi = require("strip-ansi");
 import * as util from "util";
 import * as which from "which";
 import * as xml2js from "xml2js";
@@ -800,6 +801,9 @@ export function uxLog(commandThis: any, text: string) {
     commandThis.ux.log(text);
   } else if (!process.argv.includes("--json")) {
     console.log(text);
+  }
+  if (globalThis.hardisLogFileStream) {
+    globalThis.hardisLogFileStream.write(stripAnsi(text) + "\n");
   }
 }
 
