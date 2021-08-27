@@ -356,14 +356,19 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
       ...[
         {
           type: "text",
+          name: "filesExportPath",
+          message: c.cyanBright('Please input the files export config folder name (PascalCase format). Ex: "OpportunitiesPDF"'),
+        },
+        {
+          type: "text",
           name: "sfdxHardisLabel",
-          message: "Please input a label of the files export configuration",
+          message: c.cyanBright("Please input a label of the files export configuration"),
           initial: filesExportConfig.sfdxHardisLabel,
         },
         {
           type: "text",
           name: "sfdxHardisDescription",
-          message: "Please input a description of the files export configuration",
+          message: c.cyanBright("Please input a description of the files export configuration"),
           initial: filesExportConfig.sfdxHardisDescription,
         },
       ]
@@ -400,6 +405,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
 
   const resp = await prompts(questions);
   const filesConfig = Object.assign(filesExportConfig, {
+    filesExportPath: resp.filesExportPath,
     sfdxHardisLabel: resp.sfdxHardisLabel || filesExportConfig.sfdxHardisLabel,
     sfdxHardisDescription: resp.sfdxHardisDescription || filesExportConfig.sfdxHardisDescription,
     soqlQuery: resp.soqlQuery,
