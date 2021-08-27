@@ -164,9 +164,9 @@ export default class LegacyApi extends SfdxCommand {
         delete stat.apiResources;
         return stat;
       });
-      uxLog(this, "");
-      uxLog(this, c.cyan("Statistics:"));
-      console.table(this.statistics);
+      // uxLog(this, "");
+      // uxLog(this, c.cyan("Statistics:"));
+      // console.table(this.statistics);
     } catch (e) {
       uxLog(this, c.yellow("Error while building statistics.\n") + c.grey(e.msg + "\n" + e.stack));
     }

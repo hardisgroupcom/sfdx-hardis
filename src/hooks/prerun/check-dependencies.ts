@@ -10,26 +10,28 @@ export const hook = async (options: any) => {
   if (!commandId.startsWith("hardis")) {
     return;
   }
-  if (commandId.startsWith("hardis:doc")) {
+  if (commandId.startsWith("hardis:doc") || commandId.startsWith("hardis:org:files") || commandId.startsWith("hardis:org:data")) {
     return;
   }
 
   // Set only once restDeploy=false to improve performances
   const config = await getConfig("user");
-  if (config.restDeployDisabled !== true && !commandId.includes("configure")) {
-    execSfdxJson("sfdx config:get restDeploy", {
-      output: false,
-      fail: true,
-      spinner: false,
-    }).then(async (res) => {
-      if (!(res && res.result && res.result[0] && res.result[0].value === "false")) {
-        await execCommand("sfdx config:set restDeploy=false --global", {
-          output: false,
-          fail: true,
-        });
-      }
-      await setConfig("user", { restDeployDisabled: true });
-    });
+  if (commandId.includes("deploy") || commandId.includes("scratch:create")) {
+    if (config.restDeployDisabled !== true && !commandId.includes("configure")) {
+      execSfdxJson("sfdx config:get restDeploy", {
+        output: false,
+        fail: true,
+        spinner: false,
+      }).then(async (res) => {
+        if (!(res && res.result && res.result[0] && res.result[0].value === "false")) {
+          await execCommand("sfdx config:set restDeploy=false --global", {
+            output: false,
+            fail: true,
+          });
+        }
+        await setConfig("user", { restDeployDisabled: true });
+      });
+    }
   }
 
   /* jscpd:ignore-end */
