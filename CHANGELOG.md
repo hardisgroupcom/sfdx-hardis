@@ -8,6 +8,16 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Initialize configuration with hardis:scratch:pool:configure
   - Fetch a new scratch org from the pool when requesting creation of a new scratch org
 
+## [2.48.1] 2021-08-27
+
+- QuickFix hardis:org:files:export
+
+## [2.48.0] 2021-08-27
+
+- New command **hardis:org:files:export** to download all files (ContentVersion) attached to records (ex: Opportunity)
+- Generate text log file in hardis-report/commands when sfdx-hardis is not run from CI
+- hardis:org:diagnose:legacyapi : simpler logs
+
 ## [2.47.3] 2021-08-23
 
 - hardis:org:diagnose:legacyapi: Add more summary and statistics
