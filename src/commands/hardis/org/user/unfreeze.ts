@@ -94,14 +94,17 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     });
  
      if(userListUnfreeze.length>0){
-       await userListUnfreeze.forEach(function (record :any){
-         userIdList.push('\''+record.UserId+'\'');
-       });
-     await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,function(err:any, resultunfreeze:any) {
-         if (err) { return console.log(err); }
-         userlistrawUnfreeze = resultunfreeze.records;
-       });
- 
+       for(const record of userListUnfreeze){
+        userIdList.push('\''+record.UserId+'\'');
+       }
+       try{
+        const resultunfreeze = await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,null);
+        console.log(JSON.stringify(resultunfreeze));
+        userlistrawUnfreeze = resultunfreeze.records;
+        } catch(e){
+          console.log(e);
+          return;
+        } 
      }
  
      console.log("userlistrawunFreeze : " + JSON.stringify(userlistrawUnfreeze));
@@ -131,16 +134,18 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     });
     if (confirmUnfreeze.value === true) {
       {
-        await userListUnfreeze.forEach(function (unfreezeRecord :any){
+        for (const unfreezeRecord of userListUnfreeze) {
           unfreezeRecord.IsFrozen = false;
           delete unfreezeRecord.UserId;
-        });
+        }
         console.log('userListUnfreeze '+JSON.stringify(userListUnfreeze));
-        await conn.sobject("UserLogin").update(userListUnfreeze, function(err, ret) {
-          if (err || !ret.success) { return console.error(err, ret); }
+        try {
+          const ret = await conn.sobject("UserLogin").update(userListUnfreeze, null);
           console.log('Updated Successfully : ' + JSON.stringify(ret));
-  
-        });
+        } catch (error) {
+          console.error(error, JSON.stringify(error));
+          return;
+        }
       }
 
       if (userlistrawUnfreeze.length === 0) {

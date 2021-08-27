@@ -104,14 +104,17 @@ export default class OrgUnfreezeUser extends SfdxCommand {
    });
 
     if(userList.length>0){
-      await userList.forEach(function (record :any){
+      for (const record of userList) {
         userIdList.push('\''+record.UserId+'\'');
-      });
-    await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,function(err:any, resultfreeze:any) {
-        if (err) { return console.log(err); }
-        userlistrawFreeze = resultfreeze.records;
-      });
-
+      }  
+      try{ 
+      const resultfreeze = await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,null);
+      console.log(JSON.stringify(resultfreeze));
+      userlistrawFreeze = resultfreeze.records;
+      } catch(e){
+        console.log(e);
+        return;
+      }
     }
 
     console.log("userlistrawFreeze : " + JSON.stringify(userlistrawFreeze));
@@ -119,7 +122,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     if (!userlistrawFreeze || userlistrawFreeze.length === 0) {
       const outputString = ` No matching user records found for all profile  except ${exceptFilter}`;
       uxLog(this,c.yellow(outputString));
-      return { deleted: [], outputString };
+      return { deleted: [], outputString }; 
     }
 
     let userlist = userlistrawFreeze.map((record: any) => {
@@ -144,17 +147,20 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       ),
     });
     if (confirmfreeze.value === true) {
-
-      await userList.forEach(function (freezerecord :any){
+      for (const freezerecord of userList) {
         freezerecord.IsFrozen = true;
         delete freezerecord.UserId;
-      });
-      console.log('userList '+JSON.stringify(userList));
-      await conn.sobject("UserLogin").update(userList, function(err, ret) {
-        if (err || !ret.success) { return console.error(err, JSON.stringify(ret)); }
-        console.log('Updated Successfully : ' + JSON.stringify(ret));
+      }
 
-      });
+      console.log('userList '+JSON.stringify(userList));
+      try {
+        const ret = await conn.sobject("UserLogin").update(userList, null);
+        console.log('Updated Successfully : ' + JSON.stringify(ret));
+      } catch (error) {
+        console.error(error, JSON.stringify(error));
+        return;
+      }
+     
 
     }
     if (userlistrawFreeze.length === 0) {
