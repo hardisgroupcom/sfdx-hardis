@@ -9,7 +9,7 @@ import { prompts } from "../utils/prompts";
 
 export class RedisProvider implements KeyValueProviderInterface {
   name = "redis";
-  description = "redis external service (redis secure db authentication): Recommended";
+  description = "redis external service (redis secure db authentication)";
   keyv = null;
   redisKey = null;
   authError = false;
