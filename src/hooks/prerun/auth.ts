@@ -65,23 +65,16 @@ export const hook = async (options: any) => {
   }
 };
 
-// Authorize an org manually or with JWT
+// Authorize an org with sfdxAuthUrl, manually or with JWT
 async function authOrg(orgAlias: string, options: any) {
-  // Manage auth with sfdxAuthUrl (CI & scratch org only)
-  if ((orgAlias || "").startsWith("force://")) {
-    const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
-    await fs.writeFile(authFile, orgAlias, "utf8");
-    await execCommand(`sfdx auth:sfdxurl:store -f ${authFile} --setdefaultusername`, this, { fail: true, output: false });
-    await fs.remove(authFile);
-    return;
-  }
   const isDevHub = orgAlias.includes("DevHub");
+
   let doConnect = true;
   if (!options.checkAuth) {
     // Check if we are already authenticated
     let orgDisplayCommand = "sfdx force:org:display";
     let setDefaultUsername = false;
-    if (orgAlias !== "MY_ORG" && (isCI || isDevHub)) {
+    if (orgAlias !== "MY_ORG" && (isCI || isDevHub) && !orgAlias.includes("force://")) {
       orgDisplayCommand += " --targetusername " + orgAlias;
       setDefaultUsername = true;
     } else {
@@ -105,16 +98,18 @@ async function authOrg(orgAlias: string, options: any) {
         (isDevHub && orgInfoResult.result.id != null))
     ) {
       // Set as default username or devhubusername
-      console.log(
+      uxLog(
+        this,
         `[sfdx-hardis] You are already ${c.green("connected")} to org ${c.green(
           orgInfoResult.result.alias || orgInfoResult.result.username
         )}: ${c.green(orgInfoResult.result.instanceUrl)}`
       );
       if (orgInfoResult.result.expirationDate) {
-        console.log(c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
+        uxLog(this, c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
       }
       if (!isCI) {
-        console.log(
+        uxLog(
+          this,
           c.yellow(
             c.italic(
               `[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold("hit CTRL+C"))}, then input ${c.whiteBright(
@@ -137,6 +132,27 @@ async function authOrg(orgAlias: string, options: any) {
   if (doConnect) {
     let logged = false;
     const config = await getConfig("user");
+
+    // Manage auth with sfdxAuthUrl (CI & scratch org only)
+    const authUrlVarName = `SFDX_AUTH_URL_${orgAlias}`;
+    const authUrlVarNameUpper = `SFDX_AUTH_URL_${orgAlias.toUpperCase()}`;
+    let authUrl = process.env[authUrlVarName] || process.env[authUrlVarNameUpper] || orgAlias || "";
+    if (isDevHub) {
+      authUrl = process.env[authUrlVarName] || process.env[authUrlVarNameUpper] || process.env.SFDX_AUTH_URL_DEV_HUB || orgAlias || "";
+    }
+    if (authUrl.includes("force://")) {
+      const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
+      await fs.writeFile(authFile, authUrl, "utf8");
+      const authCommand =
+        `sfdx auth:sfdxurl:store -f ${authFile}` +
+        (isDevHub ? ` --setdefaultdevhubusername` : ` --setdefaultusername`) +
+        (!orgAlias.includes("force://") ? ` --setalias ${orgAlias}` : "");
+      await execCommand(authCommand, this, { fail: true, output: false });
+      uxLog(this, c.cyan("Successfully logged using sfdxAuthUrl"));
+      await fs.remove(authFile);
+      return;
+    }
+
     // Get auth variables, with priority CLI arguments, environment variables, then .hardis-sfdx.yml config file
     let username =
       typeof options.Command.flags?.targetusername === "string"
