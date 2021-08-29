@@ -73,13 +73,12 @@ export class RedisProvider implements KeyValueProviderInterface {
       this,
       c.cyan("Create a database that you can name scratchPool, then build auth URL by appending default user password and public endpoint")
     );
-    uxLog(this, c.cyan(`Model: redis://default:PASSWORD@PUBLICENDPOINT or redis://USERNAME:PASSWORD@PUBLICENDPOINT`));
     const response = await prompts([
       {
         type: "text",
         name: "redisAuthUrl",
         message: c.cyanBright(
-          "Please enter authentication URL for Redis remote database (exemple: redis://myusername:mypassword@redis-xxxxxx.cloud.redislabs.com:18702 )" //secretlintignore
+          "Please enter authentication URL for Redis remote database" 
         ),
         initial: config.redisAuthUrl || null,
       },
@@ -99,7 +98,7 @@ export class RedisProvider implements KeyValueProviderInterface {
         type: "text",
         name: "redisAuthUrl",
         message: c.cyanBright(
-          "Please enter authentication URL for Redis remote database (exemple: redis://username:password@redis-17702.c212.eu-central-1-1.ec2.cloud.redislabs.com:18702 )"
+          "Please enter authentication URL for Redis remote database"
         ),
         initial: config.redisAuthUrl || null,
       },

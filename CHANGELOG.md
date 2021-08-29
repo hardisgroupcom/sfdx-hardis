@@ -4,7 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Manage scratch org pools
+## [2.49.0] 2021-08-30
+
+- Manage scratch org pools to enhance performances
   - Initialize configuration with hardis:scratch:pool:configure
   - Fetch a new scratch org from the pool when requesting creation of a new scratch org
 
