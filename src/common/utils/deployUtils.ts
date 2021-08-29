@@ -433,6 +433,7 @@ export async function deployMetadatas(
     check: false,
     debug: false,
     soap: false,
+    targetUsername: null
   }
 ) {
   // Perform deployment
@@ -444,6 +445,7 @@ export async function deployMetadatas(
     ` --apiversion ${options.apiVersion || CONSTANTS.API_VERSION}` +
     (options.soap ? " --soapdeploy" : "") +
     (options.check ? " --checkonly" : "") +
+    (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
     (options.debug ? " --verbose" : "");
   let deployRes;
   try {

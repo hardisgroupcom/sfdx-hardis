@@ -90,7 +90,7 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
 
     // Request additional setup to the user
     const provider = await instanciateProvider(response.storageService);
-    await provider.userSetup();
+    await provider.userSetup({devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername()});
 
     const authInfo = await AuthInfo.create({ username: this.hubOrg.getUsername() });
     const sfdxAuthUrl = authInfo.getSfdxAuthUrl();

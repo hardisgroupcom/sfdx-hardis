@@ -225,13 +225,13 @@ export default class ScratchCreate extends SfdxCommand {
     }
     // Try to fetch a scratch org from the pool
     if (this.pool === false && this.configInfo.poolConfig) {
-      this.scratchOrgFromPool = await fetchScratchOrg();
+      this.scratchOrgFromPool = await fetchScratchOrg({devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername()});
       if (this.scratchOrgFromPool) {
         this.scratchOrgAlias = this.scratchOrgFromPool.scratchOrgAlias;
         this.scratchOrgInfo = this.scratchOrgFromPool.scratchOrgInfo;
         this.scratchOrgUsername = this.scratchOrgFromPool.scratchOrgUsername;
         this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
-        uxLog(this, "[pool]" + c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
+        uxLog(this, "[pool] " + c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
         return;
       }
     }

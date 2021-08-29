@@ -63,7 +63,7 @@ export default class ScratchPoolView extends SfdxCommand {
     }
 
     // Query pool storage
-    const poolStorage = await getPoolStorage();
+    const poolStorage = await getPoolStorage({devHubConn: this?.hubOrg?.getConnection(), devHubUsername: this?.hubOrg?.getUsername()});
     uxLog(this, "Pool storage: " + c.grey(JSON.stringify(poolStorage, null, 2)));
 
     const scratchOrgs = poolStorage.scratchOrgs || [];

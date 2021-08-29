@@ -1,99 +1,100 @@
 import { Connection } from "@salesforce/core";
-import axios from "axios";
 import * as c from "chalk";
-import * as crypto from "crypto";
-import { getConfig, setConfig } from "../../config";
+import * as he from 'he';
+import * as path from 'path';
+import { getConfig } from "../../config";
 import { uxLog } from "../utils";
+import { deployMetadatas } from "../utils/deployUtils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { setPoolStorage } from "../utils/poolUtils";
-import { prompts } from "../utils/prompts";
 
-export class KvdbIoProvider implements KeyValueProviderInterface {
-  name = "Salesforce Custom Metadata (secured auth)";
-  description = "Use a custom metadata on a Salesforce org (usually DevHub) to store scratch org pool tech info";
+export class SalesforceProvider implements KeyValueProviderInterface {
+  name = "salesforce";
+  description = "Use a custom object on a Salesforce org (usually DevHub) to store scratch org pool tech info";
 
   conn: Connection = null;
+  recordName = null;
 
   async initialize(options) {
     await this.manageSfdcOrgAuth(options);
     return this.conn !== null
   }
 
-  async getValue(key: string | null = null) {
-    await this.manageSfdcOrgAuth(key);
-    const response = await axios({
-      method: "get",
-      responseType: "json",
-      headers: {
-      },
-    });
-    return response.status === 200 ? response.data || {} : null;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getValue(_key: string | null = null) {
+    await this.manageSfdcOrgAuth();
+    // Single record upsert
+    const queryRes = await this.conn.query(`SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`);
+    const valueText = queryRes.records[0] ? (queryRes.records[0] as any).ValueText__c || "" : "";
+    if (valueText.length > 5) {
+      return valueText.includes('&quot') ?
+        JSON.parse(he.decode(valueText)) :
+        JSON.parse(valueText)
+    }
+    return {};
   }
 
-  async setValue(key: string | null = null, value: any) {
-    await this.manageSfdcOrgAuth(key);
-    const resp = await axios({
-      method: "post",
-      responseType: "json",
-      data: JSON.stringify(value),
-      headers: {
-      },
-    });
-    return resp.status === 200;
-  }
-
-  async manageSfdcOrgAuth(options: any = {}) {
-    if (this.conn == null) {
-      console.log("wesh");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async setValue(_key: string | null = null, value: any) {
+    await this.manageSfdcOrgAuth();
+    // Single record upsert
+    const queryRes = await this.conn.query(`SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`);
+    if (queryRes.records[0]) {
+      const recordId = (queryRes.records[0] as any).Id;
+      const queryUpdateRes = await this.conn.sobject("SfdxHardisKeyValueStore__c").update({
+        Id: recordId,
+        Name: this.recordName,
+        ValueText__c: JSON.stringify(value)
+      });
+      return queryUpdateRes.success === true;
+    }
+    else {
+      const queryCreateRes = await this.conn.sobject("SfdxHardisKeyValueStore__c").create({
+        Name: this.recordName,
+        ValueText__c: JSON.stringify(value)
+      });
+      return queryCreateRes.success === true;
     }
   }
 
-  async userSetup() {
-    const config = await getConfig("user");
-    const projectName = config.projectName || "default";
-    const randomSecretKey = crypto.randomBytes(48).toString("hex");
-    const kvdbIoUrl = `https://kvdb.io/`;
-    const resp = await axios({
-      method: "post",
-      url: kvdbIoUrl,
-      responseType: "json",
-      data: {
-        email: `${projectName}@hardis-scratch-org-pool.com`,
-        secret_key: randomSecretKey,
-      },
-    });
-    const kvdbIoBucketId = resp.data;
-    await setConfig("user", { kvdbIoSecretKey: randomSecretKey, kvdbIoBucketId: kvdbIoBucketId });
-    await setPoolStorage({});
-    uxLog(this, c.cyan("Created new kvdb.io bucket and stored in local untracked config"));
-    uxLog(
-      this,
-      c.yellow(
-        `In future CI config, set protected variables ${c.bold(c.green("KVDB_IO_SECRET_KEY = " + randomSecretKey))} and ${c.bold(
-          c.green("KVDB_IO_BUCKET_ID = " + kvdbIoBucketId)
-        )}`
-      )
-    );
+  async manageSfdcOrgAuth(options: any = {}) {
+    const config = await getConfig("project");
+    if (this.conn == null) {
+      if (options.devHubConn) {
+        this.conn = options.devHubConn;
+      }
+      const projectName = config.projectName || "default";
+      this.recordName = `ScratchOrgPool_${projectName}`;
+    }
+  }
+
+  async userSetup(options: any) {
+    // Deploy KeyValueStore object on DevHub org
+    try {
+      await deployMetadatas({
+        deployDir: path.join(path.join(__dirname, "../../../defaults/utils/sfdxHardisKeyValueStore", ".")),
+        soap: true,
+        targetUsername: options.devHubConn.options.authInfo.fields.username
+      });
+    } catch (e) {
+      uxLog(this, c.red(`Unable to deploy CustomObject SfdxHardisKeyValueStore__c
+You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
+- API Name: SfdxHardisKeyValueStore__c
+- Field SfdxHardisKeyValueStore__c.ValueText__c of type TextArea (long) (with maximum size 131072 chars)
+      `))
+      throw e;
+    }
+    // Initialize storage
+    await setPoolStorage({}, options);
+    uxLog(this, c.green("Created KeyValue storage on Salesforce org"));
     return true;
   }
 
-  async userAuthenticate() {
-    const config = await getConfig("user");
-    const response = await prompts([
-      {
-        type: "text",
-        name: "kvdbIoBucketId",
-        message: c.cyanBright("Please input kvdb.io BUCKET ID (ask the value to your tech lead or look in CI variable KVDB_IO_BUCKET_ID )"),
-        initial: config.kvdbIoSecretKey || null,
-      },
-      {
-        type: "text",
-        name: "kvdbIoSecretKey",
-        message: c.cyanBright("Please input kvdb.io BUCKET SECRET KEY (ask the value to your tech lead or look in CI variable KVDB_IO_SECRET_KEY )"),
-        initial: config.kvdbIoSecretKey || null,
-      },
-    ]);
-    await setConfig("user", { kvdbIoBucketId: response.kvdbIoBucketId, kvdbIoSecretKey: response.kvdbIoSecretKey,  });
-    return true;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async userAuthenticate(options) {
+    if (options.devHubConn) {
+      return true;
+    }
+    return false;
   }
 }

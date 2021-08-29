@@ -10,6 +10,7 @@ import { LocalTestProvider } from "../keyValueProviders/localtest";
 import { SfdxError } from "@salesforce/core";
 import { prompts } from "./prompts";
 import { RedisProvider } from "../keyValueProviders/redis";
+import { SalesforceProvider } from "../keyValueProviders/salesforce";
 
 let keyValueProvider: KeyValueProviderInterface;
 
@@ -24,8 +25,8 @@ export async function hasPoolConfig() {
 }
 
 // Read scratch org pool remote storage
-export async function getPoolStorage() {
-  const providerInitialized = await initializeProvider();
+export async function getPoolStorage(options: any = {}) {
+  const providerInitialized = await initializeProvider(options);
   if (providerInitialized) {
     return keyValueProvider.getValue(null);
   }
@@ -33,8 +34,8 @@ export async function getPoolStorage() {
 }
 
 // Write scratch org pool remote storage
-export async function setPoolStorage(value: any) {
-  const providerInitialized = await initializeProvider();
+export async function setPoolStorage(value: any,options: any = {}) {
+  const providerInitialized = await initializeProvider(options);
   if (providerInitialized) {
     uxLog(this, "[pool] " + c.grey(`Updating poolstorage value...`));
     const valueSetRes = keyValueProvider.setValue(null, value);
@@ -45,8 +46,8 @@ export async function setPoolStorage(value: any) {
 }
 
 // Write scratch org pool remote storage
-export async function addScratchOrgToPool(scratchOrg: any, options: { position: string } = { position: "last" }) {
-  const poolStorage = await getPoolStorage();
+export async function addScratchOrgToPool(scratchOrg: any, options: any = { position: "last" }) {
+  const poolStorage = await getPoolStorage(options);
   // Valid scratch orgs
   if (scratchOrg.status === 0) {
     const scratchOrgs = poolStorage.scratchOrgs || [];
@@ -56,19 +57,19 @@ export async function addScratchOrgToPool(scratchOrg: any, options: { position: 
       scratchOrgs.unshift(scratchOrg);
     }
     poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage);
+    await setPoolStorage(poolStorage,options);
   } else {
     // Store scratch creation errors
     const scratchOrgErrors = poolStorage.scratchOrgErrors || [];
     scratchOrgErrors.push(scratchOrg);
     poolStorage.scratchOrgErrors = scratchOrgErrors;
-    await setPoolStorage(poolStorage);
+    await setPoolStorage(poolStorage,options);
   }
 }
 
 // Fetch a scratch org
-export async function fetchScratchOrg() {
-  const poolStorage = await getPoolStorage();
+export async function fetchScratchOrg(options:any) {
+  const poolStorage = await getPoolStorage(options);
   if (poolStorage === null) {
     uxLog(this, "[pool] " + c.yellow("No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth"));
     return null;
@@ -79,7 +80,7 @@ export async function fetchScratchOrg() {
     const scratchOrg = scratchOrgs.shift();
     // Remove and save
     poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage);
+    await setPoolStorage(poolStorage,options);
     // Authenticate to scratch org
     uxLog(this, "[pool] " + c.cyan("Authenticating to scratch org from pool..."));
     const authTempDir = await createTempDir();
@@ -129,10 +130,10 @@ export async function fetchScratchOrg() {
 }
 
 export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInterface>> {
-  return [RedisProvider, KvdbIoProvider, KeyValueXyzProvider, LocalTestProvider].map((cls) => new cls());
+  return [SalesforceProvider, RedisProvider, KvdbIoProvider, KeyValueXyzProvider, LocalTestProvider].map((cls) => new cls());
 }
 
-async function initializeProvider() {
+async function initializeProvider(options:any) {
   if (keyValueProvider) {
     return true;
   }
@@ -140,7 +141,7 @@ async function initializeProvider() {
   if (poolConfig.storageService) {
     keyValueProvider = await instanciateProvider(poolConfig.storageService);
     try {
-      await keyValueProvider.initialize();
+      await keyValueProvider.initialize(options);
       return true;
     } catch (e) {
       // in CI, we should always be able to initialize the provider
@@ -154,8 +155,8 @@ async function initializeProvider() {
         message: "Scratch org pool credentials are missing, do you want to configure them ?",
       });
       if (resp.value === true) {
-        await keyValueProvider.userAuthenticate();
-        await keyValueProvider.initialize();
+        await keyValueProvider.userAuthenticate(options);
+        await keyValueProvider.initialize(options);
         return true;
       }
       return false;
