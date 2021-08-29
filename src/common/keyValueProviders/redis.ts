@@ -16,10 +16,9 @@ export class RedisProvider implements KeyValueProviderInterface {
 
   async initialize() {
     await this.manageRedisAuth("init");
-    const connectionOk =  this.keyv !== null;
+    const connectionOk = this.keyv !== null;
     await this.disconnectRedis();
     return connectionOk;
-
   }
 
   async getValue(key: string | null = null) {
@@ -77,9 +76,7 @@ export class RedisProvider implements KeyValueProviderInterface {
       {
         type: "text",
         name: "redisAuthUrl",
-        message: c.cyanBright(
-          "Please enter authentication URL for Redis remote database" 
-        ),
+        message: c.cyanBright("Please enter authentication URL for Redis remote database"),
         initial: config.redisAuthUrl || null,
       },
     ]);
@@ -97,9 +94,7 @@ export class RedisProvider implements KeyValueProviderInterface {
       {
         type: "text",
         name: "redisAuthUrl",
-        message: c.cyanBright(
-          "Please enter authentication URL for Redis remote database"
-        ),
+        message: c.cyanBright("Please enter authentication URL for Redis remote database"),
         initial: config.redisAuthUrl || null,
       },
     ]);

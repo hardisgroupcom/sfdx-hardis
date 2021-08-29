@@ -34,7 +34,7 @@ export async function getPoolStorage(options: any = {}) {
 }
 
 // Write scratch org pool remote storage
-export async function setPoolStorage(value: any,options: any = {}) {
+export async function setPoolStorage(value: any, options: any = {}) {
   const providerInitialized = await initializeProvider(options);
   if (providerInitialized) {
     uxLog(this, "[pool] " + c.grey(`Updating poolstorage value...`));
@@ -57,18 +57,18 @@ export async function addScratchOrgToPool(scratchOrg: any, options: any = { posi
       scratchOrgs.unshift(scratchOrg);
     }
     poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage,options);
+    await setPoolStorage(poolStorage, options);
   } else {
     // Store scratch creation errors
     const scratchOrgErrors = poolStorage.scratchOrgErrors || [];
     scratchOrgErrors.push(scratchOrg);
     poolStorage.scratchOrgErrors = scratchOrgErrors;
-    await setPoolStorage(poolStorage,options);
+    await setPoolStorage(poolStorage, options);
   }
 }
 
 // Fetch a scratch org
-export async function fetchScratchOrg(options:any) {
+export async function fetchScratchOrg(options: any) {
   const poolStorage = await getPoolStorage(options);
   if (poolStorage === null) {
     uxLog(this, "[pool] " + c.yellow("No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth"));
@@ -80,7 +80,7 @@ export async function fetchScratchOrg(options:any) {
     const scratchOrg = scratchOrgs.shift();
     // Remove and save
     poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage,options);
+    await setPoolStorage(poolStorage, options);
     // Authenticate to scratch org
     uxLog(this, "[pool] " + c.cyan("Authenticating to scratch org from pool..."));
     const authTempDir = await createTempDir();
@@ -133,7 +133,7 @@ export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInt
   return [SalesforceProvider, RedisProvider, KvdbIoProvider, KeyValueXyzProvider, LocalTestProvider].map((cls) => new cls());
 }
 
-async function initializeProvider(options:any) {
+async function initializeProvider(options: any) {
   if (keyValueProvider) {
     return true;
   }

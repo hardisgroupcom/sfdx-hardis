@@ -287,7 +287,7 @@ export default class SaveTask extends SfdxCommand {
       // await execCommand("sfdx hardis:project:clean:references --type all", this, { output: true, fail: true, debug: this.debugMode });
       await CleanReferences.run(["--type", "all"]);
       const gitStatusAfterClean = await git().status();
-      uxLog(this,JSON.stringify(gitStatusAfterClean, null, 2));
+      uxLog(this, JSON.stringify(gitStatusAfterClean, null, 2));
       const cleanedFiles = gitStatusAfterClean.files.filter((file) => !gitStatusFilesBeforeClean.includes(file.path)).map((file) => file.path);
       if (cleanedFiles.length > 0) {
         uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join("\n")}`));
@@ -448,7 +448,7 @@ export default class SaveTask extends SfdxCommand {
 
   private updateMergeRequestInfo(mergeRequestStored, mergeRequestInfo) {
     if (this.debugMode) {
-      uxLog(this,c.grey(JSON.stringify(mergeRequestInfo, null, 2)));
+      uxLog(this, c.grey(JSON.stringify(mergeRequestInfo, null, 2)));
     }
     if (mergeRequestInfo?.remoteMessages?.id) {
       mergeRequestStored.id = mergeRequestInfo.remoteMessages.id;

@@ -64,7 +64,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     uxLog(this, c.grey("Pool config: " + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
-    const poolStorage = await getPoolStorage({devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername()});
+    const poolStorage = await getPoolStorage({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
     const scratchOrgs = poolStorage.scratchOrgs || [];
 
     // Clean expired orgs

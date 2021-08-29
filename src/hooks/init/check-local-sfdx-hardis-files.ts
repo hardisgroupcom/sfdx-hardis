@@ -18,8 +18,12 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
     return;
   }
   const config = await getConfig("user");
-  if (commandId.startsWith("hardis:work:task:new") || commandId.startsWith("hardis:doc") ||
-    commandId.startsWith("hardis:scratch") || commandId.startsWith("hardis:org")) {
+  if (
+    commandId.startsWith("hardis:work:task:new") ||
+    commandId.startsWith("hardis:doc") ||
+    commandId.startsWith("hardis:scratch") ||
+    commandId.startsWith("hardis:org")
+  ) {
     return;
   }
   // Manage .gitignore

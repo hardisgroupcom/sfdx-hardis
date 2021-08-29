@@ -225,7 +225,7 @@ export default class ScratchCreate extends SfdxCommand {
     }
     // Try to fetch a scratch org from the pool
     if (this.pool === false && this.configInfo.poolConfig) {
-      this.scratchOrgFromPool = await fetchScratchOrg({devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername()});
+      this.scratchOrgFromPool = await fetchScratchOrg({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
       if (this.scratchOrgFromPool) {
         this.scratchOrgAlias = this.scratchOrgFromPool.scratchOrgAlias;
         this.scratchOrgInfo = this.scratchOrgFromPool.scratchOrgInfo;
@@ -299,19 +299,22 @@ export default class ScratchCreate extends SfdxCommand {
           scratchOrgSfdxAuthUrl: displayResult.result.sfdxAuthUrl,
         });
         this.scratchOrgSfdxAuthUrl = displayResult.result.sfdxAuthUrl;
-      }
-      else {
+      } else {
         // Try to get sfdxAuthUrl with workaround
         try {
           const authInfo = await AuthInfo.create({ username: displayResult.result.username });
           this.scratchOrgSfdxAuthUrl = authInfo.getSfdxAuthUrl();
-          displayResult.result.sfdxAuthUrl = this.scratchOrgSfdxAuthUrl ;
+          displayResult.result.sfdxAuthUrl = this.scratchOrgSfdxAuthUrl;
           await setConfig("user", {
             scratchOrgSfdxAuthUrl: this.scratchOrgSfdxAuthUrl,
           });
-        }
-        catch (error) {
-          uxLog(this, c.yellow(`Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using auth:sfdxurl or auth:web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sfdx hardis:scratch:pool:refresh`));
+        } catch (error) {
+          uxLog(
+            this,
+            c.yellow(
+              `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using auth:sfdxurl or auth:web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sfdx hardis:scratch:pool:refresh`
+            )
+          );
           this.scratchOrgSfdxAuthUrl = null;
         }
       }

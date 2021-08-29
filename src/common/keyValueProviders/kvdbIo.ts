@@ -112,7 +112,7 @@ export class KvdbIoProvider implements KeyValueProviderInterface {
         initial: config.kvdbIoSecretKey || null,
       },
     ]);
-    await setConfig("user", { kvdbIoBucketId: response.kvdbIoBucketId, kvdbIoSecretKey: response.kvdbIoSecretKey,  });
+    await setConfig("user", { kvdbIoBucketId: response.kvdbIoBucketId, kvdbIoSecretKey: response.kvdbIoSecretKey });
     return true;
   }
 }

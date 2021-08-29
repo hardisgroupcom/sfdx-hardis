@@ -433,7 +433,7 @@ export async function deployMetadatas(
     check: false,
     debug: false,
     soap: false,
-    targetUsername: null
+    targetUsername: null,
   }
 ) {
   // Perform deployment

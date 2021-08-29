@@ -8,7 +8,7 @@ import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 
 export class LocalTestProvider implements KeyValueProviderInterface {
   name = "localtest";
-  description = "Writes in a local file (just for tests, can not work in CI)"
+  description = "Writes in a local file (just for tests, can not work in CI)";
   poolStorageLocalFileName = null;
 
   async initialize() {
@@ -34,7 +34,7 @@ export class LocalTestProvider implements KeyValueProviderInterface {
     if (this.poolStorageLocalFileName == null) {
       if (key === null) {
         const config = await getConfig("user");
-        const projectName = config.projectName || 'default';
+        const projectName = config.projectName || "default";
         key = `pool_${projectName}`;
       }
       this.poolStorageLocalFileName = path.join(os.homedir(), `poolStorage_${key}.json`);
@@ -43,7 +43,7 @@ export class LocalTestProvider implements KeyValueProviderInterface {
   }
 
   async userSetup() {
-    return true ;
+    return true;
   }
 
   async userAuthenticate() {

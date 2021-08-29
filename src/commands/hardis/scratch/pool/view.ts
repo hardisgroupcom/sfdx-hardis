@@ -59,11 +59,11 @@ export default class ScratchPoolView extends SfdxCommand {
           `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
         )
       );
-      return { status:1, outputString: "Scratch org pool configuration to create" };
+      return { status: 1, outputString: "Scratch org pool configuration to create" };
     }
 
     // Query pool storage
-    const poolStorage = await getPoolStorage({devHubConn: this?.hubOrg?.getConnection(), devHubUsername: this?.hubOrg?.getUsername()});
+    const poolStorage = await getPoolStorage({ devHubConn: this?.hubOrg?.getConnection(), devHubUsername: this?.hubOrg?.getUsername() });
     uxLog(this, "Pool storage: " + c.grey(JSON.stringify(poolStorage, null, 2)));
 
     const scratchOrgs = poolStorage.scratchOrgs || [];
