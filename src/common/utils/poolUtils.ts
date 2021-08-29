@@ -121,7 +121,7 @@ export async function fetchScratchOrg(options:any) {
     this,
     "[pool]" +
       c.yellow(
-        `No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchsOrgsNumber")} or schedule call to ${c.white(
+        `No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchOrgsNumber")} or schedule call to ${c.white(
           "sfdx hardis:scratch:pool:refresh"
         )} more often in CI`
       )
@@ -139,7 +139,7 @@ async function initializeProvider(options:any) {
   }
   const poolConfig = await getPoolConfig();
   if (poolConfig.storageService) {
-    keyValueProvider = await instanciateProvider(poolConfig.storageService);
+    keyValueProvider = await instantiateProvider(poolConfig.storageService);
     try {
       await keyValueProvider.initialize(options);
       return true;
@@ -164,7 +164,7 @@ async function initializeProvider(options:any) {
   }
 }
 
-export async function instanciateProvider(storageService: string) {
+export async function instantiateProvider(storageService: string) {
   const providerClasses = await listKeyValueProviders();
   const providerClassRes = providerClasses.filter((cls) => cls.name === storageService);
   if (providerClassRes.length === 0) {

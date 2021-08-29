@@ -60,7 +60,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
       uxLog(this, c.yellow("Configuration file must contain a poolConfig property") + "\n" + c.grey(JSON.stringify(config, null, 2)));
       return { outputString: "Configuration file must contain a poolConfig property" };
     }
-    const maxScratchsOrgsNumber = config.poolConfig.maxScratchsOrgsNumber || 5;
+    const maxScratchOrgsNumber = config.poolConfig.maxScratchOrgsNumber || 5;
     uxLog(this, c.grey("Pool config: " + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
@@ -71,7 +71,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     // Not implemented yet
 
     // Create new scratch orgs
-    const numberOfOrgsToCreate = maxScratchsOrgsNumber - scratchOrgs.length;
+    const numberOfOrgsToCreate = maxScratchOrgsNumber - scratchOrgs.length;
     uxLog(this, c.cyan("Creating " + numberOfOrgsToCreate + " scratch orgs..."));
     let numberCreated = 0;
     let numberfailed = 0;

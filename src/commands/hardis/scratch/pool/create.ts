@@ -6,7 +6,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { getConfig, setConfig } from "../../../../config";
 import { prompts } from "../../../../common/utils/prompts";
 import { uxLog } from "../../../../common/utils";
-import { instanciateProvider, listKeyValueProviders } from "../../../../common/utils/poolUtils";
+import { instantiateProvider, listKeyValueProviders } from "../../../../common/utils/poolUtils";
 import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils";
 
 // Initialize Messages with the current plugin directory
@@ -77,19 +77,19 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
       },
       {
         type: "number",
-        name: "maxScratchsOrgsNumber",
+        name: "maxScratchOrgsNumber",
         message: c.cyanBright("What is the maximum number of scratch orgs in the pool ?"),
-        initial: poolConfig.maxScratchsOrgsNumber || 5,
+        initial: poolConfig.maxScratchOrgsNumber || 5,
       },
     ]);
 
     // Store updated config
-    poolConfig.maxScratchsOrgsNumber = response.maxScratchsOrgsNumber;
+    poolConfig.maxScratchOrgsNumber = response.maxScratchOrgsNumber;
     poolConfig.storageService = response.storageService;
     await setConfig("project", { poolConfig: poolConfig });
 
     // Request additional setup to the user
-    const provider = await instanciateProvider(response.storageService);
+    const provider = await instantiateProvider(response.storageService);
     await provider.userSetup({devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername()});
 
     const authInfo = await AuthInfo.create({ username: this.hubOrg.getUsername() });

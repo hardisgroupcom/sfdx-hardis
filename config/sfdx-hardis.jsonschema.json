@@ -311,12 +311,12 @@
     "poolConfig": {
       "$id": "#/properties/poolConfig",
       "description": "Configuration allowing to generate and fetch scratch orgs from scratch org pool",
-      "examples": [{ "maxScratchsOrgsNumber": 10,"storageService": "kvdb.io"}],
+      "examples": [{ "maxScratchOrgsNumber": 10,"storageService": "kvdb.io"}],
       "title": "Scratch org pool configuration",
       "type": "object",
       "properties": {
-        "maxScratchsOrgsNumber": {
-          "$id": "#/properties/poolConfig/maxScratchsOrgsNumber",
+        "maxScratchOrgsNumber": {
+          "$id": "#/properties/poolConfig/maxScratchOrgsNumber",
           "description": "Maximum number of active scratch orgs in the scratch org pool",
           "title": "Maximum number of scratch orgs",
           "type": "number"

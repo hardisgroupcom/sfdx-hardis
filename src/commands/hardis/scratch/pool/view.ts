@@ -78,7 +78,7 @@ export default class ScratchPoolView extends SfdxCommand {
       outputString: "Viewed scratch org pool",
       poolStorage: poolStorage,
       availableScratchOrgs: availableNumber,
-      maxScratchOrgs: poolConfig.maxScratchsOrgsNumber,
+      maxScratchOrgs: poolConfig.maxScratchOrgsNumber,
     };
   }
 }

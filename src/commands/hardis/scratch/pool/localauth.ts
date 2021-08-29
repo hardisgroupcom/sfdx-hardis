@@ -5,7 +5,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getConfig } from "../../../../config";
 import { uxLog } from "../../../../common/utils";
-import { instanciateProvider } from "../../../../common/utils/poolUtils";
+import { instantiateProvider } from "../../../../common/utils/poolUtils";
 import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils";
 
 // Initialize Messages with the current plugin directory
@@ -64,7 +64,7 @@ export default class ScratchPoolLocalAuth extends SfdxCommand {
     }
 
     // Request additional setup to the user
-    const provider: KeyValueProviderInterface = await instanciateProvider(poolConfig.storageService);
+    const provider: KeyValueProviderInterface = await instantiateProvider(poolConfig.storageService);
     await provider.userAuthenticate();
 
     // Return an object to be displayed with --json
