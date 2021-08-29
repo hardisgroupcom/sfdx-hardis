@@ -79,7 +79,7 @@ export class RedisProvider implements KeyValueProviderInterface {
         type: "text",
         name: "redisAuthUrl",
         message: c.cyanBright(
-          "Please enter authentication URL for Redis remote database (exemple: redis://myusername:mypassword@redis-17702.c212.eu-central-1-1.ec2.cloud.redislabs.com:18702 )"
+          "Please enter authentication URL for Redis remote database (exemple: redis://myusername:mypassword@redis-xxxxxx.cloud.redislabs.com:18702 )" //secretlintignore
         ),
         initial: config.redisAuthUrl || null,
       },
