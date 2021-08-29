@@ -231,6 +231,7 @@ export default class ScratchCreate extends SfdxCommand {
         this.scratchOrgInfo = this.scratchOrgFromPool.scratchOrgInfo;
         this.scratchOrgUsername = this.scratchOrgFromPool.scratchOrgUsername;
         this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
+        await setConfig("user", { scratchOrgAlias: this.scratchOrgAlias });
         uxLog(this, "[pool] " + c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
         return;
       }

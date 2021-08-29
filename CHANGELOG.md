@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.49.1] 2021-08-30
+
+- QuickFix scratch org auth during CI
+
 ## [2.49.0] 2021-08-30
 
 - Manage scratch org pools to enhance performances
