@@ -845,7 +845,7 @@ OPTIONS
   -e, --except=except                                                               [default: System
                                                                                     Administrator,Administrateur
                                                                                     système] Allow to take all item
-                                                                                    except these criterias
+                                                                                    except these criteria
 
   -m, --maxuserdisplay=maxuserdisplay                                               [default: 100] Maximum users to
                                                                                     display in logs
@@ -889,7 +889,7 @@ OPTIONS
   -e, --except=except                                                               [default: System
                                                                                     Administrator,Administrateur
                                                                                     système] Allow to take all item
-                                                                                    except these criterias
+                                                                                    except these criteria
 
   -m, --maxuserdisplay=maxuserdisplay                                               [default: 100] Maximum users to
                                                                                     display in logs
