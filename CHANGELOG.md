@@ -4,6 +4,16 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.49.1] 2021-08-30
+
+- QuickFix scratch org auth during CI
+
+## [2.49.0] 2021-08-30
+
+- Manage scratch org pools to enhance performances
+  - Initialize configuration with hardis:scratch:pool:configure
+  - Fetch a new scratch org from the pool when requesting creation of a new scratch org
+
 ## [2.48.1] 2021-08-27
 
 - QuickFix hardis:org:files:export

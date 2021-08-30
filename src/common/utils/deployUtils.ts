@@ -26,14 +26,14 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
     await execCommand(pushCommand, commandThis, {
       fail: true,
-      output: true,
+      output: !isCI,
       debug: debug,
     });
     if (arrangedFiles.length > 0) {
       await restoreArrangedFiles(arrangedFiles, commandThis);
       await execCommand(pushCommand, commandThis, {
         fail: true,
-        output: true,
+        output: !isCI,
         debug: debug,
       });
       const configToSet = {};
@@ -433,6 +433,7 @@ export async function deployMetadatas(
     check: false,
     debug: false,
     soap: false,
+    targetUsername: null,
   }
 ) {
   // Perform deployment
@@ -444,6 +445,7 @@ export async function deployMetadatas(
     ` --apiversion ${options.apiVersion || CONSTANTS.API_VERSION}` +
     (options.soap ? " --soapdeploy" : "") +
     (options.check ? " --checkonly" : "") +
+    (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
     (options.debug ? " --verbose" : "");
   let deployRes;
   try {

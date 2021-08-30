@@ -163,7 +163,7 @@ export default class NewTask extends SfdxCommand {
           scratchOrgAlias: null,
           scratchOrgUsername: null,
         });
-        const createResult = await ScratchCreate.run([]);
+        const createResult = await ScratchCreate.run(["--forcenew"]);
         if (createResult == null) {
           throw new SfdxError("Unable to create scratch org");
         }

@@ -15,3 +15,11 @@ sfdx-hardis-*.tgz
 site/
 
 config/user/
+
+hardis-report/
+
+.nyc_output/
+
+site/
+
+config/user/

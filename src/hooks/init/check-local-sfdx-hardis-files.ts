@@ -1,6 +1,6 @@
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import { isCI } from "../../common/utils";
+import { isCI, uxLog } from "../../common/utils";
 import { prompts } from "../../common/utils/prompts";
 import { getConfig, setConfig } from "../../config";
 
@@ -18,7 +18,12 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
     return;
   }
   const config = await getConfig("user");
-  if (commandId.startsWith("hardis:work:task:new") || commandId.startsWith("hardis:doc") || commandId.startsWith("hardis:org:user")) {
+  if (
+    commandId.startsWith("hardis:work:task:new") ||
+    commandId.startsWith("hardis:doc") ||
+    commandId.startsWith("hardis:scratch") ||
+    commandId.startsWith("hardis:org")
+  ) {
     return;
   }
   // Manage .gitignore
@@ -55,7 +60,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
         });
         if (confirm.value === "true" || isCI) {
           await fs.writeFile(gitIgnoreFile, gitIgnoreLinesUnique.join("\n") + "\n", "utf-8");
-          console.log(c.cyan("[sfdx-hardis] Updated .gitignore"));
+          uxLog(this, c.cyan("[sfdx-hardis] Updated .gitignore"));
         }
         if (confirm.value === "never") {
           await setConfig("project", { skipUpdateGitIgnore: true });
@@ -100,7 +105,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
         /* jscpd:ignore-end */
         if (confirm.value === "true" || isCI) {
           await fs.writeFile(forceIgnoreFile, forceIgnoreLinesUnique.join("\n") + "\n", "utf-8");
-          console.log(c.cyan("[sfdx-hardis] Updated .forceignore"));
+          uxLog(this, c.cyan("[sfdx-hardis] Updated .forceignore"));
         }
         if (confirm.value === "never") {
           await setConfig("project", { skipUpdateForceIgnore: true });

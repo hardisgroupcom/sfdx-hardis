@@ -60,6 +60,9 @@ check_quality:
   only:
     - merge_requests
     - web
+  except:
+    variables:
+      - $SCRATCH_ORG_POOL == "true"
   image: nvuillam/mega-linter-salesforce:latest
   script: ["true"]
   variables:
@@ -83,6 +86,9 @@ check_deploy_to_target_branch_org:
     refs:
       - merge_requests
       - web
+  except:
+    variables:
+      - $SCRATCH_ORG_POOL == "true"
   variables:
     CONFIG_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
@@ -104,7 +110,7 @@ create_scratch_org:
     - web
   except:
     variables:
-      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
   script:
     - sfdx hardis:auth:login --devhub
     - sfdx hardis:scratch:create
@@ -116,6 +122,19 @@ create_scratch_org:
       - .sfdx
       - config/user
 
+refresh_scratch_org_pool:
+  stage: build
+  tags:
+    - ubuntu
+  only:
+    variables:
+      - $SCRATCH_ORG_POOL == "true"
+  script:
+    - sfdx hardis:auth:login --devhub
+    - sfdx hardis:scratch:pool:refresh
+  artifacts:
+    when: always
+
 # Execution des classes de test Apex dans la scratch org créée par le job
 test_apex:
   stage: test
@@ -126,7 +145,7 @@ test_apex:
     - web
   except:
     variables:
-      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
   needs:
     - job: create_scratch_org
       artifacts: true
@@ -166,7 +185,8 @@ clean:
     - web
   except:
     variables:
-      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
+      - $CI_DELETE_SCRATCH_ORG == "false"
+      - $SCRATCH_ORG_POOL == "true"
   needs:
     - job: create_scratch_org
     - job: test_apex
@@ -187,6 +207,7 @@ check_deploy_to_current_branch_org:
   except:
     variables:
       - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
   script:
     - sfdx hardis:auth:login
     - sfdx hardis:project:deploy:sources:dx --check
@@ -203,6 +224,7 @@ deploy_to_org:
   except:
     variables:
       - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
   script:
     - sfdx hardis:auth:login
     - sfdx hardis:project:deploy:sources:dx
