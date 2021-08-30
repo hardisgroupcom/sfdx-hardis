@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.50.0] 2021-08-30
+
+- New commands to freeze users before deployment then unfreeze users after deployment
+  - sfdx hardis:org:user:freeze
+  - sfdx hardis:org:user:unfreeze
+
 ## [2.49.1] 2021-08-30
 
 - QuickFix scratch org auth during CI

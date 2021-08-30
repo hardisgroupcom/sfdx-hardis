@@ -1,45 +1,30 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from '@salesforce/command';
-import { Messages/*, SfdxError*/ } from '@salesforce/core';
-import { AnyJson } from '@salesforce/ts-types';
-import * as c from 'chalk';
-import * as columnify from 'columnify';
-import { uxLog } from '../../../../common/utils';
+import { flags, SfdxCommand } from "@salesforce/command";
+import { Messages } from "@salesforce/core";
+import { AnyJson } from "@salesforce/ts-types";
+import * as c from "chalk";
+import * as columnify from "columnify";
+import { isCI, uxLog } from "../../../../common/utils";
 //import { executeApex } from "../../../../common/utils/deployUtils";
 import { prompts } from "../../../../common/utils/prompts";
- 
+import { soqlQuery } from "../../../../common/utils/queryUtils";
+
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('sfdx-hardis', 'org');
+const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class OrgUnfreezeUser extends SfdxCommand {
-  public static title = 'freeze user in organization';
+  public static title = "Freeze user logins";
 
-  public static description = messages.getMessage('orgfreezeUser');
+  public static description = messages.getMessage("orgfreezeUser");
 
   public static examples = [
-    `$ sfdx hardis:org:user:freeze --targetusername dimitri.monge@gmail.com
-    [sfdx-hardis]  Found 1 records:
-    NAME              PROFILE  
-    Dimitri Monge     Utilisateur standard  
-    ? 🦙   Are you sure you want to freeze this list of records in dimitri.monge@gmail.com (y/n)? ☑ Yes
-    ....
-    ....
-
-    [sfdx-hardis]  updated 1 user, records:
-    NAME              PROFILE
-    Dimitri Monge     Utilisateur standard
-  `,
-    `$ sfdx hardis:org:user:freeze --targetusername dimirtri.monge@gmail.com
-    [sfdx-hardis]  Found 1 records:
-    NAME                  PROFILE
-    Dimitri Monge         Utilisateur standard
-    √ 🦙   Are you sure you want to freeze this list of records in admin.hardis@cermix.com.dev (y/n)? » ☓ No
-    [sfdx-hardis]  No user has been frozen
-  `
+    `$ sfdx hardis:org:user:freeze`,
+    `$ sfdx hardis:org:user:freeze --targetusername myuser@myorg.com`,
+    `$ sfdx hardis:org:user:freeze --except 'System Administrator,Some Other Profile'`,
   ];
 
   // public static args = [{name: 'file'}];
@@ -47,19 +32,27 @@ export default class OrgUnfreezeUser extends SfdxCommand {
   protected static flagsConfig = {
     // flag with a value (-n, --name=VALUE)
     name: flags.string({
-      char: 'n',
-      description: messages.getMessage('nameFilter')
+      char: "n",
+      description: messages.getMessage("nameFilter"),
     }),
     except: flags.string({
-      char: 'e',
-      default: 'system administrator,Administrateur système',
-      description: messages.getMessage('exceptFilter')
+      char: "e",
+      default: "System Administrator,Administrateur système",
+      description: messages.getMessage("exceptFilter"),
+    }),
+    maxuserdisplay: flags.number({
+      char: "m",
+      default: 100,
+      description: "Maximum users to display in logs",
     }),
     debug: flags.boolean({
-      char: 'd',
+      char: "d",
       default: false,
-      description: messages.getMessage('debugMode')
-    })
+      description: messages.getMessage("debugMode"),
+    }),
+    websocket: flags.string({
+      description: messages.getMessage("websocket"),
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -71,134 +64,119 @@ export default class OrgUnfreezeUser extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
+  protected maxUsersDisplay = 100;
+  protected debugMode = false;
+
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    //const profiles = await promptProfiles(this.org.getConnection(),{multiselect: true, initialSelection: ["System Administrator","Administrateur Système"], message: 'Please select the profiles that will NOT be frozen'});
-    const exceptFilter = this.flags.except
-      ? this.flags.except.split(',')
-      : ['System Administrator','Administrateur système'];
+    const exceptProfilesFilter = this.flags.except ? this.flags.except.split(",") : ["System Administrator", "Administrateur système"];
     const nameFilter = this.flags.name || null;
-    //const debugMode = this.flags.debug || false;
+    this.maxUsersDisplay = this.flags.maxuserdisplay || 100;
+    this.debugMode = this.flags.debug || false;
 
-    //select id, isfrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN (\''+exceptFilter+'\') and isactive=true) AND isfrozen=false
-    // Build query with name filter if sent
-    let queryUser = `select id, isFrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN ('${exceptFilter.join(
-      "','"
-    )}') and isactive=true`;
+    const conn = this.org.getConnection();
+
+    // List all UserLogin related to Users matching profile constraint
+    const profilesConstraintIn = exceptProfilesFilter.map((profileName) => `'${profileName}'`).join(",");
+    let queryUserLogin = `select id, isFrozen, UserId from UserLogin where userid in (select id from user where profile.name NOT IN (${profilesConstraintIn}) and isactive=true`;
     if (nameFilter) {
-      queryUser += ' AND Name LIKE \'%'+nameFilter+'%\'';
+      queryUserLogin += " AND Name LIKE '%" + nameFilter + "%'";
     }
-    queryUser +=') AND isfrozen=false';
-
-   let userlistrawFreeze;
-   let userList;
-   const userIdList=[];
-   const conn = this.org.getConnection();
-   try {
-    const result = await conn.query(queryUser, null, null);
-    uxLog(this, "total freeze: " + result.totalSize);
-    uxLog(this, "fetched freeze: " + result.records.length);
-    uxLog(this, "records freeze: " + JSON.stringify(result.records));
-    userList = result.records;
-  } catch (e) {
-    uxLog(this, e);
-    return;
-  }
-      /*function(err:any, result:any) {
-    if (err) { return uxLog(this,err); }
-    uxLog(this,"total freeze: " + result.totalSize);
-    uxLog(this,"fetched freeze: " + result.records.length);
-    uxLog(this,"records freeze: " + JSON.stringify(result.records));
-    userList = result.records;
-   }); */
-
-    if(userList.length>0){
-      for (const record of userList) {
-        userIdList.push('\''+record.UserId+'\'');
-      }  
-      try{ 
-      const resultfreeze = await conn.query('SELECT Id,Name,Profile.Name FROM User WHERE Id IN ('+userIdList+')', null,null);
-      uxLog(this,JSON.stringify(resultfreeze));
-      userlistrawFreeze = resultfreeze.records;
-      } catch(e){
-        uxLog(this,e);
-        return;
-      }
+    queryUserLogin += ") AND isfrozen=false";
+    const queryUserLoginResult = await soqlQuery(queryUserLogin, conn);
+    if (this.debugMode) {
+      uxLog(this, c.grey(`Query result:\n${JSON.stringify(queryUserLoginResult, null, 2)}`));
     }
+    const userLogins = queryUserLoginResult.records;
 
-    uxLog(this,"userlistrawFreeze : " + JSON.stringify(userlistrawFreeze));
+    // List all users matching UserLogins
+    const userIdsConstraint = userLogins.map((userLogin) => `'${userLogin.UserId}'`).join(",");
+    const queryUsers = `SELECT Id,Name,Username,Profile.Name FROM User WHERE Id IN (${userIdsConstraint}) ORDER BY Profile.Name,Username`;
+    const queryUsersRes = await soqlQuery(queryUsers, conn);
+    if (this.debugMode) {
+      uxLog(this, c.grey(`Query result:\n${JSON.stringify(queryUsersRes, null, 2)}`));
+    }
+    const usersToFreeze = queryUsersRes.records;
+
     // Check empty result
-    if (!userlistrawFreeze || userlistrawFreeze.length === 0) {
-      const outputString = ` No matching user records found for all profile  except ${exceptFilter}`;
-      uxLog(this,c.yellow(outputString));
-      return { deleted: [], outputString }; 
+    if (usersToFreeze.length === 0) {
+      const outputString = `No matching user records found for all profiles except ${exceptProfilesFilter}`;
+      uxLog(this, c.yellow(outputString));
+      return { outputString };
     }
 
-    let userlist = userlistrawFreeze.map((record: any) => {
+    // Display list of users to freeze
+    const usersToFreezeDisplay = usersToFreeze.map((user: any) => {
       return {
-        Name: record.Name,
-        Profile: record.Profile.Name
+        Username: user.Username,
+        Name: user.Name,
+        Profile: user.Profile.Name,
       };
     });
-    uxLog(this,
-      ` Found ${c.bold(userlist.length)} records:\n${c.yellow(columnify(userlist.splice(0,500)))}`
-    );
+    uxLog(this, "\n" + c.white(columnify(this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay))));
+    if (!this.debugMode === false && usersToFreezeDisplay.length > this.maxUsersDisplay) {
+      uxLog(this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+    }
+    uxLog(this, c.cyan(`${c.bold(usersToFreezeDisplay.length)} users can be frozen.`));
 
-    const userlistFreezeResult = [];
-    const confirmfreeze = await prompts({
-      type: "confirm",
-      name: "value",
-      initial: true,
-      message: c.cyanBright(
-        ` Are you sure you want to freeze this list of records in ${c.green(
-          this.org.getUsername()
-        )} (y/n)?`
-      ),
+    // Request configuration from user
+    if (!isCI) {
+      const confirmfreeze = await prompts({
+        type: "confirm",
+        name: "value",
+        initial: true,
+        message: c.cyanBright(
+          `Are you sure you want to freeze these ${c.bold(usersToFreeze.length)} users in org ${c.green(this.org.getUsername())} (y/n)?`
+        ),
+      });
+      if (confirmfreeze.value !== true) {
+        const outputString = "Script cancelled by user";
+        uxLog(this, c.yellow(outputString));
+        return { outputString };
+      }
+    }
+
+    // Process UserLogin freezing
+    const updatedUserLogins = userLogins.map((userLogin) => {
+      const userLoginClone = Object.assign({}, userLogin);
+      userLoginClone.IsFrozen = true;
+      delete userLoginClone.UserId;
+      return userLoginClone;
     });
-    if (confirmfreeze.value === true) {
-      for (const freezerecord of userList) {
-        freezerecord.IsFrozen = true;
-        delete freezerecord.UserId;
-      }
-
-      uxLog(this,'userList '+JSON.stringify(userList));
-      try {
-        const retList : any[]= await (conn as any).sobject("UserLogin").update(userList, null);
-        uxLog(this,'result : ' + JSON.stringify(retList));
-        for (const result of retList){
-          for (const userrawFreeze of userlistrawFreeze){
-            if(result.id ==  userrawFreeze.Id && result.success){
-              userlistFreezeResult.push(userrawFreeze);
-              break;
-            }
-          }
-        }
-      } catch (error) {
-        console.error(error, JSON.stringify(error));
-        return;
-      }
-     
-
+    const freezeUserLoginResults: any[] = await (conn as any).sobject("UserLogin").update(updatedUserLogins);
+    if (this.debugMode) {
+      uxLog(this, c.grey(`Query result:\n${JSON.stringify(freezeUserLoginResults, null, 2)}`));
     }
-    if (userlistFreezeResult.length === 0) {
-      const outputString  = ` No user has been frozen`;
-      uxLog(this,c.green(outputString));
-      return { userlist: [], outputString }; 
-    }else{
-        userlist = userlistFreezeResult.map((record: any) => {
-          return {
-            Name: record.Name,
-            Profile: record.Profile.Name
-          };
-        });
-        const summary =
-          ` updated ${c.bold(userlist.length)} user, records:\n${c.yellow(columnify(userlist.splice(0,500)))}`;
-    
-        uxLog(this,c.green(summary));
-        // Return an object to be displayed with --json
-        return { orgId: this.org.getOrgId(), outputString: summary };
-      }
+    const freezeSuccess = freezeUserLoginResults.filter((freezeResult) => freezeResult.success === true);
+    const freezeErrors = freezeUserLoginResults.filter((freezeResult) => !(freezeResult.success === true));
+    if (freezeErrors.length > 0) {
+      uxLog(this, c.yellow(`Warning: ${c.red(c.bold(freezeErrors.length))} users has not been frozen`));
     }
-     
+
+    // Build results summary
+    const usersFrozenDisplay = freezeSuccess.map((freezeResult) => {
+      const frozenUserLogin = userLogins.filter((userLogin) => userLogin.Id === freezeResult.id)[0];
+      const frozenUser = usersToFreeze.filter((user) => frozenUserLogin.UserId === user.Id)[0];
+      return {
+        Username: frozenUser.Username,
+        Name: frozenUser.Name,
+        Profile: frozenUser.Profile.Name,
+      };
+    });
+    uxLog(this, "\n" + c.white(columnify(this.debugMode ? usersFrozenDisplay : usersFrozenDisplay.slice(0, this.maxUsersDisplay))));
+    if (!this.debugMode === false && usersFrozenDisplay.length > this.maxUsersDisplay) {
+      uxLog(this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+    }
+    uxLog(this, c.green(`${c.bold(usersFrozenDisplay.length)} users has been be frozen.`));
+
+    // Return an object to be displayed with --json
+    return {
+      orgId: this.org.getOrgId(),
+      frozenUsersDiplay: usersFrozenDisplay,
+      freezeSuccess: freezeSuccess,
+      freezeErrors: freezeErrors,
+      outputString: `${usersFrozenDisplay.length} users has been be frozen`,
+    };
+  }
 }
