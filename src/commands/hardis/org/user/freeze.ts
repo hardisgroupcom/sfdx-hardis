@@ -173,7 +173,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     // Return an object to be displayed with --json
     return {
       orgId: this.org.getOrgId(),
-      frozenUsersDiplay: usersFrozenDisplay,
+      frozenUsersDisplay: usersFrozenDisplay,
       freezeSuccess: freezeSuccess,
       freezeErrors: freezeErrors,
       outputString: `${usersFrozenDisplay.length} users has been be frozen`,
