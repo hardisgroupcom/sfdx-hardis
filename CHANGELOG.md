@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Quick fixes hardis:doc:plugin:generate
   - Handle when command.title or command.description is empty
-  - Add `# Commands` to the README.md truncate markers 
+  - Add `# Commands` to the README.md truncate markers
 
 ## [2.51.0] 2021-08-31
 
