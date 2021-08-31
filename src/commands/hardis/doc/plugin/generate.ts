@@ -95,6 +95,14 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
       uxLog(this, c.blue("Base mkdocs files copied in your sfdx plugin folder"));
       uxLog(this, c.yellow("You should probably manually update mkdocs.yml and build-deploy-docs.yml with your repo & plugin information"));
     }
+    // Remove changelog if not existing
+    if (!fs.existsSync(path.join(process.cwd(), "CHANGELOG.md")) && fs.existsSync(path.join(process.cwd(), "docs", "CHANGELOG.md"))) {
+      await fs.remove(path.join(process.cwd(), "docs", "CHANGELOG.md"));
+    }
+    // Remove license if not existing
+    if (!fs.existsSync(path.join(process.cwd(), "LICENSE")) && fs.existsSync(path.join(process.cwd(), "docs", "license.md"))) {
+      await fs.remove(path.join(process.cwd(), "docs", "license.md"));
+    }
 
     // Update mkdocs nav items
     const mkdocsYml = yaml.load(
@@ -128,7 +136,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const readme = await fs.readFile(path.join(process.cwd(), "README.md"), "utf8");
     let reusableReadmePartFound = false;
     // Try to find README content until auto-generated commands
-    const limitStrings = ["# Commands", "## Commands", "## COMMANDS", "<!-- commands -->"];
+    const limitStrings = ["## Commands", "## COMMANDS", "# Commands", "<!-- commands -->"];
     for (const limitString of limitStrings) {
       if (readme.indexOf(limitString) > 0) {
         lines.push(...readme.substring(0, readme.indexOf(limitString)).split(/\r?\n/));
@@ -187,9 +195,8 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
               optionsUnique.push(option);
             }
           }
-          return `|${flag.name + (flag.char ? `<br/>-${flag.char}` : "")}|${flag.type}|${flag.description}|${flag.default || ""}|${
-            flag.required ? "" : ""
-          }|${optionsUnique.join("<br/>")}|`;
+          return `|${flag.name + (flag.char ? `<br/>-${flag.char}` : "")}|${flag.type}|${flag.description}|${flag.default || ""}|${flag.required ? "" : ""
+            }|${optionsUnique.join("<br/>")}|`;
         }),
       "",
     ];
