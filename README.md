@@ -1,4 +1,4 @@
-[![Hardis Group Logo](docs/assets/images/hardis-banner.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
+[![Hardis Group Logo](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-banner.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
 
 # sfdx-hardis
 
