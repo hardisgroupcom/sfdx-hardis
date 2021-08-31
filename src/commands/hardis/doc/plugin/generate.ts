@@ -128,7 +128,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const readme = await fs.readFile(path.join(process.cwd(), "README.md"), "utf8");
     let reusableReadmePartFound = false;
     // Try to find README content until auto-generated commands
-    const limitStrings = ["## Commands", "## COMMANDS", "<!-- commands -->"];
+    const limitStrings = ["# Commands", "## Commands", "## COMMANDS", "<!-- commands -->"];
     for (const limitString of limitStrings) {
       if (readme.indexOf(limitString) > 0) {
         lines.push(...readme.substring(0, readme.indexOf(limitString)).split(/\r?\n/));
@@ -169,7 +169,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const titleLines = [`# ${command.id}`, ""];
     lines.push(...titleLines);
     // Description
-    const descriptionLines = [`## Description`, "", ...command.description.split("\n"), ""];
+    const descriptionLines = [`## Description`, "", ...(command.description || "").split("\n"), ""];
     lines.push(...descriptionLines);
     // Flags
     const flagLines = [
@@ -198,7 +198,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const exampleLines = [
       `## Examples`,
       "",
-      ...(command.examples || []).map((example: string) => ["```shell", ...example.split("\n"), "```", ""]).flat(),
+      ...(command.examples || []).map((example: string) => ["```shell", ...(example || "").split("\n"), "```", ""]).flat(),
       "",
     ];
     lines.push(...exampleLines);

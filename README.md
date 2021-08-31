@@ -42,7 +42,12 @@ sfdx plugins:install sfdmu sfdx-git-delta sfdx-essentials sfpowerkit shane-sfdx-
 
 ### Docker
 
-You can use docker image [**hardisgroupcom/sfdx-hardis**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis)
+You can use sfdx-hardis docker images to run in CI
+
+- [**hardisgroupcom/sfdx-hardis:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with latest sfdx-cli version)
+- [**hardisgroupcom/sfdx-hardis:latest-sfdx-stable**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with stable sfdx-cli version)
+
+_See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Dockerfile)_
 
 ## Usage
 
