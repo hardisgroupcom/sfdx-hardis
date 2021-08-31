@@ -195,8 +195,9 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
               optionsUnique.push(option);
             }
           }
-          return `|${flag.name + (flag.char ? `<br/>-${flag.char}` : "")}|${flag.type}|${flag.description}|${flag.default || ""}|${flag.required ? "" : ""
-            }|${optionsUnique.join("<br/>")}|`;
+          return `|${flag.name + (flag.char ? `<br/>-${flag.char}` : "")}|${flag.type}|${flag.description}|${flag.default || ""}|${
+            flag.required ? "" : ""
+          }|${optionsUnique.join("<br/>")}|`;
         }),
       "",
     ];
