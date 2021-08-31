@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.51.2] 2021-08-31
+
+- Quick fixes hardis:doc:plugin:generate
+  - Fix crash when there are no license & changelog
+
 ## [2.51.1] 2021-08-31
 
 - Quick fixes hardis:doc:plugin:generate
