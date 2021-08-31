@@ -124,16 +124,25 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
   private async generateIndexDoc(config: any, commandsLinks: any) {
     const lines = [
       "<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->",
-      "",
-      `# ${config.pjson.name}`,
-      "",
-      "## Description",
-      "",
-      config.pjson.description.split("\n").join("<br/>"),
-      "",
-      "## Commands",
     ];
+    const readme = await fs.readFile(path.join(process.cwd(), "README.md"), "utf8");
+    let reusableReadmePartFound = false;
+    // Try to find README content until auto-generated commands
+    const limitStrings = ["## Commands","## COMMANDS","<!-- commands -->"];
+    for (const limitString of limitStrings) {
+      if (readme.indexOf(limitString) > 0) {
+        lines.push(...readme.substring(0,readme.indexOf(limitString)).split(/\r?\n/));
+        reusableReadmePartFound = true ;
+        break ;
+      }
+    }
+    // Default index.md
+    if (reusableReadmePartFound === false) {
+      lines.push(...["", `# ${config.pjson.name}`, "", "## Description", "", config.pjson.description.split("\n").join("<br/>"), ""]);
+    }
+
     // Build commands section
+    lines.push(...["", "## Commands"]);
     let currentSection = "";
     for (const command of sortArray(config.commands, { by: ["id"], order: ["asc"] })) {
       const section = command.id.split(":")[0] + ":" + command.id.split(":")[1];

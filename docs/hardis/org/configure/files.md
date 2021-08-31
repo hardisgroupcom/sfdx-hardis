@@ -1,20 +1,9 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:doc:plugin:generate
+# hardis:org:configure:files
 
 ## Description
 
-Generate Markdown documentation ready for HTML conversion with mkdocs
-
-After the first run, you need to update manually:
-
-- mkdocs.yml
-- .github/workflows/build-deploy-docs.yml
-- docs/javascripts/gtag.js , if you want Google Analytics tracking
-
-Then, activate Github pages, with "gh_pages" as target branch
-
-At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages
-
+Configure export of file attachments from a Salesforce org
 
 ## Parameters
 
@@ -28,7 +17,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
 ## Examples
 
 ```shell
-$ sfdx hardis:doc:plugin:generate
+$ sfdx hardis:org:configure:files
 ```
 
 

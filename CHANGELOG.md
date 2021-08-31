@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.51.0] 2021-08-31
+
+- Update hardis:doc:plugin:generate so main README part is displayed on doc index.md
+
 ## [2.50.0] 2021-08-30
 
 - New commands to freeze users before deployment then unfreeze users after deployment

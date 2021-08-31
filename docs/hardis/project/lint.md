@@ -1,34 +1,30 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:doc:plugin:generate
+# hardis:project:lint
 
 ## Description
 
-Generate Markdown documentation ready for HTML conversion with mkdocs
-
-After the first run, you need to update manually:
-
-- mkdocs.yml
-- .github/workflows/build-deploy-docs.yml
-- docs/javascripts/gtag.js , if you want Google Analytics tracking
-
-Then, activate Github pages, with "gh_pages" as target branch
-
-At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages
-
+Apply syntactic analysis (linters) on the repository sources, using Mega-Linter
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
+|apiversion|option|override the api version used for api requests made by this command||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|fix<br/>-f|boolean|Apply linters fixes||||
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+|targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-$ sfdx hardis:doc:plugin:generate
+$ sfdx hardis:project:lint
+```
+
+```shell
+$ sfdx hardis:project:lint --fix
 ```
 
 
