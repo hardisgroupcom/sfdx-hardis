@@ -91,11 +91,14 @@ export default class DxSources extends SfdxCommand {
     // Create working temp folders and define it as cwd
     const prevCwd = process.cwd();
     await fs.ensureDir(tempFolder);
+    await fs.emptyDir(tempFolder);
     process.chdir(tempFolder);
     const metadataFolder = path.join(tempFolder, "mdapipkg");
     await fs.ensureDir(metadataFolder);
+    await fs.emptyDir(metadataFolder);
     const sfdxFolder = path.join(tempFolder, "sfdx-project");
     await fs.ensureDir(sfdxFolder);
+    await fs.emptyDir(sfdxFolder);
 
     // Retrieve metadatas
     const retrieveOptions: any = { filterManagedItems: true, removeStandard: false };
@@ -108,7 +111,9 @@ export default class DxSources extends SfdxCommand {
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
       uxLog(this, c.cyan("Creating SFDX project..."));
-      const createProjectRes = await exec('sfdx force:project:create --projectname "sfdx-project"', { maxBuffer: 1024 * 2000 });
+      const projectCreateCommand = 'sfdx force:project:create --projectname "sfdx-project"';
+      uxLog(this,`[command] ${c.bold(c.grey(projectCreateCommand))}`)
+      const createProjectRes = await exec(projectCreateCommand, { maxBuffer: 1024 * 2000 });
       if (debug) {
         this.ux.log(createProjectRes.stdout + createProjectRes.stderr);
       }
@@ -117,8 +122,10 @@ export default class DxSources extends SfdxCommand {
     // Converting metadatas to sfdx
     uxLog(this, c.cyan(`Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`));
     process.chdir(sfdxFolder);
+    const mdapiConvertCommand = `sfdx force:mdapi:convert --rootdir ${path.join(metadataFolder, "unpackaged")} ${debug ? "--verbose" : ""}`;
+    uxLog(this,`[command] ${c.bold(c.grey(mdapiConvertCommand))}`)
     try {
-      const convertRes = await exec(`sfdx force:mdapi:convert --rootdir ${path.join(metadataFolder, "unpackaged")} ${debug ? "--verbose" : ""}`, {
+      const convertRes = await exec(mdapiConvertCommand, {
         maxBuffer: 10000 * 10000,
       });
       if (debug) {
