@@ -57,11 +57,16 @@ nav:
         org:
           configure:
             data: hardis/org/configure/data.md
+            files: hardis/org/configure/files.md
             monitoring: hardis/org/configure/monitoring.md
           connect: hardis/org/connect.md
           data:
             export: hardis/org/data/export.md
             import: hardis/org/data/import.md
+          diagnose:
+            legacyapi: hardis/org/diagnose/legacyapi.md
+          files:
+            export: hardis/org/files/export.md
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md
@@ -74,6 +79,9 @@ nav:
           select: hardis/org/select.md
           test:
             apex: hardis/org/test/apex.md
+          user:
+            freeze: hardis/org/user/freeze.md
+            unfreeze: hardis/org/user/unfreeze.md
         package:
           create: hardis/package/create.md
           install: hardis/package/install.md
@@ -105,9 +113,15 @@ nav:
               metadata: hardis/project/deploy/sources/metadata.md
           generate:
             gitdelta: hardis/project/generate/gitdelta.md
+          lint: hardis/project/lint.md
         scratch:
           create: hardis/scratch/create.md
           delete: hardis/scratch/delete.md
+          pool:
+            create: hardis/scratch/pool/create.md
+            localauth: hardis/scratch/pool/localauth.md
+            refresh: hardis/scratch/pool/refresh.md
+            view: hardis/scratch/pool/view.md
           pull: hardis/scratch/pull.md
           push: hardis/scratch/push.md
         work:
@@ -115,5 +129,6 @@ nav:
           refresh: hardis/work/refresh.md
           resetselection: hardis/work/resetselection.md
           save: hardis/work/save.md
+          ws: hardis/work/ws.md
   - License: license.md
   - Changelog: CHANGELOG.md
