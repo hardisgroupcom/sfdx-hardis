@@ -4,9 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.51.1] 2021-08-31
+
 - Quick fixes hardis:doc:plugin:generate
   - Handle when command.title or command.description is empty
   - Add `# Commands` to the README.md truncate markers
+- Fix hardis:org:retrieve:sources:dx
+  - Empty temp directories at the beginning of the command
+  - Add ForecastingType in the list of ignored metadatas for conversion to sfdx sources
 
 ## [2.51.0] 2021-08-31
 

@@ -374,6 +374,7 @@ class MetadataUtils {
       "BlacklistedConsumer",
       "ConnectedApp",
       "CustomIndex",
+      "ForecastingType",
       "IframeWhiteListUrlSettings",
       "ManagedContentType",
       "NotificationTypeConfig",
