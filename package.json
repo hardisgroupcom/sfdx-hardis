@@ -83,7 +83,7 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/hardisgroupcom/sfdx-hardis",
+  "homepage": "https://hardisgroupcom.github.io/sfdx-hardis/",
   "keywords": [
     "sfdx-plugin"
   ],
@@ -119,7 +119,7 @@
       "@oclif/plugin-help"
     ]
   },
-  "repository": "hardisgroupcom/sfdx-hardis",
+  "repository": "https://github.com/hardisgroupcom/sfdx-hardis",
   "prettier": {
     "printWidth": 150
   },
