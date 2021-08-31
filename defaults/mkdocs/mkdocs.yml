@@ -10,8 +10,8 @@ theme:
   custom_dir: docs/overrides
   features:
     - navigation.instant
-  logo: assets/images/salesforce-logo.png
-  favicon: assets/images/salesforce-icon.png
+#  logo: assets/images/salesforce-logo.png
+#  favicon: assets/images/salesforce-icon.png
   palette:
     primary: "light blue"
 markdown_extensions:
