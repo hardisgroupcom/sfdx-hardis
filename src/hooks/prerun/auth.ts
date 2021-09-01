@@ -235,14 +235,30 @@ async function authOrg(orgAlias: string, options: any) {
       );
       uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
-      username = loginResult?.username || "your username";
+      username = loginResult?.username || "err";
       instanceUrl = loginResult?.instanceUrl || instanceUrl;
     } else {
       console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} with browser. Please try again :)`));
     }
     if (logged) {
+      // Retrieve default username or dev hub username if not returned by command
+      if (username === "err") {
+        const configGetRes = await execSfdxJson("sfdx config:get " + (isDevHub ? "defaultdevhubusername" : "defaultusername"), this, {
+          output: false,
+          fail: false,
+        });
+        username = configGetRes?.result[0]?.value || "";
+      }
       uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
       WebSocketClient.sendMessage({ event: "refreshStatus" });
+      // Assign org to SfdxCommands
+      if (isDevHub) {
+        this.options.Command.flags.targetdevhubusername = username;
+        this.options.Command.assignHubOrg();
+      } else {
+        this.options.Command.flags.targetusername = username;
+        this.options.Command.assignOrg();
+      }
       // Display warning message in case of local usage (not CI), and not login command
       if (!(options?.Command?.id || "").startsWith("hardis:auth:login")) {
         console.warn(c.yellow("*********************************************************************"));
