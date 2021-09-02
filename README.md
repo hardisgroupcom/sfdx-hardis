@@ -30,6 +30,13 @@ Toolbox for Salesforce DX, by [Hardis-Group](https://www.hardis-group.com/en/ser
 
 ### SFDX Plugin
 
+#### Pre-requisites
+
+- Install Node.js ([recommended version](https://nodejs.org/en/))
+- Install Salesforce DX by running `npm install sfdx-cli --global` command line
+
+#### Plugin installation
+
 ```sh-session
 sfdx plugins:install sfdx-hardis
 ```
@@ -39,6 +46,14 @@ For advanced use, please also install dependencies
 ```sh-session
 sfdx plugins:install sfdmu sfdx-git-delta sfdx-essentials sfpowerkit shane-sfdx-plugins texei-sfdx-plugin
 ```
+
+### With IDE
+
+You can install [Visual Studio Code](https://code.visualstudio.com/) extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+
+Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, and follow the additional installation instructions
+
+[![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-icon.png)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 ### Docker
 
@@ -471,7 +486,21 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  More info at https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1
+  Salesforce will remove access to old API versions in the following releases
+
+  | API versions  | Salesforce release  |
+  |:-------------:|:-------------------:|
+  | 7.0 to 20.0   | Summer 21           |
+  | 21.0 to 30.0  | Summer 22           |
+
+  More info at <https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1>
+
+  - Run the command `sfdx hardis:org:diagnose:legacyapi`
+
+  ![Legacy API result](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/legacy-api-result.png)
+
+  - If you see deprecated API calls, open the detailed CSV file and identify the sources of deprecated API calls
+  - You need to update your ecosystem external applications so they call a more recent version of APIS (52.0)
 
 EXAMPLE
   $ sfdx hardis:org:diagnose:legacyapi

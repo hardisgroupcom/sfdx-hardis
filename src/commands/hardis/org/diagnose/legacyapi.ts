@@ -21,8 +21,24 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class LegacyApi extends SfdxCommand {
   public static title = "Check for legacy API use";
 
-  public static description =
-    "Checks if an org uses a deprecated API version\nMore info at https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1";
+  public static description = `Checks if an org uses a deprecated API version\n
+
+Salesforce will remove access to old API versions in the following releases
+
+| API versions  | Salesforce release  |
+|:-------------:|:-------------------:|
+| 7.0 to 20.0   | Summer 21           |
+| 21.0 to 30.0  | Summer 22           |
+
+More info at <https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1>
+
+- Run the command \`sfdx hardis:org:diagnose:legacyapi\`
+
+![Legacy API result](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/legacy-api-result.png)
+
+- If you see deprecated API calls, open the detailed CSV file and identify the sources of deprecated API calls
+- You need to update your ecosystem external applications so they call a more recent version of APIS (52.0)
+`;
 
   public static examples = ["$ sfdx hardis:org:diagnose:legacyapi"];
 
