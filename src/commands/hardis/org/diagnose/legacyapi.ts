@@ -24,6 +24,7 @@ export default class LegacyApi extends SfdxCommand {
   public static description = `Checks if an org uses a deprecated API version\n
 
 Salesforce will remove access to old API versions in the following releases
+An external application (ESB, ETL, Web Portal, Mobile application...) using a deprecated API version will receive errors as response, and this will probably break integrations business processes
 
 | API versions  | Salesforce release  |
 |:-------------:|:-------------------:|
