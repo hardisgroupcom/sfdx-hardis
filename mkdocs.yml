@@ -43,7 +43,7 @@ extra:
   generator: false
 nav:
   - Home: index.md
-  - Installation: "/#installation"
+  - Installation: https://hardisgroupcom.github.io/sfdx-hardis/#installation
   - Commands:
       hardis:
         auth:
@@ -129,7 +129,7 @@ nav:
           resetselection: hardis/work/resetselection.md
           save: hardis/work/save.md
           ws: hardis/work/ws.md
-  - Use in CI: "/#use-sfdx-hardis-in-ci"
-  - Contributing: "/#contributing"
+  - Use in CI: https://hardisgroupcom.github.io/sfdx-hardis/#use-sfdx-hardis-in-ci
+  - Contributing: https://hardisgroupcom.github.io/sfdx-hardis/#contributing
   - License: license.md
   - Changelog: CHANGELOG.md
