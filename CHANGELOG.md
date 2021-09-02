@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.51.3] 2021-09-02
 
 - Improve authentication log + less cases when launching again the same command can be necessary
+- if you define `forceRestDeploy: true` in config, `restDeploy: false` won't be set automatically anymore
 
 ## [2.51.2] 2021-08-31
 
