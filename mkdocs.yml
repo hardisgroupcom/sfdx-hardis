@@ -43,7 +43,7 @@ extra:
   generator: false
 nav:
   - Home: index.md
-  - Installation: index.md#installation
+  - Installation: "/#installation"
   - Commands:
       hardis:
         auth:
@@ -129,7 +129,7 @@ nav:
           resetselection: hardis/work/resetselection.md
           save: hardis/work/save.md
           ws: hardis/work/ws.md
-  - Use in CI: index.md#use-sfdx-hardis-in-ci
-  - Contributing: index.md#contributing
+  - Use in CI: "/#use-sfdx-hardis-in-ci"
+  - Contributing: "/#contributing"
   - License: license.md
   - Changelog: CHANGELOG.md
