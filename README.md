@@ -487,11 +487,13 @@ OPTIONS
 
 DESCRIPTION
   Salesforce will remove access to old API versions in the following releases
+  An external application (ESB, ETL, Web Portal, Mobile application...) using a deprecated API version will receive 
+  errors as response, and this will probably break integrations business processes
 
-  | API versions | Salesforce release |
-  |:------------:|:------------------:|
-  | 7.0 to 20.0  |     Summer 21      |
-  | 21.0 to 30.0 |     Summer 22      |
+  | API versions  | Salesforce release  |
+  |:-------------:|:-------------------:|
+  | 7.0 to 20.0   | Summer 21           |
+  | 21.0 to 30.0  | Summer 22           |
 
   More info at <https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1>
 
