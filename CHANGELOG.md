@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.51.5] 2021-09-03
+
+- hardis:org:diagnose:legacyapi: Provide additional report with unique list of ips, hostnames (when available) , and number of calls 
+
 ## [2.51.4] 2021-09-03
 
 - hardis:org:diagnose:legacyapi: Allow to override default output reportfile with `--outputfile` argument

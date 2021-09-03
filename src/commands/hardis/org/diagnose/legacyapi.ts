@@ -10,6 +10,8 @@ import * as Papa from "papaparse";
 import path = require("path");
 import * as sortArray from "sort-array";
 import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
+import  * as dns from "dns";
+const dnsPromises = dns.promises ;
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -150,53 +152,6 @@ export default class LegacyApi extends SfdxCommand {
     }
     const allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
 
-    try {
-      // Build statistics
-      this.statistics = [];
-      for (const eventLogRecord of allErrors) {
-        // Get entry in current stats
-        const keyCurrentValFilter = this.statistics.filter(
-          (stat) => stat.API_VERSION === eventLogRecord.API_VERSION && stat.API_FAMILY === eventLogRecord.API_FAMILY
-        );
-        const keyCurrentVal =
-          keyCurrentValFilter.length > 0
-            ? keyCurrentValFilter[0]
-            : { API_VERSION: eventLogRecord.API_VERSION, API_FAMILY: eventLogRecord.API_FAMILY, apiResources: [] };
-        // Increment counter
-        const apiResourceName = eventLogRecord.API_RESOURCE || "unknown";
-        keyCurrentVal.apiResources[apiResourceName] = keyCurrentVal.apiResources[apiResourceName] || {};
-        keyCurrentVal.apiResources[apiResourceName].counter = (keyCurrentVal.apiResources[apiResourceName].counter || 0) + 1;
-        // Update statistics variable
-        if (keyCurrentValFilter.length > 0) {
-          this.statistics = this.statistics.map((stat) => {
-            if (stat.API_VERSION === eventLogRecord.API_VERSION && stat.API_FAMILY === eventLogRecord.API_FAMILY) {
-              return keyCurrentVal;
-            }
-            return stat;
-          });
-        } else {
-          this.statistics.push(keyCurrentVal);
-        }
-      }
-      // Sort statistics array
-      this.statistics = sortArray(this.statistics, {
-        by: ["API_VERSION", "API_FAMILY"],
-        order: ["asc", "asc"],
-      });
-      this.statistics = this.statistics.map((stat) => {
-        stat.API_RESOURCES_COUNT = Object.keys(stat.apiResources)
-          .map((apiResource) => apiResource + ": " + stat.apiResources[apiResource].counter)
-          .join("\n");
-        delete stat.apiResources;
-        return stat;
-      });
-      // uxLog(this, "");
-      // uxLog(this, c.cyan("Statistics:"));
-      // console.table(this.statistics);
-    } catch (e) {
-      uxLog(this, c.yellow("Error while building statistics.\n") + c.grey(e.msg + "\n" + e.stack));
-    }
-
     // Display summary
     const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red;
     const deprecatedColor = allSoonDeprecatedApiCalls.length === 0 ? c.green : c.red;
@@ -238,12 +193,13 @@ export default class LegacyApi extends SfdxCommand {
 
     // Build output CSV file
     if (outputFile == null) {
+      // Default file in system temp directory if --outputfile not provided
       const tmpDir = await createTempDir();
       outputFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
     } else {
+      // Ensure directories to provided --outputfile are existing
       await fs.ensureDir(path.dirname(outputFile));
     }
-
     try {
       const csvText = Papa.unparse(allErrors);
       await fs.writeFile(outputFile, csvText, "utf8");
@@ -251,6 +207,43 @@ export default class LegacyApi extends SfdxCommand {
     } catch (e) {
       uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
       outputFile = null;
+    }
+
+    // Collect all ips and the number of calls
+    const ipList = {};
+    for (const eventLogRecord of allErrors) {
+      if (eventLogRecord.CLIENT_IP) {
+        const ipInfo = ipList[eventLogRecord.CLIENT_IP] || { count: 0 };
+        ipInfo.count++;
+        ipList[eventLogRecord.CLIENT_IP] = ipInfo;
+      }
+    }
+    // Try to get hostname for ips
+    const ipResults = [];
+    for (const ip of Object.keys(ipList)) {
+      const ipInfo = ipList[ip];
+      let hostname ;
+      try {
+        hostname = await dnsPromises.reverse(ip);
+      } catch (e) {
+        hostname = "unknown";
+      }
+      const ipResult = { CLIENT_IP: ip, CLIENT_HOSTNAME: hostname, SFDX_HARDIS_COUNT: ipInfo.count };
+      ipResults.push(ipResult);
+    }
+    const ipResultsSorted = sortArray(ipResults, {
+      by: ["SFDX_HARDIS_COUNT"],
+      order: ["desc"],
+    });
+    // Write output CSV with client api info
+    let outputFileIps = outputFile.endsWith('.csv') ? outputFile.replace(".csv",".api-clients.csv"): outputFile +'api-clients.csv';
+    try {
+      const csvTextIps = Papa.unparse(ipResultsSorted);
+      await fs.writeFile(outputFileIps, csvTextIps, "utf8");
+      uxLog(this, c.italic(c.cyan(`Please see info about API callers in ${c.bold(outputFileIps)}`)));
+    } catch (e) {
+      uxLog(this, c.yellow("Error while generating API callers log file:\n" + e.message + "\n" + e.stack));
+      outputFileIps = null;
     }
 
     // Debug or manage CSV file generation error
@@ -267,6 +260,7 @@ export default class LegacyApi extends SfdxCommand {
       status: statusCode,
       message: msg,
       csvLogFile: outputFile,
+      outputFileIps: outputFileIps,
       allDeadApiCalls,
       allSoonDeprecatedApiCalls,
       allEndOfSupportApiCalls,
