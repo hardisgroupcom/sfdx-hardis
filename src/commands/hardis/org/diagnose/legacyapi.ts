@@ -40,7 +40,12 @@ export default class LegacyApi extends SfdxCommand {
 - You need to update your ecosystem external applications so they call a more recent version of APIS (52.0)
 `;
 
-  public static examples = ["$ sfdx hardis:org:diagnose:legacyapi"];
+  public static examples = [
+    "$ sfdx hardis:org:diagnose:legacyapi",
+    "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com",
+    "$ sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legaciapi.csv'",
+    "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legaciapi.csv",
+  ];
 
   // public static args = [{name: 'file'}];
 
@@ -108,7 +113,7 @@ export default class LegacyApi extends SfdxCommand {
   private async runJsForce() {
     const eventType = this.flags.eventtype || "ApiTotalUsage";
     const limit = this.flags.limit || 999;
-    let outputFile = this.flags.outputfile || null ;
+    let outputFile = this.flags.outputfile || null;
 
     const limitConstraint = limit ? ` LIMIT ${limit}` : "";
     const conn = this.org.getConnection();
@@ -235,6 +240,8 @@ export default class LegacyApi extends SfdxCommand {
     if (outputFile == null) {
       const tmpDir = await createTempDir();
       outputFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
+    } else {
+      await fs.ensureDir(path.dirname(outputFile));
     }
 
     try {
