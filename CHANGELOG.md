@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.51.4] 2021-09-03
+
+- Fix hardis:package:version:promote
+
 ## [2.51.3] 2021-09-02
 
 - Improve authentication log + less cases when launching again the same command can be necessary
