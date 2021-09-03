@@ -40,7 +40,12 @@ export default class LegacyApi extends SfdxCommand {
 - You need to update your ecosystem external applications so they call a more recent version of APIS (52.0)
 `;
 
-  public static examples = ["$ sfdx hardis:org:diagnose:legacyapi"];
+  public static examples = [
+    "$ sfdx hardis:org:diagnose:legacyapi",
+    "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com",
+    "$ sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'",
+    "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv",
+  ];
 
   // public static args = [{name: 'file'}];
 
@@ -59,6 +64,10 @@ export default class LegacyApi extends SfdxCommand {
       char: "l",
       default: 999,
       description: "Number of latest EventLogFile events to analyze",
+    }),
+    outputfile: flags.string({
+      char: "o",
+      description: "Force the path and name of output report file. Must end with .csv",
     }),
     debug: flags.boolean({
       char: "d",
@@ -104,6 +113,7 @@ export default class LegacyApi extends SfdxCommand {
   private async runJsForce() {
     const eventType = this.flags.eventtype || "ApiTotalUsage";
     const limit = this.flags.limit || 999;
+    let outputFile = this.flags.outputfile || null;
 
     const limitConstraint = limit ? ` LIMIT ${limit}` : "";
     const conn = this.org.getConnection();
@@ -227,19 +237,24 @@ export default class LegacyApi extends SfdxCommand {
     }
 
     // Build output CSV file
-    const tmpDir = await createTempDir();
-    let csvLogFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
+    if (outputFile == null) {
+      const tmpDir = await createTempDir();
+      outputFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
+    } else {
+      await fs.ensureDir(path.dirname(outputFile));
+    }
+
     try {
       const csvText = Papa.unparse(allErrors);
-      await fs.writeFile(csvLogFile, csvText, "utf8");
-      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(csvLogFile)}`)));
+      await fs.writeFile(outputFile, csvText, "utf8");
+      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(outputFile)}`)));
     } catch (e) {
       uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
-      csvLogFile = null;
+      outputFile = null;
     }
 
     // Debug or manage CSV file generation error
-    if (this.debugMode || csvLogFile == null) {
+    if (this.debugMode || outputFile == null) {
       uxLog(this, c.grey(c.bold("Dead API version calls:") + JSON.stringify(allDeadApiCalls, null, 2)));
       uxLog(this, c.grey(c.bold("Deprecated API version calls:") + JSON.stringify(allSoonDeprecatedApiCalls, null, 2)));
       uxLog(this, c.grey(c.bold("End of support API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
@@ -251,7 +266,7 @@ export default class LegacyApi extends SfdxCommand {
     return {
       status: statusCode,
       message: msg,
-      csvLogFile: csvLogFile,
+      csvLogFile: outputFile,
       allDeadApiCalls,
       allSoonDeprecatedApiCalls,
       allEndOfSupportApiCalls,
