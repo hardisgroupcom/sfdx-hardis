@@ -43,8 +43,8 @@ export default class LegacyApi extends SfdxCommand {
   public static examples = [
     "$ sfdx hardis:org:diagnose:legacyapi",
     "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com",
-    "$ sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legaciapi.csv'",
-    "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legaciapi.csv",
+    "$ sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'",
+    "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv",
   ];
 
   // public static args = [{name: 'file'}];
