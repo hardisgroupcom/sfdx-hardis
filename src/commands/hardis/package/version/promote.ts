@@ -91,23 +91,35 @@ export default class PackageVersionPromote extends SfdxCommand {
       packagesToPromote.push(packageResponse.packageSelected);
     }
 
+    const promotedPackageVersions = [];
+    const errorPromotedVersions = [];
+
     // Promote packages
     for (const packageToPromote of packagesToPromote) {
       uxLog(this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
       const promoteCommand = "sfdx force:package:version:promote" + ` --package "${packageToPromote}"` + " --noprompt";
-      const createResult = await execSfdxJson(promoteCommand, this, {
-        fail: true,
-        output: true,
+      const promoteResult = await execSfdxJson(promoteCommand, this, {
+        fail: false,
+        output: false,
         debug: debugMode,
       });
-      uxLog(
-        this,
-        c.cyan(
-          `Promoted package version ${c.green(packageToPromote)} with id ${c.green(createResult.result.id)}. It is now installable on production orgs`
-        )
-      );
+      if (promoteResult.status === 0) {
+        uxLog(
+          this,
+          c.cyan(
+            `Promoted package version ${c.green(packageToPromote)} with id ${c.green(
+              promoteResult.result.id
+            )}. It is now installable on production orgs`
+          )
+        );
+        promotedPackageVersions.push({ package: packageToPromote, result: promoteResult });
+      } else {
+        uxLog(this, c.yellow(`Error promoting package version ${c.red(packageToPromote)} with id ${c.red(promoteResult.result.id)}`));
+        errorPromotedVersions.push({ package: packageToPromote, result: promoteResult });
+      }
     }
+    process.exitCode = errorPromotedVersions.length === 0 ? 0 : 1;
     // Return an object to be displayed with --json
-    return { outputString: "Promoted packages" };
+    return { outputString: "Promoted packages", promotedPackageVersions: promotedPackageVersions, errorPromotedVersions: errorPromotedVersions };
   }
 }
