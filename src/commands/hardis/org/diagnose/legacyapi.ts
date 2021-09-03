@@ -10,8 +10,8 @@ import * as Papa from "papaparse";
 import path = require("path");
 import * as sortArray from "sort-array";
 import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
-import  * as dns from "dns";
-const dnsPromises = dns.promises ;
+import * as dns from "dns";
+const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -97,7 +97,8 @@ export default class LegacyApi extends SfdxCommand {
     { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "WARNING", deprecationRelease: "Summer 21" },
     { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "INFO", deprecationRelease: "Summer 22" },
   ];
-  protected statistics: Array<any> = [];
+
+  protected outputFile;
 
   /* jscpd:ignore-end */
 
@@ -115,7 +116,7 @@ export default class LegacyApi extends SfdxCommand {
   private async runJsForce() {
     const eventType = this.flags.eventtype || "ApiTotalUsage";
     const limit = this.flags.limit || 999;
-    let outputFile = this.flags.outputfile || null;
+    this.outputFile = this.flags.outputfile || null;
 
     const limitConstraint = limit ? ` LIMIT ${limit}` : "";
     const conn = this.org.getConnection();
@@ -192,62 +193,36 @@ export default class LegacyApi extends SfdxCommand {
     }
 
     // Build output CSV file
-    if (outputFile == null) {
+    if (this.outputFile == null) {
       // Default file in system temp directory if --outputfile not provided
       const tmpDir = await createTempDir();
-      outputFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
+      this.outputFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
     } else {
       // Ensure directories to provided --outputfile are existing
-      await fs.ensureDir(path.dirname(outputFile));
+      await fs.ensureDir(path.dirname(this.outputFile));
     }
     try {
       const csvText = Papa.unparse(allErrors);
-      await fs.writeFile(outputFile, csvText, "utf8");
-      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(outputFile)}`)));
+      await fs.writeFile(this.outputFile, csvText, "utf8");
+      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(this.outputFile)}`)));
     } catch (e) {
       uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
-      outputFile = null;
+      this.outputFile = null;
     }
 
-    // Collect all ips and the number of calls
-    const ipList = {};
-    for (const eventLogRecord of allErrors) {
-      if (eventLogRecord.CLIENT_IP) {
-        const ipInfo = ipList[eventLogRecord.CLIENT_IP] || { count: 0 };
-        ipInfo.count++;
-        ipList[eventLogRecord.CLIENT_IP] = ipInfo;
+    // Generate one summary file by severity
+    const outputFileIps = [];
+    for (const descriptor of this.legacyApiDescriptors) {
+      const errors =
+        descriptor.severity === "ERROR" ? allDeadApiCalls : descriptor.severity === "WARNING" ? allSoonDeprecatedApiCalls : allEndOfSupportApiCalls;
+      if (errors.length > 0) {
+        const outputFileIp = await this.generateSummaryLog(errors, descriptor.severity);
+        outputFileIps.push(outputFileIp);
       }
-    }
-    // Try to get hostname for ips
-    const ipResults = [];
-    for (const ip of Object.keys(ipList)) {
-      const ipInfo = ipList[ip];
-      let hostname ;
-      try {
-        hostname = await dnsPromises.reverse(ip);
-      } catch (e) {
-        hostname = "unknown";
-      }
-      const ipResult = { CLIENT_IP: ip, CLIENT_HOSTNAME: hostname, SFDX_HARDIS_COUNT: ipInfo.count };
-      ipResults.push(ipResult);
-    }
-    const ipResultsSorted = sortArray(ipResults, {
-      by: ["SFDX_HARDIS_COUNT"],
-      order: ["desc"],
-    });
-    // Write output CSV with client api info
-    let outputFileIps = outputFile.endsWith('.csv') ? outputFile.replace(".csv",".api-clients.csv"): outputFile +'api-clients.csv';
-    try {
-      const csvTextIps = Papa.unparse(ipResultsSorted);
-      await fs.writeFile(outputFileIps, csvTextIps, "utf8");
-      uxLog(this, c.italic(c.cyan(`Please see info about API callers in ${c.bold(outputFileIps)}`)));
-    } catch (e) {
-      uxLog(this, c.yellow("Error while generating API callers log file:\n" + e.message + "\n" + e.stack));
-      outputFileIps = null;
     }
 
     // Debug or manage CSV file generation error
-    if (this.debugMode || outputFile == null) {
+    if (this.debugMode || this.outputFile == null) {
       uxLog(this, c.grey(c.bold("Dead API version calls:") + JSON.stringify(allDeadApiCalls, null, 2)));
       uxLog(this, c.grey(c.bold("Deprecated API version calls:") + JSON.stringify(allSoonDeprecatedApiCalls, null, 2)));
       uxLog(this, c.grey(c.bold("End of support API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
@@ -259,7 +234,7 @@ export default class LegacyApi extends SfdxCommand {
     return {
       status: statusCode,
       message: msg,
-      csvLogFile: outputFile,
+      csvLogFile: this.outputFile,
       outputFileIps: outputFileIps,
       allDeadApiCalls,
       allSoonDeprecatedApiCalls,
@@ -299,6 +274,48 @@ export default class LegacyApi extends SfdxCommand {
       }
     }
     return { deadApiCalls, soonDeprecatedApiCalls, endOfSupportApiCalls };
+  }
+
+  private async generateSummaryLog(errors, severity) {
+    // Collect all ips and the number of calls
+    const ipList = {};
+    for (const eventLogRecord of errors) {
+      if (eventLogRecord.CLIENT_IP) {
+        const ipInfo = ipList[eventLogRecord.CLIENT_IP] || { count: 0 };
+        ipInfo.count++;
+        ipList[eventLogRecord.CLIENT_IP] = ipInfo;
+      }
+    }
+    // Try to get hostname for ips
+    const ipResults = [];
+    for (const ip of Object.keys(ipList)) {
+      const ipInfo = ipList[ip];
+      let hostname;
+      try {
+        hostname = await dnsPromises.reverse(ip);
+      } catch (e) {
+        hostname = "unknown";
+      }
+      const ipResult = { CLIENT_IP: ip, CLIENT_HOSTNAME: hostname, SFDX_HARDIS_COUNT: ipInfo.count };
+      ipResults.push(ipResult);
+    }
+    const ipResultsSorted = sortArray(ipResults, {
+      by: ["SFDX_HARDIS_COUNT"],
+      order: ["desc"],
+    });
+    // Write output CSV with client api info
+    let outputFileIps = this.outputFile.endsWith(".csv")
+      ? this.outputFile.replace(".csv", ".api-clients-" + severity + ".csv")
+      : this.outputFile + "api-clients-" + severity + ".csv";
+    try {
+      const csvTextIps = Papa.unparse(ipResultsSorted);
+      await fs.writeFile(outputFileIps, csvTextIps, "utf8");
+      uxLog(this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
+    } catch (e) {
+      uxLog(this, c.yellow("Error while generating " + severity + " API callers log file:\n" + e.message + "\n" + e.stack));
+      outputFileIps = null;
+    }
+    return outputFileIps;
   }
 
   // Run using Philippe Ozil script as anonymous apex code (has limitations on the latest 99 ApiTotalUsage logs)
