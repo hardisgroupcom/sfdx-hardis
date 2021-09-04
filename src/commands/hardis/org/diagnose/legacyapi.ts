@@ -29,10 +29,10 @@ export default class LegacyApi extends SfdxCommand {
 - An external application (ESB, ETL, Web Portal, Mobile application...) using a deprecated API version will receive errors as response, and this will probably break integrations business processes
 - More info in [Salesforce Help](https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1) and in this [Salesforce blog post](https://t.co/uc2cobzmVi?amp=1)
 
-| API versions  | Salesforce deprecation release  |
-|:-------------:|:-------------------------------:|
-| 7.0 to 20.0   | Summer 21                       |
-| 21.0 to 30.0  | Summer 22                       |
+| API versions | Salesforce deprecation release |
+|:------------:|:------------------------------:|
+| 7.0 to 20.0  |           Summer 21            |
+| 21.0 to 30.0 |           Summer 22            |
 
 - Run the command \`sfdx hardis:org:diagnose:legacyapi\`
 
