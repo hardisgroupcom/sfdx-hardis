@@ -342,6 +342,7 @@
     "remotesites",
     "removedonly",
     "removepackagexml",
+    "reportfile",
     "resetsave",
     "resetselection",
     "resultformat",
