@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.51.6] 2021-09-10
+
+- Take in account parameter `--ignore-whitespace` of sfdx-git-delta for packageOnChange.xml
+
 ## [2.51.5] 2021-09-10
 
 - hardis:org:diagnose:legacyapi: Provide additional report with unique list of ips, hostnames (when available) , and number of calls

@@ -329,7 +329,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   const tmpDir = await createTempDir();
   const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: debugMode })).stdout;
   const packageXmlGitDeltaCommand =
-    `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}` + (sgdHelp.includes("--permissivediff") ? " --permissivediff" : "");
+    `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}` + (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
   const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
     output: true,
     fail: false,
