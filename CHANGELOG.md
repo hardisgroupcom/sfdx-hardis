@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix hardis:package:version:promote
+
 ## [2.51.4] 2021-09-03
 
 - hardis:org:diagnose:legacyapi: Allow to override default output reportfile with `--outputfile` argument
