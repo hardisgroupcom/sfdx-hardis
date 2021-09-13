@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.52.0] 2021-09-14
+
+- New command **hardis:project:fix:v53flexipages** to fix v53.0 broken ascending compatibility
+- New command **hardis:project:audit:duplicatefiles** to detect doubling files in wrong sfdx folders
+
 ## [2.51.6] 2021-09-10
 
 - Take in account parameter `--ignore-whitespace` of sfdx-git-delta for packageOnChange.xml
