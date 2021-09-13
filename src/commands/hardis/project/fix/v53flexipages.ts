@@ -19,7 +19,7 @@ export default class FixV53Flexipages extends SfdxCommand {
 
     public static description = `Fix flexipages for apiVersion v53 (Winter22).
     
-Note: Update api version to 53.0 in package.xml and sfdx-project.json` ;
+Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
 
     public static examples = ["$ sfdx hardis:project:fix:v53flexipages"];
 
@@ -59,38 +59,58 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json` ;
         uxLog(this, c.cyan(`Adding identifiers to componentInstance in flexipages`));
         /* jscpd:ignore-end */
 
-        const globPattern = this.pathToBrowse + `/**/*.flexipage-meta.xml`
+        const globPattern = this.pathToBrowse + `/**/*.flexipage-meta.xml`;
 
         let counter = 0;
         const flexipages = [];
-        const regex = /(<componentName>.*<\/componentName>\n.*<\/componentInstance>)/gmi
         const flexipageSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse });
         uxLog(this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
+        const regexAndReplacements = [
+            {
+                regex: /(<componentName>.*<\/componentName>\n.*<\/componentInstance>)/gim,
+                replace: "</componentName>",
+                replaceWith: `</componentName>\n                <identifier>SFDX_HARDIS_REPLACEMENT_ID</identifier>`
+            },
+            {
+                regex: /(<componentName>.*<\/componentName>\n.*<visibilityRule>)/gim,
+                replace: "</componentName>",
+                replaceWith: `</componentName>\n                <identifier>SFDX_HARDIS_REPLACEMENT_ID</identifier>`
+            },
+            {
+                regex: /(<fieldItem>.*<\/fieldItem>\n.*<\/fieldInstance>)/gim,
+                replace: "</fieldItem>",
+                replaceWith: `</fieldItem>\n                <identifier>SFDX_HARDIS_REPLACEMENT_ID</identifier>`
+            }
+        ]
         for (const flexiFile of flexipageSourceFiles) {
             let flexipageRawXml = await fs.readFile(flexiFile, "utf8");
-            let m;
             let found = false;
-            while ((m = regex.exec(flexipageRawXml)) !== null) {
-                found = true;
-                // This is necessary to avoid infinite loops with zero-width matches
-                if (m.index === regex.lastIndex) {
-                    regex.lastIndex++;
-                }
-                // Iterate thru the regex matches
-                m.forEach((match, groupIndex) => {
-                    console.log(`Found match, group ${groupIndex}: ${match}`);
-                    const newId = 'sfdxHardisId' + counter;
-                    const replacementWithIdentifier = match.replace('</componentName>', `</componentName>\n                <identifier>${newId}</identifier>`);
-                    flexipageRawXml = flexipageRawXml.replace(match, replacementWithIdentifier);
-                    if (!flexipages.includes(flexiFile)) {
-                        flexipages.push(flexiFile);
+            for (const replaceParams of regexAndReplacements) {
+                const regex = replaceParams.regex ;
+                let m;
+                while ((m = regex.exec(flexipageRawXml)) !== null) {
+                    found = true;
+                    // This is necessary to avoid infinite loops with zero-width matches
+                    if (m.index === regex.lastIndex) {
+                        regex.lastIndex++;
                     }
-                    counter++;
-                });
-            }
-            if (found) {
-                await fs.writeFile(flexiFile, flexipageRawXml);
-                uxLog(this, c.grey('Updated ' + flexiFile));
+                    // Iterate thru the regex matches
+                    m.forEach((match, groupIndex) => {
+                        console.log(`Found match, group ${groupIndex}: ${match}`);
+                        const newId = "sfdxHardisId" + counter;
+                        const replaceWith = replaceParams.replaceWith.replace("SFDX_HARDIS_REPLACEMENT_ID",newId);
+                        const replacementWithIdentifier = match.replace(replaceParams.replace, replaceWith);
+                        flexipageRawXml = flexipageRawXml.replace(match, replacementWithIdentifier);
+                        if (!flexipages.includes(flexiFile)) {
+                            flexipages.push(flexiFile);
+                        }
+                        counter++;
+                    });
+                }
+                if (found) {
+                    await fs.writeFile(flexiFile, flexipageRawXml);
+                    uxLog(this, c.grey("Updated " + flexiFile));
+                }
             }
         }
 
