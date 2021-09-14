@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.53.1] 2021-09-14
+
+- Update Object deployed when configuring scratch org pool (replace Html by LongTextArea)
+
 ## [2.53.0] 2021-09-14
 
 - Additional docker images, to use when stable and latest sfdx-cli versions arr broken

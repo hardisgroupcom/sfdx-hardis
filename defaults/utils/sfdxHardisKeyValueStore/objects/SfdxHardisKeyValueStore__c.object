@@ -161,7 +161,7 @@ https://github.com/hardisgroupcom/sfdx-hardis</description>
         <label>Value Text</label>
         <length>131072</length>
         <trackTrending>false</trackTrending>
-        <type>Html</type>
+        <type>LongTextArea</type>
         <visibleLines>50</visibleLines>
     </fields>
     <gender>Masculine</gender>
