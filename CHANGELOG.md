@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.53.0] 2021-09-14
+
+- Additional docker images, to use when stable and latest sfdx-cli versions arr broken
+  - hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
+  - hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
+  - hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
+
 ## [2.52.0] 2021-09-14
 
 - New command **hardis:project:fix:v53flexipages** to fix v53.0 broken ascending compatibility
