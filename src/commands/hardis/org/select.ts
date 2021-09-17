@@ -26,6 +26,11 @@ export default class OrgSelect extends SfdxCommand {
       default: false,
       description: messages.getMessage("withDevHub"),
     }),
+    scratch: flags.boolean({
+      char: "s",
+      default: false,
+      description: "Select scratch org related to default DevHub",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -51,9 +56,10 @@ export default class OrgSelect extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const devHub = this.flags.devhub || false;
+    const scratch = this.flags.scratch ;
     this.debugMode = this.flags.debug || false;
 
-    const org = await promptOrg(this, { devHub: devHub, setDefault: true });
+    const org = await promptOrg(this, { devHub: devHub, setDefault: true, scratch: scratch });
 
     // Return an object to be displayed with --json
     return { outputString: `Selected org ${org.username}` };

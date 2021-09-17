@@ -47,23 +47,34 @@ export async function promptProfiles(conn: any, options: any = { multiselect: fa
   }
 }
 
-export async function promptOrg(commandThis: any, options: any = { devHub: false, setDefault: true }) {
+export async function promptOrg(commandThis: any, options: any = { devHub: false, setDefault: true, scratch: false }) {
   // List all local orgs and request to user
   const orgListResult = await MetadataUtils.listLocalOrgs("any");
-  const orgList = [
+  let orgList = [
     ...sortArray(orgListResult?.scratchOrgs || [], { by: ["devHubUsername", "username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     ...sortArray(orgListResult?.nonScratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     { username: "Connect to another org", otherOrg: true },
     { username: "Cancel", cancel: true },
   ];
 
+  // Filter if we want to list only the scratch attached to current devhub
+  if (options.scratch === true) {
+    const configGetRes = await execSfdxJson("sfdx config:get defaultdevhubusername", this, {
+      output: false,
+      fail: true,
+    });
+    const hubOrgUsername = configGetRes?.result[0]?.value || "";
+    orgList = orgList.filter((org: any) => org.status === "Active" && org.devHubUsername === hubOrgUsername);
+  }
+
+  // Prompt user
   const orgResponse = await prompts({
     type: "select",
     name: "org",
     message: c.cyanBright("Please select an org"),
     choices: orgList.map((org: any) => {
       const title = org.username || org.alias || org.instanceUrl;
-      const description = (title !== org.instanceUrl ? org.instanceUrl : "") + (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : "");
+      const description = (title !== org.instanceUrl ? org.instanceUrl : "") + (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : "-");
       return {
         title: c.cyan(title),
         description: description || "-",
