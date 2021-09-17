@@ -56,7 +56,7 @@ export default class OrgSelect extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const devHub = this.flags.devhub || false;
-    const scratch = this.flags.scratch ;
+    const scratch = this.flags.scratch;
     this.debugMode = this.flags.debug || false;
 
     const org = await promptOrg(this, { devHub: devHub, setDefault: true, scratch: scratch });
