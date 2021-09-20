@@ -5,9 +5,10 @@ import * as which from "which";
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { addScratchOrgToPool, getPoolStorage } from "../../../../common/utils/poolUtils";
+import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
-import { uxLog } from "../../../../common/utils";
+import { execCommand, uxLog } from "../../../../common/utils";
+import moment = require("moment");
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const stripAnsi2 = require("strip-ansi");
@@ -65,10 +66,39 @@ export default class ScratchPoolRefresh extends SfdxCommand {
 
     // Get pool storage
     const poolStorage = await getPoolStorage({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
-    const scratchOrgs = poolStorage.scratchOrgs || [];
+    let scratchOrgs = poolStorage.scratchOrgs || [];
 
     // Clean expired orgs
-    // Not implemented yet
+    const minScratchOrgRemainingDays = config.poolConfig.minScratchOrgRemainingDays || 25;
+    const scratchOrgsToDelete = [];
+    scratchOrgs = scratchOrgs.filter((scratchOrg) => {
+      const expiration = moment(scratchOrg.expirationDate);
+      const today = moment();
+      const daysBeforeExpiration = expiration.diff(today, "days");
+      if (daysBeforeExpiration < minScratchOrgRemainingDays) {
+        scratchOrg.daysBeforeExpiration = daysBeforeExpiration;
+        scratchOrgsToDelete.push(scratchOrg);
+        return false;
+      }
+      return true;
+    });
+    // Delete expired orgs and update pool if found
+    if (scratchOrgsToDelete.length > 0) {
+      poolStorage.scratchOrgs = scratchOrgs;
+      await setPoolStorage(poolStorage, { devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+      for (const scratchOrgToDelete of scratchOrgsToDelete) {
+        const deleteCommand = `sfdx force:org:delete --noprompt --targetusername ${scratchOrgToDelete.username}`;
+        await execCommand(deleteCommand, this, { fail: false, debug: this.debugMode, output: true });
+        uxLog(
+          this,
+          c.cyan(
+            `Scratch org ${c.green(scratchOrgToDelete.username)} at ${scratchOrgToDelete.instanceUrl} has been deleted because only ${
+              scratchOrgToDelete.daysBeforeExpiration
+            } days were remaining.`
+          )
+        );
+      }
+    }
 
     // Create new scratch orgs
     const numberOfOrgsToCreate = maxScratchOrgsNumber - scratchOrgs.length;
