@@ -66,7 +66,7 @@ export async function addScratchOrgToPool(scratchOrg: any, options: any = { posi
     poolStorage.scratchOrgErrors = scratchOrgErrors;
     await setPoolStorage(poolStorage, options);
     */
-    uxLog(this, '[pool] '+c.red("Scratch org creation error: \n" + JSON.stringify(scratchOrg)));
+    uxLog(this, "[pool] " + c.red("Scratch org creation error: \n" + JSON.stringify(scratchOrg)));
   }
 }
 

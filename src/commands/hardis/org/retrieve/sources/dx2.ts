@@ -31,7 +31,7 @@ export default class DxSources2 extends SfdxCommand {
     }),
     template: flags.string({
       char: "t",
-      description: "sfdx-hardis package.xml Template name. ex: wave"
+      description: "sfdx-hardis package.xml Template name. ex: wave",
     }),
     debug: flags.boolean({
       char: "d",
