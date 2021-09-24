@@ -60,10 +60,13 @@ export async function addScratchOrgToPool(scratchOrg: any, options: any = { posi
     await setPoolStorage(poolStorage, options);
   } else {
     // Store scratch creation errors
+    /*
     const scratchOrgErrors = poolStorage.scratchOrgErrors || [];
     scratchOrgErrors.push(scratchOrg);
     poolStorage.scratchOrgErrors = scratchOrgErrors;
     await setPoolStorage(poolStorage, options);
+    */
+    uxLog(this, '[pool] '+c.red("Scratch org creation error: \n" + JSON.stringify(scratchOrg)));
   }
 }
 

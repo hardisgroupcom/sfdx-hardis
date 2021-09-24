@@ -1,13 +1,15 @@
 /* jscpd:ignore-start */
 import { spawn } from "child_process";
 import * as c from "chalk";
+import * as fs from "fs-extra";
+import * as path from "path";
 import * as which from "which";
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
-import { execCommand, uxLog } from "../../../../common/utils";
+import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
 import moment = require("moment");
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -87,14 +89,22 @@ export default class ScratchPoolRefresh extends SfdxCommand {
       poolStorage.scratchOrgs = scratchOrgs;
       await setPoolStorage(poolStorage, { devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
       for (const scratchOrgToDelete of scratchOrgsToDelete) {
-        const deleteCommand = `sfdx force:org:delete --noprompt --targetusername ${scratchOrgToDelete.username}`;
+        // Authenticate to scratch org to delete
+        const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
+        const authFileContent =
+          scratchOrgToDelete.scratchOrgSfdxAuthUrl || (scratchOrgToDelete.authFileJson ? JSON.stringify(scratchOrgToDelete.authFileJson) : null);
+        await fs.writeFile(authFile, authFileContent, "utf8");
+        const authCommand = `sfdx auth:sfdxurl:store -f ${authFile}`;
+        await execCommand(authCommand, this, { fail: true, output: false });
+        // Delete scratch org
+        const deleteCommand = `sfdx force:org:delete --noprompt --targetusername ${scratchOrgToDelete.scratchOrgUsername}`;
         await execCommand(deleteCommand, this, { fail: false, debug: this.debugMode, output: true });
         uxLog(
           this,
           c.cyan(
-            `Scratch org ${c.green(scratchOrgToDelete.username)} at ${scratchOrgToDelete.instanceUrl} has been deleted because only ${
-              scratchOrgToDelete.daysBeforeExpiration
-            } days were remaining.`
+            `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${
+              scratchOrgToDelete?.authFileJson?.result?.instanceUrl
+            } has been deleted because only ${scratchOrgToDelete.daysBeforeExpiration} days were remaining.`
           )
         );
       }

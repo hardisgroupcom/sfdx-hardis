@@ -315,6 +315,13 @@
       "title": "Scratch org pool configuration",
       "type": "object",
       "properties": {
+        "minScratchOrgRemainingDays": {
+          "$id": "#/properties/poolConfig/minScratchOrgRemainingDays",
+          "description": "When pool scratch org is less than this number, it is deleted and another one is created",
+          "title": "Min scratch org remaining days",
+          "default": 25,
+          "type": "number"
+        },
         "maxScratchOrgsNumber": {
           "$id": "#/properties/poolConfig/maxScratchOrgsNumber",
           "description": "Maximum number of active scratch orgs in the scratch org pool",
