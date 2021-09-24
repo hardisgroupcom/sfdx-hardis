@@ -4,10 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.54.0] 2021-09-17
+## [2.54.0] 2021-09-24
 
 - Allow to override force:org:create waiting time using SCRATCH_ORG_WAIT en variable (default: 15mn)
 - hardis:org:select : new parameter `--scratch` to allow to list only scratch orgs related to current Dev Hub
+- hardis:org:retrieve:sources:dx2 : New parameter `--template` to use default package.xml files (ex: `wave`)
+- Scratch org pool: automatically delete too old ready-to-use scratch orgs
+- Deploy Tips
+  - Wave deployment error
 
 ## [2.53.1] 2021-09-14
 

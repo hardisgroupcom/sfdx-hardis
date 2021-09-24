@@ -587,6 +587,11 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: false,
       },
       {
+        label: "Tableau CRM / Einstein Analytics / Wave",
+        regex: /wave\//i,
+        defaultSelect: false,
+      },
+      {
         label: "Other",
         regex: /(.*?)/i,
         defaultSelect: false,

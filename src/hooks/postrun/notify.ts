@@ -1,6 +1,7 @@
 import * as changedGitFiles from "changed-git-files";
+import * as c from "chalk";
 import { IncomingWebhook } from "ms-teams-webhook";
-import { elapseEnd, isGitRepo } from "../../common/utils";
+import { elapseEnd, isGitRepo, uxLog } from "../../common/utils";
 import { getConfig } from "../../config";
 
 export const hook = async (options: any) => {
@@ -21,7 +22,11 @@ export const hook = async (options: any) => {
 
   // Close WebSocketClient if existing
   if (globalThis.webSocketClient) {
-    globalThis.webSocketClient.dispose();
+    try {
+      globalThis.webSocketClient.dispose();
+    } catch (e) {
+      uxLog(this, c.yellow("Unable to close webSocketClient") + "\n" + e.message);
+    }
     globalThis.webSocketClient = null;
   }
 

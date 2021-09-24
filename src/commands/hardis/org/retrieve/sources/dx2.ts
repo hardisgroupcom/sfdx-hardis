@@ -29,6 +29,10 @@ export default class DxSources2 extends SfdxCommand {
       char: "x",
       description: "Path to package.xml file",
     }),
+    template: flags.string({
+      char: "t",
+      description: "sfdx-hardis package.xml Template name. ex: wave"
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -56,12 +60,18 @@ export default class DxSources2 extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     let packageXml = this.flags.packagexml || null;
     let targetUsername = this.flags.targetusername || null;
+    const template = this.flags.template || null;
     this.debugMode = this.flags.debug || false;
 
     // Prompt for organization if not sent
     if (targetUsername == null) {
       const org = await promptOrg(this, { setDefault: false });
       targetUsername = org.username;
+    }
+
+    // Use package.xml template provided by sfdx-hardis
+    if (template) {
+      packageXml = path.join(__dirname, `../../../../../../ref`, `${template}-package.xml`);
     }
 
     // Prompt for package.xml if not sent

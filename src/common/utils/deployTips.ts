@@ -425,5 +425,11 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`
 - enable the related permission in the target org
 - or remove references to permission in source XML files`,
     },
+    {
+      name: "wave-digest-error",
+      label: "Tableau CRM / Wave digest error",
+      expressionString: ["Fix thefdcDigest node errors and then upload the file again"],
+      tip: `Go to the target org, open profile "Analytics Cloud Integration User" and add READ rights to the missing object fields `,
+    },
   ];
 }
