@@ -428,7 +428,7 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`
     {
       name: "wave-digest-error",
       label: "Tableau CRM / Wave digest error",
-      expressionString: ["Fix thefdcDigest node errors and then upload the file again"],
+      expressionString: ["Fix the sfdcDigest node errors and then upload the file again"],
       tip: `Go to the target org, open profile "Analytics Cloud Integration User" and add READ rights to the missing object fields `,
     },
   ];
