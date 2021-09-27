@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.54.0] 2021-09-24
+## [2.54.0] 2021-09-27
 
 - Allow to override force:org:create waiting time using SCRATCH_ORG_WAIT en variable (default: 15mn)
 - hardis:org:select : new parameter `--scratch` to allow to list only scratch orgs related to current Dev Hub
