@@ -74,16 +74,16 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     const minScratchOrgRemainingDays = config.poolConfig.minScratchOrgRemainingDays || 25;
     const scratchOrgsToDelete = [];
     scratchOrgs = scratchOrgs.filter((scratchOrg) => {
-      const expiration = moment(scratchOrg.expirationDate);
+      const expiration = moment(scratchOrg?.authFileJson?.result?.expirationDate);
       const today = moment();
       const daysBeforeExpiration = expiration.diff(today, "days");
       if (daysBeforeExpiration < minScratchOrgRemainingDays) {
         scratchOrg.daysBeforeExpiration = daysBeforeExpiration;
         scratchOrgsToDelete.push(scratchOrg);
-        uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg.expirationDate})`));
+        uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`));
          return false;
       }
-      uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kepy as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg.expirationDate})`));
+      uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kepy as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`));
       return true;
     });
     // Delete expired orgs and update pool if found
