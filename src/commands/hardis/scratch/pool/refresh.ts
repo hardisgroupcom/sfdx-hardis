@@ -1,13 +1,16 @@
 /* jscpd:ignore-start */
 import { spawn } from "child_process";
 import * as c from "chalk";
+import * as fs from "fs-extra";
+import * as path from "path";
 import * as which from "which";
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { addScratchOrgToPool, getPoolStorage } from "../../../../common/utils/poolUtils";
+import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
-import { uxLog } from "../../../../common/utils";
+import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
+import moment = require("moment");
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const stripAnsi2 = require("strip-ansi");
@@ -65,10 +68,59 @@ export default class ScratchPoolRefresh extends SfdxCommand {
 
     // Get pool storage
     const poolStorage = await getPoolStorage({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
-    const scratchOrgs = poolStorage.scratchOrgs || [];
+    let scratchOrgs = poolStorage.scratchOrgs || [];
 
     // Clean expired orgs
-    // Not implemented yet
+    const minScratchOrgRemainingDays = config.poolConfig.minScratchOrgRemainingDays || 25;
+    const scratchOrgsToDelete = [];
+    scratchOrgs = scratchOrgs.filter((scratchOrg) => {
+      const expiration = moment(scratchOrg?.authFileJson?.result?.expirationDate);
+      const today = moment();
+      const daysBeforeExpiration = expiration.diff(today, "days");
+      if (daysBeforeExpiration < minScratchOrgRemainingDays) {
+        scratchOrg.daysBeforeExpiration = daysBeforeExpiration;
+        scratchOrgsToDelete.push(scratchOrg);
+        uxLog(
+          this,
+          c.grey(
+            `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
+          )
+        );
+        return false;
+      }
+      uxLog(
+        this,
+        c.grey(
+          `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kept as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
+        )
+      );
+      return true;
+    });
+    // Delete expired orgs and update pool if found
+    if (scratchOrgsToDelete.length > 0) {
+      poolStorage.scratchOrgs = scratchOrgs;
+      await setPoolStorage(poolStorage, { devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+      for (const scratchOrgToDelete of scratchOrgsToDelete) {
+        // Authenticate to scratch org to delete
+        const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
+        const authFileContent =
+          scratchOrgToDelete.scratchOrgSfdxAuthUrl || (scratchOrgToDelete.authFileJson ? JSON.stringify(scratchOrgToDelete.authFileJson) : null);
+        await fs.writeFile(authFile, authFileContent, "utf8");
+        const authCommand = `sfdx auth:sfdxurl:store -f ${authFile}`;
+        await execCommand(authCommand, this, { fail: true, output: false });
+        // Delete scratch org
+        const deleteCommand = `sfdx force:org:delete --noprompt --targetusername ${scratchOrgToDelete.scratchOrgUsername}`;
+        await execCommand(deleteCommand, this, { fail: false, debug: this.debugMode, output: true });
+        uxLog(
+          this,
+          c.cyan(
+            `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${
+              scratchOrgToDelete?.authFileJson?.result?.instanceUrl
+            } has been deleted because only ${scratchOrgToDelete.daysBeforeExpiration} days were remaining.`
+          )
+        );
+      }
+    }
 
     // Create new scratch orgs
     const numberOfOrgsToCreate = maxScratchOrgsNumber - scratchOrgs.length;

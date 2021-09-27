@@ -246,10 +246,12 @@ export default class ScratchCreate extends SfdxCommand {
 
     // Create new scratch org
     uxLog(this, c.cyan("Creating new scratch org..."));
+    const waitTime = process.env.SCRATCH_ORG_WAIT || "15";
     const createCommand =
       "sfdx force:org:create --setdefaultusername " +
       `--definitionfile ${projectScratchDefLocal} ` +
       `--setalias ${this.scratchOrgAlias} ` +
+      `--wait ${waitTime} ` +
       `--targetdevhubusername ${this.devHubAlias} ` +
       `-d ${this.scratchOrgDuration}`;
     const createResult = await execSfdxJson(createCommand, this, {
@@ -257,16 +259,7 @@ export default class ScratchCreate extends SfdxCommand {
       output: false,
       debug: this.debugMode,
     });
-    assert(
-      createResult.status === 0 && createResult.result,
-      c.red(
-        `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
-          createResult,
-          null,
-          2
-        )}`
-      )
-    );
+    assert(createResult.status === 0 && createResult.result, this.buildScratchCreateErrorMessage(createResult));
     this.scratchOrgInfo = createResult.result;
     this.scratchOrgUsername = this.scratchOrgInfo.username;
     await setConfig("user", {
@@ -341,6 +334,25 @@ export default class ScratchCreate extends SfdxCommand {
       });
     }
     uxLog(this, c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
+  }
+
+  public buildScratchCreateErrorMessage(createResult) {
+    if (createResult.status === 0 && createResult.result) {
+      return c.green("Scratch create OK");
+    } else if (createResult.status === 1 && createResult.errorMessage.includes("Socket timeout occurred while listening for results")) {
+      return c.red(
+        `[sfdx-hardis] Error creating scratch org. ${c.bold(
+          "This is probably a Salesforce error, try again manually or launch again CI job"
+        )}\n${JSON.stringify(createResult, null, 2)}`
+      );
+    }
+    return c.red(
+      `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
+        createResult,
+        null,
+        2
+      )}`
+    );
   }
 
   // Update scratch org user

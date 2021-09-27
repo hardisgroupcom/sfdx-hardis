@@ -45,8 +45,22 @@ export async function setPoolStorage(value: any, options: any = {}) {
   return null;
 }
 
-// Write scratch org pool remote storage
+let updatingPool = false;
 export async function addScratchOrgToPool(scratchOrg: any, options: any = { position: "last" }) {
+  if (updatingPool === true) {
+    uxLog(this, c.grey("Already updating scratch org pool: try again in 2000 ms"));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    return await addScratchOrgToPool(scratchOrg, options);
+  } else {
+    updatingPool = true;
+    const res = await executeAddScratchOrgToPool(scratchOrg, options);
+    updatingPool = false;
+    return res;
+  }
+}
+
+// Write scratch org pool remote storage
+async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { position: "last" }) {
   const poolStorage = await getPoolStorage(options);
   // Valid scratch orgs
   if (scratchOrg.status === 0) {
@@ -60,10 +74,13 @@ export async function addScratchOrgToPool(scratchOrg: any, options: any = { posi
     await setPoolStorage(poolStorage, options);
   } else {
     // Store scratch creation errors
+    /*
     const scratchOrgErrors = poolStorage.scratchOrgErrors || [];
     scratchOrgErrors.push(scratchOrg);
     poolStorage.scratchOrgErrors = scratchOrgErrors;
     await setPoolStorage(poolStorage, options);
+    */
+    uxLog(this, "[pool] " + c.red("Scratch org creation error: \n" + JSON.stringify(scratchOrg)));
   }
 }
 
