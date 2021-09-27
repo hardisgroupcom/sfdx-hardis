@@ -80,8 +80,10 @@ export default class ScratchPoolRefresh extends SfdxCommand {
       if (daysBeforeExpiration < minScratchOrgRemainingDays) {
         scratchOrg.daysBeforeExpiration = daysBeforeExpiration;
         scratchOrgsToDelete.push(scratchOrg);
-        return false;
+        uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg.expirationDate})`));
+         return false;
       }
+      uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kepy as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg.expirationDate})`));
       return true;
     });
     // Delete expired orgs and update pool if found
