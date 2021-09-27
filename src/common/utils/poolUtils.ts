@@ -48,7 +48,7 @@ export async function setPoolStorage(value: any, options: any = {}) {
 let updatingPool = false;
 export async function addScratchOrgToPool(scratchOrg: any, options: any = { position: "last" }) {
   if (updatingPool === true) {
-    uxLog(this,c.grey('Already updating scratch org pool: try again in 2000 ms'))
+    uxLog(this, c.grey("Already updating scratch org pool: try again in 2000 ms"));
     await new Promise((resolve) => setTimeout(resolve, 2000));
     return await addScratchOrgToPool(scratchOrg, options);
   } else {
