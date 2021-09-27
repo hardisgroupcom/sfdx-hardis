@@ -83,7 +83,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
         uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`));
          return false;
       }
-      uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kepy as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`));
+      uxLog(this,c.grey(`Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kept as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`));
       return true;
     });
     // Delete expired orgs and update pool if found
