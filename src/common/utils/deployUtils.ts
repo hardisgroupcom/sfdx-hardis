@@ -220,7 +220,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     const deploymentItems = [mainPackageXmlItem];
 
     // Work on deploymentPlan packages before deploying them
-    if (!(process.env?.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES === 'true')) {
+    if (!(process.env?.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES === "true")) {
       for (const deploymentItem of config.deploymentPlan.packages) {
         if (deploymentItem.packageXmlFile) {
           // Copy deployment in temp packageXml file so it can be updated using packageDeployOnce and packageDeployOnChange
