@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.55.0] 2021-10-01
+
+- Manage env var SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES. If "true", package.xmls are not split with deploymentPlan
+
 ## [2.54.0] 2021-09-27
 
 - Allow to override force:org:create waiting time using SCRATCH_ORG_WAIT en variable (default: 15mn)

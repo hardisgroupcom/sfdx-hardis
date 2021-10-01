@@ -220,25 +220,27 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     const deploymentItems = [mainPackageXmlItem];
 
     // Work on deploymentPlan packages before deploying them
-    for (const deploymentItem of config.deploymentPlan.packages) {
-      if (deploymentItem.packageXmlFile) {
-        // Copy deployment in temp packageXml file so it can be updated using packageDeployOnce and packageDeployOnChange
-        deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
-        const splitPackageXmlCopyFileName = path.join(tmpDeployDir, path.basename(deploymentItem.packageXmlFile));
-        await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
-        deploymentItem.packageXmlFile = splitPackageXmlCopyFileName;
-        // Remove split of packageXml content from main package.xml
-        await removePackageXmlContent(mainPackageXmlCopyFileName, deploymentItem.packageXmlFile, false, debugMode);
-        // Remove packageDeployOnce.xml items that are already present in target org
-        if (deployOncePackageXml) {
-          await removePackageXmlContent(deploymentItem.packageXmlFile, deployOncePackageXml, false, debugMode);
+    if (!(process.env?.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES === 'true')) {
+      for (const deploymentItem of config.deploymentPlan.packages) {
+        if (deploymentItem.packageXmlFile) {
+          // Copy deployment in temp packageXml file so it can be updated using packageDeployOnce and packageDeployOnChange
+          deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
+          const splitPackageXmlCopyFileName = path.join(tmpDeployDir, path.basename(deploymentItem.packageXmlFile));
+          await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
+          deploymentItem.packageXmlFile = splitPackageXmlCopyFileName;
+          // Remove split of packageXml content from main package.xml
+          await removePackageXmlContent(mainPackageXmlCopyFileName, deploymentItem.packageXmlFile, false, debugMode);
+          // Remove packageDeployOnce.xml items that are already present in target org
+          if (deployOncePackageXml) {
+            await removePackageXmlContent(deploymentItem.packageXmlFile, deployOncePackageXml, false, debugMode);
+          }
+          // Remove packageDeployOnChange.xml items that are not different in target org
+          if (deployOnChangePackageXml) {
+            await removePackageXmlContent(deploymentItem.packageXmlFile, deployOnChangePackageXml, false, debugMode);
+          }
         }
-        // Remove packageDeployOnChange.xml items that are not different in target org
-        if (deployOnChangePackageXml) {
-          await removePackageXmlContent(deploymentItem.packageXmlFile, deployOnChangePackageXml, false, debugMode);
-        }
+        deploymentItems.push(deploymentItem);
       }
-      deploymentItems.push(deploymentItem);
     }
 
     // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org

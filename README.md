@@ -492,8 +492,7 @@ OPTIONS
 
 DESCRIPTION
   Advanced command guide in this article: 
-  [https://nicolasvuillamy.medium.com/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238](https://nicola
-  svuillamy.medium.com/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
+  [https://nicolasvuillamy.medium.com/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238](https://nicolasvuillamy.medium.com/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
 
   - Salesforce will remove access to old API versions in the following releases
   - An external application (ESB, ETL, Web Portal, Mobile application...) using a deprecated API version will receive 
