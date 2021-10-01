@@ -220,11 +220,10 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     const deploymentItems = [mainPackageXmlItem];
 
     // Work on deploymentPlan packages before deploying them
-    const skipSplitPackages = process.env.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES === "true" ;
+    const skipSplitPackages = process.env.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES === "true";
     if (skipSplitPackages === true) {
-      uxLog(this,c.yellow("Do not split package.xml, as SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES = true has been found in ENV vars"));
-    }
-    else {
+      uxLog(this, c.yellow("Do not split package.xml, as SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES = true has been found in ENV vars"));
+    } else {
       for (const deploymentItem of config.deploymentPlan.packages) {
         if (deploymentItem.packageXmlFile) {
           // Copy deployment in temp packageXml file so it can be updated using packageDeployOnce and packageDeployOnChange

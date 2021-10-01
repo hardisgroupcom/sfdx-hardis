@@ -9,7 +9,7 @@ export const hook = async (options: any) => {
     return;
   }
   if (process.env.SFDX_HARDIS_DEBUG_ENV === "true") {
-    console.log("ENV VARS:\n"+JSON.stringify(process.env,null,2));
+    console.log("ENV VARS:\n" + JSON.stringify(process.env, null, 2));
   }
   if (!isCI) {
     // Initialize log file name
