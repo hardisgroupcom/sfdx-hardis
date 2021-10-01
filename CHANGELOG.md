@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.55.1] 2021-10-01
+
+- SFDX_HARDIS_DEBUG_ENV. If set to true, display env vars at startup
+
+
 ## [2.55.0] 2021-10-01
 
 - Manage env var SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES. If "true", package.xmls are not split with deploymentPlan

@@ -19,7 +19,12 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class DxSources extends SfdxCommand {
   public static title = "Deploy sfdx sources to org";
 
-  public static description = messages.getMessage("deployDx");
+  public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
+
+  Env vars override:
+  
+  - SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml
+`;
 
   public static examples = ["$ sfdx hardis:project:deploy:sources:dx"];
 
