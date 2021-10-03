@@ -9,7 +9,6 @@
   "completeWorkTask": "When a work task is completed, guide user to create a merge request",
   "dataTreeExport": "Assisted export data defined in .sfdx-hardis.yml",
   "debugMode": "Activate debug mode (more logs)",
-  "deployDx": "Deploy SFDX project sources to org",
   "deployMetadatas": "Deploy metadatas to source org",
   "exceptFilter": "Allow to take all item except these criteria",
   "failIfError": "Fails (exit code 1) if an error is found",

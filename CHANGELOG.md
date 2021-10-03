@@ -4,10 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.55.2] 2021-10-03
+
+- Fix link to <https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238>
+
 ## [2.55.1] 2021-10-01
 
 - SFDX_HARDIS_DEBUG_ENV. If set to true, display env vars at startup
-
 
 ## [2.55.0] 2021-10-01
 
