@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.55.3] 2021-10-05
+
+- When not in CI, disable auto-update of .gitignore and .forceignore files because of a prompt library issue. To enable it, define AUTO_UPDATE env variable to "true"
+
 ## [2.55.2] 2021-10-03
 
 - Fix link to <https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238>

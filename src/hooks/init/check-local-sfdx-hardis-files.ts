@@ -26,6 +26,11 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
   ) {
     return;
   }
+
+  if (!isCI && process.env.AUTO_UPDATE !== "true") {
+    return;
+  }
+
   // Manage .gitignore
   if (!config.skipUpdateGitIgnore === true) {
     const gitIgnoreFile = "./.gitignore";
