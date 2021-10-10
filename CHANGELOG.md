@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.56.0] 2021-10-10
+
+- Update auto-generated documentation to add a commands.md + its link in the menu
+
 ## [2.55.3] 2021-10-05
 
 - When not in CI, disable auto-update of .gitignore and .forceignore files because of a prompt library issue. To enable it, define AUTO_UPDATE env variable to "true"
