@@ -369,11 +369,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n")
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n")
         )
       );
     }
@@ -769,8 +769,12 @@ export async function extractRegexGroups(regex: RegExp, text: string): Promise<s
 }
 
 // Generate output files
-export async function generateReports(resultSorted: any[], columns: any[], commandThis: any,
-  options: any = { logFileName: null, logLabel: "Generated report files:" }): Promise<any[]> {
+export async function generateReports(
+  resultSorted: any[],
+  columns: any[],
+  commandThis: any,
+  options: any = { logFileName: null, logLabel: "Generated report files:" }
+): Promise<any[]> {
   const logLabel = options.logLabel || "Generated report files:";
   let logFileName = options.logFileName || null;
   if (!logFileName) {

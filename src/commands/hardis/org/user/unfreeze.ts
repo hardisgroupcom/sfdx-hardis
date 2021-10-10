@@ -39,11 +39,11 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     }),
     includeprofiles: flags.string({
       char: "p",
-      description: "List of profiles that you want to unfreeze, separated by commas"
+      description: "List of profiles that you want to unfreeze, separated by commas",
     }),
     excludeprofiles: flags.string({
       char: "e",
-      description: "List of profiles that you want to NOT unfreeze, separated by commas"
+      description: "List of profiles that you want to NOT unfreeze, separated by commas",
     }),
     maxuserdisplay: flags.number({
       char: "m",
@@ -90,12 +90,13 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       const profilesRes = await promptProfiles(conn, {
         multiselect: true,
         message: "Please select profiles that you do you want to unfreeze users that are assigned to them ?",
-        returnField: 'record'
+        returnField: "record",
       });
-      profileIds = profilesRes.map(profile => profile.Id);
-      profileNames = profilesRes.map(profile => { return [profile.Id, profile.Name] });
-    }
-    else if (includeProfileNames.length > 0) {
+      profileIds = profilesRes.map((profile) => profile.Id);
+      profileNames = profilesRes.map((profile) => {
+        return [profile.Id, profile.Name];
+      });
+    } else if (includeProfileNames.length > 0) {
       // Use includeprofiles argument
       const profilesConstraintIn = includeProfileNames.map((profileName) => `'${profileName}'`).join(",");
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
@@ -103,10 +104,11 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       if (this.debugMode) {
         uxLog(this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
       }
-      profileIds = profilesQueryRes.records.map(profile => profile.Id);
-      profileNames = profilesQueryRes.records.map(profile => { return [profile.Id, profile.Name] });
-    }
-    else if (excludeProfileNames.length > 0) {
+      profileIds = profilesQueryRes.records.map((profile) => profile.Id);
+      profileNames = profilesQueryRes.records.map((profile) => {
+        return [profile.Id, profile.Name];
+      });
+    } else if (excludeProfileNames.length > 0) {
       // Use excludeprofiles argument
       const profilesConstraintIn = excludeProfileNames.map((profileName) => `'${profileName}'`).join(",");
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
@@ -114,19 +116,21 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       if (this.debugMode) {
         uxLog(this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
       }
-      profileIds = profilesQueryRes.records.map(profile => profile.Id);
-      profileNames = profilesQueryRes.records.map(profile => { return [profile.Id, profile.Name] });
+      profileIds = profilesQueryRes.records.map((profile) => profile.Id);
+      profileNames = profilesQueryRes.records.map((profile) => {
+        return [profile.Id, profile.Name];
+      });
     }
 
     // List profiles that must be unfrozen
-    const profileIdsStr = profileIds.map(profileId => `'${profileId}'`).join(",");
+    const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(",");
 
     // Query users that we want to unfreeze
-    uxLog(this,c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
+    uxLog(this, c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
     const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
     const userQueryRes = await bulkQuery(userQuery, conn);
     const usersToUnfreeze = userQueryRes.records;
-    const userIdsStr = usersToUnfreeze.map(user => `'${user.Id}'`).join(",");
+    const userIdsStr = usersToUnfreeze.map((user) => `'${user.Id}'`).join(",");
 
     // Check empty result
     if (usersToUnfreeze.length === 0) {
@@ -136,18 +140,18 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     }
 
     // Query related UserLogin records
-    uxLog(this,c.cyan(`Querying UserLogin records matching ${c.bold(usersToUnfreeze.length)} users...`));
+    uxLog(this, c.cyan(`Querying UserLogin records matching ${c.bold(usersToUnfreeze.length)} users...`));
     const userLoginQuery = `SELECT Id,UserId,IsFrozen FROM UserLogin WHERE UserId IN (${userIdsStr}) and IsFrozen=true`;
     const userLoginQueryRes = await bulkQuery(userLoginQuery, conn);
     const userLoginsToUnfreeze = userLoginQueryRes.records;
 
     // Display list of users to unfreeze
     const usersToUnfreezeDisplay = userLoginsToUnfreeze.map((userLogin: any) => {
-      const matchingUser = usersToUnfreeze.filter(user => user.Id === userLogin.UserId)[0];
+      const matchingUser = usersToUnfreeze.filter((user) => user.Id === userLogin.UserId)[0];
       return {
         Username: matchingUser.Username,
         Name: matchingUser.Name,
-        Profile: profileNames.filter(profile => profile[0] === matchingUser.ProfileId)[1],
+        Profile: profileNames.filter((profile) => profile[0] === matchingUser.ProfileId)[1],
       };
     });
     uxLog(this, "\n" + c.white(columnify(this.debugMode ? usersToUnfreezeDisplay : usersToUnfreezeDisplay.slice(0, this.maxUsersDisplay))));
@@ -156,8 +160,10 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     }
     uxLog(this, c.cyan(`${c.bold(userLoginsToUnfreeze.length)} users can be unfrozen.`));
     // Generate csv + xls of users about to be unfrozen
-    await generateReports(usersToUnfreezeDisplay, ["Username", "Name", "Profile"], this,
-      { logFileName: "users-to-unfreeze", logLabel: "Extract of users to unfreeze" });
+    await generateReports(usersToUnfreezeDisplay, ["Username", "Name", "Profile"], this, {
+      logFileName: "users-to-unfreeze",
+      logLabel: "Extract of users to unfreeze",
+    });
 
     // Request configuration from user
     if (!isCI) {
@@ -180,7 +186,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
     const userLoginsFrozen = userLoginsToUnfreeze.map((userLogin) => {
       return { Id: userLogin.Id, IsFrozen: true };
     });
-    const bulkUpdateRes = await bulkUpdate('UserLogin', 'update', userLoginsFrozen, conn);
+    const bulkUpdateRes = await bulkUpdate("UserLogin", "update", userLoginsFrozen, conn);
 
     const unfreezeSuccessNb = bulkUpdateRes.successRecordsNb;
     const unfreezeErrorsNb = bulkUpdateRes.errorRecordsNb;

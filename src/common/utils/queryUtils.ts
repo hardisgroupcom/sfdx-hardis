@@ -10,7 +10,7 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
   return conn.query(soqlQuery);
 }
 
-let spinnerQ ;
+let spinnerQ;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(this, c.grey("SOQL BULK: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
@@ -35,7 +35,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection): Promise<an
   });
 }
 
-let spinner ;
+let spinner;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkUpdate(objectName: string, action: string, records: Array<any>, conn: Connection): Promise<any> {
   uxLog(this, c.grey(`SOQL BULK on object ${c.bold(objectName)} with action ${c.bold(action)} (${c.bold(records.length)} records)`));
@@ -45,23 +45,23 @@ export async function bulkUpdate(objectName: string, action: string, records: Ar
     batch.execute(records);
     batch.on("queue", async (batchInfo) => {
       uxLog(this, c.grey("Bulk API job batch has been queued"));
-      uxLog(this,c.grey(JSON.stringify(batchInfo,null,2)));
+      uxLog(this, c.grey(JSON.stringify(batchInfo, null, 2)));
       spinner = ora({ text: `Bulk Load on ${objectName} (${action})`, spinner: "moon" }).start();
       batch.poll(3 * 1000, 120 * 1000);
-    })
+    });
     batch.on("error", (batchInfo) => {
       spinner.fail(`Bulk Load on ${objectName} (${action}) failed.`);
       uxLog(this, c.red("Bulk query error:" + batchInfo));
       reject(batchInfo);
       throw new SfdxError(c.red("Bulk query error:" + batchInfo));
-    })
+    });
     batch.on("response", (results) => {
       spinner.succeed(`Bulk Load on ${objectName} (${action}) completed.`);
       resolve({
         results: results,
         totalSize: results.length,
-        successRecordsNb: results.filter(result => result.success).length,
-        errorRecordsNb: results.filter(result => !result.success).length
+        successRecordsNb: results.filter((result) => result.success).length,
+        errorRecordsNb: results.filter((result) => !result.success).length,
       });
     });
   });
