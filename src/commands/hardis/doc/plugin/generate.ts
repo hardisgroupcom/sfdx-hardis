@@ -70,7 +70,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const config = await Config.load({ root: cwd, devPlugins: false, userPlugins: false });
 
     // Generate commands markdowns
-    const commandsNav = {"All commands": "commands.md"};
+    const commandsNav = { "All commands": "commands.md" };
     const commandsLinks = {};
     for (const command of config.commands) {
       await this.generateCommandDoc(command);
@@ -150,7 +150,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     }
 
     // Build commands (for index.md and commands.md)
-    const cmdLines = []
+    const cmdLines = [];
     lines.push(...["", "## Commands"]);
     cmdLines.push("# Commands");
     let currentSection = "";
@@ -174,7 +174,6 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const commandsMdFile = path.join(process.cwd(), "docs", "commands.md");
     const commandsMdString = cmdLines.join("\n") + "\n";
     await fs.writeFile(commandsMdFile, commandsMdString);
-    
   }
 
   // Generate markdown doc for a single command
