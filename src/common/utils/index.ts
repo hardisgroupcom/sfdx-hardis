@@ -769,10 +769,20 @@ export async function extractRegexGroups(regex: RegExp, text: string): Promise<s
 }
 
 // Generate output files
-export async function generateReports(resultSorted: any[], columns: any[], commandThis: any): Promise<any[]> {
-  const logFileName = "sfdx-hardis-" + commandThis.id.substr(commandThis.id.lastIndexOf(":") + 1);
-  const reportFile = path.resolve(`./hardis-report/${logFileName}.csv`);
-  const reportFileExcel = path.resolve(`./hardis-report/${logFileName}.xls`);
+export async function generateReports(
+  resultSorted: any[],
+  columns: any[],
+  commandThis: any,
+  options: any = { logFileName: null, logLabel: "Generated report files:" }
+): Promise<any[]> {
+  const logLabel = options.logLabel || "Generated report files:";
+  let logFileName = options.logFileName || null;
+  if (!logFileName) {
+    logFileName = "sfdx-hardis-" + commandThis.id.substr(commandThis.id.lastIndexOf(":") + 1);
+  }
+  const dateSuffix = new Date().toJSON().slice(0, 10);
+  const reportFile = path.resolve(`./hardis-report/${logFileName}-${dateSuffix}.csv`);
+  const reportFileExcel = path.resolve(`./hardis-report/${logFileName}-${dateSuffix}.xls`);
   await fs.ensureDir(path.dirname(reportFile));
   const csv = csvStringify(resultSorted, {
     delimiter: ";",
@@ -786,9 +796,9 @@ export async function generateReports(resultSorted: any[], columns: any[], comma
     columns,
   });
   await fs.writeFile(reportFileExcel, excel, "utf8");
-  uxLog(commandThis, "Generated report files:");
-  uxLog(commandThis, `- CSV: ${reportFile}`);
-  uxLog(commandThis, `- XLS: ${reportFileExcel}`);
+  uxLog(commandThis, c.cyan(logLabel));
+  uxLog(commandThis, c.cyan(`- CSV: ${reportFile}`));
+  uxLog(commandThis, c.cyan(`- XLS: ${reportFileExcel}`));
   return [
     { type: "csv", file: reportFile },
     { type: "xls", file: reportFileExcel },
