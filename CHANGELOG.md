@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.57.0] 2021-10-11
+
+- Make **hardis:org:user:freeze** and **hardis:org:user:unfreeze** can now handle large volume of users, using Bulk API
+
 ## [2.56.0] 2021-10-10
 
 - Update auto-generated documentation to add a commands.md + its link in the menu

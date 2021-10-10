@@ -22,7 +22,7 @@ Example calls from command class:
 const profiles = await promptProfiles(this.org.getConnection(),{multiselect: true, initialSelection: ["System Administrator","Administrateur Système"]});
 const profile = await promptProfiles(this.org.getConnection(),{multiselect: false, initialSelection: ["System Administrator","Administrateur Système"]});
 */
-export async function promptProfiles(conn: any, options: any = { multiselect: false, initialSelection: [], message: "Please select profile(s)" }) {
+export async function promptProfiles(conn: any, options: any = { multiselect: false, initialSelection: [], returnField: "Name", message: "Please select profile(s)" }) {
   const profiles = await listProfiles(conn);
   // Profiles returned by active connection
   if (profiles.length > 0) {
@@ -31,7 +31,12 @@ export async function promptProfiles(conn: any, options: any = { multiselect: fa
       message: options.message || "Please select profile(s)",
       name: "value",
       choices: profiles.map((profile: any) => {
-        return { title: profile.Name, value: profile.Name };
+        return {
+          title: profile.Name,
+          value: (options.returnField === 'record') ? profile
+            : (options.returnField === 'Id') ? profile.Id
+              : profile.Name
+        };
       }),
     });
     return profilesSelection.value || null;
