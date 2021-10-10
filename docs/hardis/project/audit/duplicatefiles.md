@@ -1,25 +1,24 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:org:select
+# hardis:project:audit:duplicatefiles
 
 ## Description
 
-Interactive org selection for user
+Find duplicate files in sfdx folder (often from past sfdx-cli bugs)
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|devhub<br/>-h|boolean|Also connect associated DevHub||||
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
-|scratch<br/>-s|boolean|Select scratch org related to default DevHub||||
+|path<br/>-p|option|Root path to check|C:\git\sfdx-hardis|||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-$ sfdx hardis:org:select
+$ sfdx hardis:project:audit:duplicatefiles
 ```
 
 

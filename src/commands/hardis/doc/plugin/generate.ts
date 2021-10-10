@@ -70,7 +70,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const config = await Config.load({ root: cwd, devPlugins: false, userPlugins: false });
 
     // Generate commands markdowns
-    const commandsNav = {};
+    const commandsNav = {"All commands": "commands.md"};
     const commandsLinks = {};
     for (const command of config.commands) {
       await this.generateCommandDoc(command);
@@ -149,23 +149,32 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
       lines.push(...["", `# ${config.pjson.name}`, "", "## Description", "", config.pjson.description.split("\n").join("<br/>"), ""]);
     }
 
-    // Build commands section
+    // Build commands (for index.md and commands.md)
+    const cmdLines = []
     lines.push(...["", "## Commands"]);
+    cmdLines.push("# Commands");
     let currentSection = "";
     for (const command of sortArray(config.commands, { by: ["id"], order: ["asc"] })) {
       const section = command.id.split(":")[0] + ":" + command.id.split(":")[1];
       if (section !== currentSection) {
         lines.push(...["", `### ${section}`, "", "|Command|Title|", "|:------|:----------|"]);
+        cmdLines.push(...["", `## ${section}`, "", "|Command|Title|", "|:------|:----------|"]);
         currentSection = section;
       }
       const commandInstance = command.load();
       const title = commandInstance.title ? commandInstance.title : commandInstance.description ? commandInstance.description.split("\n")[0] : "";
       lines.push(...[`|[**${command.id}**](${commandsLinks[command.id]})|${title}|`]);
+      cmdLines.push(...[`|[**${command.id}**](${commandsLinks[command.id]})|${title}|`]);
     }
     // write in index.md
     const indexMdFile = path.join(process.cwd(), "docs", "index.md");
     const indexMdString = lines.join("\n") + "\n";
     await fs.writeFile(indexMdFile, indexMdString);
+    // write in commands.md
+    const commandsMdFile = path.join(process.cwd(), "docs", "commands.md");
+    const commandsMdString = cmdLines.join("\n") + "\n";
+    await fs.writeFile(commandsMdFile, commandsMdString);
+    
   }
 
   // Generate markdown doc for a single command
