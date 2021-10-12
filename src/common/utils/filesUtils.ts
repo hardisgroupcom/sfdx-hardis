@@ -245,7 +245,7 @@ export class FilesExporter {
       .replace(/\\/g, " ")
       .replace(/:/g, " ");
     const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
-    let outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title);
+    let outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/\//g, " ").replace(/\\/g, " ").replace(/:/g, " "));
     // Add file extension if missing if file title, and replace .snote by .txt
     if (path.extname(outputFile) === "" && contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "txt");
