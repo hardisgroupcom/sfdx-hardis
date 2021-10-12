@@ -11,8 +11,9 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
 }
 
 let spinnerQ;
+const maxRetry = 5;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
-export async function bulkQuery(soqlQuery: string, conn: Connection): Promise<any> {
+export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0): Promise<any> {
   uxLog(this, c.grey("SOQL BULK: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
   const records = [];
   return new Promise((resolve, reject) => {
@@ -22,9 +23,13 @@ export async function bulkQuery(soqlQuery: string, conn: Connection): Promise<an
       .on("record", async (record) => {
         records.push(record);
       })
-      .on("error", (err) => {
-        spinnerQ.succeed(`Bulk query failed.`);
+      .on("error", async (err) => {
+        spinnerQ.fail(`Bulk query failed.`);
         uxLog(this, c.red("Bulk query error:" + err));
+        if (err.includes("ETIMEDOUT") && retries < maxRetry) {
+          const resRetry = await bulkQuery(soqlQuery, conn, retries + 1);
+          resolve(resRetry);
+        }
         reject(err);
         throw new SfdxError(c.red("Bulk query error:" + err));
       })

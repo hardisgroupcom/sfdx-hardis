@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.57.1] 2021-10-12
+
+- Retry when BULK API Query returns a timeout
+
 ## [2.57.0] 2021-10-11
 
 - Make **hardis:org:user:freeze** and **hardis:org:user:unfreeze** can now handle large volume of users, using Bulk API
