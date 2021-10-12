@@ -18,6 +18,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0
   const records = [];
   return new Promise((resolve, reject) => {
     spinnerQ = ora({ text: `Bulk query...`, spinner: "moon" }).start();
+    conn.bulk.pollTimeout = 600000;
     const job = conn.bulk.query(soqlQuery);
     job
       .on("record", async (record) => {
