@@ -36,6 +36,11 @@ export default class FilesExport extends SfdxCommand {
       description: "Timeout in MS for Bulk API calls",
       default: 300000,
     }),
+    startchunknumber: flags.number({
+      char: "s",
+      description: "Chunk number to start from",
+      default: 0,
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -61,9 +66,10 @@ export default class FilesExport extends SfdxCommand {
     let filesPath = this.flags.path || null;
     const recordsChunkSize = this.flags.chunksize;
     const pollTimeout = this.flags.polltimeout;
+    const startChunkNumber = this.flags.startchunknumber || 0;
     //const debugMode = this.flags.debug || false;
 
-    const exportOptions: any = { pollTimeout: pollTimeout, recordsChunkSize: recordsChunkSize };
+    const exportOptions: any = { pollTimeout: pollTimeout, recordsChunkSize: recordsChunkSize, startChunkNumber: startChunkNumber };
 
     // Identify files workspace if not defined
     if (filesPath == null) {

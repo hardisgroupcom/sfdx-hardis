@@ -136,7 +136,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:org:data:export [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdataexport--p-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:data:import [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdataimport--p-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:diagnose:legacyapi [-m <string>] [-e <string>] [-l <number>] [-o <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdiagnoselegacyapi--m-string--e-string--l-number--o-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgfilesexport--p-string--c-number--t-number--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-s <number>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgfilesexport--p-string--c-number--t-number--s-number--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:purge:apexlog [-z] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeapexlog--z--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgpurgeflow--z--n-string--s-string--f--r-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:packageconfig [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievepackageconfig--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -522,14 +522,15 @@ EXAMPLES
 
 _See code: [lib/commands/hardis/org/diagnose/legacyapi.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.57.0/lib/commands/hardis/org/diagnose/legacyapi.js)_
 
-## `sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+## `sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-s <number>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Export files from an org according to a configuration
 
 ```
 USAGE
-  $ sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-d] [--websocket <string>] [-u <string>] 
-  [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+  $ sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-s <number>] [-d] [--websocket <string>] [-u 
+  <string>] [--apiversion <string>] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -c, --chunksize=chunksize                                                         [default: 1000] Number of records to
@@ -539,6 +540,8 @@ OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
   -p, --path=path                                                                   Path to the file export project
+
+  -s, --startchunknumber=startchunknumber                                           Chunk number to start from
 
   -t, --polltimeout=polltimeout                                                     [default: 300000] Timeout in MS for
                                                                                     Bulk API calls
@@ -1217,7 +1220,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: C:\git\sfdx-hardis] Root
+  -p, --path=path                                                                   [default: D:\git\sfdx-hardis] Root
                                                                                     path to check
 
   --json                                                                            format output as json
@@ -1675,7 +1678,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: C:\git\sfdx-hardis] Root
+  -p, --path=path                                                                   [default: D:\git\sfdx-hardis] Root
                                                                                     folder
 
   --json                                                                            format output as json

@@ -8,7 +8,7 @@ import { generateReports, isCI, uxLog } from "../../../../common/utils";
 import { promptProfiles } from "../../../../common/utils/orgUtils";
 //import { executeApex } from "../../../../common/utils/deployUtils";
 import { prompts } from "../../../../common/utils/prompts";
-import { soqlQuery, bulkQuery, bulkUpdate } from "../../../../common/utils/queryUtils";
+import { soqlQuery, bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.57.1] 2021-10-12
+
+- Retry when BULK API Query returns a timeout
+- hardis:org:files:export
+  - Use node-fetch-retry for direct downloads (retry up to 30 seconds by default)
+  - New argument `--startchunknumber` to start files extraction from a chunk position
+
 ## [2.57.0] 2021-10-11
 
 - Make **hardis:org:user:freeze** and **hardis:org:user:unfreeze** can now handle large volume of users, using Bulk API
