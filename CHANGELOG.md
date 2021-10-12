@@ -7,6 +7,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.57.1] 2021-10-12
 
 - Retry when BULK API Query returns a timeout
+- hardis:org:files:export
+  - Use node-fetch-retry for direct downloads
+  - New argument 
+
 
 ## [2.57.0] 2021-10-11
 

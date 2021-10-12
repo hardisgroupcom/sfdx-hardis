@@ -11,28 +11,31 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
 }
 
 let spinnerQ;
-const maxRetry = 5;
+const maxRetry = process.env.BULK_QUERY_RETRY || 5;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0): Promise<any> {
   uxLog(this, c.grey("SOQL BULK: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
   const records = [];
   return new Promise((resolve, reject) => {
     spinnerQ = ora({ text: `Bulk query...`, spinner: "moon" }).start();
-    conn.bulk.pollTimeout = 600000;
     const job = conn.bulk.query(soqlQuery);
     job
       .on("record", async (record) => {
         records.push(record);
       })
       .on("error", async (err) => {
-        spinnerQ.fail(`Bulk query failed.`);
-        uxLog(this, c.red("Bulk query error:" + err));
-        if (err.includes("ETIMEDOUT") && retries < maxRetry) {
+        spinnerQ.fail(`Bulk query error.`);
+        uxLog(this, c.yellow("Bulk query error: " + err));
+        // In case of timeout, retry if max retry is not reached
+        if ((err + "").includes("ETIMEDOUT") && retries < maxRetry) {
+          uxLog(this, c.yellow("Bulk query retry attempt #"+retries +1));
           const resRetry = await bulkQuery(soqlQuery, conn, retries + 1);
           resolve(resRetry);
+        } else {
+          // If max retry attempts reached, give up
+          uxLog(this, c.red("Bulk query error: max retry attempts reached, or not timeout error."));
+          reject(err);
         }
-        reject(err);
-        throw new SfdxError(c.red("Bulk query error:" + err));
       })
       .on("end", () => {
         spinnerQ.succeed(`Bulk query completed.`);

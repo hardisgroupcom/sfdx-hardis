@@ -2,7 +2,7 @@ import { Connection, SfdxError } from "@salesforce/core";
 import PromisePool = require("@supercharge/promise-pool/dist");
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as fetch from "node-fetch";
+import * as fetch from "node-fetch-retry";
 import * as path from "path";
 import { isCI, uxLog } from ".";
 import { CONSTANTS } from "../../config";
@@ -16,6 +16,7 @@ export class FilesExporter {
   private conn: Connection;
   private pollTimeout: number;
   private recordsChunkSize: number;
+  private startChunkNumber: number ;
   private commandThis: any;
 
   private fetchOptions: any;
@@ -44,13 +45,14 @@ export class FilesExporter {
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any },
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number },
     commandThis: any
   ) {
     this.filesPath = filesPath;
     this.conn = conn;
     this.pollTimeout = options?.pollTimeout || 300000;
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
+    this.startChunkNumber = options?.recordsChunkSize || 0;
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
@@ -62,6 +64,8 @@ export class FilesExporter {
         Authorization: "Bearer " + this.conn.accessToken,
         "Content-Type": "blob",
       },
+      retry: 5,
+      pause: 1000
     };
   }
 
@@ -186,6 +190,10 @@ export class FilesExporter {
 
   private async processRecordsChunk(records: any[]) {
     this.recordChunksNumber++;
+    if (this.recordChunksNumber < this.startChunkNumber) {
+      uxLog(this, c.cyan(`Skip parent records chunk #${this.recordChunksNumber} because it is lesser than ${this.startChunkNumber}`));
+      return ;
+    }
     uxLog(this, c.cyan(`Processing parent records chunk #${this.recordChunksNumber} (${records.length} records) ...`));
     // Request all ContentDocumentLink related to all records of the chunk
     const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(",");
