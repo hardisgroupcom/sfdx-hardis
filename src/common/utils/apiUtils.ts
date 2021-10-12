@@ -28,12 +28,18 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0
         uxLog(this, c.yellow("Bulk query error: " + err));
         // In case of timeout, retry if max retry is not reached
         if ((err + "").includes("ETIMEDOUT") && retries < maxRetry) {
-          uxLog(this, c.yellow("Bulk query retry attempt #"+retries +1));
-          const resRetry = await bulkQuery(soqlQuery, conn, retries + 1);
-          resolve(resRetry);
+          uxLog(this, c.yellow("Bulk query retry attempt #" + retries + 1));
+          bulkQuery(soqlQuery, conn, retries + 1)
+            .then((resRetry) => {
+              resolve(resRetry);
+            })
+            .catch((resErr) => {
+              reject(resErr);
+            });
         } else {
           // If max retry attempts reached, give up
           uxLog(this, c.red("Bulk query error: max retry attempts reached, or not timeout error."));
+          globalThis.sfdxHardisFatalError = true ;
           reject(err);
         }
       })

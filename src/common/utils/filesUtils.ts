@@ -2,12 +2,12 @@ import { Connection, SfdxError } from "@salesforce/core";
 import PromisePool = require("@supercharge/promise-pool/dist");
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as fetch from "node-fetch-retry";
+import * as fetch from "@adobe/node-fetch-retry";
 import * as path from "path";
 import { isCI, uxLog } from ".";
 import { CONSTANTS } from "../../config";
 import { prompts } from "./prompts";
-import { bulkQuery, soqlQuery } from "./queryUtils";
+import { bulkQuery, soqlQuery } from "./apiUtils";
 
 export const filesFolderRoot = path.join(".", "scripts", "files");
 
@@ -16,7 +16,7 @@ export class FilesExporter {
   private conn: Connection;
   private pollTimeout: number;
   private recordsChunkSize: number;
-  private startChunkNumber: number ;
+  private startChunkNumber: number;
   private commandThis: any;
 
   private fetchOptions: any;
@@ -52,7 +52,7 @@ export class FilesExporter {
     this.conn = conn;
     this.pollTimeout = options?.pollTimeout || 300000;
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
-    this.startChunkNumber = options?.recordsChunkSize || 0;
+    this.startChunkNumber = options?.startChunkNumber || 0;
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
@@ -63,9 +63,7 @@ export class FilesExporter {
       headers: {
         Authorization: "Bearer " + this.conn.accessToken,
         "Content-Type": "blob",
-      },
-      retry: 5,
-      pause: 1000
+      }
     };
   }
 
@@ -106,13 +104,18 @@ export class FilesExporter {
     // Request user confirmation
     if (!isCI) {
       const warningMessage = c.cyanBright(
-        `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records and consume up to ${c.bold(
-          c.yellow(estimatedApiCalls)
-        )} API calls on the ${c.bold(c.yellow(this.apiLimit - this.apiUsedBefore))} remaining API calls. Do you want to proceed ?`
+        `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
+          c.yellow(Math.round(countSoqlQueryRes.totalSize / this.recordsChunkSize))
+        )} chunks, and consume up to ${c.bold(c.yellow(estimatedApiCalls))} API calls on the ${c.bold(
+          c.yellow(this.apiLimit - this.apiUsedBefore)
+        )} remaining API calls. Do you want to proceed ?`
       );
       const promptRes = await prompts({ type: "confirm", message: warningMessage });
       if (promptRes.value !== true) {
         throw new SfdxError("Command cancelled by user");
+      }
+      if (this.startChunkNumber === 0) {
+        uxLog(this, c.yellow(c.italic("Use --startchunknumber command line argument if you do not want to start from first chunk")));
       }
     }
   }
@@ -146,6 +149,10 @@ export class FilesExporter {
         ) {
           clearInterval(completeCheckInterval);
           resolve(true);
+        }
+        if (globalThis.sfdxHardisFatalError === true) {
+          uxLog(this, c.red("Fatal error while processing chunks queue"));
+          process.exit(1);
         }
       }, 1000);
     });
@@ -192,7 +199,7 @@ export class FilesExporter {
     this.recordChunksNumber++;
     if (this.recordChunksNumber < this.startChunkNumber) {
       uxLog(this, c.cyan(`Skip parent records chunk #${this.recordChunksNumber} because it is lesser than ${this.startChunkNumber}`));
-      return ;
+      return;
     }
     uxLog(this, c.cyan(`Processing parent records chunk #${this.recordChunksNumber} (${records.length} records) ...`));
     // Request all ContentDocumentLink related to all records of the chunk

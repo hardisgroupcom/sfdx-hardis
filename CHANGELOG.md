@@ -8,9 +8,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Retry when BULK API Query returns a timeout
 - hardis:org:files:export
-  - Use node-fetch-retry for direct downloads
-  - New argument 
-
+  - Use node-fetch-retry for direct downloads (retry up to 30 seconds by default)
+  - New argument `--startchunknumber` to start files extraction from a chunk position
 
 ## [2.57.0] 2021-10-11
 
