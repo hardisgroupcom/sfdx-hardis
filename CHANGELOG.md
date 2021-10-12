@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.57.2] 2021-10-13
+
+- hardis:org:files:export
+  - Add file extension when missing
+  - replace .snote by .txt
+  - replace special characters in parent folder name and file name
+
 ## [2.57.1] 2021-10-12
 
 - Retry when BULK API Query returns a timeout
