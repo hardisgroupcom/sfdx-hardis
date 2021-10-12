@@ -39,7 +39,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0
         } else {
           // If max retry attempts reached, give up
           uxLog(this, c.red("Bulk query error: max retry attempts reached, or not timeout error."));
-          globalThis.sfdxHardisFatalError = true ;
+          globalThis.sfdxHardisFatalError = true;
           reject(err);
         }
       })

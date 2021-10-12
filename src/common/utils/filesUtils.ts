@@ -63,7 +63,7 @@ export class FilesExporter {
       headers: {
         Authorization: "Bearer " + this.conn.accessToken,
         "Content-Type": "blob",
-      }
+      },
     };
   }
 

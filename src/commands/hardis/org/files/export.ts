@@ -66,7 +66,7 @@ export default class FilesExport extends SfdxCommand {
     let filesPath = this.flags.path || null;
     const recordsChunkSize = this.flags.chunksize;
     const pollTimeout = this.flags.polltimeout;
-    const startChunkNumber = this.flags.startchunknumber || 0 ;
+    const startChunkNumber = this.flags.startchunknumber || 0;
     //const debugMode = this.flags.debug || false;
 
     const exportOptions: any = { pollTimeout: pollTimeout, recordsChunkSize: recordsChunkSize, startChunkNumber: startChunkNumber };
