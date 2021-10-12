@@ -23,6 +23,7 @@ export class FilesExporter {
   private dtl: any = null; // export config
   private exportedFilesFolder: string;
   private recordsChunk: any[] = [];
+  private chunksNumber = 1;
 
   private recordsChunkQueue: any[] = [];
   private recordsChunkQueueRunning = false;
@@ -90,7 +91,8 @@ export class FilesExporter {
     const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
     this.totalSoqlRequests++;
     const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
-    const estimatedApiCalls = Math.round((countSoqlQueryRes.totalSize / this.recordsChunkSize) * 2) + 1;
+    this.chunksNumber = Math.round(countSoqlQueryRes.totalSize / this.recordsChunkSize);
+    const estimatedApiCalls = Math.round(this.chunksNumber * 2) + 1;
     this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used ? (this.conn as any).limitInfo.apiUsage.used - 1 : this.apiUsedBefore;
     this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
     // Check if there are enough API calls available
@@ -105,7 +107,7 @@ export class FilesExporter {
     if (!isCI) {
       const warningMessage = c.cyanBright(
         `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
-          c.yellow(Math.round(countSoqlQueryRes.totalSize / this.recordsChunkSize))
+          c.yellow(this.chunksNumber)
         )} chunks, and consume up to ${c.bold(c.yellow(estimatedApiCalls))} API calls on the ${c.bold(
           c.yellow(this.apiLimit - this.apiUsedBefore)
         )} remaining API calls. Do you want to proceed ?`
@@ -201,7 +203,7 @@ export class FilesExporter {
       uxLog(this, c.cyan(`Skip parent records chunk #${this.recordChunksNumber} because it is lesser than ${this.startChunkNumber}`));
       return;
     }
-    uxLog(this, c.cyan(`Processing parent records chunk #${this.recordChunksNumber} (${records.length} records) ...`));
+    uxLog(this, c.cyan(`Processing parent records chunk #${this.recordChunksNumber} on ${this.chunksNumber} (${records.length} records) ...`));
     // Request all ContentDocumentLink related to all records of the chunk
     const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(",");
     const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
@@ -237,11 +239,17 @@ export class FilesExporter {
       (contentDocumentLink) => contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId
     )[0];
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
-    // Build record output files folder
-    const parentRecordFolderForFiles = path.resolve(
-      path.join(this.exportedFilesFolder, parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id)
-    );
-    const outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title);
+    // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
+    const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id)
+      .replace(/\//g, " ")
+      .replace(/\\/g, " ")
+      .replace(/:/g, " ");
+    const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
+    let outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title);
+    // Add file extension if missing if file title, and replace .snote by .txt
+    if (path.extname(outputFile) === "" && contentVersion.FileExtension) {
+      outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "txt");
+    }
     // Check file extension
     if (this.dtl.fileTypes !== "all" && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
       uxLog(this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, "")} - File type ignored`));
@@ -380,7 +388,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         {
           type: "text",
           name: "sfdxHardisLabel",
-          message: c.cyanBright("Please input a label of the files export configuration"),
+          message: c.cyanBright("Please input a label for the files export configuration"),
           initial: filesExportConfig.sfdxHardisLabel,
         },
         {
