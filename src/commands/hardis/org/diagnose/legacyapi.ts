@@ -2,15 +2,14 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import axios from "axios";
 import * as fs from "fs-extra";
 import * as c from "chalk";
-import * as os from "os";
 import * as Papa from "papaparse";
 import path = require("path");
 import * as sortArray from "sort-array";
-import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
+import { createTempDir, uxLog } from "../../../../common/utils";
 import * as dns from "dns";
+import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
@@ -54,11 +53,6 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    mode: flags.string({
-      char: "m",
-      default: "jsforce",
-      description: "Detection mode: jsforce or apex",
-    }),
     eventtype: flags.string({
       char: "e",
       default: "ApiTotalUsage",
@@ -105,13 +99,8 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const mode = this.flags.mode || "jsforce";
     this.debugMode = this.flags.debug || false;
-    if (mode === "jsforce") {
-      return await this.runJsForce();
-    } else {
-      return await this.runApex();
-    }
+    return await this.runJsForce();
   }
 
   // Refactoring of Philippe Ozil's apex script with JsForce queries
@@ -230,6 +219,14 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
       uxLog(this, c.grey(c.bold("End of support API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
     }
 
+    // Send notification if possible
+    if (await canSendNotifications()) {
+      await sendNotification({
+        title: "WARNING: Deprecated Salesforce API versions are used in the org",
+        text: `Please run sfdx hardis:org:diagnose:legacyapi for more details`
+      });
+    }
+
     process.exitCode = statusCode;
 
     // Return an object to be displayed with --json
@@ -318,42 +315,5 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
       outputFileIps = null;
     }
     return outputFileIps;
-  }
-
-  // Run using Philippe Ozil script as anonymous apex code (has limitations on the latest 99 ApiTotalUsage logs)
-  private async runApex() {
-    // Get Legacy API scanner apex code
-    const tmpApexFile = path.join(os.tmpdir(), new Date().toJSON().slice(0, 10), "legacy-api-scanner.apex");
-    if (!fs.existsSync(tmpApexFile)) {
-      uxLog(this, c.grey("Downloaded latest legacy API scanner script from " + this.apexSCannerCodeUrl));
-      await fs.ensureDir(path.dirname(tmpApexFile));
-      const response = await axios({
-        method: "get",
-        url: this.apexSCannerCodeUrl,
-        responseType: "stream",
-      });
-      response.data.pipe(fs.createWriteStream(tmpApexFile));
-    }
-
-    // Execute apex code
-    const apexScriptCommand = `sfdx force:apex:execute -f "${tmpApexFile}" -u ${this.org.getUsername()}`;
-    const apexScriptLog = await execCommand(apexScriptCommand, this, {
-      fail: true,
-      output: true,
-      debug: this.debugMode,
-    });
-
-    let msg = "No deprecated API call has been found in the latest 99 ApiTotalUsage logs";
-    let statusCode = 0;
-    if (apexScriptLog.stdout.match(/USER_DEBUG .* Found legacy API versions in logs/gm)) {
-      msg = "Found legacy API versions in logs";
-      statusCode = 1;
-      uxLog(this, c.red(c.bold(msg)));
-    } else {
-      uxLog(this, c.green(msg));
-    }
-
-    // Return an object to be displayed with --json
-    return { status: statusCode, message: msg };
   }
 }
