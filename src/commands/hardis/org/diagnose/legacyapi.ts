@@ -220,10 +220,14 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     }
 
     // Send notification if possible
-    if (await canSendNotifications()) {
+    if (allErrors.length > 0 && await canSendNotifications()) {
       await sendNotification({
         title: "WARNING: Deprecated Salesforce API versions are used in the org",
-        text: `Please run sfdx hardis:org:diagnose:legacyapi for more details`
+        text: `- Dead API version calls           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
+- Deprecated API version calls     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
+- End of support API version calls : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
+
+Please run sfdx hardis:org:diagnose:legacyapi for more details`,
       });
     }
 

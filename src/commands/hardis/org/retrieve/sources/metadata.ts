@@ -5,7 +5,9 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository } from "../../../../../common/utils";
+import { ensureGitRepository, git, isCI } from "../../../../../common/utils";
+import LegacyApi from "../../diagnose/legacyapi";
+import OrgTestApex from "../../test/apex";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -80,6 +82,17 @@ export default class DxSources extends SfdxCommand {
 
     const message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
     this.ux.log(message);
+
+    // Post actions for monitoring CI job
+    const repoName = await git().revparse('--show-toplevel');
+    if (isCI && repoName.includes('monitoring')) {
+      // Run test classes
+      const orgTestRes = await new OrgTestApex([],this.config).run();
+      // Check usage of Legacy API versions
+      const legacyApiRes = await new LegacyApi([],this.config).run();
+      return { orgId: this.org.getOrgId(), outputString: message , subJobsResults: [orgTestRes,legacyApiRes]};
+    }
+
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 }

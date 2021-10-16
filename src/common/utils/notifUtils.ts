@@ -48,6 +48,20 @@ async function sendMsTeamsNotification(title, text, summary, buttons) {
       return btnTeams;
     }),
   };
+
+  // Add link to JOB URL if provided
+  if (process.env.CI_JOB_URL) {
+    teamsHookData.potentialAction.push({
+      "@type": "OpenUri",
+      name: "CI Job",
+      targets: [
+        {
+          os: "default",
+          uri: process.env.CI_JOB_URL ,
+        },
+      ],
+    });
+  }
   await webhook.send(JSON.stringify(teamsHookData));
   uxLog(this, c.grey("Sent Ms Teams notification"));
 }

@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.58.0] 2021-10-16
+
+- org:retrieve:sources:metadata : Run apex tests and legacy api check if we are in CI and in a repository named with `monitoring`
+- Teams notifications for apex tests and legacy api failure
+
 ## [2.57.2] 2021-10-13
 
 - hardis:org:files:export

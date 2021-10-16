@@ -4,6 +4,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import { execCommand, uxLog } from "../../../../common/utils";
+import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { getConfig } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
@@ -108,6 +109,13 @@ export default class OrgTestApex extends SfdxCommand {
           throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
         }
         if (coverageTestRun < minCoverageTestRun) {
+          // Send notification if possible
+          if (await canSendNotifications()) {
+            await sendNotification({
+              title: "WARNING: Apex Tests run coverage issue",
+              text: `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
+            });
+          }
           throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
         } else {
           uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
@@ -116,9 +124,16 @@ export default class OrgTestApex extends SfdxCommand {
     } else {
       message = `Org apex tests failure (Outcome: ${outcome} )`;
       uxLog(this, c.red(message));
-      // uxLog(this, c.red(JSON.stringify(Object.keys(testRes))));
+      // Send notification if possible
+      if (await canSendNotifications()) {
+        await sendNotification({
+          title: "WARNING: Apex Tests are failing",
+          text: `Outcome:${outcome} `,
+        });
+      }
       throw new SfdxError("[sfdx-hardis] " + message);
     }
+
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 }
