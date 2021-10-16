@@ -68,6 +68,7 @@ export default class OrgTestApex extends SfdxCommand {
       (check ? " --checkonly" : "") +
       (debugMode ? " --verbose" : "");
     let testRes;
+    let outcome;
     try {
       testRes = await execCommand(testCommand, this, {
         output: true,
@@ -77,10 +78,11 @@ export default class OrgTestApex extends SfdxCommand {
     } catch (e) {
       uxLog(this, c.red("Error during apex tests: " + e.message));
       testRes = { stdout: "", stderr: e.message };
+      outcome = "Failed";
     }
     let message = "";
     const testResStr = testRes.stdout + testRes.stderr;
-    const outcome = /Outcome *(.*) */.exec(testResStr)[1].trim();
+    outcome = outcome || /Outcome *(.*) */.exec(testResStr)[1].trim();
     if (outcome === "Passed") {
       //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = "[sfdx-hardis] Successfully run apex tests on org";
