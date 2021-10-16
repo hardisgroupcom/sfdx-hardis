@@ -118,7 +118,7 @@ export default class OrgTestApex extends SfdxCommand {
         }
         if (coverageTestRun < minCoverageTestRun) {
           // Send notification if possible
-          if (isCI && await canSendNotifications()) {
+          if (isCI && (await canSendNotifications())) {
             const currentGitBranch = await getCurrentGitBranch();
             await sendNotification({
               title: `WARNING: Apex Tests run coverage issue in ${currentGitBranch}`,
