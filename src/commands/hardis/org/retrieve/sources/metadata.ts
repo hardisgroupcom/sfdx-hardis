@@ -4,6 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
+import * as glob from "glob-promise";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { ensureGitRepository, git, isCI, uxLog } from "../../../../../common/utils";
@@ -105,6 +106,10 @@ export default class DxSources extends SfdxCommand {
       // Check usage of Legacy API versions
       uxLog(this, c.cyan("Running Legacy API Use checks..."));
       const legacyApiRes: any = await new LegacyApi([], this.config)._run();
+      // Delete report files
+      const reportFiles = await glob("**/hardis-report/**", { cwd: process.cwd() });
+      reportFiles.map(async file => await fs.remove(file)) ;
+
       return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
     }
   }

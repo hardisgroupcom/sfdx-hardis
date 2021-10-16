@@ -86,7 +86,7 @@ export default class OrgTestApex extends SfdxCommand {
     if (outcome === "Passed") {
       //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = "[sfdx-hardis] Successfully run apex tests on org";
-      this.ux.log(c.green(message));
+      uxLog(this,c.green(message));
       // Check code coverage (orgWide)
       //const coverageOrgWide = parseFloat(testRes.result.summary.orgWideCoverage.replace('%', ''));
       const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(testResStr)[1].replace("%", ""));
