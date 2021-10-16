@@ -108,7 +108,7 @@ export default class DxSources extends SfdxCommand {
       const legacyApiRes: any = await new LegacyApi([], this.config)._run();
       // Delete report files
       const reportFiles = await glob("**/hardis-report/**", { cwd: process.cwd() });
-      reportFiles.map(async file => await fs.remove(file)) ;
+      reportFiles.map(async (file) => await fs.remove(file));
 
       return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
     }
