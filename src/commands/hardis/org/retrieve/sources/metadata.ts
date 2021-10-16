@@ -84,13 +84,13 @@ export default class DxSources extends SfdxCommand {
     this.ux.log(message);
 
     // Post actions for monitoring CI job
-    const repoName = await git().revparse('--show-toplevel');
-    if (isCI && repoName.includes('monitoring')) {
+    const repoName = await git().revparse("--show-toplevel");
+    if (isCI && repoName.includes("monitoring")) {
       // Run test classes
-      const orgTestRes = await new OrgTestApex([],this.config).run();
+      const orgTestRes = await new OrgTestApex([], this.config).run();
       // Check usage of Legacy API versions
-      const legacyApiRes = await new LegacyApi([],this.config).run();
-      return { orgId: this.org.getOrgId(), outputString: message , subJobsResults: [orgTestRes,legacyApiRes]};
+      const legacyApiRes = await new LegacyApi([], this.config).run();
+      return { orgId: this.org.getOrgId(), outputString: message, subJobsResults: [orgTestRes, legacyApiRes] };
     }
 
     return { orgId: this.org.getOrgId(), outputString: message };

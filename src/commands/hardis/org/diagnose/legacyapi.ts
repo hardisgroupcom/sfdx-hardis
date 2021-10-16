@@ -220,7 +220,7 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     }
 
     // Send notification if possible
-    if (allErrors.length > 0 && await canSendNotifications()) {
+    if (allErrors.length > 0 && (await canSendNotifications())) {
       await sendNotification({
         title: "WARNING: Deprecated Salesforce API versions are used in the org",
         text: `- Dead API version calls           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})

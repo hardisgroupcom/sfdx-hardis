@@ -57,7 +57,7 @@ async function sendMsTeamsNotification(title, text, summary, buttons) {
       targets: [
         {
           os: "default",
-          uri: process.env.CI_JOB_URL ,
+          uri: process.env.CI_JOB_URL,
         },
       ],
     });
