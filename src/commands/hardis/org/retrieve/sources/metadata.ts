@@ -86,7 +86,7 @@ export default class DxSources extends SfdxCommand {
 
     // Post actions for monitoring CI job
     try {
-      await this.processPostActions();
+      return await this.processPostActions(message);
     } catch (e) {
       uxLog(this, c.yellow("Post actions have failed !"));
     }
@@ -94,7 +94,7 @@ export default class DxSources extends SfdxCommand {
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 
-  private async processPostActions() {
+  private async processPostActions(message) {
     // Post actions for monitoring CI job
     const repoName = await git().revparse("--show-toplevel");
     if (isCI && repoName.includes("monitoring")) {
