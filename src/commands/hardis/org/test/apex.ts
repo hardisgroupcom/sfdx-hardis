@@ -70,7 +70,7 @@ export default class OrgTestApex extends SfdxCommand {
     const testRes = await execCommand(testCommand, this, {
       output: true,
       debug: debugMode,
-      fail: true,
+      fail: false,
     });
     let message = "";
     const testResStr = testRes.stdout + testRes.stderr;
