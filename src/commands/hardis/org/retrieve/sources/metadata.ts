@@ -85,6 +85,17 @@ export default class DxSources extends SfdxCommand {
     uxLog(this, message);
 
     // Post actions for monitoring CI job
+    try {
+      await this.processPostActions();
+    } catch (e) {
+      uxLog(this, c.yellow("Post actions have failed !"));
+    }
+
+    return { orgId: this.org.getOrgId(), outputString: message };
+  }
+
+  private async processPostActions() {
+    // Post actions for monitoring CI job
     const repoName = await git().revparse("--show-toplevel");
     if (isCI && repoName.includes("monitoring")) {
       uxLog(this, c.cyan("Monitoring repo detected"));
@@ -96,7 +107,5 @@ export default class DxSources extends SfdxCommand {
       const legacyApiRes: any = await new LegacyApi([], this.config)._run();
       return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
     }
-
-    return { orgId: this.org.getOrgId(), outputString: message };
   }
 }
