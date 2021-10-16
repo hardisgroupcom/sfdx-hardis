@@ -2,10 +2,11 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
+import * as c from 'chalk';
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository, git, isCI } from "../../../../../common/utils";
+import { ensureGitRepository, git, isCI, uxLog } from "../../../../../common/utils";
 import LegacyApi from "../../diagnose/legacyapi";
 import OrgTestApex from "../../test/apex";
 
@@ -81,16 +82,19 @@ export default class DxSources extends SfdxCommand {
     await fs.rmdir(path.join(folder, "unpackaged"), { recursive: true });
 
     const message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
-    this.ux.log(message);
+    uxLog(this,message);
 
     // Post actions for monitoring CI job
-    const repoName = await git().revparse("--show-toplevel");
-    if (isCI && repoName.includes("monitoring")) {
+    const repoName = await git().revparse('--show-toplevel');
+    if (isCI && repoName.includes('monitoring')) {
+      uxLog(this,c.cyan("Monitoring repo detected"));
       // Run test classes
-      const orgTestRes = await new OrgTestApex([], this.config).run();
+      uxLog(this,c.cyan("Running Apex tests..."));
+      const orgTestRes: any = await new OrgTestApex([],this.config)._run();
       // Check usage of Legacy API versions
-      const legacyApiRes = await new LegacyApi([], this.config).run();
-      return { orgId: this.org.getOrgId(), outputString: message, subJobsResults: [orgTestRes, legacyApiRes] };
+      uxLog(this,c.cyan("Running Legacy API Use checks..."));
+      const legacyApiRes: any = await new LegacyApi([],this.config)._run();
+      return { orgId: this.org.getOrgId(), outputString: message , orgTestRes,legacyApiRes};
     }
 
     return { orgId: this.org.getOrgId(), outputString: message };

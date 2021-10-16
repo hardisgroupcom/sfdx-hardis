@@ -63,5 +63,5 @@ async function sendMsTeamsNotification(title, text, summary, buttons) {
     });
   }
   await webhook.send(JSON.stringify(teamsHookData));
-  uxLog(this, c.grey("Sent Ms Teams notification"));
+  uxLog(this, c.grey("Sent Ms Teams notification: "+teamsHookData.title));
 }
