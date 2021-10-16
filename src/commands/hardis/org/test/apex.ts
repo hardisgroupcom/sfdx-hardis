@@ -121,7 +121,9 @@ export default class OrgTestApex extends SfdxCommand {
           if (await canSendNotifications()) {
             await sendNotification({
               title: "WARNING: Apex Tests run coverage issue",
-              text: `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
+              text: `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%
+
+${testResStr}`,
             });
           }
           throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
@@ -136,7 +138,9 @@ export default class OrgTestApex extends SfdxCommand {
       if (await canSendNotifications()) {
         await sendNotification({
           title: "WARNING: Apex Tests are failing",
-          text: `Outcome:${outcome} `,
+          text: `Outcome: ${outcome}
+
+${testResStr}`,
         });
       }
       throw new SfdxError("[sfdx-hardis] " + message);

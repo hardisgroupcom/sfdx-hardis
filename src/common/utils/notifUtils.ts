@@ -53,7 +53,7 @@ async function sendMsTeamsNotification(title, text, summary, buttons) {
   if (process.env.CI_JOB_URL) {
     teamsHookData.potentialAction.push({
       "@type": "OpenUri",
-      name: "CI Job",
+      name: "View CI Job",
       targets: [
         {
           os: "default",
