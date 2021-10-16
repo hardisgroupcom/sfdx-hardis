@@ -138,6 +138,7 @@ export default class OrgTestApex extends SfdxCommand {
         let testResultStr;
         if (fs.existsSync("./hardis-report/test-result.txt")) {
           testResultStr = await fs.readFile("./hardis-report/test-result.txt", "utf8");
+          testResultStr = testResultStr.split('=== Test Results')[0] ;
         }
         const currentGitBranch = await getCurrentGitBranch();
         await sendNotification({
