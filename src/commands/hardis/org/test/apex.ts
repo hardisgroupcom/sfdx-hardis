@@ -69,14 +69,15 @@ export default class OrgTestApex extends SfdxCommand {
       (debugMode ? " --verbose" : "");
     let testRes;
     try {
-      testRes = await execCommand(testCommand, this, {
-        output: true,
-        debug: debugMode,
-        fail: true,
-      });
-    } catch (e) {
-      testRes = { stdout: "", stderr: e.message };
-    }
+    testRes = await execCommand(testCommand, this, {
+      output: true,
+      debug: debugMode,
+      fail: true,
+    });
+  } catch (e) {
+    uxLog(this, c.red("Error during apex tests: "+e.message));
+    testRes = {stdout: '',stderr: e.message}
+  }
     let message = "";
     const testResStr = testRes.stdout + testRes.stderr;
     const outcome = /Outcome *(.*) */.exec(testResStr)[1].trim();
