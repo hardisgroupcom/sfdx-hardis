@@ -7,7 +7,7 @@ import * as c from "chalk";
 import * as Papa from "papaparse";
 import path = require("path");
 import * as sortArray from "sort-array";
-import { createTempDir, uxLog } from "../../../../common/utils";
+import { createTempDir, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import * as dns from "dns";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 const dnsPromises = dns.promises;
@@ -220,9 +220,10 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     }
 
     // Send notification if possible
-    if (allErrors.length > 0 && (await canSendNotifications())) {
+    if (isCI && allErrors.length > 0 && (await canSendNotifications())) {
+      const currentGitBranch = await getCurrentGitBranch();
       await sendNotification({
-        title: "WARNING: Deprecated Salesforce API versions are used in the org",
+        title: `WARNING: Deprecated Salesforce API versions are used in ${currentGitBranch}`,
         text: `- Dead API version calls           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
 - Deprecated API version calls     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
 - End of support API version calls : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})

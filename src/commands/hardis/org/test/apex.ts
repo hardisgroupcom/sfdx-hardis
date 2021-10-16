@@ -3,7 +3,7 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import { execCommand, uxLog } from "../../../../common/utils";
+import { execCommand, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { getConfig } from "../../../../config";
 
@@ -118,9 +118,10 @@ export default class OrgTestApex extends SfdxCommand {
         }
         if (coverageTestRun < minCoverageTestRun) {
           // Send notification if possible
-          if (await canSendNotifications()) {
+          if (isCI && await canSendNotifications()) {
+            const currentGitBranch = await getCurrentGitBranch();
             await sendNotification({
-              title: "WARNING: Apex Tests run coverage issue",
+              title: `WARNING: Apex Tests run coverage issue in ${currentGitBranch}`,
               text: `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
             });
           }
@@ -138,8 +139,9 @@ export default class OrgTestApex extends SfdxCommand {
         if (fs.existsSync("./hardis-report/test-result.txt")) {
           testResultStr = await fs.readFile("./hardis-report/test-result.txt", "utf8");
         }
+        const currentGitBranch = await getCurrentGitBranch();
         await sendNotification({
-          title: "WARNING: Apex Tests are failing",
+          title: `WARNING: Apex Tests are failing in ${currentGitBranch}`,
           text: `Outcome: ${outcome}
 
 ${testResultStr}`,
