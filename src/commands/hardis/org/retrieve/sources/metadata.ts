@@ -2,10 +2,14 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
+import * as c from "chalk";
 import * as fs from "fs-extra";
+import * as glob from "glob-promise";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository } from "../../../../../common/utils";
+import { ensureGitRepository, git, isCI, uxLog } from "../../../../../common/utils";
+import LegacyApi from "../../diagnose/legacyapi";
+import OrgTestApex from "../../test/apex";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -79,7 +83,34 @@ export default class DxSources extends SfdxCommand {
     await fs.rmdir(path.join(folder, "unpackaged"), { recursive: true });
 
     const message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
-    this.ux.log(message);
+    uxLog(this, message);
+
+    // Post actions for monitoring CI job
+    try {
+      return await this.processPostActions(message);
+    } catch (e) {
+      uxLog(this, c.yellow("Post actions have failed !"));
+    }
+
     return { orgId: this.org.getOrgId(), outputString: message };
+  }
+
+  private async processPostActions(message) {
+    // Post actions for monitoring CI job
+    const repoName = await git().revparse("--show-toplevel");
+    if (isCI && repoName.includes("monitoring")) {
+      uxLog(this, c.cyan("Monitoring repo detected"));
+      // Run test classes
+      uxLog(this, c.cyan("Running Apex tests..."));
+      const orgTestRes: any = await new OrgTestApex([], this.config)._run();
+      // Check usage of Legacy API versions
+      uxLog(this, c.cyan("Running Legacy API Use checks..."));
+      const legacyApiRes: any = await new LegacyApi([], this.config)._run();
+      // Delete report files
+      const reportFiles = await glob("**/hardis-report/**", { cwd: process.cwd() });
+      reportFiles.map(async (file) => await fs.remove(file));
+
+      return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
+    }
   }
 }

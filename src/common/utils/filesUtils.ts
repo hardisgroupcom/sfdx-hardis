@@ -240,9 +240,9 @@ export class FilesExporter {
     )[0];
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
-    const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(/[/\\?%*:|"<>]/g, '-');
+    const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(/[/\\?%*:|"<>]/g, "-");
     const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
-    let outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
+    let outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing if file title, and replace .snote by .txt
     if (path.extname(outputFile) === "" && contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
