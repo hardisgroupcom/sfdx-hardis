@@ -526,6 +526,14 @@ class MetadataUtils {
       });
       uxLog(commandThis, filterNamespaceRes.message);
     }
+    // Filter package.xml only using locally defined remove-items-package.xml
+    else if (fs.existsSync("./remove-items-package.xml")) {
+      const filterNamespaceRes = await filterPackageXml(packageXml, packageXml, {
+        removeFromPackageXmlFile: path.resolve("./remove-items-package.xml"),
+        updateApiVersion: CONSTANTS.API_VERSION,
+      });
+      uxLog(commandThis, filterNamespaceRes.message);
+    }
 
     // Filter package XML to remove identified metadatas
     const filterRes = await filterPackageXml(packageXml, packageXml, {

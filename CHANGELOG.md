@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.58.1] 2021-10-18
+
+- org:retrieve:sources:metadata : Manage locally defined `remove-items-package.xml` (that can handle wildcard members)
+
 ## [2.58.0] 2021-10-16
 
 - org:retrieve:sources:metadata : Run apex tests and legacy api check if we are in CI and in a repository named with `monitoring`
