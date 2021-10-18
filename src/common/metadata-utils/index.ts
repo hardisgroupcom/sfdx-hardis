@@ -532,7 +532,7 @@ class MetadataUtils {
         removeFromPackageXmlFile: path.resolve("./remove-items-package.xml"),
         updateApiVersion: CONSTANTS.API_VERSION,
       });
-      uxLog(commandThis, filterNamespaceRes.message);      
+      uxLog(commandThis, filterNamespaceRes.message);
     }
 
     // Filter package XML to remove identified metadatas

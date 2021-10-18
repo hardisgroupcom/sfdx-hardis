@@ -369,11 +369,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n")
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n")
         )
       );
     }
@@ -658,28 +658,28 @@ export async function filterPackageXml(
   if (options.removeFromPackageXmlFile) {
     const destructiveFileContent = await fs.readFile(options.removeFromPackageXmlFile);
     const destructiveManifest = await xml2js.parseStringPromise(destructiveFileContent);
-    manifest.Package.types = manifest.Package.types.map((type: any) => {
-      const destructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
-        return destructiveType.name[0] === type.name[0];
-      });
-      if (destructiveTypes.length > 0) {
-        type.members = type.members.filter((member: string) => {
-          return destructiveTypes[0].members.filter((destructiveMember: string) => destructiveMember === member).length === 0;
+    manifest.Package.types = manifest.Package.types
+      .map((type: any) => {
+        const destructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
+          return destructiveType.name[0] === type.name[0];
         });
-      }
-      return type;
-    }).filter((type: any) => {
-      // Remove types with wildcard
-      const wildcardDestructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
-        return destructiveType.name[0] === type.name[0] &&
-          destructiveType.members.length === 1 &&
-          destructiveType.members[0] === '*'
+        if (destructiveTypes.length > 0) {
+          type.members = type.members.filter((member: string) => {
+            return destructiveTypes[0].members.filter((destructiveMember: string) => destructiveMember === member).length === 0;
+          });
+        }
+        return type;
+      })
+      .filter((type: any) => {
+        // Remove types with wildcard
+        const wildcardDestructiveTypes = destructiveManifest.Package.types.filter((destructiveType: any) => {
+          return destructiveType.name[0] === type.name[0] && destructiveType.members.length === 1 && destructiveType.members[0] === "*";
+        });
+        if (wildcardDestructiveTypes.length > 0) {
+          uxLog(this, c.grey(`Removed ${type.name[0]} type`));
+        }
+        return wildcardDestructiveTypes.length === 0;
       });
-      if (wildcardDestructiveTypes.length > 0) {
-        uxLog(this, c.grey(`Removed ${type.name[0]} type`))
-      }
-      return wildcardDestructiveTypes.length === 0;
-    });
   }
   // Remove standard objects
   if (options.removeStandard) {
