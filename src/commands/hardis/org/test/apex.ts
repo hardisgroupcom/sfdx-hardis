@@ -3,7 +3,8 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import { execCommand, uxLog } from "../../../../common/utils";
+import { execCommand, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
+import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { getConfig } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
@@ -66,18 +67,26 @@ export default class OrgTestApex extends SfdxCommand {
       ` --testlevel ${testlevel}` +
       (check ? " --checkonly" : "") +
       (debugMode ? " --verbose" : "");
-    const testRes = await execCommand(testCommand, this, {
-      output: true,
-      debug: debugMode,
-      fail: true,
-    });
+    let testRes;
+    let outcome;
+    try {
+      testRes = await execCommand(testCommand, this, {
+        output: true,
+        debug: debugMode,
+        fail: true,
+      });
+    } catch (e) {
+      uxLog(this, c.red("Error during apex tests: " + e.message));
+      testRes = { stdout: "", stderr: e.message };
+      outcome = "Failed";
+    }
     let message = "";
     const testResStr = testRes.stdout + testRes.stderr;
-    const outcome = /Outcome *(.*) */.exec(testResStr)[1].trim();
+    outcome = outcome || /Outcome *(.*) */.exec(testResStr)[1].trim();
     if (outcome === "Passed") {
       //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = "[sfdx-hardis] Successfully run apex tests on org";
-      this.ux.log(c.green(message));
+      uxLog(this, c.green(message));
       // Check code coverage (orgWide)
       //const coverageOrgWide = parseFloat(testRes.result.summary.orgWideCoverage.replace('%', ''));
       const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(testResStr)[1].replace("%", ""));
@@ -108,6 +117,14 @@ export default class OrgTestApex extends SfdxCommand {
           throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
         }
         if (coverageTestRun < minCoverageTestRun) {
+          // Send notification if possible
+          if (isCI && (await canSendNotifications())) {
+            const currentGitBranch = await getCurrentGitBranch();
+            await sendNotification({
+              title: `WARNING: Apex Tests run coverage issue in ${currentGitBranch}`,
+              text: `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
+            });
+          }
           throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
         } else {
           uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
@@ -116,9 +133,24 @@ export default class OrgTestApex extends SfdxCommand {
     } else {
       message = `Org apex tests failure (Outcome: ${outcome} )`;
       uxLog(this, c.red(message));
-      // uxLog(this, c.red(JSON.stringify(Object.keys(testRes))));
+      // Send notification if possible
+      if (await canSendNotifications()) {
+        let testResultStr;
+        if (fs.existsSync("./hardis-report/test-result.txt")) {
+          testResultStr = await fs.readFile("./hardis-report/test-result.txt", "utf8");
+          testResultStr = testResultStr.split("=== Test Results")[0];
+        }
+        const currentGitBranch = await getCurrentGitBranch();
+        await sendNotification({
+          title: `WARNING: Apex Tests are failing in ${currentGitBranch}`,
+          text: `Outcome: ${outcome}
+
+${testResultStr}`,
+        });
+      }
       throw new SfdxError("[sfdx-hardis] " + message);
     }
+
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 }
