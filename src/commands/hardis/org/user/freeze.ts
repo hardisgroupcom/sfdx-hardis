@@ -94,7 +94,7 @@ export default class OrgFreezeUser extends SfdxCommand {
         allowSelectMine: false,
         allowSelectMineErrorMessage: "If you freeze your own profile, you'll be unable to unfreeze it later :)",
         allowSelectAll: false,
-        allowSelectAllErrorMessage: "You can not select all profiles, keep at least one (usually System Administrator) so you can unfreeze later !"
+        allowSelectAllErrorMessage: "You can not select all profiles, keep at least one (usually System Administrator) so you can unfreeze later !",
       });
       profileIds = profilesRes.map((profile) => profile.Id);
       profileNames = profilesRes.map((profile) => {

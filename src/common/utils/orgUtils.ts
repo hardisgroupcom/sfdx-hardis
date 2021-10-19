@@ -33,7 +33,7 @@ export async function promptProfiles(
     allowSelectAll: true,
     allowSelectAllErrorMessage: "You can not select all profiles",
     allowSelectMine: true,
-    allowSelectMineErrorMessage: "You can not select the profile your user is assigned to"
+    allowSelectMineErrorMessage: "You can not select the profile your user is assigned to",
   }
 ) {
   const profiles = await listProfiles(conn);
@@ -59,9 +59,9 @@ export async function promptProfiles(
       if (!["record", "Id"].includes(options.returnField)) {
         throw new SfdxError("You can not use option allowSelectMine:false if you don't use record or Id as return value");
       }
-      const userRes = await conn.query(`SELECT ProfileId FROM User WHERE Id='${((await conn.identity()).user_id)}' LIMIT 1`);
+      const userRes = await conn.query(`SELECT ProfileId FROM User WHERE Id='${(await conn.identity()).user_id}' LIMIT 1`);
       const profileId = userRes.records[0]["ProfileId"];
-      if (profilesSelection.value.filter(profileSelected => profileSelected === profileId || profileSelected?.Id === profileId).length > 0) {
+      if (profilesSelection.value.filter((profileSelected) => profileSelected === profileId || profileSelected?.Id === profileId).length > 0) {
         throw new SfdxError(options.allowSelectMineErrorMessage);
       }
     }
