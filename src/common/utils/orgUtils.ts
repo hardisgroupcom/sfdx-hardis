@@ -7,6 +7,7 @@ import { execSfdxJson, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
+import { Connection, SfdxError } from "@salesforce/core";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -23,8 +24,17 @@ const profiles = await promptProfiles(this.org.getConnection(),{multiselect: tru
 const profile = await promptProfiles(this.org.getConnection(),{multiselect: false, initialSelection: ["System Administrator","Administrateur Système"]});
 */
 export async function promptProfiles(
-  conn: any,
-  options: any = { multiselect: false, initialSelection: [], returnField: "Name", message: "Please select profile(s)" }
+  conn: Connection,
+  options: any = {
+    multiselect: false,
+    initialSelection: [],
+    returnField: "Name",
+    message: "Please select profile(s)",
+    allowSelectAll: true,
+    allowSelectAllErrorMessage: "You can not select all profiles",
+    allowSelectMine: true,
+    allowSelectMineErrorMessage: "You can not select the profile your user is assigned to",
+  }
 ) {
   const profiles = await listProfiles(conn);
   // Profiles returned by active connection
@@ -40,6 +50,21 @@ export async function promptProfiles(
         };
       }),
     });
+    // Verify that all profiles are not selected if allowSelectAll === false
+    if (options.allowSelectAll === false && profilesSelection.value.length === profiles.length) {
+      throw new SfdxError(options.allowSelectAllErrorMessage);
+    }
+    // Verify that current user profile is not selected
+    if (options.allowSelectMine === false) {
+      if (!["record", "Id"].includes(options.returnField)) {
+        throw new SfdxError("You can not use option allowSelectMine:false if you don't use record or Id as return value");
+      }
+      const userRes = await conn.query(`SELECT ProfileId FROM User WHERE Id='${(await conn.identity()).user_id}' LIMIT 1`);
+      const profileId = userRes.records[0]["ProfileId"];
+      if (profilesSelection.value.filter((profileSelected) => profileSelected === profileId || profileSelected?.Id === profileId).length > 0) {
+        throw new SfdxError(options.allowSelectMineErrorMessage);
+      }
+    }
     return profilesSelection.value || null;
   } else {
     // Manual input of comma separated profiles

@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.58.2] 2021-10-18
+
+- org:user:freeze : Prevent to freeze all profiles and current user profile
+
 ## [2.58.1] 2021-10-18
 
 - org:retrieve:sources:metadata : Manage locally defined `remove-items-package.xml` (that can handle wildcard members)
