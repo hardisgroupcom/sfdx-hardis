@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.58.3] 2021-10-23
+
+h- ardis:org:files:export: Fix file paths in logs
+
 ## [2.58.2] 2021-10-18
 
 - org:user:freeze : Prevent to freeze all profiles and current user profile
