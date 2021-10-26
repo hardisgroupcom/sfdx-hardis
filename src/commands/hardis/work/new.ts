@@ -71,8 +71,8 @@ export default class NewTask extends SfdxCommand {
         ),
         choices: availableTargetBranches
           ? availableTargetBranches.map((branch) => {
-              return { title: branch, value: branch };
-            })
+            return { title: branch, value: branch };
+          })
           : [],
         initial: config.developmentBranch || "developpement",
       },
@@ -132,58 +132,118 @@ export default class NewTask extends SfdxCommand {
       }
     }
 
-    // Select/Create scratch org
-    const currentOrg = await MetadataUtils.getCurrentOrg("scratch");
-    if (currentOrg == null) {
-      const hubOrgUsername = this?.hubOrg?.getUsername();
-      const scratchOrgList = await MetadataUtils.listLocalOrgs("scratch", { devHubUsername: hubOrgUsername });
-      const scratchResponse = await prompts({
-        type: "select",
-        name: "value",
-        message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
-        initial: 0,
-        choices: [
-          ...[
-            {
-              title: c.yellow("Create new scratch org"),
-              value: "newScratchOrg",
-            },
-          ],
-          ...scratchOrgList.map((scratchOrg: any) => {
-            return {
-              title: `Reuse ${c.yellow(scratchOrg.alias)}`,
-              description: scratchOrg.instanceUrl,
-              value: scratchOrg,
-            };
-          }),
-        ],
-      });
-      if (scratchResponse.value === "newScratchOrg") {
-        await setConfig("user", {
-          scratchOrgAlias: null,
-          scratchOrgUsername: null,
-        });
-        const createResult = await ScratchCreate.run(["--forcenew"]);
-        if (createResult == null) {
-          throw new SfdxError("Unable to create scratch org");
-        }
-      } else {
-        await execCommand(`sfdx config:set defaultusername=${scratchResponse.value.username}`, this, {
-          output: true,
-          fail: true,
-        });
-      }
-    } else {
-      uxLog(this, c.cyan(`You will use scratch org ${c.green(currentOrg.alias)} : ${c.green(currentOrg.instanceUrl)}`));
-      uxLog(this, c.cyan("Refreshing org..."));
-      await execCommand("sfdx hardis:work:refresh", this, {
-        output: true,
-        fail: true,
-        debug: this.debugMode,
-      });
+    // Prompt if you want to use a scratch org or a tracked sandbox org
+    const orgTypeResponse = await prompts({
+      type: "select",
+      name: "value",
+      message: c.cyanBright(`Do you want to use a scratch org or a tracked sandbox org ?`),
+      initial: 0,
+      choices: [
+        {
+          title: "Scratch org",
+          value: "scratch",
+        },
+        {
+          title: "Sandbox org with source tracking",
+          value: "sandbox",
+        },
+      ]
+    });
+
+    // Select or create org that user will work in
+    if (orgTypeResponse === 'scratch') {
+      await this.selectOrCreateScratchOrg(branchName);
     }
+    else {
+      await this.selectOrCreateSandbox(branchName);
+    }
+
     uxLog(this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
     // Return an object to be displayed with --json
     return { outputString: "Created new task" };
+  }
+
+  // Select/Create scratch org
+  async selectOrCreateScratchOrg(branchName) {
+    const hubOrgUsername = this?.hubOrg?.getUsername();
+    const scratchOrgList = await MetadataUtils.listLocalOrgs("scratch", { devHubUsername: hubOrgUsername });
+    const scratchResponse = await prompts({
+      type: "select",
+      name: "value",
+      message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
+      initial: 0,
+      choices: [
+        ...[
+          {
+            title: c.yellow("Create new scratch org"),
+            value: "newScratchOrg",
+          },
+        ],
+        ...scratchOrgList.map((scratchOrg: any) => {
+          return {
+            title: `Reuse scratch org ${c.yellow(scratchOrg.alias)}`,
+            description: scratchOrg.instanceUrl,
+            value: scratchOrg,
+          };
+        }),
+      ],
+    });
+    if (scratchResponse.value === "newScratchOrg") {
+      await setConfig("user", {
+        scratchOrgAlias: null,
+        scratchOrgUsername: null,
+      });
+      const createResult = await ScratchCreate.run(["--forcenew"]);
+      if (createResult == null) {
+        throw new SfdxError("Unable to create scratch org");
+      }
+    } else {
+      await execCommand(`sfdx config:set defaultusername=${scratchResponse.value.username}`, this, {
+        output: true,
+        fail: true,
+      });
+    }
+  }
+
+  // Select or create sandbox
+  async selectOrCreateSandbox(branchName) {
+    const hubOrgUsername = this?.hubOrg?.getUsername();
+    const sandboxOrgList = await MetadataUtils.listLocalOrgs("sandbox", { devHubUsername: hubOrgUsername });
+    const sandboxResponse = await prompts({
+      type: "select",
+      name: "value",
+      message: c.cyanBright(`Please select a sandbox org to use for your branch ${c.green(branchName)}`),
+      initial: 0,
+      choices: [
+        ...[
+          {
+            title: c.yellow("Create new sandbox from another sandbox or production org"),
+            value: "newSandbox",
+          },
+        ],
+        ...sandboxOrgList.map((sandboxOrg: any) => {
+          return {
+            title: `Reuse sandbox org ${c.yellow(sandboxOrg.alias)}`,
+            description: sandboxOrg.instanceUrl,
+            value: sandboxOrg,
+          };
+        }),
+      ],
+    });
+    if (sandboxResponse.value === "newSandbox") {
+      await setConfig("user", {
+        scratchOrgAlias: null,
+        scratchOrgUsername: null,
+      });
+      const createResult = await ScratchCreate.run(["--forcenew"]);
+      if (createResult == null) {
+        throw new SfdxError("Unable to create sandbox org");
+      }
+    } else {
+      await execCommand(`sfdx config:set defaultusername=${sandboxResponse.value.username}`, this, {
+        output: true,
+        fail: true,
+      });
+    }
   }
 }
