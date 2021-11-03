@@ -144,14 +144,14 @@ export default class NewTask extends SfdxCommand {
           value: "scratch",
         },
         {
-          title: "Sandbox org with source tracking",
+          title: "Sandbox org with source tracking (ALPHA, DO NOT USE YET)",
           value: "sandbox",
         },
       ]
     });
 
     // Select or create org that user will work in
-    if (orgTypeResponse === 'scratch') {
+    if (orgTypeResponse.value === 'scratch') {
       await this.selectOrCreateScratchOrg(branchName);
     }
     else {
