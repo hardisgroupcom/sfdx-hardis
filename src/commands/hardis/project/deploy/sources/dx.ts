@@ -82,8 +82,8 @@ export default class DxSources extends SfdxCommand {
 
     let targetUsername = this.org.getUsername();
     if (!isCI) {
-      const targetOrg = await promptOrg(this,{devHub: false, setDefault: false, scratch: false});
-      targetUsername = targetOrg.username ;
+      const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, scratch: false });
+      targetUsername = targetOrg.username;
     }
 
     // Deploy sources
@@ -107,7 +107,7 @@ export default class DxSources extends SfdxCommand {
           debug: this.debugMode,
           check: check,
           testLevel: testlevel,
-          targetUsername: targetUsername
+          targetUsername: targetUsername,
         },
         this
       );

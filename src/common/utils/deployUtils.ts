@@ -200,8 +200,8 @@ export async function forceSourceDeploy(
 }
 
 export function truncateProgressLogLines(rawLog: string) {
-  const rawLogCleaned = rawLog.replace(/(SOURCE PROGRESS \|.*\n)/gm,"") ;
-  return rawLogCleaned ;
+  const rawLogCleaned = rawLog.replace(/(SOURCE PROGRESS \|.*\n)/gm, "");
+  return rawLogCleaned;
 }
 
 // Display deployment link in target org
@@ -210,7 +210,8 @@ async function displayDeploymentLink(rawLog: string, options: any) {
   const regex = /Deploy ID: (.*)/gm;
   if (rawLog && rawLog.match(regex)) {
     const deploymentId = regex.exec(rawLog)[1];
-    const detailedDeploymentUrl = "/changemgmt/monitorDeploymentsDetails.apexp?"+encodeURIComponent(`retURL=/changemgmt/monitorDeployment.apexp&asyncId=${deploymentId}`);
+    const detailedDeploymentUrl =
+      "/changemgmt/monitorDeploymentsDetails.apexp?" + encodeURIComponent(`retURL=/changemgmt/monitorDeployment.apexp&asyncId=${deploymentId}`);
     deploymentUrl = "lightning/setup/DeployStatus/page?address=" + encodeURIComponent(detailedDeploymentUrl);
   }
   const openRes = await execSfdxJson(

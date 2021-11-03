@@ -534,7 +534,7 @@ export async function execCommand(
   }
   // Display output if requested, for better user unrstanding of the logs
   if (options.output || options.debug) {
-    uxLog(commandThis, c.italic(c.grey(truncateProgressLogLines((commandResult.stdout)))));
+    uxLog(commandThis, c.italic(c.grey(truncateProgressLogLines(commandResult.stdout))));
   }
   // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;
