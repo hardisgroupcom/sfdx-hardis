@@ -277,11 +277,11 @@ export class FilesExporter {
           resolve(true);
         });
       }) */
-      uxLog(this, c.green(`Success - ${path.relative(process.cwd(),outputFile)}`));
+      uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
       this.filesDownloaded++;
     } catch (err) {
       // Download failure
-      uxLog(this, c.red(`Error   - ${path.relative(process.cwd(),outputFile)} - ${err}`));
+      uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
       this.filesErrors++;
     }
   }

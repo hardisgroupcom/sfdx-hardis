@@ -2,12 +2,14 @@ import { MetadataUtils } from "../metadata-utils";
 import { prompts } from "./prompts";
 import * as c from "chalk";
 import * as fs from "fs-extra";
+import * as glob from "glob-promise";
 import * as path from "path";
-import { execSfdxJson, uxLog } from ".";
+import { execCommand, execSfdxJson, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
 import { Connection, SfdxError } from "@salesforce/core";
+import { importData } from "./dataUtils";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -237,5 +239,70 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
   if (updated) {
     uxLog(this, "Updated package configuration in sfdx-hardis config");
     await setConfig("project", { installedPackages: projectPackages });
+  }
+}
+
+// Assign permission sets to user
+export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string) {
+  uxLog(this, c.cyan("Assigning Permission Sets..."));
+  for (const permSet of permSets) {
+    uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to sandbox org user`));
+    const assignCommand = `sfdx force:user:permset:assign -n ${permSet.name || permSet} -u ${orgUsername}`;
+    const assignResult = await execSfdxJson(assignCommand, this, {
+      fail: false,
+      output: false,
+      debug: this.debugMode,
+    });
+    if (assignResult?.result?.failures?.length > 0 && !assignResult?.result?.failures[0].message.includes("Duplicate")) {
+      uxLog(this, c.red(`Error assigning to ${c.bold(permSet.name || permSet)}\n${assignResult?.result?.failures[0].message}`));
+    }
+  }
+}
+
+// Run initialization apex scripts
+export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: string) {
+  uxLog(this, c.cyan("Running apex initialization scripts..."));
+  const allApexScripts = await glob("**/scripts/**/*.apex");
+  // Build ordered list of apex scripts
+  const initApexScripts = orgInitApexScripts.map((scriptName: string) => {
+    const matchingScripts = allApexScripts.filter((apexScript: string) => path.basename(apexScript) === scriptName);
+    if (matchingScripts.length === 0) {
+      throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}.apex`));
+    }
+    return matchingScripts[0];
+  });
+  // Process apex scripts
+  for (const apexScript of initApexScripts) {
+    const apexScriptCommand = `sfdx force:apex:execute -f "${apexScript}" -u ${orgAlias}`;
+    await execCommand(apexScriptCommand, this, {
+      fail: true,
+      output: true,
+      debug: this.debugMode,
+    });
+  }
+}
+
+// Loads data in the org
+export async function initOrgData(initDataFolder: string, orgUsername: string) {
+  // Init folder (accounts, etc...)
+  if (fs.existsSync(initDataFolder)) {
+    uxLog(this, c.cyan("Loading sandbox org initialization data..."));
+    await importData(initDataFolder, this, {
+      targetUsername: orgUsername,
+    });
+  } else {
+    uxLog(this, c.cyan(`No initialization data: Define a sfdmu workspace in ${initDataFolder} if you need data in your new sandbox orgs`));
+  }
+  // Import data packages
+  const config = await getConfig("user");
+  const dataPackages = config.dataPackages || [];
+  for (const dataPackage of dataPackages) {
+    if (dataPackage.importInSandboxOrgs === true) {
+      await importData(dataPackage.dataPath, this, {
+        targetUsername: orgUsername,
+      });
+    } else {
+      uxLog(this, c.grey(`Skipped import of ${dataPackage.dataPath} as importInSandboxOrgs is not defined to true in .sfdx-hardis.yml`));
+    }
   }
 }

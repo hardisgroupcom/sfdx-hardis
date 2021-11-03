@@ -868,7 +868,7 @@ export async function restoreLocalSfdxInfo() {
 }
 
 // Generate SSL certificate in temporary folder and copy the key in project directory
-export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any, conn: any) {
+export async function generateSSLCertificate(branchName: string, folder: string, commandThis: any, conn: any, options: any) {
   uxLog(commandThis, "Generating SSL certificate...");
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
@@ -938,7 +938,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         type: "text",
         name: "appName",
         initial: "sfdx_hardis",
-        message: c.cyanBright("How would you like to name the Connected App (ex: sfdx) ?"),
+        message: c.cyanBright("How would you like to name the Connected App (ex: sfdx_hardis) ?"),
       },
       {
         type: "text",
@@ -998,6 +998,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         deployDir: tmpDirMd,
         testlevel: branchName.includes("production") ? "RunLocalTests" : "NoTestRun",
         soap: true,
+        targetUsername: options.targetUsername ? options.targetUsername : null,
       });
       console.assert(deployRes.status === 0, c.red("[sfdx-hardis] Failed to deploy metadatas"));
       uxLog(commandThis, `Successfully deployed ${c.green(promptResponses.appName)} Connected App`);

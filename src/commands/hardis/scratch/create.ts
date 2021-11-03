@@ -6,14 +6,13 @@ import * as c from "chalk";
 import { assert } from "console";
 import * as EmailValidator from "email-validator";
 import * as fs from "fs-extra";
-import * as glob from "glob-promise";
 import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
-import { importData } from "../../../common/utils/dataUtils";
 import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "../../../common/utils/deployUtils";
+import { initApexScripts, initOrgData, initPermissionSetAssignments } from "../../../common/utils/orgUtils";
 import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
@@ -102,9 +101,9 @@ export default class ScratchCreate extends SfdxCommand {
       await this.installPackages();
       if (this.pool === false) {
         await this.initOrgMetadatas();
-        await this.initPermissionSetAssignments();
-        await this.initApexScripts();
-        await this.initOrgData();
+        await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.scratchOrgUsername);
+        await initApexScripts(this.configInfo.scratchOrgInitApexScripts || [], this.scratchOrgUsername);
+        await initOrgData(path.join(".", "scripts", "data", "ScratchInit"), this.scratchOrgUsername);
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
@@ -432,75 +431,6 @@ export default class ScratchCreate extends SfdxCommand {
           output: true,
           debug: this.debugMode,
         });
-      }
-    }
-  }
-
-  // Assign permission sets to user
-  public async initPermissionSetAssignments() {
-    uxLog(this, c.cyan("Assigning Permission Sets..."));
-    const permSets = this.configInfo.initPermissionSets || [];
-    for (const permSet of permSets) {
-      uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to scratch org user`));
-      const assignCommand = `sfdx force:user:permset:assign -n ${permSet.name || permSet} -u ${this.scratchOrgUsername}`;
-      const assignResult = await execSfdxJson(assignCommand, this, {
-        fail: false,
-        output: false,
-        debug: this.debugMode,
-      });
-      if (assignResult?.result?.failures?.length > 0 && !assignResult?.result?.failures[0].message.includes("Duplicate")) {
-        uxLog(this, c.red(`Error assigning to ${c.bold(permSet.name || permSet)}\n${assignResult?.result?.failures[0].message}`));
-      }
-    }
-  }
-
-  // Run initialization apex scripts
-  public async initApexScripts() {
-    uxLog(this, c.cyan("Running apex initialization scripts..."));
-    const allApexScripts = await glob("**/scripts/**/*.apex");
-    const scratchOrgInitApexScripts = this.configInfo.scratchOrgInitApexScripts || [];
-    // Build ordered list of apex scripts
-    const initApexScripts = scratchOrgInitApexScripts.map((scriptName: string) => {
-      const matchingScripts = allApexScripts.filter((apexScript: string) => path.basename(apexScript) === scriptName);
-      if (matchingScripts.length === 0) {
-        throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}.apex`));
-      }
-      return matchingScripts[0];
-    });
-    // Process apex scripts
-    for (const apexScript of initApexScripts) {
-      const apexScriptCommand = `sfdx force:apex:execute -f "${apexScript}" -u ${this.scratchOrgAlias}`;
-      await execCommand(apexScriptCommand, this, {
-        fail: true,
-        output: true,
-        debug: this.debugMode,
-      });
-    }
-  }
-
-  // Loads data in the org
-  public async initOrgData() {
-    // ScratchInit folder (accounts, etc...)
-    const scratchInitDataFolder = path.join(".", "scripts", "data", "ScratchInit");
-    if (fs.existsSync(scratchInitDataFolder)) {
-      uxLog(this, c.cyan("Loading scratch org initialization data..."));
-      await importData(scratchInitDataFolder, this, {
-        targetUsername: this.scratchOrgUsername,
-      });
-    } else {
-      uxLog(this, c.cyan(`No initialization data: Define a sfdmu workspace in ${scratchInitDataFolder} if you need data in your new scratch orgs`));
-    }
-
-    // Import data packages
-    const config = await getConfig("user");
-    const dataPackages = config.dataPackages || [];
-    for (const dataPackage of dataPackages) {
-      if (dataPackage.importInScratchOrgs === true) {
-        await importData(dataPackage.dataPath, this, {
-          targetUsername: this.scratchOrgUsername,
-        });
-      } else {
-        uxLog(this, c.grey(`Skipped import of ${dataPackage.dataPath} as importInScratchOrgs is not defined to true in .sfdx-hardis.yml`));
       }
     }
   }

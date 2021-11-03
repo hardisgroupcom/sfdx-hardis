@@ -4,9 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.59.0] 2021-11-03
+
+- (ALPHA,not really usable yet) Allow to use sandboxes for new task (create from production org, or clone from other sandbox)
+- Fixes about scratch org initialization and JWT auth configuration
+
 ## [2.58.3] 2021-10-23
 
-h- ardis:org:files:export: Fix file paths in logs
+- hardis:org:files:export: Fix file paths in logs
 
 ## [2.58.2] 2021-10-18
 
