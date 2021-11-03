@@ -71,8 +71,8 @@ export default class NewTask extends SfdxCommand {
         ),
         choices: availableTargetBranches
           ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+              return { title: branch, value: branch };
+            })
           : [],
         initial: config.developmentBranch || "developpement",
       },
@@ -147,14 +147,13 @@ export default class NewTask extends SfdxCommand {
           title: "Sandbox org with source tracking (ALPHA, DO NOT USE YET)",
           value: "sandbox",
         },
-      ]
+      ],
     });
 
     // Select or create org that user will work in
-    if (orgTypeResponse.value === 'scratch') {
+    if (orgTypeResponse.value === "scratch") {
       await this.selectOrCreateScratchOrg(branchName);
-    }
-    else {
+    } else {
       await this.selectOrCreateSandbox(branchName);
     }
 

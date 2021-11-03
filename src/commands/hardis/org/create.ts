@@ -25,7 +25,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class SandboxCreate extends SfdxCommand {
   public static title = "Create sandbox org";
 
-  public static description = "Create and initialize sandbox org"
+  public static description = "Create and initialize sandbox org";
 
   public static examples = ["$ sfdx hardis:org:create"];
 
@@ -79,9 +79,9 @@ export default class SandboxCreate extends SfdxCommand {
     await this.createSandboxOrg();
     try {
       await this.updateSandboxOrgUser();
-      await initPermissionSetAssignments(this.configInfo.initPermissionSets || [],this.sandboxOrgUsername);
-      await initApexScripts(this.configInfo.sandboxOrgInitApexScripts || [],this.sandboxOrgUsername);
-      await initOrgData(path.join(".", "scripts", "data", "SandboxInit"),this.sandboxOrgUsername);
+      await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.sandboxOrgUsername);
+      await initApexScripts(this.configInfo.sandboxOrgInitApexScripts || [], this.sandboxOrgUsername);
+      await initOrgData(path.join(".", "scripts", "data", "SandboxInit"), this.sandboxOrgUsername);
     } catch (e) {
       elapseEnd(`Create and initialize sandbox org`);
       uxLog(this, c.grey("Error: " + e.message + "\n" + e.stack));
@@ -142,15 +142,14 @@ export default class SandboxCreate extends SfdxCommand {
     uxLog(this, c.cyan("Building custom project-sandbox-def.json..."));
     if (fs.existsSync("./config/project-sandbox-def.json")) {
       this.projectSandboxDef = JSON.parse(fs.readFileSync("./config/project-sandbox-def.json"));
-    }
-    else {
+    } else {
       this.projectSandboxDef = {
         sandboxName: "",
         description: "SFDX Hardis developer sandbox",
-        licenseType: "Developer"
+        licenseType: "Developer",
       };
     }
-    this.projectSandboxDef.sandboxName = os.userInfo().username ;
+    this.projectSandboxDef.sandboxName = os.userInfo().username;
     const projectSandboxDefLocal = `./config/user/project-sandbox-def-${this.sandboxOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectSandboxDefLocal));
     await fs.writeFile(projectSandboxDefLocal, JSON.stringify(this.projectSandboxDef, null, 2));
@@ -245,5 +244,4 @@ export default class SandboxCreate extends SfdxCommand {
     const userUpdateCommand = `sfdx force:data:record:update -s User -i ${userQueryRes.result.Id} -v "${updatedUserValues}" -u ${this.sandboxOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
   }
-
 }
