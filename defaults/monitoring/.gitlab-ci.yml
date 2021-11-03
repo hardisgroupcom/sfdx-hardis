@@ -88,12 +88,12 @@ check_quality:
   # Conditions d'execution
   except:
     - master
-  image: nvuillam/mega-linter-salesforce:latest
+  image: megalinter/megalinter-salesforce:beta
   script: ["true"]
   allow_failure: true
   variables:
     # All available variables are described in documentation
-    # https://nvuillam.github.io/mega-linter/configuration/
+    # https://megalinter.github.io/configuration/
     DEFAULT_WORKSPACE: $CI_PROJECT_DIR
     DEFAULT_BRANCH: master
     # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY

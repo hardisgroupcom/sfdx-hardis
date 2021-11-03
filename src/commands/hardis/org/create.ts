@@ -1,17 +1,16 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { assert } from "console";
 import * as EmailValidator from "email-validator";
 import * as fs from "fs-extra";
-import * as glob from "glob-promise";
 import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
-import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from "../../../common/utils";
-import { importData } from "../../../common/utils/dataUtils";
+import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from "../../../common/utils";
+import { initApexScripts, initOrgData, initPermissionSetAssignments } from "../../../common/utils/orgUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
 import { getConfig, setConfig } from "../../../config";
@@ -80,9 +79,9 @@ export default class SandboxCreate extends SfdxCommand {
     await this.createSandboxOrg();
     try {
       await this.updateSandboxOrgUser();
-      await this.initPermissionSetAssignments();
-      await this.initApexScripts();
-      await this.initOrgData();
+      await initPermissionSetAssignments(this.configInfo.initPermissionSets || [],this.sandboxOrgUsername);
+      await initApexScripts(this.configInfo.sandboxOrgInitApexScripts || [],this.sandboxOrgUsername);
+      await initOrgData(path.join(".", "scripts", "data", "SandboxInit"),this.sandboxOrgUsername);
     } catch (e) {
       elapseEnd(`Create and initialize sandbox org`);
       uxLog(this, c.grey("Error: " + e.message + "\n" + e.stack));
@@ -127,7 +126,7 @@ export default class SandboxCreate extends SfdxCommand {
       const promptResponse = await prompts({
         type: "text",
         name: "value",
-        message: c.cyanBright("Please input your email address"),
+        message: c.cyanBright("Please input your email address (it will be stored locally for later use)"),
         validate: (value: string) => EmailValidator.validate(value),
       });
       this.userEmail = promptResponse.value;
@@ -247,72 +246,4 @@ export default class SandboxCreate extends SfdxCommand {
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
   }
 
-  // Assign permission sets to user
-  public async initPermissionSetAssignments() {
-    uxLog(this, c.cyan("Assigning Permission Sets..."));
-    const permSets = this.configInfo.initPermissionSets || [];
-    for (const permSet of permSets) {
-      uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to sandbox org user`));
-      const assignCommand = `sfdx force:user:permset:assign -n ${permSet.name || permSet} -u ${this.sandboxOrgUsername}`;
-      const assignResult = await execSfdxJson(assignCommand, this, {
-        fail: false,
-        output: false,
-        debug: this.debugMode,
-      });
-      if (assignResult?.result?.failures?.length > 0 && !assignResult?.result?.failures[0].message.includes("Duplicate")) {
-        uxLog(this, c.red(`Error assigning to ${c.bold(permSet.name || permSet)}\n${assignResult?.result?.failures[0].message}`));
-      }
-    }
-  }
-
-  // Run initialization apex scripts
-  public async initApexScripts() {
-    uxLog(this, c.cyan("Running apex initialization scripts..."));
-    const allApexScripts = await glob("**/scripts/**/*.apex");
-    const sandboxOrgInitApexScripts = this.configInfo.sandboxOrgInitApexScripts || [];
-    // Build ordered list of apex scripts
-    const initApexScripts = sandboxOrgInitApexScripts.map((scriptName: string) => {
-      const matchingScripts = allApexScripts.filter((apexScript: string) => path.basename(apexScript) === scriptName);
-      if (matchingScripts.length === 0) {
-        throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}.apex`));
-      }
-      return matchingScripts[0];
-    });
-    // Process apex scripts
-    for (const apexScript of initApexScripts) {
-      const apexScriptCommand = `sfdx force:apex:execute -f "${apexScript}" -u ${this.sandboxOrgAlias}`;
-      await execCommand(apexScriptCommand, this, {
-        fail: true,
-        output: true,
-        debug: this.debugMode,
-      });
-    }
-  }
-
-  // Loads data in the org
-  public async initOrgData() {
-    // SandboxInit folder (accounts, etc...)
-    const sandboxInitDataFolder = path.join(".", "scripts", "data", "SandboxInit");
-    if (fs.existsSync(sandboxInitDataFolder)) {
-      uxLog(this, c.cyan("Loading sandbox org initialization data..."));
-      await importData(sandboxInitDataFolder, this, {
-        targetUsername: this.sandboxOrgUsername,
-      });
-    } else {
-      uxLog(this, c.cyan(`No initialization data: Define a sfdmu workspace in ${sandboxInitDataFolder} if you need data in your new sandbox orgs`));
-    }
-
-    // Import data packages
-    const config = await getConfig("user");
-    const dataPackages = config.dataPackages || [];
-    for (const dataPackage of dataPackages) {
-      if (dataPackage.importInSandboxOrgs === true) {
-        await importData(dataPackage.dataPath, this, {
-          targetUsername: this.sandboxOrgUsername,
-        });
-      } else {
-        uxLog(this, c.grey(`Skipped import of ${dataPackage.dataPath} as importInSandboxOrgs is not defined to true in .sfdx-hardis.yml`));
-      }
-    }
-  }
 }

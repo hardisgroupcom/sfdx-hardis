@@ -37,7 +37,7 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/hardisgroupcom/sfdx-hardis
     - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/r/nvuillam/mega-linter
+      link: https://hub.docker.com/r/megalinter/megalinter
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/NicolasVuillamy
   generator: false
