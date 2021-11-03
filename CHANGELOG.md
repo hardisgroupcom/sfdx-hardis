@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.60.0] 2021-11-03
+
+- Deployment failure: Tuning of error message + display of direct link to Deployment Status page in console logs
+- When not in CI, prompt for the org to use to simulate deployments
+
 ## [2.59.0] 2021-11-03
 
 - (ALPHA,not really usable yet) Allow to use sandboxes for new task (create from production org, or clone from other sandbox)
