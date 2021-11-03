@@ -17,7 +17,7 @@ import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
-import { deployMetadatas } from "./deployUtils";
+import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
 import { promptProfiles } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
 import moment = require("moment");
@@ -507,7 +507,7 @@ export async function execCommand(
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes("--json") || options.fail) {
-      console.error(c.red(`${e.stdout}\n${e.stderr}`));
+      console.error(c.red(truncateProgressLogLines(`${e.stdout}\n${e.stderr}`)));
       // Manage retry if requested
       if (options.retry != null) {
         options.retry.tryCount = (options.retry.tryCount || 0) + 1;
@@ -534,7 +534,7 @@ export async function execCommand(
   }
   // Display output if requested, for better user unrstanding of the logs
   if (options.output || options.debug) {
-    uxLog(commandThis, c.italic(c.grey(commandResult.stdout)));
+    uxLog(commandThis, c.italic(c.grey(truncateProgressLogLines(commandResult.stdout))));
   }
   // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;

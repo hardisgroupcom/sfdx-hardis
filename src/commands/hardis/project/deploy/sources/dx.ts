@@ -5,9 +5,10 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as fs from "fs-extra";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { uxLog } from "../../../../../common/utils";
+import { isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { deployDestructiveChanges, forceSourceDeploy } from "../../../../../common/utils/deployUtils";
+import { promptOrg } from "../../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -22,7 +23,7 @@ export default class DxSources extends SfdxCommand {
   public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
   Env vars override:
-  
+
   - SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml
 `;
 
@@ -79,13 +80,19 @@ export default class DxSources extends SfdxCommand {
       await MetadataUtils.installPackagesOnOrg(packages, null, this, "deploy");
     }
 
+    let targetUsername = this.org.getUsername();
+    if (!isCI) {
+      const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, scratch: false });
+      targetUsername = targetOrg.username;
+    }
+
     // Deploy sources
     const packageXmlFile =
       packageXml || process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
         ? "./manifest/package.xml"
         : "./config/package.xml";
     const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, {
-      targetUsername: this.org.getUsername(),
+      targetUsername: targetUsername,
     });
 
     // Deploy destructive changes
@@ -100,6 +107,7 @@ export default class DxSources extends SfdxCommand {
           debug: this.debugMode,
           check: check,
           testLevel: testlevel,
+          targetUsername: targetUsername,
         },
         this
       );

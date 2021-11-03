@@ -103,7 +103,7 @@ export async function forceSourceDeploy(
   testlevel = "RunLocalTests",
   debugMode = false,
   commandThis: any = this,
-  options = {}
+  options: any = {}
 ): Promise<any> {
   elapseStart("all deployments");
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
@@ -145,6 +145,7 @@ export async function forceSourceDeploy(
         " --wait 60" +
         " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
         ` --testlevel ${testlevel}` +
+        (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
         (check ? " --checkonly" : "") +
         (debugMode ? " --verbose" : "");
       let deployRes;
@@ -157,12 +158,13 @@ export async function forceSourceDeploy(
         });
       } catch (e) {
         const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
-        uxLog(commandThis, c.red("Sadly there has been Deployment error(s)"));
+        uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
         uxLog(commandThis, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
         uxLog(
           commandThis,
           c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`))
         );
+        await displayDeploymentLink(e.stdout + e.stderr, options);
         elapseEnd(`deploy ${deployment.label}`);
         throw new SfdxError("Deployment failure. Check messages above");
       }
@@ -172,7 +174,8 @@ export async function forceSourceDeploy(
         uxLog(commandThis, c.green(message));
       } else {
         message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org`;
-        uxLog(commandThis, c.red(deployRes.errorMessage));
+        uxLog(commandThis, c.red(c.bold(deployRes.errorMessage)));
+        await displayDeploymentLink(deployRes.errorMessage, options);
       }
       // Restore quickActions after deployment of main package
       if (deployment.packageXmlFile.includes("mainPackage.xml")) {
@@ -194,6 +197,32 @@ export async function forceSourceDeploy(
   }
   elapseEnd("all deployments");
   return { messages };
+}
+
+export function truncateProgressLogLines(rawLog: string) {
+  const rawLogCleaned = rawLog.replace(/(SOURCE PROGRESS \|.*\n)/gm, "");
+  return rawLogCleaned;
+}
+
+// Display deployment link in target org
+async function displayDeploymentLink(rawLog: string, options: any) {
+  let deploymentUrl = "lightning/setup/DeployStatus/home";
+  const regex = /Deploy ID: (.*)/gm;
+  if (rawLog && rawLog.match(regex)) {
+    const deploymentId = regex.exec(rawLog)[1];
+    const detailedDeploymentUrl =
+      "/changemgmt/monitorDeploymentsDetails.apexp?" + encodeURIComponent(`retURL=/changemgmt/monitorDeployment.apexp&asyncId=${deploymentId}`);
+    deploymentUrl = "lightning/setup/DeployStatus/page?address=" + encodeURIComponent(detailedDeploymentUrl);
+  }
+  const openRes = await execSfdxJson(
+    `sfdx force:org:open -p ${deploymentUrl} --urlonly` + (options.targetUsername ? ` --targetusername ${options.targetUsername}` : ""),
+    this,
+    {
+      fail: true,
+      output: false,
+    }
+  );
+  uxLog(this, c.yellowBright(`Open deployment status page in org with url: ${c.bold(c.greenBright(openRes?.result?.url))}`));
 }
 
 // In some case we can not deploy the whole package.xml, so let's split it before :)
@@ -404,6 +433,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
     " --wait 60" +
     ` --testlevel ${options.testLevel || "NoTestRun"}` +
     " --ignorewarnings" + // So it does not fail in case metadata is already deleted
+    (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
     (options.check ? " --checkonly" : "") +
     (options.debug ? " --verbose" : "");
   // Deploy destructive changes
