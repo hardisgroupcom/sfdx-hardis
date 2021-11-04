@@ -35,7 +35,6 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
 |json|boolean|format output as json||||
 |limit<br/>-l|option|Number of latest EventLogFile events to analyze|999|||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
-|mode<br/>-m|option|Detection mode: jsforce or apex|jsforce|||
 |outputfile<br/>-o|option|Force the path and name of output report file. Must end with .csv||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||

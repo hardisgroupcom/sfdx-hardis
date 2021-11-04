@@ -6,7 +6,7 @@
 Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
   Env vars override:
-  
+
   - SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml
 
 

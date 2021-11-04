@@ -16,6 +16,7 @@ Export files from an org according to a configuration
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |path<br/>-p|option|Path to the file export project||||
 |polltimeout<br/>-t|option|Timeout in MS for Bulk API calls|300000|||
+|startchunknumber<br/>-s|option|Chunk number to start from||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

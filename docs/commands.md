@@ -26,6 +26,7 @@
 |[**hardis:org:configure:files**](hardis/org/configure/files.md)|Configure File export project|
 |[**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)|Configure org monitoring|
 |[**hardis:org:connect**](hardis/org/connect.md)|Connect to an org|
+|[**hardis:org:create**](hardis/org/create.md)|Create sandbox org|
 |[**hardis:org:data:export**](hardis/org/data/export.md)|Export data|
 |[**hardis:org:data:import**](hardis/org/data/import.md)|Import data|
 |[**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)|Check for legacy API use|
@@ -39,7 +40,7 @@
 |[**hardis:org:select**](hardis/org/select.md)|Select org|
 |[**hardis:org:test:apex**](hardis/org/test/apex.md)|Run apex tests|
 |[**hardis:org:user:freeze**](hardis/org/user/freeze.md)|Freeze user logins|
-|[**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)|Unfreeze users logins|
+|[**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)|Unfreeze user logins|
 
 ## hardis:package
 

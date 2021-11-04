@@ -63,6 +63,7 @@ nav:
             files: hardis/org/configure/files.md
             monitoring: hardis/org/configure/monitoring.md
           connect: hardis/org/connect.md
+          create: hardis/org/create.md
           data:
             export: hardis/org/data/export.md
             import: hardis/org/data/import.md

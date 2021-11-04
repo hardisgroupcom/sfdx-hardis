@@ -124,6 +124,15 @@ Anyone is welcome to contribute to this sfdx-hardis
 - Run `tsc --watch`to transpile typescript
 - Debug commands using `NODE_OPTIONS=--inspect-brk sfdx hardis:somecommand -someparameter somevalue`
 
+## Articles
+
+- English
+  - [Handle Salesforce API versions Deprecation like a pro](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
+  - [How to mass download notes and attachments files from a Salesforce org](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
+
+- French
+  - [Versions d'API Salesforce décommissionnées: Que faire ?](https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/)
+
 
 
 ## Commands
@@ -154,6 +163,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 |[**hardis:org:configure:files**](hardis/org/configure/files.md)|Configure File export project|
 |[**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)|Configure org monitoring|
 |[**hardis:org:connect**](hardis/org/connect.md)|Connect to an org|
+|[**hardis:org:create**](hardis/org/create.md)|Create sandbox org|
 |[**hardis:org:data:export**](hardis/org/data/export.md)|Export data|
 |[**hardis:org:data:import**](hardis/org/data/import.md)|Import data|
 |[**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)|Check for legacy API use|
@@ -167,7 +177,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 |[**hardis:org:select**](hardis/org/select.md)|Select org|
 |[**hardis:org:test:apex**](hardis/org/test/apex.md)|Run apex tests|
 |[**hardis:org:user:freeze**](hardis/org/user/freeze.md)|Freeze user logins|
-|[**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)|Unfreeze users logins|
+|[**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)|Unfreeze user logins|
 
 ### hardis:package
 

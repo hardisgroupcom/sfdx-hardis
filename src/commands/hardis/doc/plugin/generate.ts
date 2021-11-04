@@ -69,6 +69,8 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const cwd = process.cwd();
     const config = await Config.load({ root: cwd, devPlugins: false, userPlugins: false });
 
+    console.log(JSON.stringify(config,null,2));
+
     // Generate commands markdowns
     const commandsNav = { "All commands": "commands.md" };
     const commandsLinks = {};
@@ -166,6 +168,10 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
       lines.push(...[`|[**${command.id}**](${commandsLinks[command.id]})|${title}|`]);
       cmdLines.push(...[`|[**${command.id}**](${commandsLinks[command.id]})|${title}|`]);
     }
+
+    // Create docs dir if not existing yet
+    await fs.ensureDir(path.join(process.cwd(), "docs"));
+
     // write in index.md
     const indexMdFile = path.join(process.cwd(), "docs", "index.md");
     const indexMdString = lines.join("\n") + "\n";
