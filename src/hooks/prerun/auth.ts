@@ -25,7 +25,10 @@ export const hook = async (options: any) => {
     elapseStart(`${options?.Command?.id} execution time`);
   }
 
-  if (!commandId.startsWith("hardis") || ["hardis:doc:plugin:generate", "hardis:source:push", "hardis:source:pull"].includes(commandId)) {
+  if (
+    !commandId.startsWith("hardis") ||
+    ["hardis:doc:plugin:generate", "hardis:source:push", "hardis:source:pull", "hardis:scratch:pool:view"].includes(commandId)
+  ) {
     return;
   }
   // skip if during mocha tests

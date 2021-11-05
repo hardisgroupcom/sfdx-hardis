@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.60.1] 2021-11-05
+
+- Fix hardis:scratch:pool:view when DevHub authentication is expired
+
 ## [2.60.0] 2021-11-03
 
 - Deployment failure: Tuning of error message + display of direct link to Deployment Status page in console logs
