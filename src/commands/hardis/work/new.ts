@@ -216,7 +216,7 @@ export default class NewTask extends SfdxCommand {
       choices: [
         ...[
           {
-            title: c.yellow("Create new sandbox from another sandbox or production org"),
+            title: c.yellow("Create new sandbox from another sandbox or production org (ALPHA, do not use yet)"),
             value: "newSandbox",
           },
         ],
