@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.60.2] 2021-11-06
+
+- Allow to input URL to use to login
+
 ## [2.60.1] 2021-11-05
 
 - Fix hardis:scratch:pool:view when DevHub authentication is expired

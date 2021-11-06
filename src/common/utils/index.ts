@@ -139,10 +139,27 @@ export async function promptInstanceUrl() {
         description: "The org I want to connect is NOT a sandbox",
         value: "https://login.salesforce.com",
       },
+      {
+        title: "Custom login URL",
+        description: "When it's not possible to login via login.salesforce.com or test.salesforce.com",
+        value: "custom",
+      },
     ],
     initial: 1,
   });
-  return orgTypeResponse.value;
+  // login.salesforce.com or test.salesforce.com
+  const url = orgTypeResponse.value;
+  if (url.startsWith("http")) {
+    return url;
+  }
+  // Custom url to input
+  const customUrlResponse = await prompts({
+    type: "text",
+    name: "value",
+    message: c.cyanBright("Please input the base URL of the salesforce org (ex: https://myclient.my.salesforce.com"),
+  });
+  const urlCustom = (customUrlResponse.value || []).replace(".lightning.force.com", ".my.salesforce.com");
+  return urlCustom;
 }
 
 // Check if we are in a repo, or create it if missing
