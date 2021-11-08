@@ -73,7 +73,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       // Propose user to ignore elements
       const forceIgnoreRes = await prompts({
         type: "multiselect",
-        message: "If you want to try again with updated .forceignore file, please select elements you want to add",
+        message: "If you want to try again with updated .forceignore file, please select elements you want to add, else escape",
         name: "value",
         choices: forceIgnoreElements.map((forceIgnoreElt) => {
           return {
@@ -82,7 +82,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
           };
         }),
       });
-      if (forceIgnoreRes.value.length > 0) {
+      if (forceIgnoreRes.value.length > 0 && forceIgnoreRes.value[0] !== 'exitNow') {
         const forceIgnoreFile = "./.forceignore";
         const forceIgnore = await fs.readFile(forceIgnoreFile, "utf-8");
         const forceIgnoreLines = forceIgnore.replace("\r\n", "\n").split("\n");
