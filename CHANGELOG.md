@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.61.0] 2021-12-02
+
+- Use same XML indentation than Salesforce (#51) (requires also upgrade of sfdx-essentials, using `sfdx plugins:install sfdx-essentials`)
+
 ## [2.60.3] 2021-11-08
 
 - Fix hardis:source:pull when there are errors
