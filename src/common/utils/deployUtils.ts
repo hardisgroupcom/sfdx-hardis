@@ -82,7 +82,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
           };
         }),
       });
-      if (forceIgnoreRes.value.length > 0 && forceIgnoreRes.value[0] !== 'exitNow') {
+      if (forceIgnoreRes.value.length > 0 && forceIgnoreRes.value[0] !== "exitNow") {
         const forceIgnoreFile = "./.forceignore";
         const forceIgnore = await fs.readFile(forceIgnoreFile, "utf-8");
         const forceIgnoreLines = forceIgnore.replace("\r\n", "\n").split("\n");
