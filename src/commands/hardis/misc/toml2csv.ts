@@ -5,6 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import moment = require("moment");
+import ora = require("ora");
 import * as path from "path";
 import * as readline from "readline";
 import { uxLog } from "../../../common/utils";
@@ -86,6 +87,9 @@ export default class Toml2Csv extends SfdxCommand {
 
     uxLog(this, c.cyan(`Generating CSV files from ${tomlFile} (encoding ${tomlFileEncoding}) into folder ${outputDir}`));
 
+    // Start spinner
+    const spinner = ora({ text: `Processing...`, spinner: "moon" }).start();
+
     // Read TOML file and process lines section by section
     const fileStream = fs.createReadStream(tomlFile, { encoding: "utf8" });
     const rl = readline.createInterface({
@@ -105,6 +109,7 @@ export default class Toml2Csv extends SfdxCommand {
       // Section line
       if (line.startsWith("[")) {
         currentSection = /\[(.*)\]/gm.exec(line)[1]; // ex: get COMPTES from [COMPTES]
+        spinner.text = `Processing section ${currentSection}`;
         if (tomlSections[currentSection] == null) {
           tomlSections[currentSection] = [];
         }
@@ -117,6 +122,9 @@ export default class Toml2Csv extends SfdxCommand {
         }
       }
     }
+
+    spinner.succeed(`File processing complete`);
+    uxLog(this, c.cyan(`Generating output CSV files...`));
 
     // Generate output files
     const csvFiles = [];
