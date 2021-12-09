@@ -34,6 +34,11 @@ export default class Toml2Csv extends SfdxCommand {
       char: "t",
       description: "Path to JSON config file for mapping and transformation",
     }),
+    skiptransfo: flags.boolean({
+      char: "s",
+      default: false,
+      description: "Do not apply transformation to input data",
+    }),
     outputdir: flags.string({
       char: "o",
       description: "Output directory",
@@ -58,6 +63,11 @@ export default class Toml2Csv extends SfdxCommand {
   protected static requiresProject = false;
 
   protected transfoConfig: any = {};
+  protected transfoConfigFile: string;
+  protected outputDir: string;
+  protected skipTransfo = false;
+
+  protected csvFiles: string[] = [];
 
   /* jscpd:ignore-end */
 
@@ -65,9 +75,10 @@ export default class Toml2Csv extends SfdxCommand {
     // Collect input parameters
     const tomlFile = this.flags.tomlfile;
     const tomlFileEncoding = this.flags.tomlfileencoding || "utf8";
-    const transfoConfigFile = this.flags.transfoconfig || path.join(path.dirname(tomlFile), "transfoConfig.json");
-    const outputDir = this.flags.outputdir || path.join(path.dirname(tomlFile), path.parse(tomlFile).name);
+    this.transfoConfigFile = this.flags.transfoconfig || path.join(path.dirname(tomlFile), "transfoConfig.json");
+    this.outputDir = this.flags.outputdir || path.join(path.dirname(tomlFile), path.parse(tomlFile).name);
     const debugMode = this.flags.debug || false;
+    this.skipTransfo = this.flags.skiptransfo || false;
 
     // Check TOML file is existing
     if (!fs.existsSync(tomlFile)) {
@@ -75,17 +86,17 @@ export default class Toml2Csv extends SfdxCommand {
     }
 
     // Read configuration file
-    if (!fs.existsSync(transfoConfigFile)) {
-      throw new SfdxError(`Mapping/Transco config ${transfoConfigFile} not found`);
+    if (!fs.existsSync(this.transfoConfigFile)) {
+      throw new SfdxError(`Mapping/Transco config ${this.transfoConfigFile} not found`);
     }
-    this.transfoConfig = JSON.parse(fs.readFileSync(transfoConfigFile));
+    this.transfoConfig = JSON.parse(fs.readFileSync(this.transfoConfigFile));
 
     // Create output directory if not existing yet
-    await fs.ensureDir(outputDir);
+    await fs.ensureDir(this.outputDir);
     // Empty output dir
-    await fs.emptyDir(outputDir);
+    await fs.emptyDir(this.outputDir);
 
-    uxLog(this, c.cyan(`Generating CSV files from ${tomlFile} (encoding ${tomlFileEncoding}) into folder ${outputDir}`));
+    uxLog(this, c.cyan(`Generating CSV files from ${tomlFile} (encoding ${tomlFileEncoding}) into folder ${this.outputDir}`));
 
     // Start spinner
     const spinner = ora({ text: `Processing...`, spinner: "moon" }).start();
@@ -96,7 +107,7 @@ export default class Toml2Csv extends SfdxCommand {
       input: fileStream,
       crlfDelay: Infinity,
     });
-    const tomlSections = {};
+    const tomlSectionsFileWriters = {};
     let currentSection = null;
     for await (const line of rl) {
       if (debugMode) {
@@ -110,48 +121,67 @@ export default class Toml2Csv extends SfdxCommand {
       if (line.startsWith("[")) {
         currentSection = /\[(.*)\]/gm.exec(line)[1]; // ex: get COMPTES from [COMPTES]
         spinner.text = `Processing section ${currentSection}`;
-        if (tomlSections[currentSection] == null) {
-          tomlSections[currentSection] = [];
+        if (tomlSectionsFileWriters[currentSection] == null) {
+          tomlSectionsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection);
         }
       }
       // CSV line
       else if (currentSection) {
-        const lineSf = this.convertLineToSf(currentSection, line);
-        if (lineSf) {
-          tomlSections[currentSection].push(lineSf);
+        const lineSf = this.skipTransfo
+          ? line.split(this.transfoConfig.inputFile.separator || ",").join(this.transfoConfig?.ouputFile?.separator || ",")
+          : this.convertLineToSf(currentSection, line);
+        if (lineSf && tomlSectionsFileWriters[currentSection]) {
+          // Use writeStream. If not able to write, wait for buffer to be available again
+          // cf https://stackoverflow.com/a/50456833/7113625
+          const ableToWrite = tomlSectionsFileWriters[currentSection].write(`${lineSf}\n`);
+          if (!ableToWrite) {
+            await new Promise((resolve) => {
+              tomlSectionsFileWriters[currentSection].once("drain", resolve);
+            });
+          }
         }
       }
     }
 
     spinner.succeed(`File processing complete`);
-    uxLog(this, c.cyan(`Generating output CSV files...`));
 
-    // Generate output files
-    const csvFiles = [];
-    for (const section of Object.keys(tomlSections)) {
-      if (this.transfoConfig?.entities[section]?.outputFile?.cols) {
-        // Create SF Object output file name
-        const outputFile = path.join(outputDir, `${this.transfoConfig.entities[section].outputFile.salesforceObjectApiName}___${section}.csv`);
-        // Create CSV Header
-        const headerLine = this.transfoConfig?.entities[section]?.outputFile?.cols
-          .map((colDescription: any) => colDescription.name)
-          .join(this.transfoConfig?.ouputFile?.separator || ",");
-        // Create text and write file
-        const sectionFileLines = headerLine + "\n" + tomlSections[section].join("\n") + "\n";
-        await fs.writeFile(outputFile, sectionFileLines, "utf8");
-        csvFiles.push(outputFile);
-        uxLog(this, c.cyan(`- Generated output CSV file ${c.green(c.bold(outputFile))}`));
-      } else {
-        uxLog(this, c.yellow(`No output file for ${section} as entity is not described in ${transfoConfigFile}`));
-      }
-    }
-
-    const message = `TOML file ${tomlFile} has been split into ${csvFiles.length} CSV files in directory ${outputDir}`;
+    const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
       this,
-      c.cyan(`TOML file ${c.green(tomlFile)} has been split into ${c.green(csvFiles.length)} CSV files in directory ${c.green(outputDir)}`)
+      c.cyan(`TOML file ${c.green(tomlFile)} has been split into ${c.green(this.csvFiles.length)} CSV files in directory ${c.green(this.outputDir)}`)
     );
-    return { outputString: message, csvfiles: csvFiles };
+    return { outputString: message, csvfiles: this.csvFiles };
+  }
+
+  // Create output write stream for section
+  async createSectionWriteStream(section: string) {
+    // Case when transformation is skipped
+    if (this.skipTransfo) {
+      const outputFile = path.join(this.outputDir, `${section}.csv`);
+      // Init writeStream
+      const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: "utf8" });
+      uxLog(this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
+      this.csvFiles.push(outputFile);
+      return fileWriteStream;
+    }
+    // Create writeStream managing transformation
+    else if (this.transfoConfig?.entities[section]?.outputFile?.cols) {
+      // Create SF Object output file name
+      const outputFile = path.join(this.outputDir, `${this.transfoConfig.entities[section].outputFile.salesforceObjectApiName}___${section}.csv`);
+      // Init writeStream
+      const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: "utf8" });
+      // Create CSV Header
+      const headerLine = this.transfoConfig?.entities[section]?.outputFile?.cols
+        .map((colDescription: any) => colDescription.name)
+        .join(this.transfoConfig?.ouputFile?.separator || ",");
+      // Initialize with header
+      fileWriteStream.write(headerLine + "\n");
+      uxLog(this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
+      this.csvFiles.push(outputFile);
+      return fileWriteStream;
+    } else {
+      uxLog(this, c.yellow(`No output file for ${section} as entity is not described in ${this.transfoConfigFile}`));
+    }
   }
 
   // Convert input CSV line into SF Bulk API expected CSV line
@@ -182,7 +212,7 @@ export default class Toml2Csv extends SfdxCommand {
             let colVal = inputCols[colDefinition.inputColKey] || "";
             // Transform if necessary
             if (colVal && colDefinition.transfo) {
-              colVal = this.manageTransformation(colDefinition.transfo,colVal)
+              colVal = this.manageTransformation(colDefinition.transfo, colVal);
             }
             linesSfArray.push(colVal);
           } else {
@@ -202,10 +232,10 @@ export default class Toml2Csv extends SfdxCommand {
   }
 
   // Apply transformations defined in transfoconfig file
-  manageTransformation(transfo:any, colVal:any) {
+  manageTransformation(transfo: any, colVal: any) {
     if (transfo.type === "date") {
-      return moment(colVal, transfo.from,true).format(transfo.to);
+      return moment(colVal, transfo.from, true).format(transfo.to);
     }
-    uxLog(this,c.yellow(`Unable to format ${colVal} from ${transfo.from} to ${transfo.to}`));
+    uxLog(this, c.yellow(`Unable to format ${colVal} from ${transfo.from} to ${transfo.to}`));
   }
 }
