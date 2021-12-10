@@ -138,7 +138,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:auth:login [-r <string>] [-h] [-s] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisauthlogin--r-string--h--s--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:config:get [-l <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisconfigget--l-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:doc:plugin:generate [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisdocplugingenerate--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:misc:toml2csv -f <string> [-o <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardismisctoml2csv--f-string--o-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-s] [-o <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardismisctoml2csv--f-string--t-string--s--o-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:configure:data [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgconfiguredata--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:configure:files [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgconfigurefiles--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:configure:monitoring [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgconfiguremonitoring--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -290,19 +290,26 @@ EXAMPLE
 
 _See code: [lib/commands/hardis/doc/plugin/generate.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.61.0/lib/commands/hardis/doc/plugin/generate.js)_
 
-## `sfdx hardis:misc:toml2csv -f <string> [-o <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+## `sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-s] [-o <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Split TOML file into distinct CSV files
 
 ```
 USAGE
-  $ sfdx hardis:misc:toml2csv -f <string> [-o <string>] [-d] [--websocket <string>] [--json] [--loglevel 
-  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+  $ sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-s] [-o <string>] [-d] [--websocket <string>] [--json] 
+  [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
   -f, --tomlfile=tomlfile                                                           (required) Input TOML file path
   -o, --outputdir=outputdir                                                         Output directory
+
+  -s, --skiptransfo                                                                 Do not apply transformation to input
+                                                                                    data
+
+  -t, --transfoconfig=transfoconfig                                                 Path to JSON config file for mapping
+                                                                                    and transformation
+
   --json                                                                            format output as json
 
   --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
@@ -312,10 +319,10 @@ OPTIONS
                                                                                     Hardis UI integration
 
 EXAMPLE
-  $ sfdx hardis:misc:tomltocsv
+  $ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/APICIL/00000200_APICIL-CONNECT_T_2021_09_16_4801889.txt'
 ```
 
-_See code: [lib/commands/hardis/misc/toml2csv.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.60.3/lib/commands/hardis/misc/toml2csv.js)_
+_See code: [lib/commands/hardis/misc/toml2csv.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.61.0/lib/commands/hardis/misc/toml2csv.js)_
 
 ## `sfdx hardis:org:configure:data [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1297,7 +1304,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: C:\git\sfdx-hardis] Root
+  -p, --path=path                                                                   [default: D:\git\sfdx-hardis] Root
                                                                                     path to check
 
   --json                                                                            format output as json
@@ -1758,7 +1765,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: C:\git\sfdx-hardis] Root
+  -p, --path=path                                                                   [default: D:\git\sfdx-hardis] Root
                                                                                     folder
 
   --json                                                                            format output as json

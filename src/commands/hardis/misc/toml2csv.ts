@@ -9,6 +9,7 @@ import ora = require("ora");
 import * as path from "path";
 import * as readline from "readline";
 import { uxLog } from "../../../common/utils";
+import { countLinesInFile } from "../../../common/utils/filesUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -64,8 +65,18 @@ export default class Toml2Csv extends SfdxCommand {
 
   protected transfoConfig: any = {};
   protected transfoConfigFile: string;
+  protected rootConfigDirectory: string;
   protected outputDir: string;
   protected skipTransfo = false;
+
+  protected spinner: any;
+  protected inputFileSeparator: string;
+  protected outputFileSeparator: string;
+  protected tomlSectionsFileWriters: any = {};
+  protected tomlSectionsErrorsFileWriters: any = {};
+  protected loadedTranscos: any = {};
+  protected lineNb = 0 ;
+  protected errorNb = 0 ;
 
   protected csvFiles: string[] = [];
 
@@ -76,30 +87,36 @@ export default class Toml2Csv extends SfdxCommand {
     const tomlFile = this.flags.tomlfile;
     const tomlFileEncoding = this.flags.tomlfileencoding || "utf8";
     this.transfoConfigFile = this.flags.transfoconfig || path.join(path.dirname(tomlFile), "transfoConfig.json");
+    this.rootConfigDirectory = path.dirname(this.transfoConfigFile);
     this.outputDir = this.flags.outputdir || path.join(path.dirname(tomlFile), path.parse(tomlFile).name);
     const debugMode = this.flags.debug || false;
     this.skipTransfo = this.flags.skiptransfo || false;
 
     // Check TOML file is existing
     if (!fs.existsSync(tomlFile)) {
-      throw new SfdxError(`TOML file ${tomlFile} not found`);
+      this.triggerError(`TOML file ${tomlFile} not found`);
     }
 
     // Read configuration file
     if (!fs.existsSync(this.transfoConfigFile)) {
-      throw new SfdxError(`Mapping/Transco config ${this.transfoConfigFile} not found`);
+      this.triggerError(`Mapping/Transco config ${this.transfoConfigFile} not found`);
     }
     this.transfoConfig = JSON.parse(fs.readFileSync(this.transfoConfigFile));
+
+    // Set separators
+    this.inputFileSeparator = this.transfoConfig?.inputFile?.separator || ",";
+    this.outputFileSeparator = this.transfoConfig?.outputFile?.separator || ",";
 
     // Create output directory if not existing yet
     await fs.ensureDir(this.outputDir);
     // Empty output dir
     await fs.emptyDir(this.outputDir);
+    await fs.ensureDir(path.join(this.outputDir, "errors"));
 
     uxLog(this, c.cyan(`Generating CSV files from ${tomlFile} (encoding ${tomlFileEncoding}) into folder ${this.outputDir}`));
 
     // Start spinner
-    const spinner = ora({ text: `Processing...`, spinner: "moon" }).start();
+    this.spinner = ora({ text: `Processing...`, spinner: "moon" }).start();
 
     // Read TOML file and process lines section by section
     const fileStream = fs.createReadStream(tomlFile, { encoding: "utf8" });
@@ -107,7 +124,6 @@ export default class Toml2Csv extends SfdxCommand {
       input: fileStream,
       crlfDelay: Infinity,
     });
-    const tomlSectionsFileWriters = {};
     let currentSection = null;
     for await (const line of rl) {
       if (debugMode) {
@@ -120,30 +136,56 @@ export default class Toml2Csv extends SfdxCommand {
       // Section line
       if (line.startsWith("[")) {
         currentSection = /\[(.*)\]/gm.exec(line)[1]; // ex: get COMPTES from [COMPTES]
-        spinner.text = `Processing section ${currentSection}`;
-        if (tomlSectionsFileWriters[currentSection] == null) {
-          tomlSectionsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection);
+        this.spinner.text = `Processing section ${currentSection} (lines: ${this.lineNb}, errors: ${this.errorNb})`;
+        if (this.tomlSectionsFileWriters[currentSection] == null) {
+          this.tomlSectionsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, false);
+          this.tomlSectionsErrorsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, true);
         }
       }
       // CSV line
       else if (currentSection) {
-        const lineSf = this.skipTransfo
-          ? line.split(this.transfoConfig.inputFile.separator || ",").join(this.transfoConfig?.ouputFile?.separator || ",")
-          : this.convertLineToSf(currentSection, line);
-        if (lineSf && tomlSectionsFileWriters[currentSection]) {
-          // Use writeStream. If not able to write, wait for buffer to be available again
-          // cf https://stackoverflow.com/a/50456833/7113625
-          const ableToWrite = tomlSectionsFileWriters[currentSection].write(`${lineSf}\n`);
-          if (!ableToWrite) {
-            await new Promise((resolve) => {
-              tomlSectionsFileWriters[currentSection].once("drain", resolve);
-            });
+        this.lineNb++ ;
+        if (this.skipTransfo) {
+          // No transformation
+          const lineSf = line
+            .split(this.inputFileSeparator)
+            .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
+            .join(this.outputFileSeparator);
+          await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
+        } else {
+          // With transformation
+          try {
+            await this.convertLineToSfThenWrite(currentSection, line);
+          } catch (e) {
+            // Manage error
+            this.errorNb++ ;
+            const lineError =
+              line
+                .split(this.inputFileSeparator)
+                .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
+                .join(this.outputFileSeparator) +
+              this.outputFileSeparator +
+              e.message;
+            await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[currentSection]);
+            e.message;
           }
         }
+      } else {
+        uxLog(this, c.yellow("Line without section: we should NOT be here !!"));
       }
     }
 
-    spinner.succeed(`File processing complete`);
+    // Cleaning empty error files
+    for (const sectionKey of Object.keys(this.tomlSectionsErrorsFileWriters)) {
+      const errStream = this.tomlSectionsErrorsFileWriters[sectionKey];
+      const file = errStream.path ;
+      const lineNb = await countLinesInFile(file);
+      if (lineNb < 2) {
+        await fs.unlink(file);
+      }
+    }
+
+    this.spinner.succeed(`File processing complete with ${this.errorNb} errors`);
 
     const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
@@ -154,7 +196,7 @@ export default class Toml2Csv extends SfdxCommand {
   }
 
   // Create output write stream for section
-  async createSectionWriteStream(section: string) {
+  async createSectionWriteStream(section: string, errMode = false) {
     // Case when transformation is skipped
     if (this.skipTransfo) {
       const outputFile = path.join(this.outputDir, `${section}.csv`);
@@ -167,75 +209,147 @@ export default class Toml2Csv extends SfdxCommand {
     // Create writeStream managing transformation
     else if (this.transfoConfig?.entities[section]?.outputFile?.cols) {
       // Create SF Object output file name
-      const outputFile = path.join(this.outputDir, `${this.transfoConfig.entities[section].outputFile.salesforceObjectApiName}___${section}.csv`);
+      const outputFile = path.join(
+        this.outputDir,
+        `${errMode ? "errors" + path.sep + "err__" : ""}${this.transfoConfig.entities[section].outputFile.salesforceObjectApiName}___${section}.csv`
+      );
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: "utf8" });
       // Create CSV Header
-      const headerLine = this.transfoConfig?.entities[section]?.outputFile?.cols
+      let headerLine = this.transfoConfig?.entities[section]?.outputFile?.cols
         .map((colDescription: any) => colDescription.name)
-        .join(this.transfoConfig?.ouputFile?.separator || ",");
+        .join(this.outputFileSeparator);
+      if (errMode) {
+        headerLine += this.outputFileSeparator + "Error";
+      }
       // Initialize with header
       fileWriteStream.write(headerLine + "\n");
+      uxLog(this, c.cyan(`- Initialized ${errMode ? "errors" : "output"} CSV file ${c.green(c.bold(outputFile))}`));
+      this.csvFiles.push(outputFile);
+      return fileWriteStream;
+    } else if (errMode === false) {
+      // Section has not been described in config file !!
+      uxLog(this, c.yellow(`Section ${section} as entity is not described with columns in ${this.transfoConfigFile}`));
+      const outputFile = path.join(this.outputDir, "errors", `noconfig__${section}.csv`);
+      // Init writeStream
+      const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: "utf8" });
       uxLog(this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
-    } else {
-      uxLog(this, c.yellow(`No output file for ${section} as entity is not described in ${this.transfoConfigFile}`));
+    }
+  }
+
+  async writeLine(lineSf: string, streamWriter: any) {
+    if (lineSf && streamWriter) {
+      // Use writeStream. If not able to write, wait for buffer to be available again
+      // cf https://stackoverflow.com/a/50456833/7113625
+      const ableToWrite = streamWriter.write(`${lineSf}\n`);
+      if (!ableToWrite) {
+        await new Promise((resolve) => {
+          streamWriter.once("drain", resolve);
+        });
+      }
     }
   }
 
   // Convert input CSV line into SF Bulk API expected CSV line
-  convertLineToSf(section: string, line: string): string {
-    const lineCols = line.split(this.transfoConfig.inputFile.separator);
-    if (this.transfoConfig.entities[section]) {
-      const linesSfArray = [];
+  async convertLineToSfThenWrite(section: string, line: string) {
+    const lineCols = line.split(this.inputFileSeparator);
 
-      // convert into input format
-      const inputCols: any = {};
-      if (this.transfoConfig.entities[section]?.inputFile?.cols) {
-        // Case when cols are defined line [ {"Name": 0, "FirstName: 1" ...}]
-        for (let i = 0; i < this.transfoConfig.entities[section]?.inputFile?.cols.length; i++) {
-          const inputColKey = this.transfoConfig.entities[section].inputFile.cols[i];
-          inputCols[inputColKey] = lineCols[i] || "";
-        }
-      } else {
-        // Case when cols are not defined: just use positions
-        for (let i = 0; i < lineCols.length; i++) {
-          inputCols[i] = lineCols[i] || "";
-        }
-      }
-      // convert into output format
-      for (const colDefinition of this.transfoConfig.entities[section].outputFile.cols) {
-        // Col definition is the position or the name of a column in input file
-        if (colDefinition.inputColKey || colDefinition.inputColKey === 0) {
-          if (inputCols[colDefinition.inputColKey] || inputCols[colDefinition.inputColKey] === "" || inputCols[colDefinition.inputColKey] === 0) {
-            let colVal = inputCols[colDefinition.inputColKey] || "";
-            // Transform if necessary
-            if (colVal && colDefinition.transfo) {
-              colVal = this.manageTransformation(colDefinition.transfo, colVal);
-            }
-            linesSfArray.push(colVal);
-          } else {
-            throw new SfdxError(c.red(`You must have a correspondance in input cols for output col ${colDefinition}`));
-          }
-        }
-        // Col definition is a hardcoded value
-        else if (colDefinition.hardcodedValue) {
-          linesSfArray.push(colDefinition.hardcodedValue);
-        }
-      }
+    const linesSfArray = [];
 
-      // Join line as CSV, as expected by SF Bulk API
-      return linesSfArray.join(this.transfoConfig?.ouputFile?.separator || ",");
+    // convert into input format
+    const inputCols: any = {};
+    if (this.transfoConfig.entities[section]?.inputFile?.cols) {
+      // Case when cols are defined line [ {"Name": 0, "FirstName: 1" ...}]
+      for (let i = 0; i < this.transfoConfig.entities[section]?.inputFile?.cols.length; i++) {
+        const inputColKey = this.transfoConfig.entities[section].inputFile.cols[i];
+        inputCols[inputColKey] = lineCols[i] || "";
+      }
+    } else {
+      // Case when cols are not defined: just use positions
+      for (let i = 0; i < lineCols.length; i++) {
+        const humanInputColPos = i + 1;
+        inputCols[humanInputColPos] = lineCols[i] || "";
+      }
     }
-    return null;
+    // convert into output format
+    for (const colDefinition of this.transfoConfig.entities[section].outputFile.cols) {
+      // Col definition is the position or the name of a column in input file
+      if (colDefinition.inputColKey || colDefinition.inputColKey === 0) {
+        if (inputCols[colDefinition.inputColKey] || inputCols[colDefinition.inputColKey] === "" || inputCols[colDefinition.inputColKey] === 0) {
+          let colVal = inputCols[colDefinition.inputColKey] || "";
+          // Transform if necessary
+          if (colVal && colDefinition.transfo) {
+            colVal = this.manageTransformation(colDefinition.transfo, colVal);
+          }
+          linesSfArray.push(colVal.includes(this.outputFileSeparator) ? `"${colVal}"` : colVal); // Add quotes if value contains output file separator
+        } else {
+          this.triggerError(c.red(`You must have a correspondance in input cols for output col ${colDefinition}`), false);
+        }
+      }
+      // Col definition is a hardcoded value
+      else if (colDefinition.hardcodedValue) {
+        linesSfArray.push(
+          colDefinition.hardcodedValue.includes(this.outputFileSeparator) ? `"${colDefinition.hardcodedValue}"` : colDefinition.hardcodedValue // Add quotes if value contains output file separator
+        );
+      }
+    }
+
+    // Join line as CSV, as expected by SF Bulk API
+    const lineSf = linesSfArray.join(this.outputFileSeparator);
+    // Write line with fileWriter
+    await this.writeLine(lineSf, this.tomlSectionsFileWriters[section]);
   }
 
   // Apply transformations defined in transfoconfig file
   manageTransformation(transfo: any, colVal: any) {
     if (transfo.type === "date") {
+      if (colVal === "") {
+        return "";
+      }
       return moment(colVal, transfo.from, true).format(transfo.to);
     }
-    uxLog(this, c.yellow(`Unable to format ${colVal} from ${transfo.from} to ${transfo.to}`));
+    // Transco
+    else if (transfo.type === "transco") {
+      return this.getTranscoValue(transfo, colVal);
+    }
+    this.triggerError(`Unknown transfo definition: ${JSON.stringify(transfo)}`, false);
+  }
+
+  // Manage transco value
+  getTranscoValue(transfo: any, colVal: string) {
+    const enumValues = this.getTranscoValues(transfo);
+    const transcodedValue = enumValues[colVal] || transfo.default || "";
+    if (transcodedValue === "" && colVal !== "") {
+      this.triggerError(`There should be a matching value for ${colVal} in ${JSON.stringify(enumValues)}`, false);
+    }
+    return transcodedValue;
+  }
+
+  // Get enum values
+  getTranscoValues(transfo) {
+    // Enum config file
+    if (transfo.enum) {
+      // Check if enum has alredy been loaded in memory
+      if (this.loadedTranscos[transfo.enum]) {
+        return this.loadedTranscos[transfo.enum];
+      }
+      // Load enum in memory
+      const transcoFile = path.join(this.rootConfigDirectory, "transco", `${transfo.enum}.json`);
+      if (!fs.existsSync(transcoFile)) {
+        this.triggerError(`Missing transco file ${transcoFile} for enum ${transfo.enum}`, false);
+      }
+      this.loadedTranscos[transfo.enum] = JSON.parse(fs.readFileSync(transcoFile));
+      return this.loadedTranscos[transfo.enum];
+    }
+    this.triggerError(`Missing transco definition in ${JSON.stringify(transfo)}`, false);
+  }
+
+  triggerError(errorMsg: string, fatal = true) {
+    if (fatal && this.spinner) {
+      this.spinner.fail(errorMsg);
+    }
+    throw new SfdxError(errorMsg);
   }
 }
