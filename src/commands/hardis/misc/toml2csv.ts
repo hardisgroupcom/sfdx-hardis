@@ -75,8 +75,8 @@ export default class Toml2Csv extends SfdxCommand {
   protected tomlSectionsFileWriters: any = {};
   protected tomlSectionsErrorsFileWriters: any = {};
   protected loadedTranscos: any = {};
-  protected lineNb = 0 ;
-  protected errorNb = 0 ;
+  protected lineNb = 0;
+  protected errorNb = 0;
 
   protected csvFiles: string[] = [];
 
@@ -144,7 +144,7 @@ export default class Toml2Csv extends SfdxCommand {
       }
       // CSV line
       else if (currentSection) {
-        this.lineNb++ ;
+        this.lineNb++;
         if (this.skipTransfo) {
           // No transformation
           const lineSf = line
@@ -158,7 +158,7 @@ export default class Toml2Csv extends SfdxCommand {
             await this.convertLineToSfThenWrite(currentSection, line);
           } catch (e) {
             // Manage error
-            this.errorNb++ ;
+            this.errorNb++;
             const lineError =
               line
                 .split(this.inputFileSeparator)
@@ -178,10 +178,12 @@ export default class Toml2Csv extends SfdxCommand {
     // Cleaning empty error files
     for (const sectionKey of Object.keys(this.tomlSectionsErrorsFileWriters)) {
       const errStream = this.tomlSectionsErrorsFileWriters[sectionKey];
-      const file = errStream.path ;
-      const lineNb = await countLinesInFile(file);
-      if (lineNb < 2) {
-        await fs.unlink(file);
+      if (errStream && errStream.path) {
+        const file = errStream.path;
+        const lineNb = await countLinesInFile(file);
+        if (lineNb === 1) {
+          await fs.unlink(file);
+        }
       }
     }
 
@@ -311,7 +313,7 @@ export default class Toml2Csv extends SfdxCommand {
       return moment(colVal, transfo.from, true).format(transfo.to);
     }
     // Transco
-    else if (transfo.type === "transco") {
+    else if (transfo.enum) {
       return this.getTranscoValue(transfo, colVal);
     }
     this.triggerError(`Unknown transfo definition: ${JSON.stringify(transfo)}`, false);
@@ -336,7 +338,7 @@ export default class Toml2Csv extends SfdxCommand {
         return this.loadedTranscos[transfo.enum];
       }
       // Load enum in memory
-      const transcoFile = path.join(this.rootConfigDirectory, "transco", `${transfo.enum}.json`);
+      const transcoFile = path.join(this.rootConfigDirectory, "enums", `${transfo.enum}.json`);
       if (!fs.existsSync(transcoFile)) {
         this.triggerError(`Missing transco file ${transcoFile} for enum ${transfo.enum}`, false);
       }
