@@ -422,9 +422,9 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
   await fs.writeFile(
     emptyPackageXmlFile,
     `<?xml version="1.0" encoding="UTF-8"?>
-      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <Package xmlns="http://soap.sforce.com/2006/04/metadata">
         <version>${CONSTANTS.API_VERSION}</version>
-      </Package>`,
+    </Package>`,
     "utf8"
   );
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, "destructiveChanges.xml"));
