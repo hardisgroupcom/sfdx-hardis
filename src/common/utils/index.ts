@@ -21,6 +21,7 @@ import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
 import { promptProfiles } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
 import moment = require("moment");
+import { writeXmlFile } from "./xmlUtils";
 
 let pluginsStdout = null;
 
@@ -733,10 +734,12 @@ export async function filterPackageXml(
   manifest.Package.types = manifest.Package.types.filter(
     (type: any) => !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0
   );
-  const builder = new xml2js.Builder({ renderOpts: { pretty: true, indent: "  ", newline: "\n" } });
+  const builder = new xml2js.Builder({ renderOpts: { pretty: true,
+     indent: "  ",
+      newline: "\n" } });
   const updatedFileContent = builder.buildObject(manifest);
   if (updatedFileContent !== initialFileContent) {
-    fs.writeFileSync(packageXmlFileOut, updatedFileContent);
+    await writeXmlFile(packageXmlFileOut, manifest);
     updated = true;
     if (packageXmlFile !== packageXmlFileOut) {
       message = `[sfdx-hardis] ${packageXmlFile} has been filtered to ${packageXmlFileOut}`;

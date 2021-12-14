@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.62.0] 2021-12-14
+
+- Fix **hardis:work:save** crash when rebuilding deploymentPlan
+- Fix XML indentation (#51). Can also be overriden by using env variable `SFDX_XML_INDENT` (ex: `SFDX_INDENT='  '`)
+
 ## [2.61.0] 2021-12-02
 
 - Use same XML indentation than Salesforce (#51) (requires also upgrade of sfdx-essentials, using `sfdx plugins:install sfdx-essentials`)
