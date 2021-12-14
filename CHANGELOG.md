@@ -7,7 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.62.0] 2021-12-14
 
 - Fix **hardis:work:save** crash when rebuilding deploymentPlan
-- Fix XML indentation (#51). Can also be overriden by using env variable `SFDX_XML_INDENT` (ex: `SFDX_INDENT='  '`)
+- Fix XML indentation (#51). Can also be overridden by using env variable `SFDX_XML_INDENT` (ex: `SFDX_INDENT='  '`)
 
 ## [2.61.0] 2021-12-02
 
