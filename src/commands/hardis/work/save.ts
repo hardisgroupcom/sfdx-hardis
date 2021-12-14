@@ -354,7 +354,7 @@ export default class SaveTask extends SfdxCommand {
         // Multiple split file case
         if (split.files) {
           let pos = split.filePos;
-          for (const mainTypeMember of split.content[split.mainType]) {
+          for (const mainTypeMember of split.content[split.mainType] || []) {
             const splitFile = split.files.replace(`{{name}}`, mainTypeMember);
             const splitPackageXml = blankPackageXml;
             blankPackageXml.Package.types = [];

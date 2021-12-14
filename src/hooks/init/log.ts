@@ -10,6 +10,7 @@ export const hook = async (options: any) => {
   }
   if (process.env.SFDX_HARDIS_DEBUG_ENV === "true") {
     console.log("ENV VARS:\n" + JSON.stringify(process.env, null, 2));
+    process.env.SFDX_ENV = "development" ; // So when there is an error, the stack is displayed
   }
   if (!isCI) {
     // Initialize log file name
