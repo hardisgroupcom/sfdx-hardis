@@ -14,7 +14,14 @@ export async function parseXmlFile(xmlFile: string) {
 }
 
 export async function writeXmlFile(xmlFile: string, xmlObject: any) {
-  const builder = new xml2js.Builder({ renderOpts: { pretty: true, indent: "  ", newline: "\n" } });
+  const builder = new xml2js.Builder({
+    renderOpts: {
+      pretty: true,
+      indent: process.env.SFDX_XML_INDENT || "    ",
+      newline: "\n",
+    },
+    xmldec: { version: "1.0", encoding: "UTF-8" },
+  });
   const updatedFileContent = builder.buildObject(xmlObject);
   await fs.ensureDir(path.dirname(xmlFile));
   await fs.writeFile(xmlFile, updatedFileContent);

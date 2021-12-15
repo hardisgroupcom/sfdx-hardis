@@ -219,9 +219,9 @@ export default class SaveTask extends SfdxCommand {
       const localDestructiveChangesXml = path.join("manifest", "destructiveChanges.xml");
       if (!fs.existsSync(localDestructiveChangesXml)) {
         // Create default destructiveChanges.xml if not defined
-        const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-  <version>51.0</version>
+    <version>51.0</version>
 </Package>
 `;
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
@@ -354,7 +354,7 @@ export default class SaveTask extends SfdxCommand {
         // Multiple split file case
         if (split.files) {
           let pos = split.filePos;
-          for (const mainTypeMember of split.content[split.mainType]) {
+          for (const mainTypeMember of split.content[split.mainType] || []) {
             const splitFile = split.files.replace(`{{name}}`, mainTypeMember);
             const splitPackageXml = blankPackageXml;
             blankPackageXml.Package.types = [];
