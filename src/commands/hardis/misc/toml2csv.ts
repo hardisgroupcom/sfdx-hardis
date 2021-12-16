@@ -165,7 +165,7 @@ export default class Toml2Csv extends SfdxCommand {
                 .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
                 .join(this.outputFileSeparator) +
               this.outputFileSeparator +
-              e.message;
+              `"${e.message.replace(/"/g, "'")}"`;
             await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[currentSection]);
             e.message;
           }
@@ -283,7 +283,7 @@ export default class Toml2Csv extends SfdxCommand {
           let colVal = inputCols[colDefinition.inputColKey] || "";
           // Transform if necessary
           if (colVal && colDefinition.transfo) {
-            colVal = this.manageTransformation(colDefinition.transfo, colVal);
+            colVal = this.manageTransformation(colDefinition.transfo, colVal, colDefinition);
           }
           linesSfArray.push(colVal.includes(this.outputFileSeparator) ? `"${colVal}"` : colVal); // Add quotes if value contains output file separator
         } else {
@@ -305,26 +305,37 @@ export default class Toml2Csv extends SfdxCommand {
   }
 
   // Apply transformations defined in transfoconfig file
-  manageTransformation(transfo: any, colVal: any) {
+  manageTransformation(transfo: any, colVal: any, colDefinition: any) {
+    // Date transfo
     if (transfo.type === "date") {
       if (colVal === "") {
         return "";
       }
-      return moment(colVal, transfo.from, true).format(transfo.to);
+      if (transfo.addZero && colVal.length === 7) {
+        colVal = "0" + colVal;
+      }
+      const formattedDate = moment(colVal, transfo.from, true).format(transfo.to);
+      if (formattedDate === "Invalid date") {
+        this.triggerError(`Unable to reformat date ${colVal} for column ${JSON.stringify(colDefinition)}`, false);
+      }
+      return formattedDate;
     }
-    // Transco
+    // Enum Transco
     else if (transfo.enum) {
-      return this.getTranscoValue(transfo, colVal);
+      return this.getTranscoValue(transfo, colVal, colDefinition);
     }
-    this.triggerError(`Unknown transfo definition: ${JSON.stringify(transfo)}`, false);
+    this.triggerError(`Unknown transfo definition for column: ${JSON.stringify(colDefinition)}`, false);
   }
 
   // Manage transco value
-  getTranscoValue(transfo: any, colVal: string) {
+  getTranscoValue(transfo: any, colVal: string, colDefinition: any) {
     const enumValues = this.getTranscoValues(transfo);
     const transcodedValue = enumValues[colVal] || transfo.default || "";
     if (transcodedValue === "" && colVal !== "") {
-      this.triggerError(`There should be a matching value for ${colVal} in ${JSON.stringify(enumValues)}`, false);
+      this.triggerError(
+        `There should be a matching value for ${colVal} in ${JSON.stringify(enumValues)} for column ${JSON.stringify(colDefinition)}`,
+        false
+      );
     }
     return transcodedValue;
   }
