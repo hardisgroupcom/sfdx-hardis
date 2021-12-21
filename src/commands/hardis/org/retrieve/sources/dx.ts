@@ -185,7 +185,11 @@ export default class DxSources extends SfdxCommand {
 
     // Remove temporary files
     uxLog(this, `Remove temporary folder ${tempFolder} ...`);
-    await fs.rmdir(tempFolder, { recursive: true });
+    try {
+      await fs.rmdir(tempFolder, { recursive: true });
+    } catch (e) {
+      uxLog(this,c.yellow(`Unable to remove folder ${tempFolder}, please delete it manually`));
+    }
 
     // Trigger commands refresh on VsCode WebSocket Client
     WebSocketClient.sendMessage({ event: "refreshCommands" });

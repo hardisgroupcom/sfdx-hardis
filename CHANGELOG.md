@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.63.0] 2021-12-21
+
+- New event message refreshPlugins (used by VsCodeSFDX Hardis)
+- Display Error message when unable to delete a temporary directory
+
 ## [2.62.0] 2021-12-14
 
 - Fix **hardis:work:save** crash when rebuilding deploymentPlan
