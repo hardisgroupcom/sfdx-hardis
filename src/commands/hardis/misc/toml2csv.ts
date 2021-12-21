@@ -23,7 +23,11 @@ export default class Toml2Csv extends SfdxCommand {
 
   public static description = "Split TOML file into distinct CSV files";
 
-  public static examples = ["$ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/APICIL/00000200_APICIL-CONNECT_T_2021_09_16_4801889.txt' "];
+  public static examples = [
+    "$ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' ",
+    "$ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' ",
+    "sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'"
+  ];
 
   protected static flagsConfig = {
     tomlfile: flags.string({
@@ -113,7 +117,7 @@ export default class Toml2Csv extends SfdxCommand {
     await fs.emptyDir(this.outputDir);
     await fs.ensureDir(path.join(this.outputDir, "errors"));
 
-    uxLog(this, c.cyan(`Generating CSV files from ${tomlFile} (encoding ${tomlFileEncoding}) into folder ${this.outputDir}`));
+    uxLog(this, c.cyan(`Generating CSV files from ${c.green(tomlFile)} (encoding ${tomlFileEncoding}) into folder ${c.green(this.outputDir)}`));
 
     // Start spinner
     this.spinner = ora({ text: `Processing...`, spinner: "moon" }).start();
