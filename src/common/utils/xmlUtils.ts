@@ -121,9 +121,14 @@ export async function removePackageXmlFilesContent(
     // Manage * case
     if (removeTypeMembers[0] && removeTypeMembers[0] === "*") {
       typeMembers = typeMembers.filter(() => checkRemove(false, removedOnly));
+      uxLog(this, c.grey(c.italic(`Found wildcard * on type ${type.name}, has been ${removedOnly ? "kept" : "removed"}`)));
     } else {
       // Filter members
       typeMembers = typeMembers.filter((member: string) => checkRemove(!removeTypeMembers.includes(member), removedOnly));
+      uxLog(
+        this,
+        c.grey(c.italic(`Found type ${type.name}, following elements has been ${removedOnly ? "kept" : "removed"}: ${typeMembers.join(",")}`))
+      );
     }
     if (typeMembers.length > 0) {
       // Update members for type
