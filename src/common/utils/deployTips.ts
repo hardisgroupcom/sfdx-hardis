@@ -107,6 +107,12 @@ Example of element to delete:
 `,
     },
     {
+      name: "duplicate-value-platform-action-id-list",
+      label: "Duplicate value Platform Action Id List",
+      expressionString: ["duplicate value found: PlatformActionListId duplicates value on record with id"],
+      tip: `There are probably issue with conflict management. Open the XML of the source item, and replace all <sortOrder> numbers to make an ascending order, starting with 0`,
+    },
+    {
       name: "duplicate-label",
       label: "Duplicate label",
       expressionString: ["Duplicate label:"],

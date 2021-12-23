@@ -169,6 +169,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:project:clean:emptyitems [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanemptyitems--f-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:hiddenitems [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanhiddenitems--f-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanmanageditems--n-string--f-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:project:clean:minimizeprofiles [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanminimizeprofiles--f-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanorgmissingitems--f-string--p-string--t-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanreferences--t-string--c-string--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:project:clean:retrievefolders [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisprojectcleanretrievefolders--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -1269,7 +1270,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: C:\git\sfdx-hardis] Root
+  -p, --path=path                                                                   [default: D:\git\sfdx-hardis] Root
                                                                                     path to check
 
   --json                                                                            format output as json
@@ -1389,6 +1390,32 @@ EXAMPLE
 ```
 
 _See code: [lib/commands/hardis/project/clean/manageditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.63.0/lib/commands/hardis/project/clean/manageditems.js)_
+
+## `sfdx hardis:project:clean:minimizeprofiles [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Remove all profile attributes that exist on Permission Sets
+
+```
+USAGE
+  $ sfdx hardis:project:clean:minimizeprofiles [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+  -f, --folder=folder                                                               [default: force-app] Root folder
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+  --websocket=websocket                                                             Websocket host:port for VsCode SFDX
+                                                                                    Hardis UI integration
+
+EXAMPLE
+  $ sfdx hardis:project:clean:minimizeprofiles
+```
+
+_See code: [lib/commands/hardis/project/clean/minimizeprofiles.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.63.0/lib/commands/hardis/project/clean/minimizeprofiles.js)_
 
 ## `sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1730,7 +1757,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: C:\git\sfdx-hardis] Root
+  -p, --path=path                                                                   [default: D:\git\sfdx-hardis] Root
                                                                                     folder
 
   --json                                                                            format output as json

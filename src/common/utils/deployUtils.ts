@@ -234,18 +234,18 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
   }
   const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
+  // Copy main package.xml so it can be dynamically updated before deployment
+  const tmpDeployDir = await createTempDir();
+  const mainPackageXmlCopyFileName = path.join(tmpDeployDir, "mainPackage.xml");
+  await fs.copy(packageXmlFile, mainPackageXmlCopyFileName);
+  const mainPackageXmlItem = {
+    label: "main",
+    packageXmlFile: mainPackageXmlCopyFileName,
+    order: 0,
+  };
   const config = await getConfig("user");
   // Build list of package.xml according to plan
   if (config.deploymentPlan && !check) {
-    // Copy main package.xml so it can be dynamically updated before deployment
-    const tmpDeployDir = await createTempDir();
-    const mainPackageXmlCopyFileName = path.join(tmpDeployDir, "mainPackage.xml");
-    await fs.copy(packageXmlFile, mainPackageXmlCopyFileName);
-    const mainPackageXmlItem = {
-      label: "main",
-      packageXmlFile: mainPackageXmlCopyFileName,
-      order: 0,
-    };
     const deploymentItems = [mainPackageXmlItem];
 
     // Work on deploymentPlan packages before deploying them
@@ -291,13 +291,23 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     });
     return deploymentItemsSorted;
   }
-  // No transformation: return initial package.xml file
-  return [
-    {
-      label: "main",
-      packageXmlFile: packageXmlFile,
-    },
-  ];
+  // Return initial package.xml file minus deployOnce and deployOnChange items
+  else {
+    // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
+    if (deployOncePackageXml) {
+      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOncePackageXml, false, debugMode);
+    }
+    //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
+    if (deployOnChangePackageXml) {
+      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOnChangePackageXml, false, debugMode);
+    }
+    return [
+      {
+        label: "main",
+        packageXmlFile: mainPackageXmlCopyFileName,
+      },
+    ];
+  }
 }
 
 // packageDeployOnce.xml items are deployed only if they are not in the target org
