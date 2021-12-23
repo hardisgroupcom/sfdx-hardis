@@ -1,12 +1,12 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as glob from "glob-promise";
-import * as path from "path";
-import { createTempDir, execCommand, mergeObjectPropertyLists, uxLog } from "../../../../common/utils";
+import {  mergeObjectPropertyLists, uxLog } from "../../../../common/utils";
+import { buildOrgManifest } from "../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../common/utils/orgUtils";
 import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
 
@@ -92,24 +92,7 @@ export default class OrgMissingItems extends SfdxCommand {
         const targetOrg = await promptOrg(this, { devHub: false, setDefault: false });
         this.targetOrgUsernameAlias = targetOrg.username;
       }
-
-      const tmpDir = await createTempDir();
-      // Build target org package.xml and parse it
-      uxLog(this, c.cyan(`Generating full package.xml from target org...`));
-      const targetOrgPackageXml = path.join(tmpDir, "packageTargetOrg.xml");
-      await execCommand(`sfdx sfpowerkit:org:manifest:build -o ${targetOrgPackageXml} --targetusername ${this.targetOrgUsernameAlias}`, this, {
-        fail: true,
-        debug: this.debugMode,
-        output: true,
-      });
-      this.packageXmlFull = targetOrgPackageXml;
-      if (!fs.existsSync(this.packageXmlFull)) {
-        throw new SfdxError(
-          c.red(
-            "[sfdx-hardis] Unable to generate package.xml. This is probably an auth issue or a Salesforce technical issue, please try again later"
-          )
-        );
-      }
+      this.packageXmlFull = await buildOrgManifest(this.targetOrgUsernameAlias);
     }
 
     let packageXmlContent = await parsePackageXmlFile(this.packageXmlFull);
@@ -189,3 +172,5 @@ export default class OrgMissingItems extends SfdxCommand {
     return { outputString: msg };
   }
 }
+
+

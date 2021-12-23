@@ -93,6 +93,7 @@ export default class DxSources extends SfdxCommand {
         : "./config/package.xml";
     const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, {
       targetUsername: targetUsername,
+      conn: this.org?.getConnection()
     });
 
     // Deploy destructive changes
