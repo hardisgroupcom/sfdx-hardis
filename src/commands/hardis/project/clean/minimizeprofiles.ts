@@ -64,7 +64,7 @@ export default class CleanMinimizeProfiles extends SfdxCommand {
     for (const profileFile of matchingProfileFiles) {
       const res = await minimizeProfile(profileFile);
       if (res.updated === true) {
-        counter ++ ;
+        counter++;
       }
     }
 

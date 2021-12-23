@@ -149,7 +149,7 @@ export default class CleanReferences extends SfdxCommand {
 
     // Process cleaning
     for (const cleaningType of this.cleaningTypes) {
-      const cleaningTypeObj = this.allCleaningTypes.filter(cleaningTypeObj => cleaningTypeObj.value === cleaningType)[0];
+      const cleaningTypeObj = this.allCleaningTypes.filter((cleaningTypeObj) => cleaningTypeObj.value === cleaningType)[0];
       if (cleaningTypeObj?.command) {
         uxLog(this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
         // Command based cleaning
