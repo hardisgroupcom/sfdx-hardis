@@ -54,6 +54,8 @@ export default class WebSocketAction extends SfdxCommand {
     if (WebSocketClient.isAlive()) {
       if (this.event === "refreshStatus") {
         WebSocketClient.sendMessage({ event: "refreshStatus" });
+      } else if (this.event === "refreshPlugins") {
+        WebSocketClient.sendMessage({ event: "refreshPlugins" });
       }
     }
 
