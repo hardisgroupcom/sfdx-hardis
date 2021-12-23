@@ -26,7 +26,7 @@ export default class Toml2Csv extends SfdxCommand {
   public static examples = [
     "$ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' ",
     "$ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' ",
-    "sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'"
+    "$ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'",
   ];
 
   protected static flagsConfig = {
@@ -79,10 +79,17 @@ export default class Toml2Csv extends SfdxCommand {
   protected tomlSectionsFileWriters: any = {};
   protected tomlSectionsErrorsFileWriters: any = {};
   protected loadedTranscos: any = {};
-  protected lineNb = 0;
-  protected errorNb = 0;
 
   protected csvFiles: string[] = [];
+
+  protected stats = {
+    sectionLinesNb: 0,
+    dataLinesNb: 0,
+    emptyLinesNb: 0,
+    totalLinesNb: 0,
+    dataSuccessLinesNb: 0,
+    dataErrorLinesNb: 0,
+  };
 
   /* jscpd:ignore-end */
 
@@ -130,25 +137,30 @@ export default class Toml2Csv extends SfdxCommand {
     });
     let currentSection = null;
     for await (const line of rl) {
+      this.stats.totalLinesNb++;
       if (debugMode) {
         uxLog(this, c.grey(line));
       }
       // Empty line
       if (line.length === 0) {
+        this.stats.emptyLinesNb++;
         continue;
       }
       // Section line
       if (line.startsWith("[")) {
+        this.stats.sectionLinesNb++;
         currentSection = /\[(.*)\]/gm.exec(line)[1]; // ex: get COMPTES from [COMPTES]
-        this.spinner.text = `Processing section ${currentSection} (lines: ${this.lineNb}, errors: ${this.errorNb})`;
+        this.spinner.text = `Processing section ${currentSection} (data lines: ${this.stats.dataLinesNb}, errors: ${this.stats.dataErrorLinesNb})`;
         if (this.tomlSectionsFileWriters[currentSection] == null) {
           this.tomlSectionsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, false);
-          this.tomlSectionsErrorsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, true);
+          if (!this.skipTransfo) {
+            this.tomlSectionsErrorsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, true);
+          }
         }
       }
       // CSV line
       else if (currentSection) {
-        this.lineNb++;
+        this.stats.dataLinesNb++;
         if (this.skipTransfo) {
           // No transformation
           const lineSf = line
@@ -156,13 +168,14 @@ export default class Toml2Csv extends SfdxCommand {
             .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
             .join(this.outputFileSeparator);
           await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
+          this.stats.dataSuccessLinesNb ;
         } else {
           // With transformation
           try {
             await this.convertLineToSfThenWrite(currentSection, line);
           } catch (e) {
             // Manage error
-            this.errorNb++;
+            this.stats.dataErrorLinesNb++;
             const lineError =
               line
                 .split(this.inputFileSeparator)
@@ -175,7 +188,7 @@ export default class Toml2Csv extends SfdxCommand {
           }
         }
       } else {
-        uxLog(this, c.yellow("Line without section: we should NOT be here !!"));
+        uxLog(this, c.yellow(`Line without declared section before: skipped (${line})`));
       }
     }
 
@@ -191,14 +204,14 @@ export default class Toml2Csv extends SfdxCommand {
       }
     }
 
-    this.spinner.succeed(`File processing complete with ${this.errorNb} errors`);
-
+    this.spinner.succeed(`File processing complete of ${this.stats.dataLinesNb} data lines (${this.stats.dataErrorLinesNb} in error)`);
+    uxLog(this, c.grey("Stats: \n" + JSON.stringify(this.stats, null, 2)));
     const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
       this,
       c.cyan(`TOML file ${c.green(tomlFile)} has been split into ${c.green(this.csvFiles.length)} CSV files in directory ${c.green(this.outputDir)}`)
     );
-    return { outputString: message, csvfiles: this.csvFiles };
+    return { outputString: message, csvfiles: this.csvFiles, stats: this.stats };
   }
 
   // Create output write stream for section
@@ -306,6 +319,7 @@ export default class Toml2Csv extends SfdxCommand {
     const lineSf = linesSfArray.join(this.outputFileSeparator);
     // Write line with fileWriter
     await this.writeLine(lineSf, this.tomlSectionsFileWriters[section]);
+    this.stats.dataSuccessLinesNb++ ;
   }
 
   // Apply transformations defined in transfoconfig file
