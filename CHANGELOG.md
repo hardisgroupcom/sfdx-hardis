@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New command hardis:clean:minimizeprofiles
+- New deployTip `duplicate-value-platform-action-id-list`
+
 ## [2.63.0] 2021-12-21
 
 - New event message refreshPlugins (used by VsCodeSFDX Hardis)
