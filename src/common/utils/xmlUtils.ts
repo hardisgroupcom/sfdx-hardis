@@ -120,7 +120,7 @@ export async function removePackageXmlFilesContent(
     let typeMembers = type.members || [];
     // Manage * case contained in target
     if (removedOnly === true && typeMembers.includes("*")) {
-      typeMembers = removeTypeMembers ;
+      typeMembers = removeTypeMembers;
       uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}, kept values: ${typeMembers.join(",")}`)));
     }
     // Manage * case contained in source

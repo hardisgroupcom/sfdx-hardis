@@ -401,9 +401,13 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToRemove: string, removedOnly = false, debugMode = false) {
   if (removedOnly === false) {
     uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}...`));
-  }
-  else {
-    uxLog(this, c.cyan(`Keeping ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))} (and remove the rest)...`));
+  } else {
+    uxLog(
+      this,
+      c.cyan(
+        `Keeping ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))} (and remove the rest)...`
+      )
+    );
   }
   await removePackageXmlFilesContent(packageXmlFile, packageXmlFileToRemove, {
     outputXmlFile: packageXmlFile,
@@ -612,7 +616,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     }
     // Delete stuff we don't want
     parsedPackageXml.Package.types = parsedPackageXml.Package.types.filter((type) => !["CustomLabels"].includes(type.name[0]));
-    await writeXmlFile(packageXmlFull,parsedPackageXml);
+    await writeXmlFile(packageXmlFull, parsedPackageXml);
   }
 
   return packageXmlFull;

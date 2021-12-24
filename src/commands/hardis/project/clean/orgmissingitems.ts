@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as glob from "glob-promise";
-import {  mergeObjectPropertyLists, uxLog } from "../../../../common/utils";
+import { mergeObjectPropertyLists, uxLog } from "../../../../common/utils";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../common/utils/orgUtils";
 import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
@@ -172,5 +172,3 @@ export default class OrgMissingItems extends SfdxCommand {
     return { outputString: msg };
   }
 }
-
-

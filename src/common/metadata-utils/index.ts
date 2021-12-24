@@ -499,7 +499,7 @@ class MetadataUtils {
     await fs.ensureDir(metadataFolder);
 
     // Build package.xml for all org
-    await buildOrgManifest(commandThis.org.getUsername(),'package.xml');
+    await buildOrgManifest(commandThis.org.getUsername(), "package.xml");
 
     // Filter managed items if requested
     if (options.filterManagedItems) {
@@ -577,5 +577,3 @@ class MetadataUtils {
 }
 
 export { MetadataUtils };
-
-
