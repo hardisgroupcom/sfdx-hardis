@@ -452,6 +452,12 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
     const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(this, c.red("Sadly there has been destruction error(s)"));
     uxLog(this, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+    uxLog(
+      this,
+      c.yellow(
+        "That could be a false positive, as in real deployment, the package.xml deployment will be committed before the use of destructiveChanges.xml"
+      )
+    );
     throw new SfdxError("Error while deploying destructive changes");
   }
   await fs.remove(tmpDir);
