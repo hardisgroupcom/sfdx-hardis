@@ -10,7 +10,7 @@ import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
-import { isPackageXmlEmpty, removePackageXmlFilesContent } from "./xmlUtils";
+import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -325,15 +325,13 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
       // Build target org package.xml
       uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching packageDeployOnce.xml ...`));
       const targetOrgPackageXml = path.join(tmpDir, "packageTargetOrg.xml");
-      await execCommand(
-        `sfdx sfpowerkit:org:manifest:build -o ${targetOrgPackageXml}` + (options.targetUsername ? ` -u ${options.targetUsername}` : ""),
-        this,
-        { fail: true, debug: debugMode, output: false }
-      );
+      await buildOrgManifest(options.targetUsername, targetOrgPackageXml, options.conn);
+
       const packageDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
       await fs.copy(packageDeployOnce, packageDeployOnceToUse);
       // Keep in deployOnce.xml only what is necessary to deploy
       await removePackageXmlContent(packageDeployOnceToUse, targetOrgPackageXml, true, debugMode);
+      uxLog(this, c.grey(`packageDeployOnce.xml with only metadatas that do not exist in target: ${packageDeployOnceToUse}`));
       // Check if there is still something in updated packageDeployOnce.xml
       if (!(await isPackageXmlEmpty(packageDeployOnceToUse))) {
         return packageDeployOnceToUse;
@@ -394,27 +392,23 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   const packageXmlDeployOnChangeToUse = path.join(tmpDir, "packageDeployOnChange.xml");
   await fs.copy(packageDeployOnChangePath, packageXmlDeployOnChangeToUse);
   await removePackageXmlContent(packageXmlDeployOnChangeToUse, diffPackageXml, false, debugMode);
-
+  uxLog(this, c.grey(`packageDeployOnChange.xml filtered to keep only metadatas that have changed: ${packageXmlDeployOnChangeToUse}`));
   // Return result
   return packageXmlDeployOnChangeToUse;
 }
 
 // Remove content of a package.xml file from another package.xml file
 async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToRemove: string, removedOnly = false, debugMode = false) {
-  uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}...`));
-  /* let removePackageXmlCommand =
-    "sfdx essentials:packagexml:remove" +
-    ` --packagexml ${packageXmlFile}` +
-    ` --removepackagexml ${packageXmlFileToRemove}` +
-    ` --outputfile ${packageXmlFile}` +
-    ` --noinsight`;
-  if (removedOnly === true) {
-    removePackageXmlCommand += " --removedonly";
+  if (removedOnly === false) {
+    uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}...`));
+  } else {
+    uxLog(
+      this,
+      c.cyan(
+        `Keeping ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))} (and remove the rest)...`
+      )
+    );
   }
-  await execCommand(removePackageXmlCommand, this, {
-    fail: true,
-    debug: debugMode,
-  }); */
   await removePackageXmlFilesContent(packageXmlFile, packageXmlFileToRemove, {
     outputXmlFile: packageXmlFile,
     logFlag: debugMode,
@@ -458,6 +452,12 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
     const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(this, c.red("Sadly there has been destruction error(s)"));
     uxLog(this, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+    uxLog(
+      this,
+      c.yellow(
+        "That could be a false positive, as in real deployment, the package.xml deployment will be committed before the use of destructiveChanges.xml"
+      )
+    );
     throw new SfdxError("Error while deploying destructive changes");
   }
   await fs.remove(tmpDir);
@@ -572,4 +572,58 @@ async function restoreQuickActions() {
       uxLog(this, c.grey("Restored " + quickActionFile));
     }
   }
+}
+
+// Build target org package.xml manifest
+export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputFile = null, conn = null) {
+  // Manage file name
+  if (packageXmlOutputFile === null) {
+    const tmpDir = await createTempDir();
+    uxLog(this, c.cyan(`Generating full package.xml from target org ${targetOrgUsernameAlias}...`));
+    packageXmlOutputFile = path.join(tmpDir, "packageTargetOrg.xml");
+  }
+  // Use sfpowerkit manifest build
+  await execCommand(
+    `sfdx sfpowerkit:org:manifest:build -o ${packageXmlOutputFile} ${targetOrgUsernameAlias ? ` -u ${targetOrgUsernameAlias}` : ""}`,
+    this,
+    {
+      fail: true,
+      debug: process.env.DEBUG,
+      output: true,
+    }
+  );
+  const packageXmlFull = packageXmlOutputFile;
+  if (!fs.existsSync(packageXmlFull)) {
+    throw new SfdxError(
+      c.red("[sfdx-hardis] Unable to generate package.xml. This is probably an auth issue or a Salesforce technical issue, please try again later")
+    );
+  }
+  // Add Elements that are not returned by sfpowerkit command
+  if (conn) {
+    const mdTypes = [{ type: "ListView" }, { type: "CustomLabel" }];
+    const mdList = await conn.metadata.list(mdTypes, CONSTANTS.API_VERSION);
+    const parsedPackageXml = await parseXmlFile(packageXmlFull);
+    for (const element of mdList) {
+      const matchTypes = parsedPackageXml.Package.types.filter((type) => type.name[0] === element.type);
+      if (matchTypes.length === 1) {
+        // Add member in existing types
+        const members = matchTypes[0].members || [];
+        members.push(element.fullName);
+        matchTypes[0].members = members.sort();
+        parsedPackageXml.Package.types = parsedPackageXml.Package.types.map((type) => (type.name[0] === matchTypes[0].name ? matchTypes[0] : type));
+      } else {
+        // Create new type
+        const newType = {
+          name: [element.type],
+          members: [element.fullName],
+        };
+        parsedPackageXml.Package.types.push(newType);
+      }
+    }
+    // Delete stuff we don't want
+    parsedPackageXml.Package.types = parsedPackageXml.Package.types.filter((type) => !["CustomLabels"].includes(type.name[0]));
+    await writeXmlFile(packageXmlFull, parsedPackageXml);
+  }
+
+  return packageXmlFull;
 }
