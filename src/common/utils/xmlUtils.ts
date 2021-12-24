@@ -118,8 +118,13 @@ export async function removePackageXmlFilesContent(
     }
     const type = types[0];
     let typeMembers = type.members || [];
-    // Manage * case
-    if (removeTypeMembers[0] && removeTypeMembers[0] === "*") {
+    // Manage * case contained in target
+    if (removedOnly === true && typeMembers.includes("*")) {
+      typeMembers = removeTypeMembers ;
+      uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}, kept values: ${typeMembers.join(",")}`)));
+    }
+    // Manage * case contained in source
+    else if (removeTypeMembers[0] && removeTypeMembers[0] === "*") {
       typeMembers = typeMembers.filter(() => checkRemove(false, removedOnly));
       uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)} which has been ${removedOnly ? "kept" : "removed"}`)));
     } else {
@@ -129,7 +134,7 @@ export async function removePackageXmlFilesContent(
         this,
         c.grey(
           c.italic(
-            `Found type ${c.bold(type.name)}, following elements has been ${removedOnly ? "kept" : "removed"}: ${
+            `Found type ${c.bold(type.name)}, following elements has been ${removedOnly ? "removed" : "kept"}: ${
               typeMembers.length > 0 ? typeMembers.join(",") : "none"
             }`
           )
