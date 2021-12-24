@@ -7,6 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command hardis:clean:minimizeprofiles
 - New deployTip `duplicate-value-platform-action-id-list`
 - Apply packageDeployOnce.xml and packageDeployOnChange.xml in all contexts
+- Package.xml mixing: fix wildcard `<members>*</members>` management
+- List metadatas of target org: complete with what sfpowerkit commands does not return (ListView,CustomLabel)
 
 ## [2.63.0] 2021-12-21
 
