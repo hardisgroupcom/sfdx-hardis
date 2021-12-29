@@ -266,12 +266,12 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
             debugMode: debugMode,
             keepEmptyTypes: true,
           });
-          await applyPackageXmlFiltering(deploymentItem.packageXmlFile,deployOncePackageXml,deployOnChangePackageXml,debugMode);
+          await applyPackageXmlFiltering(deploymentItem.packageXmlFile, deployOncePackageXml, deployOnChangePackageXml, debugMode);
         }
         deploymentItems.push(deploymentItem);
       }
     }
-    await applyPackageXmlFiltering(mainPackageXmlCopyFileName,deployOncePackageXml,deployOnChangePackageXml,debugMode);
+    await applyPackageXmlFiltering(mainPackageXmlCopyFileName, deployOncePackageXml, deployOnChangePackageXml, debugMode);
 
     // Sort in requested order
     const deploymentItemsSorted = sortArray(deploymentItems, {
@@ -282,7 +282,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
   }
   // Return initial package.xml file minus deployOnce and deployOnChange items
   else {
-    await applyPackageXmlFiltering(mainPackageXmlCopyFileName,deployOncePackageXml,deployOnChangePackageXml,debugMode);
+    await applyPackageXmlFiltering(mainPackageXmlCopyFileName, deployOncePackageXml, deployOnChangePackageXml, debugMode);
     return [
       {
         label: "main",
@@ -293,15 +293,15 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
 }
 
 // Apply packageXml filtering using deployOncePackageXml and deployOnChangePackageXml
-async function applyPackageXmlFiltering(packageXml,deployOncePackageXml,deployOnChangePackageXml,debugMode) {
-    // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
-    if (deployOncePackageXml) {
-      await removePackageXmlContent(packageXml, deployOncePackageXml, false, { debugMode: debugMode, keepEmptyTypes: true });
-    }
-    //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
-    if (deployOnChangePackageXml) {
-      await removePackageXmlContent(packageXml, deployOnChangePackageXml, false, { debugMode: debugMode, keepEmptyTypes: true });
-    }
+async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deployOnChangePackageXml, debugMode) {
+  // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
+  if (deployOncePackageXml) {
+    await removePackageXmlContent(packageXml, deployOncePackageXml, false, { debugMode: debugMode, keepEmptyTypes: true });
+  }
+  //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
+  if (deployOnChangePackageXml) {
+    await removePackageXmlContent(packageXml, deployOnChangePackageXml, false, { debugMode: debugMode, keepEmptyTypes: true });
+  }
 }
 
 // packageDeployOnce.xml items are deployed only if they are not in the target org
