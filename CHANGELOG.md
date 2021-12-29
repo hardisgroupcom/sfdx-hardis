@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.64.1] 2021-12-29
+
+- Update default apiVersion to 53.0
+- Option to not remove empty types when subtracting package.xml
+
 ## [2.64.0] 2021-12-24
 
 - New command hardis:clean:minimizeprofiles
