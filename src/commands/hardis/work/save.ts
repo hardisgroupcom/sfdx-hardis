@@ -21,7 +21,7 @@ import { forceSourcePull } from "../../../common/utils/deployUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { WebSocketClient } from "../../../common/websocketClient";
-import { getConfig, setConfig } from "../../../config";
+import { CONSTANTS, getConfig, setConfig } from "../../../config";
 import CleanReferences from "../project/clean/references";
 
 // Initialize Messages with the current plugin directory
@@ -221,7 +221,7 @@ export default class SaveTask extends SfdxCommand {
         // Create default destructiveChanges.xml if not defined
         const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <version>51.0</version>
+    <version>${CONSTANTS.API_VERSION}</version>
 </Package>
 `;
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);

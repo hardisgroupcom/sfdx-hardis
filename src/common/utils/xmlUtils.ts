@@ -77,7 +77,7 @@ export async function isPackageXmlEmpty(
 export async function removePackageXmlFilesContent(
   packageXmlFile: string,
   removePackageXmlFile: string,
-  { outputXmlFile = null, logFlag = false, removedOnly = false }
+  { outputXmlFile = null, logFlag = false, removedOnly = false, keepEmptyTypes = false }
 ) {
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
@@ -141,7 +141,7 @@ export async function removePackageXmlFilesContent(
         )
       );
     }
-    if (typeMembers.length > 0) {
+    if (typeMembers.length > 0 || keepEmptyTypes === true) {
       // Update members for type
       packageXmlMetadatasTypeLs = packageXmlMetadatasTypeLs.map((type1: any) => {
         if (type1.name[0] === type.name[0]) {

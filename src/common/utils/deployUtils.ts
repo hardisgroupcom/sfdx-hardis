@@ -141,13 +141,14 @@ export async function forceSourceDeploy(
         c.cyan(`${check ? "Simulating deployment of" : "Deploying"} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`)
       );
       const deployCommand =
-        `sfdx force:source:deploy -x ${deployment.packageXmlFile}` +
+        `sfdx force:source:deploy -x "${deployment.packageXmlFile}"` +
         " --wait 60" +
         " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
         ` --testlevel ${testlevel}` +
         (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
         (check ? " --checkonly" : "") +
-        (debugMode ? " --verbose" : "");
+        (debugMode ? " --verbose" : "") +
+        (process.env.SFDX_DEPLOY_DEV_DEBUG ? " --dev-debug" : "");
       let deployRes;
       try {
         deployRes = await execCommand(deployCommand, commandThis, {
@@ -261,28 +262,16 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
           await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
           deploymentItem.packageXmlFile = splitPackageXmlCopyFileName;
           // Remove split of packageXml content from main package.xml
-          await removePackageXmlContent(mainPackageXmlCopyFileName, deploymentItem.packageXmlFile, false, debugMode);
-          // Remove packageDeployOnce.xml items that are already present in target org
-          if (deployOncePackageXml) {
-            await removePackageXmlContent(deploymentItem.packageXmlFile, deployOncePackageXml, false, debugMode);
-          }
-          // Remove packageDeployOnChange.xml items that are not different in target org
-          if (deployOnChangePackageXml) {
-            await removePackageXmlContent(deploymentItem.packageXmlFile, deployOnChangePackageXml, false, debugMode);
-          }
+          await removePackageXmlContent(mainPackageXmlCopyFileName, deploymentItem.packageXmlFile, false, {
+            debugMode: debugMode,
+            keepEmptyTypes: true,
+          });
+          await applyPackageXmlFiltering(deploymentItem.packageXmlFile,deployOncePackageXml,deployOnChangePackageXml,debugMode);
         }
         deploymentItems.push(deploymentItem);
       }
     }
-
-    // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
-    if (deployOncePackageXml) {
-      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOncePackageXml, false, debugMode);
-    }
-    //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
-    if (deployOnChangePackageXml) {
-      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOnChangePackageXml, false, debugMode);
-    }
+    await applyPackageXmlFiltering(mainPackageXmlCopyFileName,deployOncePackageXml,deployOnChangePackageXml,debugMode);
 
     // Sort in requested order
     const deploymentItemsSorted = sortArray(deploymentItems, {
@@ -293,14 +282,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
   }
   // Return initial package.xml file minus deployOnce and deployOnChange items
   else {
-    // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
-    if (deployOncePackageXml) {
-      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOncePackageXml, false, debugMode);
-    }
-    //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
-    if (deployOnChangePackageXml) {
-      await removePackageXmlContent(mainPackageXmlCopyFileName, deployOnChangePackageXml, false, debugMode);
-    }
+    await applyPackageXmlFiltering(mainPackageXmlCopyFileName,deployOncePackageXml,deployOnChangePackageXml,debugMode);
     return [
       {
         label: "main",
@@ -308,6 +290,18 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
       },
     ];
   }
+}
+
+// Apply packageXml filtering using deployOncePackageXml and deployOnChangePackageXml
+async function applyPackageXmlFiltering(packageXml,deployOncePackageXml,deployOnChangePackageXml,debugMode) {
+    // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
+    if (deployOncePackageXml) {
+      await removePackageXmlContent(packageXml, deployOncePackageXml, false, { debugMode: debugMode, keepEmptyTypes: true });
+    }
+    //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
+    if (deployOnChangePackageXml) {
+      await removePackageXmlContent(packageXml, deployOnChangePackageXml, false, { debugMode: debugMode, keepEmptyTypes: true });
+    }
 }
 
 // packageDeployOnce.xml items are deployed only if they are not in the target org
@@ -330,7 +324,7 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
       const packageDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
       await fs.copy(packageDeployOnce, packageDeployOnceToUse);
       // Keep in deployOnce.xml only what is necessary to deploy
-      await removePackageXmlContent(packageDeployOnceToUse, targetOrgPackageXml, true, debugMode);
+      await removePackageXmlContent(packageDeployOnceToUse, targetOrgPackageXml, true, { debugMode: debugMode, keepEmptyTypes: false });
       uxLog(this, c.grey(`packageDeployOnce.xml with only metadatas that do not exist in target: ${packageDeployOnceToUse}`));
       // Check if there is still something in updated packageDeployOnce.xml
       if (!(await isPackageXmlEmpty(packageDeployOnceToUse))) {
@@ -391,14 +385,19 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   // Remove from original packageDeployOnChange the items that has not been updated
   const packageXmlDeployOnChangeToUse = path.join(tmpDir, "packageDeployOnChange.xml");
   await fs.copy(packageDeployOnChangePath, packageXmlDeployOnChangeToUse);
-  await removePackageXmlContent(packageXmlDeployOnChangeToUse, diffPackageXml, false, debugMode);
+  await removePackageXmlContent(packageXmlDeployOnChangeToUse, diffPackageXml, false, { debugMode: debugMode, keepEmptyTypes: false });
   uxLog(this, c.grey(`packageDeployOnChange.xml filtered to keep only metadatas that have changed: ${packageXmlDeployOnChangeToUse}`));
   // Return result
   return packageXmlDeployOnChangeToUse;
 }
 
 // Remove content of a package.xml file from another package.xml file
-async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToRemove: string, removedOnly = false, debugMode = false) {
+async function removePackageXmlContent(
+  packageXmlFile: string,
+  packageXmlFileToRemove: string,
+  removedOnly = false,
+  options = { debugMode: false, keepEmptyTypes: false }
+) {
   if (removedOnly === false) {
     uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}...`));
   } else {
@@ -411,8 +410,9 @@ async function removePackageXmlContent(packageXmlFile: string, packageXmlFileToR
   }
   await removePackageXmlFilesContent(packageXmlFile, packageXmlFileToRemove, {
     outputXmlFile: packageXmlFile,
-    logFlag: debugMode,
+    logFlag: options.debugMode,
     removedOnly: removedOnly,
+    keepEmptyTypes: options.keepEmptyTypes || false,
   });
 }
 
