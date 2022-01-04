@@ -117,10 +117,15 @@ sfdx hardis:auth:login --devhub
 
 Anyone is welcome to contribute to this sfdx-hardis
 
-- Fork this repo and clone it
-- Run `yarn` to install dependencies
-- Run `sfdx plugins:link` to link the local sfdx-hardis to SFDX CLI
-- Run `tsc --watch`to transpile typescript
+- Install Node.js ([recommended version](https://nodejs.org/en/))
+- Install typescript by running `npm install typescript --global`
+- Install yarn by running `npm install yarn --global`
+- Install Salesforce DX by running `npm install sfdx-cli --global` command line
+- Fork this repo and clone it (or just clone if you are an internal contributor)
+- At the root of the repository:
+  - Run `yarn` to install dependencies
+  - Run `sfdx plugins:link` to link the local sfdx-hardis to SFDX CLI
+  - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
 - Debug commands using `NODE_OPTIONS=--inspect-brk sfdx hardis:somecommand -someparameter somevalue`
 
 ## Articles
