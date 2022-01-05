@@ -4,6 +4,19 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.64.1] 2021-12-29
+
+- Update default apiVersion to 53.0
+- Option to not remove empty types when subtracting package.xml
+
+## [2.64.0] 2021-12-24
+
+- New command hardis:clean:minimizeprofiles
+- New deployTip `duplicate-value-platform-action-id-list`
+- Apply packageDeployOnce.xml and packageDeployOnChange.xml in all contexts
+- Package.xml mixing: fix wildcard `<members>*</members>` management
+- List metadatas of target org: complete with what sfpowerkit commands does not return (ListView,CustomLabel)
+
 ## [2.63.0] 2021-12-21
 
 - New event message refreshPlugins (used by VsCodeSFDX Hardis)

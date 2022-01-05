@@ -22,10 +22,16 @@ export default class DxSources extends SfdxCommand {
 
   public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
-  Env vars override:
+If necessary,You can define the following files (that supports wildcards <members>*</members>):
 
-  - SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml
-`;
+- manifest/packageXmlOnce.xml: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
+- manifest/packageXmlOnChange.xml: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
+
+Env vars override:
+
+- SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml into several deployments
+
+  `;
 
   public static examples = ["$ sfdx hardis:project:deploy:sources:dx"];
 
@@ -93,6 +99,7 @@ export default class DxSources extends SfdxCommand {
         : "./config/package.xml";
     const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, {
       targetUsername: targetUsername,
+      conn: this.org?.getConnection(),
     });
 
     // Deploy destructive changes

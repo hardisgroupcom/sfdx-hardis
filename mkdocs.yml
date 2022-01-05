@@ -138,6 +138,7 @@ nav:
           save: hardis/work/save.md
           ws: hardis/work/ws.md
   - Use in CI: https://hardisgroupcom.github.io/sfdx-hardis/#use-sfdx-hardis-in-ci
+  - Articles / Tutorials: https://hardisgroupcom.github.io/sfdx-hardis/#articles
   - Contributing: https://hardisgroupcom.github.io/sfdx-hardis/#contributing
   - License: license.md
   - Changelog: CHANGELOG.md

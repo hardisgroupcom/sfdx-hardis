@@ -5,6 +5,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
+import { buildOrgManifest } from "../utils/deployUtils";
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -498,8 +499,7 @@ class MetadataUtils {
     await fs.ensureDir(metadataFolder);
 
     // Build package.xml for all org
-    uxLog(commandThis, c.cyan(`Generating full package.xml from ${c.green(commandThis.org.getUsername())}...`));
-    await execCommand("sfdx sfpowerkit:org:manifest:build -o package.xml", this, { output: false, fail: true, debug: debug });
+    await buildOrgManifest(commandThis.org.getUsername(), "package.xml");
 
     // Filter managed items if requested
     if (options.filterManagedItems) {

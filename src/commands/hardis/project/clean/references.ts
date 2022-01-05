@@ -89,6 +89,11 @@ export default class CleanReferences extends SfdxCommand {
       title: "References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5",
     },
     {
+      value: "minimizeProfiles",
+      title: "Remove profile attributes that exists on permission sets",
+      command: "sfdx hardis:project:clean:minimizeprofiles",
+    },
+    {
       value: "productrequest",
       title: "References to ProductRequest object",
     },
@@ -132,7 +137,7 @@ export default class CleanReferences extends SfdxCommand {
         type: "confirm",
         name: "value",
         default: true,
-        message: c.cyanBright("Do you want to save this configuration in your project configuration ?"),
+        message: c.cyanBright("Do you want to save this action in your project configuration, so it is executed at each Work Save ?"),
       });
       if (saveResponse.value === true) {
         autoCleanTypes.push(...this.cleaningTypes);
@@ -144,19 +149,31 @@ export default class CleanReferences extends SfdxCommand {
 
     // Process cleaning
     for (const cleaningType of this.cleaningTypes) {
-      uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)}...`));
-      const filterConfigFile = await this.getFilterConfigFile(cleaningType);
-      const cleanCommand =
-        "sfdx essentials:metadata:filter-xml-content" +
-        ` -c ${filterConfigFile}` +
-        ` --inputfolder ./force-app/main/default` +
-        ` --outputfolder ./force-app/main/default` +
-        " --noinsight";
-      await execCommand(cleanCommand, this, {
-        fail: true,
-        output: false,
-        debug: this.debugMode,
-      });
+      const cleaningTypeObj = this.allCleaningTypes.filter((cleaningTypeObj) => cleaningTypeObj.value === cleaningType)[0];
+      if (cleaningTypeObj?.command) {
+        uxLog(this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
+        // Command based cleaning
+        await execCommand(cleaningTypeObj.command, this, {
+          fail: true,
+          output: false,
+          debug: this.debugMode,
+        });
+      } else {
+        // Template based cleaning
+        uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
+        const filterConfigFile = await this.getFilterConfigFile(cleaningType);
+        const cleanCommand =
+          "sfdx essentials:metadata:filter-xml-content" +
+          ` -c ${filterConfigFile}` +
+          ` --inputfolder ./force-app/main/default` +
+          ` --outputfolder ./force-app/main/default` +
+          " --noinsight";
+        await execCommand(cleanCommand, this, {
+          fail: true,
+          output: false,
+          debug: this.debugMode,
+        });
+      }
     }
 
     // Clean package.xml file from deleted items
