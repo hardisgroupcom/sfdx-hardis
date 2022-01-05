@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix contribution install by upgrading dependencies
+
 ## [2.64.1] 2021-12-29
 
 - Update default apiVersion to 53.0
