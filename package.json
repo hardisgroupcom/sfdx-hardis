@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
   "description": "Hardis-Group Toolbox for Salesforce DX",
-  "version": "2.64.1",
+  "version": "2.65.0",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "dependencies": {
@@ -11,9 +11,10 @@
     "@oclif/command": "^1",
     "@oclif/config": "^1",
     "@oclif/errors": "^1",
-    "@salesforce/command": "^3.1.0",
-    "@salesforce/core": "^2.20.5",
+    "@salesforce/command": "^4.2.1",
+    "@salesforce/core": "^2.33.1",
     "@salesforce/ts-sinon": "^1.2.4",
+    "@salesforce/ts-types": "^1.5.20",
     "@supercharge/promise-pool": "^1.7.0",
     "@types/mocha": "^8.2.1",
     "@types/ws": "^7.4.0",

@@ -6,7 +6,7 @@ import ora = require("ora");
 
 // Perform simple SOQL query (max results: 10000)
 export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
-  uxLog(this, c.grey("SOQL REST: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
+  uxLog(this, c.grey("SOQL REST: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery) + " on " + conn.instanceUrl));
   return conn.query(soqlQuery);
 }
 
