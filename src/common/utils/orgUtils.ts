@@ -158,7 +158,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
     // If devHub , set alias of project devHub from config file
     const config = await getConfig("project");
     if (options.devHub && config.devHubAlias) {
-      const setAliasCommand = `sfdx alias:set ${config.devHubAlias}=${org.username}` ;
+      const setAliasCommand = `sfdx alias:set ${config.devHubAlias}=${org.username}`;
       await execSfdxJson(setAliasCommand, commandThis, {
         fail: true,
         output: false,
