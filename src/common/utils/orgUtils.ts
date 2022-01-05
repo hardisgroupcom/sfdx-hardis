@@ -154,6 +154,17 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
       fail: true,
       output: false,
     });
+
+    // If devHub , set alias of project devHub from config file
+    const config = await getConfig("project");
+    if (options.devHub && config.devHubAlias) {
+      const setAliasCommand = `sfdx alias:set ${config.devHubAlias}=${org.username}` ;
+      await execSfdxJson(setAliasCommand, commandThis, {
+        fail: true,
+        output: false,
+      });
+    }
+
     WebSocketClient.sendMessage({ event: "refreshStatus" });
     // Update local user .sfdx-hardis.yml file with response if scratch has been selected
     if (org.username.includes("scratch")) {
