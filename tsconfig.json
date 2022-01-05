@@ -11,7 +11,8 @@
     "outDir": "./lib",
     "importHelpers": true,
     "resolveJsonModule": true,
-    "types": ["node", "mocha"]
+    "types": ["node", "mocha"],
+    "skipLibCheck": true
   },
   "include": ["./src/**/*"]
 }

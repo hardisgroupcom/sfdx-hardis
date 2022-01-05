@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.65.0] 2021-01-05
+
+- Fix contribution install by upgrading dependencies
+- Use soqlQuery method everywhere
+- Set devhub alias when available
+
 ## [2.64.1] 2021-12-29
 
 - Update default apiVersion to 53.0

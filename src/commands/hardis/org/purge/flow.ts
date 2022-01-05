@@ -113,7 +113,6 @@ export default class OrgPurgeFlow extends SfdxCommand {
 
     const username = this.org.getUsername();
 
-    // const flowQueryResult = await conn.query<Flow>(query,{ });
     const flowQueryCommand = "sfdx force:data:soql:query " + ` -q "${query}"` + ` --targetusername ${username}` + " --usetoolingapi";
     const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
       output: false,

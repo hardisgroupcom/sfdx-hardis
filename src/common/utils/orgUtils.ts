@@ -10,6 +10,7 @@ import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
 import { Connection, SfdxError } from "@salesforce/core";
 import { importData } from "./dataUtils";
+import { soqlQuery } from "./apiUtils";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -61,7 +62,7 @@ export async function promptProfiles(
       if (!["record", "Id"].includes(options.returnField)) {
         throw new SfdxError("You can not use option allowSelectMine:false if you don't use record or Id as return value");
       }
-      const userRes = await conn.query(`SELECT ProfileId FROM User WHERE Id='${(await conn.identity()).user_id}' LIMIT 1`);
+      const userRes = await soqlQuery(`SELECT ProfileId FROM User WHERE Id='${(await conn.identity()).user_id}' LIMIT 1`, conn);
       const profileId = userRes.records[0]["ProfileId"];
       if (profilesSelection.value.filter((profileSelected) => profileSelected === profileId || profileSelected?.Id === profileId).length > 0) {
         throw new SfdxError(options.allowSelectMineErrorMessage);
@@ -153,6 +154,17 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
       fail: true,
       output: false,
     });
+
+    // If devHub , set alias of project devHub from config file
+    const config = await getConfig("project");
+    if (options.devHub && config.devHubAlias) {
+      const setAliasCommand = `sfdx alias:set ${config.devHubAlias}=${org.username}`;
+      await execSfdxJson(setAliasCommand, commandThis, {
+        fail: true,
+        output: false,
+      });
+    }
+
     WebSocketClient.sendMessage({ event: "refreshStatus" });
     // Update local user .sfdx-hardis.yml file with response if scratch has been selected
     if (org.username.includes("scratch")) {
