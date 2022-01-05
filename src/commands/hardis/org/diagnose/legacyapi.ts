@@ -10,6 +10,7 @@ import * as sortArray from "sort-array";
 import { createTempDir, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import * as dns from "dns";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
+import { soqlQuery } from "../../../../common/utils/apiUtils";
 const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
@@ -114,8 +115,7 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
     const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
-    uxLog(this, c.grey("Query: " + c.italic(logCountQuery)));
-    const logCountRes = await conn.query(logCountQuery);
+    const logCountRes = await soqlQuery(logCountQuery, conn);
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
       uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
@@ -129,7 +129,7 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     // Fetch EventLogFiles with ApiTotalUsage entries
     const logCollectQuery = `SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY CreatedDate DESC` + limitConstraint;
     uxLog(this, c.grey("Query: " + c.italic(logCollectQuery)));
-    const eventLogRes: any = await conn.query(logCollectQuery);
+    const eventLogRes: any = await soqlQuery(logCollectQuery, conn);
 
     // Collect legacy api calls from logs
     uxLog(this, c.grey("Calling org API to get CSV content of each EventLogFile record, then parse and analyze it..."));

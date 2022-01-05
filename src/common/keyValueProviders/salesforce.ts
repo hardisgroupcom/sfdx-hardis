@@ -4,6 +4,7 @@ import * as he from "he";
 import * as path from "path";
 import { getConfig } from "../../config";
 import { uxLog } from "../utils";
+import { soqlQuery } from "../utils/apiUtils";
 import { deployMetadatas } from "../utils/deployUtils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { setPoolStorage } from "../utils/poolUtils";
@@ -24,7 +25,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
   async getValue(_key: string | null = null) {
     await this.manageSfdcOrgAuth();
     // Single record upsert
-    const queryRes = await this.conn.query(`SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`);
+    const queryRes = await soqlQuery(`SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`, this.conn);
     const valueText = queryRes.records[0] ? (queryRes.records[0] as any).ValueText__c || "" : "";
     if (valueText.length > 5) {
       return valueText.includes("&quot") ? JSON.parse(he.decode(valueText)) : JSON.parse(valueText);
@@ -36,7 +37,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
   async setValue(_key: string | null = null, value: any) {
     await this.manageSfdcOrgAuth();
     // Single record upsert
-    const queryRes = await this.conn.query(`SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`);
+    const queryRes = await soqlQuery(`SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`, this.conn);
     if (queryRes.records[0]) {
       const recordId = (queryRes.records[0] as any).Id;
       const queryUpdateRes = await this.conn.sobject("SfdxHardisKeyValueStore__c").update({

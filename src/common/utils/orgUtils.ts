@@ -10,6 +10,7 @@ import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
 import { Connection, SfdxError } from "@salesforce/core";
 import { importData } from "./dataUtils";
+import { soqlQuery } from "./apiUtils";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -61,7 +62,7 @@ export async function promptProfiles(
       if (!["record", "Id"].includes(options.returnField)) {
         throw new SfdxError("You can not use option allowSelectMine:false if you don't use record or Id as return value");
       }
-      const userRes = await conn.query(`SELECT ProfileId FROM User WHERE Id='${(await conn.identity()).user_id}' LIMIT 1`);
+      const userRes = await soqlQuery(`SELECT ProfileId FROM User WHERE Id='${(await conn.identity()).user_id}' LIMIT 1`, conn);
       const profileId = userRes.records[0]["ProfileId"];
       if (profilesSelection.value.filter((profileSelected) => profileSelected === profileId || profileSelected?.Id === profileId).length > 0) {
         throw new SfdxError(options.allowSelectMineErrorMessage);
