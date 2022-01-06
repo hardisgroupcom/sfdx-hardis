@@ -88,7 +88,7 @@ check_quality:
   # Conditions d'execution
   except:
     - master
-  image: megalinter/megalinter-salesforce:beta
+  image: megalinter/megalinter-salesforce:latest
   script: ["true"]
   allow_failure: true
   variables:
