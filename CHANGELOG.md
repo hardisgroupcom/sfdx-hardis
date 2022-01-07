@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.66.0] 2021-01-07
+
+- Check deployment with metadata project
+
 ## [2.65.0] 2021-01-05
 
 - Fix contribution install by upgrading dependencies

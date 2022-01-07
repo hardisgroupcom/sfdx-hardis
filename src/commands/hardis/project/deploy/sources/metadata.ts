@@ -5,6 +5,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
+import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { createTempDir, execCommand, uxLog } from "../../../../../common/utils";
 import { deployDestructiveChanges, deployMetadatas } from "../../../../../common/utils/deployUtils";
@@ -29,6 +30,11 @@ export default class DxSources extends SfdxCommand {
       char: "c",
       default: false,
       description: messages.getMessage("checkOnly"),
+    }),
+    deploydir: flags.string({
+      char: "x",
+      default: ".",
+      description: "Deploy directory",
     }),
     packagexml: flags.string({
       char: "p",
@@ -69,6 +75,7 @@ export default class DxSources extends SfdxCommand {
   protected static requiresSfdxPlugins = ["sfdx-essentials"];
 
   protected configInfo: any = {};
+  protected deployDir: any = ".";
 
   /* jscpd:ignore-end */
 
@@ -79,6 +86,7 @@ export default class DxSources extends SfdxCommand {
     const destructivePackageXml = this.flags.destructivepackagexml || null;
     const testlevel = this.flags.testlevel || "RunLocalTests";
     const debugMode = this.flags.debug || false;
+    this.deployDir = this.flags.deploydir || ".";
     this.configInfo = await getConfig("branch");
 
     // Install packages
@@ -96,14 +104,15 @@ export default class DxSources extends SfdxCommand {
         ? "./manifest/package.xml"
         : fs.existsSync("./package.xml")
         ? "./package.xml"
+        : fs.existsSync(path.join(this.deployDir, "package.xml"))
+        ? path.join(this.deployDir, "package.xml")
         : "./config/package.xml";
     if (fs.existsSync(packageXmlFile)) {
-      let deployDir = ".";
       // Filter if necessary
       if (filter) {
         const tmpDir = await createTempDir();
-        const filterCommand = "sfdx essentials:metadata:filter-from-packagexml" + ` -i ${deployDir}` + ` -p ${packageXmlFile}` + ` -o ${tmpDir}`;
-        deployDir = tmpDir;
+        const filterCommand = "sfdx essentials:metadata:filter-from-packagexml" + ` -i ${this.deployDir}` + ` -p ${packageXmlFile}` + ` -o ${tmpDir}`;
+        this.deployDir = tmpDir;
         await execCommand(filterCommand, this, {
           output: true,
           debugMode,
@@ -112,20 +121,21 @@ export default class DxSources extends SfdxCommand {
       }
       // Perform deployment
       const deployRes = await deployMetadatas({
-        deployDir,
+        deployDir: this.deployDir,
         testlevel,
         check,
         soap: true,
         debug: debugMode,
+        tryOnce: true,
       });
       let message = "";
       if (deployRes.status === 0) {
         deployProcessed = true;
         message = "[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org";
-        this.ux.log(c.green(message));
+        uxLog(this, c.green(message));
       } else {
         message = "[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org";
-        this.ux.log(c.red(deployRes.errorMessage));
+        uxLog(this, c.red(deployRes.errorMessage));
       }
     } else {
       uxLog(this, "No package.xml found so no deployment has been performed");
@@ -140,6 +150,8 @@ export default class DxSources extends SfdxCommand {
         ? "./manifest/destructiveChanges.xml"
         : fs.existsSync("./destructiveChanges.xml")
         ? "./destructiveChanges.xml"
+        : fs.existsSync(path.join(this.deployDir, "destructiveChanges.xml"))
+        ? path.join(this.deployDir, "destructiveChanges.xml")
         : "./config/destructiveChanges.xml";
     if (fs.existsSync(packageDeletedXmlFile)) {
       await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
