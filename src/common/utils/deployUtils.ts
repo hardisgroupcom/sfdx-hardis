@@ -479,7 +479,7 @@ export async function deployMetadatas(
     debug: false,
     soap: false,
     targetUsername: null,
-    tryOnce: false
+    tryOnce: false,
   }
 ) {
   // Perform deployment
@@ -524,7 +524,7 @@ export async function deployMetadatas(
         }
       }
     } else {
-      await checkDeploymentErrors(e,options);
+      await checkDeploymentErrors(e, options);
     }
   }
   return deployRes;
@@ -629,7 +629,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   return packageXmlFull;
 }
 
-async function checkDeploymentErrors(e,options,commandThis = null){
+async function checkDeploymentErrors(e, options, commandThis = null) {
   const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
   uxLog(commandThis, c.red(c.bold("Sadly there has been Metadata deployment error(s)...")));
   uxLog(commandThis, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));

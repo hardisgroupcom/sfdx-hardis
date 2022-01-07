@@ -5,7 +5,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as path from 'path';
+import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { createTempDir, execCommand, uxLog } from "../../../../../common/utils";
 import { deployDestructiveChanges, deployMetadatas } from "../../../../../common/utils/deployUtils";
@@ -86,7 +86,7 @@ export default class DxSources extends SfdxCommand {
     const destructivePackageXml = this.flags.destructivepackagexml || null;
     const testlevel = this.flags.testlevel || "RunLocalTests";
     const debugMode = this.flags.debug || false;
-    this.deployDir = this.flags.deploydir || '.' ;
+    this.deployDir = this.flags.deploydir || ".";
     this.configInfo = await getConfig("branch");
 
     // Install packages
@@ -104,8 +104,8 @@ export default class DxSources extends SfdxCommand {
         ? "./manifest/package.xml"
         : fs.existsSync("./package.xml")
         ? "./package.xml"
-        : fs.existsSync(path.join(this.deployDir,"package.xml"))
-        ? path.join(this.deployDir,"package.xml")
+        : fs.existsSync(path.join(this.deployDir, "package.xml"))
+        ? path.join(this.deployDir, "package.xml")
         : "./config/package.xml";
     if (fs.existsSync(packageXmlFile)) {
       // Filter if necessary
@@ -126,7 +126,7 @@ export default class DxSources extends SfdxCommand {
         check,
         soap: true,
         debug: debugMode,
-        tryOnce: true
+        tryOnce: true,
       });
       let message = "";
       if (deployRes.status === 0) {
@@ -150,8 +150,8 @@ export default class DxSources extends SfdxCommand {
         ? "./manifest/destructiveChanges.xml"
         : fs.existsSync("./destructiveChanges.xml")
         ? "./destructiveChanges.xml"
-        : fs.existsSync(path.join(this.deployDir,"destructiveChanges.xml"))
-        ? path.join(this.deployDir,"destructiveChanges.xml")
+        : fs.existsSync(path.join(this.deployDir, "destructiveChanges.xml"))
+        ? path.join(this.deployDir, "destructiveChanges.xml")
         : "./config/destructiveChanges.xml";
     if (fs.existsSync(packageDeletedXmlFile)) {
       await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
