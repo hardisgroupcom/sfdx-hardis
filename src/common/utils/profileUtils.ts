@@ -9,15 +9,20 @@ export async function minimizeProfile(profileFile: string) {
   const profileXml = await parseXmlFile(profileFile);
   // Remove nodes that are present on Permission Sets
   const nodesToRemove = [
-    "userPermissions",
     "classAccesses",
+    "customMetadataTypeAccesses",
     "externalDataSourceAccesses",
     "fieldPermissions",
     "objectPermissions",
     "pageAccesses",
     "tabVisibilities",
-    "customMetadataTypeAccesses",
   ];
+  // Remove more attributes if not admin profile
+  const isAdmin = path.basename(profileFile) === 'Admin.profile-meta.xml';
+  if (!isAdmin) {
+    nodesToRemove.push(...["userPermissions"]);
+  }
+  // Remove nodes
   const removed = [];
   for (const node of nodesToRemove) {
     if (profileXml.Profile[node]) {
