@@ -18,7 +18,7 @@ export async function minimizeProfile(profileFile: string) {
     "tabVisibilities",
   ];
   // Remove more attributes if not admin profile
-  const isAdmin = path.basename(profileFile) === 'Admin.profile-meta.xml';
+  const isAdmin = path.basename(profileFile) === "Admin.profile-meta.xml";
   if (!isAdmin) {
     nodesToRemove.push(...["userPermissions"]);
   }
