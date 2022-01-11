@@ -161,7 +161,7 @@ export default class SaveTask extends SfdxCommand {
     const currentGitBranch = await getCurrentGitBranch();
 
     // Request user to select what he/she wants to commit
-    const groups = this.describeGroups();
+    const groups = this.describeGroups(config);
     if (this.noGit) {
       uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
     } else {
@@ -519,7 +519,8 @@ export default class SaveTask extends SfdxCommand {
     return packages;
   }
 
-  private describeGroups() {
+  private describeGroups(config) {
+    const minimizedProfiles = config?.autoCleanTypes?.includes("minimizeProfiles");
     const groups = [
       {
         label: "Data (SFDMU projects)",
@@ -532,7 +533,7 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: true,
       },
       {
-        label: "Objects",
+        label: "Object model",
         regex: /objects\//i,
         defaultSelect: true,
       },
@@ -582,7 +583,9 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: false,
       },
       {
-        label: "Profiles (not recommended, use Permission Sets instead)",
+        label: minimizedProfiles
+          ? "Profiles (they will be committed but cleaned from all attributes that can be defined on Permission Sets)"
+          : "Profiles (not recommended, use Permission Sets instead. Add minimizeProfiles in autoCleanTypes config to be able to take them safely)",
         regex: /profiles\//i,
         defaultSelect: false,
       },
@@ -592,7 +595,12 @@ export default class SaveTask extends SfdxCommand {
         defaultSelect: false,
       },
       {
-        label: "Other",
+        label: "Other Salesforce sources elements",
+        regex: /force-app\//i,
+        defaultSelect: false,
+      },
+      {
+        label: "Other elements",
         regex: /(.*?)/i,
         defaultSelect: false,
       },

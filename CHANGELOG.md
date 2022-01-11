@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.66.1] 2021-01-11
+
+- minimizeProfiles: do not remove userPermissions if profile is default Admin profile
+
 ## [2.66.0] 2021-01-07
 
 - Check deployment with metadata project
