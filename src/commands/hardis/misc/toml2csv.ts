@@ -39,6 +39,11 @@ export default class Toml2Csv extends SfdxCommand {
       char: "t",
       description: "Path to JSON config file for mapping and transformation",
     }),
+    filtersections: flags.array({
+      char: "l",
+      description: "List of sections to process (if not set, all sections will be processed)",
+      default: []
+    }),
     skiptransfo: flags.boolean({
       char: "s",
       default: false,
@@ -72,6 +77,8 @@ export default class Toml2Csv extends SfdxCommand {
   protected rootConfigDirectory: string;
   protected outputDir: string;
   protected skipTransfo = false;
+  protected filterSections = [];
+  protected doFilterSections = false ;
 
   protected spinner: any;
   protected inputFileSeparator: string;
@@ -108,6 +115,8 @@ export default class Toml2Csv extends SfdxCommand {
     this.outputDir = this.flags.outputdir || path.join(process.cwd(), path.parse(tomlFile).name);
     const debugMode = this.flags.debug || false;
     this.skipTransfo = this.flags.skiptransfo || false;
+    this.filterSections = this.flags.filtersections || [];
+    this.doFilterSections = this.filterSections.length > 0;
 
     // Check TOML file is existing
     if (!fs.existsSync(tomlFile)) {
@@ -156,6 +165,9 @@ export default class Toml2Csv extends SfdxCommand {
       if (line.startsWith("[")) {
         this.stats.sectionLinesNb++;
         currentSection = /\[(.*)\]/gm.exec(line)[1]; // ex: get COMPTES from [COMPTES]
+        if (this.doFilterSections && !this.filterSections.includes(currentSection)) {
+          continue;
+        }
         this.spinner.text =
           `Processing section ${currentSection} (data lines: ${this.stats.dataLinesNb},` +
           ` errors: ${this.stats.dataErrorLinesNb}, filtered: ${this.stats.dataFilteredLinesNb})`;
@@ -180,6 +192,9 @@ export default class Toml2Csv extends SfdxCommand {
       }
       // CSV line
       else if (currentSection) {
+        if (this.doFilterSections && !this.filterSections.includes(currentSection)) {
+          continue;
+        }
         this.stats.dataLinesNb++;
         this.stats.sections[currentSection].dataLinesNb++;
         const lineSplit = line.split(this.inputFileSeparator);
