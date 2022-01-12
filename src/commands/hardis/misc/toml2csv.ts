@@ -179,37 +179,30 @@ export default class Toml2Csv extends SfdxCommand {
         this.stats.dataLinesNb++;
         this.stats.sections[currentSection].dataLinesNb++;
         const lineSplit = line.split(this.inputFileSeparator);
+        // Check if line has to be filtered
+        let filtered = false;
+        if (this.transfoConfig?.entities[currentSection]?.filters) {
+          for (const filter of this.transfoConfig?.entities[currentSection]?.filters) {
+            if (!this.checkFilter(filter, lineSplit, currentSection)) {
+              filtered = true;
+              break;
+            }
+          }
+        }
+        if (filtered) {
+          this.stats.dataFilteredLinesNb++;
+          this.stats.sections[currentSection].dataFilteredLinesNb++;
+        }
         if (this.skipTransfo) {
           // Without transformation
-          if (this.transfoConfig?.entities[currentSection]?.filters) {
-            // Without transformation but with filter
-            let filtered = false;
-            for (const filter of this.transfoConfig?.entities[currentSection]?.filters) {
-              if (!this.checkFilter(filter, lineSplit, currentSection)) {
-                filtered = true;
-                break;
-              }
-            }
-            if (!filtered) {
-              const lineSf = lineSplit
-                .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
-                .join(this.outputFileSeparator);
-              await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
-              this.addLineId(currentSection, lineSplit);
-              this.stats.sections[currentSection].dataSuccessLinesNb++;
-            } else {
-              this.stats.dataFilteredLinesNb++;
-              this.stats.sections[currentSection].dataFilteredLinesNb++;
-            }
-          } else {
-            // Without transformation and without filters
+          if (!filtered) {
             const lineSf = lineSplit
               .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
               .join(this.outputFileSeparator);
             await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
             this.addLineId(currentSection, lineSplit);
-            this.stats.dataSuccessLinesNb;
             this.stats.sections[currentSection].dataSuccessLinesNb++;
+            this.stats.dataSuccessLinesNb++;
           }
         } else {
           // With transformation
@@ -218,6 +211,7 @@ export default class Toml2Csv extends SfdxCommand {
           } catch (e) {
             // Manage error
             this.stats.dataErrorLinesNb++;
+            this.stats.sections[currentSection].dataErrorLinesNb++;
             const lineError =
               line
                 .split(this.inputFileSeparator)
@@ -227,7 +221,6 @@ export default class Toml2Csv extends SfdxCommand {
               `"${e.message.replace(/"/g, "'")}"`;
             await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[currentSection]);
             this.addLineId(currentSection, lineSplit);
-            this.stats.sections[currentSection].dataSuccessLinesNb++;
             e.message;
           }
         }
@@ -250,6 +243,13 @@ export default class Toml2Csv extends SfdxCommand {
 
     this.spinner.succeed(`File processing complete of ${this.stats.dataLinesNb} data lines (${this.stats.dataErrorLinesNb} in error)`);
     uxLog(this, c.grey("Stats: \n" + JSON.stringify(this.stats, null, 2)));
+    for (const section of Object.keys(this.stats.sections)) {
+      const sectionStats = this.stats.sections[section];
+      if (sectionStats.dataLinesNb > 0) {
+        uxLog(this, c.grey(`[${section}] kept ${sectionStats.dataSuccessLinesNb} entries on ${sectionStats.dataLinesNb}`));
+      }
+    }
+    uxLog(this, c.grey(`[TOTAL] kept ${this.stats.dataSuccessLinesNb} entries on ${this.stats.dataLinesNb}`));
     const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
       this,
@@ -420,17 +420,24 @@ export default class Toml2Csv extends SfdxCommand {
   }
 
   checkFilter(filter, lineSplit, currentSection) {
+    let checkRes: boolean | null = false;
     try {
-      if (filter.type === "date") {
-        return this.checkFilterDate(filter, lineSplit);
-      } else if (filter.type === "parentId") {
-        return this.checkFilterParentId(filter, lineSplit);
+      checkRes =
+        filter.type === "date"
+          ? this.checkFilterDate(filter, lineSplit)
+          : filter.type === "parentId"
+          ? this.checkFilterParentId(filter, lineSplit)
+          : filter.type === "colValue"
+          ? this.checkFilterColValue(filter, lineSplit)
+          : null;
+      if (checkRes === null) {
+        throw Error("Unknown filter type " + JSON.stringify(filter));
       }
     } catch (e) {
       this.stats.sections[currentSection].dataFilterErrorsNb++;
       return filter.keepIfFilterCrash === true;
     }
-    return false;
+    return checkRes;
   }
 
   checkFilterDate(filter, lineSplit) {
@@ -448,6 +455,12 @@ export default class Toml2Csv extends SfdxCommand {
   checkFilterParentId(filter, lineSplit) {
     const colValue = lineSplit[filter.idColNumber - 1];
     const res = (this.sectionLineIds[filter.parentSection] || []).includes(colValue);
+    return res;
+  }
+
+  checkFilterColValue(filter, lineSplit) {
+    const colValue = lineSplit[filter.idColNumber - 1];
+    const res = colValue === filter.value;
     return res;
   }
 
