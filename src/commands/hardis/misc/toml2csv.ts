@@ -304,7 +304,7 @@ export default class Toml2Csv extends SfdxCommand {
       const outputFile = path.join(this.outputDir, "errors", `noconfig__${section}.csv`);
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: "utf8" });
-      uxLog(this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog(this, c.cyan(`- Initialized default output CSV file ${c.green(c.bold(outputFile))}`));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     }
@@ -412,7 +412,7 @@ export default class Toml2Csv extends SfdxCommand {
   getTranscoValues(transfo) {
     // Enum config file
     if (transfo.enum) {
-      // Check if enum has alredy been loaded in memory
+      // Check if enum has already been loaded in memory
       if (this.loadedTranscos[transfo.enum]) {
         return this.loadedTranscos[transfo.enum];
       }
