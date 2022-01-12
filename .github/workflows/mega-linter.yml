@@ -32,7 +32,7 @@ jobs:
         id: ml
         # You can override Mega-Linter flavor used to have faster performances
         # More info at https://megalinter.github.io/flavors/
-        uses: megalinter/megalinter/flavors/javascript@beta
+        uses: megalinter/megalinter/flavors/javascript@latest
         env:
           # All available variables are described in documentation
           # https://megalinter.github.io/configuration/

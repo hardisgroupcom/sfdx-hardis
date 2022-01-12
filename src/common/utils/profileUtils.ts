@@ -1,6 +1,7 @@
 import * as c from "chalk";
 import * as path from "path";
 import { uxLog } from ".";
+import { getConfig } from "../../config";
 import { parseXmlFile, writeXmlFile } from "./xmlUtils";
 
 // Push sources to org
@@ -8,16 +9,24 @@ import { parseXmlFile, writeXmlFile } from "./xmlUtils";
 export async function minimizeProfile(profileFile: string) {
   const profileXml = await parseXmlFile(profileFile);
   // Remove nodes that are present on Permission Sets
-  const nodesToRemove = [
-    "userPermissions",
+  const nodesToRemoveDefault = [
     "classAccesses",
+    "customMetadataTypeAccesses",
     "externalDataSourceAccesses",
     "fieldPermissions",
     "objectPermissions",
     "pageAccesses",
     "tabVisibilities",
-    "customMetadataTypeAccesses",
   ];
+  // Remove more attributes if not admin profile
+  const isAdmin = path.basename(profileFile) === "Admin.profile-meta.xml";
+  if (!isAdmin) {
+    nodesToRemoveDefault.push(...["userPermissions"]);
+  }
+  // Allow to override the list of node to remove at repo level
+  const config = await getConfig("branch");
+  const nodesToRemove = config.minimizeProfilesNodesToRemove || nodesToRemoveDefault;
+  // Remove nodes
   const removed = [];
   for (const node of nodesToRemove) {
     if (profileXml.Profile[node]) {

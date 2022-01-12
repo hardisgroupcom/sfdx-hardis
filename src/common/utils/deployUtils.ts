@@ -479,6 +479,7 @@ export async function deployMetadatas(
     debug: false,
     soap: false,
     targetUsername: null,
+    tryOnce: false,
   }
 ) {
   // Perform deployment
@@ -501,7 +502,7 @@ export async function deployMetadatas(
     });
   } catch (e) {
     // workaround if --soapdeploy is not available
-    if (JSON.stringify(e).includes("--soapdeploy")) {
+    if (JSON.stringify(e).includes("--soapdeploy") && !options.tryOnce === true) {
       uxLog(this, c.yellow("This may be a error with a workaround... let's try it :)"));
       try {
         deployRes = await execCommand(deployCommand.replace(" --soapdeploy", ""), this, {
@@ -523,7 +524,7 @@ export async function deployMetadatas(
         }
       }
     } else {
-      throw e;
+      await checkDeploymentErrors(e, options);
     }
   }
   return deployRes;
@@ -626,4 +627,16 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   }
 
   return packageXmlFull;
+}
+
+async function checkDeploymentErrors(e, options, commandThis = null) {
+  const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+  uxLog(commandThis, c.red(c.bold("Sadly there has been Metadata deployment error(s)...")));
+  uxLog(commandThis, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+  uxLog(
+    commandThis,
+    c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the metadata deployment issues :)`))
+  );
+  await displayDeploymentLink(e.stdout + e.stderr, options);
+  throw new SfdxError("Metadata deployment failure. Check messages above");
 }
