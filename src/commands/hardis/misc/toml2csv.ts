@@ -103,9 +103,9 @@ export default class Toml2Csv extends SfdxCommand {
     // Collect input parameters
     const tomlFile = this.flags.tomlfile;
     const tomlFileEncoding = this.flags.tomlfileencoding || "utf8";
-    this.transfoConfigFile = this.flags.transfoconfig || path.join(path.dirname(tomlFile), "transfoConfig.json");
+    this.transfoConfigFile = this.flags.transfoconfig || path.join(process.cwd(), "transfoConfig.json");
     this.rootConfigDirectory = path.dirname(this.transfoConfigFile);
-    this.outputDir = this.flags.outputdir || path.join(path.dirname(tomlFile), path.parse(tomlFile).name);
+    this.outputDir = this.flags.outputdir || path.join(process.cwd(), path.parse(tomlFile).name);
     const debugMode = this.flags.debug || false;
     this.skipTransfo = this.flags.skiptransfo || false;
 
