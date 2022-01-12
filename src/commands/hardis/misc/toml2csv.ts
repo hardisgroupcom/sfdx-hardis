@@ -83,6 +83,7 @@ export default class Toml2Csv extends SfdxCommand {
   protected csvFiles: string[] = [];
 
   protected sectionLineIds: any = {};
+  protected sectionLines: any = {};
 
   protected stats = {
     sectionLinesNb: 0,
@@ -92,6 +93,7 @@ export default class Toml2Csv extends SfdxCommand {
     dataSuccessLinesNb: 0,
     dataErrorLinesNb: 0,
     dataFilteredLinesNb: 0,
+    dataDuplicatesNb: 0,
     sections: {},
   };
 
@@ -164,8 +166,10 @@ export default class Toml2Csv extends SfdxCommand {
           dataErrorLinesNb: 0,
           dataFilteredLinesNb: 0,
           dataFilterErrorsNb: 0,
+          dataDuplicatesNb: this.transfoConfig?.entities[currentSection]?.removeDuplicates ? 0 : null,
         };
         this.sectionLineIds[currentSection] = [];
+        this.sectionLines[currentSection] = this.sectionLines[currentSection] || [];
         // Init section files writeStreams
         if (this.tomlSectionsFileWriters[currentSection] == null) {
           this.tomlSectionsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, false);
@@ -199,10 +203,12 @@ export default class Toml2Csv extends SfdxCommand {
             const lineSf = lineSplit
               .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
               .join(this.outputFileSeparator);
-            await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
-            this.addLineId(currentSection, lineSplit);
-            this.stats.sections[currentSection].dataSuccessLinesNb++;
-            this.stats.dataSuccessLinesNb++;
+            if (this.checkNotDuplicate(currentSection, lineSf)) {
+              await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
+              this.addLineInCache(currentSection, lineSplit, lineSf);
+              this.stats.sections[currentSection].dataSuccessLinesNb++;
+              this.stats.dataSuccessLinesNb++;
+            }
           }
         } else {
           // With transformation
@@ -219,9 +225,11 @@ export default class Toml2Csv extends SfdxCommand {
                 .join(this.outputFileSeparator) +
               this.outputFileSeparator +
               `"${e.message.replace(/"/g, "'")}"`;
-            await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[currentSection]);
-            this.addLineId(currentSection, lineSplit);
-            e.message;
+            if (this.checkNotDuplicate(currentSection, lineError)) {
+              await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[currentSection]);
+              this.addLineInCache(currentSection, lineSplit, lineError);
+            }
+            uxLog(this, c.red(e.message));
           }
         }
       } else {
@@ -464,11 +472,27 @@ export default class Toml2Csv extends SfdxCommand {
     return res;
   }
 
-  addLineId(currentSection, lineSplit) {
+  addLineInCache(currentSection, lineSplit, lineWrite) {
     if (this.transfoConfig?.entities[currentSection]?.idColNumber) {
       const lineId = lineSplit[this.transfoConfig.entities[currentSection].idColNumber - 1];
       this.sectionLineIds[currentSection].push(lineId);
     }
+    if (this.transfoConfig?.entities[currentSection]?.removeDuplicates) {
+      this.sectionLines[currentSection].push(lineWrite);
+    }
+  }
+
+  checkNotDuplicate(currentSection, lineWrite) {
+    if (this.transfoConfig?.entities[currentSection]?.removeDuplicates) {
+      const isDuplicate = this.sectionLines[currentSection].includes(lineWrite);
+      if (isDuplicate) {
+        this.stats.dataDuplicatesNb++;
+        this.stats.sections[currentSection].dataDuplicatesNb++;
+        return false;
+      }
+      return true;
+    }
+    return true;
   }
 
   triggerError(errorMsg: string, fatal = true) {
