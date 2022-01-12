@@ -448,7 +448,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
   return filesConfig;
 }
 
-export async function countLinesInFile(file:string ) {
+export async function countLinesInFile(file: string) {
   let readError;
   let lineCount = 0;
   return await new Promise((resolve) => {
