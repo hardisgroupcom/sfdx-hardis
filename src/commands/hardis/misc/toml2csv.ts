@@ -82,6 +82,8 @@ export default class Toml2Csv extends SfdxCommand {
 
   protected csvFiles: string[] = [];
 
+  protected sectionLineIds: any = {};
+
   protected stats = {
     sectionLinesNb: 0,
     dataLinesNb: 0,
@@ -89,6 +91,8 @@ export default class Toml2Csv extends SfdxCommand {
     totalLinesNb: 0,
     dataSuccessLinesNb: 0,
     dataErrorLinesNb: 0,
+    dataFilteredLinesNb: 0,
+    sections: {},
   };
 
   /* jscpd:ignore-end */
@@ -150,7 +154,19 @@ export default class Toml2Csv extends SfdxCommand {
       if (line.startsWith("[")) {
         this.stats.sectionLinesNb++;
         currentSection = /\[(.*)\]/gm.exec(line)[1]; // ex: get COMPTES from [COMPTES]
-        this.spinner.text = `Processing section ${currentSection} (data lines: ${this.stats.dataLinesNb}, errors: ${this.stats.dataErrorLinesNb})`;
+        this.spinner.text =
+          `Processing section ${currentSection} (data lines: ${this.stats.dataLinesNb},` +
+          ` errors: ${this.stats.dataErrorLinesNb}, filtered: ${this.stats.dataFilteredLinesNb})`;
+        // Init section variables
+        this.stats.sections[currentSection] = this.stats.sections[currentSection] || {
+          dataLinesNb: 0,
+          dataSuccessLinesNb: 0,
+          dataErrorLinesNb: 0,
+          dataFilteredLinesNb: 0,
+          dataFilterErrorsNb: 0,
+        };
+        this.sectionLineIds[currentSection] = [];
+        // Init section files writeStreams
         if (this.tomlSectionsFileWriters[currentSection] == null) {
           this.tomlSectionsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, false);
           if (!this.skipTransfo) {
@@ -161,18 +177,44 @@ export default class Toml2Csv extends SfdxCommand {
       // CSV line
       else if (currentSection) {
         this.stats.dataLinesNb++;
+        this.stats.sections[currentSection].dataLinesNb++;
+        const lineSplit = line.split(this.inputFileSeparator);
         if (this.skipTransfo) {
-          // No transformation
-          const lineSf = line
-            .split(this.inputFileSeparator)
-            .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
-            .join(this.outputFileSeparator);
-          await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
-          this.stats.dataSuccessLinesNb ;
+          // Without transformation
+          if (this.transfoConfig?.entities[currentSection]?.filters) {
+            // Without transformation but with filter
+            let filtered = false;
+            for (const filter of this.transfoConfig?.entities[currentSection]?.filters) {
+              if (!this.checkFilter(filter, lineSplit, currentSection)) {
+                filtered = true;
+                break;
+              }
+            }
+            if (!filtered) {
+              const lineSf = lineSplit
+                .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
+                .join(this.outputFileSeparator);
+              await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
+              this.addLineId(currentSection, lineSplit);
+              this.stats.sections[currentSection].dataSuccessLinesNb++;
+            } else {
+              this.stats.dataFilteredLinesNb++;
+              this.stats.sections[currentSection].dataFilteredLinesNb++;
+            }
+          } else {
+            // Without transformation and without filters
+            const lineSf = lineSplit
+              .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
+              .join(this.outputFileSeparator);
+            await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
+            this.addLineId(currentSection, lineSplit);
+            this.stats.dataSuccessLinesNb;
+            this.stats.sections[currentSection].dataSuccessLinesNb++;
+          }
         } else {
           // With transformation
           try {
-            await this.convertLineToSfThenWrite(currentSection, line);
+            await this.convertLineToSfThenWrite(currentSection, lineSplit);
           } catch (e) {
             // Manage error
             this.stats.dataErrorLinesNb++;
@@ -184,6 +226,8 @@ export default class Toml2Csv extends SfdxCommand {
               this.outputFileSeparator +
               `"${e.message.replace(/"/g, "'")}"`;
             await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[currentSection]);
+            this.addLineId(currentSection, lineSplit);
+            this.stats.sections[currentSection].dataSuccessLinesNb++;
             e.message;
           }
         }
@@ -272,9 +316,7 @@ export default class Toml2Csv extends SfdxCommand {
   }
 
   // Convert input CSV line into SF Bulk API expected CSV line
-  async convertLineToSfThenWrite(section: string, line: string) {
-    const lineCols = line.split(this.inputFileSeparator);
-
+  async convertLineToSfThenWrite(section: string, lineSplit: string[]) {
     const linesSfArray = [];
 
     // convert into input format
@@ -283,13 +325,13 @@ export default class Toml2Csv extends SfdxCommand {
       // Case when cols are defined line [ {"Name": 0, "FirstName: 1" ...}]
       for (let i = 0; i < this.transfoConfig.entities[section]?.inputFile?.cols.length; i++) {
         const inputColKey = this.transfoConfig.entities[section].inputFile.cols[i];
-        inputCols[inputColKey] = lineCols[i] || "";
+        inputCols[inputColKey] = lineSplit[i] || "";
       }
     } else {
       // Case when cols are not defined: just use positions
-      for (let i = 0; i < lineCols.length; i++) {
+      for (let i = 0; i < lineSplit.length; i++) {
         const humanInputColPos = i + 1;
-        inputCols[humanInputColPos] = lineCols[i] || "";
+        inputCols[humanInputColPos] = lineSplit[i] || "";
       }
     }
     // convert into output format
@@ -319,7 +361,7 @@ export default class Toml2Csv extends SfdxCommand {
     const lineSf = linesSfArray.join(this.outputFileSeparator);
     // Write line with fileWriter
     await this.writeLine(lineSf, this.tomlSectionsFileWriters[section]);
-    this.stats.dataSuccessLinesNb++ ;
+    this.stats.dataSuccessLinesNb++;
   }
 
   // Apply transformations defined in transfoconfig file
@@ -375,6 +417,45 @@ export default class Toml2Csv extends SfdxCommand {
       return this.loadedTranscos[transfo.enum];
     }
     this.triggerError(`Missing transco definition in ${JSON.stringify(transfo)}`, false);
+  }
+
+  checkFilter(filter, lineSplit, currentSection) {
+    try {
+      if (filter.type === "date") {
+        return this.checkFilterDate(filter, lineSplit);
+      } else if (filter.type === "parentId") {
+        return this.checkFilterParentId(filter, lineSplit);
+      }
+    } catch (e) {
+      this.stats.sections[currentSection].dataFilterErrorsNb++;
+      return filter.keepIfFilterCrash === true;
+    }
+    return false;
+  }
+
+  checkFilterDate(filter, lineSplit) {
+    const dateStart = moment(filter.date, filter.dateFormat, true);
+    const colValue = moment(lineSplit[filter.colNumber - 1], filter.colDateFormat, true);
+    const res =
+      filter.typeDtl === "higherThan"
+        ? colValue.isAfter(dateStart, "day")
+        : filter.typeDtl === "lowerThan"
+        ? colValue.isBefore(dateStart, "day")
+        : colValue.isSame(dateStart, "day");
+    return res;
+  }
+
+  checkFilterParentId(filter, lineSplit) {
+    const colValue = lineSplit[filter.idColNumber - 1];
+    const res = (this.sectionLineIds[filter.parentSection] || []).includes(colValue);
+    return res;
+  }
+
+  addLineId(currentSection, lineSplit) {
+    if (this.transfoConfig?.entities[currentSection]?.idColNumber) {
+      const lineId = lineSplit[this.transfoConfig.entities[currentSection].idColNumber - 1];
+      this.sectionLineIds[currentSection].push(lineId);
+    }
   }
 
   triggerError(errorMsg: string, fatal = true) {
