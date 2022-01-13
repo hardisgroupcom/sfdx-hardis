@@ -308,16 +308,17 @@ export async function initOrgData(initDataFolder: string, orgUsername: string) {
 }
 
 // Request the current org to know if it's a sandbox or not
-export async function isSandbox(targetUsername=null, orgAlias: string){
+export async function isSandbox(orgAlias: string){
   const apexScriptCommand = `force:data:soql:query -q "SELECT IsSandbox FROM Organization LIMIT 1" -u ${orgAlias}`;
   uxLog(
     this,
     c.grey(`Request if isSandbox context ${orgAlias}`)
   );
 
-  await execCommand(apexScriptCommand, this, {
+  const organizationQueryRes =  await execSfdxJson(apexScriptCommand, this, {
     fail: true,
-    output: true,
+    output: false,
     debug: this.debugMode,
   });
+  return organizationQueryRes.result.IsSandbox;
 }

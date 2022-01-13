@@ -4,6 +4,7 @@ import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
+import { isSandbox } from "../../common/utils/orgUtils";
 import { CONSTANTS } from "../../config";
 import { buildOrgManifest } from "../utils/deployUtils";
 
@@ -430,6 +431,7 @@ class MetadataUtils {
   // Install package on existing org
   public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null, context = "none") {
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(null, this);
+    const isSandboxContext = await isSandbox(orgAlias);
     for (const package1 of packages) {
       if (
         alreadyInstalled.filter((installedPackage: any) => package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId)
@@ -446,6 +448,13 @@ class MetadataUtils {
           uxLog(
             commandThis,
             c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`)
+          );
+          continue;
+        }
+        if(package1.isProductionPackage && isSandboxContext){
+          uxLog(
+            commandThis,
+            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on production orgs`)
           );
           continue;
         }
