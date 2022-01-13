@@ -263,7 +263,6 @@ export async function initPermissionSetAssignments(permSets: Array<any>, orgUser
     const assignResult = await execSfdxJson(assignCommand, this, {
       fail: false,
       output: false,
-      debug: this.debugMode,
     });
     if (assignResult?.result?.failures?.length > 0 && !assignResult?.result?.failures[0].message.includes("Duplicate")) {
       uxLog(this, c.red(`Error assigning to ${c.bold(permSet.name || permSet)}\n${assignResult?.result?.failures[0].message}`));
@@ -289,7 +288,6 @@ export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: 
     await execCommand(apexScriptCommand, this, {
       fail: true,
       output: true,
-      debug: this.debugMode,
     });
   }
 }

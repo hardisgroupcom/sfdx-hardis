@@ -336,6 +336,40 @@ EXAMPLES
 
 _See code: [lib/commands/hardis/misc/toml2csv.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.66.1/lib/commands/hardis/misc/toml2csv.js)_
 
+## `sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-s] [-o <string>] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Split TOML file into distinct CSV files
+
+```
+USAGE
+  $ sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-s] [-o <string>] [-d] [--websocket <string>] [--json] 
+  [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+  -f, --tomlfile=tomlfile                                                           (required) Input TOML file path
+  -o, --outputdir=outputdir                                                         Output directory
+
+  -s, --skiptransfo                                                                 Do not apply transformation to input
+                                                                                    data
+
+  -t, --transfoconfig=transfoconfig                                                 Path to JSON config file for mapping
+                                                                                    and transformation
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+  --websocket=websocket                                                             Websocket host:port for VsCode SFDX
+                                                                                    Hardis UI integration
+
+EXAMPLE
+  $ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/APICIL/00000200_APICIL-CONNECT_T_2021_09_16_4801889.txt'
+```
+
+_See code: [lib/commands/hardis/misc/toml2csv.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.61.0/lib/commands/hardis/misc/toml2csv.js)_
+
 ## `sfdx hardis:org:configure:data [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Configure Data Export/Import with a SFDMU Project

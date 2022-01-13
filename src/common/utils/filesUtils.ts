@@ -4,6 +4,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as fetch from "@adobe/node-fetch-retry";
 import * as path from "path";
+import * as split from "split";
 import { isCI, uxLog } from ".";
 import { CONSTANTS } from "../../config";
 import { prompts } from "./prompts";
@@ -445,4 +446,26 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
     overwriteFiles: resp.overwriteFiles,
   });
   return filesConfig;
+}
+
+export async function countLinesInFile(file: string) {
+  let readError;
+  let lineCount = 0;
+  return await new Promise((resolve) => {
+    fs.createReadStream(file)
+      .pipe(split())
+      .on("data", () => {
+        lineCount++;
+      })
+      .on("end", () => {
+        if (readError) {
+          return;
+        }
+        resolve(lineCount - 1);
+      })
+      .on("error", (error) => {
+        readError = true;
+        resolve(error);
+      });
+  });
 }

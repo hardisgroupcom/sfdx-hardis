@@ -63,7 +63,7 @@ check_quality:
   except:
     variables:
       - $SCRATCH_ORG_POOL == "true"
-  image: megalinter/megalinter-salesforce:beta
+  image: megalinter/megalinter-salesforce:latest
   script: ["true"]
   variables:
     # All available variables are described in documentation
