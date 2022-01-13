@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.66.2] 2021-01-13
+
+- hardis:misc:toml2csv enhancements
+
 ## [2.66.1] 2021-01-11
 
 - minimizeProfiles: do not remove userPermissions if profile is default Admin profile

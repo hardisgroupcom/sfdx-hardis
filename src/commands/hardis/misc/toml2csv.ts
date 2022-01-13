@@ -27,7 +27,7 @@ export default class Toml2Csv extends SfdxCommand {
     "$ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' ",
     "$ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' ",
     "$ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'",
-    "$ NODE_OPTIONS=--max_old_space_size=9096 sfdx hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' --outputdir './output' --filtersections 'COMPTES,SOUS'"
+    "$ NODE_OPTIONS=--max_old_space_size=9096 sfdx hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' --outputdir './output' --filtersections 'COMPTES,SOUS'",
   ];
 
   protected static flagsConfig = {
