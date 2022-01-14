@@ -300,6 +300,19 @@
       "title": "Instance URL",
       "type": "string"
     },
+    "listViewsToSetToMine": {
+      "$id": "#/properties/listViewsToSetToMine",
+      "default": [],
+      "description": "List of ListView items to set to Mine after a delivery (that does not accept value 'Everything')",
+      "examples": [
+
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "List views to set to Mine",
+      "type": "array"
+    },
     "msTeamsWebhookUrl": {
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",

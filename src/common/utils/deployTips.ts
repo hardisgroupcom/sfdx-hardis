@@ -318,6 +318,14 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 - Org & Scratch: https://developer.salesforce.com/docs/atlas.en-us.workdotcom_dev_guide.meta/workdotcom_dev_guide/wdc_cc_setup_dev_org.htm`,
     },
     {
+      name: "missing-object-package-xml",
+      label: "Missing object referenced in package.xml",
+      expressionRegex: [/An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory/gm],
+      tip: `You can either:
+- Update the package.xml to remove the reference to the missing element
+- Add the missing element in your project source files`,
+    },
+    {
       name: "missing-sales-team",
       label: "Missing Sales Team",
       expressionString: ["related list:RelatedAccountSalesTeam"],
@@ -347,6 +355,20 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 - Perform a search in all code of the picklist value name
 - Remove XML tags referring to unknown picklist value (for example in record types metadatas)
 `,
+    },
+    {
+      name: "profile-default-app",
+      label: "Missing profile default application",
+      expressionString: ["You can't remove the only default app from the profile."],
+      tip: `You must have a default application for a profile. You can:
+ - Update it in UI
+ - Update the XML of the profile to set "true" in the <default> tag of one of the applicationVisibilities item.
+ Ex:
+ <applicationVisibilities>
+    <application>standard__LightningSales</application>
+    <default>true</default>
+    <visible>true</visible>
+</applicationVisibilities>`,
     },
     {
       name: "record-type-not-found",
@@ -429,7 +451,7 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`
       expressionString: ["Unknown user permission:"],
       tip: `You can:
 - enable the related permission in the target org
-- or remove references to permission in source XML files`,
+- or remove references to the permission in source XML files (Probably a Profile or a Permission set)`,
     },
     {
       name: "wave-digest-error",
