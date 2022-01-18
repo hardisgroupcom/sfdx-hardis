@@ -128,7 +128,8 @@ export default class Toml2Csv extends SfdxCommand {
     if (!fs.existsSync(this.transfoConfigFile)) {
       this.triggerError(`Mapping/Transco config ${this.transfoConfigFile} not found`);
     }
-    this.transfoConfig = JSON.parse(fs.readFileSync(this.transfoConfigFile));
+    const transfoConfigInit = JSON.parse(fs.readFileSync(this.transfoConfigFile));
+    this.transfoConfig = this.completeTransfoConfig(transfoConfigInit);
 
     // Set separators
     this.inputFileSeparator = this.transfoConfig?.inputFile?.separator || ",";
@@ -217,7 +218,7 @@ export default class Toml2Csv extends SfdxCommand {
           // Without transformation
           if (!filtered) {
             const lineSf = lineSplit
-              .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
+              .map((val) => (this.inputFileSeparator !== this.outputFileSeparator ? this.formatCsvCell(val) : val)) // Add quotes if value contains a separator
               .join(this.outputFileSeparator);
             if (this.checkNotDuplicate(currentSection, lineSf)) {
               await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
@@ -237,7 +238,7 @@ export default class Toml2Csv extends SfdxCommand {
             const lineError =
               line
                 .split(this.inputFileSeparator)
-                .map((val) => (this.inputFileSeparator !== this.outputFileSeparator && val.includes(this.outputFileSeparator) ? `"${val}"` : val)) // Add quotes if value contains a separator
+                .map((val) => (this.inputFileSeparator !== this.outputFileSeparator ? this.formatCsvCell(val) : val)) // Add quotes if value contains a separator
                 .join(this.outputFileSeparator) +
               this.outputFileSeparator +
               `"${e.message.replace(/"/g, "'")}"`;
@@ -265,7 +266,24 @@ export default class Toml2Csv extends SfdxCommand {
       }
     }
 
+    // Stop spinner
     this.spinner.succeed(`File processing complete of ${this.stats.dataLinesNb} data lines (${this.stats.dataErrorLinesNb} in error)`);
+
+    // Manage file copy to data workspace folders
+    for (const sectionKey of Object.keys(this.transfoConfig.entities)) {
+      const sectionData = this.transfoConfig.entities[sectionKey];
+      if (sectionData?.outputFile?.copyFilePath && this.tomlSectionsFileWriters[sectionKey]) {
+        if (fs.existsSync(sectionData.outputFile.copyFilePath)) {
+          await fs.unlink(sectionData.outputFile.copyFilePath);
+        }
+        if (fs.existsSync(this.tomlSectionsFileWriters[sectionKey].path)) {
+          await fs.copy(this.tomlSectionsFileWriters[sectionKey].path, sectionData.outputFile.copyFilePath);
+          uxLog(this, c.grey(`- copied ${this.tomlSectionsFileWriters[sectionKey].path} to ${sectionData.outputFile.copyFilePath}`));
+        }
+      }
+    }
+
+    // Display summary results
     uxLog(this, c.grey("Stats: \n" + JSON.stringify(this.stats, null, 2)));
     for (const section of Object.keys(this.stats.sections)) {
       const sectionStats = this.stats.sections[section];
@@ -368,23 +386,41 @@ export default class Toml2Csv extends SfdxCommand {
           if (colVal && colDefinition.transfo) {
             colVal = this.manageTransformation(colDefinition.transfo, colVal, colDefinition);
           }
-          linesSfArray.push(colVal.includes(this.outputFileSeparator) ? `"${colVal}"` : colVal); // Add quotes if value contains output file separator
+          linesSfArray.push(colVal); // Add quotes if value contains output file separator
         } else {
           this.triggerError(c.red(`You must have a correspondance in input cols for output col ${colDefinition}`), false);
         }
       }
       // Col definition is a hardcoded value
       else if (colDefinition.hardcodedValue) {
-        linesSfArray.push(
-          colDefinition.hardcodedValue.includes(this.outputFileSeparator) ? `"${colDefinition.hardcodedValue}"` : colDefinition.hardcodedValue // Add quotes if value contains output file separator
-        );
+        linesSfArray.push(colDefinition.hardcodedValue);
+      }
+      // Col definition is a concatenated value
+      else if (colDefinition.concat) {
+        const concatenatedValue = colDefinition.concat
+          .map((concatColName) => {
+            const colNamePosition = this.transfoConfig?.entities[section]?.outputFile?.colOutputPositions?.indexOf(concatColName);
+            if (colNamePosition === null || colNamePosition < 0) {
+              this.triggerError(
+                `Concat error: Unable to find output field "${concatColName}" in ${JSON.stringify(
+                  this.transfoConfig.entities[section].outputFile.colOutputPositions
+                )}`,
+                false
+              );
+            }
+            const colNameValue = linesSfArray[colNamePosition];
+            return colNameValue;
+          })
+          .join(" ");
+        linesSfArray.push(concatenatedValue);
       }
     }
 
     // Join line as CSV, as expected by SF Bulk API
-    const lineSf = linesSfArray.join(this.outputFileSeparator);
+    const lineSf = linesSfArray.map((val) => this.formatCsvCell(val)).join(this.outputFileSeparator);
     // Write line with fileWriter
     await this.writeLine(lineSf, this.tomlSectionsFileWriters[section]);
+    this.stats.sections[section].dataSuccessLinesNb++;
     this.stats.dataSuccessLinesNb++;
   }
 
@@ -511,10 +547,30 @@ export default class Toml2Csv extends SfdxCommand {
     return true;
   }
 
+  completeTransfoConfig(transfoConfig: any) {
+    for (const section of Object.keys(transfoConfig?.entities || [])) {
+      if (transfoConfig.entities[section]?.outputFile?.cols) {
+        const colOutputPositions = transfoConfig.entities[section].outputFile.cols.map((colConfig) => colConfig.name);
+        transfoConfig.entities[section].outputFile.colOutputPositions = colOutputPositions;
+      }
+    }
+    return transfoConfig;
+  }
+
   triggerError(errorMsg: string, fatal = true) {
     if (fatal && this.spinner) {
       this.spinner.fail(errorMsg);
     }
     throw new SfdxError(errorMsg);
+  }
+
+  formatCsvCell(cellVal: string) {
+    if (cellVal.includes('"')) {
+      cellVal = cellVal.replace(/"/g, `""`);
+    }
+    if (cellVal.includes(this.outputFileSeparator)) {
+      cellVal = `"${cellVal}"`;
+    }
+    return cellVal;
   }
 }

@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.67.0] 2021-01-18
+
+- hardis:misc:toml2csv enhancements (rename and copy files)
+- fix minimizing of profiles
+- new command hardis:project:clean:listview
+
 ## [2.66.2] 2021-01-13
 
 - hardis:misc:toml2csv enhancements

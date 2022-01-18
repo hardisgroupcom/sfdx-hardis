@@ -40,7 +40,7 @@ export async function minimizeProfile(profileFile: string) {
   for (const node of nodesHavingDefault) {
     if (profileXml.Profile[node]) {
       const prevLen = profileXml.Profile[node].length;
-      profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => nodeVal.default === true);
+      profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => nodeVal?.default[0] === "true");
       if (profileXml.Profile[node].length !== prevLen) {
         updatedDefaults = true;
       }
