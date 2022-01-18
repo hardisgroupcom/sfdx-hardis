@@ -266,7 +266,24 @@ export default class Toml2Csv extends SfdxCommand {
       }
     }
 
+    // Stop spinner
     this.spinner.succeed(`File processing complete of ${this.stats.dataLinesNb} data lines (${this.stats.dataErrorLinesNb} in error)`);
+
+    // Manage file copy to data workspace folders
+    for (const sectionKey of Object.keys(this.transfoConfig.entities)) {
+      const sectionData = this.transfoConfig.entities[sectionKey];
+      if (sectionData?.outputFile?.copyFilePath && this.tomlSectionsFileWriters[sectionKey]) {
+        if (fs.existsSync(sectionData.outputFile.copyFilePath)){
+          await fs.unlink(sectionData.outputFile.copyFilePath);
+        }
+        if (fs.existsSync(this.tomlSectionsFileWriters[sectionKey].path)){
+          await fs.copy(this.tomlSectionsFileWriters[sectionKey].path,sectionData.outputFile.copyFilePath);
+          uxLog(this,c.grey(`- copied ${this.tomlSectionsFileWriters[sectionKey].path} to ${sectionData.outputFile.copyFilePath}`))
+        }
+      }
+    }
+
+    // Display summary results
     uxLog(this, c.grey("Stats: \n" + JSON.stringify(this.stats, null, 2)));
     for (const section of Object.keys(this.stats.sections)) {
       const sectionStats = this.stats.sections[section];
