@@ -304,9 +304,7 @@
       "$id": "#/properties/listViewsToSetToMine",
       "default": [],
       "description": "List of ListView items to set to Mine after a delivery (that does not accept value 'Everything')",
-      "examples": [
-
-      ],
+      "examples": [],
       "items": {
         "type": "string"
       },

@@ -68,14 +68,14 @@ export default class CleanListViews extends SfdxCommand {
       const listViewXml = await parseXmlFile(listViewfile);
       if (listViewXml.ListView?.filterScope[0] === "Mine") {
         listViewXml.ListView.filterScope[0] = "Everything";
-        uxLog(this,c.grey(`replaced Mine by Everything in ListView ${listViewXml}`));
-        await writeXmlFile(listViewfile,listViewXml);
-        listViewsMine.push(path.relative(process.cwd(),listViewfile).replace(/\\/g, '/'));
-        counter++ ;
+        uxLog(this, c.grey(`replaced Mine by Everything in ListView ${listViewXml}`));
+        await writeXmlFile(listViewfile, listViewXml);
+        listViewsMine.push(path.relative(process.cwd(), listViewfile).replace(/\\/g, "/"));
+        counter++;
       }
     }
-    listViewsMine = [...new Set(listViewsMine)] // Make unique
-    await setConfig("project",{listViewsToSetToMine: listViewsMine});
+    listViewsMine = [...new Set(listViewsMine)]; // Make unique
+    await setConfig("project", { listViewsToSetToMine: listViewsMine });
 
     // Summary
     const msg = `Replaced ${c.green(c.bold(counter))} Mine by Everything in ListViews`;
