@@ -213,19 +213,18 @@ export default class Toml2Csv extends SfdxCommand {
         if (filtered) {
           this.stats.dataFilteredLinesNb++;
           this.stats.sections[currentSection].dataFilteredLinesNb++;
+          continue;
         }
         if (this.skipTransfo) {
           // Without transformation
-          if (!filtered) {
-            const lineSf = lineSplit
-              .map((val) => (this.inputFileSeparator !== this.outputFileSeparator ? this.formatCsvCell(val) : val)) // Add quotes if value contains a separator
-              .join(this.outputFileSeparator);
-            if (this.checkNotDuplicate(currentSection, lineSf)) {
-              await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
-              this.addLineInCache(currentSection, lineSplit, lineSf);
-              this.stats.sections[currentSection].dataSuccessLinesNb++;
-              this.stats.dataSuccessLinesNb++;
-            }
+          const lineSf = lineSplit
+            .map((val) => (this.inputFileSeparator !== this.outputFileSeparator ? this.formatCsvCell(val) : val)) // Add quotes if value contains a separator
+            .join(this.outputFileSeparator);
+          if (this.checkNotDuplicate(currentSection, lineSf)) {
+            await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
+            this.addLineInCache(currentSection, lineSplit, lineSf);
+            this.stats.sections[currentSection].dataSuccessLinesNb++;
+            this.stats.dataSuccessLinesNb++;
           }
         } else {
           // With transformation
@@ -411,7 +410,7 @@ export default class Toml2Csv extends SfdxCommand {
             const colNameValue = linesSfArray[colNamePosition];
             return colNameValue;
           })
-          .join(" ");
+          .join(colDefinition.separator || " ");
         linesSfArray.push(concatenatedValue);
       }
     }
@@ -419,9 +418,13 @@ export default class Toml2Csv extends SfdxCommand {
     // Join line as CSV, as expected by SF Bulk API
     const lineSf = linesSfArray.map((val) => this.formatCsvCell(val)).join(this.outputFileSeparator);
     // Write line with fileWriter
-    await this.writeLine(lineSf, this.tomlSectionsFileWriters[section]);
-    this.stats.sections[section].dataSuccessLinesNb++;
-    this.stats.dataSuccessLinesNb++;
+
+    if (this.checkNotDuplicate(section, lineSf)) {
+      await this.writeLine(lineSf, this.tomlSectionsFileWriters[section]);
+      this.stats.sections[section].dataSuccessLinesNb++;
+      this.stats.dataSuccessLinesNb++;
+      this.addLineInCache(section, lineSplit, lineSf);
+    }
   }
 
   // Apply transformations defined in transfoconfig file
