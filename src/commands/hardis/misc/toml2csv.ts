@@ -93,6 +93,8 @@ export default class Toml2Csv extends SfdxCommand {
   protected sectionLineIds: any = {};
   protected sectionLines: any = {};
 
+  protected lineErrorMessages: any = {};
+
   protected stats = {
     sectionLinesNb: 0,
     dataLinesNb: 0,
@@ -147,7 +149,7 @@ export default class Toml2Csv extends SfdxCommand {
     this.spinner = ora({ text: `Processing...`, spinner: "moon" }).start();
 
     // Read TOML file and process lines section by section
-    const fileStream = fs.createReadStream(tomlFile, { encoding: "utf8" });
+    const fileStream = fs.createReadStream(tomlFile, { encoding: this.transfoConfig?.inputFile?.encoding || "utf8" });
     const rl = readline.createInterface({
       input: fileStream,
       crlfDelay: Infinity,
@@ -245,7 +247,12 @@ export default class Toml2Csv extends SfdxCommand {
               await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[currentSection]);
               this.addLineInCache(currentSection, lineSplit, lineError);
             }
-            uxLog(this, c.red(e.message));
+            if (this.lineErrorMessages[e.message]) {
+              this.lineErrorMessages[e.message]++;
+            } else {
+              this.lineErrorMessages[e.message] = 1;
+              uxLog(this, c.red(e.message));
+            }
           }
         }
       } else {
@@ -282,8 +289,19 @@ export default class Toml2Csv extends SfdxCommand {
       }
     }
 
-    // Display summary results
+    // Display full stats
     uxLog(this, c.grey("Stats: \n" + JSON.stringify(this.stats, null, 2)));
+
+    // Display errors summary
+    if (Object.keys(this.lineErrorMessages)) {
+      uxLog(this, c.yellow("Therehave been parsing errors:"));
+      for (const errMsg of Object.keys(this.lineErrorMessages)) {
+        uxLog(this, c.yellow("- " + this.lineErrorMessages[errMsg] + " lines: " + errMsg));
+      }
+      uxLog(this, "");
+    }
+
+    // Display human-readable stats
     for (const section of Object.keys(this.stats.sections)) {
       const sectionStats = this.stats.sections[section];
       if (sectionStats.dataLinesNb > 0) {
@@ -456,7 +474,7 @@ export default class Toml2Csv extends SfdxCommand {
     const transcodedValue = enumValues[colVal] || transfo.default || "";
     if (transcodedValue === "" && colVal !== "") {
       this.triggerError(
-        `There should be a matching value for ${colVal} in ${JSON.stringify(enumValues)} for column ${JSON.stringify(colDefinition)}`,
+        `There should be a matching value for "${colVal}" in ${JSON.stringify(enumValues)} for column ${JSON.stringify(colDefinition)}`,
         false
       );
     }
