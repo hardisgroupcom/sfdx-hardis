@@ -19,7 +19,16 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class ScratchPoolCreate extends SfdxCommand {
   public static title = "Create and configure scratch org pool";
 
-  public static description = "Select a data storage service and configure information to build a scratch org pool";
+  public static description = `Select a data storage service and configure information to build a scratch org pool
+
+  Then, you need to schedule a daily CI job for the pool maintenance:
+
+  - Define CI ENV variable SCRATCH_ORG_POOL with value "true"
+  - Call the following lines :
+
+  sfdx hardis:auth:login --devhub
+  sfdx hardis:scratch:pool:refresh
+  `;
 
   public static examples = ["$ sfdx hardis:scratch:pool:configure"];
 
