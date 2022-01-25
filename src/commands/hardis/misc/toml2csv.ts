@@ -82,6 +82,7 @@ export default class Toml2Csv extends SfdxCommand {
   protected doFilterSections = false;
 
   protected spinner: any;
+  protected spinnerInterval: any;
   protected inputFileSeparator: string;
   protected outputFileSeparator: string;
   protected tomlSectionsFileWriters: any = {};
@@ -90,6 +91,7 @@ export default class Toml2Csv extends SfdxCommand {
 
   protected csvFiles: string[] = [];
 
+  protected currentSection: string | null = null;
   protected sectionLineIds: any = {};
   protected sectionLines: any = {};
 
@@ -123,12 +125,12 @@ export default class Toml2Csv extends SfdxCommand {
 
     // Check TOML file is existing
     if (!fs.existsSync(tomlFile)) {
-      this.triggerError(`TOML file ${tomlFile} not found`);
+      this.triggerError(c.red(`TOML file ${c.bold(tomlFile)} not found`));
     }
 
     // Read configuration file
     if (!fs.existsSync(this.transfoConfigFile)) {
-      this.triggerError(`Mapping/Transco config ${this.transfoConfigFile} not found`);
+      this.triggerError(c.red(`Mapping/Transco config ${c.bold(this.transfoConfigFile)} not found`));
     }
     const transfoConfigInit = JSON.parse(fs.readFileSync(this.transfoConfigFile));
     this.transfoConfig = this.completeTransfoConfig(transfoConfigInit);
@@ -147,6 +149,9 @@ export default class Toml2Csv extends SfdxCommand {
 
     // Start spinner
     this.spinner = ora({ text: `Processing...`, spinner: "moon" }).start();
+    this.spinnerInterval = setInterval(() => {
+      this.updateSpinner();
+    }, 10000);
 
     // Read TOML file and process lines section by section
     const fileStream = fs.createReadStream(tomlFile, { encoding: this.transfoConfig?.inputFile?.encoding || "utf8" });
@@ -154,7 +159,6 @@ export default class Toml2Csv extends SfdxCommand {
       input: fileStream,
       crlfDelay: Infinity,
     });
-    let currentSection = null;
     for await (const line of rl) {
       this.stats.totalLinesNb++;
       if (debugMode) {
@@ -168,45 +172,43 @@ export default class Toml2Csv extends SfdxCommand {
       // Section line
       if (line.startsWith("[")) {
         this.stats.sectionLinesNb++;
-        currentSection = /\[(.*)\]/gm.exec(line)[1]; // ex: get COMPTES from [COMPTES]
-        if (this.doFilterSections && !this.filterSections.includes(currentSection)) {
+        this.currentSection = /\[(.*)\]/gm.exec(line)[1]; // ex: get COMPTES from [COMPTES]
+        if (this.doFilterSections && !this.filterSections.includes(this.currentSection)) {
           continue;
         }
-        this.spinner.text =
-          `Processing section ${currentSection} (data lines: ${this.stats.dataLinesNb},` +
-          ` errors: ${this.stats.dataErrorLinesNb}, filtered: ${this.stats.dataFilteredLinesNb})`;
+        this.updateSpinner();
         // Init section variables
-        this.stats.sections[currentSection] = this.stats.sections[currentSection] || {
+        this.stats.sections[this.currentSection] = this.stats.sections[this.currentSection] || {
           dataLinesNb: 0,
           dataSuccessLinesNb: 0,
           dataErrorLinesNb: 0,
           dataFilteredLinesNb: 0,
           dataFilterErrorsNb: 0,
-          dataDuplicatesNb: this.transfoConfig?.entities[currentSection]?.removeDuplicates ? 0 : null,
+          dataDuplicatesNb: this.transfoConfig?.entities[this.currentSection]?.removeDuplicates ? 0 : null,
         };
-        this.sectionLineIds[currentSection] = [];
-        this.sectionLines[currentSection] = this.sectionLines[currentSection] || [];
+        this.sectionLineIds[this.currentSection] = [];
+        this.sectionLines[this.currentSection] = this.sectionLines[this.currentSection] || [];
         // Init section files writeStreams
-        if (this.tomlSectionsFileWriters[currentSection] == null) {
-          this.tomlSectionsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, false);
+        if (this.tomlSectionsFileWriters[this.currentSection] == null) {
+          this.tomlSectionsFileWriters[this.currentSection] = await this.createSectionWriteStream(this.currentSection, false);
           if (!this.skipTransfo) {
-            this.tomlSectionsErrorsFileWriters[currentSection] = await this.createSectionWriteStream(currentSection, true);
+            this.tomlSectionsErrorsFileWriters[this.currentSection] = await this.createSectionWriteStream(this.currentSection, true);
           }
         }
       }
       // CSV line
-      else if (currentSection) {
-        if (this.doFilterSections && !this.filterSections.includes(currentSection)) {
+      else if (this.currentSection) {
+        if (this.doFilterSections && !this.filterSections.includes(this.currentSection)) {
           continue;
         }
         this.stats.dataLinesNb++;
-        this.stats.sections[currentSection].dataLinesNb++;
+        this.stats.sections[this.currentSection].dataLinesNb++;
         const lineSplit = line.split(this.inputFileSeparator);
         // Check if line has to be filtered
         let filtered = false;
-        if (this.transfoConfig?.entities[currentSection]?.filters) {
-          for (const filter of this.transfoConfig?.entities[currentSection]?.filters) {
-            if (!this.checkFilter(filter, lineSplit, currentSection)) {
+        if (this.transfoConfig?.entities[this.currentSection]?.filters) {
+          for (const filter of this.transfoConfig?.entities[this.currentSection]?.filters) {
+            if (!this.checkFilter(filter, lineSplit, this.currentSection)) {
               filtered = true;
               break;
             }
@@ -214,7 +216,7 @@ export default class Toml2Csv extends SfdxCommand {
         }
         if (filtered) {
           this.stats.dataFilteredLinesNb++;
-          this.stats.sections[currentSection].dataFilteredLinesNb++;
+          this.stats.sections[this.currentSection].dataFilteredLinesNb++;
           continue;
         }
         if (this.skipTransfo) {
@@ -222,20 +224,20 @@ export default class Toml2Csv extends SfdxCommand {
           const lineSf = lineSplit
             .map((val) => (this.inputFileSeparator !== this.outputFileSeparator ? this.formatCsvCell(val) : val)) // Add quotes if value contains a separator
             .join(this.outputFileSeparator);
-          if (this.checkNotDuplicate(currentSection, lineSf)) {
-            await this.writeLine(lineSf, this.tomlSectionsFileWriters[currentSection]);
-            this.addLineInCache(currentSection, lineSplit, lineSf);
-            this.stats.sections[currentSection].dataSuccessLinesNb++;
+          if (this.checkNotDuplicate(this.currentSection, lineSf)) {
+            await this.writeLine(lineSf, this.tomlSectionsFileWriters[this.currentSection]);
+            this.addLineInCache(this.currentSection, lineSplit, lineSf);
+            this.stats.sections[this.currentSection].dataSuccessLinesNb++;
             this.stats.dataSuccessLinesNb++;
           }
         } else {
           // With transformation
           try {
-            await this.convertLineToSfThenWrite(currentSection, lineSplit);
+            await this.convertLineToSfThenWrite(this.currentSection, lineSplit);
           } catch (e) {
             // Manage error
             this.stats.dataErrorLinesNb++;
-            this.stats.sections[currentSection].dataErrorLinesNb++;
+            this.stats.sections[this.currentSection].dataErrorLinesNb++;
             const lineError =
               line
                 .split(this.inputFileSeparator)
@@ -243,9 +245,9 @@ export default class Toml2Csv extends SfdxCommand {
                 .join(this.outputFileSeparator) +
               this.outputFileSeparator +
               `"${e.message.replace(/"/g, "'")}"`;
-            if (this.checkNotDuplicate(currentSection, lineError)) {
-              await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[currentSection]);
-              this.addLineInCache(currentSection, lineSplit, lineError);
+            if (this.checkNotDuplicate(this.currentSection, lineError)) {
+              await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[this.currentSection]);
+              this.addLineInCache(this.currentSection, lineSplit, lineError);
             }
             if (this.lineErrorMessages[e.message]) {
               this.lineErrorMessages[e.message]++;
@@ -273,6 +275,7 @@ export default class Toml2Csv extends SfdxCommand {
     }
 
     // Stop spinner
+    clearInterval(this.spinnerInterval);
     this.spinner.succeed(`File processing complete of ${this.stats.dataLinesNb} data lines (${this.stats.dataErrorLinesNb} in error)`);
 
     // Manage file copy to data workspace folders
@@ -294,7 +297,7 @@ export default class Toml2Csv extends SfdxCommand {
 
     // Display errors summary
     if (Object.keys(this.lineErrorMessages)) {
-      uxLog(this, c.yellow("Therehave been parsing errors:"));
+      uxLog(this, c.yellow("There have been parsing errors:"));
       for (const errMsg of Object.keys(this.lineErrorMessages)) {
         uxLog(this, c.yellow("- " + this.lineErrorMessages[errMsg] + " lines: " + errMsg));
       }
@@ -315,6 +318,13 @@ export default class Toml2Csv extends SfdxCommand {
       c.cyan(`TOML file ${c.green(tomlFile)} has been split into ${c.green(this.csvFiles.length)} CSV files in directory ${c.green(this.outputDir)}`)
     );
     return { outputString: message, csvfiles: this.csvFiles, stats: this.stats };
+  }
+
+  updateSpinner() {
+    this.spinner.text =
+      `Processing section ${this.currentSection} (total lines: ${this.stats.dataLinesNb},` +
+      ` success: ${this.stats.dataSuccessLinesNb},` +
+      ` errors: ${this.stats.dataErrorLinesNb}, filtered: ${this.stats.dataFilteredLinesNb})`;
   }
 
   // Create output write stream for section
@@ -398,11 +408,27 @@ export default class Toml2Csv extends SfdxCommand {
       // Col definition is the position or the name of a column in input file
       if (colDefinition.inputColKey || colDefinition.inputColKey === 0) {
         if (inputCols[colDefinition.inputColKey] || inputCols[colDefinition.inputColKey] === "" || inputCols[colDefinition.inputColKey] === 0) {
-          let colVal = inputCols[colDefinition.inputColKey] || "";
+          let colVal: string = inputCols[colDefinition.inputColKey] || "";
           // Transform if necessary
-          if (colVal && colDefinition.transfo) {
+          if (colDefinition.transfo) {
             colVal = this.manageTransformation(colDefinition.transfo, colVal, colDefinition);
           }
+          // Manage missing required value
+          if (colDefinition?.required === true && colVal === "") {
+            this.triggerError(
+              c.red(
+                `${c.bold(this.transfoConfig.entities[this.currentSection].outputFile.salesforceObjectApiName)}.${c.bold(
+                  colDefinition.name
+                )}: Missing required value`
+              ),
+              false
+            );
+          }
+          // Manage truncate value
+          if (colDefinition?.truncate && colVal.length > colDefinition.truncate) {
+            colVal = colVal.substring(0, colDefinition.truncate - 1);
+          }
+          // Add cell in line
           linesSfArray.push(colVal); // Add quotes if value contains output file separator
         } else {
           this.triggerError(c.red(`You must have a correspondance in input cols for output col ${colDefinition}`), false);
@@ -474,7 +500,11 @@ export default class Toml2Csv extends SfdxCommand {
     const transcodedValue = enumValues[colVal] || transfo.default || "";
     if (transcodedValue === "" && colVal !== "") {
       this.triggerError(
-        `There should be a matching value for "${colVal}" in ${JSON.stringify(enumValues)} for column ${JSON.stringify(colDefinition)}`,
+        c.red(
+          `${c.bold(this.transfoConfig.entities[this.currentSection].outputFile.salesforceObjectApiName)}.${c.bold(
+            colDefinition.name
+          )}: Missing matching value for ${c.bold(colVal)} in ${c.grey(JSON.stringify(Object.keys(enumValues)))}`
+        ),
         false
       );
     }
@@ -492,12 +522,12 @@ export default class Toml2Csv extends SfdxCommand {
       // Load enum in memory
       const transcoFile = path.join(this.rootConfigDirectory, "enums", `${transfo.enum}.json`);
       if (!fs.existsSync(transcoFile)) {
-        this.triggerError(`Missing transco file ${transcoFile} for enum ${transfo.enum}`, false);
+        this.triggerError(`Missing transco file ${c.bold(transcoFile)} for enum ${c.bold(transfo.enum)}`, false);
       }
       this.loadedTranscos[transfo.enum] = JSON.parse(fs.readFileSync(transcoFile));
       return this.loadedTranscos[transfo.enum];
     }
-    this.triggerError(`Missing transco definition in ${JSON.stringify(transfo)}`, false);
+    this.triggerError(`Missing transco definition in ${c.bold(JSON.stringify(transfo))}`, false);
   }
 
   checkFilter(filter, lineSplit, currentSection) {
@@ -580,6 +610,7 @@ export default class Toml2Csv extends SfdxCommand {
 
   triggerError(errorMsg: string, fatal = true) {
     if (fatal && this.spinner) {
+      clearInterval(this.spinnerInterval);
       this.spinner.fail(errorMsg);
     }
     throw new SfdxError(errorMsg);
