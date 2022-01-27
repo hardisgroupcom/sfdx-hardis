@@ -142,8 +142,10 @@ export default class Toml2Csv extends SfdxCommand {
     // Create output directory if not existing yet
     await fs.ensureDir(this.outputDir);
     // Empty output dir
-    await fs.emptyDir(this.outputDir);
-    await fs.ensureDir(path.join(this.outputDir, "errors"));
+    if (!this.transfoConfig?.skipResetOutputDir === true) {
+      await fs.emptyDir(this.outputDir);
+      await fs.ensureDir(path.join(this.outputDir, "errors"));
+    }
 
     uxLog(this, c.cyan(`Generating CSV files from ${c.green(tomlFile)} (encoding ${tomlFileEncoding}) into folder ${c.green(this.outputDir)}`));
 
@@ -348,7 +350,7 @@ export default class Toml2Csv extends SfdxCommand {
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: "utf8" });
       // Create CSV Header
-      let headerLine = this.transfoConfig?.entities[section]?.outputFile?.cols
+      let headerLine = (this.transfoConfig?.entities[section]?.outputFile?.cols || [])
         .map((colDescription: any) => colDescription.name)
         .join(this.outputFileSeparator);
       if (errMode) {
@@ -392,7 +394,7 @@ export default class Toml2Csv extends SfdxCommand {
     const inputCols: any = {};
     if (this.transfoConfig.entities[section]?.inputFile?.cols) {
       // Case when cols are defined line [ {"Name": 0, "FirstName: 1" ...}]
-      for (let i = 0; i < this.transfoConfig.entities[section]?.inputFile?.cols.length; i++) {
+      for (let i = 0; i < this.transfoConfig.entities[section].inputFile.cols.length; i++) {
         const inputColKey = this.transfoConfig.entities[section].inputFile.cols[i];
         inputCols[inputColKey] = lineSplit[i] || "";
       }
@@ -404,7 +406,7 @@ export default class Toml2Csv extends SfdxCommand {
       }
     }
     // convert into output format
-    for (const colDefinition of this.transfoConfig.entities[section].outputFile.cols) {
+    for (const colDefinition of this.transfoConfig.entities[section]?.outputFile?.cols || []) {
       // Col definition is the position or the name of a column in input file
       if (colDefinition.inputColKey || colDefinition.inputColKey === 0) {
         if (inputCols[colDefinition.inputColKey] || inputCols[colDefinition.inputColKey] === "" || inputCols[colDefinition.inputColKey] === 0) {
