@@ -89,6 +89,11 @@ export default class CleanReferences extends SfdxCommand {
       title: "References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5",
     },
     {
+      value: "listViewsMine",
+      title: `Convert scope "Everything" into scope "Mine" on ListViews`,
+      command: "sfdx hardis:project:clean:listviews",
+    },
+    {
       value: "minimizeProfiles",
       title: "Remove profile attributes that exists on permission sets",
       command: "sfdx hardis:project:clean:minimizeprofiles",

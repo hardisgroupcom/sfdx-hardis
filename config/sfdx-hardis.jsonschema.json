@@ -10,7 +10,16 @@
       "examples": [["dashboards", "datadotcom", "destructivechanges"]],
       "items": {
         "type": "string",
-        "enum": ["caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields", "minimizeProfiles", "productrequest"]
+        "enum": [
+          "caseentitlement",
+          "dashboards",
+          "datadotcom",
+          "destructivechanges",
+          "localfields",
+          "listViewsMine",
+          "minimizeProfiles",
+          "productrequest"
+        ]
       },
       "title": "Auto-Cleaning types",
       "type": "array"
