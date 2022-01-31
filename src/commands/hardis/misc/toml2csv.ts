@@ -249,7 +249,7 @@ export default class Toml2Csv extends SfdxCommand {
               `"${e.message.replace(/"/g, "'")}"`;
             if (this.checkNotDuplicate(this.currentSection, lineError)) {
               await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[this.currentSection]);
-              this.addLineInCache(this.currentSection, lineSplit, lineError);
+              this.addLineInCache(this.currentSection, lineSplit, lineError, false);
             }
             if (this.lineErrorMessages[e.message]) {
               this.lineErrorMessages[e.message]++;
@@ -469,7 +469,7 @@ export default class Toml2Csv extends SfdxCommand {
       await this.writeLine(lineSf, this.tomlSectionsFileWriters[section]);
       this.stats.sections[section].dataSuccessLinesNb++;
       this.stats.dataSuccessLinesNb++;
-      this.addLineInCache(section, lineSplit, lineSf);
+      this.addLineInCache(section, lineSplit, lineSf, true);
     }
   }
 
@@ -577,8 +577,8 @@ export default class Toml2Csv extends SfdxCommand {
     return res;
   }
 
-  addLineInCache(currentSection, lineSplit, lineWrite) {
-    if (this.transfoConfig?.entities[currentSection]?.idColNumber) {
+  addLineInCache(currentSection, lineSplit, lineWrite, success=true) {
+    if (success && this.transfoConfig?.entities[currentSection]?.idColNumber) {
       const lineId = lineSplit[this.transfoConfig.entities[currentSection].idColNumber - 1];
       this.sectionLineIds[currentSection].push(lineId);
     }
