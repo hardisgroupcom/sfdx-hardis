@@ -4,29 +4,34 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.67.1] 2021-01-20
+## [2.68.0] 2022-01-31
+
+- Do not create log files in the current directory if it is empty
+
+## [2.67.1] 2022-01-20
 
 - Enhance documentation for hardis:scratch:pool:create command
 - Fixes and enhancements on toml2csv command
-## [2.67.0] 2021-01-18
+
+## [2.67.0] 2022-01-18
 
 - hardis:misc:toml2csv enhancements (rename and copy files)
 - fix minimizing of profiles
 - new command hardis:project:clean:listview
 
-## [2.66.2] 2021-01-13
+## [2.66.2] 2022-01-13
 
 - hardis:misc:toml2csv enhancements
 
-## [2.66.1] 2021-01-11
+## [2.66.1] 2022-01-11
 
 - minimizeProfiles: do not remove userPermissions if profile is default Admin profile
 
-## [2.66.0] 2021-01-07
+## [2.66.0] 2022-01-07
 
 - Check deployment with metadata project
 
-## [2.65.0] 2021-01-05
+## [2.65.0] 2022-01-05
 
 - Fix contribution install by upgrading dependencies
 - Use soqlQuery method everywhere
