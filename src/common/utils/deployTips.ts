@@ -352,8 +352,8 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
       label: "Picklist value not found",
       expressionRegex: [/Picklist value: (.*) in picklist: (.*) not found/gm],
       tip: `Some element have references to missing picklist value(e)
-- Perform a search in all code of the picklist value name
-- Remove XML tags referring to unknown picklist value (for example in record types metadatas)
+- If the picklist is standard, add the picklist to sfdx sources by using "sfdx force:source:retrieve -m StandardValueSet:CaseType" for example, then save again
+- Else, perform a search in all code of the picklist value name, then remove XML tags referring to unknown picklist value (for example in record types metadatas)
 `,
     },
     {

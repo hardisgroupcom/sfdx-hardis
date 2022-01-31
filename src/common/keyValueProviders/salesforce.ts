@@ -89,10 +89,16 @@ You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
 - Field SfdxHardisKeyValueStore__c.ValueText__c of type TextArea (long) (with maximum size 131072 chars)
       `)
       );
+      uxLog(this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
       throw e;
     }
     // Initialize storage
-    await setPoolStorage({}, options);
+    try {
+      await setPoolStorage({}, options);
+    } catch (e) {
+      uxLog(this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
+    }
+
     uxLog(this, c.green("Created KeyValue storage on Salesforce org"));
     return true;
   }

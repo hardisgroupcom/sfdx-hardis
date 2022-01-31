@@ -1,5 +1,6 @@
 import * as fs from "fs-extra";
 import * as path from "path";
+import * as os from "os";
 import { isCI } from "../../common/utils";
 
 export const hook = async (options: any) => {
@@ -13,8 +14,8 @@ export const hook = async (options: any) => {
     process.env.SFDX_ENV = "development"; // So when there is an error, the stack is displayed
   }
   if (!isCI) {
-    // Initialize log file name
-    const reportsDir = "./hardis-report";
+    // Initialize log file name (in the current directory if not empty)
+    const reportsDir = fs.readdirSync(process.cwd()).length === 0 ? path.join(os.tmpdir(), "hardis-report") : "./hardis-report";
     await fs.ensureDir(reportsDir);
     const commandsLogFolder = path.join(reportsDir, "commands");
     await fs.ensureDir(commandsLogFolder);

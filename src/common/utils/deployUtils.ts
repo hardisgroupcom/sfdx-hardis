@@ -201,7 +201,7 @@ export async function forceSourceDeploy(
 }
 
 export function truncateProgressLogLines(rawLog: string) {
-  const rawLogCleaned = rawLog.replace(/(SOURCE PROGRESS \|.*\n)/gm, "");
+  const rawLogCleaned = rawLog.replace(/(SOURCE PROGRESS \|.*\n)/gm, "").replace(/(MDAPI PROGRESS \|.*\n)/gm, "");
   return rawLogCleaned;
 }
 
