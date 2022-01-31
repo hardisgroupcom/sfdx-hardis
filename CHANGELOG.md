@@ -7,6 +7,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.68.0] 2022-01-31
 
 - Do not create log files in the current directory if it is empty
+- More deployTips
+- Clean MDAPI output logs from progression lines
+- Add listViewMine in cleaning references
+- toml2csv updates
 
 ## [2.67.1] 2022-01-20
 
