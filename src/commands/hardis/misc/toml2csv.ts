@@ -577,7 +577,7 @@ export default class Toml2Csv extends SfdxCommand {
     return res;
   }
 
-  addLineInCache(currentSection, lineSplit, lineWrite, success=true) {
+  addLineInCache(currentSection, lineSplit, lineWrite, success = true) {
     if (success && this.transfoConfig?.entities[currentSection]?.idColNumber) {
       const lineId = lineSplit[this.transfoConfig.entities[currentSection].idColNumber - 1];
       this.sectionLineIds[currentSection].push(lineId);
