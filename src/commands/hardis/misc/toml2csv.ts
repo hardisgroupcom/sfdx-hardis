@@ -442,21 +442,13 @@ export default class Toml2Csv extends SfdxCommand {
       }
       // Col definition is a concatenated value
       else if (colDefinition.concat) {
-        const concatenatedValue = colDefinition.concat
-          .map((concatColName) => {
-            const colNamePosition = this.transfoConfig?.entities[section]?.outputFile?.colOutputPositions?.indexOf(concatColName);
-            if (colNamePosition === null || colNamePosition < 0) {
-              this.triggerError(
-                `Concat error: Unable to find output field "${concatColName}" in ${JSON.stringify(
-                  this.transfoConfig.entities[section].outputFile.colOutputPositions
-                )}`,
-                false
-              );
-            }
-            const colNameValue = linesSfArray[colNamePosition];
-            return colNameValue;
-          })
-          .join(colDefinition.separator || " ");
+        const concatFields = colDefinition.concat;
+        const concatenatedValue = this.processConcat(concatFields, section, linesSfArray, colDefinition);
+        linesSfArray.push(concatenatedValue);
+      } else if (colDefinition.concatComposite) {
+        const concatFields = colDefinition.name.split("$").filter((fieldName) => fieldName !== "");
+        colDefinition.separator = colDefinition.separator || ";";
+        const concatenatedValue = this.processConcat(concatFields, section, linesSfArray, colDefinition);
         linesSfArray.push(concatenatedValue);
       }
     }
@@ -471,6 +463,25 @@ export default class Toml2Csv extends SfdxCommand {
       this.stats.dataSuccessLinesNb++;
       this.addLineInCache(section, lineSplit, lineSf, true);
     }
+  }
+
+  processConcat(fields, section, linesSfArray, colDefinition) {
+    const concatenatedValues = fields
+      .map((concatColName) => {
+        const colNamePosition = this.transfoConfig?.entities[section]?.outputFile?.colOutputPositions?.indexOf(concatColName);
+        if (colNamePosition === null || colNamePosition < 0) {
+          this.triggerError(
+            `Concat error: Unable to find output field "${concatColName}" in ${JSON.stringify(
+              this.transfoConfig.entities[section].outputFile.colOutputPositions
+            )}`,
+            false
+          );
+        }
+        const colNameValue = linesSfArray[colNamePosition];
+        return colNameValue;
+      })
+      .join(colDefinition.separator || " ");
+    return concatenatedValues;
   }
 
   // Apply transformations defined in transfoconfig file

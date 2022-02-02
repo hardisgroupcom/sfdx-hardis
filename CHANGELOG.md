@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.68.1] 2022-02-02
+
+- Add concatComposite option for toml2csv
+
 ## [2.68.0] 2022-01-31
 
 - Do not create log files in the current directory if it is empty
