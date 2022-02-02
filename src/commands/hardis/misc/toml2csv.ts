@@ -10,6 +10,7 @@ import * as path from "path";
 import * as readline from "readline";
 import { uxLog } from "../../../common/utils";
 import { countLinesInFile } from "../../../common/utils/filesUtils";
+import { getRecordTypeId } from "../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -65,13 +66,13 @@ export default class Toml2Csv extends SfdxCommand {
   };
 
   // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
+  protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
   // protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  protected static requiresProject = true;
 
   protected transfoConfig: any = {};
   protected transfoConfigFile: string;
@@ -445,11 +446,21 @@ export default class Toml2Csv extends SfdxCommand {
         const concatFields = colDefinition.concat;
         const concatenatedValue = this.processConcat(concatFields, section, linesSfArray, colDefinition);
         linesSfArray.push(concatenatedValue);
-      } else if (colDefinition.concatComposite) {
+      }
+      // Col definition is a composite concatenated value (Virtual unique key for SFDMU)
+      else if (colDefinition.concatComposite) {
         const concatFields = colDefinition.name.split("$").filter((fieldName) => fieldName !== "");
         colDefinition.separator = colDefinition.separator || ";";
         const concatenatedValue = this.processConcat(concatFields, section, linesSfArray, colDefinition);
         linesSfArray.push(concatenatedValue);
+      }
+      // Get record type Id
+      else if (colDefinition.recordType) {
+        const recordTypeId = await getRecordTypeId(colDefinition.recordType, this.org.getConnection());
+        if (recordTypeId === null) {
+          this.triggerError(`No RecordTypeId found for ${JSON.stringify(colDefinition.recordType)}`, true);
+        }
+        linesSfArray.push(recordTypeId);
       }
     }
 
