@@ -6,7 +6,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.68.1] 2022-02-02
 
-- Add concatComposite option for toml2csv
+- toml2csv:
+  - Add concatComposite option for column
+  - Add recordType option for column
 
 ## [2.68.0] 2022-01-31
 

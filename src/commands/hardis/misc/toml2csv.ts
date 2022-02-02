@@ -8,6 +8,7 @@ import moment = require("moment");
 import ora = require("ora");
 import * as path from "path";
 import * as readline from "readline";
+import stripAnsi = require("strip-ansi");
 import { uxLog } from "../../../common/utils";
 import { countLinesInFile } from "../../../common/utils/filesUtils";
 import { getRecordTypeId } from "../../../common/utils/orgUtils";
@@ -247,7 +248,7 @@ export default class Toml2Csv extends SfdxCommand {
                 .map((val) => (this.inputFileSeparator !== this.outputFileSeparator ? this.formatCsvCell(val) : val)) // Add quotes if value contains a separator
                 .join(this.outputFileSeparator) +
               this.outputFileSeparator +
-              `"${e.message.replace(/"/g, "'")}"`;
+              stripAnsi(`"${e.message.replace(/"/g, "'")}"`);
             if (this.checkNotDuplicate(this.currentSection, lineError)) {
               await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[this.currentSection]);
               this.addLineInCache(this.currentSection, lineSplit, lineError, false);
@@ -299,7 +300,7 @@ export default class Toml2Csv extends SfdxCommand {
     uxLog(this, c.grey("Stats: \n" + JSON.stringify(this.stats, null, 2)));
 
     // Display errors summary
-    if (Object.keys(this.lineErrorMessages)) {
+    if (Object.keys(this.lineErrorMessages).length > 0) {
       uxLog(this, c.yellow("There have been parsing errors:"));
       for (const errMsg of Object.keys(this.lineErrorMessages)) {
         uxLog(this, c.yellow("- " + this.lineErrorMessages[errMsg] + " lines: " + errMsg));
