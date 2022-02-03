@@ -24,6 +24,16 @@
       "title": "Auto-Cleaning types",
       "type": "array"
     },
+    "autoRemoveUserPermissions": {
+      "$id": "#/properties/autoRemoveUserPermissions",
+      "description": "When saving a sfdx-hardis task, these permissions will be removed from profiles",
+      "examples": [["EnableCommunityAppLauncher", "FieldServiceAccess", "OmnichannelInventorySync"]],
+      "items": {
+        "type": "string"
+      },
+      "title": "Auto-Remove User Permissions on profiles",
+      "type": "array"
+    },
     "apexTestsMinCoverageOrgWide": {
       "$id": "#/properties/apexTestsMinCoverageOrgWide",
       "default": 75.0,

@@ -46,9 +46,22 @@ export async function minimizeProfile(profileFile: string) {
       }
     }
   }
+
+  // Additional user permissions to remove (defined in .sfdx-hardis autoRemoveUserPermissions property)
+  let updatedUserPerms = false;
+  if (profileXml.Profile["userPermissions"]) {
+    const prevLen1 = profileXml.Profile["userPermissions"].length;
+    profileXml.Profile["userPermissions"] = profileXml.Profile["userPermissions"].filter((userPermission) => {
+      return !(config.autoRemoveUserPermissions || []).includes(userPermission.name[0]);
+    });
+    if (profileXml.Profile["userPermissions"].length !== prevLen1) {
+      updatedUserPerms = true;
+    }
+  }
+
   // Update profile file
   let updated = false;
-  if (removed.length > 1 || updatedDefaults === true) {
+  if (removed.length > 1 || updatedDefaults === true || updatedUserPerms === true) {
     updated = true;
     await writeXmlFile(profileFile, profileXml);
     uxLog(
