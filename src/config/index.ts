@@ -16,7 +16,7 @@ import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as os from "os";
 import * as path from "path";
-import { getCurrentGitBranch, isGitRepo, uxLog } from "../common/utils";
+import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from "../common/utils";
 import { prompts } from "../common/utils/prompts";
 
 const moduleName = "sfdx-hardis";
@@ -90,7 +90,9 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   if (explorer != null) {
     explorer.clearCaches();
   }
-  uxLog(this, c.magentaBright(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`));
+  if (!isCI) {
+    uxLog(this, c.magentaBright(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`));
+  }
 }
 
 // Check configuration of project so it works with sfdx-hardis

@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.68.1] 2022-02-02
+
+- Allow property autoRemoveUserPermissions in .sfdx-hardis.yml to clean profiles
+- toml2csv:
+  - Add concatComposite option for column
+  - Add recordType option for column
+
 ## [2.68.0] 2022-01-31
 
 - Do not create log files in the current directory if it is empty

@@ -34,7 +34,13 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class SaveTask extends SfdxCommand {
   public static title = "Save work task";
 
-  public static description = messages.getMessage("completeWorkTask");
+  public static description = `When a work task is completed, guide user to create a merge request
+
+  Some properties can be defined in .sfdx-hardis.yml
+
+  - autocleantypes: List of auto-performed sources cleanings, available on command hardis:project:clean:references
+  - autoRemoveUserPermissions: List of userPermission to automatically remove from profile metadatas
+  `;
 
   public static examples = ["$ sfdx hardis:work:task:save", "$ sfdx hardis:work:task:save --nopull --nogit --noclean"];
 

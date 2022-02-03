@@ -8,8 +8,10 @@ import moment = require("moment");
 import ora = require("ora");
 import * as path from "path";
 import * as readline from "readline";
+import stripAnsi = require("strip-ansi");
 import { uxLog } from "../../../common/utils";
 import { countLinesInFile } from "../../../common/utils/filesUtils";
+import { getRecordTypeId } from "../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -65,13 +67,13 @@ export default class Toml2Csv extends SfdxCommand {
   };
 
   // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
+  protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
   // protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  protected static requiresProject = true;
 
   protected transfoConfig: any = {};
   protected transfoConfigFile: string;
@@ -246,7 +248,7 @@ export default class Toml2Csv extends SfdxCommand {
                 .map((val) => (this.inputFileSeparator !== this.outputFileSeparator ? this.formatCsvCell(val) : val)) // Add quotes if value contains a separator
                 .join(this.outputFileSeparator) +
               this.outputFileSeparator +
-              `"${e.message.replace(/"/g, "'")}"`;
+              stripAnsi(`"${e.message.replace(/"/g, "'")}"`);
             if (this.checkNotDuplicate(this.currentSection, lineError)) {
               await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[this.currentSection]);
               this.addLineInCache(this.currentSection, lineSplit, lineError, false);
@@ -298,7 +300,7 @@ export default class Toml2Csv extends SfdxCommand {
     uxLog(this, c.grey("Stats: \n" + JSON.stringify(this.stats, null, 2)));
 
     // Display errors summary
-    if (Object.keys(this.lineErrorMessages)) {
+    if (Object.keys(this.lineErrorMessages).length > 0) {
       uxLog(this, c.yellow("There have been parsing errors:"));
       for (const errMsg of Object.keys(this.lineErrorMessages)) {
         uxLog(this, c.yellow("- " + this.lineErrorMessages[errMsg] + " lines: " + errMsg));
@@ -442,22 +444,24 @@ export default class Toml2Csv extends SfdxCommand {
       }
       // Col definition is a concatenated value
       else if (colDefinition.concat) {
-        const concatenatedValue = colDefinition.concat
-          .map((concatColName) => {
-            const colNamePosition = this.transfoConfig?.entities[section]?.outputFile?.colOutputPositions?.indexOf(concatColName);
-            if (colNamePosition === null || colNamePosition < 0) {
-              this.triggerError(
-                `Concat error: Unable to find output field "${concatColName}" in ${JSON.stringify(
-                  this.transfoConfig.entities[section].outputFile.colOutputPositions
-                )}`,
-                false
-              );
-            }
-            const colNameValue = linesSfArray[colNamePosition];
-            return colNameValue;
-          })
-          .join(colDefinition.separator || " ");
+        const concatFields = colDefinition.concat;
+        const concatenatedValue = this.processConcat(concatFields, section, linesSfArray, colDefinition);
         linesSfArray.push(concatenatedValue);
+      }
+      // Col definition is a composite concatenated value (Virtual unique key for SFDMU)
+      else if (colDefinition.concatComposite) {
+        const concatFields = colDefinition.name.split("$").filter((fieldName) => fieldName !== "");
+        colDefinition.separator = colDefinition.separator || ";";
+        const concatenatedValue = this.processConcat(concatFields, section, linesSfArray, colDefinition);
+        linesSfArray.push(concatenatedValue);
+      }
+      // Get record type Id
+      else if (colDefinition.recordType) {
+        const recordTypeId = await getRecordTypeId(colDefinition.recordType, this.org.getConnection());
+        if (recordTypeId === null) {
+          this.triggerError(`No RecordTypeId found for ${JSON.stringify(colDefinition.recordType)}`, true);
+        }
+        linesSfArray.push(recordTypeId);
       }
     }
 
@@ -471,6 +475,25 @@ export default class Toml2Csv extends SfdxCommand {
       this.stats.dataSuccessLinesNb++;
       this.addLineInCache(section, lineSplit, lineSf, true);
     }
+  }
+
+  processConcat(fields, section, linesSfArray, colDefinition) {
+    const concatenatedValues = fields
+      .map((concatColName) => {
+        const colNamePosition = this.transfoConfig?.entities[section]?.outputFile?.colOutputPositions?.indexOf(concatColName);
+        if (colNamePosition === null || colNamePosition < 0) {
+          this.triggerError(
+            `Concat error: Unable to find output field "${concatColName}" in ${JSON.stringify(
+              this.transfoConfig.entities[section].outputFile.colOutputPositions
+            )}`,
+            false
+          );
+        }
+        const colNameValue = linesSfArray[colNamePosition];
+        return colNameValue;
+      })
+      .join(colDefinition.separator || " ");
+    return concatenatedValues;
   }
 
   // Apply transformations defined in transfoconfig file

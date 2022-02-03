@@ -20,6 +20,26 @@ export async function listProfiles(conn: any) {
   return profileRes.records;
 }
 
+// Get record type id, with cache management
+const recordTypeIdCache: any = {};
+export async function getRecordTypeId(recordTypeInfo: { sObjectType: string; developerName: string }, conn: any) {
+  const cacheKey = JSON.stringify(recordTypeInfo);
+  if (recordTypeIdCache[cacheKey]) {
+    return recordTypeIdCache[cacheKey];
+  }
+  const recordTypeQueryRes = await soqlQuery(
+    `SELECT Id FROM RecordType WHERE SobjectType='${recordTypeInfo.sObjectType}' AND` +
+      ` DeveloperName='${recordTypeInfo.developerName}'` +
+      ` LIMIT 1`,
+    conn
+  );
+  if (recordTypeQueryRes.records[0].Id) {
+    recordTypeIdCache[cacheKey] = recordTypeQueryRes.records[0].Id;
+    return recordTypeQueryRes.records[0].Id;
+  }
+  return null;
+}
+
 // Prompt profile(s) for selection
 /*
 Example calls from command class:
