@@ -40,7 +40,7 @@ export default class SaveTask extends SfdxCommand {
 
   - autocleantypes: List of auto-performed sources cleanings, available on command hardis:project:clean:references
   - autoRemoveUserPermissions: List of userPermission to automatically remove from profile metadatas
-  `
+  `;
 
   public static examples = ["$ sfdx hardis:work:task:save", "$ sfdx hardis:work:task:save --nopull --nogit --noclean"];
 
