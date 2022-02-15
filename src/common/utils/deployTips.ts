@@ -348,6 +348,14 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 `,
     },
     {
+      name: "picklist-sharing-not-supported",
+      label: "Picklist sharing is not supported",
+      expressionString: ["Picklist sharing is not supported"],
+      tip: `You probably changed the type of a field.
+Go manually make the change in the target org, so the deployment will pass
+`,
+    },
+    {
       name: "picklist-value-not-found",
       label: "Picklist value not found",
       expressionRegex: [/Picklist value: (.*) in picklist: (.*) not found/gm],

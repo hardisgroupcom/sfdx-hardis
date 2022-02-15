@@ -67,7 +67,7 @@ export async function minimizeProfile(profileFile: string) {
     uxLog(
       this,
       c.grey(
-        `Updated profile ${c.bold(path.basename(profileXml))} by removing sections ${c.bold(removed.join(","))}${
+        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${
           updatedDefaults === true ? " and removing not default values" : ""
         }`
       )
