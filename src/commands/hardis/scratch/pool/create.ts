@@ -21,7 +21,7 @@ export default class ScratchPoolCreate extends SfdxCommand {
 
   public static description = `Select a data storage service and configure information to build a scratch org pool
 
-  Run the command, follow instrucitons, then you need to schedule a daily CI job for the pool maintenance:
+  Run the command, follow instruction, then you need to schedule a daily CI job for the pool maintenance:
 
   - Define CI ENV variable SCRATCH_ORG_POOL with value "true"
 
