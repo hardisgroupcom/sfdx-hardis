@@ -43,6 +43,11 @@ export default class PackageVersionInstall extends SfdxCommand {
     websocket: flags.string({
       description: messages.getMessage("websocket"),
     }),
+    installationkey: flags.string({
+      char: "k",
+      default: null,
+      description: messages.getMessage("packageInstallationKey"),
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -84,7 +89,7 @@ export default class PackageVersionInstall extends SfdxCommand {
           name: "value",
           message: c.cyanBright(
             "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
-              c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
+            c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
           ),
         });
         packagesToInstall.push({
@@ -103,6 +108,26 @@ export default class PackageVersionInstall extends SfdxCommand {
     } else {
       packagesToInstall.push({ SubscriberPackageVersionId: packageId });
     }
+
+    // Set package installation key if supplied to CLI
+    if (this.flags.installationkey) {
+      packagesToInstall.forEach((pckg) => { pckg.installationkey = this.flags.installationkey });
+    }
+
+    // Ask for package installation key if not supplied to CLI
+    if (!isCI && !this.flags.installationkey) {
+      for (const pckg of packagesToInstall) {
+        const passwordPrompt = await prompts({
+          type: "text",
+          name: "value",
+          message: c.cyanBright(
+            `Enter the password for package ${c.green(pckg.SubscriberPackageName || pckg.SubscriberPackageVersionId)} (leave empty if package is not protected by a password)`
+          ),
+        });
+        pckg.installationkey = passwordPrompt.value;
+      }
+    }
+
     // Complete packages with remote information
     const packagesToInstallCompleted = await Promise.all(
       packagesToInstall.map(async (pckg) => {
