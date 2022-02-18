@@ -84,6 +84,7 @@ export default class PackageVersionInstall extends SfdxCommand {
         initial: 0,
       });
       if (packageResponse.value === "other") {
+<<<<<<< HEAD
         const packageDtlResponse = await prompts({
           type: "text",
           name: "value",
@@ -93,8 +94,31 @@ export default class PackageVersionInstall extends SfdxCommand {
           ),
         });
         packagesToInstall.push({
+=======
+        const packageDtlResponse = await prompts([
+          {
+            type: "text",
+            name: "value",
+            message: c.cyanBright(
+              "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
+              c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
+            ),
+          },
+          {
+            type: "text",
+            name: "installationkey",
+            message: c.cyanBright(
+              "Enter the password for this package (leave empty if package is not protected by a password)"
+            ),
+          }
+        ]);
+        const pckg: { SubscriberPackageVersionId?: string, installationkey?: string } = {
+>>>>>>> 4294a42 (Prompt for installationkey for "Other" pckgs)
           SubscriberPackageVersionId: packageDtlResponse.value,
-        });
+        };
+        if (packageDtlResponse.installationkey)
+          pckg.installationkey = packageDtlResponse.installationkey;
+        packagesToInstall.push(pckg);
       } else if (packageResponse.value.bundle) {
         // Package bundle selected
         const packagesToAdd = packageResponse.value.packages.map((packageId) => {
@@ -106,9 +130,11 @@ export default class PackageVersionInstall extends SfdxCommand {
         packagesToInstall.push(packageResponse.value.package);
       }
     } else {
-      packagesToInstall.push({ SubscriberPackageVersionId: packageId });
-    }
+      const pckg: { SubscriberPackageVersionId: string, installationkey?: string } = {
+        SubscriberPackageVersionId: packageId
+      };
 
+<<<<<<< HEAD
     // Set package installation key if supplied to CLI
     if (this.flags.installationkey) {
       packagesToInstall.forEach((pckg) => {
@@ -130,6 +156,11 @@ export default class PackageVersionInstall extends SfdxCommand {
         });
         pckg.installationkey = passwordPrompt.value;
       }
+=======
+      if (this.flags.installationkey)
+        pckg.installationkey = this.flags.installationkey;
+      packagesToInstall.push(pckg);
+>>>>>>> 4294a42 (Prompt for installationkey for "Other" pckgs)
     }
 
     // Complete packages with remote information
@@ -167,7 +198,7 @@ export default class PackageVersionInstall extends SfdxCommand {
     /* disabled until sfdx multiple package deployment is working >_<
         // Post install actions
         if (!isCI && fs.existsSync(this.sfdxProjectJsonFileName)) {
-
+ 
             const postInstallResponse = await prompts([
                 {
                     type: 'confirm',
