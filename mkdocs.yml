@@ -34,7 +34,7 @@ extra_css:
   - stylesheets/extra.css
 extra:
   social:
-    - icon: fontawesome/regular/question-circle
+    - icon: fontawesome/regular/circle-question
       link: https://github.com/hardisgroupcom/sfdx-hardis/issues
       title: Need help ? Post an issue :)
     - icon: fontawesome/brands/github
