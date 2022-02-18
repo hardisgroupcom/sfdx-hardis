@@ -31,7 +31,7 @@ export default class PackageVersionInstall extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    package: flags.boolean({
+    package: flags.string({
       char: "p",
       description: "Package Version Id to install (04t...)",
     }),
