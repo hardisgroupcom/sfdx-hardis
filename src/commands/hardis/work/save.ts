@@ -14,6 +14,7 @@ import {
   git,
   gitHasLocalUpdates,
   interactiveGitAdd,
+  normalizeFileStatusPath,
   uxLog,
 } from "../../../common/utils";
 import { exportData } from "../../../common/utils/dataUtils";
@@ -211,9 +212,8 @@ export default class SaveTask extends SfdxCommand {
       )
     );
     const tmpDir = await createTempDir();
-    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
-      toCommit ? toCommit.hash : masterBranchLatestCommit
-    } --output ${tmpDir}`;
+    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit ? toCommit.hash : masterBranchLatestCommit
+      } --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
       output: true,
       fail: false,
@@ -237,7 +237,7 @@ export default class SaveTask extends SfdxCommand {
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr)
+        c.red(destructivePackageXmlDiffStr)
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +
@@ -294,7 +294,9 @@ export default class SaveTask extends SfdxCommand {
       await CleanReferences.run(["--type", "all"]);
       const gitStatusAfterClean = await git().status();
       uxLog(this, JSON.stringify(gitStatusAfterClean, null, 2));
-      const cleanedFiles = gitStatusAfterClean.files.filter((file) => !gitStatusFilesBeforeClean.includes(file.path)).map((file) => file.path);
+      const cleanedFiles = gitStatusAfterClean.files
+        .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
+        .map((file) => normalizeFileStatusPath(file.path, config));
       if (cleanedFiles.length > 0) {
         uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join("\n")}`));
         if (!this.noGit) {

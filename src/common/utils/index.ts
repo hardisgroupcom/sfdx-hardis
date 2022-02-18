@@ -313,16 +313,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       return (options.filter || []).filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
     })
     .map((fileStatus: FileStatusResult) => {
-      if (fileStatus.path.startsWith('"')) {
-        fileStatus.path = fileStatus.path.substring(1);
-      }
-      if (fileStatus.path.endsWith('"')) {
-        fileStatus.path = fileStatus.path.slice(0, -1);
-      }
-      if (config.gitRootFolderPrefix) {
-        uxLog(this, c.red(fileStatus.path));
-        fileStatus.path = fileStatus.path.replace(config.gitRootFolderPrefix, "");
-      }
+      fileStatus.path = normalizeFileStatusPath(fileStatus.path,config);
       return fileStatus;
     });
   // Create default group if
@@ -468,6 +459,20 @@ export async function gitAddCommitPush(
     .add(options.pattern || "./*")
     .commit(options.commitMessage || "Updated by sfdx-hardis")
     .push(["-u", "origin", currentgitBranch]);
+}
+
+// Normalize git FileStatus path
+export function normalizeFileStatusPath(fileStatusPath: string,config): string {
+    if (fileStatusPath.startsWith('"')) {
+      fileStatusPath = fileStatusPath.substring(1);
+    }
+    if (fileStatusPath.endsWith('"')) {
+      fileStatusPath = fileStatusPath.slice(0, -1);
+    }
+    if (config.gitRootFolderPrefix) {
+      fileStatusPath = fileStatusPath.replace(config.gitRootFolderPrefix, "");
+    }
+    return fileStatusPath;
 }
 
 // Execute salesforce DX command with --json
