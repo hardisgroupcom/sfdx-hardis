@@ -84,17 +84,6 @@ export default class PackageVersionInstall extends SfdxCommand {
         initial: 0,
       });
       if (packageResponse.value === "other") {
-<<<<<<< HEAD
-        const packageDtlResponse = await prompts({
-          type: "text",
-          name: "value",
-          message: c.cyanBright(
-            "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
-              c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
-          ),
-        });
-        packagesToInstall.push({
-=======
         const packageDtlResponse = await prompts([
           {
             type: "text",
@@ -113,7 +102,6 @@ export default class PackageVersionInstall extends SfdxCommand {
           }
         ]);
         const pckg: { SubscriberPackageVersionId?: string, installationkey?: string } = {
->>>>>>> 4294a42 (Prompt for installationkey for "Other" pckgs)
           SubscriberPackageVersionId: packageDtlResponse.value,
         };
         if (packageDtlResponse.installationkey)
@@ -134,33 +122,9 @@ export default class PackageVersionInstall extends SfdxCommand {
         SubscriberPackageVersionId: packageId
       };
 
-<<<<<<< HEAD
-    // Set package installation key if supplied to CLI
-    if (this.flags.installationkey) {
-      packagesToInstall.forEach((pckg) => {
-        pckg.installationkey = this.flags.installationkey;
-      });
-    }
-
-    // Ask for package installation key if not supplied to CLI
-    if (!isCI && !this.flags.installationkey) {
-      for (const pckg of packagesToInstall) {
-        const passwordPrompt = await prompts({
-          type: "text",
-          name: "value",
-          message: c.cyanBright(
-            `Enter the password for package ${c.green(
-              pckg.SubscriberPackageName || pckg.SubscriberPackageVersionId
-            )} (leave empty if package is not protected by a password)`
-          ),
-        });
-        pckg.installationkey = passwordPrompt.value;
-      }
-=======
       if (this.flags.installationkey)
         pckg.installationkey = this.flags.installationkey;
       packagesToInstall.push(pckg);
->>>>>>> 4294a42 (Prompt for installationkey for "Other" pckgs)
     }
 
     // Complete packages with remote information
