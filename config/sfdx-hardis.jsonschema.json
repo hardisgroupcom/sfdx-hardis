@@ -225,7 +225,8 @@
             "SubscriberPackageVersionName": "2.11",
             "SubscriberPackageVersionNumber": "2.11.0.1",
             "installOnScratchOrgs": false,
-            "installDuringDeployments": true
+            "installDuringDeployments": true,
+            "installationkey": "MyInstallationKey"
           },
           {
             "Id": "0A35r000000GveVCAS",
@@ -303,6 +304,13 @@
             "examples": [true, false],
             "title": "Install on scratch orgs",
             "type": "boolean"
+          },
+          "installationkey": {
+            "$Id": "#/properties/install/properties/packages/items/installationkey",
+            "examples": ["MyInstallationKey", "4FzkMzUSwFfP#@"],
+            "description": "Installation key for key-protected package",
+            "title": "Package installation key",
+            "type": "string"
           }
         },
         "required": ["SubscriberPackageVersionId"],

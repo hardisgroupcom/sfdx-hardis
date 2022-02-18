@@ -29,6 +29,7 @@
   "orgUnfreezeUser": "Unfreeze mass users in org after a maintenance or go live\n\nSee user guide in the following article\n\n<https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3>",
   "packageCreate": "Create a new package",
   "packageInstall": "Install a package",
+  "packageInstallationKey": "installation key for key-protected package (default: null)",
   "packageVersionCreate": "Create a new version of an unlocked package",
   "packageVersionList": "List versions of unlocked package",
   "packageXml": "Path to package.xml manifest file",

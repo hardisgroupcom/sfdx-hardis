@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.68.4] 2022-02-18
+
+- hardis:package:install
+  - Add -k, --installationkey CLI param and prompts user for it if not supplied
+
 ## [2.68.3] 2022-02-18
 
 - Fix hardis:package:version:promote --auto

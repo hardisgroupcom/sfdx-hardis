@@ -31,7 +31,7 @@ export default class PackageVersionInstall extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    package: flags.boolean({
+    package: flags.string({
       char: "p",
       description: "Package Version Id to install (04t...)",
     }),
@@ -42,6 +42,11 @@ export default class PackageVersionInstall extends SfdxCommand {
     }),
     websocket: flags.string({
       description: messages.getMessage("websocket"),
+    }),
+    installationkey: flags.string({
+      char: "k",
+      default: null,
+      description: messages.getMessage("packageInstallationKey"),
     }),
   };
 
@@ -79,17 +84,28 @@ export default class PackageVersionInstall extends SfdxCommand {
         initial: 0,
       });
       if (packageResponse.value === "other") {
-        const packageDtlResponse = await prompts({
-          type: "text",
-          name: "value",
-          message: c.cyanBright(
-            "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
-              c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
-          ),
-        });
-        packagesToInstall.push({
+        const packageDtlResponse = await prompts([
+          {
+            type: "text",
+            name: "value",
+            message: c.cyanBright(
+              "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
+                c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
+            ),
+          },
+          {
+            type: "text",
+            name: "installationkey",
+            message: c.cyanBright("Enter the password for this package (leave empty if package is not protected by a password)"),
+          },
+        ]);
+        const pckg: { SubscriberPackageVersionId?: string; installationkey?: string } = {
           SubscriberPackageVersionId: packageDtlResponse.value,
-        });
+        };
+        if (packageDtlResponse.installationkey) {
+          pckg.installationkey = packageDtlResponse.installationkey;
+        }
+        packagesToInstall.push(pckg);
       } else if (packageResponse.value.bundle) {
         // Package bundle selected
         const packagesToAdd = packageResponse.value.packages.map((packageId) => {
@@ -101,8 +117,15 @@ export default class PackageVersionInstall extends SfdxCommand {
         packagesToInstall.push(packageResponse.value.package);
       }
     } else {
-      packagesToInstall.push({ SubscriberPackageVersionId: packageId });
+      const pckg: { SubscriberPackageVersionId: string; installationkey?: string } = {
+        SubscriberPackageVersionId: packageId,
+      };
+      if (this.flags.installationkey) {
+        pckg.installationkey = this.flags.installationkey;
+      }
+      packagesToInstall.push(pckg);
     }
+
     // Complete packages with remote information
     const packagesToInstallCompleted = await Promise.all(
       packagesToInstall.map(async (pckg) => {
@@ -138,7 +161,7 @@ export default class PackageVersionInstall extends SfdxCommand {
     /* disabled until sfdx multiple package deployment is working >_<
         // Post install actions
         if (!isCI && fs.existsSync(this.sfdxProjectJsonFileName)) {
-
+ 
             const postInstallResponse = await prompts([
                 {
                     type: 'confirm',
