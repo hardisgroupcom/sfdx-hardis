@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.68.3] 2022-02-18
+
+- Fix hardis:package:version:promote --auto
+
 ## [2.68.2] 2022-02-15
 
 - Fix minimize profiles command
