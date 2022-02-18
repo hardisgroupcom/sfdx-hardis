@@ -114,7 +114,7 @@ export default class PackageVersionPromote extends SfdxCommand {
         );
         promotedPackageVersions.push({ package: packageToPromote, result: promoteResult });
       } else {
-        uxLog(this, c.yellow(`Error promoting package version ${c.red(packageToPromote)} with id ${c.red(promoteResult.result.id)}`));
+        uxLog(this, c.yellow(`Error promoting package version ${c.red(packageToPromote)} (probably already promoted so it can be ok)`));
         errorPromotedVersions.push({ package: packageToPromote, result: promoteResult });
       }
     }
