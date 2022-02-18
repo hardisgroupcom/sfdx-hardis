@@ -102,7 +102,9 @@ export default class PackageVersionInstall extends SfdxCommand {
         const pckg: { SubscriberPackageVersionId?: string; installationkey?: string } = {
           SubscriberPackageVersionId: packageDtlResponse.value,
         };
-        if (packageDtlResponse.installationkey) pckg.installationkey = packageDtlResponse.installationkey;
+        if (packageDtlResponse.installationkey) {
+          pckg.installationkey = packageDtlResponse.installationkey;
+        }
         packagesToInstall.push(pckg);
       } else if (packageResponse.value.bundle) {
         // Package bundle selected
@@ -118,8 +120,9 @@ export default class PackageVersionInstall extends SfdxCommand {
       const pckg: { SubscriberPackageVersionId: string; installationkey?: string } = {
         SubscriberPackageVersionId: packageId,
       };
-
-      if (this.flags.installationkey) pckg.installationkey = this.flags.installationkey;
+      if (this.flags.installationkey) {
+        pckg.installationkey = this.flags.installationkey;
+      }
       packagesToInstall.push(pckg);
     }
 
