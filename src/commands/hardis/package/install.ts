@@ -90,22 +90,19 @@ export default class PackageVersionInstall extends SfdxCommand {
             name: "value",
             message: c.cyanBright(
               "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
-              c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
+                c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
             ),
           },
           {
             type: "text",
             name: "installationkey",
-            message: c.cyanBright(
-              "Enter the password for this package (leave empty if package is not protected by a password)"
-            ),
-          }
+            message: c.cyanBright("Enter the password for this package (leave empty if package is not protected by a password)"),
+          },
         ]);
-        const pckg: { SubscriberPackageVersionId?: string, installationkey?: string } = {
+        const pckg: { SubscriberPackageVersionId?: string; installationkey?: string } = {
           SubscriberPackageVersionId: packageDtlResponse.value,
         };
-        if (packageDtlResponse.installationkey)
-          pckg.installationkey = packageDtlResponse.installationkey;
+        if (packageDtlResponse.installationkey) pckg.installationkey = packageDtlResponse.installationkey;
         packagesToInstall.push(pckg);
       } else if (packageResponse.value.bundle) {
         // Package bundle selected
@@ -118,12 +115,11 @@ export default class PackageVersionInstall extends SfdxCommand {
         packagesToInstall.push(packageResponse.value.package);
       }
     } else {
-      const pckg: { SubscriberPackageVersionId: string, installationkey?: string } = {
-        SubscriberPackageVersionId: packageId
+      const pckg: { SubscriberPackageVersionId: string; installationkey?: string } = {
+        SubscriberPackageVersionId: packageId,
       };
 
-      if (this.flags.installationkey)
-        pckg.installationkey = this.flags.installationkey;
+      if (this.flags.installationkey) pckg.installationkey = this.flags.installationkey;
       packagesToInstall.push(pckg);
     }
 
