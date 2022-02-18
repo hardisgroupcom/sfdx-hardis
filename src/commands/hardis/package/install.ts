@@ -89,7 +89,7 @@ export default class PackageVersionInstall extends SfdxCommand {
           name: "value",
           message: c.cyanBright(
             "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
-            c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
+              c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
           ),
         });
         packagesToInstall.push({
@@ -111,7 +111,9 @@ export default class PackageVersionInstall extends SfdxCommand {
 
     // Set package installation key if supplied to CLI
     if (this.flags.installationkey) {
-      packagesToInstall.forEach((pckg) => { pckg.installationkey = this.flags.installationkey });
+      packagesToInstall.forEach((pckg) => {
+        pckg.installationkey = this.flags.installationkey;
+      });
     }
 
     // Ask for package installation key if not supplied to CLI
@@ -121,7 +123,9 @@ export default class PackageVersionInstall extends SfdxCommand {
           type: "text",
           name: "value",
           message: c.cyanBright(
-            `Enter the password for package ${c.green(pckg.SubscriberPackageName || pckg.SubscriberPackageVersionId)} (leave empty if package is not protected by a password)`
+            `Enter the password for package ${c.green(
+              pckg.SubscriberPackageName || pckg.SubscriberPackageVersionId
+            )} (leave empty if package is not protected by a password)`
           ),
         });
         pckg.installationkey = passwordPrompt.value;
