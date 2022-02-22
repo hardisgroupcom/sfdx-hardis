@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.68.6] 2022-02-22
+
+- remove `DEPLOY PROGRESS` noisy lines from logs
 ## [2.68.5] 2022-02-18
 
 - Update mkdocs
