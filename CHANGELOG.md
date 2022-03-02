@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.69.0] 2022-03-02
+
+- Scratch org pool: add history (fetch,auth) on ActiveScratchOrg devhub record
+
 ## [2.68.6] 2022-02-22
 
 - remove `DEPLOY PROGRESS` noisy lines from logs

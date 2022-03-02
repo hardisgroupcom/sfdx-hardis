@@ -37,6 +37,11 @@ export class KeyValueXyzProvider implements KeyValueProviderInterface {
     return true;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async updateActiveScratchOrg(_scratchOrg: any, _keyValues: any) {
+    return null ;
+  }
+
   async manageKeyValueXyzAuth(key: string | null = null) {
     if (this.keyValueUrl == null) {
       const config = await getConfig("user");
