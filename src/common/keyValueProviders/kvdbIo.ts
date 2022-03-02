@@ -48,7 +48,7 @@ export class KvdbIoProvider implements KeyValueProviderInterface {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async updateActiveScratchOrg(_scratchOrg: any, _keyValues: any) {
-    return null ;
+    return null;
   }
 
   async manageKvdbIoAuth(key: string | null = null) {

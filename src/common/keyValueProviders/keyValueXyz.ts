@@ -39,7 +39,7 @@ export class KeyValueXyzProvider implements KeyValueProviderInterface {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async updateActiveScratchOrg(_scratchOrg: any, _keyValues: any) {
-    return null ;
+    return null;
   }
 
   async manageKeyValueXyzAuth(key: string | null = null) {

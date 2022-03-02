@@ -2060,7 +2060,7 @@ Calls the related storage service to request api keys and secrets that allows a 
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2092,7 +2092,7 @@ Create enough scratch orgs to fill the pool
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2124,7 +2124,7 @@ Displays all stored content of project scratch org pool if defined
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2156,7 +2156,7 @@ Pull scratch org updates from scratch org to local git branch
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2188,7 +2188,7 @@ Push local updates in git branch to scratch org
 
 ```
 USAGE
-  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2220,7 +2220,7 @@ New work task
 
 ```
 USAGE
-  $ sfdx hardis:work:new [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:new [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2252,7 +2252,7 @@ Make my local branch and my scratch org up to date with the most recent sources
 
 ```
 USAGE
-  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2287,7 +2287,7 @@ Process again the selection of the items that you want to publish to upper level
 
 ```
 USAGE
-  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2319,7 +2319,7 @@ When a work task is completed, guide user to create a merge request
 
 ```
 USAGE
-  $ sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2361,7 +2361,7 @@ Technical calls to WebSocket functions
 
 ```
 USAGE
-  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS

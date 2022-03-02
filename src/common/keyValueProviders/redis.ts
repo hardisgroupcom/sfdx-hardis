@@ -37,7 +37,7 @@ export class RedisProvider implements KeyValueProviderInterface {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async updateActiveScratchOrg(_scratchOrg: any, _keyValues: any) {
-    return null ;
+    return null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

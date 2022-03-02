@@ -313,7 +313,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       return (options.filter || []).filter((filterString: string) => fileStatus.path.includes(filterString)).length === 0;
     })
     .map((fileStatus: FileStatusResult) => {
-      fileStatus.path = normalizeFileStatusPath(fileStatus.path,config);
+      fileStatus.path = normalizeFileStatusPath(fileStatus.path, config);
       return fileStatus;
     });
   // Create default group if
@@ -462,17 +462,17 @@ export async function gitAddCommitPush(
 }
 
 // Normalize git FileStatus path
-export function normalizeFileStatusPath(fileStatusPath: string,config): string {
-    if (fileStatusPath.startsWith('"')) {
-      fileStatusPath = fileStatusPath.substring(1);
-    }
-    if (fileStatusPath.endsWith('"')) {
-      fileStatusPath = fileStatusPath.slice(0, -1);
-    }
-    if (config.gitRootFolderPrefix) {
-      fileStatusPath = fileStatusPath.replace(config.gitRootFolderPrefix, "");
-    }
-    return fileStatusPath;
+export function normalizeFileStatusPath(fileStatusPath: string, config): string {
+  if (fileStatusPath.startsWith('"')) {
+    fileStatusPath = fileStatusPath.substring(1);
+  }
+  if (fileStatusPath.endsWith('"')) {
+    fileStatusPath = fileStatusPath.slice(0, -1);
+  }
+  if (config.gitRootFolderPrefix) {
+    fileStatusPath = fileStatusPath.replace(config.gitRootFolderPrefix, "");
+  }
+  return fileStatusPath;
 }
 
 // Execute salesforce DX command with --json
