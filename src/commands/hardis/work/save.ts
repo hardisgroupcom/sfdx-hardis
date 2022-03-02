@@ -212,8 +212,9 @@ export default class SaveTask extends SfdxCommand {
       )
     );
     const tmpDir = await createTempDir();
-    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit ? toCommit.hash : masterBranchLatestCommit
-      } --output ${tmpDir}`;
+    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
+      toCommit ? toCommit.hash : masterBranchLatestCommit
+    } --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
       output: true,
       fail: false,
@@ -237,7 +238,7 @@ export default class SaveTask extends SfdxCommand {
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-        c.red(destructivePackageXmlDiffStr)
+          c.red(destructivePackageXmlDiffStr)
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +

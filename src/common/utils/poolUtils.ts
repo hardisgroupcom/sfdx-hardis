@@ -1,5 +1,7 @@
 import * as c from "chalk";
 import * as fs from "fs-extra";
+import * as moment from "moment";
+import * as os from "os";
 import * as path from "path";
 import { getConfig, setConfig } from "../../config";
 import { createTempDir, execSfdxJson, isCI, uxLog } from ".";
@@ -28,7 +30,7 @@ export async function hasPoolConfig() {
 export async function getPoolStorage(options: any = {}) {
   const providerInitialized = await initializeProvider(options);
   if (providerInitialized) {
-    return keyValueProvider.getValue(null);
+    return await keyValueProvider.getValue(null);
   }
   return null;
 }
@@ -38,9 +40,18 @@ export async function setPoolStorage(value: any, options: any = {}) {
   const providerInitialized = await initializeProvider(options);
   if (providerInitialized) {
     uxLog(this, "[pool] " + c.grey(`Updating poolstorage value...`));
-    const valueSetRes = keyValueProvider.setValue(null, value);
+    const valueSetRes = await keyValueProvider.setValue(null, value);
     uxLog(this, "[pool] " + c.grey(`Updated poolstorage value`));
     return valueSetRes;
+  }
+  return null;
+}
+
+// Update ActiveScratchOrgInfo
+export async function updateActiveScratchOrg(scratchOrg: string, keyValues: any, options: any = {}) {
+  const providerInitialized = await initializeProvider(options);
+  if (providerInitialized) {
+    return await keyValueProvider.updateActiveScratchOrg(scratchOrg, keyValues);
   }
   return null;
 }
@@ -72,6 +83,7 @@ async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { posi
     }
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage, options);
+    await updateActiveScratchOrg(scratchOrg, { Description: `Added to pool by ${os.userInfo().username} on ${moment().format("YYYYMMDD_hhmm")}` });
   } else {
     // Store scratch creation errors
     /*
@@ -95,6 +107,7 @@ export async function fetchScratchOrg(options: any) {
   const scratchOrgs: Array<any> = poolStorage.scratchOrgs || [];
   if (scratchOrgs.length > 0) {
     const scratchOrg = scratchOrgs.shift();
+    await updateActiveScratchOrg(scratchOrg, { Description: `Fetched by ${os.userInfo().username} on ${moment().format("YYYYMMDD_hhmm")}` });
     // Remove and save
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage, options);
@@ -132,6 +145,7 @@ export async function fetchScratchOrg(options: any) {
     const openRes = await execSfdxJson(`sfdx force:org:open --urlonly -u ${scratchOrg.scratchOrgAlias}`, this, { fail: false, output: true });
     uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     // Return scratch org
+    await updateActiveScratchOrg(scratchOrg, { Description: `Authenticated by ${os.userInfo().username} on ${moment().format("YYYYMMDD_hhmm")}` });
     return scratchOrg;
   }
   uxLog(

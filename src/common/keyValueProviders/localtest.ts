@@ -30,6 +30,11 @@ export class LocalTestProvider implements KeyValueProviderInterface {
     return true;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async updateActiveScratchOrg(_scratchOrg: any, _keyValues: any) {
+    return null;
+  }
+
   async managePoolStorageLocalFileName(key: string | null = null) {
     if (this.poolStorageLocalFileName == null) {
       if (key === null) {

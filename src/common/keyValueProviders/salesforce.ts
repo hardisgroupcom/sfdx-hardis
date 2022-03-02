@@ -61,6 +61,16 @@ export class SalesforceProvider implements KeyValueProviderInterface {
     }
   }
 
+  async updateActiveScratchOrg(scratchOrg: any, keyValues: any) {
+    const orgId = scratchOrg?.scratchOrgInfo?.orgId ? scratchOrg.scratchOrgInfo.orgId.slice(0, 15) : scratchOrg.Id.slice(0, 15);
+    const activeScratchOrg: any = await this.conn.sobject("ActiveScratchOrg").findOne({ ScratchOrg: orgId }, { Id: true, Description: true });
+    keyValues.Id = activeScratchOrg.Id;
+    if (keyValues.Description) {
+      keyValues.Description = (activeScratchOrg.Description ? activeScratchOrg.Description + "\n" : "") + keyValues.Description;
+    }
+    await this.conn.sobject("ActiveScratchOrg").update(keyValues);
+  }
+
   async manageSfdcOrgAuth(options: any = {}) {
     const config = await getConfig("project");
     if (this.conn == null) {

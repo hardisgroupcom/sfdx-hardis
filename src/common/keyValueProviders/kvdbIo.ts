@@ -46,6 +46,11 @@ export class KvdbIoProvider implements KeyValueProviderInterface {
     return resp.status === 200;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async updateActiveScratchOrg(_scratchOrg: any, _keyValues: any) {
+    return null;
+  }
+
   async manageKvdbIoAuth(key: string | null = null) {
     if (this.kvdbIoUrl == null) {
       const config = await getConfig("user");
