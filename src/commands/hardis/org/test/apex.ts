@@ -80,8 +80,8 @@ export default class OrgTestApex extends SfdxCommand {
         e.message.includes("Toujours fournir une propriété classes, suites, tests ou testLevel") ||
         e.message.includes("Always provide a classes, suites, tests, or testLevel property")
       ) {
-        uxLog(this, c.inverse("Previous error was ignored, script ran successfully."));
-        return { orgId: this.org.getOrgId(), outputString: "No tests found." };
+        uxLog(this, c.yellow("No Apex classes were found in the project"));
+        return { orgId: this.org.getOrgId(), outputString: "No Apex classes were found in the project" };
       }
       uxLog(this, c.red("Error during apex tests: " + e.message));
       testRes = { stdout: "", stderr: e.message };
