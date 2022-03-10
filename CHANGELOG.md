@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.70.0] 2022-03-02
+
+- hardis:org:apex:test : allow command to succeed when no tests are present in the project, useful for new environments initialization
+
 ## [2.69.0] 2022-03-02
 
 - Scratch org pool: add history (fetch,auth) on ActiveScratchOrg devhub record
