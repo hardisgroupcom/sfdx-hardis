@@ -12,6 +12,7 @@ export const dataFolderRoot = path.join(".", "scripts", "data");
 export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
   uxLog(commandThis, c.cyan(`Importing data from ${c.green(dtl.full_label)} ...`));
+  /* jscpd:ignore-start */
   uxLog(commandThis, c.italic(c.grey(dtl.description)));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, "logs"));
@@ -23,12 +24,35 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     ` -p ${sfdmuPath}` +
     " --noprompt" +
     (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : "");
+  /* jscpd:ignore-end */
   elapseStart(`import ${dtl.full_label}`);
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,
   });
   elapseEnd(`import ${dtl.full_label}`);
+}
+
+// Delete data using sfdmu folder
+export async function deleteData(sfdmuPath: string, commandThis: any, options: any = {}) {
+  const dtl = await getDataWorkspaceDetail(sfdmuPath);
+  uxLog(commandThis, c.cyan(`Deleting data from ${c.green(dtl.full_label)} ...`));
+  uxLog(commandThis, c.italic(c.grey(dtl.description)));
+  const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
+  await fs.ensureDir(path.join(sfdmuPath, "logs"));
+  const config = await getConfig("branch");
+  const dataImportCommand =
+    "sfdx sfdmu:run" +
+    ` --sourceusername ${targetUsername}` +
+    ` -p ${sfdmuPath}` +
+    " --noprompt" +
+    (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : "");
+  elapseStart(`delete ${dtl.full_label}`);
+  await execCommand(dataImportCommand, commandThis, {
+    fail: true,
+    output: true,
+  });
+  elapseEnd(`delete ${dtl.full_label}`);
 }
 
 // Export data from sfdmu folder
@@ -93,5 +117,6 @@ export async function getDataWorkspaceDetail(dataWorkspace: string) {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ""}`,
     label: hardisLabel,
     description: hardisDescription,
+    exportJson: exportFileJson
   };
 }

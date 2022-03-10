@@ -185,6 +185,7 @@
     "hardisorgconnect",
     "hardisorgcreate",
     "hardisorgdataconfig",
+    "hardisorgdatadelete",
     "hardisorgdataexport",
     "hardisorgdataimport",
     "hardisorgdiagnoselegacyapi",

@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.70.0] 2022-03-02
+## [2.71.0] 2022-03-10
+
+- New command hardis:org:data:delete to manage [delete data workspaces](https://help.sfdmu.com/full-documentation/advanced-features/delete-from-source) of sfdmu
+
+## [2.70.0] 2022-03-10
 
 - hardis:org:apex:test : allow command to succeed when no tests are present in the project, useful for new environments initialization
 

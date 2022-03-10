@@ -128,6 +128,7 @@ async function getHardisGitRepoIgnoreContent() {
     "tmp/",
     "**/__tests__/**",
     // Metadatas to be ignored
+    "**/cleanDataServices/",
     "**/siteDotComSites/*.site",
     // SFDX Items to be ignored
     "**/data/**/source/**",
