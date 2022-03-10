@@ -117,6 +117,6 @@ export async function getDataWorkspaceDetail(dataWorkspace: string) {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ""}`,
     label: hardisLabel,
     description: hardisDescription,
-    exportJson: exportFileJson
+    exportJson: exportFileJson,
   };
 }

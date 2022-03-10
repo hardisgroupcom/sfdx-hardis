@@ -2066,7 +2066,7 @@ Calls the related storage service to request api keys and secrets that allows a 
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2098,7 +2098,7 @@ Create enough scratch orgs to fill the pool
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2130,7 +2130,7 @@ Displays all stored content of project scratch org pool if defined
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2162,7 +2162,7 @@ Pull scratch org updates from scratch org to local git branch
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2194,7 +2194,7 @@ Push local updates in git branch to scratch org
 
 ```
 USAGE
-  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2226,7 +2226,7 @@ New work task
 
 ```
 USAGE
-  $ sfdx hardis:work:new [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:new [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2258,7 +2258,7 @@ Make my local branch and my scratch org up to date with the most recent sources
 
 ```
 USAGE
-  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2293,7 +2293,7 @@ Process again the selection of the items that you want to publish to upper level
 
 ```
 USAGE
-  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2325,7 +2325,7 @@ When a work task is completed, guide user to create a merge request
 
 ```
 USAGE
-  $ sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2367,7 +2367,7 @@ Technical calls to WebSocket functions
 
 ```
 USAGE
-  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2456,7 +2456,7 @@ Login to salesforce org
 
 ```
 USAGE
-  $ sfdx hardis:auth:login [-r <string>] [-h] [-s] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:auth:login [-r <string>] [-h] [-s] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2484,7 +2484,7 @@ Returns sfdx-hardis project config for a given level
 
 ```
 USAGE
-  $ sfdx hardis:config:get [-l <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:config:get [-l <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2513,7 +2513,7 @@ Generate Markdown documentation ready for HTML conversion with mkdocs
 
 ```
 USAGE
-  $ sfdx hardis:doc:plugin:generate [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:doc:plugin:generate [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2529,13 +2529,13 @@ OPTIONS
 DESCRIPTION
   After the first run, you need to update manually:
 
-  - mkdocs.yml
-  - .github/workflows/build-deploy-docs.yml
-  - docs/javascripts/gtag.js , if you want Google Analytics tracking
+- mkdocs.yml
+- .github/workflows/build-deploy-docs.yml
+- docs/javascripts/gtag.js , if you want Google Analytics tracking
 
   Then, activate Github pages, with "gh_pages" as target branch
 
-  At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it 
+  At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it
   in GitHub pages
 
 EXAMPLE
@@ -2550,8 +2550,8 @@ Split TOML file into distinct CSV files
 
 ```
 USAGE
-  $ sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-l <array>] [-s] [-o <string>] [-d] [--websocket <string>] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-l <array>] [-s] [-o <string>] [-d] [--websocket <string>] [-u
+  <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2585,10 +2585,10 @@ OPTIONS
                                                                                     Hardis UI integration
 
 EXAMPLES
-  $ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' 
-  $ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' 
+  $ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt'
+  $ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt'
   $ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'
-  $ NODE_OPTIONS=--max_old_space_size=9096 sfdx hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' 
+  $ NODE_OPTIONS=--max_old_space_size=9096 sfdx hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt'
   --outputdir './output' --filtersections 'COMPTES,SOUS'
 ```
 
@@ -2600,7 +2600,7 @@ Configure Data Export/Import with a SFDMU Project
 
 ```
 USAGE
-  $ sfdx hardis:org:configure:data [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:configure:data [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2625,7 +2625,7 @@ Configure export of file attachments from a Salesforce org
 
 ```
 USAGE
-  $ sfdx hardis:org:configure:files [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:configure:files [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2650,7 +2650,7 @@ Configure monitoring of an org
 
 ```
 USAGE
-  $ sfdx hardis:org:configure:monitoring [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:org:configure:monitoring [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2682,7 +2682,7 @@ Connect to an org without setting it as default username
 
 ```
 USAGE
-  $ sfdx hardis:org:connect [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:connect [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2707,7 +2707,7 @@ Create and initialize sandbox org
 
 ```
 USAGE
-  $ sfdx hardis:org:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2739,7 +2739,7 @@ Export data from org using sfdmu
 
 ```
 USAGE
-  $ sfdx hardis:org:data:export [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:org:data:export [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2772,7 +2772,7 @@ Import data in org using sfdmu
 
 ```
 USAGE
-  $ sfdx hardis:org:data:import [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:org:data:import [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2805,8 +2805,8 @@ Checks if an org uses a deprecated API version
 
 ```
 USAGE
-  $ sfdx hardis:org:diagnose:legacyapi [-e <string>] [-l <number>] [-o <string>] [-d] [--websocket <string>] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:diagnose:legacyapi [-e <string>] [-l <number>] [-o <string>] [-d] [--websocket <string>] [-u
+  <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2836,13 +2836,13 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  Advanced command guide in [**this 
+  Advanced command guide in [**this
   article**](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
 
-  - Salesforce will remove access to old API versions in the following releases
-  - An external application (ESB, ETL, Web Portal, Mobile application...) using a deprecated API version will receive 
+- Salesforce will remove access to old API versions in the following releases
+- An external application (ESB, ETL, Web Portal, Mobile application...) using a deprecated API version will receive
   errors as response, and this will probably break integrations business processes
-  - More info in [Salesforce Help](https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1) 
+- More info in [Salesforce Help](https://help.salesforce.com/s/articleView?id=000351312&language=en_US&mode=1&type=1)
   and in this [Salesforce blog post](https://t.co/uc2cobzmVi?amp=1)
 
   | API versions | Salesforce deprecation release |
@@ -2850,12 +2850,12 @@ DESCRIPTION
   | 7.0 to 20.0  |           Summer 21            |
   | 21.0 to 30.0 |           Summer 22            |
 
-  - Run the command `sfdx hardis:org:diagnose:legacyapi`
+- Run the command `sfdx hardis:org:diagnose:legacyapi`
 
   ![Legacy API result](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/legacy-api-result.png)
 
-  - If you see deprecated API calls, open the detailed CSV file and identify the sources of deprecated API calls
-  - You need to update your ecosystem external applications so they call a more recent version of APIS (52.0)
+- If you see deprecated API calls, open the detailed CSV file and identify the sources of deprecated API calls
+- You need to update your ecosystem external applications so they call a more recent version of APIS (52.0)
 
 EXAMPLES
   $ sfdx hardis:org:diagnose:legacyapi
@@ -2872,8 +2872,8 @@ Export files from an org according to a configuration
 
 ```
 USAGE
-  $ sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-s <number>] [-d] [--websocket <string>] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-s <number>] [-d] [--websocket <string>] [-u
+  <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2916,7 +2916,7 @@ Purge apex logs in selected org
 
 ```
 USAGE
-  $ sfdx hardis:org:purge:apexlog [-z] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:org:purge:apexlog [-z] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2952,8 +2952,8 @@ Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Stat
 
 ```
 USAGE
-  $ sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] [-u
+  <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2966,7 +2966,7 @@ OPTIONS
   -n, --name=name                                                                   Filter according to Name criteria
 
   -r, --instanceurl=instanceurl                                                     [default:
-                                                                                    https://login.saleforce.com] URL of
+                                                                                    <https://login.saleforce.com>] URL of
                                                                                     org instance
 
   -s, --status=status                                                               [default: Obsolete] Filter according
@@ -3000,7 +3000,7 @@ EXAMPLES
      ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
      30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   
-  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name 
+  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name
   TestFlow"
      Found 4 records:
      ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
@@ -3020,7 +3020,7 @@ Retrieve package configuration from an org
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:packageconfig [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:org:retrieve:packageconfig [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3052,8 +3052,8 @@ Retrieve Salesforce DX project from org
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-k <string>] [-m <string>] [-o] [-r <string>] [-d] 
-  [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-k <string>] [-m <string>] [-o] [-r <string>] [-d]
+  [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3100,7 +3100,7 @@ Retrieve Salesforce DX project from org
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:dx2 [-x <string>] [-t <string>] [-d] [--websocket <string>] [-u <string>] 
+  $ sfdx hardis:org:retrieve:sources:dx2 [-x <string>] [-t <string>] [-d] [--websocket <string>] [-u <string>]
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3137,8 +3137,8 @@ Retrieve Salesforce DX project from org
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-r <string>] [-d] [--websocket <string>] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-r <string>] [-d] [--websocket <string>] [-u
+  <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3173,7 +3173,7 @@ Interactive org selection for user
 
 ```
 USAGE
-  $ sfdx hardis:org:select [-h] [-s] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:select [-h] [-s] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3203,8 +3203,8 @@ Run apex test cases on org
 
 ```
 USAGE
-  $ sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket 
-  <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket
+  <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3240,8 +3240,8 @@ freeze mass users in org before a maintenance or go live
 
 ```
 USAGE
-  $ sfdx hardis:org:user:freeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:user:freeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] [-u
+  <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3292,8 +3292,8 @@ Unfreeze mass users in org after a maintenance or go live
 
 ```
 USAGE
-  $ sfdx hardis:org:user:unfreeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] 
-  [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:org:user:unfreeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>]
+  [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3344,7 +3344,7 @@ Create a new package
 
 ```
 USAGE
-  $ sfdx hardis:package:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:package:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3376,7 +3376,7 @@ Install a package
 
 ```
 USAGE
-  $ sfdx hardis:package:install [-p <string>] [-d] [--websocket <string>] [-k <string>] [-u <string>] [--apiversion 
+  $ sfdx hardis:package:install [-p <string>] [-d] [--websocket <string>] [-k <string>] [-u <string>] [--apiversion
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3414,7 +3414,7 @@ Create a new version of an unlocked package
 
 ```
 USAGE
-  $ sfdx hardis:package:version:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:package:version:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3446,7 +3446,7 @@ List versions of unlocked package
 
 ```
 USAGE
-  $ sfdx hardis:package:version:list [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:package:version:list [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3478,7 +3478,7 @@ Promote package(s) version(s): convert it from beta to released
 
 ```
 USAGE
-  $ sfdx hardis:package:version:promote [-d] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:package:version:promote [-d] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3514,7 +3514,7 @@ Audit API version
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3546,7 +3546,7 @@ Generate list of callIn and callouts from sfdx project
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:callincallout [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:audit:callincallout [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3571,7 +3571,7 @@ Find duplicate files in sfdx folder (often from past sfdx-cli bugs)
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:duplicatefiles [-p <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:audit:duplicatefiles [-p <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3600,7 +3600,7 @@ Generate list of remote sites
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:remotesites [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:audit:remotesites [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3625,7 +3625,7 @@ Remove unwanted empty items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:emptyitems [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:clean:emptyitems [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3651,7 +3651,7 @@ Remove unwanted hidden items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:hiddenitems [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:clean:hiddenitems [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3677,7 +3677,7 @@ Replace Mine by Everything in ListView, and log the replacements in sfdx-hardis.
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:listviews [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:clean:listviews [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3703,7 +3703,7 @@ Remove unwanted managed items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3730,7 +3730,7 @@ Remove all profile attributes that exist on Permission Sets
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:minimizeprofiles [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:clean:minimizeprofiles [-f <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3756,7 +3756,7 @@ Clean SFDX sources from items present neither in target org nor local package.xm
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] 
+  $ sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3796,7 +3796,7 @@ Remove unwanted references within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3838,7 +3838,7 @@ Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:retrievefolders [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:project:clean:retrievefolders [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3870,7 +3870,7 @@ Remove unwanted standard items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:standarditems [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:clean:standarditems [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3895,7 +3895,7 @@ Configure authentication from git branch to target org
 
 ```
 USAGE
-  $ sfdx hardis:project:configure:auth [-b] [-d] [--websocket <string>] [-v <string>] [-u <string>] [--apiversion 
+  $ sfdx hardis:project:configure:auth [-b] [-d] [--websocket <string>] [-v <string>] [-u <string>] [--apiversion
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3931,7 +3931,7 @@ Creates permission sets from existing profiles, with id PS_PROFILENAME
 
 ```
 USAGE
-  $ sfdx hardis:project:convert:profilestopermsets [-e <array>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:convert:profilestopermsets [-e <array>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3957,7 +3957,7 @@ Create a new SFDX Project
 
 ```
 USAGE
-  $ sfdx hardis:project:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3989,8 +3989,8 @@ Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
 ```
 USAGE
-  $ sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p 
-  <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p
+  <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -4023,15 +4023,15 @@ OPTIONS
 DESCRIPTION
   If necessary,You can define the following files (that supports wildcards <members>*</members>):
 
-  - manifest/packageXmlOnce.xml: Every element defined in this file will be deployed only if it is not existing yet in 
-  the target org (can be useful with ListView for example, if the client wants to update them directly in production 
+- manifest/packageXmlOnce.xml: Every element defined in this file will be deployed only if it is not existing yet in
+  the target org (can be useful with ListView for example, if the client wants to update them directly in production
   org)
-  - manifest/packageXmlOnChange.xml: Every element defined in this file will not be deployed if it already has a similar 
+- manifest/packageXmlOnChange.xml: Every element defined in this file will not be deployed if it already has a similar
   definition in target org (can be useful for SharingRules for example)
 
   Env vars override:
 
-  - SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml into several deployments
+- SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml into several deployments
 
 EXAMPLE
   $ sfdx hardis:project:deploy:sources:dx
@@ -4045,8 +4045,8 @@ Deploy metadatas to source org
 
 ```
 USAGE
-  $ sfdx hardis:project:deploy:sources:metadata [-c] [-x <string>] [-p <string>] [-f] [-k <string>] [-l 
-  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion 
+  $ sfdx hardis:project:deploy:sources:metadata [-c] [-x <string>] [-p <string>] [-f] [-k <string>] [-l
+  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -4094,7 +4094,7 @@ Fix flexipages for apiVersion v53 (Winter22).
 
 ```
 USAGE
-  $ sfdx hardis:project:fix:v53flexipages [-p <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:fix:v53flexipages [-p <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -4126,7 +4126,7 @@ Generate package.xml git delta between 2 commits
 
 ```
 USAGE
-  $ sfdx hardis:project:generate:gitdelta [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d] 
+  $ sfdx hardis:project:generate:gitdelta [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d]
   [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -4155,7 +4155,7 @@ Apply syntactic analysis (linters) on the repository sources, using Mega-Linter
 
 ```
 USAGE
-  $ sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -4189,7 +4189,7 @@ Create and initialize a scratch org so it is ready to use
 
 ```
 USAGE
-  $ sfdx hardis:scratch:create [-n] [-d] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:create [-n] [-d] [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -4227,7 +4227,7 @@ Deletes a scratch org
 
 ```
 USAGE
-  $ sfdx hardis:scratch:delete [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:delete [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -4259,7 +4259,7 @@ Select a data storage service and configure information to build a scratch org p
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pool:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
