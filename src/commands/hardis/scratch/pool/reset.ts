@@ -1,13 +1,11 @@
 /* jscpd:ignore-start */
 import * as c from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
-import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
+import { execCommand, uxLog } from "../../../../common/utils";
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
@@ -66,6 +64,7 @@ export default class ScratchPoolReset extends SfdxCommand {
     let scratchOrgs = poolStorage.scratchOrgs || [];
 
     // Delete existing scratch orgs
+    /* jscpd:ignore-start */
     const scratchOrgsToDelete = [...scratchOrgs];
     scratchOrgs = [];
     poolStorage.scratchOrgs = scratchOrgs;
@@ -83,6 +82,7 @@ export default class ScratchPoolReset extends SfdxCommand {
         )
       );
     }
+    /* jscpd:ignore-end */
 
     return { outputString: "Reset scratch orgs pool" };
   }

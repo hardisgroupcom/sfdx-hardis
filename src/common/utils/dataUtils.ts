@@ -65,10 +65,12 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
 
 // Export data from sfdmu folder
 export async function exportData(sfdmuPath: string, commandThis: any, options: any = {}) {
+  /* jscpd:ignore-start */
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl.isDelete === true) {
     throw new SfdxError("Your export.json contains deletion info, please use appropriate delete command");
   }
+  /* jscpd:ignore-end */
   uxLog(commandThis, c.cyan(`Exporting data from ${c.green(dtl.full_label)} ...`));
   uxLog(commandThis, c.italic(c.grey(dtl.description)));
   const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;

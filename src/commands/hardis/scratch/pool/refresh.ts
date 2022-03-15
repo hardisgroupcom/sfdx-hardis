@@ -1,15 +1,13 @@
 /* jscpd:ignore-start */
 import { spawn } from "child_process";
 import * as c from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
 import * as which from "which";
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
-import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
+import {  execCommand, uxLog } from "../../../../common/utils";
 import moment = require("moment");
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
 
@@ -63,7 +61,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
       uxLog(this, c.yellow("Configuration file must contain a poolConfig property") + "\n" + c.grey(JSON.stringify(config, null, 2)));
       return { outputString: "Configuration file must contain a poolConfig property" };
     }
-    /* jscpd:ignore-end */
+
     const maxScratchOrgsNumber = config.poolConfig.maxScratchOrgsNumber || 5;
     uxLog(this, c.grey("Pool config: " + JSON.stringify(config.poolConfig)));
 
@@ -71,6 +69,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     const poolStorage = await getPoolStorage({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
     let scratchOrgs = poolStorage.scratchOrgs || [];
 
+    /* jscpd:ignore-end */
     // Clean expired orgs
     const minScratchOrgRemainingDays = config.poolConfig.minScratchOrgRemainingDays || 25;
     const scratchOrgsToDelete = [];
