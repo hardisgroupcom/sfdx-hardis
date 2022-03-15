@@ -18,7 +18,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class ScratchPoolReset extends SfdxCommand {
   public static title = "Reset scratch org pool";
 
-  public static description = "Reset scratch org pool (delete all scratchs in the pool)";
+  public static description = "Reset scratch org pool (delete all scratches in the pool)";
 
   public static examples = ["$ sfdx hardis:scratch:pool:refresh"];
 

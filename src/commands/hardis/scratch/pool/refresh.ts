@@ -7,7 +7,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
-import {  execCommand, uxLog } from "../../../../common/utils";
+import { execCommand, uxLog } from "../../../../common/utils";
 import moment = require("moment");
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
 
