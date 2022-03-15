@@ -4,7 +4,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
-import { execCommand, execSfdxJson, uxLog } from ".";
+import { createTempDir, execCommand, execSfdxJson, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
@@ -210,6 +210,16 @@ export async function promptOrgUsernameDefault(commandThis: any, defaultOrg: str
     const selectedOrg = await promptOrg(commandThis, options);
     return selectedOrg.username;
   }
+}
+
+// Authenticate with SfdxUrlStore
+export async function authenticateWithSfdxUrlStore(org: any) {
+  // Authenticate to scratch org to delete
+  const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
+  const authFileContent = org.scratchOrgSfdxAuthUrl || (org.authFileJson ? JSON.stringify(org.authFileJson) : null);
+  await fs.writeFile(authFile, authFileContent, "utf8");
+  const authCommand = `sfdx auth:sfdxurl:store -f ${authFile}`;
+  await execCommand(authCommand, this, { fail: true, output: false });
 }
 
 // Add package installation to project .sfdx-hardis.yml
