@@ -42,6 +42,29 @@
       "title": "Minimum apex test coverage %",
       "type": "number"
     },
+    "customCommands": {
+      "$id": "#/properties/customCommands",
+      "description": "List of custom commands for VsCode SFDX Hardis (see documentation)",
+      "examples": [
+        [
+          {
+            "id": "custom-menu",
+            "label": "Custom menu",
+            "commands": [
+              {
+                "id": "some-command",
+                "label": "Some commands",
+                "tooltip": "Run some commands tooltip",
+                "icon": "old.svg",
+                "command": "echo 'This is my custom command'"
+              }
+            ]
+          }
+        ]
+      ],
+      "title": "Custom commands for VsCode SFDX Hardis",
+      "type": "array"
+    },
     "dataPackages": {
       "$id": "#/properties/dataPackages",
       "description": "List of data packages",
@@ -349,7 +372,12 @@
     "poolConfig": {
       "$id": "#/properties/poolConfig",
       "description": "Configuration allowing to generate and fetch scratch orgs from scratch org pool",
-      "examples": [{ "maxScratchOrgsNumber": 10, "storageService": "kvdb.io" }],
+      "examples": [
+        {
+          "maxScratchOrgsNumber": 10,
+          "storageService": "kvdb.io"
+        }
+      ],
       "title": "Scratch org pool configuration",
       "type": "object",
       "properties": {

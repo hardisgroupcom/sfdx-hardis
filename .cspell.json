@@ -234,6 +234,7 @@
     "hardisscratchpoolcreate",
     "hardisscratchpoollocalauth",
     "hardisscratchpoolrefresh",
+    "hardisscratchpoolreset",
     "hardisscratchpoolview",
     "hardisscratchpull",
     "hardisscratchpush",

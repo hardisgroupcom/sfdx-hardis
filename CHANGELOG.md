@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update JSON schema for customCommands (used by VsCode SFDX Hardis)
+
 ## [2.71.0] 2022-03-15
 
 - New command hardis:org:data:delete to manage [delete data workspaces](https://help.sfdmu.com/full-documentation/advanced-features/delete-from-source) of sfdmu
