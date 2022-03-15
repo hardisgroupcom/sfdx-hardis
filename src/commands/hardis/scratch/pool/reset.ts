@@ -8,6 +8,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
 import { createTempDir, execCommand, uxLog } from "../../../../common/utils";
+import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -64,19 +65,14 @@ export default class ScratchPoolReset extends SfdxCommand {
     const poolStorage = await getPoolStorage({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
     let scratchOrgs = poolStorage.scratchOrgs || [];
 
-    // Clean existing scratch orgs
+    // Delete existing scratch orgs
     const scratchOrgsToDelete = [...scratchOrgs];
     scratchOrgs = [];
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage, { devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
     for (const scratchOrgToDelete of scratchOrgsToDelete) {
       // Authenticate to scratch org to delete
-      const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
-      const authFileContent =
-        scratchOrgToDelete.scratchOrgSfdxAuthUrl || (scratchOrgToDelete.authFileJson ? JSON.stringify(scratchOrgToDelete.authFileJson) : null);
-      await fs.writeFile(authFile, authFileContent, "utf8");
-      const authCommand = `sfdx auth:sfdxurl:store -f ${authFile}`;
-      await execCommand(authCommand, this, { fail: true, output: false });
+      await authenticateWithSfdxUrlStore(scratchOrgToDelete);
       // Delete scratch org
       const deleteCommand = `sfdx force:org:delete --noprompt --targetusername ${scratchOrgToDelete.scratchOrgUsername}`;
       await execCommand(deleteCommand, this, { fail: false, debug: this.debugMode, output: true });
