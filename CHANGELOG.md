@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.71.0] 2022-03-10
+## [2.71.0] 2022-03-11
 
 - New command hardis:org:data:delete to manage [delete data workspaces](https://help.sfdmu.com/full-documentation/advanced-features/delete-from-source) of sfdmu
 

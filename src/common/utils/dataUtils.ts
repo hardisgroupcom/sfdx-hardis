@@ -11,6 +11,9 @@ export const dataFolderRoot = path.join(".", "scripts", "data");
 // Import data from sfdmu folder
 export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
+  if (dtl.isDelete === true) {
+    throw new SfdxError("Your export.json contains deletion info, please use appropriate delete command");
+  }
   uxLog(commandThis, c.cyan(`Importing data from ${c.green(dtl.full_label)} ...`));
   /* jscpd:ignore-start */
   uxLog(commandThis, c.italic(c.grey(dtl.description)));
@@ -36,6 +39,11 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
 // Delete data using sfdmu folder
 export async function deleteData(sfdmuPath: string, commandThis: any, options: any = {}) {
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
+  if (dtl.isDelete === false) {
+    throw new SfdxError(
+      "Your export.json does not contain deletion information. Please check http://help.sfdmu.com/full-documentation/advanced-features/delete-from-source"
+    );
+  }
   uxLog(commandThis, c.cyan(`Deleting data from ${c.green(dtl.full_label)} ...`));
   uxLog(commandThis, c.italic(c.grey(dtl.description)));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
@@ -58,6 +66,9 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
 // Export data from sfdmu folder
 export async function exportData(sfdmuPath: string, commandThis: any, options: any = {}) {
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
+  if (dtl.isDelete === true) {
+    throw new SfdxError("Your export.json contains deletion info, please use appropriate delete command");
+  }
   uxLog(commandThis, c.cyan(`Exporting data from ${c.green(dtl.full_label)} ...`));
   uxLog(commandThis, c.italic(c.grey(dtl.description)));
   const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
@@ -118,5 +129,17 @@ export async function getDataWorkspaceDetail(dataWorkspace: string) {
     label: hardisLabel,
     description: hardisDescription,
     exportJson: exportFileJson,
+    isDelete: isDeleteDataWorkspace(exportFileJson),
   };
+}
+
+// Checks if a sfdmu data workspace can delete object!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*!*!é!*é!!!é*!é!*!*é!*!*!*!*!*!*!**!!!!!!!*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!s -> https://help.sfdmu.com/full-documentation/advanced-features/delete-from-source
+export function isDeleteDataWorkspace(exportFileJson: any) {
+  let isDelete = false;
+  for (const objectConfig of exportFileJson.objects) {
+    if (objectConfig?.deleteFromSource === true || objectConfig.operation === "DeleteSource") {
+      isDelete = true;
+    }
+  }
+  return isDelete;
 }
