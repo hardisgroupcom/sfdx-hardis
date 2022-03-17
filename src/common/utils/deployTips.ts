@@ -172,6 +172,12 @@ Update the formula to use a field compliant with formulas.
 More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_formulas.htm&type=5`,
     },
     {
+      name: "flow-must-be-deleted-manually",
+      label: "Flow must be deleted manually",
+      expressionRegex: [/.flow (.*) insufficient access rights on cross-reference id/gm],
+      tip: `Flows can not be deleted using deployments, please delete them manually in the target org`,
+    },
+    {
       name: "invalid-scope-mine",
       label: "Invalid scope:Mine, not allowed",
       expressionString: ["Invalid scope:Mine, not allowed"],

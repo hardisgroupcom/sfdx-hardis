@@ -63,6 +63,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     }
 
     const maxScratchOrgsNumber = config.poolConfig.maxScratchOrgsNumber || 5;
+    const maxScratchOrgsNumberToCreateOnce = config.poolConfig.maxScratchOrgsNumberToCreateOnce || 10;
     uxLog(this, c.grey("Pool config: " + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
@@ -118,7 +119,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
     }
 
     // Create new scratch orgs
-    const numberOfOrgsToCreate = maxScratchOrgsNumber - scratchOrgs.length;
+    const numberOfOrgsToCreate = Math.min(maxScratchOrgsNumber - scratchOrgs.length, maxScratchOrgsNumberToCreateOnce);
     uxLog(this, c.cyan("Creating " + numberOfOrgsToCreate + " scratch orgs..."));
     let numberCreated = 0;
     let numberfailed = 0;
@@ -134,7 +135,6 @@ export default class ScratchPoolRefresh extends SfdxCommand {
         // handle errors
         child.on("error", (err) => {
           resolve({ code: 1, result: { error: err } });
-          throw err;
         });
         // Store data
         let stdout = "";
@@ -149,7 +149,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
           const colorFunc = code === 0 ? c.green : c.red;
           uxLog(this, "[pool] " + colorFunc(`hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
           if (code !== 0) {
-            uxLog(this, c.grey(stdout));
+            uxLog(this, `Return code is not 0 (${i}): ` + c.grey(stdout));
             numberfailed++;
           } else {
             numberCreated++;
@@ -160,7 +160,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
             result = JSON.parse(stdout);
           } catch (e) {
             result = { result: { status: 1, rawLog: stdout } };
-            uxLog(this, c.yellow("Error parsing stdout: " + stdout));
+            uxLog(this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
           }
           await addScratchOrgToPool(result.result || result);
           resolve({ code, result: result });
