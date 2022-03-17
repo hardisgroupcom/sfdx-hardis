@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.71.1] 2022-03-17
+## [2.71.2] 2022-03-17
 
 - Update JSON schema for customCommands (used by VsCode SFDX Hardis)
 - New property for scratch org pool config: maxScratchOrgsNumberToCreateOnce (max number of scratch orgs to create during one CI job)
