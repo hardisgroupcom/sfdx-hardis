@@ -1,31 +1,68 @@
 // Analyze deployment errors to provide tips to user :)
 import * as c from "chalk";
 
-export function analyzeDeployErrorLogs(log: string): any {
+let logRes = null;
+
+export function analyzeDeployErrorLogs(log: string, includeInLog = true): any {
+  logRes = log;
   const tips: any = [];
   for (const tipDefinition of getAllTips()) {
-    if (matchesTip(tipDefinition, log)) {
+    if (matchesTip(tipDefinition, includeInLog)) {
       tips.push(tipDefinition);
     }
   }
-  return { tips };
+  return { tips, errLog: logRes };
 }
 
-function matchesTip(tipDefinition: any, log: string) {
+// Checks if the error string or regex is found in the log
+// Adds the fix tip under the line if includeInLog is true
+function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
+  // string matching
   if (
     tipDefinition.expressionString &&
     tipDefinition.expressionString.filter((expressionString: any) => {
-      return log.includes(expressionString);
+      return logRes.includes(expressionString);
     }).length > 0
   ) {
+    if (includeInLog) {
+      const newLogLines = [];
+      const logLines = logRes.split(/\r?\n/).filter((str) => str.startsWith("Error"));
+      for (const line of logLines) {
+        newLogLines.push(line);
+        for (const expressionString of tipDefinition.expressionString) {
+          if (line.includes(expressionString)) {
+            newLogLines.push(c.bold(c.yellow(tipDefinition.label)));
+            newLogLines.push(...tipDefinition.tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
+          }
+        }
+      }
+      logRes = newLogLines.join("\n");
+    }
     return true;
   }
+  // regex matching
   if (
     tipDefinition.expressionRegex &&
     tipDefinition.expressionRegex.filter((expressionRegex: any) => {
-      return expressionRegex.test(log);
+      return expressionRegex.test(logRes);
     }).length > 0
   ) {
+    if (includeInLog) {
+      const newLogLines = [];
+      const logLines = logRes.split(/\r?\n/).filter((str) => str.startsWith("Error"));
+      for (const line of logLines) {
+        newLogLines.push(line);
+        for (const expressionRegex of tipDefinition.expressionRegex) {
+          const matches = [...line.matchAll(expressionRegex)];
+          for (const _m of matches){
+              newLogLines.push(c.bold(c.yellow(tipDefinition.label)));
+              const tip = tipDefinition.tip;
+              newLogLines.push(...tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
+          }
+        }
+      }
+      logRes = newLogLines.join("\n");
+    }
     return true;
   }
   return false;

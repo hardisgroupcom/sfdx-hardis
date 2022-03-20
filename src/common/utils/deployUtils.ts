@@ -43,9 +43,9 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     elapseEnd("force:source:push");
   } catch (e) {
     await restoreArrangedFiles(arrangedFiles, commandThis);
-    const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(commandThis, c.red("Sadly there has been push error(s)"));
-    uxLog(commandThis, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+    uxLog(commandThis, c.red(errLog));
     uxLog(
       commandThis,
       c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`))
@@ -64,9 +64,9 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       debug: debug,
     });
   } catch (e) {
-    const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(this, c.red("Sadly there has been pull error(s)"));
-    uxLog(this, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+    uxLog(this, c.red(errLog));
     // List unknown elements from output
     const forceIgnoreElements = [...(e.stdout + e.stderr).matchAll(/Entity of type '(.*)' named '(.*)' cannot be found/gm)];
     if (forceIgnoreElements.length > 0 && !isCI) {
@@ -158,9 +158,9 @@ export async function forceSourceDeploy(
           retry: deployment.retry || null,
         });
       } catch (e) {
-        const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+        const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
         uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
-        uxLog(commandThis, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+        uxLog(this, c.red(errLog));
         uxLog(
           commandThis,
           c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`))
@@ -452,14 +452,14 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
       fail: true,
     });
   } catch (e) {
-    const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    const { errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(this, c.red("Sadly there has been destruction error(s)"));
-    uxLog(this, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+    uxLog(this, c.red(errLog));
     uxLog(
       this,
-      c.yellow(
+      c.yellow(c.bold(
         "That could be a false positive, as in real deployment, the package.xml deployment will be committed before the use of destructiveChanges.xml"
-      )
+      ))
     );
     throw new SfdxError("Error while deploying destructive changes");
   }
@@ -633,9 +633,9 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { tips } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+  const { tips , errLog} = analyzeDeployErrorLogs(e.stdout + e.stderr);
   uxLog(commandThis, c.red(c.bold("Sadly there has been Metadata deployment error(s)...")));
-  uxLog(commandThis, c.yellow(tips.map((tip: any) => c.bold(tip.label) + "\n" + tip.tip).join("\n\n")));
+  uxLog(this, c.red(errLog));
   uxLog(
     commandThis,
     c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the metadata deployment issues :)`))
