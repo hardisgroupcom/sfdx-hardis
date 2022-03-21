@@ -457,9 +457,11 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
     uxLog(this, c.red(errLog));
     uxLog(
       this,
-      c.yellow(c.bold(
-        "That could be a false positive, as in real deployment, the package.xml deployment will be committed before the use of destructiveChanges.xml"
-      ))
+      c.yellow(
+        c.bold(
+          "That could be a false positive, as in real deployment, the package.xml deployment will be committed before the use of destructiveChanges.xml"
+        )
+      )
     );
     throw new SfdxError("Error while deploying destructive changes");
   }
@@ -633,7 +635,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { tips , errLog} = analyzeDeployErrorLogs(e.stdout + e.stderr);
+  const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
   uxLog(commandThis, c.red(c.bold("Sadly there has been Metadata deployment error(s)...")));
   uxLog(this, c.red(errLog));
   uxLog(
