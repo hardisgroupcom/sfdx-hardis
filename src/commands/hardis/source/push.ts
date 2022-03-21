@@ -7,7 +7,8 @@ export default class Push extends SfdxCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.
 
 See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push
-`;  protected static readonly flagsConfig: FlagsConfig = {
+`;
+  protected static readonly flagsConfig: FlagsConfig = {
     forceoverwrite: flags.boolean({
       char: "f",
       description: "forceoverwrite",
