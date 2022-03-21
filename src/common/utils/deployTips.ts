@@ -5,15 +5,26 @@ import * as format from "string-template";
 let logRes = null;
 const firstYellowChar = c.yellow("*")[0];
 
+// Checks for deploy tips in a log string
+// returns formatted and completed error log
 export function analyzeDeployErrorLogs(log: string, includeInLog = true): any {
-  logRes = log;
+  logRes = returnErrorLines(log).join("\n");
   const tips: any = [];
   for (const tipDefinition of getAllTips()) {
     if (matchesTip(tipDefinition, includeInLog)) {
       tips.push(tipDefinition);
     }
   }
-  return { tips, errLog: logRes };
+  // Add default error messages for errors without tips
+  const logResLines = [];
+  const updatedLogLines = returnErrorLines(logRes);
+  updatedLogLines.forEach((logLine, index) => {
+    logResLines.push(logLine);
+    if (logLine.startsWith("Error") && !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].startsWith("Error"))) {
+      logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. Try google ?"), c.yellow(""));
+    }
+  });
+  return { tips, errLog: logResLines.join("\n") };
 }
 
 // Checks if the error string or regex is found in the log
@@ -35,6 +46,7 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
           if (line.includes(expressionString)) {
             newLogLines.push(c.yellow(c.bold(tipDefinition.label)));
             newLogLines.push(...tipDefinition.tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
+            newLogLines.push(c.yellow(" "));
           }
         }
       }
@@ -63,6 +75,7 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
             newLogLines.push(c.yellow(c.bold(format(tipDefinition.label, replacements))));
             const tip = tipDefinition.tip;
             newLogLines.push(...tip.split(/\r?\n/).map((str: string) => c.yellow(format(str, replacements))));
+            newLogLines.push(c.yellow(" "));
           }
         }
       }
@@ -162,8 +175,8 @@ Example of element to delete:
     {
       name: "duplicate-label",
       label: "Duplicate label",
-      expressionString: ["Duplicate label:"],
-      tip: `You probably renamed a picklist API name. Please update manually the picklist in the target org to avoid to have a duplicate label`,
+      expressionRegex: [/Error (.*) Duplicate label: (.*)/gm],
+      tip: `You probably renamed the picklist API name for {2}. Please update manually the picklist {1} in the target org to avoid to have a duplicate label`,
     },
     {
       name: "email-template-missing",
@@ -435,7 +448,7 @@ Go manually make the change in the target org, so the deployment will pass
       name: "record-type-not-found",
       label: "Record Type not found",
       expressionRegex: [/Error (.*) In field: recordType - no RecordType named (.*) found/gm],
-      tip: `An unknown record type {2} is missing in {1}
+      tip: `An unknown record type {2} is referenced in {1}
 - If record type {2} is not supposed to exist, perform a search in all files of {1}, then remove matching XML elements referring to this record type
 - If record type {2} is supposed to exist, you may have to create it manually in the target org to make the deployment pass
 `,
@@ -513,6 +526,12 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`
       tip: `You can:
 - enable the related permission in the target org
 - or remove references to the permission in source XML files (Probably a Profile or a Permission set)`,
+    },
+    {
+      name: "variable-does-not-exist",
+      label: "Variable does not exist",
+      expressionRegex: [/Error (.*) Variable does not exist: (.*) \((.*)\)/gm],
+      tip: `Apex error in {1} with unknown variable {2} at position {3}. If {2} is a class name, try to fix it !`,
     },
     {
       name: "wave-digest-error",

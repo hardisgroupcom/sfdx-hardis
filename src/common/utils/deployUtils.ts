@@ -45,7 +45,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     await restoreArrangedFiles(arrangedFiles, commandThis);
     const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(commandThis, c.red("Sadly there has been push error(s)"));
-    uxLog(commandThis, c.red(errLog));
+    uxLog(this, c.red("\n" + errLog));
     uxLog(
       commandThis,
       c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`))
@@ -66,7 +66,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
   } catch (e) {
     const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(this, c.red("Sadly there has been pull error(s)"));
-    uxLog(this, c.red(errLog));
+    uxLog(this, c.red("\n" + errLog));
     // List unknown elements from output
     const forceIgnoreElements = [...(e.stdout + e.stderr).matchAll(/Entity of type '(.*)' named '(.*)' cannot be found/gm)];
     if (forceIgnoreElements.length > 0 && !isCI) {
@@ -160,7 +160,7 @@ export async function forceSourceDeploy(
       } catch (e) {
         const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
         uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
-        uxLog(this, c.red(errLog));
+        uxLog(this, c.red("\n" + errLog));
         uxLog(
           commandThis,
           c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`))
@@ -454,7 +454,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
   } catch (e) {
     const { errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
     uxLog(this, c.red("Sadly there has been destruction error(s)"));
-    uxLog(this, c.red(errLog));
+    uxLog(this, c.red("\n" + errLog));
     uxLog(
       this,
       c.yellow(
@@ -637,7 +637,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
 async function checkDeploymentErrors(e, options, commandThis = null) {
   const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
   uxLog(commandThis, c.red(c.bold("Sadly there has been Metadata deployment error(s)...")));
-  uxLog(this, c.red(errLog));
+  uxLog(this, c.red("\n" + errLog));
   uxLog(
     commandThis,
     c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the metadata deployment issues :)`))

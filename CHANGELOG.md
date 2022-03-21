@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.73.0] 2022-03-21
+
+- Improve tips about how to fix deployments directly within error messages
+- Wrapper commands to display tips in error logs
+  - force:source:deploy can be wrapped using hardis:source:deploy
+  - force:source:push can be wrapped using hardis:source:push
+  - force:mdapi:deploy can be wrapped using hardis:mdapi:deploy
+
 ## [2.72.0] 2022-03-21
 
 - Include tips about how to fix deployments directly within error messages
