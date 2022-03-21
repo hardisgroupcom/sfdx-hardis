@@ -1,7 +1,9 @@
 // Analyze deployment errors to provide tips to user :)
 import * as c from "chalk";
+import * as format from "string-template";
 
 let logRes = null;
+const firstYellowChar = c.yellow("*")[0];
 
 export function analyzeDeployErrorLogs(log: string, includeInLog = true): any {
   logRes = log;
@@ -17,6 +19,7 @@ export function analyzeDeployErrorLogs(log: string, includeInLog = true): any {
 // Checks if the error string or regex is found in the log
 // Adds the fix tip under the line if includeInLog is true
 function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
+  const newLogLines = [];
   // string matching
   if (
     tipDefinition.expressionString &&
@@ -25,13 +28,12 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
     }).length > 0
   ) {
     if (includeInLog) {
-      const newLogLines = [];
-      const logLines = logRes.split(/\r?\n/).filter((str) => str.startsWith("Error"));
+      const logLines = returnErrorLines(logRes);
       for (const line of logLines) {
         newLogLines.push(line);
         for (const expressionString of tipDefinition.expressionString) {
           if (line.includes(expressionString)) {
-            newLogLines.push(c.bold(c.yellow(tipDefinition.label)));
+            newLogLines.push(c.yellow(c.bold(tipDefinition.label)));
             newLogLines.push(...tipDefinition.tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
           }
         }
@@ -41,6 +43,7 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
     return true;
   }
   // regex matching
+  /* jscpd:ignore-start */
   if (
     tipDefinition.expressionRegex &&
     tipDefinition.expressionRegex.filter((expressionRegex: any) => {
@@ -49,15 +52,17 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
   ) {
     if (includeInLog) {
       const newLogLines = [];
-      const logLines = logRes.split(/\r?\n/).filter((str) => str.startsWith("Error"));
+      const logLines = returnErrorLines(logRes);
       for (const line of logLines) {
         newLogLines.push(line);
         for (const expressionRegex of tipDefinition.expressionRegex) {
+          expressionRegex.lastIndex = 0; // reset regex last index to be able to reuse it
           const matches = [...line.matchAll(expressionRegex)];
-          for (const _m of matches){
-              newLogLines.push(c.bold(c.yellow(tipDefinition.label)));
-              const tip = tipDefinition.tip;
-              newLogLines.push(...tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
+          for (const m of matches) {
+            const replacements = m.map((str: string) => c.bold(str.trim()));
+            newLogLines.push(c.yellow(c.bold(format(tipDefinition.label, replacements))));
+            const tip = tipDefinition.tip;
+            newLogLines.push(...tip.split(/\r?\n/).map((str: string) => c.yellow(format(str, replacements))));
           }
         }
       }
@@ -66,6 +71,11 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
     return true;
   }
   return false;
+  /* jscpd:ignore-end */
+}
+
+function returnErrorLines(strIn) {
+  return strIn.split(/\r?\n/).filter((str) => str.startsWith("Error") || str.startsWith(firstYellowChar));
 }
 
 function getAllTips() {
@@ -83,7 +93,7 @@ function getAllTips() {
       label: "Can not delete custom field",
       context: "destructiveChange",
       expressionRegex: [/This (.*) is referenced elsewhere in salesforce.com/gm, /Le champ personnalisé (.*) est utilisé dans (.*)/gm],
-      tip: `A custom field can not be deleted because it is used elsewhere. Remove its references ans try again
+      tip: `Custom field {1} can not be deleted because it is used elsewhere. Remove its references ans try again
 THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed separately from updated items deployment check`,
     },
     {
@@ -108,8 +118,8 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
     {
       name: "custom-object-not-found",
       label: "Custom object not found",
-      expressionRegex: [/In field: field - no CustomObject named (.*) found/gm],
-      tip: `A reference to a custom object is not found:
+      expressionRegex: [/Error (.*) In field: field - no CustomObject named (.*) found/gm],
+      tip: `A reference to a custom object {2} is not found in {1}:
 - If you renamed the custom object, do a search/replace in sources with previous object name and new object name
 - If you deleted the custom object, or if you don't want to deploy it, do a search on the custom object name, and remove XML elements referencing it
 - If the object should exist, make sure it is in force-app/main/default/objects and that the object name is in manifest/package.xml in CustomObject section
@@ -119,8 +129,8 @@ You may also have a look to command sfdx hardis:project:clean:references
     {
       name: "custom-field-not-found",
       label: "Custom field not found",
-      expressionRegex: [/In field: field - no CustomField named (.*) found/gm],
-      tip: `A reference to a custom field is not found:
+      expressionRegex: [/Error (.*) In field: field - no CustomField named (.*) found/gm],
+      tip: `A reference to a custom field {2} is not found in {1}:
 - If you renamed the custom field, do a search/replace in sources with previous field name and new field name
 - If you deleted the custom field, or if you don't want to deploy it, do a search on the custom field name, and remove XML elements referencing it
 - If the custom field should exist, make sure it is in force-app/main/default/objects/YOUROBJECT/fields and that the field name is in manifest/package.xml in CustomField section
@@ -159,7 +169,7 @@ Example of element to delete:
       name: "email-template-missing",
       label: "Missing e-mail template",
       expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
-      tip: `Lightning EmailTemplates must also be imported with metadatas.
+      tip: `Lightning EmailTemplates records must also be imported with metadatas.
 ${c.cyan(
   "If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)"
 )}
@@ -190,15 +200,15 @@ To remove them, please run sfdx:hardis:project:clean:emptyitems`,
       name: "field-must-not-be-required",
       label: "Formula picklist field issue",
       expressionRegex: [/Field:(.*) must not be Required/gm],
-      tip: `You probably made read only a field that was required before.
-Find the field in the layout source XML, then replace Required by Readonly`,
+      tip: `You probably made read only field {1} that was required before.
+Find field {1} in the layout source XML, then replace Required by Readonly`,
     },
     {
       name: "field-not-available-for-element",
       label: "Field not available for element",
       expressionRegex: [/Field (.*) is not available for/gm],
-      tip: `You probably changed the type of a field.
-Find the field in the source XML, and remove the section using it`,
+      tip: `You probably changed the type of field {1}.
+Find field {1} in the source XML, and remove the section using it`,
     },
     {
       name: "formula-picklist-issue",
@@ -212,7 +222,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       name: "flow-must-be-deleted-manually",
       label: "Flow must be deleted manually",
       expressionRegex: [/.flow (.*) insufficient access rights on cross-reference id/gm],
-      tip: `Flows can not be deleted using deployments, please delete them manually in the target org`,
+      tip: `Flow {1} can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows`,
     },
     {
       name: "invalid-scope-mine",
@@ -365,8 +375,8 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
       label: "Missing object referenced in package.xml",
       expressionRegex: [/An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory/gm],
       tip: `You can either:
-- Update the package.xml to remove the reference to the missing element
-- Add the missing element in your project source files`,
+- Update the package.xml to remove the reference to the missing {2} {1}
+- Add the missing {2} {1} in your project source files`,
     },
     {
       name: "missing-sales-team",
@@ -402,9 +412,9 @@ Go manually make the change in the target org, so the deployment will pass
       name: "picklist-value-not-found",
       label: "Picklist value not found",
       expressionRegex: [/Picklist value: (.*) in picklist: (.*) not found/gm],
-      tip: `Some element have references to missing picklist value(e)
-- If the picklist is standard, add the picklist to sfdx sources by using "sfdx force:source:retrieve -m StandardValueSet:CaseType" for example, then save again
-- Else, perform a search in all code of the picklist value name, then remove XML tags referring to unknown picklist value (for example in record types metadatas)
+      tip: `Sources have references to value {1} of picklist {2}
+- If picklist {2} is standard, add the picklist to sfdx sources by using "sfdx force:source:retrieve -m StandardValueSet:{2}", then save again
+- Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
 `,
     },
     {
@@ -424,10 +434,10 @@ Go manually make the change in the target org, so the deployment will pass
     {
       name: "record-type-not-found",
       label: "Record Type not found",
-      expressionRegex: [/In field: recordType - no RecordType named (.*) found/gm],
-      tip: `Some element have references to missing record type
-- If the record type is not supposed to exist, perform a search in all files and remove XML elements referring to this record type
-- If the record type is supposed to exist, you may have to create it manually in the target org to make the deployment pass
+      expressionRegex: [/Error (.*) In field: recordType - no RecordType named (.*) found/gm],
+      tip: `An unknown record type {2} is missing in {1}
+- If record type {2} is not supposed to exist, perform a search in all files of {1}, then remove matching XML elements referring to this record type
+- If record type {2} is supposed to exist, you may have to create it manually in the target org to make the deployment pass
 `,
     },
     {
@@ -443,7 +453,7 @@ Go manually make the change in the target org, so the deployment will pass
       name: "sharing-not-supported",
       label: "Unsupported sharing configuration",
       expressionRegex: [/not supported for (.*) since it's org wide default is/gm],
-      tip: `Consistency error between sharing settings and object configuration
+      tip: `Consistency error between {1} sharing settings and {1} object configuration
 Please check https://salesforce.stackexchange.com/questions/260923/sfdx-deploying-contact-sharing-rules-on-a-fresh-deployment
 If you already did that, please try again to run the job`,
     },
@@ -466,7 +476,7 @@ If you already did that, please try again to run the job`,
       name: "test-case-async-exception",
       label: "Async exception in test class",
       expressionRegex: [/System.AsyncException: (.*) Apex/gm],
-      tip: `This may be a test class implementation issue.
+      tip: `This may be a test class implementation issue in {1}.
 Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY`,
     },
     {
