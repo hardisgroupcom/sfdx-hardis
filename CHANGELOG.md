@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Enhance hardis:work:save to request if the files has already been staged and committed
 - Deploy manifest and destructive change in the same sfdx force:source:deploy call thanks to new argument postdestructivechanges
 - More deployTips
+- Improve MsTeams notifications management
 
 ## [2.73.0] 2022-03-21
 
