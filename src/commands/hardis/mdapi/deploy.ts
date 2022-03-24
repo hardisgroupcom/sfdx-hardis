@@ -1,4 +1,4 @@
-  /* jscpd:ignore-start */
+/* jscpd:ignore-start */
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";

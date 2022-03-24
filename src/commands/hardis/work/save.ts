@@ -168,7 +168,7 @@ export default class SaveTask extends SfdxCommand {
     const currentGitBranch = await getCurrentGitBranch();
 
     // Request user to select what he/she wants to commit
-    let interactiveGitAllPerformed = false ;
+    let interactiveGitAllPerformed = false;
     let gitStatus: any = {};
     if (this.noGit) {
       uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
@@ -178,7 +178,7 @@ export default class SaveTask extends SfdxCommand {
         name: "value",
         message: c.cyanBright("Have you already staged and committed your files ?"),
         choices: [
-          { title: "Yes, I already staged and commited my files", value: true },
+          { title: "Yes, I already staged and committed my files", value: true },
           { title: "No, please help me to select the files I want to stage and commit !", value: false },
           { title: "I have no idea about what you are talking about :(", value: false },
         ],
@@ -187,7 +187,7 @@ export default class SaveTask extends SfdxCommand {
         // Interactive git add displays the list of local files to stage
         const groups = this.describeGroups(config);
         await interactiveGitAdd({ groups: groups });
-        interactiveGitAllPerformed = true ;
+        interactiveGitAllPerformed = true;
         // Commit updates
         gitStatus = await git().status();
         if (gitStatus.files.length > 0 && !this.noGit) {
@@ -421,7 +421,12 @@ export default class SaveTask extends SfdxCommand {
     }
 
     // Push new commit(s)
-    if (((interactiveGitAllPerformed === true && gitStatus?.staged?.length > 0) || gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) && !this.noGit) {
+    if (
+      ((interactiveGitAllPerformed === true && gitStatus?.staged?.length > 0) ||
+        gitStatusWithConfig.staged.length > 0 ||
+        gitStatusAfterDeployPlan.staged.length > 0) &&
+      !this.noGit
+    ) {
       const pushResponse = await prompts({
         type: "confirm",
         name: "push",

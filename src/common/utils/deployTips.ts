@@ -92,5 +92,3 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
 function returnErrorLines(strIn) {
   return strIn.split(/\r?\n/).filter((str) => str.startsWith("Error") || str.startsWith(firstYellowChar));
 }
-
-
