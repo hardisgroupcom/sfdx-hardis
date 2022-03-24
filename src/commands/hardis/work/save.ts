@@ -168,28 +168,43 @@ export default class SaveTask extends SfdxCommand {
     const currentGitBranch = await getCurrentGitBranch();
 
     // Request user to select what he/she wants to commit
-    const groups = this.describeGroups(config);
+    let interactiveGitAllPerformed = false ;
+    let gitStatus: any = {};
     if (this.noGit) {
       uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
     } else {
-      await interactiveGitAdd({ groups: groups });
-    }
-
-    // Commit updates
-    const gitStatus = await git().status();
-    if (gitStatus.files.length > 0 && !this.noGit) {
-      // Request commit info
-      const commitResponse = await prompts([
-        {
-          type: "text",
-          name: "commitText",
-          message: c.cyanBright(
-            'Please define a title describing what you did in the work task (50 chars max). Exemples "Update sharing rules configuration", "Create new webservice getAccount"...'
-          ),
-        },
-      ]);
-      uxLog(this, c.cyan(`Committing files in local git branch ${c.green(currentGitBranch)}...`));
-      await git().commit(commitResponse.commitText || "Updated by sfdx-hardis");
+      const gitAddRes = await prompts({
+        type: "select",
+        name: "value",
+        message: c.cyanBright("Have you already staged and committed your files ?"),
+        choices: [
+          { title: "Yes, I already staged and commited my files", value: true },
+          { title: "No, please help me to select the files I want to stage and commit !", value: false },
+          { title: "I have no idea about what you are talking about :(", value: false },
+        ],
+      });
+      if (gitAddRes.value === false) {
+        // Interactive git add displays the list of local files to stage
+        const groups = this.describeGroups(config);
+        await interactiveGitAdd({ groups: groups });
+        interactiveGitAllPerformed = true ;
+        // Commit updates
+        gitStatus = await git().status();
+        if (gitStatus.files.length > 0 && !this.noGit) {
+          // Request commit info
+          const commitResponse = await prompts([
+            {
+              type: "text",
+              name: "commitText",
+              message: c.cyanBright(
+                'Please define a title describing what you did in the work task (50 chars max). Exemples "Update sharing rules configuration", "Create new webservice getAccount"...'
+              ),
+            },
+          ]);
+          uxLog(this, c.cyan(`Committing files in local git branch ${c.green(currentGitBranch)}...`));
+          await git().commit(commitResponse.commitText || "Updated by sfdx-hardis");
+        }
+      }
     }
 
     // Retrieving info about current branch latest commit and master branch latest commit
@@ -406,12 +421,12 @@ export default class SaveTask extends SfdxCommand {
     }
 
     // Push new commit(s)
-    if ((gitStatus.staged.length > 0 || gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) && !this.noGit) {
+    if (((interactiveGitAllPerformed === true && gitStatus?.staged?.length > 0) || gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) && !this.noGit) {
       const pushResponse = await prompts({
         type: "confirm",
         name: "push",
         default: true,
-        message: c.cyanBright(`Do you want to save your updates on git server ? (git push in remote git branch ${c.green(currentGitBranch)})`),
+        message: c.cyanBright(`Do you want to push your updates on git server ? (git push in remote git branch ${c.green(currentGitBranch)})`),
       });
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));

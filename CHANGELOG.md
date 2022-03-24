@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.74.0] 2022-03-24
+
+- Enhance hardis:work:save to request if the files has already been staged and committed
+- Deploy manifest and destructive change in the same sfdx force:source:deploy call thanks to new argument postdestructivechanges
+- More deployTips
+
 ## [2.73.0] 2022-03-21
 
 - Improve tips about how to fix deployments directly within error messages

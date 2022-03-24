@@ -1,3 +1,4 @@
+  /* jscpd:ignore-start */
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
@@ -81,7 +82,7 @@ See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_
       description: "websocket",
     }),
   };
-
+  /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
     return await wrapDeployCommand("sfdx force:mdapi:deploy", process.argv, this, this.flags.debug);
   }

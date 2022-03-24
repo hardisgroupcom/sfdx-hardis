@@ -5,9 +5,9 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as fs from "fs-extra";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { isCI, uxLog } from "../../../../../common/utils";
+import { isCI } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
-import { deployDestructiveChanges, forceSourceDeploy } from "../../../../../common/utils/deployUtils";
+import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
@@ -92,35 +92,25 @@ Env vars override:
       targetUsername = targetOrg.username;
     }
 
-    // Deploy sources
+    // Get package.xml
     const packageXmlFile =
       packageXml || process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
         ? "./manifest/package.xml"
         : "./config/package.xml";
-    const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, {
+    const forceSourceDeployOptions: any = {
       targetUsername: targetUsername,
       conn: this.org?.getConnection(),
-    });
-
-    // Deploy destructive changes
+    };
+    // Get destructiveChanges.xml and add it in options if existing
     const packageDeletedXmlFile =
       process.env.PACKAGE_XML_TO_DELETE || this.configInfo.packageXmlToDelete || fs.existsSync("./manifest/destructiveChanges.xml")
         ? "./manifest/destructiveChanges.xml"
         : "./config/destructiveChanges.xml";
     if (fs.existsSync(packageDeletedXmlFile)) {
-      await deployDestructiveChanges(
-        packageDeletedXmlFile,
-        {
-          debug: this.debugMode,
-          check: check,
-          testLevel: testlevel,
-          targetUsername: targetUsername,
-        },
-        this
-      );
-    } else {
-      uxLog(this, "No destructivePackage.Xml found so no destructive deployment has been performed");
+      forceSourceDeployOptions.postDestructiveChanges = packageDeletedXmlFile;
     }
+    // Process deployment (or deployment check)
+    const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, forceSourceDeployOptions);
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
