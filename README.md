@@ -113,6 +113,18 @@ Alternative for DevHub
 sfdx hardis:auth:login --devhub
 ```
 
+## MsTeams notifications
+
+In case suspiscious results are found (failures, critical updates to come...), sfdx-hardis can send notifications to Microsoft Teams channels.
+
+You can define hooks using env variables:
+- MS_TEAMS_WEBHOOK_URL
+- CRITICAL_MS_TEAMS_WEBHOOK_URL
+- SEVERE_MS_TEAMS_WEBHOOK_URL
+- WARNING_MS_TEAMS_WEBHOOK_URL
+
+Ex: `CRITICAL_MS_TEAMS_WEBHOOK_URL=https://mycompany.webhook.office.com/webhookb2/f49c28c6-d10b-412c-b961-fge456bd@c1a7fa9b-90b3-49ab-b5e2-345HG88c/IncomingWebhook/b43c20SDSGFG56712d848bc1cebb17/53ee2e22-a867-4e74-868a-F3fs3935`
+
 ## Contributing
 
 Anyone is welcome to contribute to this sfdx-hardis

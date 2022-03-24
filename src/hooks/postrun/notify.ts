@@ -41,13 +41,13 @@ export const hook = async (options: any) => {
     const projectName = process.env.CI_PROJECT_NAME || "Missing CI_PROJECT_NAME variable";
     const branchName = process.env.CI_COMMIT_REF_NAME || "Missing CI_COMMIT_REF_NAME variable";
     const envName = projectName + "/" + branchName;
-    const notifInfo = {
+    await sendNotification({
       title: `Updates detected in org ${envName}`,
-      summary: `Changes on metadatas has been detected on ${envName}. You may want to have a look !`,
       text: `<pre>${diffFiles.join("\n")}</pre>`,
+      summary: `Changes on metadatas has been detected on ${envName}. You may want to have a look !`,
       buttons: [{ title: "View commit", url: jobUrl }],
-    };
-    await sendNotification(notifInfo);
+      severity: "info"
+    });
   }
 };
 
