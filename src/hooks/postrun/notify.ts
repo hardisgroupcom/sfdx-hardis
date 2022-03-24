@@ -46,7 +46,7 @@ export const hook = async (options: any) => {
       text: `<pre>${diffFiles.join("\n")}</pre>`,
       summary: `Changes on metadatas has been detected on ${envName}. You may want to have a look !`,
       buttons: [{ title: "View commit", url: jobUrl }],
-      severity: "info"
+      severity: "info",
     });
   }
 };

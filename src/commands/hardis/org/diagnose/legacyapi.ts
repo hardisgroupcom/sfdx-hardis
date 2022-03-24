@@ -231,7 +231,7 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
 See article to solve issue before it's too late:
 - EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
 - FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`,
-        severity: "critical"
+        severity: "critical",
       });
     }
 

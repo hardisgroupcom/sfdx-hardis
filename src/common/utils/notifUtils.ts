@@ -6,22 +6,23 @@ import { getConfig } from "../../config";
 // Check if current process can send notifications
 export async function canSendNotifications(): Promise<boolean> {
   const config = await getConfig("user");
-  return process.env.MS_TEAMS_WEBHOOK_URL ||
+  return (
+    process.env.MS_TEAMS_WEBHOOK_URL ||
     process.env.CRITICAL_MS_TEAMS_WEBHOOK_URL ||
     process.env.SEVERE_MS_TEAMS_WEBHOOK_URL ||
     process.env.WARNING_MS_TEAMS_WEBHOOK_URL ||
-    config.msTeamsWebhookUrl;
+    config.msTeamsWebhookUrl
+  );
 }
 
 // Send notification to targets defined in env variables
-export async function sendNotification(options:
-  {
-    title: string;
-    text?: string;
-    summary?: string;
-    buttons?: Array<any>;
-    severity?: "critical" | "severe" | "warning" | "info"
-  }): Promise<any> {
+export async function sendNotification(options: {
+  title: string;
+  text?: string;
+  summary?: string;
+  buttons?: Array<any>;
+  severity?: "critical" | "severe" | "warning" | "info";
+}): Promise<any> {
   let title = options.title || "No title defined for notification";
   // Add repo & branch name in title if available and not already included
   const repoName = process.env.CI_PROJECT_NAME || null;
@@ -66,7 +67,7 @@ async function sendMsTeamsNotification(title, text, summary, buttons, severity) 
     if (msTeamsSevereHookUrl) {
       hooksUrls.push(msTeamsSevereHookUrl);
     }
-  }  // Critical hook URL
+  } // Critical hook URL
   if (severity === "warning") {
     const msTeamsWarningHookUrl = process.env.WARNING_MS_TEAMS_WEBHOOK_URL || config.warningMsTeamsWebhookUrl;
     if (msTeamsWarningHookUrl) {
