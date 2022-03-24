@@ -145,6 +145,8 @@ export async function forceSourceDeploy(
         " --wait 60" +
         " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
         ` --testlevel ${testlevel}` +
+        (options.preDestructiveChanges ? ` --predestructivechanges ${options.postDestructiveChanges}` : "") +
+        (options.postDestructiveChanges ? ` --postdestructivechanges ${options.postDestructiveChanges}` : "") +
         (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
         (check ? " --checkonly" : "") +
         (debugMode ? " --verbose" : "") +

@@ -113,6 +113,18 @@ Alternative for DevHub
 sfdx hardis:auth:login --devhub
 ```
 
+## MsTeams notifications
+
+In case suspiscious results are found (failures, critical updates to come...), sfdx-hardis can send notifications to Microsoft Teams channels.
+
+You can define hooks using env variables:
+- MS_TEAMS_WEBHOOK_URL
+- CRITICAL_MS_TEAMS_WEBHOOK_URL
+- SEVERE_MS_TEAMS_WEBHOOK_URL
+- WARNING_MS_TEAMS_WEBHOOK_URL
+
+Ex: `CRITICAL_MS_TEAMS_WEBHOOK_URL=https://mycompany.webhook.office.com/webhookb2/f49c28c6-d10b-412c-b961-fge456bd@c1a7fa9b-90b3-49ab-b5e2-345HG88c/IncomingWebhook/b43c20SDSGFG56712d848bc1cebb17/53ee2e22-a867-4e74-868a-F3fs3935`
+
 ## Contributing
 
 Anyone is welcome to contribute to this sfdx-hardis
@@ -2153,7 +2165,7 @@ Calls the related storage service to request api keys and secrets that allows a 
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2185,7 +2197,7 @@ Create enough scratch orgs to fill the pool
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2217,7 +2229,7 @@ Reset scratch org pool (delete all scratches in the pool)
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:reset [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pool:reset [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2249,7 +2261,7 @@ Displays all stored content of project scratch org pool if defined
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2281,7 +2293,7 @@ Pull scratch org updates from scratch org to local git branch
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2313,7 +2325,7 @@ Push local updates in git branch to scratch org
 
 ```
 USAGE
-  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2345,9 +2357,9 @@ sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve dep
 
 ```
 USAGE
-  $ sfdx hardis:source:deploy [--soapdeploy] [-w <minutes>] [-q <id> | -x <filepath> | -m <array> | -p <array> | -c | -l 
-  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g] [--predestructivechanges <filepath> 
-  ] [--postdestructivechanges <filepath> ] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>] 
+  $ sfdx hardis:source:deploy [--soapdeploy] [-w <minutes>] [-q <id> | -x <filepath> | -m <array> | -p <array> | -c | -l
+  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g] [--predestructivechanges <filepath>
+  ] [--postdestructivechanges <filepath> ] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>]
   [--verbose] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2388,8 +2400,8 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  See documentation at 
-  https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_sourc
+  See documentation at
+  <https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_sourc>
   e.htm#cli_reference_force_source_deploy
 ```
 
@@ -2401,7 +2413,7 @@ sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deplo
 
 ```
 USAGE
-  $ sfdx hardis:source:push [-f] [-w <minutes>] [-g] [--debug] [--websocket <string>] [-u <string>] [--apiversion 
+  $ sfdx hardis:source:push [-f] [-w <minutes>] [-g] [--debug] [--websocket <string>] [-u <string>] [--apiversion
   <string>] [--quiet] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2428,8 +2440,8 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  See documentation at 
-  https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_sourc
+  See documentation at
+  <https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_sourc>
   e.htm#cli_reference_force_source_push
 ```
 
@@ -2441,7 +2453,7 @@ New work task
 
 ```
 USAGE
-  $ sfdx hardis:work:new [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:new [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2473,7 +2485,7 @@ Make my local branch and my scratch org up to date with the most recent sources
 
 ```
 USAGE
-  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2508,7 +2520,7 @@ Process again the selection of the items that you want to publish to upper level
 
 ```
 USAGE
-  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2540,7 +2552,7 @@ When a work task is completed, guide user to create a merge request
 
 ```
 USAGE
-  $ sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2582,7 +2594,7 @@ Technical calls to WebSocket functions
 
 ```
 USAGE
-  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS

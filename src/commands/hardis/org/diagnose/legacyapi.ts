@@ -228,7 +228,10 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
 - Deprecated API version calls     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
 - End of support API version calls : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
 
-Please run sfdx hardis:org:diagnose:legacyapi for more details`,
+See article to solve issue before it's too late:
+- EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
+- FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`,
+        severity: "critical",
       });
     }
 
