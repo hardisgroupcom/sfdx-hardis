@@ -7,7 +7,7 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository, getCurrentGitBranch, git, isCI, uxLog } from "../../../../../common/utils";
+import { ensureGitRepository, git, isCI, uxLog } from "../../../../../common/utils";
 import { canSendNotifications, sendNotification } from "../../../../../common/utils/notifUtils";
 import LegacyApi from "../../diagnose/legacyapi";
 import OrgTestApex from "../../test/apex";
