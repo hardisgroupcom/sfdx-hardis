@@ -7,7 +7,8 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository, git, isCI, uxLog } from "../../../../../common/utils";
+import { ensureGitRepository, getCurrentGitBranch, git, isCI, uxLog } from "../../../../../common/utils";
+import { canSendNotifications, sendNotification } from "../../../../../common/utils/notifUtils";
 import LegacyApi from "../../diagnose/legacyapi";
 import OrgTestApex from "../../test/apex";
 
@@ -73,44 +74,69 @@ export default class DxSources extends SfdxCommand {
 
     // Check required pre-requisites
     await ensureGitRepository({ init: true });
+    const isMonitoring = await this.isMonitoringJob();
 
     // Retrieve metadatas
-    await MetadataUtils.retrieveMetadatas(packageXml, folder, false, [], {}, this, debug);
+    let message = "";
+    try {
+      await MetadataUtils.retrieveMetadatas(packageXml, folder, false, [], {}, this, debug);
 
-    // Copy to destination
-    await fs.copy(path.join(folder, "unpackaged"), path.resolve(folder));
-    // Remove temporary files
-    await fs.rmdir(path.join(folder, "unpackaged"), { recursive: true });
+      // Copy to destination
+      await fs.copy(path.join(folder, "unpackaged"), path.resolve(folder));
+      // Remove temporary files
+      await fs.rmdir(path.join(folder, "unpackaged"), { recursive: true });
 
-    const message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
-    uxLog(this, message);
+      message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
+      uxLog(this, message);
+    } catch (e) {
+      if (!isMonitoring) {
+        throw e;
+      }
+      if (isCI && (await canSendNotifications())) {
+        await sendNotification({
+          title: `Crash while retrieving metadatas`,
+          text: e.message,
+          severity: "warning",
+        });
+      }
+      message = "[sfdx-hardis] Error retrieving metadatas";
+    }
 
     // Post actions for monitoring CI job
-    try {
-      return await this.processPostActions(message);
-    } catch (e) {
-      uxLog(this, c.yellow("Post actions have failed !"));
+
+    if (isMonitoring) {
+      try {
+        return await this.processPostActions(message);
+      } catch (e) {
+        uxLog(this, c.yellow("Post actions have failed !"));
+      }
     }
 
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 
   private async processPostActions(message) {
-    // Post actions for monitoring CI job
+    uxLog(this, c.cyan("Monitoring repo detected"));
+    // Run test classes
+    uxLog(this, c.cyan("Running Apex tests..."));
+    const orgTestRes: any = await new OrgTestApex([], this.config)._run();
+    // Check usage of Legacy API versions
+    uxLog(this, c.cyan("Running Legacy API Use checks..."));
+    const legacyApiRes: any = await new LegacyApi([], this.config)._run();
+    // Delete report files
+    const reportFiles = await glob("**/hardis-report/**", { cwd: process.cwd() });
+    reportFiles.map(async (file) => await fs.remove(file));
+    return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
+  }
+
+  private async isMonitoringJob() {
+    if (!isCI) {
+      return false;
+    }
     const repoName = await git().revparse("--show-toplevel");
     if (isCI && repoName.includes("monitoring")) {
-      uxLog(this, c.cyan("Monitoring repo detected"));
-      // Run test classes
-      uxLog(this, c.cyan("Running Apex tests..."));
-      const orgTestRes: any = await new OrgTestApex([], this.config)._run();
-      // Check usage of Legacy API versions
-      uxLog(this, c.cyan("Running Legacy API Use checks..."));
-      const legacyApiRes: any = await new LegacyApi([], this.config)._run();
-      // Delete report files
-      const reportFiles = await glob("**/hardis-report/**", { cwd: process.cwd() });
-      reportFiles.map(async (file) => await fs.remove(file));
-
-      return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
+      return true;
     }
+    return false;
   }
 }
