@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.74.2] 2022-03-26
+
+- Update legacy API detection labels
+
 ## [2.74.1] 2022-03-25
 
 - Manage crash when retrieving metadatas from CI jobs

@@ -41,7 +41,7 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
 ![Legacy API result](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/legacy-api-result.png)
 
 - If you see deprecated API calls, open the detailed CSV file and identify the sources of deprecated API calls
-- You need to update your ecosystem external applications so they call a more recent version of APIS (52.0)
+- You need to update your ecosystem external applications so they call a more recent version of APIS (54.0)
 `;
 
   public static examples = [
@@ -90,9 +90,9 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
   protected debugMode = false;
   protected apexSCannerCodeUrl = "https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex";
   protected legacyApiDescriptors = [
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 1.0, maxApiVersion: 6.0, severity: "ERROR", deprecationRelease: "Winter 19" },
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "WARNING", deprecationRelease: "Summer 21" },
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "INFO", deprecationRelease: "Summer 22" },
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 1.0, maxApiVersion: 6.0, severity: "ERROR", deprecationRelease: "Summer 21 - retirement of 1 to 6  " },
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "ERROR", deprecationRelease: "Summer 22 - retirement of 7 to 20 " },
+    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "WARNING", deprecationRelease: "Summer 23 - retirement of 21 to 30" },
   ];
 
   protected outputFile;
@@ -152,18 +152,18 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     uxLog(this, c.cyan("Results:"));
     uxLog(
       this,
-      deadColor(`- Dead API version calls           : ${c.bold(allDeadApiCalls.length)} (${this.legacyApiDescriptors[0].deprecationRelease})`)
+      deadColor(`- ${this.legacyApiDescriptors[0].deprecationRelease} : ${c.bold(allDeadApiCalls.length)}`)
     );
     uxLog(
       this,
       deprecatedColor(
-        `- Deprecated API version calls     : ${c.bold(allSoonDeprecatedApiCalls.length)} (${this.legacyApiDescriptors[1].deprecationRelease})`
+        `- ${this.legacyApiDescriptors[1].deprecationRelease} : ${c.bold(allSoonDeprecatedApiCalls.length)}`
       )
     );
     uxLog(
       this,
       endOfSupportColor(
-        `- End of support API version calls : ${c.bold(allEndOfSupportApiCalls.length)} (${this.legacyApiDescriptors[2].deprecationRelease})`
+        `- ${this.legacyApiDescriptors[2].deprecationRelease} : ${c.bold(allEndOfSupportApiCalls.length)}`
       )
     );
     uxLog(this, "");
@@ -224,9 +224,9 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
       const currentGitBranch = await getCurrentGitBranch();
       await sendNotification({
         title: `WARNING: Deprecated Salesforce API versions are used in ${currentGitBranch}`,
-        text: `- Dead API version calls           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
-- Deprecated API version calls     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
-- End of support API version calls : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
+        text: `- Dead API version calls found in logs           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
+- Deprecated API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
+- End of support API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
 
 See article to solve issue before it's too late:
 - EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
