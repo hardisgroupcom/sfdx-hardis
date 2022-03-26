@@ -90,9 +90,27 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
   protected debugMode = false;
   protected apexSCannerCodeUrl = "https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex";
   protected legacyApiDescriptors = [
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 1.0, maxApiVersion: 6.0, severity: "ERROR", deprecationRelease: "Summer 21 - retirement of 1 to 6  " },
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 7.0, maxApiVersion: 20.0, severity: "ERROR", deprecationRelease: "Summer 22 - retirement of 7 to 20 " },
-    { apiFamily: ["SOAP", "REST", "BULK_API"], minApiVersion: 21.0, maxApiVersion: 30.0, severity: "WARNING", deprecationRelease: "Summer 23 - retirement of 21 to 30" },
+    {
+      apiFamily: ["SOAP", "REST", "BULK_API"],
+      minApiVersion: 1.0,
+      maxApiVersion: 6.0,
+      severity: "ERROR",
+      deprecationRelease: "Summer 21 - retirement of 1 to 6  ",
+    },
+    {
+      apiFamily: ["SOAP", "REST", "BULK_API"],
+      minApiVersion: 7.0,
+      maxApiVersion: 20.0,
+      severity: "ERROR",
+      deprecationRelease: "Summer 22 - retirement of 7 to 20 ",
+    },
+    {
+      apiFamily: ["SOAP", "REST", "BULK_API"],
+      minApiVersion: 21.0,
+      maxApiVersion: 30.0,
+      severity: "WARNING",
+      deprecationRelease: "Summer 23 - retirement of 21 to 30",
+    },
   ];
 
   protected outputFile;
@@ -150,22 +168,9 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.red;
     uxLog(this, "");
     uxLog(this, c.cyan("Results:"));
-    uxLog(
-      this,
-      deadColor(`- ${this.legacyApiDescriptors[0].deprecationRelease} : ${c.bold(allDeadApiCalls.length)}`)
-    );
-    uxLog(
-      this,
-      deprecatedColor(
-        `- ${this.legacyApiDescriptors[1].deprecationRelease} : ${c.bold(allSoonDeprecatedApiCalls.length)}`
-      )
-    );
-    uxLog(
-      this,
-      endOfSupportColor(
-        `- ${this.legacyApiDescriptors[2].deprecationRelease} : ${c.bold(allEndOfSupportApiCalls.length)}`
-      )
-    );
+    uxLog(this, deadColor(`- ${this.legacyApiDescriptors[0].deprecationRelease} : ${c.bold(allDeadApiCalls.length)}`));
+    uxLog(this, deprecatedColor(`- ${this.legacyApiDescriptors[1].deprecationRelease} : ${c.bold(allSoonDeprecatedApiCalls.length)}`));
+    uxLog(this, endOfSupportColor(`- ${this.legacyApiDescriptors[2].deprecationRelease} : ${c.bold(allEndOfSupportApiCalls.length)}`));
     uxLog(this, "");
 
     // Build command result
