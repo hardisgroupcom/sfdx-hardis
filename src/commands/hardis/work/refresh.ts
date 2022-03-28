@@ -55,6 +55,13 @@ export default class RefreshTask extends SfdxCommand {
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
+    const config = await getConfig("project");
+    if (config.get("EXPERIMENTAL", "") !== "true") {
+      const msg = "This command is not stable enough to be used. Use EXPERIMENTAL=true to use it anyway";
+      uxLog(this, c.yellow(msg));
+      return { outputString: msg };
+    }
+
     this.noPull = this.flags.nopull || false;
     uxLog(this, c.cyan("This command will refresh your git branch and your org with the content of another git branch"));
     // Verify that the user saved his/her work before merging another branch
@@ -74,7 +81,6 @@ export default class RefreshTask extends SfdxCommand {
       process.exit(0);
     }
     // Select branch to merge
-    const config = await getConfig("project");
     const localBranch = await getCurrentGitBranch();
     const branchSummary = await git().branch(["-r"]);
     const branchChoices = [

@@ -97,8 +97,8 @@ export default class ProjectCreate extends SfdxCommand {
       const devBranchRes = await prompts({
         type: "text",
         name: "devBranch",
-        message: "What is the name of your development branch ?",
-        initial: "developpement",
+        message: "What is the name of your default development branch ?",
+        initial: "develop",
       });
       await setConfig("project", { developmentBranch: devBranchRes.devBranch });
     }

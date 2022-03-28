@@ -4,7 +4,8 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
-import { getConfig, setConfig } from "../../../config";
+import { selectTargetBranch } from "../../../common/utils/gitUtils";
+import { setConfig } from "../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -48,15 +49,18 @@ export default class RebuildSelection extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
-    const config = await getConfig("project");
-    uxLog(this, c.cyan(`This script will rebuild selection that you will want to publish to ${c.green(config.developmentBranch)}`));
+
+    const targetBranch = await selectTargetBranch({ message: "Please select the target branch of your current or future merge request" });
+
+    uxLog(this, c.cyan(`This script will rebuild selection that you will want to merge into ${c.green(targetBranch)}`));
 
     const currentGitBranch = await getCurrentGitBranch();
-    if (currentGitBranch === config.developmentBranch) {
+    if (currentGitBranch === targetBranch) {
       throw new SfdxError(c.red("[sfdx-hardis] You can not revert commits of a protected branch !"));
     }
+
     // List all commits since the branch creation
-    const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
+    const logResult = await git().log([`${targetBranch}..${currentGitBranch}`]);
     const commitstoReset = logResult.all;
     const commitsToResetNumber = commitstoReset.length;
     // Reset commits

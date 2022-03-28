@@ -19,6 +19,7 @@ import {
 } from "../../../common/utils";
 import { exportData } from "../../../common/utils/dataUtils";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
+import { selectTargetBranch } from "../../../common/utils/gitUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { WebSocketClient } from "../../../common/websocketClient";
@@ -99,11 +100,11 @@ export default class SaveTask extends SfdxCommand {
     let config = await getConfig("project");
     const localBranch = await getCurrentGitBranch();
 
+    const targetBranch = await selectTargetBranch({ message: "Please select the target branch of your Merge Request" });
+
     uxLog(
       this,
-      c.cyan(
-        `This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(config.developmentBranch)}`
-      )
+      c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(targetBranch)}`)
     );
 
     if (this.noGit) {
@@ -170,6 +171,7 @@ export default class SaveTask extends SfdxCommand {
     // Request user to select what he/she wants to commit
     let interactiveGitAllPerformed = false;
     let gitStatus: any = {};
+    let commitManuallyDone = false;
     if (this.noGit) {
       uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
     } else {
@@ -204,13 +206,15 @@ export default class SaveTask extends SfdxCommand {
           uxLog(this, c.cyan(`Committing files in local git branch ${c.green(currentGitBranch)}...`));
           await git().commit(commitResponse.commitText || "Updated by sfdx-hardis");
         }
+      } else {
+        commitManuallyDone = true;
       }
     }
 
     // Retrieving info about current branch latest commit and master branch latest commit
-    const logResult = await git().log([`${config.developmentBranch}..${currentGitBranch}`]);
+    const logResult = await git().log([`${targetBranch}..${currentGitBranch}`]);
     const toCommit = logResult.latest;
-    const mergeBaseCommand = `git merge-base ${config.developmentBranch} ${currentGitBranch}`;
+    const mergeBaseCommand = `git merge-base ${targetBranch} ${currentGitBranch}`;
     const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {
       fail: true,
       debug: this.debugMode,
@@ -222,9 +226,7 @@ export default class SaveTask extends SfdxCommand {
     const toCommitMessage = toCommit ? toCommit.message : "";
     uxLog(
       this,
-      c.cyan(
-        `Calculating package.xml diff from [${c.green(config.developmentBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`
-      )
+      c.cyan(`Calculating package.xml diff from [${c.green(targetBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`)
     );
     const tmpDir = await createTempDir();
     const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
@@ -424,7 +426,8 @@ export default class SaveTask extends SfdxCommand {
     if (
       ((interactiveGitAllPerformed === true && gitStatus?.staged?.length > 0) ||
         gitStatusWithConfig.staged.length > 0 ||
-        gitStatusAfterDeployPlan.staged.length > 0) &&
+        gitStatusAfterDeployPlan.staged.length > 0 ||
+        commitManuallyDone === true) &&
       !this.noGit
     ) {
       const pushResponse = await prompts({
