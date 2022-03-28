@@ -100,13 +100,11 @@ export default class SaveTask extends SfdxCommand {
     let config = await getConfig("project");
     const localBranch = await getCurrentGitBranch();
 
-    const targetBranch = await selectTargetBranch({message: "Please select the target branch of your Merge Request"});
+    const targetBranch = await selectTargetBranch({ message: "Please select the target branch of your Merge Request" });
 
     uxLog(
       this,
-      c.cyan(
-        `This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(targetBranch)}`
-      )
+      c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(targetBranch)}`)
     );
 
     if (this.noGit) {
@@ -173,7 +171,7 @@ export default class SaveTask extends SfdxCommand {
     // Request user to select what he/she wants to commit
     let interactiveGitAllPerformed = false;
     let gitStatus: any = {};
-    let commitManuallyDone = false ;
+    let commitManuallyDone = false;
     if (this.noGit) {
       uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
     } else {
@@ -208,9 +206,8 @@ export default class SaveTask extends SfdxCommand {
           uxLog(this, c.cyan(`Committing files in local git branch ${c.green(currentGitBranch)}...`));
           await git().commit(commitResponse.commitText || "Updated by sfdx-hardis");
         }
-      }
-      else {
-        commitManuallyDone = true ;
+      } else {
+        commitManuallyDone = true;
       }
     }
 
@@ -229,9 +226,7 @@ export default class SaveTask extends SfdxCommand {
     const toCommitMessage = toCommit ? toCommit.message : "";
     uxLog(
       this,
-      c.cyan(
-        `Calculating package.xml diff from [${c.green(targetBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`
-      )
+      c.cyan(`Calculating package.xml diff from [${c.green(targetBranch)}] to [${c.green(currentGitBranch)} - ${c.green(toCommitMessage)}]`)
     );
     const tmpDir = await createTempDir();
     const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
