@@ -5,6 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { checkGitClean, ensureGitBranch, execCommand, git, gitCheckOutRemote, uxLog } from "../../../common/utils";
+import { selectTargetBranch } from "../../../common/utils/gitUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { getConfig, setConfig } from "../../../config";
 import ScratchCreate from "../scratch/create";
@@ -59,23 +60,11 @@ export default class NewTask extends SfdxCommand {
     await checkGitClean({ allowStash: true });
 
     const config = await getConfig("project");
-    const availableTargetBranches = config.availableTargetBranches || null;
+
+    const targetBranch = await selectTargetBranch();
 
     // Request info to build branch name. ex features/config/MYTASK
     const response = await prompts([
-      {
-        type: availableTargetBranches ? "select" : "text",
-        name: "targetBranch",
-        message: c.cyanBright(
-          "What will be the target branch of your new task ? (the branch where you will make your merge request after the task is completed)"
-        ),
-        choices: availableTargetBranches
-          ? availableTargetBranches.map((branch) => {
-              return { title: branch, value: branch };
-            })
-          : [],
-        initial: config.developmentBranch || "developpement",
-      },
       {
         type: "select",
         name: "branch",
@@ -107,8 +96,6 @@ export default class NewTask extends SfdxCommand {
       },
     ]);
 
-    const targetBranch = response.targetBranch || "developpement";
-
     // Checkout development main branch
     const branchName = `${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(targetBranch)} on server...`));
@@ -124,11 +111,11 @@ export default class NewTask extends SfdxCommand {
       const updateDefaultBranchRes = await prompts({
         type: "confirm",
         name: "value",
-        message: c.cyanBright(`Do you want to update the default development branch to ${c.green(targetBranch)} ?`),
+        message: c.cyanBright(`Do you want to update your default target branch to ${c.green(targetBranch)} ?`),
         default: false,
       });
       if (updateDefaultBranchRes.value === true) {
-        await setConfig("project", { developmentBranch: targetBranch });
+        await setConfig("user", { developmentBranch: targetBranch });
       }
     }
 

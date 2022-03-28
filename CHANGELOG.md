@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.75.0] 2022-03-28
+
+- Property `availableTargetBranches` can be defined in `.sfdx-hardis.yml` to list the possible target branches for merge requests
+
 ## [2.74.2] 2022-03-26
 
 - Update legacy API detection labels

@@ -42,6 +42,16 @@
       "title": "Minimum apex test coverage %",
       "type": "number"
     },
+    "availableTargetBranches": {
+      "$id": "#/properties/availableTargetBranches",
+      "description": "List of git branches that can be used as target for merge requests",
+      "examples": [["develop", "develop_next"]],
+      "items": {
+        "type": "string"
+      },
+      "title": "Available target branches",
+      "type": "array"
+    },
     "dataPackages": {
       "$id": "#/properties/dataPackages",
       "description": "List of data packages",
