@@ -450,5 +450,13 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`
       expressionString: ["Fix the sfdcDigest node errors and then upload the file again"],
       tip: `Go to the target org, open profile "Analytics Cloud Integration User" and add READ rights to the missing object fields `,
     },
+    {
+      name: "XML item appears more than once",
+      label: "XML item appears more than once",
+      expressionRegex: [/Error (.*) Field:(.*), value:(.*) appears more than once/gm],
+      tip: `You probably made an error while merging conflicts
+Look for {3} in the XML of {1}
+If you see two {2} XML blocks with {3}, please decide which one you keep and remove the other one`,
+    },
   ];
 }

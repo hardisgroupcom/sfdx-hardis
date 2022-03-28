@@ -173,6 +173,7 @@ export default class SaveTask extends SfdxCommand {
     // Request user to select what he/she wants to commit
     let interactiveGitAllPerformed = false;
     let gitStatus: any = {};
+    let commitManuallyDone = false ;
     if (this.noGit) {
       uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
     } else {
@@ -207,6 +208,9 @@ export default class SaveTask extends SfdxCommand {
           uxLog(this, c.cyan(`Committing files in local git branch ${c.green(currentGitBranch)}...`));
           await git().commit(commitResponse.commitText || "Updated by sfdx-hardis");
         }
+      }
+      else {
+        commitManuallyDone = true ;
       }
     }
 
@@ -427,7 +431,8 @@ export default class SaveTask extends SfdxCommand {
     if (
       ((interactiveGitAllPerformed === true && gitStatus?.staged?.length > 0) ||
         gitStatusWithConfig.staged.length > 0 ||
-        gitStatusAfterDeployPlan.staged.length > 0) &&
+        gitStatusAfterDeployPlan.staged.length > 0 ||
+        commitManuallyDone === true) &&
       !this.noGit
     ) {
       const pushResponse = await prompts({

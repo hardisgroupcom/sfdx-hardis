@@ -7,6 +7,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.75.0] 2022-03-28
 
 - Property `availableTargetBranches` can be defined in `.sfdx-hardis.yml` to list the possible target branches for merge requests
+- fix hardis:work:save to propose a git push when the current branch is ahead of origin branch
+- New deployTips
+  - XML item appears more than once
 
 ## [2.74.2] 2022-03-26
 
