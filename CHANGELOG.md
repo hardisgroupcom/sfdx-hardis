@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.76.0] 2022-03-29
+
+- New command **sfdx **hardis:org:user:activateinvalid** to activate invalid emails in sandbox
+- Fix CI org authentication in case the default username is not the org that we want to configure
+- New deployTips
+  - Please choose a different name
+
 ## [2.75.0] 2022-03-28
 
 - Property `availableTargetBranches` can be defined in `.sfdx-hardis.yml` to list the possible target branches for merge requests
