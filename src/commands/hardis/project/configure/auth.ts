@@ -3,7 +3,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import { generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils";
+import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config";
 
@@ -55,6 +55,9 @@ export default class ConfigureAuth extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const devHub = this.flags.devhub || false;
+
+    // Ask user to login to org
+    const prevUserName = devHub ? this.hubOrg?.getUsername() : this.org?.getUsername();
     uxLog(this, c.cyan("Please login into the org you want to configure the SFDX Authentication"));
     await this.config.runHook("auth", {
       checkAuth: true,
@@ -62,6 +65,19 @@ export default class ConfigureAuth extends SfdxCommand {
       devHub,
     });
     await checkConfig(this);
+
+    // Check if the user has changed. If yes, as to run the command again
+    const configGetRes = await execSfdxJson("sfdx config:get " + (devHub ? "defaultdevhubusername" : "defaultusername"), this, {
+      output: false,
+      fail: false,
+    });
+    const newUsername = configGetRes?.result[0]?.value || "";
+    if (prevUserName !== newUsername) {
+      const returnMsg = "Default org has changed. This is ok but for technical reasons, please run again the same command :)";
+      uxLog(this, c.yellow(returnMsg));
+      return { outputString: returnMsg };
+    }
+
     const config = await getConfig("project");
     // Get branch name to configure if not Dev Hub
     let branchName = "";
