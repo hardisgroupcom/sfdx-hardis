@@ -356,6 +356,16 @@
       "title": "List views to set to Mine",
       "type": "array"
     },
+    "sourcesToRetrofit": {
+      "$id": "#/properties/sourcesToRetrofit",
+      "description": "List of metadata to retrieve for retrofit job",
+      "examples": [["CustomField", "Layout", "PermissionSet"]],
+      "items": {
+        "type": "string"
+      },
+      "title": "Metadata to retrofit",
+      "type": "array"
+    },
     "msTeamsWebhookUrl": {
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",
