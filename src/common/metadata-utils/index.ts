@@ -405,7 +405,7 @@ class MetadataUtils {
     } else if (type === "sandbox") {
       return (
         orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
-          return (org.loginUrl.includes("--") || org.loginUrl.includes("test.salesforce.com"));
+          return org.loginUrl.includes("--") || org.loginUrl.includes("test.salesforce.com");
         }) || []
       );
     } else if (type === "scratch") {

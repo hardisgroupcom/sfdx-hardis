@@ -229,7 +229,7 @@ export default class NewTask extends SfdxCommand {
     });
     // Connect to a sandbox
     if (sandboxResponse.value === "connectSandbox") {
-      await promptOrg(this, { setDefault: true, devSandbox:true });
+      await promptOrg(this, { setDefault: true, devSandbox: true });
     }
     // Create a new sandbox
     else if (sandboxResponse.value === "newSandbox") {

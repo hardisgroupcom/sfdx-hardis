@@ -133,15 +133,15 @@ export default class SandboxCreate extends SfdxCommand {
     if (fs.existsSync("./config/project-sandbox-def.json")) {
       this.projectSandboxDef = JSON.parse(fs.readFileSync("./config/project-sandbox-def.json"));
     } else {
-      uxLog(this,c.yellow(`Default values used: you may define a file ${c.bold("config/project-sandbox-def.json")}`))
+      uxLog(this, c.yellow(`Default values used: you may define a file ${c.bold("config/project-sandbox-def.json")}`));
       this.projectSandboxDef = {
         sandboxName: "",
         description: "SFDX Hardis developer sandbox",
         licenseType: "Developer",
-        sourceSandbox: ""
+        sourceSandbox: "",
       };
     }
-    this.projectSandboxDef.sandboxName = os.userInfo().username.substring(0,10);
+    this.projectSandboxDef.sandboxName = os.userInfo().username.substring(0, 10);
     const projectSandboxDefLocal = `./config/user/project-sandbox-def-${this.sandboxOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectSandboxDefLocal));
     await fs.writeFile(projectSandboxDefLocal, JSON.stringify(this.projectSandboxDef, null, 2));

@@ -153,7 +153,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
       devHub: options.devHub === true,
       setDefault: options.setDefault !== false,
     });
-    return options.setDefault !== false ? await MetadataUtils.getCurrentOrg(): {};
+    return options.setDefault !== false ? await MetadataUtils.getCurrentOrg() : {};
   }
 
   // Token is expired: login again to refresh it
@@ -183,8 +183,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
         fail: true,
         output: false,
       });
-    }
-    else {
+    } else {
       // If not devHub, set MY_ORG as alias
       const setAliasCommand = `sfdx alias:set MY_ORG=${org.username}`;
       await execSfdxJson(setAliasCommand, commandThis, {
