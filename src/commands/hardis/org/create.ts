@@ -66,7 +66,6 @@ export default class SandboxCreate extends SfdxCommand {
   protected projectSandboxDef: any;
   protected sandboxOrgInfo: any;
   protected sandboxOrgUsername: string;
-  protected sandboxOrgPassword: string;
   protected sandboxOrgSfdxAuthUrl: string;
   protected authFileJson: any;
   protected projectName: string;
@@ -87,14 +86,6 @@ export default class SandboxCreate extends SfdxCommand {
       uxLog(this, c.grey("Error: " + e.message + "\n" + e.stack));
       throw e;
     }
-
-    // Show password to user
-    if (this.sandboxOrgPassword) {
-      uxLog(
-        this,
-        c.cyan(`You can connect to your sandbox using username ${c.green(this.sandboxOrgUsername)} and password ${c.green(this.sandboxOrgPassword)}`)
-      );
-    }
     elapseEnd(`Create and initialize sandbox org`);
     // Return an object to be displayed with --json
     return {
@@ -102,7 +93,6 @@ export default class SandboxCreate extends SfdxCommand {
       sandboxOrgAlias: this.sandboxOrgAlias,
       sandboxOrgInfo: this.sandboxOrgInfo,
       sandboxOrgUsername: this.sandboxOrgUsername,
-      sandboxOrgPassword: this.sandboxOrgPassword,
       sandboxOrgSfdxAuthUrl: this.sandboxOrgSfdxAuthUrl,
       authFileJson: this.authFileJson,
       outputString: "Created and initialized sandbox org",
@@ -143,13 +133,15 @@ export default class SandboxCreate extends SfdxCommand {
     if (fs.existsSync("./config/project-sandbox-def.json")) {
       this.projectSandboxDef = JSON.parse(fs.readFileSync("./config/project-sandbox-def.json"));
     } else {
+      uxLog(this,c.yellow(`Default values used: you may define a file ${c.bold("config/project-sandbox-def.json")}`))
       this.projectSandboxDef = {
         sandboxName: "",
         description: "SFDX Hardis developer sandbox",
         licenseType: "Developer",
+        sourceSandbox: ""
       };
     }
-    this.projectSandboxDef.sandboxName = os.userInfo().username;
+    this.projectSandboxDef.sandboxName = os.userInfo().username.substring(0,10);
     const projectSandboxDefLocal = `./config/user/project-sandbox-def-${this.sandboxOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectSandboxDefLocal));
     await fs.writeFile(projectSandboxDefLocal, JSON.stringify(this.projectSandboxDef, null, 2));
@@ -163,7 +155,7 @@ export default class SandboxCreate extends SfdxCommand {
 
     // Create new sandbox org
     uxLog(this, c.cyan("Creating new sandbox org..."));
-    const waitTime = process.env.SANDBOX_ORG_WAIT || "30";
+    const waitTime = process.env.SANDBOX_ORG_WAIT || "60";
     const createCommand =
       "sfdx force:org:create --setdefaultusername " +
       "--type sandbox " +
@@ -179,21 +171,6 @@ export default class SandboxCreate extends SfdxCommand {
     assert(createResult.status === 0 && createResult.result, this.buildSandboxCreateErrorMessage(createResult));
     this.sandboxOrgInfo = createResult.result;
     this.sandboxOrgUsername = this.sandboxOrgInfo.username;
-    await setConfig("user", {
-      sandboxOrgAlias: this.sandboxOrgAlias,
-      sandboxOrgUsername: this.sandboxOrgUsername,
-    });
-    // Generate password
-    const passwordCommand = `sfdx force:user:password:generate --targetusername ${this.sandboxOrgUsername}`;
-    const passwordResult = await execSfdxJson(passwordCommand, this, {
-      fail: true,
-      output: false,
-      debug: this.debugMode,
-    });
-    this.sandboxOrgPassword = passwordResult.result.password;
-    await setConfig("user", {
-      sandboxOrgPassword: this.sandboxOrgPassword,
-    });
     // Trigger a status refresh on VsCode WebSocket Client
     WebSocketClient.sendMessage({ event: "refreshStatus" });
 

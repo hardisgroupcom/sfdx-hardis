@@ -12,6 +12,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:work:save : Propose to manually commit files
 - Fix hardis:org:select alias & user config
 - Colorize command lines in logs
+- Enhance new task with sandbox (not fully stable yet)
 - New deployTips
   - Please choose a different name
 

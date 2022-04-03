@@ -187,7 +187,7 @@ export default class SaveTask extends SfdxCommand {
         ],
       });
       if (gitAddRes.value === null) {
-        uxLog(this, c.yellow("Stage and commit your file, then run again this command :)"));
+        uxLog(this, c.yellow("Stage and commit your files, then run again this command :)"));
         return { outputString: "Waiting for manual commit" };
       } else if (gitAddRes.value === false) {
         // Interactive git add displays the list of local files to stage

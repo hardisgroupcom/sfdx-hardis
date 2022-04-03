@@ -404,6 +404,12 @@ class MetadataUtils {
     const orgListResult = await execSfdxJson("sfdx force:org:list", this);
     if (type === "any") {
       return orgListResult?.result || [];
+    } else if (type === "sandbox") {
+      return (
+        orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
+          return org.status === "Active" && (org.loginUrl.includes("--") || org.loginUrl.includes("test.salesforce.com"));
+        }) || []
+      );
     } else if (type === "scratch") {
       return (
         orgListResult?.result?.scratchOrgs?.filter((org: any) => {

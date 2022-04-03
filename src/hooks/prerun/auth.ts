@@ -103,9 +103,9 @@ async function authOrg(orgAlias: string, options: any) {
       // Set as default username or devhubusername
       uxLog(
         this,
-        `[sfdx-hardis] You are already ${c.green("connected")} to org ${c.green(
-          orgInfoResult.result.alias || orgInfoResult.result.username
-        )}: ${c.green(orgInfoResult.result.instanceUrl)}`
+        `[sfdx-hardis] You are already ${c.green("connected")} as ${c.green(
+          orgInfoResult.result.username
+        )} on org ${c.green(orgInfoResult.result.instanceUrl)}`
       );
       if (orgInfoResult.result.expirationDate) {
         uxLog(this, c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
