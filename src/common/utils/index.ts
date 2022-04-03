@@ -50,7 +50,7 @@ export function git(options: any = { output: false }): SimpleGit {
         first = false;
         const gitArgsStr = (gitArgs || []).join(" ");
         if (!(gitArgsStr.includes("branch -v") || gitArgsStr.includes("config --list --show-origin --null"))) {
-          uxLog(this, `[command] ${c.bold(c.bgWhiteBright(c.grey(command + " " + gitArgsStr)))}`);
+          uxLog(this, `[command] ${c.bold(c.bgWhite(c.grey(command + " " + gitArgsStr)))}`);
         }
       }
     }
@@ -349,7 +349,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         type: "multiselect",
         name: "files",
         message: c.cyanBright(
-          `Please select ${c.red("carefully")} the ${c.bgWhiteBright(c.red(c.bold(group.label.toUpperCase())))} files you want to commit (save)}`
+          `Please select ${c.red("carefully")} the ${c.bgWhite(c.red(c.bold(group.label.toUpperCase())))} files you want to commit (save)}`
         ),
         choices: matchingFiles.map((fileStatus: FileStatusResult) => {
           return {
@@ -392,7 +392,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       .filter((group) => group.files != null && group.files.length > 0)
       .map((group) => {
         return (
-          c.bgWhiteBright(c.red(c.bold(group.label))) +
+          c.bgWhite(c.red(c.bold(group.label))) +
           "\n" +
           group.files
             .map((fileStatus: FileStatusResult) => {
@@ -503,7 +503,7 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  const commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhiteBright(c.grey(command)))}`;
+  const commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(command)))}`;
   let commandResult = null;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
