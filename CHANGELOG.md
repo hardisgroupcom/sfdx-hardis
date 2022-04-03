@@ -11,6 +11,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Bypass error with force:source:legacy:pull / push
 - hardis:work:save : Propose to manually commit files
 - Fix hardis:org:select alias & user config
+- Colorize command lines in logs
 - New deployTips
   - Please choose a different name
 
