@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Fix CI org authentication in case the default username is not the org that we want to configure
 - Bypass error with force:source:legacy:pull / push
 - hardis:work:save : Propose to manually commit files
+- Fix hardis:org:select alias & user config
 - New deployTips
   - Please choose a different name
 

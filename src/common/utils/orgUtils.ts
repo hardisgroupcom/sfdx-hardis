@@ -101,9 +101,9 @@ export async function promptProfiles(
   }
 }
 
-export async function promptOrg(commandThis: any, options: any = { devHub: false, setDefault: true, scratch: false }) {
+export async function promptOrg(commandThis: any, options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false }) {
   // List all local orgs and request to user
-  const orgListResult = await MetadataUtils.listLocalOrgs("any");
+  const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? "sandbox" : "any");
   let orgList = [
     ...sortArray(orgListResult?.scratchOrgs || [], { by: ["devHubUsername", "username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     ...sortArray(orgListResult?.nonScratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
@@ -184,13 +184,26 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
         output: false,
       });
     }
+    else {
+      // If not devHub, set MY_ORG as alias
+      const setAliasCommand = `sfdx alias:set MY_ORG=${org.username}`;
+      await execSfdxJson(setAliasCommand, commandThis, {
+        fail: true,
+        output: false,
+      });
+    }
 
     WebSocketClient.sendMessage({ event: "refreshStatus" });
     // Update local user .sfdx-hardis.yml file with response if scratch has been selected
     if (org.username.includes("scratch")) {
       await setConfig("user", {
-        scratchOrgAlias: org.username,
-        scratchOrgUsername: org.alias || org.username,
+        scratchOrgAlias: org.alias || null,
+        scratchOrgUsername: org.username || org.alias,
+      });
+    } else {
+      await setConfig("user", {
+        scratchOrgAlias: null,
+        scratchOrgUsername: null,
       });
     }
   }
