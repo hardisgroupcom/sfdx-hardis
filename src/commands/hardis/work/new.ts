@@ -133,7 +133,7 @@ export default class NewTask extends SfdxCommand {
           value: "scratch",
         },
         {
-          title: "Sandbox org with source tracking (ALPHA, DO NOT USE YET)",
+          title: "Sandbox org with source tracking (beta)",
           value: "sandbox",
         },
       ],
