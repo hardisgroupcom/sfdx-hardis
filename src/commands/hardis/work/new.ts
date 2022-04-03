@@ -6,8 +6,10 @@ import * as c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { checkGitClean, ensureGitBranch, execCommand, git, gitCheckOutRemote, uxLog } from "../../../common/utils";
 import { selectTargetBranch } from "../../../common/utils/gitUtils";
+import { promptOrg } from "../../../common/utils/orgUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { getConfig, setConfig } from "../../../config";
+import SandboxCreate from "../org/create";
 import ScratchCreate from "../scratch/create";
 
 // Initialize Messages with the current plugin directory
@@ -131,7 +133,7 @@ export default class NewTask extends SfdxCommand {
           value: "scratch",
         },
         {
-          title: "Sandbox org with source tracking (ALPHA, DO NOT USE YET)",
+          title: "Sandbox org with source tracking (beta)",
           value: "sandbox",
         },
       ],
@@ -203,29 +205,41 @@ export default class NewTask extends SfdxCommand {
       choices: [
         ...[
           {
-            title: c.yellow("Create new sandbox from another sandbox or production org (ALPHA, do not use yet)"),
+            title: c.yellow("Connect to a sandbox not appearing in this list"),
+            value: "connectSandbox",
+          },
+          {
+            title: c.yellow("Create new sandbox from another sandbox or production org (ALPHA -> UNSTABLE, DO NOT USE YET)"),
             value: "newSandbox",
           },
         ],
         ...sandboxOrgList.map((sandboxOrg: any) => {
           return {
-            title: `Reuse sandbox org ${c.yellow(sandboxOrg.alias)}`,
+            title: `Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
             description: sandboxOrg.instanceUrl,
             value: sandboxOrg,
           };
         }),
       ],
     });
-    if (sandboxResponse.value === "newSandbox") {
-      await setConfig("user", {
-        scratchOrgAlias: null,
-        scratchOrgUsername: null,
-      });
-      const createResult = await ScratchCreate.run(["--forcenew"]);
+    // Remove scratch org info in user config
+    await setConfig("user", {
+      scratchOrgAlias: null,
+      scratchOrgUsername: null,
+    });
+    // Connect to a sandbox
+    if (sandboxResponse.value === "connectSandbox") {
+      await promptOrg(this, { setDefault: true, devSandbox: true });
+    }
+    // Create a new sandbox
+    else if (sandboxResponse.value === "newSandbox") {
+      const createResult = await SandboxCreate.run();
       if (createResult == null) {
         throw new SfdxError("Unable to create sandbox org");
       }
-    } else {
+    }
+    // Selected sandbox from list
+    else {
       await execCommand(`sfdx config:set defaultusername=${sandboxResponse.value.username}`, this, {
         output: true,
         fail: true,

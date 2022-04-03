@@ -181,11 +181,15 @@ export default class SaveTask extends SfdxCommand {
         message: c.cyanBright("Have you already staged and committed your files ?"),
         choices: [
           { title: "Yes, I already staged and committed my files", value: true },
+          { title: "No, but i'd like to do it manually, I'll run this command again after !", value: null },
           { title: "No, please help me to select the files I want to stage and commit !", value: false },
           { title: "I have no idea about what you are talking about :(", value: false },
         ],
       });
-      if (gitAddRes.value === false) {
+      if (gitAddRes.value === null) {
+        uxLog(this, c.yellow("Stage and commit your files, then run again this command :)"));
+        return { outputString: "Waiting for manual commit" };
+      } else if (gitAddRes.value === false) {
         // Interactive git add displays the list of local files to stage
         const groups = this.describeGroups(config);
         await interactiveGitAdd({ groups: groups });

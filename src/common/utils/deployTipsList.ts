@@ -342,6 +342,14 @@ Go manually make the change in the target org, so the deployment will pass
 `,
     },
     {
+      name: "please-choose-a-different-name",
+      label: "Please choose a different name",
+      expressionRegex: [/Error (.*) This (.*) already exists or has been previously used(.*)Please choose a different name./gm],
+      tip: `- Rename {1} in the target org, then try again the deployment. if it succeeds, delete the renamed item.
+- or Delete {1} in the target org, then try again the deployment
+`,
+    },
+    {
       name: "profile-default-app",
       label: "Missing profile default application",
       expressionString: ["You can't remove the only default app from the profile."],
