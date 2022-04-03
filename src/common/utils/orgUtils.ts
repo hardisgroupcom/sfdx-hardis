@@ -153,7 +153,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
       devHub: options.devHub === true,
       setDefault: options.setDefault !== false,
     });
-    return { outputString: "Launched org connection" };
+    return options.setDefault !== false ? await MetadataUtils.getCurrentOrg(): {};
   }
 
   // Token is expired: login again to refresh it

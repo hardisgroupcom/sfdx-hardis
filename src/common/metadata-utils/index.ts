@@ -385,16 +385,14 @@ class MetadataUtils {
   }
 
   // Get default org that is currently selected for user
-  public static async getCurrentOrg(type = "any") {
-    const displayOrgCommand = "sfdx force:org:display --verbose";
+  public static async getCurrentOrg() {
+    const displayOrgCommand = "sfdx force:org:display";
     const displayResult = await execSfdxJson(displayOrgCommand, this, {
       fail: false,
-      output: true,
+      output: false,
     });
-    if (displayResult.id && type === "scratch" && displayResult.scratchOrg) {
-      return displayResult;
-    } else if (displayResult.id && type === "any") {
-      return displayResult;
+    if (displayResult?.result?.id) {
+      return displayResult.result;
     }
     return null;
   }
@@ -407,7 +405,7 @@ class MetadataUtils {
     } else if (type === "sandbox") {
       return (
         orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
-          return org.status === "Active" && (org.loginUrl.includes("--") || org.loginUrl.includes("test.salesforce.com"));
+          return (org.loginUrl.includes("--") || org.loginUrl.includes("test.salesforce.com"));
         }) || []
       );
     } else if (type === "scratch") {

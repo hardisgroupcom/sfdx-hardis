@@ -215,7 +215,7 @@ export default class NewTask extends SfdxCommand {
         ],
         ...sandboxOrgList.map((sandboxOrg: any) => {
           return {
-            title: `Use sandbox org ${c.yellow(sandboxOrg.alias)}`,
+            title: `Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
             description: sandboxOrg.instanceUrl,
             value: sandboxOrg,
           };
