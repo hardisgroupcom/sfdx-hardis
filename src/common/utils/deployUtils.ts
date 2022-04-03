@@ -14,7 +14,7 @@ import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXml
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
-export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false) {
+export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false, options: any = {}) {
   elapseStart("force:source:push");
   const config = await getConfig("user");
   const currentBranch = await getCurrentGitBranch();
@@ -23,7 +23,8 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     arrangedFiles = await arrangeFilesBefore(commandThis);
   }
   try {
-    const pushCommand = `sfdx force:source:push -g -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
+    const sfdxPushCommand = options.sfdxPushCommand || "force:source:push";
+    const pushCommand = `sfdx ${sfdxPushCommand} -g -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
     await execCommand(pushCommand, commandThis, {
       fail: true,
       output: !isCI,
@@ -43,7 +44,21 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     elapseEnd("force:source:push");
   } catch (e) {
     await restoreArrangedFiles(arrangedFiles, commandThis);
-    const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    // Manage beta/legacy boza
+    const stdOut = e.stdout + e.stderr;
+    if (stdOut.includes(`'force:source:legacy:push' with your existing tracking files`)) {
+      options.sfdxPushCommand = "force:source:legacy:push";
+      uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:legacy:push"));
+      const pullRes = await forceSourcePush(scratchOrgAlias, commandThis, debug, options);
+      return pullRes;
+    } else if (stdOut.includes(`'force:source:beta:push' with your existing tracking files`)) {
+      options.sfdxPushCommand = "force:source:beta:push";
+      uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:beta:push"));
+      const pullRes = await forceSourcePush(scratchOrgAlias, commandThis, debug, options);
+      return pullRes;
+    }
+    // Analyze errors
+    const { tips, errLog } = analyzeDeployErrorLogs(stdOut);
     uxLog(commandThis, c.red("Sadly there has been push error(s)"));
     uxLog(this, c.red("\n" + errLog));
     uxLog(
@@ -55,20 +70,35 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
   }
 }
 
-export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
+export async function forceSourcePull(scratchOrgAlias: string, debug = false, options: any = {}) {
+  const sfdxPullCommand = options.sfdxPullCommand || "force:source:pull";
   try {
-    const pullCommand = `sfdx force:source:pull -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
+    const pullCommand = `sfdx ${sfdxPullCommand} -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
     await execCommand(pullCommand, this, {
       fail: true,
       output: true,
       debug: debug,
     });
   } catch (e) {
-    const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    // Manage beta/legacy boza
+    const stdOut = e.stdout + e.stderr;
+    if (stdOut.includes(`'force:source:legacy:pull' with your existing tracking files`)) {
+      options.sfdxPullCommand = "force:source:legacy:pull";
+      uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:legacy:pull"));
+      const pullRes = await forceSourcePull(scratchOrgAlias, debug, options);
+      return pullRes;
+    } else if (stdOut.includes(`'force:source:beta:pull' with your existing tracking files`)) {
+      options.sfdxPullCommand = "force:source:beta:pull";
+      uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:beta:pull"));
+      const pullRes = await forceSourcePull(scratchOrgAlias, debug, options);
+      return pullRes;
+    }
+    // Analyze errors
+    const { tips, errLog } = analyzeDeployErrorLogs(stdOut);
     uxLog(this, c.red("Sadly there has been pull error(s)"));
     uxLog(this, c.red("\n" + errLog));
     // List unknown elements from output
-    const forceIgnoreElements = [...(e.stdout + e.stderr).matchAll(/Entity of type '(.*)' named '(.*)' cannot be found/gm)];
+    const forceIgnoreElements = [...stdOut.matchAll(/Entity of type '(.*)' named '(.*)' cannot be found/gm)];
     if (forceIgnoreElements.length > 0 && !isCI) {
       // Propose user to ignore elements
       const forceIgnoreRes = await prompts({

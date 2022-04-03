@@ -4,10 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.76.0] 2022-03-29
+## [2.76.0] 2022-04-03
 
 - New command **sfdx **hardis:org:user:activateinvalid** to activate invalid emails in sandbox
 - Fix CI org authentication in case the default username is not the org that we want to configure
+- Bypass error with force:source:legacy:pull / push
 - New deployTips
   - Please choose a different name
 
