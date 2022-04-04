@@ -4,6 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as columnify from "columnify";
+import * as sortArray from "sort-array";
 import { isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils";
@@ -71,19 +72,40 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
       return { outputString };
     }
 
-    // Request configuration from user
+    let usersToActivateFinal = [...usersToActivate];
+    // Request confirmation or selection from user
     if (!isCI) {
-      const confirmfreeze = await prompts({
-        type: "confirm",
+      const confirmSelect = await prompts({
+        type: "select",
         name: "value",
         initial: true,
         message: c.cyanBright(
-          `Are you sure you want to replace invalid mails by valid mails for these ${c.bold(usersToActivate.length)} users in org ${c.green(
+          `Do you want to replace invalid mails by valid mails for all ${c.bold(usersToActivate.length)} found users in org ${c.green(
             this.org.getUsername()
-          )} (y/n)?`
+          )} ?`
         ),
+        choices: [
+          { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: "all" },
+          { title: "No, i want to manually select users", value: "select" },
+        ],
       });
-      if (confirmfreeze.value !== true) {
+      // Let users select users to reactivate
+      if (confirmSelect.value === "select") {
+        const usersSorted = sortArray(usersToActivate, {
+          by: ["Name", "Email"],
+          order: ["asc"],
+        });
+        const selectUsers = await prompts({
+          type: "multiselect",
+          name: "value",
+          message: "Please select users that you want to remove the .invalid from emails",
+          choices: usersSorted.map((user) => {
+            return { title: `${user.Name} - ${user.Email}`, value: user };
+          }),
+        });
+        usersToActivateFinal = selectUsers.value;
+      }
+      else if (confirmSelect.value !== "all") {
         const outputString = "Script cancelled by user";
         uxLog(this, c.yellow(outputString));
         return { outputString };
@@ -91,7 +113,7 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
     }
 
     // Process invalid users reactivation
-    const userToActivateUpdated = usersToActivate.map((user) => {
+    const userToActivateUpdated = usersToActivateFinal.map((user) => {
       const emailReplaced = user.Email.replace(".invalid", "");
       return { Id: user.Id, Email: emailReplaced };
     });
