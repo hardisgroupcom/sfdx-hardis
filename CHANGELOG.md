@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.76.1] 2022-04-04
 
-- Improve activate invalid users commands
+- Improve activate invalid users commands (allow to select by profile(s))
 
 ## [2.76.0] 2022-04-03
 
