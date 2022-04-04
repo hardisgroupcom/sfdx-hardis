@@ -93,14 +93,12 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
       });
       // Let users select profiles to reactivate users
       if (confirmSelect.value === "selectProfiles") {
-        const selectedProfileIds = await promptProfiles(
-          this.org.getConnection(), {
+        const selectedProfileIds = await promptProfiles(this.org.getConnection(), {
           multiselect: true,
           returnField: "Id",
-          message: "Please select profiles that you want to reactivate users with .invalid emails"
+          message: "Please select profiles that you want to reactivate users with .invalid emails",
         });
-        usersToActivateFinal = usersToActivateFinal.filter(user => selectedProfileIds.includes(user.ProfileId));
-
+        usersToActivateFinal = usersToActivateFinal.filter((user) => selectedProfileIds.includes(user.ProfileId));
       }
       // Let users select users to reactivate
       else if (confirmSelect.value === "select") {
