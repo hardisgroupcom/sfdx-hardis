@@ -104,8 +104,7 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
           }),
         });
         usersToActivateFinal = selectUsers.value;
-      }
-      else if (confirmSelect.value !== "all") {
+      } else if (confirmSelect.value !== "all") {
         const outputString = "Script cancelled by user";
         uxLog(this, c.yellow(outputString));
         return { outputString };
