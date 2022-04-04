@@ -8,6 +8,7 @@ import * as sortArray from "sort-array";
 import { isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils";
+import { promptProfiles } from "../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -61,7 +62,7 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
 
     // Query users that we want to freeze
     uxLog(this, c.cyan(`Querying User records with email ending with .invalid...`));
-    const userQuery = `SELECT Id,Name,Username,Email FROM User WHERE Email LIKE '%.invalid' and IsActive=true`;
+    const userQuery = `SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE '%.invalid' and IsActive=true`;
     const userQueryRes = await bulkQuery(userQuery, conn);
     const usersToActivate = userQueryRes.records;
 
@@ -86,11 +87,23 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
         ),
         choices: [
           { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: "all" },
-          { title: "No, i want to manually select users", value: "select" },
+          { title: "No, i want to manually select by profile(s)", value: "selectProfiles" },
+          { title: "No, i want to manually select user(s)", value: "select" },
         ],
       });
+      // Let users select profiles to reactivate users
+      if (confirmSelect.value === "selectProfiles") {
+        const selectedProfileIds = await promptProfiles(
+          this.org.getConnection(), {
+          multiselect: true,
+          returnField: "Id",
+          message: "Please select profiles that you want to reactivate users with .invalid emails"
+        });
+        usersToActivateFinal = usersToActivateFinal.filter(user => selectedProfileIds.includes(user.ProfileId));
+
+      }
       // Let users select users to reactivate
-      if (confirmSelect.value === "select") {
+      else if (confirmSelect.value === "select") {
         const usersSorted = sortArray(usersToActivate, {
           by: ["Name", "Email"],
           order: ["asc"],
@@ -127,14 +140,14 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
     }
 
     // Build results summary
-    uxLog(this, c.green(`${c.bold(activateSuccessNb)} users has been be reactivated.`));
+    uxLog(this, c.green(`${c.bold(activateSuccessNb)} users has been be reactivated by removing the .invalid of their email`));
 
     // Return an object to be displayed with --json
     return {
       orgId: this.org.getOrgId(),
       activateSuccessNb: activateSuccessNb,
       activateErrorNb: activateErrorNb,
-      outputString: `${activateSuccessNb} sandbox users has been be reactivated`,
+      outputString: `${activateSuccessNb} sandbox users has been be reactivated by removing the .invalid of their email`,
     };
   }
 }
