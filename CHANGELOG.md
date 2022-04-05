@@ -8,11 +8,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - hardis:org:user:activateinvalid : new --profiles argument
 - Update MsTeams WebHooks ENV variables
-  - MS_TEAMS_WEBHOOK_URL
-  - CRITICAL_MS_TEAMS_WEBHOOK_URL
-  - SEVERE_MS_TEAMS_WEBHOOK_URL
-  - WARNING_MS_TEAMS_WEBHOOK_URL
-  - INFO_MS_TEAMS_WEBHOOK_URL
+  - MS_TEAMS_WEBHOOK_URL_CRITICAL
+  - MS_TEAMS_WEBHOOK_URL_SEVERE
+  - MS_TEAMS_WEBHOOK_URL_WARNING
+  - MS_TEAMS_WEBHOOK_URL_INFO
 - Allow to install packages during deployment check using INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true env variable
 - Enhance prompt org labels
 
