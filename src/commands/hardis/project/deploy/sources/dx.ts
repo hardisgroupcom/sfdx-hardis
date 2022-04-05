@@ -80,6 +80,13 @@ Env vars override:
     const packageXml = this.flags.packagexml || null;
     this.debugMode = this.flags.debug || false;
 
+    // Get target org
+    let targetUsername = this.org.getUsername();
+    if (!isCI) {
+      const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, scratch: false });
+      targetUsername = targetOrg.username;
+    }
+
     // Install packages
     const packages = this.configInfo.installedPackages || [];
     const missingPackages = [];
@@ -87,10 +94,10 @@ Env vars override:
       check === false || process.env.INSTALL_PACKAGES_DURING_CHECK_DEPLOY === "true" || this.configInfo.installPackagesDuringCheckDeploy === true;
     if (packages.length > 0 && installPackages) {
       // Install packages only if we are in real deployment mode
-      await MetadataUtils.installPackagesOnOrg(packages, null, this, "deploy");
+      await MetadataUtils.installPackagesOnOrg(packages, targetUsername, this, "deploy");
     } else if (packages.length > 0 && check === true) {
       // If check mode, warn if there are missing packages
-      const alreadyInstalled = await MetadataUtils.listInstalledPackages(null, this);
+      const alreadyInstalled = await MetadataUtils.listInstalledPackages(targetUsername, this);
       for (const package1 of packages) {
         if (
           alreadyInstalled.filter((installedPackage: any) => package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId)
@@ -100,12 +107,6 @@ Env vars override:
           missingPackages.push(package1);
         }
       }
-    }
-
-    let targetUsername = this.org.getUsername();
-    if (!isCI) {
-      const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, scratch: false });
-      targetUsername = targetOrg.username;
     }
 
     // Get package.xml
@@ -131,17 +132,22 @@ Env vars override:
       for (const package1 of missingPackages) {
         uxLog(
           this,
-          `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-            package1.SubscriberPackageVersionId
-          )} in target org to validate the deployment check`
+          c.yellow(
+            `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
+              package1.SubscriberPackageVersionId
+            )} in target org to validate the deployment check`
+          )
         );
       }
+      uxLog(this,"");
       uxLog(
         this,
         c.yellow(
-          `If you want deployment checks to automatically install packages, please define ${c.bold(
-            "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true"
-          )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`
+          c.italic(
+            `If you want deployment checks to automatically install packages, please define ${c.bold(
+              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true"
+            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`
+          )
         )
       );
     }
