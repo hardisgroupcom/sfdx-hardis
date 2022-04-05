@@ -139,7 +139,7 @@ Env vars override:
           )
         );
       }
-      uxLog(this,"");
+      uxLog(this, "");
       uxLog(
         this,
         c.yellow(

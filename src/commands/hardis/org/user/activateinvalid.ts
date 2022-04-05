@@ -60,8 +60,8 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.profiles = this.flags.profiles ? this.flags.profiles.split(","): null ;
-    const hasProfileConstraint = this.profiles !== null ;
+    this.profiles = this.flags.profiles ? this.flags.profiles.split(",") : null;
+    const hasProfileConstraint = this.profiles !== null;
     this.debugMode = this.flags.debug || false;
 
     const conn = this.org.getConnection();
@@ -73,7 +73,7 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
       const profilesQuery = `SELECT Id FROM Profile WHERE Name IN ('${this.profiles.join("','")}')`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       const profileIds = profilesQueryRes.records.map((profile) => profile.Id);
-      userQuery += ` and ProfileId IN ('${profileIds.join("','")}')`
+      userQuery += ` and ProfileId IN ('${profileIds.join("','")}')`;
     }
     const userQueryRes = await bulkQuery(userQuery, conn);
     const usersToActivate = userQueryRes.records;
