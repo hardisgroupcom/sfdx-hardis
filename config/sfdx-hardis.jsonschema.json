@@ -329,6 +329,14 @@
       "title": "Installed Packages",
       "type": "array"
     },
+    "installPackagesDuringCheckDeploy": {
+      "$id": "#/properties/installPackagesDuringCheckDeploy",
+      "default": false,
+      "description": "When calling deployment check command, installs any package referred within installedPackages property",
+      "examples": [true],
+      "title": "Install packages during deployment checks",
+      "type": "boolean"
+    },
     "instanceUrl": {
       "$id": "#/properties/instanceUrl",
       "default": "",
@@ -351,9 +359,41 @@
     "msTeamsWebhookUrl": {
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",
-      "description": "Url of the Ms Teams channel Web Hook that can be used to send notifications",
+      "description": "Url of the Ms Teams channel Web Hook that can be used to send ALL notifications",
       "examples": ["https://my.msteams.webhook.url"],
-      "title": "MsTeams WebHook Url",
+      "title": "MsTeams WebHook Url (ALL)",
+      "type": "string"
+    },
+    "msTeamsWebhookUrlCritical": {
+      "$id": "#/properties/msTeamsWebhookUrlCritical",
+      "default": "",
+      "description": "Url of the Ms Teams channel Web Hook that can be used to send CRITICAL notifications",
+      "examples": ["https://my.msteams.webhook.url"],
+      "title": "MsTeams WebHook Url (CRITICAL)",
+      "type": "string"
+    },
+    "msTeamsWebhookUrlSevere": {
+      "$id": "#/properties/msTeamsWebhookUrlSevere",
+      "default": "",
+      "description": "Url of the Ms Teams channel Web Hook that can be used to send SEVERE notifications",
+      "examples": ["https://my.msteams.webhook.url"],
+      "title": "MsTeams WebHook Url (SEVERE)",
+      "type": "string"
+    },
+    "msTeamsWebhookUrlWarning": {
+      "$id": "#/properties/msTeamsWebhookUrlWarning",
+      "default": "",
+      "description": "Url of the Ms Teams channel Web Hook that can be used to send WARNING notifications",
+      "examples": ["https://my.msteams.webhook.url"],
+      "title": "MsTeams WebHook Url (WARNING)",
+      "type": "string"
+    },
+    "msTeamsWebhookUrlInfo": {
+      "$id": "#/properties/msTeamsWebhookUrlWarning",
+      "default": "",
+      "description": "Url of the Ms Teams channel Web Hook that can be used to send INFO notifications",
+      "examples": ["https://my.msteams.webhook.url"],
+      "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
     },
     "poolConfig": {

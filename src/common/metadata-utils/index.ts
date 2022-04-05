@@ -433,7 +433,7 @@ class MetadataUtils {
 
   // Install package on existing org
   public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null, context = "none") {
-    const alreadyInstalled = await MetadataUtils.listInstalledPackages(null, this);
+    const alreadyInstalled = await MetadataUtils.listInstalledPackages(orgAlias, this);
     for (const package1 of packages) {
       if (
         alreadyInstalled.filter((installedPackage: any) => package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId)

@@ -8,9 +8,10 @@ export async function canSendNotifications(): Promise<boolean> {
   const config = await getConfig("user");
   return (
     process.env.MS_TEAMS_WEBHOOK_URL ||
-    process.env.CRITICAL_MS_TEAMS_WEBHOOK_URL ||
-    process.env.SEVERE_MS_TEAMS_WEBHOOK_URL ||
-    process.env.WARNING_MS_TEAMS_WEBHOOK_URL ||
+    process.env.MS_TEAMS_WEBHOOK_URL_CRITICAL ||
+    process.env.MS_TEAMS_WEBHOOK_URL_SEVERE ||
+    process.env.MS_TEAMS_WEBHOOK_URL_WARNING ||
+    process.env.MS_TEAMS_WEBHOOK_URL_INFO ||
     config.msTeamsWebhookUrl
   );
 }
@@ -56,22 +57,30 @@ async function sendMsTeamsNotification(title, text, summary, buttons, severity) 
   }
   // Critical hook URL
   if (severity === "critical") {
-    const msTeamsCriticalHookUrl = process.env.CRITICAL_MS_TEAMS_WEBHOOK_URL || config.criticalMsTeamsWebhookUrl;
+    const msTeamsCriticalHookUrl = process.env.MS_TEAMS_WEBHOOK_URL_CRITICAL || config.msTeamsWebhookUrlCritical;
     if (msTeamsCriticalHookUrl) {
       hooksUrls.push(msTeamsCriticalHookUrl);
     }
   }
-  // Critical hook URL
+  // Severe hook URL
   if (severity === "severe") {
-    const msTeamsSevereHookUrl = process.env.SEVERE_MS_TEAMS_WEBHOOK_URL || config.severeMsTeamsWebhookUrl;
+    const msTeamsSevereHookUrl = process.env.MS_TEAMS_WEBHOOK_URL_SEVERE || config.msTeamsWebhookUrlSevere;
     if (msTeamsSevereHookUrl) {
       hooksUrls.push(msTeamsSevereHookUrl);
     }
-  } // Critical hook URL
+  }
+  // Warning hook URL
   if (severity === "warning") {
-    const msTeamsWarningHookUrl = process.env.WARNING_MS_TEAMS_WEBHOOK_URL || config.warningMsTeamsWebhookUrl;
+    const msTeamsWarningHookUrl = process.env.MS_TEAMS_WEBHOOK_URL_WARNING || config.msTeamsWebhookUrlWarning;
     if (msTeamsWarningHookUrl) {
       hooksUrls.push(msTeamsWarningHookUrl);
+    }
+  }
+  // Info hook URL
+  if (severity === "info") {
+    const msTeamsInfoHookUrl = process.env.MS_TEAMS_WEBHOOK_URL_INFO || config.msTeamsWebhookUrlInfo;
+    if (msTeamsInfoHookUrl) {
+      hooksUrls.push(msTeamsInfoHookUrl);
     }
   }
   // Call MsTeams hooks

@@ -107,8 +107,12 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   let orgList = [
     ...sortArray(orgListResult?.scratchOrgs || [], { by: ["devHubUsername", "username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     ...sortArray(orgListResult?.nonScratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
-    { username: "Connect to another org", otherOrg: true },
-    { username: "Cancel", cancel: true },
+    {
+      username: "Connect to another org",
+      otherOrg: true,
+      descriptionForUi: "Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org",
+    },
+    { username: "Cancel", cancel: true, descriptionForUi: "Get out of here :)" },
   ];
 
   // Filter if we want to list only the scratch attached to current devhub
@@ -131,7 +135,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
       const description = (title !== org.instanceUrl ? org.instanceUrl : "") + (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : "-");
       return {
         title: c.cyan(title),
-        description: description || "-",
+        description: org.descriptionForUi ? org.descriptionForUi : description || "-",
         value: org,
       };
     }),

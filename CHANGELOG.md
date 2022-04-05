@@ -4,6 +4,18 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.77.0] 2022-04-05
+
+- Generate deployment tips documentation
+- hardis:org:user:activateinvalid : new --profiles argument
+- Update MsTeams WebHooks ENV variables
+  - MS_TEAMS_WEBHOOK_URL_CRITICAL
+  - MS_TEAMS_WEBHOOK_URL_SEVERE
+  - MS_TEAMS_WEBHOOK_URL_WARNING
+  - MS_TEAMS_WEBHOOK_URL_INFO
+- Allow to install packages during deployment check using INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true env variable
+- Enhance prompt org labels
+
 ## [2.76.2] 2022-04-04
 
 - Improve activate invalid users commands (allow to select by profile(s))
@@ -14,7 +26,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.76.0] 2022-04-03
 
-- New command **sfdx**hardis:org:user:activateinvalid** to activate invalid emails in sandbox
+- New command **sfdx hardis:org:user:activateinvalid** to activate invalid emails in sandbox
 - Fix CI org authentication in case the default username is not the org that we want to configure
 - Bypass error with force:source:legacy:pull / push
 - hardis:work:save : Propose to manually commit files

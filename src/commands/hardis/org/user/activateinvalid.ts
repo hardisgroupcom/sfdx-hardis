@@ -7,7 +7,7 @@ import * as columnify from "columnify";
 import * as sortArray from "sort-array";
 import { isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
-import { bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils";
+import { bulkQuery, bulkUpdate, soqlQuery } from "../../../../common/utils/apiUtils";
 import { promptProfiles } from "../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
@@ -30,7 +30,10 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    // flag with a value (-n, --name=VALUE)
+    profiles: flags.string({
+      char: "p",
+      description: "Comma-separated list of profiles names that you want to reactive users assigned to and with a .invalid email",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -50,19 +53,28 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
+  protected profiles = [];
   protected maxUsersDisplay = 100;
   protected debugMode = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    this.profiles = this.flags.profiles ? this.flags.profiles.split(",") : null;
+    const hasProfileConstraint = this.profiles !== null;
     this.debugMode = this.flags.debug || false;
 
     const conn = this.org.getConnection();
 
     // Query users that we want to freeze
     uxLog(this, c.cyan(`Querying User records with email ending with .invalid...`));
-    const userQuery = `SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE '%.invalid' and IsActive=true`;
+    let userQuery = `SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE '%.invalid' and IsActive=true`;
+    if (hasProfileConstraint) {
+      const profilesQuery = `SELECT Id FROM Profile WHERE Name IN ('${this.profiles.join("','")}')`;
+      const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+      const profileIds = profilesQueryRes.records.map((profile) => profile.Id);
+      userQuery += ` and ProfileId IN ('${profileIds.join("','")}')`;
+    }
     const userQueryRes = await bulkQuery(userQuery, conn);
     const usersToActivate = userQueryRes.records;
 
@@ -75,7 +87,7 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
 
     let usersToActivateFinal = [...usersToActivate];
     // Request confirmation or selection from user
-    if (!isCI) {
+    if (!isCI && !hasProfileConstraint) {
       const confirmSelect = await prompts({
         type: "select",
         name: "value",
