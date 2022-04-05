@@ -4,6 +4,16 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.77.0] 2022-04-05
+
+- Update MsTeams WebHooks ENV variables
+  - MS_TEAMS_WEBHOOK_URL
+  - CRITICAL_MS_TEAMS_WEBHOOK_URL
+  - SEVERE_MS_TEAMS_WEBHOOK_URL
+  - WARNING_MS_TEAMS_WEBHOOK_URL
+  - INFO_MS_TEAMS_WEBHOOK_URL
+- Allow to install packages during deployment check using INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true env variable
+
 ## [2.76.2] 2022-04-04
 
 - Improve activate invalid users commands (allow to select by profile(s))
