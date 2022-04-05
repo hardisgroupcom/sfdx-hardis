@@ -181,7 +181,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-r <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesmetadata--f-string--p-string--r-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:select [-h] [-s] [-d] [--websocket <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgselect--h--s--d---websocket-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgtestapex--l-notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:org:user:activateinvalid [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorguseractivateinvalid--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:org:user:activateinvalid [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorguseractivateinvalid--p-string--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:user:freeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorguserfreeze--n-string--p-string--e-string--m-number--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:user:unfreeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorguserunfreeze--n-string--p-string--e-string--m-number--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:package:create [-d] [--websocket <string>] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardispackagecreate--d---websocket-string--v-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -346,7 +346,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 0 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -369,9 +369,9 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  See documentation at 
-  https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi
-  .htm#cli_reference_force_mdapi_deploy
+  [See documentation of Salesforce 
+  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
+  rce_mdapi.htm#cli_reference_force_mdapi_deploy)
 ```
 
 _See code: [lib/commands/hardis/mdapi/deploy.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.76.2/lib/commands/hardis/mdapi/deploy.js)_
@@ -1099,17 +1099,22 @@ EXAMPLE
 
 _See code: [lib/commands/hardis/org/test/apex.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.76.2/lib/commands/hardis/org/test/apex.js)_
 
-## `sfdx hardis:org:user:activateinvalid [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+## `sfdx hardis:org:user:activateinvalid [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Update sandbox users so their email is valid
 
 ```
 USAGE
-  $ sfdx hardis:org:user:activateinvalid [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
-  [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+  $ sfdx hardis:org:user:activateinvalid [-p <string>] [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] 
+  [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
+
+  -p, --profiles=profiles                                                           Comma-separated list of profiles
+                                                                                    names that you want to reactive
+                                                                                    users assigned to and with a
+                                                                                    .invalid email
 
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
@@ -1478,8 +1483,8 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: C:\git\sfdx-hardis] Root
-                                                                                    path to check
+  -p, --path=path                                                                   [default: D:\git\sfdx-hardis1703]
+                                                                                    Root path to check
 
   --json                                                                            format output as json
 
@@ -1933,6 +1938,7 @@ DESCRIPTION
   Env vars override:
 
   - SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml into several deployments
+  - INSTALL_PACKAGES_DURING_CHECK_DEPLOY: define "true" so packages are installed during deployment check
 
 EXAMPLE
   $ sfdx hardis:project:deploy:sources:dx
@@ -2001,8 +2007,8 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: C:\git\sfdx-hardis] Root
-                                                                                    folder
+  -p, --path=path                                                                   [default: D:\git\sfdx-hardis1703]
+                                                                                    Root folder
 
   --json                                                                            format output as json
 
@@ -2414,7 +2420,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   -x, --manifest=manifest                                                           flagsLong.manifest
 
@@ -2439,9 +2445,9 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  See documentation at 
-  https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_sourc
-  e.htm#cli_reference_force_source_deploy
+  [See documentation of Salesforce 
+  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
+  rce_source.htm#cli_reference_force_source_deploy)
 ```
 
 _See code: [lib/commands/hardis/source/deploy.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.76.2/lib/commands/hardis/source/deploy.js)_
@@ -2462,7 +2468,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -2479,9 +2485,9 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  See documentation at 
-  https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_sourc
-  e.htm#cli_reference_force_source_push
+  [See documentation of Salesforce 
+  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
+  rce_source.htm#cli_reference_force_source_push)
 ```
 
 _See code: [lib/commands/hardis/source/push.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.76.2/lib/commands/hardis/source/push.js)_

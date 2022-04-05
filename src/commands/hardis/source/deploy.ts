@@ -7,7 +7,7 @@ import { wrapDeployCommand } from "../../../common/utils/wrapUtils";
 export class Deploy extends SfdxCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors.
 
-See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy
+[See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
 `;
   public static readonly examples = [];
   public static readonly requiresProject = true;

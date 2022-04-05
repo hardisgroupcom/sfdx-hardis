@@ -34,7 +34,6 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
 - If the folder is existing in sources, add it in related package.xml
 - If the folder is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders -u YOURSOURCEORG`,
     },
-    {},
     {
       name: "custom-object-not-found",
       label: "Custom object not found",

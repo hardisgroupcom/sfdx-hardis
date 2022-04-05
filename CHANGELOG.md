@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.77.0] 2022-04-05
 
+- Generate deployment tips documentation
 - hardis:org:user:activateinvalid : new --profiles argument
 - Update MsTeams WebHooks ENV variables
   - MS_TEAMS_WEBHOOK_URL_CRITICAL
