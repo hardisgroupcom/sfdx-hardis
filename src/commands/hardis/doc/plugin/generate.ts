@@ -47,6 +47,9 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     websocket: flags.string({
       description: messages.getMessage("websocket"),
     }),
+    skipauth: flags.boolean({
+      description: "Skip authentication check when a default username is required"
+    }),
   };
 
   // Comment this out if your command does not require an org username

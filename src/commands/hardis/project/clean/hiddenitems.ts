@@ -36,6 +36,9 @@ export default class CleanHiddenItems extends SfdxCommand {
     websocket: flags.string({
       description: messages.getMessage("websocket"),
     }),
+    skipauth: flags.boolean({
+      description: "Skip authentication check when a default username is required"
+    }),
   };
 
   // Comment this out if your command does not require an org username
