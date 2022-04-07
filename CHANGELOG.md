@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.77.2] 2022-04-07
+
+- Fix bug when subtracting a package.xml from another
+
 ## [2.77.1] 2022-04-07
 
 - Fix error in packageDeployOnce.xml document (sfdx hardis:project:deploy:sources:dx)
