@@ -25,7 +25,7 @@ export default class DxSources extends SfdxCommand {
 
 If necessary,You can define the following files (that supports wildcards <members>*</members>):
 
-- manifest/packageXmlOnce.xml: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
+- manifest/packageDeployOnce.xml: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
 - manifest/packageXmlOnChange.xml: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
 Env vars override:
