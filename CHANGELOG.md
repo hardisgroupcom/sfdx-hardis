@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.78.0] 2022-04-07
 
 - New parameter --skipauth on all hardis commands, to allow the auth check when a default username is required (allows advanced users to improve performances)
+- Set user email when fetching a scratch org from scratch org pool
 
 ## [2.77.2] 2022-04-07
 
