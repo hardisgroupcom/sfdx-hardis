@@ -106,8 +106,12 @@ export async function removePackageXmlFilesContent(
   }
 
   // Filter main package.xml file
+  const processedTypes = [];
   for (const removeType of packageXmlRemoveMetadatasTypeLs) {
     const removeTypeName = removeType.name[0] || null;
+    if (removeTypeName) {
+      processedTypes.push(removeTypeName);
+    }
     if (removeTypeName === null) {
       continue;
     }
@@ -156,6 +160,12 @@ export async function removePackageXmlFilesContent(
       });
     }
   }
+
+  // If removedOnly mode, remove types which were not present in removePackageXml
+  if (removedOnly) {
+    packageXmlMetadatasTypeLs = packageXmlMetadatasTypeLs.filter((type1: any) => processedTypes.includes(type1.name[0]));
+  }
+
   // display in logs if requested
   if (logFlag) {
     uxLog(this, "Package.xml remove results :\n" + util.inspect(packageXmlMetadatasTypeLs, false, null));

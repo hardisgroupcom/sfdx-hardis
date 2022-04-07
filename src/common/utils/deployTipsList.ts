@@ -73,6 +73,15 @@ Example of element to delete:
 `,
     },
     {
+      name: "custom-metadata-not-found",
+      label: "Custom metadata entry not found",
+      expressionRegex: [/Error (.*) In field: (.*) - no CustomMetadata named (.*) found/gm],
+      tip: `A reference to a custom metadata {3} of type {2} is not found in {1}:
+- Are you sure you deployed {3} ?
+- If you use a package.xml, is {3} present within type CustomMetadata ?
+`,
+    },
+    {
       name: "duplicate-value-platform-action-id-list",
       label: "Duplicate value Platform Action Id List",
       expressionString: ["duplicate value found: PlatformActionListId duplicates value on record with id"],
