@@ -61,7 +61,7 @@ Once installed, click on ![Hardis Group button](https://github.com/hardisgroupco
 You can use sfdx-hardis docker images to run in CI
 
 - [**hardisgroupcom/sfdx-hardis:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with latest sfdx-cli version)
-- [**hardisgroupcom/sfdx-hardis:latest-sfdx-stable**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with stable sfdx-cli version)
+- [**hardisgroupcom/sfdx-hardis:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with recommended sfdx-cli version, in case the latest version of sfdx-cli is buggy)
 
 _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Dockerfile)_
 
