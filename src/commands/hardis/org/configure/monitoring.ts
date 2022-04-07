@@ -42,7 +42,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       description: messages.getMessage("websocket"),
     }),
     skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required"
+      description: "Skip authentication check when a default username is required",
     }),
   };
 
