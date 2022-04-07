@@ -53,6 +53,9 @@ export default class ScratchCreate extends SfdxCommand {
     websocket: flags.string({
       description: messages.getMessage("websocket"),
     }),
+    skipauth: flags.boolean({
+      description: "Skip authentication check when a default username is required",
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -362,6 +365,9 @@ export default class ScratchCreate extends SfdxCommand {
     const userQueryCommand = `sfdx force:data:record:get -s User -w "Username=${this.scratchOrgUsername}" -u ${this.scratchOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, { fail: true, output: false, debug: this.debugMode });
     let updatedUserValues = `LastName='SFDX-HARDIS' FirstName='Scratch Org'`;
+    if (config.userEmail !== userQueryRes.result.CountryCode) {
+      updatedUserValues += ` Email='${config.userEmail}'`;
+    }
     // Fix country value is State & Country picklist activated
     if ((this.projectScratchDef.features || []).includes("StateAndCountryPicklist") && userQueryRes.result.CountryCode == null) {
       updatedUserValues += ` CountryCode='${config.defaultCountryCode || "FR"}' Country='${config.defaultCountry || "France"}'`;

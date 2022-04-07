@@ -18,7 +18,7 @@ export default class FixV53Flexipages extends SfdxCommand {
   public static title = "Fix flexipages for v53";
 
   public static description = `Fix flexipages for apiVersion v53 (Winter22).
-    
+
 Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
 
   public static examples = ["$ sfdx hardis:project:fix:v53flexipages"];
@@ -36,6 +36,9 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
     }),
     websocket: flags.string({
       description: messages.getMessage("websocket"),
+    }),
+    skipauth: flags.boolean({
+      description: "Skip authentication check when a default username is required",
     }),
   };
 
