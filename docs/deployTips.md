@@ -109,6 +109,19 @@ Example of element to delete:
 
 ```
 
+## Custom metadata entry not found
+
+- `Error (.*) In field: (.*) - no CustomMetadata named (.*) found`
+
+**Resolution tip**
+
+```shell
+A reference to a custom metadata {3} of type {2} is not found in {1}:
+- Are you sure you deployed {3} ?
+- If you use a package.xml, is {3} present within type CustomMetadata ?
+
+```
+
 ## Duplicate value Platform Action Id List
 
 - `duplicate value found: PlatformActionListId duplicates value on record with id`
