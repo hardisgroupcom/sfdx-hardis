@@ -72,8 +72,10 @@ export function isGitRepo() {
 }
 
 export async function gitHasLocalUpdates() {
-  const gitStatus = await git().status();
-  return gitStatus.files.length > 0;
+  const changes = await git().status();
+  uxLog(this, c.cyan(JSON.stringify(changes)));
+
+  return changes.files.length > 0;
 }
 
 // Install plugin if not present
