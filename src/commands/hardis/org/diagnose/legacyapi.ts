@@ -195,7 +195,8 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     // Build output CSV file
     if (this.outputFile == null) {
       // Default file in system temp directory if --outputfile not provided
-      const reportDir = await fs.ensureDir("./hardis-report");
+      const reportDir = "./hardis-report";
+      await fs.ensureDir(reportDir);
       this.outputFile = path.join(reportDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
     } else {
       // Ensure directories to provided --outputfile are existing
