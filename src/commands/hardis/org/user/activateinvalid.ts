@@ -25,7 +25,11 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
   Example: replaces toto@company.com.dev.invalid with toto@company.com.dev.invalid
 `;
 
-  public static examples = [`$ sfdx hardis:org:user:activateinvalid`, `$ sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com`];
+  public static examples = [
+    `$ sfdx hardis:org:user:activateinvalid`,
+    `$ sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com`,
+    `$ sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername myuser@myorg.com`,
+  ];
 
   // public static args = [{name: 'file'}];
 

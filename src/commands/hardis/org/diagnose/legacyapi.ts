@@ -7,7 +7,7 @@ import * as c from "chalk";
 import * as Papa from "papaparse";
 import path = require("path");
 import * as sortArray from "sort-array";
-import { createTempDir, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
+import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import * as dns from "dns";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
@@ -33,8 +33,9 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
 
 | API versions | Salesforce deprecation release |
 |:------------:|:------------------------------:|
+| 1.0 to 6.0   |           Summer 21            |
 | 7.0 to 20.0  |           Summer 21            |
-| 21.0 to 30.0 |           Summer 22            |
+| 21.0 to 30.0 |           Summer 23            |
 
 - Run the command \`sfdx hardis:org:diagnose:legacyapi\`
 
@@ -104,14 +105,14 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
       apiFamily: ["SOAP", "REST", "BULK_API"],
       minApiVersion: 7.0,
       maxApiVersion: 20.0,
-      severity: "ERROR",
+      severity: "WARNING",
       deprecationRelease: "Summer 22 - retirement of 7 to 20 ",
     },
     {
       apiFamily: ["SOAP", "REST", "BULK_API"],
       minApiVersion: 21.0,
       maxApiVersion: 30.0,
-      severity: "WARNING",
+      severity: "INFO",
       deprecationRelease: "Summer 23 - retirement of 21 to 30",
     },
   ];
@@ -168,7 +169,7 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     // Display summary
     const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red;
     const deprecatedColor = allSoonDeprecatedApiCalls.length === 0 ? c.green : c.red;
-    const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.red;
+    const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.yellow;
     uxLog(this, "");
     uxLog(this, c.cyan("Results:"));
     uxLog(this, deadColor(`- ${this.legacyApiDescriptors[0].deprecationRelease} : ${c.bold(allDeadApiCalls.length)}`));
@@ -194,8 +195,9 @@ Advanced command guide in [**this article**](https://nicolas.vuillamy.fr/handle-
     // Build output CSV file
     if (this.outputFile == null) {
       // Default file in system temp directory if --outputfile not provided
-      const tmpDir = await createTempDir();
-      this.outputFile = path.join(tmpDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
+      const reportDir = "./hardis-report";
+      await fs.ensureDir(reportDir);
+      this.outputFile = path.join(reportDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
     } else {
       // Ensure directories to provided --outputfile are existing
       await fs.ensureDir(path.dirname(this.outputFile));
