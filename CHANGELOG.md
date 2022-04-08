@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.78.1] 2022-04-07
+
+- Fix CI & remove docker image with sfdx-cli@stable as it does not exists anymore
+
 ## [2.78.0] 2022-04-07
 
 - New parameter --skipauth on all hardis commands, to allow the auth check when a default username is required (allows advanced users to improve performances)

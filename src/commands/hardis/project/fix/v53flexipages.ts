@@ -38,7 +38,7 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
       description: messages.getMessage("websocket"),
     }),
     skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required"
+      description: "Skip authentication check when a default username is required",
     }),
   };
 

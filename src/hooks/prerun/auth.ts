@@ -52,10 +52,10 @@ export const hook = async (options: any) => {
     await authOrg(devHubAlias, options);
   }
   // Manage authentication if org is required but current user is disconnected
-  if (((options?.Command?.requiresUsername === true) || options.checkAuth === true) && !(options.devHub === true)) {
-    if (options?.Command?.requiresUsername === true && process.argv.includes("--skipauth")) {
-      return ;
-    }
+  if (
+    ((options?.Command?.requiresUsername === true && !process.argv.includes("--skipauth")) || options.checkAuth === true) &&
+    !(options.devHub === true)
+  ) {
     const orgAlias = process.env.ORG_ALIAS
       ? process.env.ORG_ALIAS
       : isCI && configInfo.scratchOrgAlias
