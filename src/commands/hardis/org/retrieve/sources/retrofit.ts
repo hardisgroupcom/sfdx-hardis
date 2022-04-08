@@ -5,13 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { getConfig } from "../../../../../config";
 import * as c from "chalk";
 // import * as path from "path";
-import {
-  ensureGitRepository,
-  gitHasLocalUpdates,
-  execCommand,
-  git,
-  uxLog,
-} from "../../../../../common/utils";
+import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog } from "../../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -40,7 +34,7 @@ export default class Retrofit extends SfdxCommand {
     "PermissionSet",
     "RecordType",
     "StandardValueSet",
-    "ValidationRule"
+    "ValidationRule",
   ];
 
   public static title = "Retrofit changes from an org";
@@ -54,7 +48,7 @@ export default class Retrofit extends SfdxCommand {
   List of metadata to retrieve can be set in three way, in order of priority :
   - "CI_SOURCES_TO_RETROFIT": variable set for CI context
   - "sourcesToRetrofit": variable set in .sfdx-hardis.yml
-  - Or default list: ${Retrofit.DEFAULT_SOURCES_TO_RETROFIT.join(', ')}
+  - Or default list: ${Retrofit.DEFAULT_SOURCES_TO_RETROFIT.join(", ")}
   `;
 
   public static examples = ["$ sfdx hardis:org:retrieve:sources:retrofit"];
@@ -132,10 +126,14 @@ export default class Retrofit extends SfdxCommand {
       "-o merge_request.create",
       `-o merge_request.title='[RETROFIT] Created by pipeline #${process.env.CI_PIPELINE_ID}'`,
       "-o merge_request.merge_when_pipeline_succeeds",
-      "-o merge_request.remove_source_branch"
+      "-o merge_request.remove_source_branch",
     ];
 
-    const pushResult = await execCommand(`git push ${origin} ${targetBranch} ${options.join(" ")}`, this, { fail: true, debug: this.debugMode, output: true });
+    const pushResult = await execCommand(`git push ${origin} ${targetBranch} ${options.join(" ")}`, this, {
+      fail: true,
+      debug: this.debugMode,
+      output: true,
+    });
     uxLog(this, c.yellow(JSON.stringify(pushResult)));
   }
 
@@ -149,7 +147,8 @@ export default class Retrofit extends SfdxCommand {
   }
 
   async retrieveSources() {
-    const RETROFIT_MDT: Array<string> = process.env.CI_SOURCES_TO_RETROFIT || this.configInfo.sourcesToRetrofit || Retrofit.DEFAULT_SOURCES_TO_RETROFIT;
+    const RETROFIT_MDT: Array<string> =
+      process.env.CI_SOURCES_TO_RETROFIT || this.configInfo.sourcesToRetrofit || Retrofit.DEFAULT_SOURCES_TO_RETROFIT;
     const retrieveCommand = `sfdx force:source:retrieve -m "${RETROFIT_MDT.join(",")}"`;
     await execCommand(retrieveCommand, this, { fail: true, debug: this.debugMode, output: true });
 
