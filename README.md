@@ -778,7 +778,7 @@ DESCRIPTION
 
   | API versions | Salesforce deprecation release |
   |:------------:|:------------------------------:|
-  | 1.0 to 6.0   |           Summer 21            |
+  |  1.0 to 6.0  |           Summer 21            |
   | 7.0 to 20.0  |           Summer 21            |
   | 21.0 to 30.0 |           Summer 23            |
 
@@ -2178,13 +2178,13 @@ DESCRIPTION
          waitAfter: 30
   ```
 
-  ## Packages installation
+## Packages installation
 
   You can define a list of package to install during deployments using property `installedPackages`
 
-  - If `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` is defined as `true` (or `installPackagesDuringCheckDeploy: true` in 
+- If `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` is defined as `true` (or `installPackagesDuringCheckDeploy: true` in
   `.sfdx-hardis.yml`), packages will be installed even if the command is called with `--check` mode
-  - You can automatically update this property by listing all packages installed on an org using command `sfdx 
+- You can automatically update this property by listing all packages installed on an org using command `sfdx
   hardis:org:retrieve:packageconfig`
 
   Example:
@@ -2226,8 +2226,8 @@ Deploy metadatas to source org
 
 ```
 USAGE
-  $ sfdx hardis:project:deploy:sources:metadata [-c] [-x <string>] [-p <string>] [-f] [-k <string>] [-l 
-  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [--skipauth] [-u <string>] 
+  $ sfdx hardis:project:deploy:sources:metadata [-c] [-x <string>] [-p <string>] [-f] [-k <string>] [-l
+  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [--skipauth] [-u <string>]
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2278,7 +2278,7 @@ Fix flexipages for apiVersion v53 (Winter22).
 
 ```
 USAGE
-  $ sfdx hardis:project:fix:v53flexipages [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
+  $ sfdx hardis:project:fix:v53flexipages [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2313,8 +2313,8 @@ Generate package.xml git delta between 2 commits
 
 ```
 USAGE
-  $ sfdx hardis:project:generate:gitdelta [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d] 
-  [--websocket <string>] [--skipauth] [--json] [--loglevel 
+  $ sfdx hardis:project:generate:gitdelta [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d]
+  [--websocket <string>] [--skipauth] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2346,7 +2346,7 @@ Apply syntactic analysis (linters) on the repository sources, using Mega-Linter
 
 ```
 USAGE
-  $ sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
+  $ sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2383,7 +2383,7 @@ Create and initialize a scratch org so it is ready to use
 
 ```
 USAGE
-  $ sfdx hardis:scratch:create [-n] [-d] [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
+  $ sfdx hardis:scratch:create [-n] [-d] [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2424,7 +2424,7 @@ Deletes a scratch org
 
 ```
 USAGE
-  $ sfdx hardis:scratch:delete [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:delete [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2459,7 +2459,7 @@ Select a data storage service and configure information to build a scratch org p
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
+  $ sfdx hardis:scratch:pool:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2506,7 +2506,7 @@ Calls the related storage service to request api keys and secrets that allows a 
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
+  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2541,7 +2541,7 @@ Create enough scratch orgs to fill the pool
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
+  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2576,7 +2576,7 @@ Reset scratch org pool (delete all scratches in the pool)
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:reset [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
+  $ sfdx hardis:scratch:pool:reset [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2611,7 +2611,7 @@ Displays all stored content of project scratch org pool if defined
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
+  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2646,7 +2646,7 @@ Pull scratch org updates from scratch org to local git branch
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2681,7 +2681,7 @@ Push local updates in git branch to scratch org
 
 ```
 USAGE
-  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2716,9 +2716,9 @@ sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve dep
 
 ```
 USAGE
-  $ sfdx hardis:source:deploy [--soapdeploy] [-w <minutes>] [-q <id> | -x <filepath> | -m <array> | -p <array> | -c | -l 
-  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g] [--predestructivechanges <filepath> 
-  ] [--postdestructivechanges <filepath> ] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>] 
+  $ sfdx hardis:source:deploy [--soapdeploy] [-w <minutes>] [-q <id> | -x <filepath> | -m <array> | -p <array> | -c | -l
+  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g] [--predestructivechanges <filepath>
+  ] [--postdestructivechanges <filepath> ] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>]
   [--verbose] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2759,8 +2759,8 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
+  [See documentation of Salesforce
+  command](<https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo>
   rce_source.htm#cli_reference_force_source_deploy)
 ```
 
@@ -2772,7 +2772,7 @@ sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deplo
 
 ```
 USAGE
-  $ sfdx hardis:source:push [-f] [-w <minutes>] [-g] [--debug] [--websocket <string>] [-u <string>] [--apiversion 
+  $ sfdx hardis:source:push [-f] [-w <minutes>] [-g] [--debug] [--websocket <string>] [-u <string>] [--apiversion
   <string>] [--quiet] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2799,8 +2799,8 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
+  [See documentation of Salesforce
+  command](<https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo>
   rce_source.htm#cli_reference_force_source_push)
 ```
 
@@ -2812,7 +2812,7 @@ New work task
 
 ```
 USAGE
-  $ sfdx hardis:work:new [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:work:new [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2847,7 +2847,7 @@ Make my local branch and my scratch org up to date with the most recent sources
 
 ```
 USAGE
-  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
+  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2885,7 +2885,7 @@ Process again the selection of the items that you want to publish to upper level
 
 ```
 USAGE
-  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
+  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2920,7 +2920,7 @@ When a work task is completed, guide user to create a merge request
 
 ```
 USAGE
-  $ sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
+  $ sfdx hardis:work:save [-n] [-g] [-c] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2949,8 +2949,8 @@ OPTIONS
 DESCRIPTION
   Some properties can be defined in .sfdx-hardis.yml
 
-  - autocleantypes: List of auto-performed sources cleanings, available on command hardis:project:clean:references
-  - autoRemoveUserPermissions: List of userPermission to automatically remove from profile metadatas
+- autocleantypes: List of auto-performed sources cleanings, available on command hardis:project:clean:references
+- autoRemoveUserPermissions: List of userPermission to automatically remove from profile metadatas
 
   Example:
 
@@ -2985,7 +2985,7 @@ Technical calls to WebSocket functions
 
 ```
 USAGE
-  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
+  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
