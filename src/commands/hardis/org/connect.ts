@@ -16,7 +16,8 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class OrgSelect extends SfdxCommand {
   public static title = "Connect to an org";
 
-  public static description = "Connect to an org without setting it as default username";
+  public static description = `Connect to an org without setting it as default username, then proposes to open the org in web browser
+  `;
 
   public static examples = ["$ sfdx hardis:org:connect"];
 

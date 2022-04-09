@@ -23,6 +23,8 @@ export default class DxSources extends SfdxCommand {
 
   public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
+In case of errors, [tips to fix them](https://hardisgroupcom.github.io/sfdx-hardis/deployTips/) will be included within the error messages.
+
 ### Dynamic deployment items
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):

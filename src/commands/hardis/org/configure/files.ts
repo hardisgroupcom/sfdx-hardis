@@ -21,7 +21,12 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class ConfigureData extends SfdxCommand {
   public static title = "Configure File export project";
 
-  public static description = "Configure export of file attachments from a Salesforce org";
+  public static description = `Configure export of file attachments from a Salesforce org
+  
+See article below
+
+[![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
+`;
 
   public static examples = ["$ sfdx hardis:org:configure:files"];
 

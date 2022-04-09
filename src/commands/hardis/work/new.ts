@@ -22,7 +22,18 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class NewTask extends SfdxCommand {
   public static title = "New work task";
 
-  public static description = messages.getMessage("newWorkTask");
+  public static description = `Assisted menu to start working on a Salesforce task.
+
+Under the hood, it can:
+
+- Make git pull to be up to date with target branch
+- Create new git branch with formatted name
+- Create and initialize a scratch org or a source-tracked sandbox:
+  - Install packages
+  - Push sources
+  - Load data
+  
+`;
 
   public static examples = ["$ sfdx hardis:work:task:new"];
 

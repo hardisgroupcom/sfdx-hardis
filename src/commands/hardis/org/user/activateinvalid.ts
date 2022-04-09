@@ -22,7 +22,11 @@ export default class OrgUserActiveInvalid extends SfdxCommand {
 
   public static description = `Update sandbox users so their email is valid
 
-  Example: replaces toto@company.com.dev.invalid with toto@company.com.dev.invalid
+  Example: replaces \`toto@company.com.dev.invalid\` with \`toto@company.com.dev.invalid\`
+
+See article below
+
+[![Reactivate all the sandbox users with .invalid emails in 3 clicks](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-email.jpg)](https://nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
 `;
 
   public static examples = [

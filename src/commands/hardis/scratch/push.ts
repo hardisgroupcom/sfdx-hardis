@@ -14,7 +14,10 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class SourcePush extends SfdxCommand {
   public static title = "Scratch PUSH";
 
-  public static description = "Push local updates in git branch to scratch org";
+  public static description = `Push local files to scratch org
+  
+Calls \`sfdx force:source:push\` under the hood
+`;
 
   public static examples = ["$ sfdx hardis:scratch:push"];
 

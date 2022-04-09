@@ -14,7 +14,11 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class SourcePull extends SfdxCommand {
   public static title = "Scratch PULL";
 
-  public static description = "Pull scratch org updates from scratch org to local git branch";
+  public static description = `Pull scratch org updates from scratch org to local files
+  
+- Calls sfdx force:source:pull under the hood
+- If there are errors, proposes to automatically add erroneous item in \`.forceignore\`, then pull again
+`;
 
   public static examples = ["$ sfdx hardis:scratch:pull"];
 

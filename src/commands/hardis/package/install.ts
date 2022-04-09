@@ -24,7 +24,10 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class PackageVersionInstall extends SfdxCommand {
   public static title = "Install packages in an org";
 
-  public static description = messages.getMessage("packageInstall");
+  public static description = `Install a package in an org using its id (starting with **04t**)
+
+Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-hardis.yml\`
+`;
 
   public static examples = ["$ sfdx hardis:package:install"];
 

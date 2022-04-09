@@ -17,7 +17,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class ScratchDelete extends SfdxCommand {
   public static title = "Delete scratch orgs(s)";
 
-  public static description = "Deletes a scratch org";
+  public static description = "Assisted menu to delete scratch orgs associated to a DevHub";
 
   public static examples = ["$ sfdx hardis:scratch:delete"];
 
