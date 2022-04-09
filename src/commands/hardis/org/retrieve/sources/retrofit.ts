@@ -23,6 +23,7 @@ export default class Retrofit extends SfdxCommand {
     "CustomLabels",
     "CustomMetadata",
     "CustomObject",
+    "CustomObjectTranslation",
     "CustomTab",
     "DuplicateRule",
     "EmailTemplate",
@@ -34,6 +35,8 @@ export default class Retrofit extends SfdxCommand {
     "PermissionSet",
     "RecordType",
     "StandardValueSet",
+    "Translation",
+    "Translations",
     "ValidationRule",
   ];
 
@@ -41,14 +44,13 @@ export default class Retrofit extends SfdxCommand {
 
   public static description = `Retrieve changes from org link to a ref branch not present in sources
 
-  This command need to be triggered from a branch that is connected to a SF org. It will then retrieve
-  all changes not present in that branch sources, commit them and create a merge request against the default
-  branch. If a merge request already exists, it will simply add a new commit.
+  This command need to be triggered from a branch that is connected to a SF org. It will then retrieve all changes not present in that branch sources, commit them and create a merge request against the default branch. If a merge request already exists, it will simply add a new commit.
 
   List of metadata to retrieve can be set in three way, in order of priority :
-  - "CI_SOURCES_TO_RETROFIT": variable set for CI context
-  - "sourcesToRetrofit": variable set in .sfdx-hardis.yml
-  - Or default list: ${Retrofit.DEFAULT_SOURCES_TO_RETROFIT.join(", ")}
+
+  - \`CI_SOURCES_TO_RETROFIT\`: env variable (can be defined in CI context)
+  - \`sourcesToRetrofit\` property in \`.sfdx-hardis.yml\`
+  - Default list:\n  - ${Retrofit.DEFAULT_SOURCES_TO_RETROFIT.join("\n  - ")}
   `;
 
   public static examples = ["$ sfdx hardis:org:retrieve:sources:retrofit"];

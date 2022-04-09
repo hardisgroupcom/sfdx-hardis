@@ -23,14 +23,14 @@ export default class DxSources extends SfdxCommand {
 
   public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
-## Dynamic deployment items
+### Dynamic deployment items
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
 - \`manifest/packageDeployOnce.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
 - \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
-## Deployment plan
+### Deployment plan
 
 If you need to deploy in multiple steps, you can define a property \`deploymentPlan\` in \`.sfdx-hardis.yml\`.
 
@@ -54,7 +54,7 @@ deploymentPlan:
       waitAfter: 30
 \`\`\`
 
-## Packages installation
+### Packages installation
 
 You can define a list of package to install during deployments using property \`installedPackages\`
 
