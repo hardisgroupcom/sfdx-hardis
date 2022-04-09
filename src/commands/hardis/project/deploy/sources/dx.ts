@@ -23,15 +23,68 @@ export default class DxSources extends SfdxCommand {
 
   public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
-If necessary,You can define the following files (that supports wildcards <members>*</members>):
+## Dynamic deployment items
 
-- manifest/packageDeployOnce.xml: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
-- manifest/packageXmlOnChange.xml: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
+If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
-Env vars override:
+- \`manifest/packageDeployOnce.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
+- \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
-- SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES: define "true" to ignore split of package.xml into several deployments
-- INSTALL_PACKAGES_DURING_CHECK_DEPLOY: define "true" so packages are installed during deployment check
+## Deployment plan
+
+If you need to deploy in multiple steps, you can define a property \`deploymentPlan\` in \`.sfdx-hardis.yml\`.
+
+- If a file \`manifest/package.xml\` is found, it will be placed with order 0 in the deployment plan
+
+- If a file \`manifest/destructiveChanges.xml\` is found, it will be executed as --postdestructivechanges
+
+- If env var \`SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES\` is defined as \`true\` , split of package.xml will be ignored
+
+Example:
+
+\`\`\`yaml
+deploymentPlan:
+  packages:
+    - label: Deploy Flow-Workflow
+      packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
+      order: 6
+    - label: Deploy SharingRules - Case
+      packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
+      order: 30
+      waitAfter: 30
+\`\`\`
+
+## Packages installation
+
+You can define a list of package to install during deployments using property \`installedPackages\`
+
+- If \`INSTALL_PACKAGES_DURING_CHECK_DEPLOY\` is defined as \`true\` (or \`installPackagesDuringCheckDeploy: true\` in \`.sfdx-hardis.yml\`), packages will be installed even if the command is called with \`--check\` mode
+- You can automatically update this property by listing all packages installed on an org using command \`sfdx hardis:org:retrieve:packageconfig\`
+
+Example:
+
+\`\`\`yaml
+installedPackages:
+  - Id: 0A35r0000009EtECAU
+    SubscriberPackageId: 033i0000000LVMYAA4
+    SubscriberPackageName: Marketing Cloud
+    SubscriberPackageNamespace: et4ae5
+    SubscriberPackageVersionId: 04t6S000000l11iQAA
+    SubscriberPackageVersionName: Marketing Cloud
+    SubscriberPackageVersionNumber: 236.0.0.2
+    installOnScratchOrgs: true                  // true or false depending you want to install this package when creating a new scratch org
+    installDuringDeployments: true              // set as true to install package during a deployment using sfdx hardis:project:deploy:sources:dx
+    installationkey: xxxxxxxxxxxxxxxxxxxx       // if the package has a password, write it in this property
+    - Id: 0A35r0000009F9CCAU
+    SubscriberPackageId: 033b0000000Pf2AAAS
+    SubscriberPackageName: Declarative Lookup Rollup Summaries Tool
+    SubscriberPackageNamespace: dlrs
+    SubscriberPackageVersionId: 04t5p000001BmLvAAK
+    SubscriberPackageVersionName: Release
+    SubscriberPackageVersionNumber: 2.15.0.9
+    installOnScratchOrgs: true
+    installDuringDeployments: true
+\`\`\`
   `;
 
   public static examples = ["$ sfdx hardis:project:deploy:sources:dx"];

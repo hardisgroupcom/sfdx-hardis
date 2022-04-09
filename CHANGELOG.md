@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.78.4] 2022-04-09
+
+- Update documentation
+
 ## [2.78.3] 2022-04-08
 
 - Add a retrofit command to retrieve changes made directly in an org
