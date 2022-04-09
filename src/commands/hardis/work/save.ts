@@ -38,10 +38,30 @@ export default class SaveTask extends SfdxCommand {
 
   public static description = `When a work task is completed, guide user to create a merge request
 
-  Some properties can be defined in .sfdx-hardis.yml
+Some properties can be defined in .sfdx-hardis.yml
 
-  - autocleantypes: List of auto-performed sources cleanings, available on command hardis:project:clean:references
-  - autoRemoveUserPermissions: List of userPermission to automatically remove from profile metadatas
+- autocleantypes: List of auto-performed sources cleanings, available on command hardis:project:clean:references
+- autoRemoveUserPermissions: List of userPermission to automatically remove from profile metadatas
+
+Example:
+
+\`\`\`yaml
+autoCleanTypes:
+  - destructivechanges
+  - datadotcom
+  - minimizeProfiles
+  - listViewsMine
+autoRemoveUserPermissions:
+  - EnableCommunityAppLauncher
+  - FieldServiceAccess
+  - OmnichannelInventorySync
+  - SendExternalEmailAvailable
+  - UseOmnichannelInventoryAPIs
+  - ViewDataLeakageEvents
+  - ViewMLModels
+  - ViewPlatformEvents
+  - WorkCalibrationUser
+\`\`\`
   `;
 
   public static examples = ["$ sfdx hardis:work:task:save", "$ sfdx hardis:work:task:save --nopull --nogit --noclean"];
