@@ -17,7 +17,10 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class RebuildSelection extends SfdxCommand {
   public static title = "Select again";
 
-  public static description = messages.getMessage("rebuildSelection");
+  public static description = `Resets the selection that we want to add in the merge request
+
+Calls a soft git reset behind the hood  
+`
 
   public static examples = ["$ sfdx hardis:work:resetsave"];
 

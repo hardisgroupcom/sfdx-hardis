@@ -17,7 +17,13 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class OrgTestApex extends SfdxCommand {
   public static title = "Run apex tests";
 
-  public static description = messages.getMessage("apexTests");
+  public static description = `Run apex tests in Salesforce org
+
+If following configuration is defined, it will fail if apex coverage target is not reached:  
+
+- Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
+- Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
+`
 
   public static examples = ["$ sfdx hardis:org:test:apex"];
 
