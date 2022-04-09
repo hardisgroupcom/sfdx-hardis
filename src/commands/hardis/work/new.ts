@@ -33,7 +33,7 @@ Under the hood, it can:
   - Push sources
   - Load data
   
-`
+`;
 
   public static examples = ["$ sfdx hardis:work:task:new"];
 

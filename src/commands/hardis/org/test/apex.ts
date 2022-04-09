@@ -23,7 +23,7 @@ If following configuration is defined, it will fail if apex coverage target is n
 
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
-`
+`;
 
   public static examples = ["$ sfdx hardis:org:test:apex"];
 
