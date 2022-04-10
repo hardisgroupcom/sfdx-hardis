@@ -7,7 +7,13 @@
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving a sfdx-hardis task, the list of cleanings will be automatically applied to sfdx sources",
-      "examples": [["dashboards", "datadotcom", "destructivechanges"]],
+      "examples": [
+        [
+          "dashboards",
+          "datadotcom",
+          "destructivechanges"
+        ]
+      ],
       "items": {
         "type": "string",
         "enum": [
@@ -27,7 +33,13 @@
     "autoRemoveUserPermissions": {
       "$id": "#/properties/autoRemoveUserPermissions",
       "description": "When saving a sfdx-hardis task, these permissions will be removed from profiles",
-      "examples": [["EnableCommunityAppLauncher", "FieldServiceAccess", "OmnichannelInventorySync"]],
+      "examples": [
+        [
+          "EnableCommunityAppLauncher",
+          "FieldServiceAccess",
+          "OmnichannelInventorySync"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -38,18 +50,118 @@
       "$id": "#/properties/apexTestsMinCoverageOrgWide",
       "default": 75.0,
       "description": "Minimum percentage of apex code coverage accepted",
-      "examples": [80.0, 95.0],
+      "examples": [
+        80.0,
+        95.0
+      ],
       "title": "Minimum apex test coverage %",
       "type": "number"
     },
     "availableTargetBranches": {
       "$id": "#/properties/availableTargetBranches",
       "description": "List of git branches that can be used as target for merge requests",
-      "examples": [["develop", "develop_next"]],
+      "examples": [
+        [
+          "develop",
+          "develop_next"
+        ]
+      ],
       "items": {
         "type": "string"
       },
       "title": "Available target branches",
+      "type": "array"
+    },
+    "customCommands": {
+      "$id": "#/properties/customCommands",
+      "description": "List of custom commands for VsCode SFDX-Hardis extension",
+      "examples": [
+        [
+          {
+            "id": "custom-menu",
+            "label": "Custom commands",
+            "commands": [
+              {
+                "id": "generate-manifest-xml",
+                "label": "Generate manifest",
+                "icon": "file.svg",
+                "tooltip": "Generates a manifest package.xml using local sfdx source files",
+                "command": "sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest"
+              },
+              {
+                "id": "list-all-orgs",
+                "label": "List all orgs",
+                "icon": "salesforce.svg",
+                "tooltip": "List all orgs that has already been authenticated using sfdx",
+                "command": "sfdx force:org:list --all"
+              }
+            ]
+          },
+          {
+            "id": "custom-menu-2",
+            "label": "Another custom menu",
+            "commands": [
+              {
+                "id": "echo",
+                "label": "Echo something",
+                "icon": "user.svg",
+                "tooltip": "Useless commands just to show that we can use not sfdx commands too",
+                "command": "echo \"Something\""
+              }
+            ]
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/customCommands/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Custom command definition",
+        "properties": {
+          "id": {
+            "$id": "#/properties/customCommands/items/properties/id",
+            "description": "Identifier of the command (can be any string)",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "$id": "#/properties/customCommands/items/properties/label",
+            "description": "Label of the command that will appear in menu",
+            "title": "Label",
+            "type": "string"
+          },
+          "icon": {
+            "$id": "#/properties/customCommands/items/properties/icon",
+            "description": "Icon (can be any of svg icons of this list: https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources",
+            "title": "Icon",
+            "type": "string"
+          },
+          "tooltip": {
+            "$id": "#/properties/customCommands/items/properties/tooltip",
+            "description": "Text that will appear when user will hover the command",
+            "title": "Tooltip",
+            "type": "string"
+          },
+          "command": {
+            "$id": "#/properties/customCommands/items/properties/command",
+            "description": "Command line to run when clicking on the menu",
+            "title": "Command",
+            "type": "string"
+          },
+          "helpUrl": {
+            "$id": "#/properties/customCommands/items/properties/helpUrl",
+            "description": "URL for help page of the command",
+            "title": "Help url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "command"
+        ]
+      },
+      "title": "Custom commands",
       "type": "array"
     },
     "dataPackages": {
@@ -74,7 +186,10 @@
             "type": "boolean"
           }
         },
-        "required": ["dataPath", "importInScratchOrgs"]
+        "required": [
+          "dataPath",
+          "importInScratchOrgs"
+        ]
       },
       "title": "Data packages",
       "type": "array"
@@ -82,7 +197,11 @@
     "defaultPackageInstallationKey": {
       "$id": "#/properties/defaultPackageInstallationKey",
       "description": "When generating a new package version protected with password, use this value as default package installation key",
-      "examples": ["hardis", "myPassword", "dFGGF43656YfdFDG{{{dhgfh:::;FSEDSFd78"],
+      "examples": [
+        "hardis",
+        "myPassword",
+        "dFGGF43656YfdFDG{{{dhgfh:::;FSEDSFd78"
+      ],
       "title": "Defaut package installation key",
       "type": "string"
     },
@@ -90,7 +209,11 @@
       "$id": "#/properties/developmentBranch",
       "default": "developpement",
       "description": "When creating a new sfdx-hardis task, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
-      "examples": ["developpement", "dev_lot2", "hotfixes"],
+      "examples": [
+        "developpement",
+        "dev_lot2",
+        "hotfixes"
+      ],
       "title": "Default pull/merge request target org",
       "type": "string"
     },
@@ -144,38 +267,55 @@
             "properties": {
               "dataPath": {
                 "$id": "#/properties/install/properties/packages/items/dataPath",
-                "examples": ["scripts/data/EmailTemplate"],
+                "examples": [
+                  "scripts/data/EmailTemplate"
+                ],
                 "title": "Path to SFDMU data project to deploy",
                 "type": "string"
               },
               "label": {
                 "$id": "#/properties/install/properties/packages/items/label",
-                "examples": ["Deploy EmailTemplate", "Import EmailTemplate records"],
+                "examples": [
+                  "Deploy EmailTemplate",
+                  "Import EmailTemplate records"
+                ],
                 "title": "Source or data package label",
                 "type": "string"
               },
               "order": {
                 "$id": "#/properties/install/properties/packages/items/order",
-                "examples": [-20, 13, 50],
+                "examples": [
+                  -20,
+                  13,
+                  50
+                ],
                 "title": "Execution order in deployment plan",
                 "type": "number"
               },
               "packageXmlFile": {
                 "$id": "#/properties/install/properties/packages/items/packageXmlFile",
-                "examples": ["manifest/splits/packageXmlEmails.xml"],
+                "examples": [
+                  "manifest/splits/packageXmlEmails.xml"
+                ],
                 "title": "Path to package.xml file to use for deployment",
                 "type": "string"
               },
               "waitAfter": {
                 "$id": "#/properties/install/properties/packages/items/waitAfter",
                 "description": "Delay to wait before installing the next package",
-                "examples": [10, 20],
+                "examples": [
+                  10,
+                  20
+                ],
                 "title": "Wait after install (seconds)",
                 "type": "number"
               }
             }
           },
-          "required": ["label", "order"],
+          "required": [
+            "label",
+            "order"
+          ],
           "title": "List of packages to deploy",
           "type": "array"
         }
@@ -187,7 +327,11 @@
       "$id": "#/properties/devHubAlias",
       "default": "",
       "description": "Dev Hub alias, usually DevHub_ProjectName",
-      "examples": ["DevHub_MyClientMyProject", "DevHub_GoogleGmail", "DevHub_AppleIWatch"],
+      "examples": [
+        "DevHub_MyClientMyProject",
+        "DevHub_GoogleGmail",
+        "DevHub_AppleIWatch"
+      ],
       "title": "Dev Hub org alias",
       "type": "string"
     },
@@ -195,24 +339,51 @@
       "$id": "#/properties/devHubUsername",
       "default": "",
       "description": "Dev Hub username, used to authenticate to DevHub from CI jobs",
-      "examples": ["cicd-user@myclient.com", "scratch-user@google.fr", "scratch-user@apple.fr"],
+      "examples": [
+        "cicd-user@myclient.com",
+        "scratch-user@google.fr",
+        "scratch-user@apple.fr"
+      ],
       "title": "Dev Hub Username",
+      "type": "string"
+    },
+    "extends": {
+      "$id": "#/properties/extends",
+      "description": "You can base your local sfdx-hardis configuration on a remote config file. That allows you to have the same config base for all your projects",
+      "examples": [
+        "https://raw.githubusercontent.com/worldcompany/shared-config/main/.sfdx-hardis.yml"
+      ],
+      "title": "Extends remote configuration URL",
       "type": "string"
     },
     "initPermissionSets": {
       "$id": "#/properties/initPermissionSets",
       "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets",
-      "examples": [["MyPermissionSet", "MyPermissionSetGroup"]],
+      "examples": [
+        [
+          "MyPermissionSet",
+          "MyPermissionSetGroup"
+        ]
+      ],
       "items": {
         "$id": "#/properties/initPermissionSets/items",
-        "type": ["object", "string"],
+        "type": [
+          "object",
+          "string"
+        ],
         "additionalProperties": false,
         "description": "Permission Set or Permission Set Group",
         "properties": {
           "name": {
             "$Id": "#/properties/initPermissionSets/items/properties/name",
             "description": "Permission Set or Permission Set Group name",
-            "examples": [["MyPermissionSet", "MyPermissionSetGroup", "MyPermissionSetGroup2"]],
+            "examples": [
+              [
+                "MyPermissionSet",
+                "MyPermissionSetGroup",
+                "MyPermissionSetGroup2"
+              ]
+            ],
             "title": "Name",
             "type": "string"
           }
@@ -259,43 +430,60 @@
         "properties": {
           "Id": {
             "$Id": "#/properties/install/properties/packages/items/Id",
-            "examples": ["0A35r000000GveVCAS"],
+            "examples": [
+              "0A35r000000GveVCAS"
+            ],
             "title": "(unused) PackageId",
             "type": "string"
           },
           "SubscriberPackageId": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageId",
-            "examples": ["033b0000000Pf2AAAS"],
+            "examples": [
+              "033b0000000Pf2AAAS"
+            ],
             "title": "Subscriber Package Id",
             "type": "string"
           },
           "SubscriberPackageName": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageName",
-            "examples": ["Files Attachment Notes"],
+            "examples": [
+              "Files Attachment Notes"
+            ],
             "title": "Subscriber Package Name",
             "type": "string"
           },
           "SubscriberPackageNamespace": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageNamespace",
-            "examples": ["fan_astrea"],
+            "examples": [
+              "fan_astrea"
+            ],
             "title": "Subscriber Package NameSpace",
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "SubscriberPackageVersionId": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionId",
-            "examples": ["04t0o000003nRWAAA2"],
+            "examples": [
+              "04t0o000003nRWAAA2"
+            ],
             "title": "Subscriber Version Id (IMPORTANT)",
             "type": "string"
           },
           "SubscriberPackageVersionName": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionName",
-            "examples": ["Summer2021"],
+            "examples": [
+              "Summer2021"
+            ],
             "title": "Subscriber Version Name",
             "type": "string"
           },
           "SubscriberPackageVersionNumber": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionNumber",
-            "examples": ["1.22.0.2"],
+            "examples": [
+              "1.22.0.2"
+            ],
             "title": "Subscriber Version Number",
             "type": "string"
           },
@@ -303,7 +491,10 @@
             "$Id": "#/properties/install/properties/packages/items/installDuringDeployments",
             "default": false,
             "description": "If true, during deployments this package will be installed in target org if not installed yet",
-            "examples": [true, false],
+            "examples": [
+              true,
+              false
+            ],
             "title": "Install during deployments",
             "type": "boolean"
           },
@@ -311,19 +502,27 @@
             "$Id": "#/properties/install/properties/packages/items/installOnScratchOrgs",
             "default": false,
             "description": "If true, this package will be installed when creating a new scratch org with sfdx-hardis",
-            "examples": [true, false],
+            "examples": [
+              true,
+              false
+            ],
             "title": "Install on scratch orgs",
             "type": "boolean"
           },
           "installationkey": {
             "$Id": "#/properties/install/properties/packages/items/installationkey",
-            "examples": ["MyInstallationKey", "4FzkMzUSwFfP#@"],
+            "examples": [
+              "MyInstallationKey",
+              "4FzkMzUSwFfP#@"
+            ],
             "description": "Installation key for key-protected package",
             "title": "Package installation key",
             "type": "string"
           }
         },
-        "required": ["SubscriberPackageVersionId"],
+        "required": [
+          "SubscriberPackageVersionId"
+        ],
         "title": "Salesforce package"
       },
       "title": "Installed Packages",
@@ -333,7 +532,9 @@
       "$id": "#/properties/installPackagesDuringCheckDeploy",
       "default": false,
       "description": "When calling deployment check command, installs any package referred within installedPackages property",
-      "examples": [true],
+      "examples": [
+        true
+      ],
       "title": "Install packages during deployment checks",
       "type": "boolean"
     },
@@ -341,7 +542,11 @@
       "$id": "#/properties/instanceUrl",
       "default": "",
       "description": "Salesforce instance URL used by CI for deployment or backups",
-      "examples": ["https://myclient.force.com", "https://google.force.com", "https://apple.force.com"],
+      "examples": [
+        "https://myclient.force.com",
+        "https://google.force.com",
+        "https://apple.force.com"
+      ],
       "title": "Instance URL",
       "type": "string"
     },
@@ -359,7 +564,13 @@
     "sourcesToRetrofit": {
       "$id": "#/properties/sourcesToRetrofit",
       "description": "List of metadata to retrieve for retrofit job",
-      "examples": [["CustomField", "Layout", "PermissionSet"]],
+      "examples": [
+        [
+          "CustomField",
+          "Layout",
+          "PermissionSet"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -370,7 +581,9 @@
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send ALL notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (ALL)",
       "type": "string"
     },
@@ -378,7 +591,9 @@
       "$id": "#/properties/msTeamsWebhookUrlCritical",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send CRITICAL notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (CRITICAL)",
       "type": "string"
     },
@@ -386,7 +601,9 @@
       "$id": "#/properties/msTeamsWebhookUrlSevere",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send SEVERE notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (SEVERE)",
       "type": "string"
     },
@@ -394,7 +611,9 @@
       "$id": "#/properties/msTeamsWebhookUrlWarning",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send WARNING notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (WARNING)",
       "type": "string"
     },
@@ -402,14 +621,21 @@
       "$id": "#/properties/msTeamsWebhookUrlWarning",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send INFO notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
     },
     "poolConfig": {
       "$id": "#/properties/poolConfig",
       "description": "Configuration allowing to generate and fetch scratch orgs from scratch org pool",
-      "examples": [{ "maxScratchOrgsNumber": 10, "storageService": "kvdb.io" }],
+      "examples": [
+        {
+          "maxScratchOrgsNumber": 10,
+          "storageService": "kvdb.io"
+        }
+      ],
       "title": "Scratch org pool configuration",
       "type": "object",
       "properties": {
@@ -444,7 +670,11 @@
       "$id": "#/properties/projectName",
       "default": "",
       "description": "Identifier for the project (can be the client and project)",
-      "examples": ["MyClientMyProject", "GoogleGmail", "AppleIWatch"],
+      "examples": [
+        "MyClientMyProject",
+        "GoogleGmail",
+        "AppleIWatch"
+      ],
       "title": "Project Name",
       "type": "string"
     },
@@ -452,7 +682,9 @@
       "$id": "#/properties/sfdmuCanModify",
       "default": "",
       "description": "Instance host name to allow SFDMU to deploy data in a production org",
-      "examples": ["myproject.force.com"],
+      "examples": [
+        "myproject.force.com"
+      ],
       "title": "SFDMU can modify",
       "type": "string"
     },
@@ -474,7 +706,11 @@
       "$id": "#/properties/targetUsername",
       "default": "",
       "description": "Salesforce username used by CI for deployment or backups",
-      "examples": ["deployments@myclient.com", "deployments@google.fr", "deployments@apple.com"],
+      "examples": [
+        "deployments@myclient.com",
+        "deployments@google.fr",
+        "deployments@apple.com"
+      ],
       "title": "Target Username",
       "type": "string"
     }
