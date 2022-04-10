@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add `customPlugins` definition in json schema
+
 ## [2.79.0] 2022-04-10
 
 - New property `extends` in `.sfdx-hardis.yml`, to allow local config file to extend from remote file
