@@ -120,49 +120,91 @@
         "properties": {
           "id": {
             "$id": "#/properties/customCommands/items/properties/id",
-            "description": "Identifier of the command (can be any string)",
+            "description": "Identifier of the menu (can be any string)",
             "title": "Id",
             "type": "string"
           },
           "label": {
             "$id": "#/properties/customCommands/items/properties/label",
-            "description": "Label of the command that will appear in menu",
+            "description": "Label of the menu",
             "title": "Label",
             "type": "string"
           },
-          "icon": {
-            "$id": "#/properties/customCommands/items/properties/icon",
-            "description": "Icon (can be any of svg icons of this list: https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources",
-            "title": "Icon",
-            "type": "string"
-          },
-          "tooltip": {
-            "$id": "#/properties/customCommands/items/properties/tooltip",
-            "description": "Text that will appear when user will hover the command",
-            "title": "Tooltip",
-            "type": "string"
-          },
-          "command": {
-            "$id": "#/properties/customCommands/items/properties/command",
-            "description": "Command line to run when clicking on the menu",
-            "title": "Command",
-            "type": "string"
-          },
-          "helpUrl": {
-            "$id": "#/properties/customCommands/items/properties/helpUrl",
-            "description": "URL for help page of the command",
-            "title": "Help url",
-            "type": "string"
+          "commands": {
+            "$id": "#/properties/customCommands/items/properties/commands",
+            "description": "List of commands of the menu",
+            "items": {
+              "$id": "#/properties/customCommands/items/properties/commands/items/properties",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Custom command definition",
+              "properties": {
+                "id": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/id",
+                  "description": "Identifier of the command (can be any string)",
+                  "title": "Id",
+                  "type": "string"
+                },
+                "label": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/label",
+                  "description": "Label of the command that will appear in menu",
+                  "title": "Label",
+                  "type": "string"
+                },
+                "icon": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/icon",
+                  "description": "Icon (can be any of svg icons of this list: https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources",
+                  "title": "Icon",
+                  "type": "string"
+                },
+                "tooltip": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/tooltip",
+                  "description": "Text that will appear when user will hover the command",
+                  "title": "Tooltip",
+                  "type": "string"
+                },
+                "command": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/command",
+                  "description": "Command line to run when clicking on the menu",
+                  "title": "Command",
+                  "type": "string"
+                },
+                "helpUrl": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/helpUrl",
+                  "description": "URL for help page of the command",
+                  "title": "Help url",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "command"
+              ]
+            },
+            "title": "Label",
+            "type": "array"
           }
         },
         "required": [
           "id",
-          "label",
-          "command"
+          "label"
         ]
       },
       "title": "Custom commands",
       "type": "array"
+    },
+    "customCommandsPosition": {
+      "$id": "#/properties/customCommandsPosition",
+      "description": "Position of custom commands in the menu (first or last)",
+      "default": "first",
+      "enum": ["first","last"],
+      "examples": [
+        "first",
+        "last"
+      ],
+      "title": "Custom commands position",
+      "type": "string"
     },
     "dataPackages": {
       "$id": "#/properties/dataPackages",
