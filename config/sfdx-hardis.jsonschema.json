@@ -52,6 +52,130 @@
       "title": "Available target branches",
       "type": "array"
     },
+    "customCommands": {
+      "$id": "#/properties/customCommands",
+      "description": "List of custom commands for VsCode SFDX-Hardis extension",
+      "examples": [
+        [
+          {
+            "id": "custom-menu",
+            "label": "Custom commands",
+            "commands": [
+              {
+                "id": "generate-manifest-xml",
+                "label": "Generate manifest",
+                "icon": "file.svg",
+                "tooltip": "Generates a manifest package.xml using local sfdx source files",
+                "command": "sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest"
+              },
+              {
+                "id": "list-all-orgs",
+                "label": "List all orgs",
+                "icon": "salesforce.svg",
+                "tooltip": "List all orgs that has already been authenticated using sfdx",
+                "command": "sfdx force:org:list --all"
+              }
+            ]
+          },
+          {
+            "id": "custom-menu-2",
+            "label": "Another custom menu",
+            "commands": [
+              {
+                "id": "echo",
+                "label": "Echo something",
+                "icon": "user.svg",
+                "tooltip": "Useless commands just to show that we can use not sfdx commands too",
+                "command": "echo \"Something\""
+              }
+            ]
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/customCommands/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Custom command definition",
+        "properties": {
+          "id": {
+            "$id": "#/properties/customCommands/items/properties/id",
+            "description": "Identifier of the menu (can be any string)",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "$id": "#/properties/customCommands/items/properties/label",
+            "description": "Label of the menu",
+            "title": "Label",
+            "type": "string"
+          },
+          "commands": {
+            "$id": "#/properties/customCommands/items/properties/commands",
+            "description": "List of commands of the menu",
+            "items": {
+              "$id": "#/properties/customCommands/items/properties/commands/items/properties",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Custom command definition",
+              "properties": {
+                "id": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/id",
+                  "description": "Identifier of the command (can be any string)",
+                  "title": "Id",
+                  "type": "string"
+                },
+                "label": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/label",
+                  "description": "Label of the command that will appear in menu",
+                  "title": "Label",
+                  "type": "string"
+                },
+                "icon": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/icon",
+                  "description": "Icon (can be any of svg icons of this list: https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources",
+                  "title": "Icon",
+                  "type": "string"
+                },
+                "tooltip": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/tooltip",
+                  "description": "Text that will appear when user will hover the command",
+                  "title": "Tooltip",
+                  "type": "string"
+                },
+                "command": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/command",
+                  "description": "Command line to run when clicking on the menu",
+                  "title": "Command",
+                  "type": "string"
+                },
+                "helpUrl": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/helpUrl",
+                  "description": "URL for help page of the command",
+                  "title": "Help url",
+                  "type": "string"
+                }
+              },
+              "required": ["id", "label", "command"]
+            },
+            "title": "Label",
+            "type": "array"
+          }
+        },
+        "required": ["id", "label"]
+      },
+      "title": "Custom commands",
+      "type": "array"
+    },
+    "customCommandsPosition": {
+      "$id": "#/properties/customCommandsPosition",
+      "description": "Position of custom commands in the menu (first or last)",
+      "default": "first",
+      "enum": ["first", "last"],
+      "examples": ["first", "last"],
+      "title": "Custom commands position",
+      "type": "string"
+    },
     "dataPackages": {
       "$id": "#/properties/dataPackages",
       "description": "List of data packages",
@@ -197,6 +321,13 @@
       "description": "Dev Hub username, used to authenticate to DevHub from CI jobs",
       "examples": ["cicd-user@myclient.com", "scratch-user@google.fr", "scratch-user@apple.fr"],
       "title": "Dev Hub Username",
+      "type": "string"
+    },
+    "extends": {
+      "$id": "#/properties/extends",
+      "description": "You can base your local sfdx-hardis configuration on a remote config file. That allows you to have the same config base for all your projects",
+      "examples": ["https://raw.githubusercontent.com/worldcompany/shared-config/main/.sfdx-hardis.yml"],
+      "title": "Extends remote configuration URL",
       "type": "string"
     },
     "initPermissionSets": {
@@ -409,7 +540,12 @@
     "poolConfig": {
       "$id": "#/properties/poolConfig",
       "description": "Configuration allowing to generate and fetch scratch orgs from scratch org pool",
-      "examples": [{ "maxScratchOrgsNumber": 10, "storageService": "kvdb.io" }],
+      "examples": [
+        {
+          "maxScratchOrgsNumber": 10,
+          "storageService": "kvdb.io"
+        }
+      ],
       "title": "Scratch org pool configuration",
       "type": "object",
       "properties": {

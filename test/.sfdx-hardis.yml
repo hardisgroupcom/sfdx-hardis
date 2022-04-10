@@ -1,0 +1,24 @@
+customCommandsPosition: first
+customCommands:
+  - id: custom-menu
+    label: Custom commands
+    commands:
+      - id: generate-manifest-xml
+        label: Generate manifest
+        icon: file.svg
+        tooltip: Generates a manifest package.xml using local sfdx source files
+        command: sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest
+        helpUrl: https://megalinter.github.io/
+      - id: list-all-orgs
+        label: List all orgs
+        icon: salesforce.svg
+        tooltip: List all orgs that has already been authenticated using sfdx
+        command: sfdx force:org:list --all
+  - id: custom-menu-2
+    label: Another custom menu
+    commands:
+      - id: echo
+        label: Echo something
+        icon: user.svg
+        tooltip: Useless commands just to show that we can use not sfdx commands too
+        command: echo "Something"
