@@ -11,10 +11,11 @@
 
     <!-- STANDARD RULES -->
     <rule ref="category/apex/design.xml">
+        <exclude name="CyclomaticComplexity" />
         <exclude name="ExcessiveParameterList" />
         <exclude name="ExcessivePublicCount" />
+        <exclude name="StdCyclomaticComplexity" />
         <exclude name="TooManyFields" />
-        <exclude name="CyclomaticComplexity" />
     </rule>
     <rule ref="category/apex/performance.xml" />
     <rule ref="category/apex/codestyle.xml">
