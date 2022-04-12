@@ -157,6 +157,15 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       tip: `Replace Mine by Everything in the list view SFDX source XML`,
     },
     {
+      name: "invalid-field-for-upsert",
+      label: "Invalid field for upsert",
+      expressionRegex: [/Error (.*) Invalid field for upsert, must be an External Id custom or standard indexed field: (.*) \((.*)\)/gm],
+      tip: `You tried to use field {2} for an upsert call in {1}.
+- Is it declared as externalId ?
+- Is the customIndex source file present in the deployment ?
+`,
+    },
+    {
       name: "invalid-type",
       label: "Invalid type",
       expressionRegex: [/Error (.*) Invalid type: (.*) \((.*)\)/gm],
