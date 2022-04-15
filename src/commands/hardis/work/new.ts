@@ -114,7 +114,9 @@ Under the hood, it can:
       {
         type: "text",
         name: "taskName",
-        message: c.cyanBright("What is the name of your new task ? (examples: webservice-get-account, flow-process-opportunity...). Please avoid accents or special characters"),
+        message: c.cyanBright(
+          "What is the name of your new task ? (examples: webservice-get-account, flow-process-opportunity...). Please avoid accents or special characters"
+        ),
       },
     ]);
 
@@ -151,12 +153,12 @@ Under the hood, it can:
         {
           title: "Scratch org",
           value: "scratch",
-          description: "Scratch orgs are configured on my project so I want to create or reuse one"
+          description: "Scratch orgs are configured on my project so I want to create or reuse one",
         },
         {
           title: "Sandbox org with source tracking (beta)",
           value: "sandbox",
-          description: "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one"
+          description: "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one",
         },
       ],
     });
@@ -187,7 +189,7 @@ Under the hood, it can:
           {
             title: c.yellow("Create new scratch org"),
             value: "newScratchOrg",
-            description: "This will generate a new scratch org, and in a few minutes you'll be ready to work"
+            description: "This will generate a new scratch org, and in a few minutes you'll be ready to work",
           },
         ],
         ...scratchOrgList.map((scratchOrg: any) => {

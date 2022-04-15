@@ -183,8 +183,8 @@ autoRemoveUserPermissions:
       } else if (commitReadyRes.value === "help") {
         // Show pull commit stage help
         const commitHelpUrl = "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/pull/";
-        uxLog(this,c.cyan(`Opening help at ${commitHelpUrl} ...`))
-        await open(commitHelpUrl, {wait: true});
+        uxLog(this, c.cyan(`Opening help at ${commitHelpUrl} ...`));
+        await open(commitHelpUrl, { wait: true });
         return { outputString: "Help displayed at " };
       }
 
