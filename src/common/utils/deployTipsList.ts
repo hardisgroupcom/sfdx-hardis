@@ -183,7 +183,10 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       name: "invalid-scope-mine",
       label: "Invalid scope:Mine, not allowed",
       expressionString: ["Invalid scope:Mine, not allowed"],
-      tip: `Replace Mine by Everything in the list view SFDX source XML`,
+      tip: `Replace Mine by Everything in the list view SFDX source XML.
+Have a look at this command to manage that automatically :)
+https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/fix/listviewmine/
+`,
     },
     {
       name: "invalid-field-for-upsert",

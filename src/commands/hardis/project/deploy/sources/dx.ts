@@ -10,6 +10,7 @@ import { isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
+import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -87,9 +88,30 @@ installedPackages:
     installOnScratchOrgs: true
     installDuringDeployments: true
 \`\`\`
+
+### Automated fixes post deployments
+
+#### List view with scope Mine
+
+If you defined a property **listViewsToSetToMine** in your .sfdx-hardis.yml, related ListViews will be set to Mine ( see command <https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/fix/listviewmine/> )
+
+Example:
+
+\`\`\`yaml
+listViewsToSetToMine:
+  - "Operation__c:MyCurrentOperations"
+  - "Operation__c:MyFinalizedOperations"
+  - "Opportunity:Default_Opportunity_Pipeline"
+  - "Opportunity:MyCurrentSubscriptions"
+  - "Opportunity:MySubscriptions"
+  - "Account:MyActivePartners"
+\`\`\`
   `;
 
-  public static examples = ["$ sfdx hardis:project:deploy:sources:dx"];
+  public static examples = [
+    "$ sfdx hardis:project:deploy:sources:dx",
+    "$ sfdx hardis:project:deploy:sources:dx --check"
+  ];
 
   protected static flagsConfig = {
     check: flags.boolean({
@@ -212,6 +234,11 @@ installedPackages:
 
     // Process deployment (or deployment check)
     const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, forceSourceDeployOptions);
+
+    // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
+    if (this.configInfo.listViewsToSetToMine) {
+      await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
+    }
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
