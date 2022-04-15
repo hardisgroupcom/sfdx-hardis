@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.81.0] 2022-04-15
+
+- new property `autoRetrieveWhenPull` to always retrieve some sources when calling hardis:source:pull (useful when sfdx tracking forgets some updates)
+
 ## [2.80.0] 2022-04-15
 
 - Simplify and document more hardis:work:new , hardis:work:pull and hardis:work:save
