@@ -24,6 +24,8 @@ export default class NewTask extends SfdxCommand {
 
   public static description = `Assisted menu to start working on a Salesforce task.
 
+At the end of the command, it will allow you to work on either a scratch org or a sandbox, depending on your choices.
+
 Under the hood, it can:
 
 - Make git pull to be up to date with target branch
@@ -32,7 +34,6 @@ Under the hood, it can:
   - Install packages
   - Push sources
   - Load data
-  
 `;
 
   public static examples = ["$ sfdx hardis:work:task:new"];
@@ -88,10 +89,11 @@ Under the hood, it can:
         initial: 0,
         choices: [
           {
-            title: "Feature (new feature, evolution of an existing feature...)",
+            title: "Feature",
             value: "features",
+            description: "New feature, evolution of an existing feature... If you don't know, just select Feature",
           },
-          { title: "Debug (a bug fix :) )", value: "bugs" },
+          { title: "Debug", value: "bugs", description: "A bug has been identified and you are the right person to solve it !" },
         ],
       },
       {
@@ -100,15 +102,19 @@ Under the hood, it can:
         message: c.cyanBright("What type(s) of Salesforce updates will you have to perform for this task ?"),
         initial: 0,
         choices: [
-          { title: "Configuration", value: "config" },
-          { title: "Development (Apex, Javascript...)", value: "dev" },
-          { title: "Configuration + Development", value: "dev" },
+          { title: "Configuration", value: "config", description: "You will update anything in the setup except apex code :)" },
+          { title: "Development", value: "dev", description: "You are a developer who will do magic with Apex or Javascript !" },
+          {
+            title: "Configuration + Development",
+            value: "dev",
+            description: "Like the unicorn you are, you will update configuration but also write code :)",
+          },
         ],
       },
       {
         type: "text",
         name: "taskName",
-        message: c.cyanBright("What is the name of your new task ? (examples: webservice-get-account, flow-process-opportunity...)"),
+        message: c.cyanBright("What is the name of your new task ? (examples: webservice-get-account, flow-process-opportunity...). Please avoid accents or special characters"),
       },
     ]);
 
@@ -119,7 +125,7 @@ Under the hood, it can:
     // Pull latest version of target branch
     await git().pull();
     // Create new branch
-    uxLog(this, c.cyan(`Creating new branch ${c.green(branchName)}...`));
+    uxLog(this, c.cyan(`Creating new git branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
 
     // Update config if necessary
@@ -127,7 +133,7 @@ Under the hood, it can:
       const updateDefaultBranchRes = await prompts({
         type: "confirm",
         name: "value",
-        message: c.cyanBright(`Do you want to update your default target branch to ${c.green(targetBranch)} ?`),
+        message: c.cyanBright(`Do you want to update your default target git branch to ${c.green(targetBranch)} ?`),
         default: false,
       });
       if (updateDefaultBranchRes.value === true) {
@@ -145,10 +151,12 @@ Under the hood, it can:
         {
           title: "Scratch org",
           value: "scratch",
+          description: "Scratch orgs are configured on my project so I want to create or reuse one"
         },
         {
           title: "Sandbox org with source tracking (beta)",
           value: "sandbox",
+          description: "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one"
         },
       ],
     });
@@ -179,6 +187,7 @@ Under the hood, it can:
           {
             title: c.yellow("Create new scratch org"),
             value: "newScratchOrg",
+            description: "This will generate a new scratch org, and in a few minutes you'll be ready to work"
           },
         ],
         ...scratchOrgList.map((scratchOrg: any) => {
@@ -214,7 +223,11 @@ Under the hood, it can:
     const sandboxResponse = await prompts({
       type: "select",
       name: "value",
-      message: c.cyanBright(`Please select a sandbox org to use for your branch ${c.green(branchName)}`),
+      message: c.cyanBright(
+        `Please select a sandbox org to use for your branch ${c.green(
+          branchName
+        )} (if you want to avoid conflicts, you should often refresh your sandbox)`
+      ),
       initial: 0,
       choices: [
         ...[

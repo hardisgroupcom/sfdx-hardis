@@ -35,6 +35,22 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
 - If the folder is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders -u YOURSOURCEORG`,
     },
     {
+      name: "can-not-find-user",
+      label: "Can not find user",
+      expressionRegex: [/Error (.*) Cannot find a user that matches any of the following usernames/gm],
+      tip: `You made reference to username(s) in {1}, and those users probably do not exist in target org.
+- Do not use named users, but user groups for assignments
+- Remove the XML part referring to hardcoded usernames
+
+Example of XML you have to remove in {1}:
+
+<folderShares>
+  <accessLevel>Manage</accessLevel>
+  <sharedTo>nicolas.vuillamy@hardis-scratch-po-tgci-root-develop_20220412_0604.com</sharedTo>
+  <sharedToType>User</sharedToType>
+</folderShares>`,
+    },
+    {
       name: "custom-object-not-found",
       label: "Custom object not found",
       expressionRegex: [/Error (.*) In field: field - no CustomObject named (.*) found/gm],
@@ -79,6 +95,13 @@ Example of element to delete:
       tip: `A reference to a custom metadata {3} of type {2} is not found in {1}:
 - Are you sure you deployed {3} ?
 - If you use a package.xml, is {3} present within type CustomMetadata ?
+`,
+    },
+    {
+      name: "dependent-class-invalid",
+      label: "Dependent class is invalid and needs recompilation",
+      expressionRegex: [/Error (.*) Dependent class is invalid and needs recompilation/gm],
+      tip: `Solve the other errors and this one will disappear !
 `,
     },
     {
@@ -148,7 +171,13 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       name: "flow-must-be-deleted-manually",
       label: "Flow must be deleted manually",
       expressionRegex: [/.flow (.*) insufficient access rights on cross-reference id/gm],
-      tip: `Flow {1} can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows`,
+      tip: `Flow {1} can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow`,
+    },
+    {
+      name: "insufficient-access-right-cross-reference-id",
+      label: "Insufficient access rights on cross-reference id",
+      expressionRegex: [/Error (.*) insufficient access rights on cross-reference id/gm],
+      tip: `If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow`,
     },
     {
       name: "invalid-scope-mine",
@@ -163,6 +192,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       tip: `You tried to use field {2} for an upsert call in {1}.
 - Is it declared as externalId ?
 - Is the customIndex source file present in the deployment ?
+- If it is declared as externalId and customIndex is present, you may have to go manually define the field as externalId in the target org
 `,
     },
     {
@@ -318,6 +348,19 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
       tip: `You can either:
 - Update the package.xml to remove the reference to the missing {2} {1}
 - Add the missing {2} {1} in your project source files`,
+    },
+    {
+      name: "missing-quick-action",
+      label: "Missing Quick Action",
+      expressionRegex: [/Error (.*) In field: QuickAction - no QuickAction named (.*) found/gm],
+      tip: `QuickAction {2} referred in {1} is unknown. You can either:
+- Make sure your QuickAction {2} is present in source files and in package.xml
+- If {2} is a standard QuickAction, activate related feature in target org
+- Solve other errors that could impact QuickAction {2}
+- Remove QuickAction {2} in the source XML of {1}. Example of XML to remove below:
+<quickActionListItems>
+  <quickActionName>FeedItem.RypplePost</quickActionName>
+</quickActionListItems>`,
     },
     {
       name: "missing-sales-team",
