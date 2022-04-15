@@ -4,6 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
+import open = require("open");
 import * as path from "path";
 import {
   createTempDir,
@@ -13,7 +14,6 @@ import {
   getGitRepoRoot,
   git,
   gitHasLocalUpdates,
-  interactiveGitAdd,
   normalizeFileStatusPath,
   uxLog,
 } from "../../../common/utils";
@@ -151,20 +151,43 @@ autoRemoveUserPermissions:
       uxLog(this, c.cyan(`[Expert mode] Skipped force:source:pull from scratch org`));
     } else {
       // Request user
-      const pullRes = await prompts({
+      const commitReadyRes = await prompts({
         type: "select",
         name: "value",
-        message: c.cyanBright("Do you want to pull the latest updates performed on the scratch org ?"),
+        message: c.cyanBright("Is your commit ready ?"),
         choices: [
-          { title: "Yes, I want to pull latest updates from the scratch org", value: true },
-          { title: "No, I want to save directly from local files on my computer", value: false },
+          {
+            title: "Yes, my commit is ready !",
+            value: "commitReady",
+            description:
+              "You have already pulled updates from your org (or locally updated the files if you're a nerd) then staged your files and created a commit",
+          },
+          {
+            title: "No, please pull my latest updates from my org",
+            value: "pleasePull",
+            description: "Pull latest updates from org so then you can stage files and create your commit",
+          },
+          {
+            title: "What is a commit ? What does mean pull ? Help !",
+            value: "help",
+            description: "Don't panic, just click on the link that will appear in the console (CTRL + Click) and then you will know :)",
+          },
         ],
       });
-      if (pullRes.value === true) {
+      if (commitReadyRes.value === "pleasePull") {
         // Process force:source:pull
         uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
         await forceSourcePull(this.org.getUsername(), this.debugMode);
+        uxLog(this, c.cyan(`Sources has been pulled from ${this.org.getUsername()}, now you can stage and commit your updates !`));
+        return { outputString: "Pull performed" };
+      } else if (commitReadyRes.value === "help") {
+        // Show pull commit stage help
+        const commitHelpUrl = "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/pull/";
+        uxLog(this, c.cyan(`Opening help at ${commitHelpUrl} ...`));
+        await open(commitHelpUrl, { wait: true });
+        return { outputString: "Help displayed at " };
       }
+
       // Extract data from org
       const dataSources = [
         {
@@ -190,53 +213,6 @@ autoRemoveUserPermissions:
 
     const gitUrl = await git().listRemote(["--get-url"]);
     const currentGitBranch = await getCurrentGitBranch();
-
-    // Request user to select what he/she wants to commit
-    let interactiveGitAllPerformed = false;
-    let gitStatus: any = {};
-    let commitManuallyDone = false;
-    if (this.noGit) {
-      uxLog(this, c.cyan(`[Expert mode] Skipped interactive git add: must be done manually`));
-    } else {
-      const gitAddRes = await prompts({
-        type: "select",
-        name: "value",
-        message: c.cyanBright("Have you already staged and committed your files ?"),
-        choices: [
-          { title: "Yes, I already staged and committed my files", value: true },
-          { title: "No, but i'd like to do it manually, I'll run this command again after !", value: null },
-          { title: "No, please help me to select the files I want to stage and commit !", value: false },
-          { title: "I have no idea about what you are talking about :(", value: false },
-        ],
-      });
-      if (gitAddRes.value === null) {
-        uxLog(this, c.yellow("Stage and commit your files, then run again this command :)"));
-        return { outputString: "Waiting for manual commit" };
-      } else if (gitAddRes.value === false) {
-        // Interactive git add displays the list of local files to stage
-        const groups = this.describeGroups(config);
-        await interactiveGitAdd({ groups: groups });
-        interactiveGitAllPerformed = true;
-        // Commit updates
-        gitStatus = await git().status();
-        if (gitStatus.files.length > 0 && !this.noGit) {
-          // Request commit info
-          const commitResponse = await prompts([
-            {
-              type: "text",
-              name: "commitText",
-              message: c.cyanBright(
-                'Please define a title describing what you did in the work task (50 chars max). Exemples "Update sharing rules configuration", "Create new webservice getAccount"...'
-              ),
-            },
-          ]);
-          uxLog(this, c.cyan(`Committing files in local git branch ${c.green(currentGitBranch)}...`));
-          await git().commit(commitResponse.commitText || "Updated by sfdx-hardis");
-        }
-      } else {
-        commitManuallyDone = true;
-      }
-    }
 
     // Retrieving info about current branch latest commit and master branch latest commit
     const logResult = await git().log([`${targetBranch}..${currentGitBranch}`]);
@@ -450,18 +426,12 @@ autoRemoveUserPermissions:
     }
 
     // Push new commit(s)
-    if (
-      ((interactiveGitAllPerformed === true && gitStatus?.staged?.length > 0) ||
-        gitStatusWithConfig.staged.length > 0 ||
-        gitStatusAfterDeployPlan.staged.length > 0 ||
-        commitManuallyDone === true) &&
-      !this.noGit
-    ) {
+    if ((gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) && !this.noGit) {
       const pushResponse = await prompts({
         type: "confirm",
         name: "push",
         default: true,
-        message: c.cyanBright(`Do you want to push your updates on git server ? (git push in remote git branch ${c.green(currentGitBranch)})`),
+        message: c.cyanBright(`Do you want to push your commit(s) on git server ? (git push in remote git branch ${c.green(currentGitBranch)})`),
       });
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${currentGitBranch}`)}...`));
@@ -576,94 +546,5 @@ autoRemoveUserPermissions:
       packages.push(item);
     }
     return packages;
-  }
-
-  private describeGroups(config) {
-    const minimizedProfiles = config?.autoCleanTypes?.includes("minimizeProfiles");
-    const groups = [
-      {
-        label: "Data (SFDMU projects)",
-        regex: /scripts\/data/i,
-        defaultSelect: true,
-      },
-      {
-        label: "Tech config (recommended)",
-        regex: /(\.gitignore|\.forceignore|\.mega-linter.yml|\.vscode|config\/|gitlab|scripts\/|package\.json|sfdx-project\.json)/i,
-        defaultSelect: true,
-      },
-      {
-        label: "Object model",
-        regex: /objects\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Picklists",
-        regex: /(standardValueSets|globalValueSets)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Tabs",
-        regex: /tabs\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Classes/Triggers",
-        regex: /(classes|triggers)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Aura/LWC Components",
-        regex: /(aura|lwc)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Emails",
-        regex: /email\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Flows, Workflows, Path Assistants",
-        regex: /(flows|workflows|pathAssistants)\//i,
-        defaultSelect: true,
-      },
-      {
-        label: "Layouts",
-        regex: /layouts\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Object Translations",
-        regex: /objectTranslations\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Permissionsets",
-        regex: /permissionsets\//i,
-        defaultSelect: false,
-      },
-      {
-        label: minimizedProfiles
-          ? "Profiles (they will be committed but cleaned from all attributes that can be defined on Permission Sets)"
-          : "Profiles (not recommended, use Permission Sets instead. Add minimizeProfiles in autoCleanTypes config to be able to take them safely)",
-        regex: /profiles\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Tableau CRM / Einstein Analytics / Wave",
-        regex: /wave\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Other Salesforce sources elements",
-        regex: /force-app\//i,
-        defaultSelect: false,
-      },
-      {
-        label: "Other elements",
-        regex: /(.*?)/i,
-        defaultSelect: false,
-      },
-    ];
-    return groups;
   }
 }

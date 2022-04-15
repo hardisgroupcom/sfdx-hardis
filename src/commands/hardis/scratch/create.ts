@@ -235,6 +235,16 @@ export default class ScratchCreate extends SfdxCommand {
         this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
         await setConfig("user", { scratchOrgAlias: this.scratchOrgAlias });
         uxLog(this, "[pool] " + c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
+        if (!isCI) {
+          uxLog(this, c.cyan("Now opening org...") + " " + c.yellow("(The org is not ready to work in until this script is completed !)"));
+          await execSfdxJson("sfdx force:org:open", this, {
+            fail: true,
+            output: false,
+            debug: this.debugMode,
+          });
+          // Trigger a status refresh on VsCode WebSocket Client
+          WebSocketClient.sendMessage({ event: "refreshStatus" });
+        }
         return;
       }
     }

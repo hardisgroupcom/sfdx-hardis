@@ -46,7 +46,7 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
         newLogLines.push(line);
         for (const expressionString of tipDefinition.expressionString) {
           if (line.includes(expressionString)) {
-            newLogLines.push(c.yellow(c.bold(tipDefinition.label)));
+            newLogLines.push(c.yellow(c.italic("Tip for " + tipDefinition.label + ":")));
             newLogLines.push(...tipDefinition.tip.split(/\r?\n/).map((str: string) => c.yellow(str)));
             newLogLines.push(c.yellow(" "));
           }

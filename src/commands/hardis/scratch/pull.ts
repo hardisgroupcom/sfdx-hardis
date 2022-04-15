@@ -14,8 +14,12 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class SourcePull extends SfdxCommand {
   public static title = "Scratch PULL";
 
-  public static description = `Pull scratch org updates from scratch org to local files
-  
+  public static description = `This commands pulls the updates you performed in your scratch or sandbox org, into your local files
+
+Then, you probably want to stage and commit the files containing the updates you want to keep, as explained in this video.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 - Calls sfdx force:source:pull under the hood
 - If there are errors, proposes to automatically add erroneous item in \`.forceignore\`, then pull again
 `;
