@@ -37,7 +37,7 @@
     "autoRetrieveWhenPull": {
       "$id": "#/properties/autoRetrieveWhenPull",
       "description": "When calling hardis:scratch:pull, if you define metadatas (named or not), they will also be retrieved using force:source:retrieve",
-      "examples": [["CustomApplication"],["CustomApplication:MyApp1","CustomApplication:MyApp2"]],
+      "examples": [["CustomApplication"], ["CustomApplication:MyApp1", "CustomApplication:MyApp2"]],
       "items": {
         "type": "string"
       },
