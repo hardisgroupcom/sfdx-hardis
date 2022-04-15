@@ -125,6 +125,19 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false, op
     uxLog(this, c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the pull issues :)`)));
     throw new SfdxError("Pull failure. Check messages above");
   }
+
+  // Check if some items has to be forced-retrieved because sfdx does not detect updates
+  const config = await getConfig("project");
+  if (config.autoRetrieveWhenPull) {
+    uxLog(this, c.cyan("Retrieving additional sources that are usually forgotten by force:source:pull ..."));
+    const metadataConstraint = config.autoRetrieveWhenPull.join(", ");
+    const retrieveCommand = `sfdx force:source:retrieve -w 60 -m "${metadataConstraint}" -u ${scratchOrgAlias}`;
+    await execCommand(retrieveCommand, this, {
+      fail: true,
+      output: true,
+      debug: debug,
+    });
+  }
 }
 
 export async function forceSourceDeploy(

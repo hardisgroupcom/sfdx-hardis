@@ -34,6 +34,16 @@
       "title": "Auto-Remove User Permissions on profiles",
       "type": "array"
     },
+    "autoRetrieveWhenPull": {
+      "$id": "#/properties/autoRetrieveWhenPull",
+      "description": "When calling hardis:scratch:pull, if you define metadatas (named or not), they will also be retrieved using force:source:retrieve",
+      "examples": [["CustomApplication"],["CustomApplication:MyApp1","CustomApplication:MyApp2"]],
+      "items": {
+        "type": "string"
+      },
+      "title": "Auto-Retrieve when pull",
+      "type": "array"
+    },
     "apexTestsMinCoverageOrgWide": {
       "$id": "#/properties/apexTestsMinCoverageOrgWide",
       "default": 75.0,

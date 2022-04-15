@@ -22,6 +22,15 @@ Then, you probably want to stage and commit the files containing the updates you
 
 - Calls sfdx force:source:pull under the hood
 - If there are errors, proposes to automatically add erroneous item in \`.forceignore\`, then pull again
+- If you want to always retrieve sources like CustomApplication that are not always detected as updates by force:source:pull , you can define property **autoRetrieveWhenPull** in .sfdx-hardis.yml
+
+Example:
+\`\`\`yaml
+autoRetrieveWhenPull:
+  - CustomApplication:MyCustomApplication
+  - CustomApplication:MyOtherCustomApplication
+  - CustomApplication:MyThirdCustomApp
+\`\`\`
 `;
 
   public static examples = ["$ sfdx hardis:scratch:pull"];
@@ -55,7 +64,9 @@ Then, you probably want to stage and commit the files containing the updates you
 
   public async run(): Promise<AnyJson> {
     const debugMode = this.flags.debug || false;
-    await forceSourcePull(this.org.getUsername(), debugMode);
+    const targetUsername = this.org.getUsername();
+    await forceSourcePull(targetUsername, debugMode);
+
     // Return an object to be displayed with --json
     return { outputString: "Pulled scratch org updates" };
   }
