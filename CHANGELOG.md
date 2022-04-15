@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.80.0] 2022-04-15
+
 - Simplify and document more hardis:work:new , hardis:work:pull and hardis:work:save
 - Open org in browser when fetched from scratch org pool
 - More [deploymentTips](https://hardisgroupcom.github.io/sfdx-hardis/deployTips/)

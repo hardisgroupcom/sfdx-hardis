@@ -58,6 +58,26 @@ A folder is probably missing from project.
 - If the folder is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders -u YOURSOURCEORG
 ```
 
+## Can not find user
+
+- `Error (.*) Cannot find a user that matches any of the following usernames`
+
+**Resolution tip**
+
+```shell
+You made reference to username(s) in {1}, and those users probably do not exist in target org.
+- Do not use named users, but user groups for assignments
+- Remove the XML part referring to hardcoded usernames
+
+Example of XML you have to remove in {1}:
+
+<folderShares>
+  <accessLevel>Manage</accessLevel>
+  <sharedTo>nicolas.vuillamy@hardis-scratch-po-tgci-root-develop_20220412_0604.com</sharedTo>
+  <sharedToType>User</sharedToType>
+</folderShares>
+```
+
 ## Custom object not found
 
 - `Error (.*) In field: field - no CustomObject named (.*) found`
@@ -119,6 +139,17 @@ Example of element to delete:
 A reference to a custom metadata {3} of type {2} is not found in {1}:
 - Are you sure you deployed {3} ?
 - If you use a package.xml, is {3} present within type CustomMetadata ?
+
+```
+
+## Dependent class is invalid and needs recompilation
+
+- `Error (.*) Dependent class is invalid and needs recompilation`
+
+**Resolution tip**
+
+```shell
+Solve the other errors and this one will disappear !
 
 ```
 
@@ -218,7 +249,17 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 **Resolution tip**
 
 ```shell
-Flow {1} can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows
+Flow {1} can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
+```
+
+## Insufficient access rights on cross-reference id
+
+- `Error (.*) insufficient access rights on cross-reference id`
+
+**Resolution tip**
+
+```shell
+If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
 ```
 
 ## Invalid scope:Mine, not allowed
@@ -229,6 +270,20 @@ Flow {1} can not be deleted using deployments, please delete it manually in the 
 
 ```shell
 Replace Mine by Everything in the list view SFDX source XML
+```
+
+## Invalid field for upsert
+
+- `Error (.*) Invalid field for upsert, must be an External Id custom or standard indexed field: (.*) \((.*)\)`
+
+**Resolution tip**
+
+```shell
+You tried to use field {2} for an upsert call in {1}.
+- Is it declared as externalId ?
+- Is the customIndex source file present in the deployment ?
+- If it is declared as externalId and customIndex is present, you may have to go manually define the field as externalId in the target org
+
 ```
 
 ## Invalid type
@@ -446,6 +501,23 @@ Work.com feature must be activated in the target org.
 You can either:
 - Update the package.xml to remove the reference to the missing {2} {1}
 - Add the missing {2} {1} in your project source files
+```
+
+## Missing Quick Action
+
+- `Error (.*) In field: QuickAction - no QuickAction named (.*) found`
+
+**Resolution tip**
+
+```shell
+QuickAction {2} referred in {1} is unknown. You can either:
+- Make sure your QuickAction {2} is present in source files and in package.xml
+- If {2} is a standard QuickAction, activate related feature in target org
+- Solve other errors that could impact QuickAction {2}
+- Remove QuickAction {2} in the source XML of {1}. Example of XML to remove below:
+<quickActionListItems>
+  <quickActionName>FeedItem.RypplePost</quickActionName>
+</quickActionListItems>
 ```
 
 ## Missing Sales Team
