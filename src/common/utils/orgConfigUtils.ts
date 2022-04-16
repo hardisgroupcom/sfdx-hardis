@@ -35,7 +35,10 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   const loginUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${conn.accessToken}`;
 
   // Start puppeteer
-  const browser = await puppeteer.launch({ headless: !(options.debug === true) });
+  const browser = await puppeteer.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: !(options.debug === true),
+  });
   const page = await browser.newPage();
 
   // Process login page

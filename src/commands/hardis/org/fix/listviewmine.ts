@@ -54,6 +54,16 @@ listViewsToSetToMine:
   - "Opportunity:MySubscriptions"
   - "Account:MyActivePartners"
 \`\`\`
+
+Troubleshooting: if you need to run this command from an alpine-linux based docker image, use this workaround in your dockerfile:
+
+\`\`\`dockerfile
+# Do not use puppeteer embedded chromium
+RUN apk add --update --no-cache chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
+ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
+ENV PUPPETEER_EXECUTABLE_PATH="\${CHROMIUM_PATH}"
+\`\`\`
 `;
 
   public static examples = [
