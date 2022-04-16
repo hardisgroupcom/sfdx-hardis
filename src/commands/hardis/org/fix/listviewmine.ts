@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "../../../../common/utils";
 import { restoreListViewMine } from "../../../../common/utils/orgConfigUtils";
 import { getConfig } from "../../../../config";
-import * as c from 'chalk';
+import * as c from "chalk";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -58,7 +58,8 @@ listViewsToSetToMine:
 
   public static examples = [
     "$ sfdx hardis:org:fix:listviewmine",
-    "$ sfdx hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners"];
+    "$ sfdx hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners",
+  ];
 
   // public static args = [{name: 'file'}];
 
@@ -103,8 +104,7 @@ listViewsToSetToMine:
     if (this.flags.listviews) {
       // Use input flag
       this.listViewsStrings = this.flags.listviews.split(",");
-    }
-    else {
+    } else {
       // Use property listViewsToSetToMine from .sfdx-hardis.yml config file
       const config = await getConfig("project");
       this.listViewsStrings = config.listViewsToSetToMine || [];

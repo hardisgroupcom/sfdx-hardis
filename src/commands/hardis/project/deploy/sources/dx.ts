@@ -108,10 +108,7 @@ listViewsToSetToMine:
 \`\`\`
   `;
 
-  public static examples = [
-    "$ sfdx hardis:project:deploy:sources:dx",
-    "$ sfdx hardis:project:deploy:sources:dx --check"
-  ];
+  public static examples = ["$ sfdx hardis:project:deploy:sources:dx", "$ sfdx hardis:project:deploy:sources:dx --check"];
 
   protected static flagsConfig = {
     check: flags.boolean({
