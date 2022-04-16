@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.82.1] 2022-04-16
+
+- QuickFix platform compatibility for `sfdx hardis:org:fix:listviewmine`
+
 ## [2.82.0] 2022-04-16
 
 - New command `sfdx hardis:org:fix:listviewmine` as a workaround to force:source:deploy not allowing ListView with scope **Mine**
