@@ -269,7 +269,10 @@ If {1} is a Flow, it can not be deleted using deployments, please delete it manu
 **Resolution tip**
 
 ```shell
-Replace Mine by Everything in the list view SFDX source XML
+Replace Mine by Everything in the list view SFDX source XML.
+Have a look at this command to manage that automatically :)
+https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/fix/listviewmine/
+
 ```
 
 ## Invalid field for upsert
