@@ -114,7 +114,7 @@ Troubleshooting: if you need to fix ListViews with mine from an alpine-linux bas
 RUN apk add --update --no-cache chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
-ENV PUPPETEER_EXECUTABLE_PATH="\${CHROMIUM_PATH}"
+ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 \`\`\`
   `;
 
