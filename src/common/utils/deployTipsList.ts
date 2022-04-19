@@ -12,11 +12,11 @@ export function getAllTips() {
       name: "can-not-change-type-due-to-existing-data",
       label: "Can not change type due to existing data",
       expressionRegex: [/Error (.*) Cannot change type due to existing data/gm],
-      tip: `It is usually not recommanded to change types of fields, but if it's really necessary you can:
-- Manually change the type pf {1} in the target org
+      tip: `It is usually not recommended to change types of fields, but if it's really necessary you can:
+- Manually change the type of {1} in the target org
 - If you can't manually change the type:
-  - you may modify the dependencies using such {1} (Formulas, Flows...) so they don't use this field
-  - you can also delete Formulas and Flows using {1}, but make sure they are deployed again later
+  - you may modify the dependencies (Formulas, Flows...) using {1}, so they don't use this field
+  - you can also delete dependencies (Formulas, Flows...) using {1}, but make sure they are deployed again later
 - More help: https://help.salesforce.com/s/articleView?id=000327186&type=1`,
     },
     {

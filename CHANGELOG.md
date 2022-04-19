@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.82.2] 2022-04-19
+
 - New deployTip: Can not change type due to existing data
+- Do not replace ListView Everything by Mine when we are just simulating deployment
 
 ## [2.82.1] 2022-04-16
 
