@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New deployTip: Can not change type due to existing data
+
 ## [2.82.1] 2022-04-16
 
 - QuickFix platform compatibility for `sfdx hardis:org:fix:listviewmine`

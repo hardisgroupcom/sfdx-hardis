@@ -9,6 +9,17 @@ export function getAllTips() {
 - if you can't delete {1}, rename it into {1}_ToDel, then once the deployment done, delete {1}_ToDel`,
     },
     {
+      name: "can-not-change-type-due-to-existing-data",
+      label: "Can not change type due to existing data",
+      expressionRegex: [/Error (.*) Cannot change type due to existing data/gm],
+      tip: `It is usually not recommanded to change types of fields, but if it's really necessary you can:
+- Manually change the type pf {1} in the target org
+- If you can't manually change the type:
+  - you may modify the dependencies using such {1} (Formulas, Flows...) so they don't use this field
+  - you can also delete Formulas and Flows using {1}, but make sure they are deployed again later
+- More help: https://help.salesforce.com/s/articleView?id=000327186&type=1`,
+    },
+    {
       name: "can-not-delete-custom-field",
       label: "Can not delete custom field",
       context: "destructiveChange",
