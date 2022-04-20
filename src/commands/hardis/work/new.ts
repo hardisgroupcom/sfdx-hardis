@@ -215,7 +215,10 @@ Under the hood, it can:
         output: true,
         fail: true,
       });
-      uxLog(this, c.cyan(`Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(scratchResponse.value.username)}`));
+      uxLog(
+        this,
+        c.cyan(`Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(scratchResponse.value.username)}`)
+      );
       await execSfdxJson("sfdx force:org:open", this, {
         fail: true,
         output: false,
