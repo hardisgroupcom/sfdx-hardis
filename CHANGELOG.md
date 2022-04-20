@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New deployment tips:
+  - Not valid sharing model
 ## [2.82.2] 2022-04-19
 
 - New deployTip: Can not change type due to existing data

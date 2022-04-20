@@ -399,6 +399,16 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 `,
     },
     {
+      name: "not-valid-sharing-model",
+      label: "Not valid sharing model",
+      expressionRegex: [/Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)/gm],
+      tip: `It seems that Sharing Models of {1} and {4} are not compatible in target org.
+- Use compatible sharing models between {1} and {4} by updating Sharing model of {1} or {4}
+- Make sure that sfdx sources {1}.object-meta.xml and {4}.object-meta.xml and in the files, and that {1} and {4} are in package.xml in CustomObject block
+- You may directly update sharingModel in XML. For example, replace <sharingModel>ReadWrite</sharingModel> by <sharingModel>Private</sharingModel> in {3}.object-meta.xml
+`,
+    },
+    {
       name: "picklist-sharing-not-supported",
       label: "Picklist sharing is not supported",
       expressionString: ["Picklist sharing is not supported"],
