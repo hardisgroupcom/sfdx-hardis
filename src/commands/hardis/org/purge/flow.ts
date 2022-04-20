@@ -4,7 +4,8 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as columnify from "columnify";
-import { execSfdxJson, uxLog } from "../../../../common/utils";
+import { execSfdxJson, isCI, uxLog } from "../../../../common/utils";
+import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -57,7 +58,6 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }),
     status: flags.string({
       char: "s",
-      default: "Obsolete",
       description: messages.getMessage("statusFilter"),
     }),
     allowpurgefailure: flags.boolean({
@@ -97,10 +97,59 @@ export default class OrgPurgeFlow extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const prompt = this.flags.prompt === false ? false : true;
-    const statusFilter = this.flags.status ? this.flags.status.split(",") : ["Obsolete"];
-    const nameFilter = this.flags.name || null;
+    let nameFilter = this.flags.name || null;
     const allowPurgeFailure = this.flags.allowpurgefailure === false ? false : true;
     const debugMode = this.flags.debug || false;
+    const username = this.org.getUsername();
+
+    let statusFilter;
+    if (this.flags.status) {
+      // Input parameter used
+      statusFilter = this.flags.status.split(",");
+    } else if (isCI) {
+      // Obsolete by default for CI
+      statusFilter = ["Obsolete"];
+    } else {
+      // Query all flows
+      const allFlowQueryCommand =
+        "sfdx force:data:soql:query " +
+        ` -q "SELECT Id,MasterLabel,VersionNumber FROM Flow ORDER BY MasterLabel"` +
+        ` --targetusername ${username}` +
+        " --usetoolingapi";
+      const allFlowQueryRes = await execSfdxJson(allFlowQueryCommand, this, {
+        output: false,
+        debug: debugMode,
+        fail: true,
+      });
+      const flowRecordsRaw = allFlowQueryRes?.result?.records || allFlowQueryRes.records || [];
+      const flowNamesUnique = [...new Set(flowRecordsRaw.map((flowRecord) => flowRecord.MasterLabel))];
+      const flowNamesChoice = flowNamesUnique.map((flowName) => {
+        return { title: flowName, value: flowName };
+      });
+      flowNamesChoice.unshift({ title: "All flows", value: "all" });
+
+      // Manually select status
+      const selectStatus = await prompts([
+        {
+          type: "select",
+          name: "name",
+          message: "Please select the flow you want to clean",
+          choices: flowNamesChoice,
+        },
+        {
+          type: "multiselect",
+          name: "status",
+          message: "Please select the status(es) you want to delete",
+          choices: [
+            { title: `Draft`, value: "Draft" },
+            { title: `Inactive`, value: "Inactive" },
+            { title: `Obsolete`, value: "Obsolete" },
+          ],
+        },
+      ]);
+      nameFilter = selectStatus.name;
+      statusFilter = selectStatus.status;
+    }
 
     // Check we don't delete active Flows
     if (statusFilter.includes("Active")) {
@@ -114,16 +163,14 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }
     query += " ORDER BY MasterLabel,VersionNumber";
 
-    const username = this.org.getUsername();
-
     const flowQueryCommand = "sfdx force:data:soql:query " + ` -q "${query}"` + ` --targetusername ${username}` + " --usetoolingapi";
     const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
       output: false,
       debug: debugMode,
       fail: true,
     });
-
     const recordsRaw = flowQueryRes?.result?.records || flowQueryRes.records || [];
+
     // Check empty result
     if (recordsRaw.length === 0) {
       const outputString = `[sfdx-hardis] No matching Flow records found with query ${query}`;
@@ -143,33 +190,34 @@ export default class OrgPurgeFlow extends SfdxCommand {
     });
     uxLog(this, `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(columnify(records))}`);
 
+    // Confirm deletion
+    if (prompt) {
+      const confirmDelete = await prompts({
+        type: "confirm",
+        name: "value",
+        message: c.cyanBright(`Do you confirm you want to delete these ${records.length} flow versions ?`),
+      });
+      if (confirmDelete === false) {
+        return { outputString: "Action cancelled by user" };
+      }
+    }
+
     // Perform deletion
     const deleted = [];
     const deleteErrors = [];
-    if (
-      !prompt ||
-      (await this.ux.confirm(
-        c.bold(`[sfdx-hardis] Are you sure you want to delete this list of records in ${c.green(this.org.getUsername())} (y/n)?`)
-      ))
-    ) {
-      for (const record of records) {
-        const deleteCommand =
-          "sfdx force:data:record:delete" +
-          " --sobjecttype Flow" +
-          ` --sobjectid ${record.Id}` +
-          ` --targetusername ${username}` +
-          " --usetoolingapi";
-        const deleteRes = await execSfdxJson(deleteCommand, this, {
-          fail: false,
-          output: false,
-          debug: debugMode,
-        });
-        if (!(deleteRes.status === 0)) {
-          this.ux.error(c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
-          deleteErrors.push(deleteRes);
-        }
-        deleted.push(record);
+    for (const record of records) {
+      const deleteCommand =
+        "sfdx force:data:record:delete" + " --sobjecttype Flow" + ` --sobjectid ${record.Id}` + ` --targetusername ${username}` + " --usetoolingapi";
+      const deleteRes = await execSfdxJson(deleteCommand, this, {
+        fail: false,
+        output: false,
+        debug: debugMode,
+      });
+      if (!(deleteRes.status === 0)) {
+        this.ux.error(c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
+        deleteErrors.push(deleteRes);
       }
+      deleted.push(record);
     }
 
     if (deleteErrors.length > 0) {

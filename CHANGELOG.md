@@ -4,8 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.82.3] 2022-04-20
+
 - New deployment tips:
   - Not valid sharing model
+- Improve purge flows for manual users
+- Open scratch org when reusing one
+
 ## [2.82.2] 2022-04-19
 
 - New deployTip: Can not change type due to existing data
