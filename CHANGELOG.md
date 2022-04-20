@@ -4,11 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.82.3] 2022-04-20
+## [2.83.0] 2022-04-20
 
 - New deployment tips:
   - Not valid sharing model
 - Improve purge flows for manual users
+- Improve badwords detector
 - Open scratch org when reusing one
 
 ## [2.82.2] 2022-04-19
