@@ -28,7 +28,8 @@ class SfdxHardisBuilder {
       "",
       "Example:",
       "",
-      "![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)"
+      "![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)",
+      ""
     ];
     for (const tip of deployTips) {
       if (!tip.label) {
