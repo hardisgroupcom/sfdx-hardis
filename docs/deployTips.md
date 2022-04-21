@@ -22,6 +22,21 @@ You need to manually delete or rename the field in the target org to allow the d
 - if you can't delete {1}, rename it into {1}_ToDel, then once the deployment done, delete {1}_ToDel
 ```
 
+## Can not change type due to existing data
+
+- `Error (.*) Cannot change type due to existing data`
+
+**Resolution tip**
+
+```shell
+It is usually not recommended to change types of fields, but if it's really necessary you can:
+- Manually change the type of {1} in the target org
+- If you can't manually change the type:
+  - you may modify the dependencies (Formulas, Flows...) using {1}, so they don't use this field
+  - you can also delete dependencies (Formulas, Flows...) using {1}, but make sure they are deployed again later
+- More help: https://help.salesforce.com/s/articleView?id=000327186&type=1
+```
+
 ## Can not delete custom field
 
 - `This (.*) is referenced elsewhere in salesforce.com`
@@ -269,7 +284,10 @@ If {1} is a Flow, it can not be deleted using deployments, please delete it manu
 **Resolution tip**
 
 ```shell
-Replace Mine by Everything in the list view SFDX source XML
+Replace Mine by Everything in the list view SFDX source XML.
+Have a look at this command to manage that automatically :)
+https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/fix/listviewmine/
+
 ```
 
 ## Invalid field for upsert
@@ -547,6 +565,20 @@ You can not deploy multiple SharingRules at the same time. You can either:
 - Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
 - Use sfdx hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json,
 - If you are trying to create a scratch org, add DeferSharingCalc in features in project-scratch-def.json
+
+```
+
+## Not valid sharing model
+
+- `Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)`
+
+**Resolution tip**
+
+```shell
+It seems that Sharing Models of {1} and {4} are not compatible in target org.
+- Use compatible sharing models between {1} and {4} by updating Sharing model of {1} or {4}
+- Make sure that sfdx sources {1}.object-meta.xml and {4}.object-meta.xml and in the files, and that {1} and {4} are in package.xml in CustomObject block
+- You may directly update sharingModel in XML. For example, replace <sharingModel>ReadWrite</sharingModel> by <sharingModel>Private</sharingModel> in {3}.object-meta.xml
 
 ```
 
