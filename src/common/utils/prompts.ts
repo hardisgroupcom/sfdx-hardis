@@ -45,7 +45,11 @@ export async function prompts(options) {
       uxLog(this, c.cyan(question.message) + c.white(" ↑↑ Look up in VsCode ↑↑"));
       const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
       answers = Object.assign(answers, questionAnswer);
-      uxLog(this, c.grey(JSON.stringify(answers)));
+      if (JSON.stringify(answers).toLowerCase().includes("token")) {
+        uxLog(this, c.grey("Selection done but hidden in log because it contains sensitive information"));
+      } else {
+        uxLog(this, c.grey(JSON.stringify(answers)));
+      }
     }
   } else {
     // Use text prompt

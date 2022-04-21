@@ -11,6 +11,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Improve purge flows for manual users
 - Improve badwords detector
 - Open scratch org when reusing one
+- Hide prompt result when it contains sensitive information
 
 ## [2.82.2] 2022-04-19
 
