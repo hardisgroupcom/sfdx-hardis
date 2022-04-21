@@ -10,6 +10,9 @@ This page summarizes all errors that can be detected by sfdx-hardis wrapper comm
 
 If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)
 
+Example:
+
+![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)
 ## Can not change field type to a formula field
 
 - `Error (.*) Cannot update a field from a Formula to something else`

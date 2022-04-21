@@ -25,7 +25,10 @@ class SfdxHardisBuilder {
       "| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy)  | [sfdx hardis:mdapi:deploy](https://hardisgroupcom.github.io/sfdx-hardis/hardis/mdapi/deploy/)    |",
       "",
       "If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)",
-      ""
+      "",
+      "Example:",
+      "",
+      "![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)"
     ];
     for (const tip of deployTips) {
       if (!tip.label) {
