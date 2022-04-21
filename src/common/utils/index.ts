@@ -510,7 +510,7 @@ export async function execCommand(
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = "0";
-  const output = options.output !== null ? options.output: !process.argv.includes("--json");
+  const output = options.output !== null ? options.output : !process.argv.includes("--json");
   let spinner: any;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: "moon" }).start();
