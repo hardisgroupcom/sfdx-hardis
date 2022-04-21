@@ -80,6 +80,18 @@ See article:
         ),
       },
       {
+        type: "multiselect",
+        name: "additional",
+        message: c.cyanBright("Please select additional options if you need them. If not, just select nothing and continue"),
+        choices: [
+          {
+            title: "Bad words detector",
+            description: "Can detect a list of bad words in records",
+            value: "badwordsFilter",
+          },
+        ],
+      },
+      {
         type: "confirm",
         name: "importInScratchOrgs",
         message: c.cyanBright("Do you want this SFDMU config to be used to import data when initializing a new scratch org ?"),
@@ -92,7 +104,10 @@ See article:
     const sfdxHardisLabel = resp.sfdxHardisLabel;
     const sfdxHardisDescription = resp.sfdxHardisDescription;
     const importInScratchOrgs = resp.importInScratchOrgs;
-    const sfdmuConfig = {
+    const additionalConfig: Array<string> = resp.additional || [];
+
+    const additionalFiles = [];
+    const sfdmuConfig: any = {
       sfdxHardisLabel: sfdxHardisLabel,
       sfdxHardisDescription: sfdxHardisDescription,
       objects: [
@@ -104,6 +119,42 @@ See article:
       ],
     };
 
+    // Manage badwords filter option
+    if (additionalConfig.includes("badwordsFilter")) {
+      const badwordsFileName = "badwords.json";
+      sfdmuConfig.objects[0] = [
+        {
+          query: "SELECT all FROM Lead",
+          operation: "Readonly",
+          targetRecordsFilter: "core:DetectBadwords",
+          filterRecordsAddons: [
+            {
+              module: "core:RecordsFilter",
+              args: {
+                filterType: "BadWords",
+                settings: {
+                  badwordsFile: badwordsFileName,
+                  detectFields: ["Description"],
+                  highlightWords: true,
+                  outputMatches: false,
+                },
+              },
+            },
+          ],
+        },
+      ];
+      if (!fs.existsSync("badwords.json")) {
+        const badwordsSample = {
+          badwords: ["write", "your", "bad", "words", "and expressions", "here"],
+        };
+        additionalFiles.push({
+          path: badwordsFileName,
+          text: JSON.stringify(badwordsSample, null, 2),
+          message: "Sample badwords file has been generated and needs to be updated",
+        });
+      }
+    }
+
     // Check if not already existing
     const sfdmuProjectFolder = path.join(dataFolderRoot, dataPath);
     if (fs.existsSync(sfdmuProjectFolder)) {
@@ -114,6 +165,17 @@ See article:
     await fs.ensureDir(sfdmuProjectFolder);
     const exportJsonFile = path.join(sfdmuProjectFolder, "export.json");
     await fs.writeFile(exportJsonFile, JSON.stringify(sfdmuConfig, null, 2));
+    uxLog(this, "Generated SFDMU config file " + exportJsonFile);
+
+    for (const additionalFile of additionalFiles) {
+      const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
+      await fs.writeFile(additionalFileFull, additionalFile.text);
+      uxLog(this, c.cyan(additionalFile.message + ": ") + c.yellow(additionalFileFull));
+      WebSocketClient.sendMessage({ event: "openFile", file: additionalFileFull.replace(/\\/g, "/") });
+    }
+
+    // Trigger command to open SFDMU config file in VsCode extension
+    WebSocketClient.sendMessage({ event: "openFile", file: exportJsonFile.replace(/\\/g, "/") });
 
     // Manage dataPackages if importInScratchOrgs is true
     if (importInScratchOrgs === true) {
@@ -122,9 +184,6 @@ See article:
       dataPackages.push({ dataPath: sfdmuProjectFolder.replace(/\\/g, "/"), importInScratchOrgs: true });
       await setConfig("project", { dataPackages: dataPackages });
     }
-
-    // Trigger command to open SFDMU config file in VsCode extension
-    WebSocketClient.sendMessage({ event: "openFile", file: exportJsonFile.replace(/\\/g, "/") });
 
     // Set bac initial cwd
     const message = c.cyan(`Successfully initialized sfdmu project ${c.green(sfdmuProjectFolder)}, with ${c.green("export.json")} file.

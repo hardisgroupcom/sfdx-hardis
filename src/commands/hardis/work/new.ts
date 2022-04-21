@@ -4,7 +4,7 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils";
-import { checkGitClean, ensureGitBranch, execCommand, git, gitCheckOutRemote, uxLog } from "../../../common/utils";
+import { checkGitClean, ensureGitBranch, execCommand, execSfdxJson, git, gitCheckOutRemote, uxLog } from "../../../common/utils";
 import { selectTargetBranch } from "../../../common/utils/gitUtils";
 import { promptOrg } from "../../../common/utils/orgUtils";
 import { prompts } from "../../../common/utils/prompts";
@@ -214,6 +214,15 @@ Under the hood, it can:
       await execCommand(`sfdx config:set defaultusername=${scratchResponse.value.username}`, this, {
         output: true,
         fail: true,
+      });
+      uxLog(
+        this,
+        c.cyan(`Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(scratchResponse.value.username)}`)
+      );
+      await execSfdxJson("sfdx force:org:open", this, {
+        fail: true,
+        output: false,
+        debug: this.debugMode,
       });
     }
   }

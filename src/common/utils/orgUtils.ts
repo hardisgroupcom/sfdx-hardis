@@ -210,7 +210,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
       });
     }
   }
-  uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
+  // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
   uxLog(commandThis, c.cyan(`Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
   return orgResponse.org;
 }
