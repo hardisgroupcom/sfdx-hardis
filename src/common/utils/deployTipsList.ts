@@ -88,13 +88,13 @@ You may also have a look to command sfdx hardis:project:clean:references
     {
       name: "custom-field-rights-mandatory",
       label: "Mandatory custom field can not be in a profile/permission set",
-      expressionString: ["You cannot deploy to a required field", "Impossible de déployer vers un champ obligatoire"],
-      tip: `A custom field declared as mandatory can not have rights defined in Profiles and Permission Sets
-- Search the name of the Object.Field in sfdx folders permissionsets / profiles and remove the entries matching the results
+      expressionRegex: [/Error (.*) You cannot deploy to a required field: (.*)/gm],
+      tip: `
+- Search for {2} in source file XML of {1}, then remove the entries matching the results
 Example of element to delete:
 <fieldPermissions>
   <editable>true</editable>
-  <field>MyObject.MyField__c</field>
+  <field>{2}</field>
   <readable>true</readable>
 </fieldPermissions>
 `,
