@@ -131,18 +131,17 @@ A reference to a custom field {2} is not found in {1}:
 
 ## Mandatory custom field can not be in a profile/permission set
 
-- `You cannot deploy to a required field`
-- `Impossible de déployer vers un champ obligatoire`
+- `Error (.*) You cannot deploy to a required field: (.*)`
 
 **Resolution tip**
 
 ```shell
-A custom field declared as mandatory can not have rights defined in Profiles and Permission Sets
-- Search the name of the Object.Field in sfdx folders permissionsets / profiles and remove the entries matching the results
+
+- Search for {2} in source file XML of {1}, then remove the entries matching the results
 Example of element to delete:
 <fieldPermissions>
   <editable>true</editable>
-  <field>MyObject.MyField__c</field>
+  <field>{2}</field>
   <readable>true</readable>
 </fieldPermissions>
 
