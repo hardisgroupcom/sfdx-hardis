@@ -75,13 +75,13 @@ You may also have a look to command sfdx hardis:project:clean:references
     {
       name: "custom-field-not-found",
       label: "Custom field not found",
-      expressionRegex: [/Error (.*) In field: field - no CustomField named (.*) found/gm],
-      tip: `A reference to a custom field {2} is not found in {1}:
-- If you renamed the custom field, do a search/replace in sources with previous field name and new field name
-- If you deleted the custom field, or if you don't want to deploy it, do a search on the custom field name, and remove XML elements referencing it
-- If the custom field should exist, make sure it is in force-app/main/default/objects/YOUROBJECT/fields and that the field name is in manifest/package.xml in CustomField section
-- If the field is standard, the error is because the field not available in the org you are trying to deploy to. You can:
-  - Remove the reference to the standard field ( maybe sfdx hardis:project:clean:references can clean automatically for you ! )
+      expressionRegex: [/Error (.*) In field: (.*) - no CustomField named (.*)\.(.*) found/gm],
+      tip: `A reference to a custom field {3}.{4} is not found in {1}:
+- If you renamed {3}.{4}, do a search/replace in {1} with previous field name and {4}
+- If you deleted {3}.{4}, or if you don't want to deploy it, do a search on {4} in all sources, and remove all XML elements referring to {3}.{4} (except in destructiveChanges.xml)
+- If {3}.{4} should exist, make sure it is in force-app/main/default/objects/{3}/fields and that {3}.{4} is in manifest/package.xml in CustomField section
+- If {3}.{4} is standard, the error is because {3}.{4} is not available in the org you are trying to deploy to. You can:
+  - Remove the reference to {4} in the XML of {1} ( maybe sfdx hardis:project:clean:references can clean automatically for you ! )
   - Activate the required features/license in the target org
 `,
     },

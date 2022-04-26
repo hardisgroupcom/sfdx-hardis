@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.83.7] 2022-04-26
+
+- Update deployTips: improve unknown custom field message
+
 ## [2.83.6] 2022-04-26
 
 - Fix hardis:work:save who sometimes forgot to ask to push commits
