@@ -426,7 +426,7 @@ autoRemoveUserPermissions:
     }
 
     // Push new commit(s)
-    if ((gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0) && !this.noGit) {
+    if ((gitStatusWithConfig.staged.length > 0 || gitStatusAfterDeployPlan.staged.length > 0 || gitStatusAfterDeployPlan?.ahead > 0) && !this.noGit) {
       const pushResponse = await prompts({
         type: "confirm",
         name: "push",
