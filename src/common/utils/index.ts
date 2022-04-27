@@ -71,10 +71,11 @@ export function isGitRepo() {
   return isInsideWorkTree.status === 0;
 }
 
-export async function gitHasLocalUpdates() {
+export async function gitHasLocalUpdates(options = { show: false }) {
   const changes = await git().status();
-  uxLog(this, c.cyan(JSON.stringify(changes)));
-
+  if (options.show) {
+    uxLog(this, c.cyan(JSON.stringify(changes)));
+  }
   return changes.files.length > 0;
 }
 
