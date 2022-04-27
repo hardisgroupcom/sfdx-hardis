@@ -108,9 +108,9 @@ export default class DocGenerate extends SfdxCommand {
     }
 
     // Build markdown file
-    const mdPsg = ["# Permission set groups", "", "<!-- toc -->","<!-- tocstop -->"];
+    const mdPsg = ["# Permission set groups", "", "<!-- toc -->", "<!-- tocstop -->"];
     for (const psg of psgList) {
-      mdPsg.push(...[`## ${psg.name}`, "",  psg.label, "", psg.description, ""]);
+      mdPsg.push(...[`## ${psg.name}`, "", psg.label, "", psg.description, ""]);
       for (const psName of psg.permissionSetsNames) {
         mdPsg.push(`  - ${psName} `);
       }
@@ -118,7 +118,7 @@ export default class DocGenerate extends SfdxCommand {
     }
     const docFile = "docs/permission-set-groups.md";
     await fs.ensureDir("docs");
-    let mdPsgText =  mdPsg.join("\n");
+    let mdPsgText = mdPsg.join("\n");
     mdPsgText = toc.insert(mdPsgText);
     await fs.writeFile("docs/permission-set-groups.md", mdPsgText, "utf8");
     uxLog(this, c.cyan(`Permission set groups Markdown file generated in ${c.bold(c.green(docFile))}`));
