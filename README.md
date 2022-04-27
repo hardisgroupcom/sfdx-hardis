@@ -174,6 +174,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 <!-- commands -->
 * [`sfdx hardis:auth:login [-r <string>] [-h] [-s] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisauthlogin--r-string--h--s--d---websocket-string---skipauth---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:config:get [-l <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisconfigget--l-string--d---websocket-string---skipauth---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:doc:extract:permsetgroups [-o <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisdocextractpermsetgroups--o-string--d---websocket-string---skipauth---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:doc:plugin:generate [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisdocplugingenerate--d---websocket-string---skipauth---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:mdapi:deploy [-d <directory>] [-w <minutes>] [-q <id> | -l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g | -c] [-f <filepath>] [-s] [--soapdeploy] [--purgeondelete] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>] [--verbose] [--concise] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardismdapideploy--d-directory--w-minutes--q-id---l-notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg---r-array---o---g---c--f-filepath--s---soapdeploy---purgeondelete---debug---websocket-string--u-string---apiversion-string---verbose---concise---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-l <array>] [-s] [-o <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardismisctoml2csv--f-string--t-string--l-array--s--o-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -306,6 +307,38 @@ EXAMPLE
 
 _See code: [lib/commands/hardis/config/get.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.83.6/lib/commands/hardis/config/get.js)_
 
+## `sfdx hardis:doc:extract:permsetgroups [-o <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Generate markdown files with project documentation
+
+```
+USAGE
+  $ sfdx hardis:doc:extract:permsetgroups [-o <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+
+  -o, --outputfile=outputfile                                                       Force the path and name of output
+                                                                                    report file. Must end with .csv
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+  --skipauth                                                                        Skip authentication check when a
+                                                                                    default username is required
+
+  --websocket=websocket                                                             Websocket host:port for VsCode SFDX
+                                                                                    Hardis UI integration
+
+EXAMPLE
+  $ sfdx hardis:doc:extract:permsetgroups
+```
+
+_See code: [lib/commands/hardis/doc/extract/permsetgroups.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.83.6/lib/commands/hardis/doc/extract/permsetgroups.js)_
+
 ## `sfdx hardis:doc:plugin:generate [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Generate Markdown documentation ready for HTML conversion with mkdocs
@@ -371,7 +404,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 0 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -2937,7 +2970,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   -x, --manifest=manifest                                                           flagsLong.manifest
 
@@ -2985,7 +3018,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
