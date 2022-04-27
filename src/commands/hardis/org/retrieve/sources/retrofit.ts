@@ -7,6 +7,7 @@ import * as c from "chalk";
 // import * as path from "path";
 import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog, isCI } from "../../../../../common/utils";
 import { CleanOptions } from "simple-git";
+import CleanReferences from "../../../project/clean/references";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -46,11 +47,29 @@ export default class Retrofit extends SfdxCommand {
 
   This command need to be triggered from a branch that is connected to a SF org. It will then retrieve all changes not present in that branch sources, commit them and create a merge request against the default branch. If a merge request already exists, it will simply add a new commit.
 
+  Define the following properties in **.sfdx-hardis.yml**
+
+  - **productionBranch** : Name of the git branch that is corresponding to production org
+  - **retrofitBranch** : Name of the git branch that will be used as merge request target
+
   List of metadata to retrieve can be set in three way, in order of priority :
 
   - \`CI_SOURCES_TO_RETROFIT\`: env variable (can be defined in CI context)
   - \`sourcesToRetrofit\` property in \`.sfdx-hardis.yml\`
   - Default list:\n\n    - ${Retrofit.DEFAULT_SOURCES_TO_RETROFIT.join("\n    - ")}
+
+  You can also ignore some files even if they have been updated in production. To do that, define property **retrofitIgnoredFiles** in .sfdx-hardis.yml
+
+  Example of full retrofit configuration:
+
+  \`\`\`yaml
+  productionBranch: master
+  retrofitBranch: preprod
+  retrofitIgnoredFiles:
+  - force-app/main/default/applications/MyApp.app-meta.xml
+  - force-app/main/default/applications/MyOtherApp.app-meta.xml
+  - force-app/main/default/flexipages/MyFlexipageContainingDashboards.flexipage-meta.xml
+  \`\`\`
   `;
 
   public static examples = [
@@ -125,7 +144,7 @@ export default class Retrofit extends SfdxCommand {
     this.push = this.flags.push || false;
     this.pushMode = this.flags.pushmode || "default";
     this.productionBranch = this.flags.productionbranch || null;
-    this.retrofitTargetBranch = this.flags.retrofittargetbranch;
+    this.retrofitTargetBranch = this.flags.retrofittargetbranch || null;
     this.debugMode = this.flags.debug || false;
     this.configInfo = await getConfig("branch");
     // check git repo before processing
@@ -140,17 +159,17 @@ export default class Retrofit extends SfdxCommand {
 
   async processRetrofit() {
     const config = await getConfig("branch");
-    const REF_BRANCH = this.productionBranch || process.env.CI_COMMIT_REF_NAME || config.productionBranch || "master";
-    const RETROFIT_BRANCH = `retrofit/${REF_BRANCH}`;
+    this.productionBranch = this.productionBranch || config.productionBranch || process.env.CI_COMMIT_REF_NAME || "master";
+    const retrofitBranch = `retrofit/${this.productionBranch}`;
 
     await git().fetch(["--prune"]);
     const branches = await git().branch();
-    if (branches.all.find((branch) => branch.includes(RETROFIT_BRANCH))) {
-      uxLog(this, c.cyan(`Checkout to existing branch ${RETROFIT_BRANCH}`));
-      await git().checkout(RETROFIT_BRANCH, ["--force"]);
+    if (branches.all.find((branch) => branch.includes(retrofitBranch))) {
+      uxLog(this, c.cyan(`Checkout to existing branch ${retrofitBranch}`));
+      await git().checkout(retrofitBranch, ["--force"]);
     } else {
-      uxLog(this, c.cyan(`Create a new branch ${RETROFIT_BRANCH} from ${REF_BRANCH}`));
-      await git().checkoutBranch(RETROFIT_BRANCH, `origin/${REF_BRANCH}`);
+      uxLog(this, c.cyan(`Create a new branch ${retrofitBranch} from ${this.productionBranch}`));
+      await git().checkoutBranch(retrofitBranch, `origin/${this.productionBranch}`);
     }
 
     const currentHash = await git().revparse(["HEAD"]);
@@ -163,7 +182,7 @@ export default class Retrofit extends SfdxCommand {
       if (this.commit) {
         await this.commitChanges();
         if (this.push) {
-          await this.pushChanges(RETROFIT_BRANCH);
+          await this.pushChanges(retrofitBranch);
         }
       }
     } else {
@@ -171,7 +190,7 @@ export default class Retrofit extends SfdxCommand {
       // Delete locally created branch if we are within CI process
       if (isCI) {
         uxLog(this, c.yellow("Deleting local retrofit branch..."));
-        await git().branch([`-D ${RETROFIT_BRANCH}`]);
+        await git().branch([`-D ${retrofitBranch}`]);
       }
     }
   }
@@ -201,6 +220,8 @@ export default class Retrofit extends SfdxCommand {
     const origin = `https://root:${process.env.CI_TOKEN}@${process.env.CI_SERVER_HOST}/${process.env.CI_PROJECT_PATH}.git`;
     const pushOptions = [];
     if (this.pushMode === "mergerequest") {
+      const config = await getConfig("branch");
+      this.retrofitTargetBranch = this.retrofitTargetBranch || config.retrofitTargetBranch || "retrofitTargetBranch MUST BE SET";
       const mrOptions = [
         "-o merge_request.create",
         `-o merge_request.target ${this.retrofitTargetBranch}`,
@@ -237,7 +258,25 @@ export default class Retrofit extends SfdxCommand {
     const retrieveCommand = `sfdx force:source:retrieve -m "${RETROFIT_MDT.join(",")}" -u ${this.org.getUsername()}`;
     await execCommand(retrieveCommand, this, { fail: true, debug: this.debugMode, output: true });
 
+    // Discard ignored changes
+    await this.discardIgnoredChanges();
+    // Clean sources
+    await CleanReferences.run(["--type", "all"]);
+
     // display current changes to commit
     return gitHasLocalUpdates();
+  }
+
+  // Discard ignored changes from retrofitIgnoredFiles
+  async discardIgnoredChanges() {
+    const config = await getConfig("branch");
+    const ignoredFiles = config.retrofitIgnoredFiles || [];
+    if (ignoredFiles.length > 0) {
+      uxLog(this, c.cyan(`Discarding ignored changes from .sfdx-hardis.yml ${c.bold("retrofitIgnoredFiles")} property...`));
+      for (const ignoredFile of ignoredFiles) {
+        // Reset file state
+        await git().checkout(["--", ignoredFile]);
+      }
+    }
   }
 }
