@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.84.0] 2022-04-27
+
+- Update deployTips: improve unknown custom field message
+- New command sfdx hardis:doc:extract:permsetgroups to generate permission set groups documentation
+
 ## [2.83.6] 2022-04-26
 
 - Fix hardis:work:save who sometimes forgot to ask to push commits
