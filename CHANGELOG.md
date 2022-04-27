@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.85.1] 2022-04-27
+
+- Enhance sfdx hardis:org:retrieve:sources:retrofit command + JSON schema updates
+
 ## [2.85.0] 2022-04-27
 
 - Enhance sfdx hardis:org:retrieve:sources:retrofit command

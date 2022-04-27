@@ -627,6 +627,14 @@
         }
       }
     },
+    "productionBranch": {
+      "$id": "#/properties/productionBranch",
+      "default": "",
+      "description": "Name of the git branch corresponding to production environment",
+      "examples": ["master", "main", "production"],
+      "title": "Production branch name",
+      "type": "string"
+    },
     "projectName": {
       "$id": "#/properties/projectName",
       "default": "",
@@ -634,6 +642,29 @@
       "examples": ["MyClientMyProject", "GoogleGmail", "AppleIWatch"],
       "title": "Project Name",
       "type": "string"
+    },
+    "retrofitBranch": {
+      "$id": "#/properties/retrofitBranch",
+      "default": "",
+      "description": "Name of the git branch where retrofit merge requests targets to",
+      "examples": ["preprod", "dev", "maintenance"],
+      "title": "Retrofit branch name",
+      "type": "string"
+    },
+    "retrofitIgnoredFiles": {
+      "$id": "#/properties/retrofitIgnoredFiles",
+      "description": "When calling hardis:org:retrieve:sources:retrofit, list of files to ignore (discard just after retrieve)",
+      "examples": [
+        [
+          "force-app/main/default/applications/MyAppIWantToManageInProduction.app-meta.xml",
+          "force-app/main/default/flexipages/MyFlexipageWithDashboards.flexipage-meta.xml"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Retrofit ignored files",
+      "type": "array"
     },
     "sfdmuCanModify": {
       "$id": "#/properties/sfdmuCanModify",
