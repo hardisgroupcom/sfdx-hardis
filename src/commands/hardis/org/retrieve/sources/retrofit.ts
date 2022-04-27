@@ -50,7 +50,7 @@ export default class Retrofit extends SfdxCommand {
 
   - \`CI_SOURCES_TO_RETROFIT\`: env variable (can be defined in CI context)
   - \`sourcesToRetrofit\` property in \`.sfdx-hardis.yml\`
-  - Default list:\n  - ${Retrofit.DEFAULT_SOURCES_TO_RETROFIT.join("\n  - ")}
+  - Default list:\n\n    - ${Retrofit.DEFAULT_SOURCES_TO_RETROFIT.join("\n    - ")}
   `;
 
   public static examples = [
@@ -79,7 +79,8 @@ export default class Retrofit extends SfdxCommand {
       description: "Defines if we send merge request options to git push arguments",
     }),
     productionbranch: flags.string({
-      description: "Name of the git branch corresponding to the org we want to perform the retrofit on.\nCan be defined in productionBranch property in .sfdx-hardis.yml",
+      description:
+        "Name of the git branch corresponding to the org we want to perform the retrofit on.\nCan be defined in productionBranch property in .sfdx-hardis.yml",
     }),
     retrofittargetbranch: flags.string({
       description: "Name of branch the merge request will have as target\nCan be defined in retrofitBranch property in .sfdx-hardis.yml",

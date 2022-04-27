@@ -195,7 +195,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-k <string>] [-m <string>] [-o] [-r <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesdx--f-string--t-string--k-string--m-string--o--r-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:dx2 [-x <string>] [-t <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesdx2--x-string--t-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [-r <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesmetadata--f-string--p-string--r-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
-* [`sfdx hardis:org:retrieve:sources:retrofit [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesretrofit--d---websocket-string--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:org:retrieve:sources:retrofit [--commit] [--commitmode updated|all] [--push] [--pushmode default|mergerequest] [--productionbranch <string>] [--retrofittargetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgretrievesourcesretrofit---commit---commitmode-updatedall---push---pushmode-defaultmergerequest---productionbranch-string---retrofittargetbranch-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:select [-h] [-s] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgselect--h--s--d---websocket-string---skipauth---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgtestapex--l-notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:user:activateinvalid [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorguseractivateinvalid--p-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -404,7 +404,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 0 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -1256,14 +1256,16 @@ EXAMPLE
 
 _See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.84.0/lib/commands/hardis/org/retrieve/sources/metadata.js)_
 
-## `sfdx hardis:org:retrieve:sources:retrofit [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+## `sfdx hardis:org:retrieve:sources:retrofit [--commit] [--commitmode updated|all] [--push] [--pushmode default|mergerequest] [--productionbranch <string>] [--retrofittargetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
 Retrieve changes from org link to a ref branch not present in sources
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:retrofit [-d] [--websocket <string>] [-u <string>] [--apiversion <string>] [--json] 
-  [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+  $ sfdx hardis:org:retrieve:sources:retrofit [--commit] [--commitmode updated|all] [--push] [--pushmode 
+  default|mergerequest] [--productionbranch <string>] [--retrofittargetbranch <string>] [-d] [--websocket <string>] 
+  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
@@ -1274,10 +1276,38 @@ OPTIONS
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
 
+  --commit                                                                          If true, a commit will be performed
+                                                                                    after the retrofit
+
+  --commitmode=(updated|all)                                                        [default: updated] Defines if we
+                                                                                    commit all retrieved updates, or all
+                                                                                    updates including creations
+
   --json                                                                            format output as json
 
   --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
                                                                                     this command invocation
+
+  --productionbranch=productionbranch                                               Name of the git branch corresponding
+                                                                                    to the org we want to perform the
+                                                                                    retrofit on.
+                                                                                    Can be defined in productionBranch
+                                                                                    property in .sfdx-hardis.yml
+
+  --push                                                                            If true, a push will be performed
+                                                                                    after the retrofit
+
+  --pushmode=(default|mergerequest)                                                 [default: default] Defines if we
+                                                                                    send merge request options to git
+                                                                                    push arguments
+
+  --retrofittargetbranch=retrofittargetbranch                                       Name of branch the merge request
+                                                                                    will have as target
+                                                                                    Can be defined in retrofitBranch
+                                                                                    property in .sfdx-hardis.yml
+
+  --skipauth                                                                        Skip authentication check when a
+                                                                                    default username is required
 
   --websocket=websocket                                                             Websocket host:port for VsCode SFDX
                                                                                     Hardis UI integration
@@ -1292,31 +1322,34 @@ DESCRIPTION
      - `CI_SOURCES_TO_RETROFIT`: env variable (can be defined in CI context)
      - `sourcesToRetrofit` property in `.sfdx-hardis.yml`
      - Default list:
-     - CompactLayout
-     - CustomApplication
-     - CustomField
-     - CustomLabel
-     - CustomLabels
-     - CustomMetadata
-     - CustomObject
-     - CustomObjectTranslation
-     - CustomTab
-     - DuplicateRule
-     - EmailTemplate
-     - FlexiPage
-     - GlobalValueSet
-     - Layout
-     - ListView
-     - MatchingRules
-     - PermissionSet
-     - RecordType
-     - StandardValueSet
-     - Translation
-     - Translations
-     - ValidationRule
 
-EXAMPLE
+       - CompactLayout
+       - CustomApplication
+       - CustomField
+       - CustomLabel
+       - CustomLabels
+       - CustomMetadata
+       - CustomObject
+       - CustomObjectTranslation
+       - CustomTab
+       - DuplicateRule
+       - EmailTemplate
+       - FlexiPage
+       - GlobalValueSet
+       - Layout
+       - ListView
+       - MatchingRules
+       - PermissionSet
+       - RecordType
+       - StandardValueSet
+       - Translations
+       - ValidationRule
+
+EXAMPLES
   $ sfdx hardis:org:retrieve:sources:retrofit
+  sfdx hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated
+  sfdx hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode 
+  updated --push --pushmode mergerequest
 ```
 
 _See code: [lib/commands/hardis/org/retrieve/sources/retrofit.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v2.84.0/lib/commands/hardis/org/retrieve/sources/retrofit.js)_
@@ -2970,7 +3003,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   -x, --manifest=manifest                                                           flagsLong.manifest
 
@@ -3018,7 +3051,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command

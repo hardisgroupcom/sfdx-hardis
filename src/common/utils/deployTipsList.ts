@@ -214,7 +214,7 @@ Example of XML to remove:
   <fields>SOLUTION.STATUS</fields>
   <fields>CORE.USERS.ALIAS</fields>
   <relatedList>RelatedSolutionList</relatedList>
-  </relatedLists>
+</relatedLists>
 `,
     },
     {
