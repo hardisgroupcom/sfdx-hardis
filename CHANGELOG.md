@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.85.0] 2022-04-27
+
+- Enhance sfdx hardis:org:retrieve:sources:retrofit command
+- Ad deployment tip: Invalid field in related list
+
 ## [2.84.0] 2022-04-27
 
 - Update deployTips: improve unknown custom field message
