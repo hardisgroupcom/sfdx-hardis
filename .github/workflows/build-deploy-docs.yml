@@ -14,7 +14,7 @@ jobs:
       # Build doc with sfdx-hardis
       - uses: actions/setup-node@v1
         with:
-          node-version: "12.x"
+          node-version: "14.x"
       - run: yarn
       - run: yarn prepack
       - run: npm i sfdx-cli -g
