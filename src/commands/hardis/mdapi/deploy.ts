@@ -8,6 +8,8 @@ const xorFlags = ["zipfile", "validateddeployrequestid", "deploydir"];
 export class Deploy extends SfdxCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:mdapi:deploy that displays tips to solve deployment errors.
 
+[![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
+
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_deploy)
 `;
   public static readonly examples = [];

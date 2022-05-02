@@ -18,7 +18,9 @@ export default class FixListViewMine extends SfdxCommand {
   public static title = "Fix listviews with ";
 
   public static description = `Fix listviews whose scope Mine has been replaced by Everything
-  
+
+[![Invalid scope:Mine, not allowed ? Deploy your ListViews anyway !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-scope-mine.jpg)](https://nicolas.vuillamy.fr/invalid-scope-mine-not-allowed-deploy-your-listviews-anyway-443aceca8ac7)
+
 List of ListViews can be:
 
 - read from .sfdx-hardis.yml file in property **listViewsToSetToMine**

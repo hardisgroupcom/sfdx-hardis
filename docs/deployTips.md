@@ -14,6 +14,17 @@ Example:
 
 ![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)
 
+## Allow deployment with pending Apex Jobs
+
+- `You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup.`
+
+**Resolution tip**
+
+```shell
+Go to target org, in Setup -> Deployment Settings -> Activate option "Allow deployments of components when corresponding Apex jobs are pending or in progress."
+
+```
+
 ## Can not change field type to a formula field
 
 - `Error (.*) Cannot update a field from a Formula to something else`
@@ -67,14 +78,16 @@ You need to manually delete record type {1} in target org
 
 ## Can not find folder
 
-- `Cannot find folder`
+- `Error (.*) Cannot find folder:(.*)`
 
 **Resolution tip**
 
 ```shell
-A folder is probably missing from project.
-- If the folder is existing in sources, add it in related package.xml
-- If the folder is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders -u YOURSOURCEORG
+Folder {2} is missing.
+- If folder {2} is existing in sources, add it in related package.xml
+- If folder {2} is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders to retrieve it
+- If both previous solutions did not work, go create manually folder {2} in target org
+
 ```
 
 ## Can not find user
