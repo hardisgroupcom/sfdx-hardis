@@ -1,6 +1,13 @@
 export function getAllTips() {
   return [
     {
+      name: "allow-deployments-apex-jobs",
+      label: "Allow deployment with pending Apex Jobs",
+      expressionString: ["You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup."],
+      tip: `Go to target org, in Setup -> Deployment Settings -> Activate option "Allow deployments of components when corresponding Apex jobs are pending or in progress."
+`,
+    },
+    {
       name: "can-not-change-to-formula-field",
       label: "Can not change field type to a formula field",
       expressionRegex: [/Error (.*) Cannot update a field from a Formula to something else/gm],
@@ -39,11 +46,12 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
     {
       name: "can-not-find-folder",
       label: "Can not find folder",
-      context: "destructiveChange",
-      expressionString: ["Cannot find folder"],
-      tip: `A folder is probably missing from project.
-- If the folder is existing in sources, add it in related package.xml
-- If the folder is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders -u YOURSOURCEORG`,
+      expressionRegex: [/Error (.*) Cannot find folder:(.*)/gm],
+      tip: `Folder {2} is missing.
+- If folder {2} is existing in sources, add it in related package.xml
+- If folder {2} is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders to retrieve it
+- If both previous solutions did not work, go create manually folder {2} in target org
+`,
     },
     {
       name: "can-not-find-user",

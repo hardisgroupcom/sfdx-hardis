@@ -23,14 +23,6 @@ It will allow you to:
 
 [**Please see the full list of commands in Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis)
 
-**sfdx-hardis** partially relies on the following SFDX Open-Source packages
-
-- [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
-- [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
-- [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
-- [SfPowerkit](https://github.com/Accenture/sfpowerkit)
-- [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
-
 **sfdx-hardis** commands are also available with UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 ## Installation
@@ -143,11 +135,13 @@ Here are some articles with examples of use of [sfdx-hardis](https://hardisgroup
 
 - English
 
+[![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-error.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 [![Handle Salesforce API versions Deprecation like a pro](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deprecated-api.jpg)](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
 [![How to freeze / unfreeze users during a Salesforce deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
 [![Reactivate all the sandbox users with .invalid emails in 3 clicks](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-email.jpg)](https://nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
+[![Invalid scope:Mine, not allowed ? Deploy your ListViews anyway !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-scope-mine.jpg)](https://nicolas.vuillamy.fr/invalid-scope-mine-not-allowed-deploy-your-listviews-anyway-443aceca8ac7)
 
 - French
   - [Versions d'API Salesforce décommissionnées: Que faire ?](https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/)
@@ -168,6 +162,16 @@ Anyone is welcome to contribute to this sfdx-hardis
   - Run `sfdx plugins:link` to link the local sfdx-hardis to SFDX CLI
   - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
 - Debug commands using `NODE_OPTIONS=--inspect-brk sfdx hardis:somecommand -someparameter somevalue`
+
+## Dependencies
+
+**sfdx-hardis** partially relies on the following SFDX Open-Source packages
+
+- [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
+- [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
+- [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
+- [SfPowerkit](https://github.com/Accenture/sfpowerkit)
+- [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 
 ## Commands
 
@@ -404,7 +408,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 0 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -3022,7 +3026,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   -x, --manifest=manifest                                                           flagsLong.manifest
 
@@ -3070,7 +3074,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command

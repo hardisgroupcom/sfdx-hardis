@@ -438,7 +438,7 @@ export default class Toml2Csv extends SfdxCommand {
           // Add cell in line
           linesSfArray.push(colVal); // Add quotes if value contains output file separator
         } else {
-          this.triggerError(c.red(`You must have a correspondance in input cols for output col ${colDefinition}`), false);
+          this.triggerError(c.red(`You must have a correspondance in input cols for output col ${JSON.stringify(colDefinition)}`), false);
         }
       }
       // Col definition is a hardcoded value
