@@ -431,6 +431,10 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
+  [![Assisted solving of Salesforce deployments 
+  errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
+  s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
+
   [See documentation of Salesforce 
   command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
   rce_mdapi.htm#cli_reference_force_mdapi_deploy)
@@ -929,6 +933,10 @@ OPTIONS
       Websocket host:port for VsCode SFDX Hardis UI integration
 
 DESCRIPTION
+  [![Invalid scope:Mine, not allowed ? Deploy your ListViews anyway 
+  !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-scope-mine.jpg)](https://
+  nicolas.vuillamy.fr/invalid-scope-mine-not-allowed-deploy-your-listviews-anyway-443aceca8ac7)
+
   List of ListViews can be:
 
   - read from .sfdx-hardis.yml file in property **listViewsToSetToMine**
@@ -1886,7 +1894,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: D:\git\sfdx-hardis1703]
+  -p, --path=path                                                                   [default: C:\git\pro\sfdx-hardis2]
                                                                                     Root path to check
 
   --json                                                                            format output as json
@@ -2552,7 +2560,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: D:\git\sfdx-hardis1703]
+  -p, --path=path                                                                   [default: C:\git\pro\sfdx-hardis2]
                                                                                     Root folder
 
   --json                                                                            format output as json
@@ -3051,6 +3059,10 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
+  [![Assisted solving of Salesforce deployments 
+  errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
+  s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
+
   [See documentation of Salesforce 
   command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
   rce_source.htm#cli_reference_force_source_deploy)
@@ -3091,6 +3103,10 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
+  [![Assisted solving of Salesforce deployments 
+  errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
+  s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
+
   [See documentation of Salesforce 
   command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
   rce_source.htm#cli_reference_force_source_push)
