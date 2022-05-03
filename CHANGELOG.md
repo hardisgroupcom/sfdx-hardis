@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.86.0] 2022-05-03
+
+- New wrapper command: sfdx hardis:source:retrieve
+- Quickfix toml2csv
+
 ## [2.85.2] 2022-05-02
 
 - Fix toml2csv error log

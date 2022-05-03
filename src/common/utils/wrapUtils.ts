@@ -4,17 +4,24 @@ import * as c from "chalk";
 import { execCommand, uxLog } from ".";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
-export async function wrapDeployCommand(commandBase: string, argv: string[], commandThis: SfdxCommand, debug = false): Promise<AnyJson> {
+export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfdxCommand, debug = false): Promise<AnyJson> {
   const endArgs = [...argv].splice(3);
   // Remove sfdx-hardis arguments
-  if (endArgs.indexOf("--debug") > -1) {
-    endArgs.splice(endArgs.indexOf("debug"), 1);
+  const debugPos = endArgs.indexOf("--debug");
+  if (debugPos > -1) {
+    endArgs.splice(debugPos, 1);
   }
-  if (endArgs.indexOf("-d") > -1) {
-    endArgs.splice(endArgs.indexOf("-d"), 1);
+  const dPos = endArgs.indexOf("-d");
+  if (dPos > -1) {
+    endArgs.splice(dPos, 1);
   }
-  if (endArgs.indexOf("--websocket") > -1) {
-    endArgs.splice(endArgs.indexOf("websocket"), 2);
+  const websocketPos = endArgs.indexOf("--websocket");
+  if (websocketPos > -1) {
+    endArgs.splice(websocketPos, 2);
+  }
+  const skipAuthPos = endArgs.indexOf("--skipauth");
+  if (skipAuthPos > -1) {
+    endArgs.splice(skipAuthPos, 1);
   }
   // Build wrapped sfdx command
   const commandsArgs = endArgs.join(" ");
@@ -30,7 +37,7 @@ export async function wrapDeployCommand(commandBase: string, argv: string[], com
   } catch (e) {
     // Add deployment tips in error logs
     const { errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
-    uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
+    uxLog(commandThis, c.red(c.bold("Sadly there has been error(s)")));
     uxLog(commandThis, c.red("\n" + errLog));
     deployRes = errLog;
   }

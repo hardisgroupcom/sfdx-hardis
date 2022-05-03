@@ -1,7 +1,7 @@
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
-import { wrapDeployCommand } from "../../../common/utils/wrapUtils";
+import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfdxCommand {
@@ -90,6 +90,6 @@ export class Deploy extends SfdxCommand {
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
-    return await wrapDeployCommand("sfdx force:source:deploy", process.argv, this, this.flags.debug);
+    return await wrapSfdxCoreCommand("sfdx force:source:deploy", process.argv, this, this.flags.debug);
   }
 }
