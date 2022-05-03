@@ -82,7 +82,7 @@ export class SourceRetrieve extends SfdxCommand {
       args.push(...["-m", `"${metadataArg}"`]);
     }
     // Manage user selection for org
-    if (!isCI && !this.flags.targetusername ) {
+    if (!isCI && !this.flags.targetusername) {
       let orgUsername = this.org.getUsername();
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
       args.push(...["--targetusername", `"${orgUsername}"`]);
