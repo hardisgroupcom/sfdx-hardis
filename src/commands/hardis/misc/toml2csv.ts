@@ -415,7 +415,7 @@ export default class Toml2Csv extends SfdxCommand {
       // Col definition is the position or the name of a column in input file
       if (colDefinition.inputColKey || colDefinition.inputColKey === 0) {
         if (inputCols[colDefinition.inputColKey] || inputCols[colDefinition.inputColKey] === "" || inputCols[colDefinition.inputColKey] === 0) {
-          let colVal: string = inputCols[colDefinition.inputColKey] || "";
+          let colVal: string = inputCols[colDefinition.inputColKey];
           // Transform if necessary
           if (colDefinition.transfo) {
             colVal = this.manageTransformation(colDefinition.transfo, colVal, colDefinition);
@@ -525,7 +525,7 @@ export default class Toml2Csv extends SfdxCommand {
   // Manage transco value
   getTranscoValue(transfo: any, colVal: string, colDefinition: any) {
     const enumValues = this.getTranscoValues(transfo);
-    const transcodedValue = enumValues[colVal] || transfo.default || "";
+    const transcodedValue = enumValues[colVal] !== null ? enumValues[colVal] : transfo.default || "";
     if (transcodedValue === "" && colVal !== "") {
       this.triggerError(
         c.red(

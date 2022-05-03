@@ -1,7 +1,7 @@
 import { FlagsConfig, flags, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
-import { wrapDeployCommand } from "../../../common/utils/wrapUtils";
+import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
 export default class Push extends SfdxCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.
@@ -40,6 +40,6 @@ export default class Push extends SfdxCommand {
   protected static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
-    return await wrapDeployCommand("sfdx force:source:push", process.argv, this, this.flags.debug);
+    return await wrapSfdxCoreCommand("sfdx force:source:push", process.argv, this, this.flags.debug);
   }
 }

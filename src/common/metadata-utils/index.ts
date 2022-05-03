@@ -3,9 +3,12 @@ import * as c from "chalk";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
+import * as sortArray from "sort-array";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
 import { buildOrgManifest } from "../utils/deployUtils";
+import { prompts } from "../utils/prompts";
+import { listMetadataTypes } from "./metadataList";
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -577,6 +580,22 @@ class MetadataUtils {
       });
       await fs.unlink(path.join(metadataFolder, "unpackaged.zip"));
     }
+  }
+
+  // Prompt user to select a list of metadata types
+  public static async promptMetadataTypes() {
+    const metadataTypes = sortArray(listMetadataTypes(), { by: ["xmlName"], order: ["asc"] });
+    const metadataResp = await prompts({
+      type: "multiselect",
+      message: c.cyanBright("Please select metadata types"),
+      choices: metadataTypes.map((metadataType: any) => {
+        return {
+          title: c.cyan(`${metadataType.xmlName || "no xml name"} (${metadataType.directoryName || "no dir name"})`),
+          value: metadataType,
+        };
+      }),
+    });
+    return metadataResp.value;
   }
 }
 

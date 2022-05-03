@@ -2,7 +2,7 @@
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
-import { wrapDeployCommand } from "../../../common/utils/wrapUtils";
+import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
 const xorFlags = ["zipfile", "validateddeployrequestid", "deploydir"];
 export class Deploy extends SfdxCommand {
@@ -86,6 +86,6 @@ export class Deploy extends SfdxCommand {
   };
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
-    return await wrapDeployCommand("sfdx force:mdapi:deploy", process.argv, this, this.flags.debug);
+    return await wrapSfdxCoreCommand("sfdx force:mdapi:deploy", process.argv, this, this.flags.debug);
   }
 }
