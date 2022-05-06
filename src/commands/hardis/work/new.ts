@@ -8,6 +8,7 @@ import { checkGitClean, ensureGitBranch, execCommand, execSfdxJson, git, gitChec
 import { selectTargetBranch } from "../../../common/utils/gitUtils";
 import { promptOrg } from "../../../common/utils/orgUtils";
 import { prompts } from "../../../common/utils/prompts";
+import { WebSocketClient } from "../../../common/websocketClient";
 import { getConfig, setConfig } from "../../../config";
 import SandboxCreate from "../org/create";
 import ScratchCreate from "../scratch/create";
@@ -179,19 +180,28 @@ Under the hood, it can:
   async selectOrCreateScratchOrg(branchName) {
     const hubOrgUsername = this?.hubOrg?.getUsername();
     const scratchOrgList = await MetadataUtils.listLocalOrgs("scratch", { devHubUsername: hubOrgUsername });
+    const currentOrg = await MetadataUtils.getCurrentOrg();
+    const baseChoices = [
+      {
+        title: c.yellow("Create new scratch org"),
+        value: "newScratchOrg",
+        description: "This will generate a new scratch org, and in a few minutes you'll be ready to work",
+      },
+    ];
+    if (currentOrg) {
+      baseChoices.push({
+        title: c.yellow(`Reuse current org`),
+        value: currentOrg,
+        description: `This will reuse current org ${currentOrg.instanceUrl}. Beware of conflicts if others merged merge requests :)`,
+      });
+    }
     const scratchResponse = await prompts({
       type: "select",
       name: "value",
       message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
       initial: 0,
       choices: [
-        ...[
-          {
-            title: c.yellow("Create new scratch org"),
-            value: "newScratchOrg",
-            description: "This will generate a new scratch org, and in a few minutes you'll be ready to work",
-          },
-        ],
+        ...baseChoices,
         ...scratchOrgList.map((scratchOrg: any) => {
           return {
             title: `Reuse scratch org ${c.yellow(scratchOrg.alias)}`,
@@ -211,6 +221,7 @@ Under the hood, it can:
         throw new SfdxError("Unable to create scratch org");
       }
     } else {
+      // Set selected org as default org
       await execCommand(`sfdx config:set defaultusername=${scratchResponse.value.username}`, this, {
         output: true,
         fail: true,
@@ -219,11 +230,14 @@ Under the hood, it can:
         this,
         c.cyan(`Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(scratchResponse.value.username)}`)
       );
+      // Open selected org
       await execSfdxJson("sfdx force:org:open", this, {
         fail: true,
         output: false,
         debug: this.debugMode,
       });
+      // Trigger a status refresh on VsCode WebSocket Client
+      WebSocketClient.sendMessage({ event: "refreshStatus" });
     }
   }
 
