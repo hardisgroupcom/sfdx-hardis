@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.86.1] 2022-05-06
+
+- hardis:work:new : Propose to reuse current scratch org when it is not in the local list
+- hardis:work:save : Propose to push git branch on server when it is still untracked
+
 ## [2.86.0] 2022-05-03
 
 - New wrapper command: sfdx hardis:source:retrieve
