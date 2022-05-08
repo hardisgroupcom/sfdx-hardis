@@ -25,6 +25,7 @@ import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { WebSocketClient } from "../../../common/websocketClient";
 import { CONSTANTS, getConfig, setConfig } from "../../../config";
 import CleanReferences from "../project/clean/references";
+import CleanXml from "../project/clean/xml";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -363,9 +364,13 @@ autoRemoveUserPermissions:
     if (!this.noClean) {
       const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
       uxLog(this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
+      // References cleaning
       uxLog(this, c.cyan("Cleaning sfdx project from obsolete references..."));
-      // await execCommand("sfdx hardis:project:clean:references --type all", this, { output: true, fail: true, debug: this.debugMode });
+      // User defined cleaning
       await CleanReferences.run(["--type", "all"]);
+      uxLog(this, c.cyan("Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns..."));
+      await CleanXml.run([]);
+      // Manage git after cleaning
       const gitStatusAfterClean = await git().status();
       uxLog(this, JSON.stringify(gitStatusAfterClean, null, 2));
       const cleanedFiles = gitStatusAfterClean.files

@@ -9,6 +9,7 @@ import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog, isCI 
 import { CleanOptions } from "simple-git";
 import CleanReferences from "../../../project/clean/references";
 import SaveTask from "../../../work/save";
+import CleanXml from "../../../project/clean/xml";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -161,17 +162,17 @@ export default class Retrofit extends SfdxCommand {
   async processRetrofit() {
     const config = await getConfig("branch");
     this.productionBranch = this.productionBranch || config.productionBranch || process.env.CI_COMMIT_REF_NAME || "master";
-    const retrofitBranch = `retrofit/${this.productionBranch}`;
-    this.retrofitTargetBranch = this.retrofitTargetBranch || config.retrofitTargetBranch || "retrofitTargetBranch MUST BE SET";
+    const retrofitWorkBranch = `retrofit/${this.productionBranch}`;
+    this.retrofitTargetBranch = this.retrofitTargetBranch || config.retrofitBranch || "retrofitTargetBranch MUST BE SET";
 
     await git().fetch(["--prune"]);
     const branches = await git().branch();
-    if (branches.all.find((branch) => branch.includes(retrofitBranch))) {
-      uxLog(this, c.cyan(`Checkout to existing branch ${retrofitBranch}`));
-      await git().checkout(retrofitBranch, ["--force"]);
+    if (branches.all.find((branch) => branch.includes(retrofitWorkBranch))) {
+      uxLog(this, c.cyan(`Checkout to existing branch ${retrofitWorkBranch}`));
+      await git().checkout(retrofitWorkBranch, ["--force"]);
     } else {
-      uxLog(this, c.cyan(`Create a new branch ${retrofitBranch} from ${this.productionBranch}`));
-      await git().checkoutBranch(retrofitBranch, `origin/${this.productionBranch}`);
+      uxLog(this, c.cyan(`Create a new branch ${retrofitWorkBranch} from ${this.productionBranch}`));
+      await git().checkoutBranch(retrofitWorkBranch, `origin/${this.productionBranch}`);
     }
 
     const currentHash = await git().revparse(["HEAD"]);
@@ -186,7 +187,7 @@ export default class Retrofit extends SfdxCommand {
         // Update package.xml files and clean if necessary
         await SaveTask.run(["--targetbranch", this.retrofitTargetBranch, "--auto"]);
         if (this.push) {
-          await this.pushChanges(retrofitBranch);
+          await this.pushChanges(retrofitWorkBranch);
         }
       }
     } else {
@@ -194,7 +195,7 @@ export default class Retrofit extends SfdxCommand {
       // Delete locally created branch if we are within CI process
       if (isCI) {
         uxLog(this, c.yellow("Deleting local retrofit branch..."));
-        await git().branch([`-D ${retrofitBranch}`]);
+        await git().branch([`-D ${retrofitWorkBranch}`]);
       }
     }
   }
@@ -220,7 +221,7 @@ export default class Retrofit extends SfdxCommand {
   }
 
   // Push changes and add merge request options if requested
-  async pushChanges(targetBranch: string) {
+  async pushChanges(retrofitWorkBranch: string) {
     const origin = `https://root:${process.env.CI_TOKEN}@${process.env.CI_SERVER_HOST}/${process.env.CI_PROJECT_PATH}.git`;
     const pushOptions = [];
     if (this.pushMode === "mergerequest") {
@@ -234,7 +235,7 @@ export default class Retrofit extends SfdxCommand {
       pushOptions.push(...mrOptions);
     }
 
-    const pushResult = await execCommand(`git push ${origin} ${targetBranch} ${pushOptions.join(" ")}`, this, {
+    const pushResult = await execCommand(`git push ${origin} ${retrofitWorkBranch} ${pushOptions.join(" ")}`, this, {
       fail: true,
       debug: this.debugMode,
       output: true,
@@ -264,6 +265,7 @@ export default class Retrofit extends SfdxCommand {
     await this.discardIgnoredChanges();
     // Clean sources
     await CleanReferences.run(["--type", "all"]);
+    await CleanXml.run([]);
 
     // display current changes to commit
     return gitHasLocalUpdates();

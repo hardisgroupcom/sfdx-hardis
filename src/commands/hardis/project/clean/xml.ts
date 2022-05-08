@@ -120,6 +120,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
           const nodes = xpathSelect(xpathItem, doc);
           for (const node of nodes) {
             await this.removeXPath(xpathItem, doc, node);
+            uxLog(this,c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
             updated = true;
             counter++;
           }
