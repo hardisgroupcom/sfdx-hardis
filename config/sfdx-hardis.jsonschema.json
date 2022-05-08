@@ -62,6 +62,50 @@
       "title": "Available target branches",
       "type": "array"
     },
+    "cleanXmlPatterns": {
+      "$id": "#/properties/cleanXmlPatterns",
+      "examples": [
+        [
+          {
+            "globPattern": "/**/*.flexipage-meta.xml",
+            "xpaths": ["//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"]
+          },
+          {
+            "globPattern": "/**/*.layout-meta.xml",
+            "xpaths": ["//ns:relatedLists//ns:relatedList[contains(text(),'RelatedSolutionList')]"]
+          }
+        ]
+      ],
+      "description": "List of patterns to automatically clean XML files",
+      "items": {
+        "$id": "#/properties/cleanXmlPatterns/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Clean XML pattern and xpaths",
+        "properties": {
+          "globPattern": {
+            "$id": "#/properties/cleanXmlPatterns/items/properties/globPattern",
+            "description": "Glob pattern to identify XML files to clean",
+            "examples": ["/**/*.flexipage-meta.xml"],
+            "title": "Glob pattern",
+            "type": "string"
+          },
+          "xpaths": {
+            "$id": "#/properties/cleanXmlPatterns/items/properties/xpaths",
+            "description": "XPaths to identify elements to remove",
+            "examples": [["//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"]],
+            "title": "XPath list",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["globPattern", "xpaths"]
+      },
+      "title": "Clean XML Patterns",
+      "type": "array"
+    },
     "customCommands": {
       "$id": "#/properties/customCommands",
       "description": "List of custom commands for VsCode SFDX-Hardis extension",

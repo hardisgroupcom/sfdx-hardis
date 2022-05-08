@@ -27,6 +27,11 @@ export async function writeXmlFile(xmlFile: string, xmlObject: any) {
   await fs.writeFile(xmlFile, updatedFileContent);
 }
 
+export async function writeXmlFileFormatted(xmlFile: string, xmlString: string) {
+  const xmlObject = await xml2js.parseStringPromise(xmlString);
+  await writeXmlFile(xmlFile, xmlObject);
+}
+
 export async function parsePackageXmlFile(packageXmlFile: string) {
   const targetOrgPackage = await parseXmlFile(packageXmlFile);
   const targetOrgContent: any = {};
