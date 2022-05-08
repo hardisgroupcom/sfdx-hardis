@@ -7,6 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.87.0] 2022-05-08
 
 - New command **hardis:project:clean:xml** allowing to automate the manual cleaning in the XML files using glob pattern and xPath
+- Reorganize work:save command code + add auto mode
+- Call Save command from Retrofit command to update package.xml files and make sure sources have been cleaned
 
 ## [2.86.1] 2022-05-06
 

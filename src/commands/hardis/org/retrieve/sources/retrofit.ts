@@ -8,6 +8,7 @@ import * as c from "chalk";
 import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog, isCI } from "../../../../../common/utils";
 import { CleanOptions } from "simple-git";
 import CleanReferences from "../../../project/clean/references";
+import SaveTask from "../../../work/save";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -161,6 +162,7 @@ export default class Retrofit extends SfdxCommand {
     const config = await getConfig("branch");
     this.productionBranch = this.productionBranch || config.productionBranch || process.env.CI_COMMIT_REF_NAME || "master";
     const retrofitBranch = `retrofit/${this.productionBranch}`;
+    this.retrofitTargetBranch = this.retrofitTargetBranch || config.retrofitTargetBranch || "retrofitTargetBranch MUST BE SET";
 
     await git().fetch(["--prune"]);
     const branches = await git().branch();
@@ -181,6 +183,8 @@ export default class Retrofit extends SfdxCommand {
       // Commit and push if requested
       if (this.commit) {
         await this.commitChanges();
+        // Update package.xml files and clean if necessary
+        await SaveTask.run(["--targetbranch", this.retrofitTargetBranch, "--auto"]);
         if (this.push) {
           await this.pushChanges(retrofitBranch);
         }
@@ -220,8 +224,6 @@ export default class Retrofit extends SfdxCommand {
     const origin = `https://root:${process.env.CI_TOKEN}@${process.env.CI_SERVER_HOST}/${process.env.CI_PROJECT_PATH}.git`;
     const pushOptions = [];
     if (this.pushMode === "mergerequest") {
-      const config = await getConfig("branch");
-      this.retrofitTargetBranch = this.retrofitTargetBranch || config.retrofitTargetBranch || "retrofitTargetBranch MUST BE SET";
       const mrOptions = [
         "-o merge_request.create",
         `-o merge_request.target ${this.retrofitTargetBranch}`,
