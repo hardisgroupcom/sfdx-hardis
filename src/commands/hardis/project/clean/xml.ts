@@ -3,12 +3,12 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import * as fs from 'fs-extra';
+import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import * as xmldom from 'xmldom';
-import * as xpath from 'xpath';
+import * as xmldom from "xmldom";
+import * as xpath from "xpath";
 import { isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { writeXmlFileFormatted } from "../../../../common/utils/xmlUtils";
@@ -40,7 +40,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
 
   public static examples = [
     "$ sfdx hardis:project:clean:xml",
-    `$ sfdx hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"`
+    `$ sfdx hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"`,
   ];
 
   protected static flagsConfig = {
@@ -50,18 +50,18 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
       description: "Root folder",
     }),
     globpattern: flags.string({
-      char: 'p',
+      char: "p",
       description: "Glob pattern to find files to clean. Ex: /**/*.flexipage-meta.xml",
-      dependsOn: ["xpath"]
+      dependsOn: ["xpath"],
     }),
     xpath: flags.string({
-      char: 'x',
+      char: "x",
       description: "XPath to use to detect the elements to remove. Ex: //ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]",
-      dependsOn: ["globpattern"]
+      dependsOn: ["globpattern"],
     }),
     namespace: flags.string({
-      char: 'n',
-      default: 'http://soap.sforce.com/2006/04/metadata',
+      char: "n",
+      default: "http://soap.sforce.com/2006/04/metadata",
       description: "XML Namespace to use",
     }),
     debug: flags.boolean({
@@ -96,7 +96,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     this.folder = this.flags.folder || "./force-app";
     this.globPattern = this.flags.globpattern;
     this.xpath = this.flags.xpath;
-    this.namespace = this.flags.namespace || 'http://soap.sforce.com/2006/04/metadata';
+    this.namespace = this.flags.namespace || "http://soap.sforce.com/2006/04/metadata";
     this.debugMode = this.flags.debug || false;
 
     // Delete standard files when necessary
@@ -105,7 +105,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     const rootFolder = path.resolve(this.folder);
     const cleanXmlPatterns = await this.buildCleanXmlPatterns();
     let counter = 0;
-    const xpathSelect = xpath.useNamespaces({ "ns": this.namespace });
+    const xpathSelect = xpath.useNamespaces({ ns: this.namespace });
     // iterate on removePatterns
     for (const cleanXmlPattern of cleanXmlPatterns) {
       const findPattern = rootFolder + cleanXmlPattern.globPattern;
@@ -120,7 +120,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
           const nodes = xpathSelect(xpathItem, doc);
           for (const node of nodes) {
             await this.removeXPath(xpathItem, doc, node);
-            uxLog(this,c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
+            uxLog(this, c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
             updated = true;
             counter++;
           }
@@ -150,8 +150,9 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
       return [
         {
           globPattern: this.globPattern,
-          xpaths: [this.xpath]
-        }];
+          xpaths: [this.xpath],
+        },
+      ];
     }
     // Stored config
     uxLog(this, c.cyan(`Using configuration from property ${c.bold("cleanXmlPatterns")} in .sfdx-hardis.yml config file...`));
@@ -168,7 +169,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   }
 
   public findRemoveParentNodeName(xpathItem: string) {
-    const splits = xpathItem.split("//ns:").filter(str => str !== '');
+    const splits = xpathItem.split("//ns:").filter((str) => str !== "");
     if (splits[0]) {
       return splits[0];
     }
@@ -197,7 +198,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
       // prompt user
       const addConfigRes = await prompts({
         type: "confirm",
-        message: c.cyanBright(`Do you want to ALWAYS apply removal of xpath ${xpath} from files of pattern ${globPattern} ?`)
+        message: c.cyanBright(`Do you want to ALWAYS apply removal of xpath ${xpath} from files of pattern ${globPattern} ?`),
       });
       if (addConfigRes.value === true) {
         let updated = false;
@@ -214,7 +215,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
           // globPattern not existing yet: add it with single xpath
           cleanXmlPatterns.push({
             globPattern: globPattern,
-            xpaths: [xpath]
+            xpaths: [xpath],
           });
         }
         // Update config with sorted new value

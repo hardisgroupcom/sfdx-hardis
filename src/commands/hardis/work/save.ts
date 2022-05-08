@@ -90,7 +90,7 @@ autoRemoveUserPermissions:
       description: "No user prompts (when called from CI for example)",
     }),
     targetbranch: flags.string({
-      description: 'Name of the Merge Request target branch. Will be guessed or prompted if not provided.',
+      description: "Name of the Merge Request target branch. Will be guessed or prompted if not provided.",
     }),
     debug: flags.boolean({
       char: "d",
@@ -121,7 +121,7 @@ autoRemoveUserPermissions:
   protected noPull = false;
   protected noGit = false;
   protected noClean = false;
-  protected auto = false ;
+  protected auto = false;
   protected gitUrl: string;
   protected currentBranch: string;
   protected targetBranch: string;
@@ -131,7 +131,7 @@ autoRemoveUserPermissions:
     this.noPull = this.flags.nopull || false;
     this.noGit = this.flags.nogit || false;
     this.noClean = this.flags.noclean || false;
-    this.auto = this.flags.auto || false ;
+    this.auto = this.flags.auto || false;
     this.targetBranch = this.flags.targetbranch || null;
     this.debugMode = this.flags.debug || false;
     const localBranch = await getCurrentGitBranch();
@@ -166,7 +166,10 @@ autoRemoveUserPermissions:
 
     // Merge request
     uxLog(this, c.cyan(`If your work is ${c.bold("completed")}, you can create a ${c.bold("merge request")}:`));
-    uxLog(this, c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + this.currentBranch + ", visit")}`));
+    uxLog(
+      this,
+      c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + this.currentBranch + ", visit")}`)
+    );
     uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`));
     // const remote = await git().listRemote();
     // const remoteMergeRequest = `${remote.replace('.git','-/merge_requests/new')}`;
@@ -193,7 +196,6 @@ autoRemoveUserPermissions:
     if (gitStatusInit.staged.length > 0) {
       await execCommand("git reset", this, { output: true, fail: true });
     }
-
   }
 
   private async ensureCommitIsReady() {
@@ -283,8 +285,9 @@ autoRemoveUserPermissions:
       c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`)
     );
     const tmpDir = await createTempDir();
-    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit ? toCommit.hash : masterBranchLatestCommit
-      } --output ${tmpDir}`;
+    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
+      toCommit ? toCommit.hash : masterBranchLatestCommit
+    } --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
       output: true,
       fail: false,
@@ -308,7 +311,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-        c.red(destructivePackageXmlDiffStr)
+          c.red(destructivePackageXmlDiffStr)
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +

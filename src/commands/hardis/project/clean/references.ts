@@ -104,7 +104,7 @@ export default class CleanReferences extends SfdxCommand {
     {
       value: "productrequest",
       title: "References to ProductRequest object",
-    }
+    },
   ];
 
   protected configFile: string;

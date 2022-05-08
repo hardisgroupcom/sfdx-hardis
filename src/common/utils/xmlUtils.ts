@@ -143,7 +143,8 @@ export async function removePackageXmlFilesContent(
         this,
         c.grey(
           c.italic(
-            `Found type ${c.bold(type.name)}, following elements has been ${removedOnly ? "removed" : "kept"}: ${typeMembers.length > 0 ? typeMembers.join(",") : "none"
+            `Found type ${c.bold(type.name)}, following elements has been ${removedOnly ? "removed" : "kept"}: ${
+              typeMembers.length > 0 ? typeMembers.join(",") : "none"
             }`
           )
         )

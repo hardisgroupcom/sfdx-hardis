@@ -5,14 +5,14 @@ import { isCI, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 
 export interface PromptsQuestion {
-  message: string,
-  type: 'select'|'multiselect'|'confirm'|'text'|'number',
-  name?: string,
-  choices?: Array<any>,
-  default?: any,
-  validate?: any,
-  initial?: any,
-  optionsPerPage?: number
+  message: string;
+  type: "select" | "multiselect" | "confirm" | "text" | "number";
+  name?: string;
+  choices?: Array<any>;
+  default?: any;
+  validate?: any;
+  initial?: any;
+  optionsPerPage?: number;
 }
 
 // Centralized prompts function
