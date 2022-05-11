@@ -5,7 +5,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import { execCommand, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
-import { getConfig } from "../../../../config";
+import { getConfig, getReportDirectory } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -19,7 +19,7 @@ export default class OrgTestApex extends SfdxCommand {
 
   public static description = `Run apex tests in Salesforce org
 
-If following configuration is defined, it will fail if apex coverage target is not reached:  
+If following configuration is defined, it will fail if apex coverage target is not reached:
 
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
@@ -66,12 +66,12 @@ If following configuration is defined, it will fail if apex coverage target is n
 
     this.configInfo = await getConfig("branch");
     /* jscpd:ignore-end */
-    await fs.ensureDir("./hardis-report");
+    const reportDir = await getReportDirectory();
     const testCommand =
       "sfdx force:apex:test:run" +
       " --codecoverage" +
       " --resultformat human" +
-      " --outputdir ./hardis-report" +
+      ` --outputdir ${reportDir}` +
       " --wait 60" +
       ` --testlevel ${testlevel}` +
       (check ? " --checkonly" : "") +
@@ -153,8 +153,9 @@ If following configuration is defined, it will fail if apex coverage target is n
       // Send notification if possible
       if (await canSendNotifications()) {
         let testResultStr;
-        if (fs.existsSync("./hardis-report/test-result.txt")) {
-          testResultStr = await fs.readFile("./hardis-report/test-result.txt", "utf8");
+        const reportDir = await getReportDirectory();
+        if (fs.existsSync(reportDir + "/test-result.txt")) {
+          testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
           testResultStr = testResultStr.split("=== Test Results")[0];
         }
         const currentGitBranch = await getCurrentGitBranch();

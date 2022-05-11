@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.87.2] 2022-05-11
+
+- Refactor report directory management
+
 ## [2.87.1] 2022-05-11
 
 - Fix monitoring default pipeline

@@ -165,3 +165,11 @@ export const checkConfig = async (options: any) => {
     }
   }
 };
+
+export async function getReportDirectory() {
+  const configProject = await getConfig("project");
+  const defaultReportDir = path.join(process.cwd(), "hardis-report");
+  const reportDir = configProject.reportDirectory || defaultReportDir;
+  await fs.ensureDir(reportDir);
+  return reportDir;
+}
