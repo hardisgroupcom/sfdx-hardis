@@ -1,6 +1,6 @@
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import { isCI, uxLog } from "../../common/utils";
+import { isCI, isMonitoringJob, uxLog } from "../../common/utils";
 import { prompts } from "../../common/utils/prompts";
 import { getConfig, setConfig } from "../../config";
 
@@ -17,20 +17,22 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
   if (!commandId.startsWith("hardis")) {
     return;
   }
+  const isMon = await isMonitoringJob();
+  if (!commandId.includes("monitoring") && !isMon) {
+    if (
+      commandId.startsWith("hardis:work:task:new") ||
+      commandId.startsWith("hardis:doc") ||
+      commandId.startsWith("hardis:scratch") ||
+      commandId.startsWith("hardis:org")
+    ) {
+      return;
+    }
+
+    if (!isCI && process.env.AUTO_UPDATE !== "true" && process.env.AUTO_UPDATE_CI_CONFIG !== "true") {
+      return;
+    }
+  }
   const config = await getConfig("user");
-  if (
-    commandId.startsWith("hardis:work:task:new") ||
-    commandId.startsWith("hardis:doc") ||
-    commandId.startsWith("hardis:scratch") ||
-    commandId.startsWith("hardis:org")
-  ) {
-    return;
-  }
-
-  if (!isCI && process.env.AUTO_UPDATE !== "true") {
-    return;
-  }
-
   // Manage .gitignore
   if (!config.skipUpdateGitIgnore === true) {
     const gitIgnoreFile = "./.gitignore";
