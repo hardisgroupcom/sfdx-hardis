@@ -14,7 +14,7 @@ const exec = util.promisify(child.exec);
 import { SfdxError } from "@salesforce/core";
 import * as ora from "ora";
 import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
-import { CONSTANTS, getConfig, setConfig } from "../../config";
+import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../config";
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
@@ -819,8 +819,9 @@ export async function generateReports(
     logFileName = "sfdx-hardis-" + commandThis.id.substr(commandThis.id.lastIndexOf(":") + 1);
   }
   const dateSuffix = new Date().toJSON().slice(0, 10);
-  const reportFile = path.resolve(`./hardis-report/${logFileName}-${dateSuffix}.csv`);
-  const reportFileExcel = path.resolve(`./hardis-report/${logFileName}-${dateSuffix}.xls`);
+  const reportDir = await getReportDirectory();
+  const reportFile = path.resolve(`${reportDir}/${logFileName}-${dateSuffix}.csv`);
+  const reportFileExcel = path.resolve(`${reportDir}/${logFileName}-${dateSuffix}.xls`);
   await fs.ensureDir(path.dirname(reportFile));
   const csv = csvStringify(resultSorted, {
     delimiter: ";",

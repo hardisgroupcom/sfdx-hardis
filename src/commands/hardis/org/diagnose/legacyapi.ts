@@ -11,6 +11,7 @@ import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import * as dns from "dns";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
+import { getReportDirectory } from "../../../../config";
 const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
@@ -181,8 +182,7 @@ See article below
     // Build output CSV file
     if (this.outputFile == null) {
       // Default file in system temp directory if --outputfile not provided
-      const reportDir = "./hardis-report";
-      await fs.ensureDir(reportDir);
+      const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
     } else {
       // Ensure directories to provided --outputfile are existing

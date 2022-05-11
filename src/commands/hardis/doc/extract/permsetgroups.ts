@@ -9,6 +9,7 @@ import * as path from "path";
 import * as toc from "markdown-toc";
 import { uxLog } from "../../../../common/utils";
 import { parseXmlFile } from "../../../../common/utils/xmlUtils";
+import { getReportDirectory } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -91,8 +92,7 @@ export default class DocGenerate extends SfdxCommand {
     // Build output CSV file
     if (this.outputFile == null) {
       // Default file in system temp directory if --outputfile not provided
-      const reportDir = "./hardis-report";
-      await fs.ensureDir(reportDir);
+      const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, "permission-set-groups.csv");
     } else {
       // Ensure directories to provided --outputfile are existing
