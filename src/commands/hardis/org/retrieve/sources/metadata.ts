@@ -131,6 +131,4 @@ export default class DxSources extends SfdxCommand {
     reportFiles.map(async (file) => await fs.remove(file));
     return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
   }
-
-
 }

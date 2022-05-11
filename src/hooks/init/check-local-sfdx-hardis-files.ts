@@ -28,7 +28,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
       return;
     }
 
-    if (!isCI && (process.env.AUTO_UPDATE !== "true" && process.env.AUTO_UPDATE_CI_CONFIG !== "true")) {
+    if (!isCI && process.env.AUTO_UPDATE !== "true" && process.env.AUTO_UPDATE_CI_CONFIG !== "true") {
       return;
     }
   }
