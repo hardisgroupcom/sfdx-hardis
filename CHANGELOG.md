@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.87.1] 2022-05-11
+
+- Fix monitoring default pipeline
+
 ## [2.87.0] 2022-05-08
 
 - New command **hardis:project:clean:xml** allowing to automate the manual cleaning in the XML files using glob pattern and xPath

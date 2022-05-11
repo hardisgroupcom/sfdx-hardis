@@ -1084,3 +1084,14 @@ Hit ENTER when you are ready`
     uxLog(commandThis, `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(encryptionKey)} key`);
   }
 }
+
+export async function isMonitoringJob() {
+  if (!isCI) {
+    return false;
+  }
+  const repoName = await git().revparse("--show-toplevel");
+  if (isCI && repoName.includes("monitoring")) {
+    return true;
+  }
+  return false;
+}

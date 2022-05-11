@@ -7,7 +7,7 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository, git, isCI, uxLog } from "../../../../../common/utils";
+import { ensureGitRepository, isCI, isMonitoringJob, uxLog } from "../../../../../common/utils";
 import { canSendNotifications, sendNotification } from "../../../../../common/utils/notifUtils";
 import LegacyApi from "../../diagnose/legacyapi";
 import OrgTestApex from "../../test/apex";
@@ -77,7 +77,7 @@ export default class DxSources extends SfdxCommand {
 
     // Check required pre-requisites
     await ensureGitRepository({ init: true });
-    const isMonitoring = await this.isMonitoringJob();
+    const isMonitoring = await isMonitoringJob();
 
     // Retrieve metadatas
     let message = "";
@@ -132,14 +132,5 @@ export default class DxSources extends SfdxCommand {
     return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
   }
 
-  private async isMonitoringJob() {
-    if (!isCI) {
-      return false;
-    }
-    const repoName = await git().revparse("--show-toplevel");
-    if (isCI && repoName.includes("monitoring")) {
-      return true;
-    }
-    return false;
-  }
+
 }
