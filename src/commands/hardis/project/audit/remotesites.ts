@@ -7,7 +7,7 @@ import * as glob from "glob-promise";
 import * as psl from "psl";
 import * as sortArray from "sort-array";
 import * as url from "url";
-import { catchMatches, generateReports } from "../../../../common/utils";
+import { catchMatches, generateReports, uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -74,7 +74,7 @@ export default class RemoteSites extends SfdxCommand {
     ];
     const remoteSiteSettingsFiles = await glob(pattern);
     this.matchResults = [];
-    this.ux.log(`Browsing ${remoteSiteSettingsFiles.length} files`);
+    uxLog(this,`Browsing ${remoteSiteSettingsFiles.length} files`);
     // Loop in files
     for (const file of remoteSiteSettingsFiles) {
       const fileText = await fs.readFile(file, "utf8");

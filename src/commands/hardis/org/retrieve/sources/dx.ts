@@ -118,7 +118,7 @@ export default class DxSources extends SfdxCommand {
       uxLog(this, `[command] ${c.bold(c.grey(projectCreateCommand))}`);
       const createProjectRes = await exec(projectCreateCommand, { maxBuffer: 1024 * 2000 });
       if (debug) {
-        this.ux.log(createProjectRes.stdout + createProjectRes.stderr);
+        uxLog(this,createProjectRes.stdout + createProjectRes.stderr);
       }
     }
 
@@ -132,7 +132,7 @@ export default class DxSources extends SfdxCommand {
         maxBuffer: 10000 * 10000,
       });
       if (debug) {
-        this.ux.log(convertRes.stdout + convertRes.stderr);
+        uxLog(this,convertRes.stdout + convertRes.stderr);
       }
     } catch (e) {
       throw new SfdxError(JSON.stringify(e, null, 2));
@@ -157,7 +157,7 @@ export default class DxSources extends SfdxCommand {
       const packageXmlInConfig = path.resolve(folder) + "/manifest/package.xml"; // '/config/package.xml';
       if (!fs.existsSync(packageXmlInConfig)) {
         await fs.ensureDir(path.dirname(packageXmlInConfig));
-        this.ux.log(`[sfdx-hardis] Copying package.xml manifest ${c.green(packageXmlInConfig)}...`);
+        uxLog(this,`[sfdx-hardis] Copying package.xml manifest ${c.green(packageXmlInConfig)}...`);
         await fs.copy(packageXml, packageXmlInConfig);
       }
       // Store list of installed packages
@@ -167,7 +167,7 @@ export default class DxSources extends SfdxCommand {
       });
       // Try to get org shape
       const projectScratchDefFile = "./config/project-scratch-def.json";
-      this.ux.log(`[sfdx-hardis] Getting org shape in ${c.green(path.resolve(projectScratchDefFile))}...`);
+      uxLog(this,`[sfdx-hardis] Getting org shape in ${c.green(path.resolve(projectScratchDefFile))}...`);
       const shapeFile = path.join(await createTempDir(), "project-scratch-def.json");
       try {
         await exec(`sfdx force:org:shape:create -f "${shapeFile} -u `);
@@ -176,9 +176,9 @@ export default class DxSources extends SfdxCommand {
         const newShape = Object.assign(projectScratchDef, orgShape);
         await fs.writeFile(projectScratchDefFile, JSON.stringify(newShape, null, 2));
       } catch (e) {
-        this.ux.log(c.yellow("[sfdx-hardis][ERROR] Unable to create org shape"));
-        this.ux.log(c.yellow("[sfdx-hardis] You need to manually update config/project-scratch-def.json"));
-        this.ux.log(
+        uxLog(this,c.yellow("[sfdx-hardis][ERROR] Unable to create org shape"));
+        uxLog(this,c.yellow("[sfdx-hardis] You need to manually update config/project-scratch-def.json"));
+        uxLog(this,
           c.yellow(
             "[sfdx-hardis] See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm"
           )
@@ -199,7 +199,7 @@ export default class DxSources extends SfdxCommand {
 
     // Set bac initial cwd
     const message = `[sfdx-hardis] Successfully retrieved sfdx project in ${folder}`;
-    this.ux.log(c.green(message));
+    uxLog(this,c.green(message));
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 }

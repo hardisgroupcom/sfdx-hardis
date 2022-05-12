@@ -119,12 +119,27 @@ export default class DxSources extends SfdxCommand {
 
   private async processPostActions(message) {
     uxLog(this, c.cyan("Monitoring repo detected"));
+
+    // Update default .gitlab-ci.yml within the monitoring repo
+    const localGitlabCiFile = path.join(process.cwd(), ".gitlab-ci.yml");
+    if (fs.existsSync(localGitlabCiFile)) {
+      const localGitlabCiContent = await fs.readFile(localGitlabCiFile, "utf8");
+      const latestGitlabCiFile = path.join(__dirname, "../../../../../../defaults/monitoring/.gitlab-ci.yml");
+      const latestGitlabCiContent = await fs.readFile(latestGitlabCiFile, "utf8");
+      if (localGitlabCiContent !== latestGitlabCiContent) {
+        await fs.writeFile(localGitlabCiFile, latestGitlabCiContent);
+        uxLog(this,c.cyan("Updated .gitlab-ci.yml file"));
+      }
+    }
+
     // Run test classes
     uxLog(this, c.cyan("Running Apex tests..."));
     const orgTestRes: any = await new OrgTestApex([], this.config)._run();
+
     // Check usage of Legacy API versions
     uxLog(this, c.cyan("Running Legacy API Use checks..."));
     const legacyApiRes: any = await new LegacyApi([], this.config)._run();
+
     // Delete report files
     //const reportFiles = await glob("**/hardis-report/**", { cwd: process.cwd() });
     //reportFiles.map(async (file) => await fs.remove(file));

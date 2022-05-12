@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as sortArray from "sort-array";
-import { catchMatches, generateReports } from "../../../../common/utils";
+import { catchMatches, generateReports, uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -80,7 +80,7 @@ export default class CallInCallOut extends SfdxCommand {
     ];
     const apexFiles = await glob(pattern);
     this.matchResults = [];
-    this.ux.log(`Browsing ${apexFiles.length} files`);
+    uxLog(this,`Browsing ${apexFiles.length} files`);
     // Loop in files
     for (const file of apexFiles) {
       const fileText = await fs.readFile(file, "utf8");

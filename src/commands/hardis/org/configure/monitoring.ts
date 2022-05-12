@@ -78,7 +78,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     - name: ${c.bold("ACCESS_TOKEN")}
     - value: Paste token previously generated (CTRL+V)
     - Select "Mask variable", unselect "Protected variable"`;
-    this.ux.log(c.blue(gitLabInfo));
+    uxLog(this, c.blue(gitLabInfo));
     await prompts({
       type: "confirm",
       message: c.cyanBright("Hit ENTER when done (or if previously done on the same repository)"),
