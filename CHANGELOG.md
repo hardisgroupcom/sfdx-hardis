@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.87.3] 2022-05-12
+
+- Auto-update `.gitlab-ci.yml` if a newest version exists
+
 ## [2.87.2] 2022-05-11
 
 - Refactor report directory management

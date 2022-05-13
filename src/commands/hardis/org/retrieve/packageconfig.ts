@@ -4,6 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../../common/metadata-utils";
+import { uxLog } from "../../../../common/utils";
 import { managePackageConfig, promptOrg } from "../../../../common/utils/orgUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -69,7 +70,7 @@ export default class RetrievePackageConfig extends SfdxCommand {
     }
 
     const message = `[sfdx-hardis] Successfully retrieved package config`;
-    this.ux.log(c.green(message));
+    uxLog(this, c.green(message));
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 }
