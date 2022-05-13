@@ -128,7 +128,7 @@ export default class DxSources extends SfdxCommand {
       const latestGitlabCiContent = await fs.readFile(latestGitlabCiFile, "utf8");
       if (localGitlabCiContent !== latestGitlabCiContent) {
         await fs.writeFile(localGitlabCiFile, latestGitlabCiContent);
-        uxLog(this,c.cyan("Updated .gitlab-ci.yml file"));
+        uxLog(this, c.cyan("Updated .gitlab-ci.yml file"));
       }
     }
 

@@ -80,7 +80,7 @@ export default class CallInCallOut extends SfdxCommand {
     ];
     const apexFiles = await glob(pattern);
     this.matchResults = [];
-    uxLog(this,`Browsing ${apexFiles.length} files`);
+    uxLog(this, `Browsing ${apexFiles.length} files`);
     // Loop in files
     for (const file of apexFiles) {
       const fileText = await fs.readFile(file, "utf8");

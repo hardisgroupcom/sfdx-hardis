@@ -74,7 +74,7 @@ export default class RemoteSites extends SfdxCommand {
     ];
     const remoteSiteSettingsFiles = await glob(pattern);
     this.matchResults = [];
-    uxLog(this,`Browsing ${remoteSiteSettingsFiles.length} files`);
+    uxLog(this, `Browsing ${remoteSiteSettingsFiles.length} files`);
     // Loop in files
     for (const file of remoteSiteSettingsFiles) {
       const fileText = await fs.readFile(file, "utf8");
