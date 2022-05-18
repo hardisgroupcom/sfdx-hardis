@@ -362,3 +362,15 @@ export async function initOrgData(initDataFolder: string, orgUsername: string) {
     }
   }
 }
+
+export async function getOrgAliasUsername(alias: string) {
+  const aliasListRes = await execSfdxJson("sfdx alias:list", this, {
+    output: false,
+    fail: false,
+  });
+  const matchingItems = aliasListRes?.result?.filter((aliasItem) => aliasItem.alias === alias);
+  if (matchingItems.length > 0) {
+    return matchingItems[0].value;
+  }
+  return null;
+}

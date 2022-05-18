@@ -4,6 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils";
+import { getOrgAliasUsername } from "../../../../common/utils/orgUtils";
 import { prompts } from "../../../../common/utils/prompts";
 import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config";
 
@@ -65,6 +66,7 @@ export default class ConfigureAuth extends SfdxCommand {
     await this.config.runHook("auth", {
       checkAuth: true,
       Command: this,
+      alias: "CONFIGURE_CI",
       devHub,
     });
     await checkConfig(this);
@@ -74,7 +76,9 @@ export default class ConfigureAuth extends SfdxCommand {
       output: false,
       fail: false,
     });
-    const newUsername = configGetRes?.result[0]?.value || "";
+    let newUsername = configGetRes?.result[0]?.value || "";
+    newUsername = (await getOrgAliasUsername(newUsername)) || newUsername ;
+
     if (prevUserName !== newUsername) {
       const returnMsg = "Default org has changed. This is ok but for technical reasons, please run again the same command :)";
       uxLog(this, c.yellow(returnMsg));
