@@ -6,8 +6,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.87.4] 2022-05-18
 
--  Fix configure org CI
+- Fix configure org CI
 - Hide auth info from console logs
+- Fix Bulk Update job not closed
 
 ## [2.87.3] 2022-05-12
 

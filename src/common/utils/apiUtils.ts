@@ -65,12 +65,14 @@ export async function bulkUpdate(objectName: string, action: string, records: Ar
       batch.poll(3 * 1000, 120 * 1000);
     });
     batch.on("error", (batchInfo) => {
+      job.close();
       spinner.fail(`Bulk Load on ${objectName} (${action}) failed.`);
       uxLog(this, c.red("Bulk query error:" + batchInfo));
       reject(batchInfo);
       throw new SfdxError(c.red("Bulk query error:" + batchInfo));
     });
     batch.on("response", (results) => {
+      job.close();
       spinner.succeed(`Bulk Load on ${objectName} (${action}) completed.`);
       resolve({
         results: results,
