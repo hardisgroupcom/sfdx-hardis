@@ -56,7 +56,9 @@ export const hook = async (options: any) => {
     ((options?.Command?.requiresUsername === true && !process.argv.includes("--skipauth")) || options.checkAuth === true) &&
     !(options.devHub === true)
   ) {
-    const orgAlias = process.env.ORG_ALIAS
+    const orgAlias = options.alias
+      ? options.alias
+      : process.env.ORG_ALIAS
       ? process.env.ORG_ALIAS
       : isCI && configInfo.scratchOrgAlias
       ? configInfo.scratchOrgAlias

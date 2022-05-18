@@ -125,7 +125,7 @@ export async function fetchScratchOrg(options: any) {
     }
     await fs.writeFile(tmpAuthFile, authFileContent, "utf8");
     const authCommand = `sfdx auth:sfdxurl:store -f ${tmpAuthFile} --setdefaultusername --setalias ${scratchOrg.scratchOrgAlias}`;
-    const authRes = await execSfdxJson(authCommand, this, { fail: false, output: true });
+    const authRes = await execSfdxJson(authCommand, this, { fail: false, output: false });
     if (authRes.status !== 0) {
       uxLog(
         this,
@@ -142,7 +142,7 @@ export async function fetchScratchOrg(options: any) {
       await setConfig("user", { sfdxAuthUrl: authFileContent });
     }
     // Display org URL
-    const openRes = await execSfdxJson(`sfdx force:org:open --urlonly -u ${scratchOrg.scratchOrgAlias}`, this, { fail: false, output: true });
+    const openRes = await execSfdxJson(`sfdx force:org:open --urlonly -u ${scratchOrg.scratchOrgAlias}`, this, { fail: false, output: false });
     uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     // Return scratch org
     await updateActiveScratchOrg(scratchOrg, { Description: `Authenticated by ${os.userInfo().username} on ${moment().format("YYYYMMDD_hhmm")}` });
