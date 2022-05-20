@@ -484,7 +484,7 @@ export default class Toml2Csv extends SfdxCommand {
     const concatenatedValues = fields
       .map((concatColName) => {
         if (concatColName.hardcoded) {
-          return concatColName.hardcoded ;
+          return concatColName.hardcoded;
         }
         const colNamePosition = this.transfoConfig?.entities[section]?.outputFile?.colOutputPositions?.indexOf(concatColName);
         if (colNamePosition === null || colNamePosition < 0) {
