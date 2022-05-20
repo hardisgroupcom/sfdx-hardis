@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.87.5] 2022-05-18
+
+- toml2csv: Allow `hardcoded` values for concat
+- Refactor internal CI to use 7.148.3 as recommended version
+
 ## [2.87.4] 2022-05-18
 
 - Fix configure org CI

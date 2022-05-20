@@ -46,11 +46,14 @@ jobs:
         uses: actions/checkout@v2
       - name: Publish alpha to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
+        env:
+          SFDX_HARDIS_VERSION: alpha
+          SFDX_CLI_VERSION: latest
         with:
           name: hardisgroupcom/sfdx-hardis
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          buildargs: SFDX_HARDIS_VERSION=alpha
+          buildargs: SFDX_HARDIS_VERSION,SFDX_CLI_VERSION
           tags: "alpha"
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -71,11 +74,14 @@ jobs:
         uses: actions/checkout@v2
       - name: Publish alpha to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
+        env:
+          SFDX_HARDIS_VERSION: alpha
+          SFDX_CLI_VERSION: "7.148.3"
         with:
           name: hardisgroupcom/sfdx-hardis
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          buildargs: SFDX_HARDIS_VERSION=alpha
+          buildargs: SFDX_HARDIS_VERSION,SFDX_CLI_VERSION
           tags: "alpha-sfdx-recommended"
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master

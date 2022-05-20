@@ -77,7 +77,7 @@ export default class ConfigureAuth extends SfdxCommand {
       fail: false,
     });
     let newUsername = configGetRes?.result[0]?.value || "";
-    newUsername = (await getOrgAliasUsername(newUsername)) || newUsername ;
+    newUsername = (await getOrgAliasUsername(newUsername)) || newUsername;
 
     if (prevUserName !== newUsername) {
       const returnMsg = "Default org has changed. This is ok but for technical reasons, please run again the same command :)";
