@@ -35,10 +35,10 @@ export default class CleanSystemDebug extends SfdxCommand {
       description: "Skip authentication check when a default username is required",
     }),
     delete: flags.boolean({
-        char : "d",
-        default: false,
-        description : "Delete lines with System.debug"
-    })
+      char: "d",
+      default: false,
+      description: "Delete lines with System.debug",
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -65,28 +65,27 @@ export default class CleanSystemDebug extends SfdxCommand {
     const matchingFiles = await glob(findManagedPattern, { cwd: process.cwd() });
     let countFiles = 0;
     for (const apexFile of matchingFiles) {
-        const fileText = await fs.readFile(apexFile, "utf8");
-        const fileLines = fileText.split('\n');
-        let counter = 0;
-        let writeF = false;
-        for(const line of fileLines){
-            if(line.includes('System.debug') && !line.includes('NOPMD')){ 
-                if(!this.del && line.substring(0,2) != '//' ){
-                    fileLines[counter] = '//'+line;                    
-                    writeF = true;
-                }else if(this.del){
-                    delete fileLines[counter];                    
-                    writeF = true;
-                }
-            }
-            counter++;
+      const fileText = await fs.readFile(apexFile, "utf8");
+      const fileLines = fileText.split("\n");
+      let counter = 0;
+      let writeF = false;
+      for (const line of fileLines) {
+        if (line.includes("System.debug") && !line.includes("NOPMD")) {
+          if (!this.del && line.substring(0, 2) != "//") {
+            fileLines[counter] = "//" + line;
+            writeF = true;
+          } else if (this.del) {
+            delete fileLines[counter];
+            writeF = true;
+          }
         }
-        if(writeF){
-            const joinLines = fileLines.join('\n');       
-            await fs.writeFile(apexFile, joinLines, "utf8");
-            countFiles++;
-        }
-
+        counter++;
+      }
+      if (writeF) {
+        const joinLines = fileLines.join("\n");
+        await fs.writeFile(apexFile, joinLines, "utf8");
+        countFiles++;
+      }
     }
 
     // Summary
@@ -95,6 +94,4 @@ export default class CleanSystemDebug extends SfdxCommand {
     // Return an object to be displayed with --json
     return { outputString: msg };
   }
-
-  
 }
