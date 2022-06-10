@@ -93,5 +93,6 @@ export default class CleanSystemDebug extends SfdxCommand {
     uxLog(this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
+    
   }
 }
