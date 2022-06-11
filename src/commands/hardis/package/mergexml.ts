@@ -3,6 +3,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
+import * as fs from 'fs-extra';
 import * as glob from "glob-promise";
 import * as path from "path";
 import { execCommand, uxLog } from "../../../common/utils";
@@ -72,6 +73,7 @@ export default class MergePackageXml extends SfdxCommand {
     this.pattern = this.flags.pattern || "/**/*package*.xml";
     this.packageXmlFiles = this.flags.packagexmls ? this.flags.packagexmls.split(",") : [];
     this.resultFileName = this.flags.result || path.join(this.folder, "package-merge.xml");
+    await fs.ensureDir(path.dirname(this.resultFileName));
     this.debugMode = this.flags.debug || false;
     /* jscpd:ignore-end */
 
@@ -84,19 +86,17 @@ export default class MergePackageXml extends SfdxCommand {
         type: "multiselect",
         name: "files",
         message: "Please select the package.xml files you want to merge",
-        choices: matchingFiles.map(file => {
+        choices: matchingFiles.map((file) => {
           const relativeFile = path.relative(process.cwd(), file);
-          return { title: relativeFile, value: relativeFile }
-        })
+          return { title: relativeFile, value: relativeFile };
+        }),
       });
       this.packageXmlFiles = filesSelectRes.files;
     }
 
     // Process merge of package.xml files
     const appendPackageXmlCommand =
-      "sfdx essentials:packagexml:append" +
-      ` --packagexmls "${this.packageXmlFiles.join(",")}"` +
-      ` --outputfile "${this.resultFileName}"`;
+      "sfdx essentials:packagexml:append" + ` --packagexmls "${this.packageXmlFiles.join(",")}"` + ` --outputfile "${this.resultFileName}"`;
     await execCommand(appendPackageXmlCommand, this, {
       fail: true,
       debug: this.debugMode,
