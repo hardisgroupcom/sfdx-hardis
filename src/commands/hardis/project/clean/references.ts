@@ -105,6 +105,11 @@ export default class CleanReferences extends SfdxCommand {
       value: "productrequest",
       title: "References to ProductRequest object",
     },
+    {
+      value: "systemDebug",
+      title: "Remove System.debug from sources",
+      command: "sfdx hardis:project:clean:systemdebug",
+    },
   ];
 
   protected configFile: string;
