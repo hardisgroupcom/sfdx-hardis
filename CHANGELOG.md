@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.88.0] 2022-06-11
+
+- **hardis:project:clean:systemdebug**: New command to comment or remove all System.debug from apex and triggers
+
 ## [2.87.5] 2022-05-18
 
 - toml2csv: Allow `hardcoded` values for concat
