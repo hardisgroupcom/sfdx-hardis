@@ -72,7 +72,7 @@ export default class CleanSystemDebug extends SfdxCommand {
       for (const line of fileLines) {
         if (line.includes("System.debug") && !line.includes("NOPMD")) {
           if (!this.del && line.trim().substring(0, 2) != "//") {
-            fileLines[counter] = line.replace("System.debug","// System.debug");
+            fileLines[counter] = line.replace("System.debug", "// System.debug");
             writeF = true;
           } else if (this.del) {
             delete fileLines[counter];
