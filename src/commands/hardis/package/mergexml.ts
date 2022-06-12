@@ -24,7 +24,7 @@ export default class MergePackageXml extends SfdxCommand {
   public static examples = [
     "$ sfdx hardis:package:mergexml",
     "$ sfdx hardis:package:mergexml --folder packages --pattern /**/*.xml --result myMergedPackage.xml",
-    "$ sfdx hardis:package:mergexml --packagexmls \"config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml\" --result myMergedPackage.xml"
+    '$ sfdx hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml" --result myMergedPackage.xml',
   ];
 
   protected static flagsConfig = {
