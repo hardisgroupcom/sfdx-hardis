@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.89.0] 2022-06-12
+
+- **hardis:package:mergexml**: New command to merge package.Xml files
+
 ## [2.88.0] 2022-06-11
 
 - **hardis:project:clean:systemdebug**: New command to comment or remove all System.debug from apex and triggers
