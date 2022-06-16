@@ -122,7 +122,7 @@ export default class DxSources extends SfdxCommand {
 
     // Update default .gitlab-ci.yml within the monitoring repo
     const localGitlabCiFile = path.join(process.cwd(), ".gitlab-ci.yml");
-    if (fs.existsSync(localGitlabCiFile)) {
+    if (fs.existsSync(localGitlabCiFile) && process.env?.AUTO_UPDATE_GITLAB_CI_YML) {
       const localGitlabCiContent = await fs.readFile(localGitlabCiFile, "utf8");
       const latestGitlabCiFile = path.join(__dirname, "../../../../../../defaults/monitoring/.gitlab-ci.yml");
       const latestGitlabCiContent = await fs.readFile(latestGitlabCiFile, "utf8");
