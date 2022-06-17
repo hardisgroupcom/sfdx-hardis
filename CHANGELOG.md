@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.89.2] 2022-06-17
+
+- Build full manifest using sfpowerkit excluding `ManagedContentTypeBundle` because it is not managed by retrieve
+
 ## [2.89.1] 2022-06-16
 
 - Auto-update gitlab-ci.yml only if variable `AUTO_UPDATE_GITLAB_CI_YML` is set
