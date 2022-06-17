@@ -635,7 +635,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   }
   // Use sfpowerkit manifest build
   await execCommand(
-    `sfdx sfpowerkit:org:manifest:build -o ${packageXmlOutputFile} ${targetOrgUsernameAlias ? ` -u ${targetOrgUsernameAlias}` : ""}`,
+    `sfdx sfpowerkit:org:manifest:build` +
+      ` --excludefilter ManagedContentTypeBundle` +
+      ` -o ${packageXmlOutputFile}` +
+      ` ${targetOrgUsernameAlias ? ` -u ${targetOrgUsernameAlias}` : ""}`,
     this,
     {
       fail: true,
