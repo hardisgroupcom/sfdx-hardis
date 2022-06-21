@@ -244,8 +244,8 @@ export class FilesExporter {
     const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(/[/\\?%*:|"<>]/g, "-");
     const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
     let outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
-    // Add file extension if missing if file title, and replace .snote by .txt
-    if (path.extname(outputFile) === "" && contentVersion.FileExtension) {
+    // Add file extension if missing in file title, and replace .snote by .html
+    if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
     }
     // Check file extension
