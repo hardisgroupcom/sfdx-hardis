@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.89.3] 2022-06-21
+
+- Fix exported file extension ([#266](https://github.com/hardisgroupcom/sfdx-hardis/issues/266))
+
 ## [2.89.2] 2022-06-17
 
 - Build full manifest using sfpowerkit excluding `ManagedContentTypeBundle` because it is not managed by retrieve
