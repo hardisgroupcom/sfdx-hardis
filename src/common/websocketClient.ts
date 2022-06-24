@@ -35,6 +35,11 @@ export class WebSocketClient {
     }
   }
 
+  // Requests open file within VsCode if linked
+  static requestOpenFile(file: string) {
+    WebSocketClient.sendMessage({ event: "openFile", file: file.replace(/\\/g, "/") });
+  }
+
   static sendPrompts(prompts: any): Promise<any> {
     return globalWs.promptServer(prompts);
   }

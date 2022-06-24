@@ -8,6 +8,7 @@ import * as glob from "glob-promise";
 import * as path from "path";
 import { execCommand, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
+import { WebSocketClient } from "../../../common/websocketClient";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -109,6 +110,10 @@ export default class MergePackageXml extends SfdxCommand {
     // Summary
     const msg = `Merged ${c.green(c.bold(this.packageXmlFiles.length))} files into ${c.green(this.resultFileName)}`;
     uxLog(this, c.cyan(msg));
+
+    // Trigger command to open files config file in VsCode extension
+    WebSocketClient.requestOpenFile(this.resultFileName);
+
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

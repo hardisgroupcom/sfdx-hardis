@@ -171,11 +171,11 @@ See article:
       const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
       await fs.writeFile(additionalFileFull, additionalFile.text);
       uxLog(this, c.cyan(additionalFile.message + ": ") + c.yellow(additionalFileFull));
-      WebSocketClient.sendMessage({ event: "openFile", file: additionalFileFull.replace(/\\/g, "/") });
+      WebSocketClient.requestOpenFile(additionalFileFull);
     }
 
     // Trigger command to open SFDMU config file in VsCode extension
-    WebSocketClient.sendMessage({ event: "openFile", file: exportJsonFile.replace(/\\/g, "/") });
+    WebSocketClient.requestOpenFile(exportJsonFile);
 
     // Manage dataPackages if importInScratchOrgs is true
     if (importInScratchOrgs === true) {

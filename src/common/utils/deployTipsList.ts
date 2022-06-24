@@ -27,6 +27,15 @@ export function getAllTips() {
 - More help: https://help.salesforce.com/s/articleView?id=000327186&type=1`,
     },
     {
+      name: "can-not-change-whic-global-value-set-this-picklist-uses",
+      label: "Can not change field type with picklist",
+      expressionRegex: [/Error (.*) Cannot change which global value set this picklist uses/gm],
+      tip: `You probably updated the type of field {1}, and Salesforce does not allows that with deployments. You can:
+- Try to manually change the type of {1} directly in target org, but it may not be technically possible
+- Delete field {1} in target org: it will be recreated after deployment (but you will loose data on existing records, so be careful if your target is a production org)
+- Create another field with desired type and manage data recovery if the target is a production org`,
+    },
+    {
       name: "can-not-delete-custom-field",
       label: "Can not delete custom field",
       context: "destructiveChange",

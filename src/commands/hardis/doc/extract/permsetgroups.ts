@@ -10,6 +10,7 @@ import * as toc from "markdown-toc";
 import { uxLog } from "../../../../common/utils";
 import { parseXmlFile } from "../../../../common/utils/xmlUtils";
 import { getReportDirectory } from "../../../../config";
+import { WebSocketClient } from "../../../../common/websocketClient";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -102,6 +103,8 @@ export default class DocGenerate extends SfdxCommand {
       const csvText = csvLines.map((e) => e.join(",")).join("\n");
       await fs.writeFile(this.outputFile, csvText, "utf8");
       uxLog(this, c.cyan(`Permission set groups CSV file generated in ${c.bold(c.green(this.outputFile))}`));
+      // Trigger command to open CSV file in VsCode extension
+      WebSocketClient.requestOpenFile(this.outputFile);
     } catch (e) {
       uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
       this.outputFile = null;
@@ -120,8 +123,10 @@ export default class DocGenerate extends SfdxCommand {
     await fs.ensureDir("docs");
     let mdPsgText = mdPsg.join("\n");
     mdPsgText = toc.insert(mdPsgText);
-    await fs.writeFile("docs/permission-set-groups.md", mdPsgText, "utf8");
+    await fs.writeFile(docFile, mdPsgText, "utf8");
     uxLog(this, c.cyan(`Permission set groups Markdown file generated in ${c.bold(c.green(docFile))}`));
+    // Trigger command to open CSV file in VsCode extension
+    WebSocketClient.requestOpenFile(docFile);
 
     // Return an object to be displayed with --json
     return { outputString: "Permission set groups Documentation generated" };

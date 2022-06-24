@@ -22,7 +22,7 @@ export default class ConfigureData extends SfdxCommand {
   public static title = "Configure File export project";
 
   public static description = `Configure export of file attachments from a Salesforce org
-  
+
 See article below
 
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
@@ -84,8 +84,8 @@ See article below
     const exportJsonFile = path.join(filesProjectFolder, "export.json");
     await fs.writeFile(exportJsonFile, JSON.stringify(exportConfig, null, 2));
 
-    // Trigger command to open files config file in VsCode extension
-    WebSocketClient.sendMessage({ event: "openFile", file: exportJsonFile.replace(/\\/g, "/") });
+    // Trigger command to open SFDMU config file in VsCode extension
+    WebSocketClient.requestOpenFile(exportJsonFile);
 
     // Set bac initial cwd
     const message = c.cyan(`Successfully initialized files export project ${c.green(filesProjectFolder)}, with ${c.green("export.json")} file.

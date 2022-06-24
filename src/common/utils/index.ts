@@ -829,6 +829,8 @@ export async function generateReports(
     columns,
   });
   await fs.writeFile(reportFile, csv, "utf8");
+  // Trigger command to open CSV file in VsCode extension
+  WebSocketClient.requestOpenFile(reportFile);
   const excel = csvStringify(resultSorted, {
     delimiter: "\t",
     header: true,

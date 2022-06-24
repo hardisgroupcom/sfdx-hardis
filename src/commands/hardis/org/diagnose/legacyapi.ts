@@ -12,6 +12,7 @@ import * as dns from "dns";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { getReportDirectory } from "../../../../config";
+import { WebSocketClient } from "../../../../common/websocketClient";
 const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
@@ -192,6 +193,8 @@ See article below
       const csvText = Papa.unparse(allErrors);
       await fs.writeFile(this.outputFile, csvText, "utf8");
       uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(this.outputFile)}`)));
+      // Trigger command to open CSV file in VsCode extension
+      WebSocketClient.requestOpenFile(this.outputFile);
     } catch (e) {
       uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
       this.outputFile = null;
@@ -205,6 +208,8 @@ See article below
       if (errors.length > 0) {
         const outputFileIp = await this.generateSummaryLog(errors, descriptor.severity);
         outputFileIps.push(outputFileIp);
+        // Trigger command to open CSV file in VsCode extension
+        WebSocketClient.requestOpenFile(outputFileIp);
       }
     }
 

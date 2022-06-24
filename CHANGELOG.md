@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.90.0] 2022-06-24
+
+- Events to open generated files when called from VsCode SFDX Hardis
+- New deployTips
+
 ## [2.89.3] 2022-06-21
 
 - Fix exported file extension ([#266](https://github.com/hardisgroupcom/sfdx-hardis/issues/266))
