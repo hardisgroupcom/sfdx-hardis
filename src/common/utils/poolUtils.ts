@@ -98,6 +98,16 @@ async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { posi
 
 // Fetch a scratch org
 export async function fetchScratchOrg(options: any) {
+  try {
+    const scratchOrg = await tryFetchScratchOrg(options);
+    return scratchOrg;
+  } catch (e) {
+    uxLog(this, c.yellow(`[pool] Unable to fetch scratch org from pool. That's sad because it's faster !\nError: ${e.message}`));
+    return null;
+  }
+}
+
+export async function tryFetchScratchOrg(options: any) {
   const poolStorage = await getPoolStorage(options);
   if (poolStorage === null) {
     uxLog(this, "[pool] " + c.yellow("No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth"));
