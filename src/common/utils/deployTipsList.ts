@@ -434,6 +434,13 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 `,
     },
     {
+      name: "not-available-for-deploy-for-this-org",
+      label: "Not available for deploy for this organization",
+      expressionRegex: [/Error (.*) Not available for deploy for this organization/gm],
+      tip: `The user you use for deployments probably lacks of the rights (Profiles, Permission sets...) to manage {1}.
+- Assign the deployment user to the good Permission Sets, or modify its profile rights, then try again`,
+    },
+    {
       name: "not-valid-sharing-model",
       label: "Not valid sharing model",
       expressionRegex: [/Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)/gm],
