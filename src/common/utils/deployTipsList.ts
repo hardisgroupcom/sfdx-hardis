@@ -27,7 +27,7 @@ export function getAllTips() {
 - More help: https://help.salesforce.com/s/articleView?id=000327186&type=1`,
     },
     {
-      name: "can-not-change-whic-global-value-set-this-picklist-uses",
+      name: "can-not-change-which-global-value-set-this-picklist-uses",
       label: "Can not change field type with picklist",
       expressionRegex: [/Error (.*) Cannot change which global value set this picklist uses/gm],
       tip: `You probably updated the type of field {1}, and Salesforce does not allows that with deployments. You can:
@@ -497,15 +497,15 @@ Go manually make the change in the target org, so the deployment will pass
 </applicationVisibilities>`,
     },
 
-  {
-    name: "recipe-must-specify-dataflow",
-    label: "CRM Analytics: A Recipe must specify a DataFlow",
-    expressionRegex: [/Error (.*) A Recipe must specify a Dataflow/gm],
-    tip: `You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
+    {
+      name: "recipe-must-specify-dataflow",
+      label: "CRM Analytics: A Recipe must specify a DataFlow",
+      expressionRegex: [/Error (.*) A Recipe must specify a Dataflow/gm],
+      tip: `You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
 To retrieve it, run: sfdx force:source:retrieve -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
   - https://salesforce.stackexchange.com/a/365453/33522
   - https://help.salesforce.com/s/articleView?id=000319274&type=1`,
-  },
+    },
     {
       name: "record-type-not-found",
       label: "Record Type not found",
