@@ -86,7 +86,7 @@ export default class DxSources extends SfdxCommand {
       // Copy to destination
       await fs.copy(path.join(folder, "unpackaged"), path.resolve(folder));
       // Remove temporary files
-      await fs.rmdir(path.join(folder, "unpackaged"), { recursive: true });
+      await fs.rm(path.join(folder, "unpackaged"), { recursive: true });
 
       message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
       uxLog(this, message);
