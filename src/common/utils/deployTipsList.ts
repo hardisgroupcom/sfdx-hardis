@@ -174,6 +174,13 @@ If this type of error is displayed in a deployment with --check, you may ignore 
 To remove them, please run sfdx:hardis:project:clean:emptyitems`,
     },
     {
+      name: "enable-CRM-analytics",
+      label: "Enable CRM Analytics",
+      expressionString: ["It should be created by enabling the CRM Analytics Cloud preference"],
+      tip: `You must enable CRM Analytics (ex Wave, Einstein Analytics & Tableau CRM) in the target org.
+You probably also need to add CRM Analytics Admin Permission Set assignment to the deployment user`,
+    },
+    {
       name: "field-must-not-be-required",
       label: "Formula picklist field issue",
       expressionRegex: [/Field:(.*) must not be Required/gm],
@@ -489,6 +496,16 @@ Go manually make the change in the target org, so the deployment will pass
     <visible>true</visible>
 </applicationVisibilities>`,
     },
+
+  {
+    name: "recipe-must-specify-dataflow",
+    label: "CRM Analytics: A Recipe must specify a DataFlow",
+    expressionRegex: [/Error (.*) A Recipe must specify a Dataflow/gm],
+    tip: `You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
+To retrieve it, run: sfdx force:source:retrieve -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
+  - https://salesforce.stackexchange.com/a/365453/33522
+  - https://help.salesforce.com/s/articleView?id=000319274&type=1`,
+  },
     {
       name: "record-type-not-found",
       label: "Record Type not found",
