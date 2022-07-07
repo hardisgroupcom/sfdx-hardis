@@ -190,7 +190,7 @@ export default class DxSources extends SfdxCommand {
     // Remove temporary files
     uxLog(this, `Remove temporary folder ${tempFolder} ...`);
     try {
-      await fs.rmdir(tempFolder, { recursive: true });
+      await fs.rm(tempFolder, { recursive: true });
     } catch (e) {
       uxLog(this, c.yellow(`Unable to remove folder ${tempFolder}, please delete it manually`));
     }

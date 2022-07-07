@@ -27,7 +27,7 @@ export function getAllTips() {
 - More help: https://help.salesforce.com/s/articleView?id=000327186&type=1`,
     },
     {
-      name: "can-not-change-whic-global-value-set-this-picklist-uses",
+      name: "can-not-change-which-global-value-set-this-picklist-uses",
       label: "Can not change field type with picklist",
       expressionRegex: [/Error (.*) Cannot change which global value set this picklist uses/gm],
       tip: `You probably updated the type of field {1}, and Salesforce does not allows that with deployments. You can:
@@ -172,6 +172,13 @@ If this type of error is displayed in a deployment with --check, you may ignore 
       ],
       tip: `You probably retrieved empty items, that must not be included within the SFDX project
 To remove them, please run sfdx:hardis:project:clean:emptyitems`,
+    },
+    {
+      name: "enable-CRM-analytics",
+      label: "Enable CRM Analytics",
+      expressionString: ["It should be created by enabling the CRM Analytics Cloud preference"],
+      tip: `You must enable CRM Analytics (ex Wave, Einstein Analytics & Tableau CRM) in the target org.
+You probably also need to add CRM Analytics Admin Permission Set assignment to the deployment user`,
     },
     {
       name: "field-must-not-be-required",
@@ -434,6 +441,13 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 `,
     },
     {
+      name: "not-available-for-deploy-for-this-org",
+      label: "Not available for deploy for this organization",
+      expressionRegex: [/Error (.*) Not available for deploy for this organization/gm],
+      tip: `The user you use for deployments probably lacks of the rights (Profiles, Permission sets...) to manage {1}.
+- Assign the deployment user to the good Permission Sets, or modify its profile rights, then try again`,
+    },
+    {
       name: "not-valid-sharing-model",
       label: "Not valid sharing model",
       expressionRegex: [/Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)/gm],
@@ -481,6 +495,16 @@ Go manually make the change in the target org, so the deployment will pass
     <default>true</default>
     <visible>true</visible>
 </applicationVisibilities>`,
+    },
+
+    {
+      name: "recipe-must-specify-dataflow",
+      label: "CRM Analytics: A Recipe must specify a DataFlow",
+      expressionRegex: [/Error (.*) A Recipe must specify a Dataflow/gm],
+      tip: `You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
+To retrieve it, run: sfdx force:source:retrieve -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
+  - https://salesforce.stackexchange.com/a/365453/33522
+  - https://help.salesforce.com/s/articleView?id=000319274&type=1`,
     },
     {
       name: "record-type-not-found",

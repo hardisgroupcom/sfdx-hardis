@@ -88,7 +88,7 @@ export default class ProjectCreate extends SfdxCommand {
       await fs.copy(path.join(process.cwd(), projectName), process.cwd(), {
         overwrite: false,
       });
-      await fs.rmdir(path.join(process.cwd(), projectName), { recursive: true });
+      await fs.rm(path.join(process.cwd(), projectName), { recursive: true });
     }
     // Copy default project files
     uxLog(this, "Copying default files...");
