@@ -18,7 +18,7 @@ export class WebSocketClient {
     const wsHostPort = context.websocketHostPort ? `ws://${context.websocketHostPort}` : `ws://localhost:${PORT}`;
     try {
       this.ws = new WebSocket(wsHostPort);
-      globalWs = this;
+      globalWs = this; // eslint-disable-line
       this.start();
     } catch (err) {
       uxLog(this, c.yellow("Warning: Unable to start WebSocket client on " + wsHostPort));
