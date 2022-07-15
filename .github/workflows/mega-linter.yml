@@ -1,6 +1,6 @@
 ---
 # Mega-Linter GitHub Action configuration file
-# More info at https://megalinter.github.io
+# More info at https://oxsecurity.github.io/megalinter
 name: Mega-Linter
 
 on:
@@ -22,7 +22,7 @@ jobs:
     steps:
       # Git Checkout
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -31,11 +31,11 @@ jobs:
       - name: Mega-Linter
         id: ml
         # You can override Mega-Linter flavor used to have faster performances
-        # More info at https://megalinter.github.io/flavors/
-        uses: megalinter/megalinter/flavors/javascript@latest
+        # More info at https://oxsecurity.github.io/megalinter/flavors/
+        uses: oxsecurity/megalinter/flavors/javascript@latest
         env:
           # All available variables are described in documentation
-          # https://megalinter.github.io/configuration/
+          # https://oxsecurity.github.io/megalinter/configuration/
           VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/master&#39; }} to validate only diff with master branch
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
@@ -47,7 +47,7 @@ jobs:
         with:
           name: Mega-Linter reports
           path: |
-            report
+            megalinter-reports
             mega-linter.log
 
       # Create pull request if applicable (for now works only on PR from same repository, not from forks)

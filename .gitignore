@@ -23,3 +23,5 @@ hardis-report/
 site/
 
 config/user/
+
+megalinter-reports/

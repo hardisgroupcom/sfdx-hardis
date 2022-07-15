@@ -1,4 +1,4 @@
-# Full doc here --> https://megalinter.github.io/latest/
+# Full doc here --> https://oxsecurity.github.io/megalinter/latest/
 # Extend from shared sfdx-hardis Mega-Linter configuration :)
 EXTENDS:
   - https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.mega-linter-config.yml

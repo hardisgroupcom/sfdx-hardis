@@ -20,7 +20,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v1
         with:
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Publish version to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         env:
@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Publish latest to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         env:

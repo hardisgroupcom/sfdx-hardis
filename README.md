@@ -1732,7 +1732,7 @@ OPTIONS
 
   -r, --result=result                                                               Result package.xml file name
 
-  -x, --pattern=pattern                                                             [default: /**/*package*.xml] Name
+  -x, --pattern=pattern                                                             [default: /**/_package_.xml] Name
                                                                                     criteria to list package.xml files
 
   --json                                                                            format output as json
