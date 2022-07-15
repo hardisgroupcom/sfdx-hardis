@@ -8,7 +8,7 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
   const endArgs = [...argv].splice(3).map((arg) => {
     // Add quotes to avoid problems if arguments contain spaces
     if (!arg.startsWith("-") && !arg.startsWith(`"`) && !arg.startsWith(`'`)) {
-      arg = `"${arg}"`
+      arg = `"${arg}"`;
     }
     return arg;
   });
