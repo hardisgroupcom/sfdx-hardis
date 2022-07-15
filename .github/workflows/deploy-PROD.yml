@@ -63,6 +63,7 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
+          security-checks: vuln
           severity: "CRITICAL,HIGH"
 
   push_beta_to_registry_sfdx_recommended:
@@ -91,4 +92,5 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
+          security-checks: vuln
           severity: "CRITICAL,HIGH"
