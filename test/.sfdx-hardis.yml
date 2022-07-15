@@ -8,7 +8,7 @@ customCommands:
         icon: file.svg
         tooltip: Generates a manifest package.xml using local sfdx source files
         command: sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest
-        helpUrl: https://megalinter.github.io/
+        helpUrl: https://oxsecurity.github.io/megalinter/
       - id: list-all-orgs
         label: List all orgs
         icon: salesforce.svg

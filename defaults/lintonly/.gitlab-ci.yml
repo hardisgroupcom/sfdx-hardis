@@ -22,11 +22,11 @@ check_quality:
   only:
     - merge_requests
     - web
-  image: megalinter/megalinter-salesforce:latest
+  image: oxsecurity/megalinter-salesforce:latest
   script: ["true"]
   variables:
     # All available variables are described in documentation
-    # https://megalinter.github.io/configuration/
+    # https://oxsecurity.github.io/megalinter/configuration/
     DEFAULT_WORKSPACE: $CI_PROJECT_DIR
     DEFAULT_BRANCH: master
   artifacts:
