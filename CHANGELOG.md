@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.91.0] 2022-07-07
+
+- New deployment tips (Wave analytics)
+
+
 ## [2.90.0] 2022-06-24
 
 - Events to open generated files when called from VsCode SFDX Hardis
