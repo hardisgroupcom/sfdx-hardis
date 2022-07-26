@@ -214,7 +214,7 @@ export default class Toml2Csv extends SfdxCommand {
         // Check if line has to be filtered
         let filtered = false;
         if (this.transfoConfig?.entities[this.currentSection]?.filters) {
-          for (const filter of this.transfoConfig?.entities[this.currentSection]?.filters) {
+          for (const filter of this.transfoConfig?.entities[this.currentSection]?.filters || []) {
             if (!this.checkFilter(filter, lineSplit, this.currentSection)) {
               filtered = true;
               break;

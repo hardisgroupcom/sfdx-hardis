@@ -52,6 +52,19 @@ It is usually not recommended to change types of fields, but if it's really nece
 - More help: https://help.salesforce.com/s/articleView?id=000327186&type=1
 ```
 
+## Can not change field type with picklist
+
+- `Error (.*) Cannot change which global value set this picklist uses`
+
+**Resolution tip**
+
+```shell
+You probably updated the type of field {1}, and Salesforce does not allows that with deployments. You can:
+- Try to manually change the type of {1} directly in target org, but it may not be technically possible
+- Delete field {1} in target org: it will be recreated after deployment (but you will loose data on existing records, so be careful if your target is a production org)
+- Create another field with desired type and manage data recovery if the target is a production org
+```
+
 ## Can not delete custom field
 
 - `This (.*) is referenced elsewhere in salesforce.com`
@@ -237,6 +250,17 @@ If this type of error is displayed in a deployment with --check, you may ignore 
 ```shell
 You probably retrieved empty items, that must not be included within the SFDX project
 To remove them, please run sfdx:hardis:project:clean:emptyitems
+```
+
+## Enable CRM Analytics
+
+- `It should be created by enabling the CRM Analytics Cloud preference`
+
+**Resolution tip**
+
+```shell
+You must enable CRM Analytics (ex Wave, Einstein Analytics & Tableau CRM) in the target org.
+You probably also need to add CRM Analytics Admin Permission Set assignment to the deployment user
 ```
 
 ## Formula picklist field issue
@@ -606,6 +630,17 @@ You can not deploy multiple SharingRules at the same time. You can either:
 
 ```
 
+## Not available for deploy for this organization
+
+- `Error (.*) Not available for deploy for this organization`
+
+**Resolution tip**
+
+```shell
+The user you use for deployments probably lacks of the rights (Profiles, Permission sets...) to manage {1}.
+- Assign the deployment user to the good Permission Sets, or modify its profile rights, then try again
+```
+
 ## Not valid sharing model
 
 - `Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)`
@@ -673,6 +708,19 @@ You must have a default application for a profile. You can:
     <default>true</default>
     <visible>true</visible>
 </applicationVisibilities>
+```
+
+## CRM Analytics: A Recipe must specify a DataFlow
+
+- `Error (.*) A Recipe must specify a Dataflow`
+
+**Resolution tip**
+
+```shell
+You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
+To retrieve it, run: sfdx force:source:retrieve -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
+  - https://salesforce.stackexchange.com/a/365453/33522
+  - https://help.salesforce.com/s/articleView?id=000319274&type=1
 ```
 
 ## Record Type not found

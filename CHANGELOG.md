@@ -4,9 +4,16 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.91.0] 2022-07-07
+## [2.92.0] 2022-07-07
 
+- New command hardis:org:retrieve:analytics to retrieve all analytics sources
 - New deployment tips (Wave analytics)
+
+## [2.91.0] 2022-07-15
+
+- Fix issue when force:source command wrappers arguments contain spaces [(#269)](https://github.com/hardisgroupcom/sfdx-hardis/issues/269))
+- Upgrade [MegaLinter](https://oxsecurity.github.io/megalinter/latest/) to v6
+- Upgrade yarn dependencies
 
 
 ## [2.90.0] 2022-06-24

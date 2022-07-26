@@ -21,7 +21,7 @@ jobs:
     name: Deploy alpha
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v1
         with:
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Publish alpha to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         env:
@@ -63,6 +63,7 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
+          security-checks: vuln
           severity: "CRITICAL,HIGH"
 
   push_alpha_to_registry_sfdx_recommended:
@@ -71,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Publish alpha to Registry
         uses: elgohr/Publish-Docker-Github-Action@master
         env:
@@ -91,4 +92,5 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: "os,library"
+          security-checks: vuln
           severity: "CRITICAL,HIGH"

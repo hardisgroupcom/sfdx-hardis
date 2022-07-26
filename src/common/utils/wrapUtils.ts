@@ -5,7 +5,13 @@ import { execCommand, uxLog } from ".";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
 export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfdxCommand, debug = false): Promise<AnyJson> {
-  const endArgs = [...argv].splice(3);
+  const endArgs = [...argv].splice(3).map((arg) => {
+    // Add quotes to avoid problems if arguments contain spaces
+    if (!arg.startsWith("-") && !arg.startsWith(`"`) && !arg.startsWith(`'`)) {
+      arg = `"${arg}"`;
+    }
+    return arg;
+  });
   // Remove sfdx-hardis arguments
   const debugPos = endArgs.indexOf("--debug");
   if (debugPos > -1) {
