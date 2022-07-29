@@ -719,6 +719,7 @@ You must have a default application for a profile. You can:
 ```shell
 You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
 To retrieve it, run: sfdx force:source:retrieve -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
+You can also retrieve all analytics sources in one shot using sfdx hardis:org:retrieve:source:analytics -u SOURCE_ORG_USERNAME
   - https://salesforce.stackexchange.com/a/365453/33522
   - https://help.salesforce.com/s/articleView?id=000319274&type=1
 ```
