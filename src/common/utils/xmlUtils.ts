@@ -6,6 +6,7 @@ import * as path from "path";
 import * as util from "util";
 import * as xml2js from "xml2js";
 import { uxLog } from ".";
+import { CONSTANTS } from "../../config";
 
 export async function parseXmlFile(xmlFile: string) {
   const packageXmlString = await fs.readFile(xmlFile, "utf8");
@@ -44,7 +45,10 @@ export async function parsePackageXmlFile(packageXmlFile: string) {
 }
 
 export async function writePackageXmlFile(packageXmlFile: string, packageXmlObject: any) {
-  const packageXmlContent = await parseXmlFile(packageXmlFile);
+  let packageXmlContent = { Package: { types: [], version: [CONSTANTS.API_VERSION] } };
+  if (fs.existsSync(packageXmlFile)) {
+    packageXmlContent = await parseXmlFile(packageXmlFile);
+  }
   packageXmlContent.Package.types = Object.keys(packageXmlObject).map((typeKey) => {
     const type = {
       members: packageXmlObject[typeKey],
