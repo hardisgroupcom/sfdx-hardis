@@ -674,6 +674,34 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
         parsedPackageXml.Package.types.push(newType);
       }
     }
+
+    // Complete with missing WaveDataflow Ids build from WaveRecipe Ids
+    const waveRecipeTypeList = parsedPackageXml.Package.types.filter((type) => type.name[0] === "WaveRecipe");
+    if (waveRecipeTypeList.length === 1) {
+      const waveRecipeType = waveRecipeTypeList[0];
+      const waveRecipeTypeMembers = waveRecipeType.members || [];
+      const waveDataFlowTypeList = parsedPackageXml.Package.types.filter((type) => type.name[0] === "WaveDataflow");
+      let waveDataFlowType = { name: ["WaveDataflow"], members: []}
+      if (waveDataFlowTypeList.length === 1) {
+        waveDataFlowType = waveDataFlowTypeList[0];
+      }
+      for (const recipeId of waveRecipeTypeMembers) {
+        if (!waveDataFlowType.members.includes(recipeId)) {
+          waveDataFlowType.members.push(recipeId);
+          uxLog(this,c.grey(`- Added WaveDataflow ${recipeId} to match WaveRecipe ${recipeId}`))
+        }
+      }
+      waveDataFlowType.members.sort();
+      // Update type
+      if (waveDataFlowTypeList.length === 1) {
+        parsedPackageXml.Package.types = parsedPackageXml.Package.types.map((type) => (type.name[0] === "WaveDataflow" ? waveDataFlowType : type));
+      }
+      // Add type
+      else {
+        parsedPackageXml.Package.types.push(waveDataFlowType);
+      }
+    }
+
     // Delete stuff we don't want
     parsedPackageXml.Package.types = parsedPackageXml.Package.types.filter((type) => !["CustomLabels"].includes(type.name[0]));
     await writeXmlFile(packageXmlFull, parsedPackageXml);

@@ -66,10 +66,10 @@ export default class Retrofit extends SfdxCommand {
     const tmpDir = await createTempDir();
     const packageXmlAllFile = path.join(tmpDir, "packageXmlAll.xml");
     await buildOrgManifest(orgUsername, packageXmlAllFile, this.org.getConnection());
-    const parsedPackageXmlAll = await parsePackageXmlFile(packageXmlAllFile);
     uxLog(this, c.cyan(`Retrieved full package XML from org ${orgUsername}: ${packageXmlAllFile}`));
 
     // Filter to keep only analytics metadatas
+    const parsedPackageXmlAll = await parsePackageXmlFile(packageXmlAllFile);
     const packageXmlAnalyticsFile = path.join(tmpDir, "packageXmlAnalytics.xml");
     const analyticsPackageXml = {};
     for (const type of Object.keys(parsedPackageXmlAll)) {

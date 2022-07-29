@@ -4,10 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.92.0] 2022-07-07
+## [2.92.0] 2022-07-29
 
 - New command hardis:org:retrieve:source:analytics to retrieve all analytics (CRM Analytics/TCRM) sources
 - New deployment tips (Wave analytics)
+- Fix writePackageXml method when there is not an existing file
 
 ## [2.91.0] 2022-07-15
 
