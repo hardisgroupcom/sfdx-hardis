@@ -77,7 +77,7 @@ export default class Retrofit extends SfdxCommand {
         analyticsPackageXml[type] = parsedPackageXmlAll[type];
       }
     }
-    await writePackageXmlFile(packageXmlAnalyticsFile,analyticsPackageXml);
+    await writePackageXmlFile(packageXmlAnalyticsFile, analyticsPackageXml);
     uxLog(this, c.cyan(`Filtered and completed analytics metadatas in analytics package XML: ${packageXmlAnalyticsFile}`));
 
     // Retrieve locally Analytics sources

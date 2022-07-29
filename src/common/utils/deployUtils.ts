@@ -681,14 +681,14 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
       const waveRecipeType = waveRecipeTypeList[0];
       const waveRecipeTypeMembers = waveRecipeType.members || [];
       const waveDataFlowTypeList = parsedPackageXml.Package.types.filter((type) => type.name[0] === "WaveDataflow");
-      let waveDataFlowType = { name: ["WaveDataflow"], members: []}
+      let waveDataFlowType = { name: ["WaveDataflow"], members: [] };
       if (waveDataFlowTypeList.length === 1) {
         waveDataFlowType = waveDataFlowTypeList[0];
       }
       for (const recipeId of waveRecipeTypeMembers) {
         if (!waveDataFlowType.members.includes(recipeId)) {
           waveDataFlowType.members.push(recipeId);
-          uxLog(this,c.grey(`- Added WaveDataflow ${recipeId} to match WaveRecipe ${recipeId}`))
+          uxLog(this, c.grey(`- Added WaveDataflow ${recipeId} to match WaveRecipe ${recipeId}`));
         }
       }
       waveDataFlowType.members.sort();
