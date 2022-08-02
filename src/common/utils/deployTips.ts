@@ -21,7 +21,7 @@ export function analyzeDeployErrorLogs(log: string, includeInLog = true): any {
   const updatedLogLines = returnErrorLines(logRes);
   updatedLogLines.forEach((logLine, index) => {
     logResLines.push(logLine);
-    if (logLine.startsWith("Error") && !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].startsWith("Error"))) {
+    if ((logLine.startsWith("Error") || logLine.startsWith(" Error")) && !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].startsWith("Error"))) {
       logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. Try google ?"));
       logResLines.push(c.yellow(""));
     }
