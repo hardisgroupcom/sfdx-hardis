@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.93.0] 2022-08-02
+
+- Fix handling of new sfdx error format so we can again identify deployment tips
+
 ## [2.92.0] 2022-07-29
 
 - New command hardis:org:retrieve:source:analytics to retrieve all analytics (CRM Analytics/TCRM) sources
