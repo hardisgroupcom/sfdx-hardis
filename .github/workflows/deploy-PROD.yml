@@ -45,7 +45,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
       - name: Publish beta to Registry
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v4
         env:
           SFDX_HARDIS_VERSION: beta
           SFDX_CLI_VERSION: latest
@@ -74,10 +74,10 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v3
       - name: Publish beta to Registry
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: elgohr/Publish-Docker-Github-Action@v4
         env:
           SFDX_HARDIS_VERSION: beta
-          SFDX_CLI_VERSION: "7.148.3"
+          SFDX_CLI_VERSION: "latest"
         with:
           name: hardisgroupcom/sfdx-hardis
           username: ${{ secrets.DOCKER_USERNAME }}

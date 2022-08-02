@@ -73,7 +73,7 @@ export default class DataExport extends SfdxCommand {
     });
 
     // Output message
-    const message = `Successfully import data from sfdmu project ${c.green(sfdmuPath)} into org ${c.green(orgUsername)}`;
+    const message = `Successfully deleted data from org ${c.green(orgUsername)} using SFDMU project ${c.green(sfdmuPath)}`;
     uxLog(this, c.cyan(message));
     return { outputString: message };
   }
