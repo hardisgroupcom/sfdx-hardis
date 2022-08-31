@@ -4,8 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.94.0] 2022-08-31
+
 - Update documentation to initialize scratch org
 - Update JSON schema to add `scratchOrgInitApexScripts`
+- Fix execution of scripts defined in `scratchOrgInitApexScripts`
 
 ## [2.93.0] 2022-08-02
 
