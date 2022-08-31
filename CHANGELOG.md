@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update documentation to initialize scratch org
+- Update JSON schema to add `scratchOrgInitApexScripts`
+
 ## [2.93.0] 2022-08-02
 
 - Fix handling of new sfdx error format so we can again identify deployment tips

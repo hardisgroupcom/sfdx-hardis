@@ -982,9 +982,11 @@ ansi-regex@^3.0.0:
   integrity sha512-+O9Jct8wf++lXxxFc4hc8LsjaSq0HFzzL7cVsw8pRDIPdjKD2mT4ytDZlLuSBZ4cLKZFXIrMGO7DbQCtMJJMKw==
 
 ansi-regex@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-4.1.0.tgz#8b9f8f08cf1acb843756a839ca8c7e3168c51997"
-  integrity sha512-1apePfXM1UOSqw0o9IiFAovVz9M5S1Dg+4TrDwfMewQ6p/rmMueb7tWZjQ1rx4Loy1ArBggoqGpfqqdI4rondg==
+  version "4.1.1"
+  resolved ""
+  integrity ""
+  dependencies:
+    
 
 ansi-regex@^5.0.0:
   version "5.0.1"
@@ -4609,13 +4611,11 @@ node-fetch@2.6.7, node-fetch@^2.6.0, node-fetch@^2.6.1:
     whatwg-url "^5.0.0"
 
 node-fetch@^3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-3.1.1.tgz#d0d9607e455b3087e3092b821b5b1f1ebf4c2147"
-  integrity sha512-SMk+vKgU77PYotRdWzqZGTZeuFKlsJ0hu4KPviQKkfY+N3vn2MIzr0rvpnYpR8MtB3IEuhlEcuOLbGvLRlA+yg==
+  version "3.2.10"
+  resolved ""
+  integrity ""
   dependencies:
-    data-uri-to-buffer "^4.0.0"
-    fetch-blob "^3.1.3"
-    formdata-polyfill "^4.0.10"
+    
 
 node-preload@^0.2.1:
   version "0.2.1"

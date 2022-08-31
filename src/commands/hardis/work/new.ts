@@ -31,10 +31,16 @@ Under the hood, it can:
 
 - Make git pull to be up to date with target branch
 - Create new git branch with formatted name
-- Create and initialize a scratch org or a source-tracked sandbox:
+- Create and initialize a scratch org or a source-tracked sandbox (config can be defined using \`config/.sfdx-hardis.yml\`):
   - Install packages
+    - Use property \`installedPackages\`
   - Push sources
+  - Assign permission sets
+    - Use property \`initPermissionSets\`
+  - Run apex initialization scripts
+    - Use property \`scratchOrgInitApexScripts\`
   - Load data
+    - Use property \`dataPackages\`
 `;
 
   public static examples = ["$ sfdx hardis:work:task:new"];
