@@ -710,6 +710,21 @@
       "title": "Retrofit ignored files",
       "type": "array"
     },
+    "scratchOrgInitApexScripts": {
+      "$id": "#/properties/scratchOrgInitApexScripts",
+      "description": "Apex scripts to call after scratch org initialization",
+      "examples": [
+        [
+          "scripts/apex/init-scratch.apex",
+          "scripts/apex/init-custom-settings.apex"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Scratch org init apex scripts",
+      "type": "array"
+    },
     "sfdmuCanModify": {
       "$id": "#/properties/sfdmuCanModify",
       "default": "",
