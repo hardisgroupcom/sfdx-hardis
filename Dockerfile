@@ -28,7 +28,7 @@ RUN npm install --no-cache sfdx-cli@${SFDX_CLI_VERSION} -g && \
     echo 'y' | sfdx plugins:install sfdmu && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
     echo 'y' | sfdx plugins:install sfdx-essentials && \
-    echo 'y' | sfdx plugins:install sfpowerkit && \
+    echo 'y' | sfdx plugins:install sfpowerkit@4.2.13 && \
     echo 'y' | sfdx plugins:install texei-sfdx-plugin && \
     sfdx --version && \
     sfdx plugins

@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.94.1] 2022-09-01
+
+- Lock sfpowerkit dependency to 4.2.13 to avoid error caused by deprecation of sfpowerkit:org:build:manifest
+
 ## [2.94.0] 2022-08-31
 
 - Update documentation to initialize scratch org
