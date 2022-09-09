@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.94.1] 2022-09-09
+
+- [hardis:project:clean:minimizeprofiles](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/minimizeprofiles/): Do not strip tabVisibilities from Profiles
+
 ## [2.94.1] 2022-09-01
 
 - Lock sfpowerkit dependency to 4.2.13 to avoid error caused by deprecation of sfpowerkit:org:build:manifest

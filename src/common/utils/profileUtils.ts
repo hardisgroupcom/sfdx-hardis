@@ -15,8 +15,7 @@ export async function minimizeProfile(profileFile: string) {
     "externalDataSourceAccesses",
     "fieldPermissions",
     "objectPermissions",
-    "pageAccesses",
-    "tabVisibilities",
+    "pageAccesses"
   ];
   // Remove more attributes if not admin profile
   const isAdmin = path.basename(profileFile) === "Admin.profile-meta.xml";
