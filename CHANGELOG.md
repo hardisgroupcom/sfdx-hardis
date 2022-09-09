@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.94.1] 2022-09-09
+## [2.94.2] 2022-09-09
 
 - [hardis:project:clean:minimizeprofiles](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/minimizeprofiles/): Do not strip tabVisibilities from Profiles
 
