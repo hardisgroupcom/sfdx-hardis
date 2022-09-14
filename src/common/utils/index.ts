@@ -382,11 +382,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n")
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n")
         )
       );
     }
@@ -903,7 +903,8 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
-  const sslCommand = 'openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=GB/ST=Paris/L=Paris/O=Hardis Group/OU=sfdx-hardis/CN=hardis-group.com"'
+  const sslCommand =
+    'openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=GB/ST=Paris/L=Paris/O=Hardis Group/OU=sfdx-hardis/CN=hardis-group.com"';
   await execCommand(sslCommand, this, { output: true, fail: true });
   await execCommand("openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt", this, {
     output: true,
