@@ -903,20 +903,9 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
-  const pwd = Math.random().toString(36).slice(-20);
-  await execCommand(`openssl genrsa -des3 -passout "pass:${pwd}" -out server.pass.key 2048`, this, { output: true, fail: true });
-  await execCommand(`openssl rsa -passin "pass:${pwd}" -in server.pass.key -out server.key`, this, { output: true, fail: true });
-  await fs.remove("server.pass.key");
-  await prompts({
-    type: "confirm",
-    message: c.cyanBright("Now answer the following questions. The answers are not really important :)\nHit ENTER when ready"),
-  });
-  await new Promise((resolve) => {
-    const opensslCommand = "openssl req -new -key server.key -out server.csr";
-    crossSpawn(opensslCommand, [], { stdio: "inherit" }).on("close", () => {
-      resolve(null);
-    });
-  });
+  const sslCommand =
+    'openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=GB/ST=Paris/L=Paris/O=Hardis Group/OU=sfdx-hardis/CN=hardis-group.com"';
+  await execCommand(sslCommand, this, { output: true, fail: true });
   await execCommand("openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt", this, {
     output: true,
     fail: true,

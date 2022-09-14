@@ -324,6 +324,7 @@
     "jsforce",
     "jwtkeyfile",
     "keepmetadatatypes",
+    "keyout",
     "keyv",
     "keyvalue",
     "kvdb",
