@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.94.3] 2022-09-15
+
+- Automate SSL certificate generation + force:source:deploy replaced by force:source:legacy:deploy
+
 ## [2.94.2] 2022-09-09
 
 - [hardis:project:clean:minimizeprofiles](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/minimizeprofiles/): Do not strip tabVisibilities from Profiles
