@@ -2,6 +2,7 @@ import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
+import { clearCache } from "../../common/cache";
 import { decryptFile } from "../../common/cryptoUtils";
 import {
   createTempDir,
@@ -241,6 +242,7 @@ async function authOrg(orgAlias: string, options: any) {
         this,
         { output: true, fail: true, spinner: false }
       );
+      await clearCache("force:org:list");
       uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
       username = loginResult?.username || "err";

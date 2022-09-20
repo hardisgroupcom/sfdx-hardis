@@ -6,6 +6,7 @@ import * as path from "path";
 import * as sortArray from "sort-array";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
+import { getCache, setCache } from "../cache";
 import { buildOrgManifest } from "../utils/deployUtils";
 import { prompts } from "../utils/prompts";
 import { listMetadataTypes } from "./metadataList";
@@ -402,7 +403,11 @@ class MetadataUtils {
 
   // List local orgs for user
   public static async listLocalOrgs(type = "any", options: any = {}) {
-    const orgListResult = await execSfdxJson("sfdx force:org:list", this);
+    let orgListResult = await getCache("force:org:list", null);
+    if (orgListResult == null) {
+      orgListResult = await execSfdxJson("sfdx force:org:list", this);
+      await setCache("force:org:list", orgListResult);
+    }
     if (type === "any") {
       return orgListResult?.result || [];
     } else if (type === "sandbox") {
