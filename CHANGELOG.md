@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Replace use of sfpowerkit by default command `sfdx force:source:manifest:create`
+- Manage cache for listing orgs
+
 ## [2.94.3] 2022-09-15
 
 - Automate SSL certificate generation + force:source:deploy replaced by force:source:legacy:deploy

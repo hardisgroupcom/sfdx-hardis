@@ -43,7 +43,7 @@ sfdx plugins:install sfdx-hardis
 For advanced use, please also install dependencies
 
 ```sh-session
-sfdx plugins:install sfdmu sfdx-git-delta sfdx-essentials sfpowerkit shane-sfdx-plugins texei-sfdx-plugin
+sfdx plugins:install sfdmu sfdx-git-delta sfdx-essentials shane-sfdx-plugins texei-sfdx-plugin
 ```
 
 ### With IDE
@@ -170,7 +170,6 @@ Anyone is welcome to contribute to this sfdx-hardis
 - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 - [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
-- [SfPowerkit](https://github.com/Accenture/sfpowerkit)
 - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 
 ## Commands

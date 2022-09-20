@@ -6,6 +6,7 @@ import * as path from "path";
 import * as sortArray from "sort-array";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
+import { MetadataUtils } from "../metadata-utils";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
 import { prompts } from "./prompts";
@@ -633,12 +634,22 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     uxLog(this, c.cyan(`Generating full package.xml from target org ${targetOrgUsernameAlias}...`));
     packageXmlOutputFile = path.join(tmpDir, "packageTargetOrg.xml");
   }
-  // Use sfpowerkit manifest build
+  const manifestName = path.basename(packageXmlOutputFile);
+  const manifestDir = path.dirname(packageXmlOutputFile);
+  // Get default org if not sent as argument (should not happen but better safe than sorry)
+  if (targetOrgUsernameAlias == null || targetOrgUsernameAlias == '') {
+    const currentOrg = await MetadataUtils.getCurrentOrg();
+    if (currentOrg == null) {
+      throw new SfdxError("You should call buildOrgManifest while having a default org set !");
+    }
+    targetOrgUsernameAlias = currentOrg.username ;
+  }
+  // Use sfdx manifest build
   await execCommand(
-    `sfdx sfpowerkit:org:manifest:build` +
-      ` --excludefilter ManagedContentTypeBundle` +
-      ` -o ${packageXmlOutputFile}` +
-      ` ${targetOrgUsernameAlias ? ` -u ${targetOrgUsernameAlias}` : ""}`,
+    `sfdx force:source:manifest:create` +
+      ` --manifestname ${manifestName}`+
+      ` --outputdir  ${manifestDir}`+
+      ` --fromorg ${targetOrgUsernameAlias}`,
     this,
     {
       fail: true,
@@ -652,7 +663,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
       c.red("[sfdx-hardis] Unable to generate package.xml. This is probably an auth issue or a Salesforce technical issue, please try again later")
     );
   }
-  // Add Elements that are not returned by sfpowerkit command
+  // Add Elements that are not returned by sfdx command
   if (conn) {
     const mdTypes = [{ type: "ListView" }, { type: "CustomLabel" }];
     const mdList = await conn.metadata.list(mdTypes, CONSTANTS.API_VERSION);
