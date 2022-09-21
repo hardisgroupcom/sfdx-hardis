@@ -52,6 +52,7 @@ export default class ConvertProfilesToPermSets extends SfdxCommand {
   protected static requiresSfdxPlugins = ["shane-sfdx-plugins"];
 
   public async run(): Promise<AnyJson> {
+
     const except = this.flags.except || [];
 
     uxLog(this, c.cyan("This command will convert profiles into permission sets"));

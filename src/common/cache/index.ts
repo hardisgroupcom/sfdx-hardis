@@ -1,34 +1,33 @@
-import * as fs from 'fs-extra';
-import * as os from 'os';
-import * as path from 'path';
+import * as fs from "fs-extra";
+import * as os from "os";
+import * as path from "path";
 
-const cacheFileName = path.join(os.homedir(),'.sfdx','.sfdx-hardis-cache.json');
+const cacheFileName = path.join(os.homedir(), ".sfdx", ".sfdx-hardis-cache.json");
 let MEMORY_CACHE: any = null;
 
 const readCache = async (): Promise<void> => {
   if (process.env?.NO_CACHE) {
-    MEMORY_CACHE = {}
-    return ;
+    MEMORY_CACHE = {};
+    return;
   }
   if (MEMORY_CACHE == null) {
     if (await fs.exists(cacheFileName)) {
       MEMORY_CACHE = await fs.readJson(cacheFileName);
-    }
-    else {
-      MEMORY_CACHE = {}
+    } else {
+      MEMORY_CACHE = {};
     }
   }
-}
+};
 
 const storeCache = async (): Promise<void> => {
   if (process.env?.NO_CACHE) {
-    return ;
+    return;
   }
   if (!(await fs.exists(cacheFileName))) {
     await fs.ensureDir(path.dirname(cacheFileName));
   }
   await fs.writeJson(cacheFileName, MEMORY_CACHE);
-}
+};
 
 // Get cache property
 export const getCache = async (key: string, defaultVal: any): Promise<any> => {
@@ -47,13 +46,12 @@ export const setCache = async (key: string, val: any): Promise<void> => {
 };
 
 // Clear cache property, or all cache if property is empty
-export const clearCache = async (key: string): Promise<void> => {
+export const clearCache = async (key: string = null): Promise<void> => {
   await readCache();
   if (key) {
     delete MEMORY_CACHE[key];
-  }
-  else {
-    MEMORY_CACHE = null ;
+  } else {
+    MEMORY_CACHE = null;
   }
   await storeCache();
 };

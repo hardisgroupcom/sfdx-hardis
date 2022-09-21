@@ -46,7 +46,7 @@ sfdx plugins:install sfdx-hardis
 For advanced use, please also install dependencies
 
 ```sh-session
-sfdx plugins:install sfdmu sfdx-git-delta sfdx-essentials sfpowerkit shane-sfdx-plugins texei-sfdx-plugin
+sfdx plugins:install sfdmu sfdx-git-delta sfdx-essentials texei-sfdx-plugin
 ```
 
 ### With IDE
