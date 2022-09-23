@@ -145,7 +145,7 @@ export default class PackageVersionCreate extends SfdxCommand {
         output: true,
         debug: debugMode,
       });
-      if (!(deleteVersionResult.result === "success")) {
+      if (!(deleteVersionResult.result.success === true)) {
         throw new SfdxError(`Unable to delete package version ${latestVersion}`);
       }
     }
