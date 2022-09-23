@@ -4,7 +4,7 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../../common/metadata-utils";
-import { execSfdxJson, isCI } from "../../../../common/utils";
+import { execSfdxJson, isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { getConfig, setConfig } from "../../../../config";
 
@@ -34,6 +34,11 @@ export default class PackageVersionCreate extends SfdxCommand {
       char: "p",
       default: null,
       description: "Package identifier that you want to use to generate a new package version",
+    }),
+    installkey: flags.string({
+      char: "k",
+      default: null,
+      description: "Package installation key",
     }),
     deleteafter: flags.boolean({
       default: false,
@@ -107,13 +112,16 @@ export default class PackageVersionCreate extends SfdxCommand {
       this.installKey = packageResponse.packageInstallationKey;
     }
     // Identify package directory
-    const pckgDirectory = packageDirectories.filter((pckgDirectory) => pckgDirectory.name === this.package)[0];
+    const pckgDirectory = packageDirectories.filter(
+      (pckgDirectory) => pckgDirectory.name === this.package || pckgDirectory.package === this.package
+    )[0];
     if (config.defaultPackageInstallationKey !== this.installKey) {
       await setConfig("project", {
         defaultPackageInstallationKey: this.installKey,
       });
     }
     // Create package version
+    uxLog(this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
     const createCommand =
       "sfdx force:package:version:create" +
       ` --package "${pckgDirectory.package}"` +
@@ -129,8 +137,9 @@ export default class PackageVersionCreate extends SfdxCommand {
 
     // If delete after is true, delete package version we just created
     if (this.deleteAfter) {
-      // Create package version
-      const deleteVersionCommand = "sfdx force:package:version:create -p " + latestVersion;
+      // Delete package version
+      uxLog(this, c.cyan(`Delete new package version ${c.green(latestVersion)} of package ${c.green(pckgDirectory.package)}...`));
+      const deleteVersionCommand = "sfdx force:package:version:delete -p " + latestVersion;
       const deleteVersionResult = await execSfdxJson(deleteVersionCommand, this, {
         fail: true,
         output: true,
