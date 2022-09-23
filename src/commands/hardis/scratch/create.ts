@@ -9,6 +9,7 @@ import * as fs from "fs-extra";
 import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
+import { clearCache } from "../../../common/cache";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
 import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "../../../common/utils/deployUtils";
@@ -282,6 +283,7 @@ export default class ScratchCreate extends SfdxCommand {
       output: false,
       debug: this.debugMode,
     });
+    await clearCache("force:org:list");
     assert(createResult.status === 0 && createResult.result, this.buildScratchCreateErrorMessage(createResult));
     this.scratchOrgInfo = createResult.result;
     this.scratchOrgUsername = this.scratchOrgInfo.username;

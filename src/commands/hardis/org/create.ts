@@ -9,6 +9,7 @@ import * as fs from "fs-extra";
 import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
+import { clearCache } from "../../../common/cache";
 import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from "../../../common/utils";
 import { initApexScripts, initOrgData, initPermissionSetAssignments } from "../../../common/utils/orgUtils";
 import { prompts } from "../../../common/utils/prompts";
@@ -171,6 +172,7 @@ export default class SandboxCreate extends SfdxCommand {
       output: false,
       debug: this.debugMode,
     });
+    await clearCache("force:org:list");
     assert(createResult.status === 0 && createResult.result, this.buildSandboxCreateErrorMessage(createResult));
     this.sandboxOrgInfo = createResult.result;
     this.sandboxOrgUsername = this.sandboxOrgInfo.username;
