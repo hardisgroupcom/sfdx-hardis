@@ -115,7 +115,7 @@ export default class PackageVersionCreate extends SfdxCommand {
     const pckgDirectory = packageDirectories.filter(
       (pckgDirectory) => pckgDirectory.name === this.package || pckgDirectory.package === this.package
     )[0];
-    if (config.defaultPackageInstallationKey !== this.installKey) {
+    if (config.defaultPackageInstallationKey !== this.installKey && this.installKey != null) {
       await setConfig("project", {
         defaultPackageInstallationKey: this.installKey,
       });
@@ -139,7 +139,7 @@ export default class PackageVersionCreate extends SfdxCommand {
     if (this.deleteAfter) {
       // Delete package version
       uxLog(this, c.cyan(`Delete new package version ${c.green(latestVersion)} of package ${c.green(pckgDirectory.package)}...`));
-      const deleteVersionCommand = "sfdx force:package:version:delete -p " + latestVersion;
+      const deleteVersionCommand = "sfdx force:package:version:delete --noprompt -p " + latestVersion;
       const deleteVersionResult = await execSfdxJson(deleteVersionCommand, this, {
         fail: true,
         output: true,
