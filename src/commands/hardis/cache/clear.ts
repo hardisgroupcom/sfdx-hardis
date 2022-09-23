@@ -46,7 +46,7 @@ export default class DxSources extends SfdxCommand {
     await clearCache();
     uxLog(this, "sfdx-hardis cache cleared");
     return {
-      message: 'sfdx-hardis cache cleared'
+      message: "sfdx-hardis cache cleared",
     };
   }
 }

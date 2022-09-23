@@ -637,19 +637,16 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   const manifestName = path.basename(packageXmlOutputFile);
   const manifestDir = path.dirname(packageXmlOutputFile);
   // Get default org if not sent as argument (should not happen but better safe than sorry)
-  if (targetOrgUsernameAlias == null || targetOrgUsernameAlias == '') {
+  if (targetOrgUsernameAlias == null || targetOrgUsernameAlias == "") {
     const currentOrg = await MetadataUtils.getCurrentOrg();
     if (currentOrg == null) {
       throw new SfdxError("You should call buildOrgManifest while having a default org set !");
     }
-    targetOrgUsernameAlias = currentOrg.username ;
+    targetOrgUsernameAlias = currentOrg.username;
   }
   // Use sfdx manifest build
   await execCommand(
-    `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}`+
-      ` --outputdir  ${manifestDir}`+
-      ` --fromorg ${targetOrgUsernameAlias}`,
+    `sfdx force:source:manifest:create` + ` --manifestname ${manifestName}` + ` --outputdir  ${manifestDir}` + ` --fromorg ${targetOrgUsernameAlias}`,
     this,
     {
       fail: true,
