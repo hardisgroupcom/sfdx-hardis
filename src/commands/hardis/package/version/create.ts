@@ -1,9 +1,10 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
+import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import { execSfdxJson } from "../../../../common/utils";
+import { MetadataUtils } from "../../../../common/metadata-utils";
+import { execSfdxJson, isCI } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { getConfig, setConfig } from "../../../../config";
 
@@ -29,6 +30,20 @@ export default class PackageVersionCreate extends SfdxCommand {
       default: false,
       description: messages.getMessage("debugMode"),
     }),
+    package: flags.string({
+      char: "p",
+      default: null,
+      description: "Package identifier that you want to use to generate a new package version",
+    }),
+    deleteafter: flags.boolean({
+      default: false,
+      description: "Delete package version after creating it",
+    }),
+    install: flags.boolean({
+      char: "i",
+      default: false,
+      description: "Install package version on default org after generation",
+    }),
     websocket: flags.string({
       description: messages.getMessage("websocket"),
     }),
@@ -46,45 +61,63 @@ export default class PackageVersionCreate extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
+  protected package: string;
+  protected deleteAfter = false;
+  protected install = false;
+  protected installKey = null;
+  protected promote = false;
+
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    this.package = this.flags.package || null;
+    this.install = this.flags.install || false;
+    this.installKey = this.flags.installkey || null;
+    this.deleteAfter = this.flags.deleteafter || false;
+    this.promote = this.flags.promote || false;
     const debugMode = this.flags.debug || false;
     const config = await getConfig("project");
     // List project packages
     const packageDirectories = this.project.getUniquePackageDirectories();
-    const packageResponse = await prompts([
-      {
-        type: "select",
-        name: "packageSelected",
-        message: c.cyanBright(`Please select a package (this is not a drill, it will create an official new version !)`),
-        choices: packageDirectories.map((packageDirectory) => {
-          return {
-            title: packageDirectory.package || packageDirectory.path,
-            value: packageDirectory.name,
-          };
-        }),
-      },
-      {
-        type: "text",
-        name: "packageInstallationKey",
-        message: c.cyanBright(`Please input an installation password (or let empty)`),
-        initial: config.defaultPackageInstallationKey || "",
-      },
-    ]);
-    // Manage user response
-    const pckgDirectory = packageDirectories.filter((pckgDirectory) => pckgDirectory.name === packageResponse.packageSelected)[0];
-    if (config.defaultPackageInstallationKey !== packageResponse.packageInstallationKey) {
+    // Ask user to select package and input install key if not sent as command arguments
+    if (this.package == null) {
+      if (isCI) {
+        throw new SfdxError("You need to send argument 'package'");
+      }
+      const packageResponse = await prompts([
+        {
+          type: "select",
+          name: "packageSelected",
+          message: c.cyanBright(`Please select a package (this is not a drill, it will create an official new version !)`),
+          choices: packageDirectories.map((packageDirectory) => {
+            return {
+              title: packageDirectory.package || packageDirectory.path,
+              value: packageDirectory.name,
+            };
+          }),
+        },
+        {
+          type: "text",
+          name: "packageInstallationKey",
+          message: c.cyanBright(`Please input an installation password (or let empty)`),
+          initial: config.defaultPackageInstallationKey || "",
+        },
+      ]);
+      this.package = packageResponse.packageSelected;
+      this.installKey = packageResponse.packageInstallationKey;
+    }
+    // Identify package directory
+    const pckgDirectory = packageDirectories.filter((pckgDirectory) => pckgDirectory.name === this.package)[0];
+    if (config.defaultPackageInstallationKey !== this.installKey) {
       await setConfig("project", {
-        defaultPackageInstallationKey: packageResponse.packageInstallationKey,
+        defaultPackageInstallationKey: this.installKey,
       });
     }
-
     // Create package version
     const createCommand =
       "sfdx force:package:version:create" +
       ` --package "${pckgDirectory.package}"` +
-      (packageResponse.packageInstallationKey ? ` --installationkey "${packageResponse.packageInstallationKey}"` : " --installationkeybypass") +
+      (this.installKey ? ` --installationkey "${this.installKey}"` : " --installationkeybypass") +
       " --codecoverage" +
       " -w 60";
     const createResult = await execSfdxJson(createCommand, this, {
@@ -93,6 +126,33 @@ export default class PackageVersionCreate extends SfdxCommand {
       debug: debugMode,
     });
     const latestVersion = createResult.result.SubscriberPackageVersionId;
+
+    // If delete after is true, delete package version we just created
+    if (this.deleteAfter) {
+      // Create package version
+      const deleteVersionCommand = "sfdx force:package:version:create -p " + latestVersion;
+      const deleteVersionResult = await execSfdxJson(deleteVersionCommand, this, {
+        fail: true,
+        output: true,
+        debug: debugMode,
+      });
+      if (!(deleteVersionResult.result === "success")) {
+        throw new SfdxError(`Unable to delete package version ${latestVersion}`);
+      }
+    }
+    // Install package on org just after is has been generated
+    else if (this.install) {
+      const packagesToInstall = [];
+      const pckg: { SubscriberPackageVersionId?: string; installationkey?: string } = {
+        SubscriberPackageVersionId: latestVersion,
+      };
+      if (this.installKey) {
+        pckg.installationkey = this.installKey;
+      }
+      packagesToInstall.push(pckg);
+      await MetadataUtils.installPackagesOnOrg(packagesToInstall, null, this, "install");
+    }
+
     // Return an object to be displayed with --json
     return {
       outputString: "Generated new package version",
