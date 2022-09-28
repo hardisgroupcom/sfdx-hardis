@@ -9,6 +9,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { getConfig, setConfig } from "../../../config";
 import { WebSocketClient } from "../../../common/websocketClient";
+import { isSfdxProject } from "../../../common/utils/projectUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -76,7 +77,7 @@ export default class ProjectCreate extends SfdxCommand {
     }
 
     // Create sfdx project only if not existing
-    if (!fs.existsSync("./sfdx-project.json")) {
+    if (!isSfdxProject()) {
       const createCommand = "sfdx force:project:create" + ` --projectname "${projectName}"` + " --manifest";
       await execCommand(createCommand, this, {
         output: true,

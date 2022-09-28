@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Update hardis:package:version:create to allow to
   - install it later on an org
   - immediately delete it
+- Factorize check of sfdx project existence
 
 ## [2.94.3] 2022-09-15
 

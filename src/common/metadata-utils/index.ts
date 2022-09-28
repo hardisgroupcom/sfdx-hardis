@@ -8,6 +8,7 @@ import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, ux
 import { CONSTANTS } from "../../config";
 import { getCache, setCache } from "../cache";
 import { buildOrgManifest } from "../utils/deployUtils";
+import { isSfdxProject } from "../utils/projectUtils";
 import { prompts } from "../utils/prompts";
 import { listMetadataTypes } from "./metadataList";
 
@@ -517,7 +518,7 @@ class MetadataUtils {
     if (options.filterManagedItems) {
       uxLog(commandThis, c.cyan("Filtering managed items from package.Xml manifest..."));
       // List installed packages & collect managed namespaces
-      const installedPackages = fs.existsSync("sfdx-project.json") ? await this.listInstalledPackages(null, commandThis) : [];
+      const installedPackages = isSfdxProject() ? await this.listInstalledPackages(null, commandThis) : [];
       const namespaces = [];
       for (const installedPackage of installedPackages) {
         if (installedPackage?.SubscriberPackageNamespace !== "" && installedPackage?.SubscriberPackageNamespace != null) {
