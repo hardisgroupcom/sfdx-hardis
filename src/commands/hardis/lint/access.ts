@@ -74,8 +74,7 @@ export default class Access extends SfdxCommand {
     const rootFolder = path.resolve(this.folder);
     
     
-    for(let i=0; i< Access.sourceElements.length; i++  ) {
-      const sourceElement = Access.sourceElements[i];
+    for(const sourceElement of Access.sourceElements) {
       const findManagedPattern = rootFolder + sourceElement['regex'];
       const matchedElements = await glob(findManagedPattern, { cwd: process.cwd() });
     
