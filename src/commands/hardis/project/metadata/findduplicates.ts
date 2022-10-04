@@ -15,18 +15,18 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 
 export default class Find extends SfdxCommand {
-  protected static manifestDuplicateFindKeys = {
+  protected static metadataDuplicateFindKeys = {
     layout: ["Layout.layoutSections.layoutColumns.layoutItems.field", "Layout.quickActionListItems.quickActionName"],
     profile: ["Profile.fieldPermissions.field"],
   };
 
   public static title = "XML duplicate values finder";
   public static description = `find duplicate values in XML file(s).
-  Find duplicate values in XML file(s). Keys to be checked can be configured in \`config/sfdx-hardis.yml\` using property manifestDuplicateFindKeys.
+  Find duplicate values in XML file(s). Keys to be checked can be configured in \`config/sfdx-hardis.yml\` using property metadataDuplicateFindKeys.
 
 Default config :
-manifestDuplicateFindKeys :
-${Find.manifestDuplicateFindKeys}
+metadataDuplicateFindKeys :
+${Find.metadataDuplicateFindKeys}
 `;
 
   public static examples = [
@@ -49,14 +49,14 @@ ${Find.manifestDuplicateFindKeys}
 </Layout>
 `,
     `
-$ sfdx hardis:manifest:duplicate:find --file layout.layout-meta.xml
+$ sfdx hardis:metadata:duplicate:find --file layout.layout-meta.xml
 [sfdx-hardis] Duplicate values in layout.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
   - Values : Name
 `,
     `
-$ sfdx hardis:manifest:duplicate:find -f "force-app/main/default/**/*.xml" 
-[sfdx-hardis] hardis:manifest:duplicate:find execution time 0:00:00.397
+$ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml" 
+[sfdx-hardis] hardis:metadata:duplicate:find execution time 0:00:00.397
 [sfdx-hardis] Duplicate values in layout1.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
   - Values : CreatedById
@@ -94,8 +94,8 @@ $ sfdx hardis:manifest:duplicate:find -f "force-app/main/default/**/*.xml"
 
   async initConfig() {
     this.configInfo = await getConfig("user");
-    if (this.configInfo.manifestDuplicateFindKeys) {
-      Find.manifestDuplicateFindKeys = this.configInfo.manifestDuplicateFindKeys;
+    if (this.configInfo.metadataDuplicateFindKeys) {
+      Find.metadataDuplicateFindKeys = this.configInfo.metadataDuplicateFindKeys;
     }
     // Gets the root sfdx logger level
     this.logLevel = (await Logger.root()).getLevel();
@@ -117,7 +117,7 @@ $ sfdx hardis:manifest:duplicate:find -f "force-app/main/default/**/*.xml"
       const type = inputFile.match(filenameRegex)[1];
 
       // Check if given metadata type has unicity rules
-      const uniqueKeys = Find.manifestDuplicateFindKeys[type];
+      const uniqueKeys = Find.metadataDuplicateFindKeys[type];
       if (!uniqueKeys) {
         if (this.logLevel === LoggerLevel.DEBUG) {
           uxLog(this, `No unicity rule found for metadata type ${type} (processing ${inputFile})`);
@@ -125,7 +125,7 @@ $ sfdx hardis:manifest:duplicate:find -f "force-app/main/default/**/*.xml"
         continue;
       }
 
-      // Read manifest file
+      // Read metadata file
       const file = await parseXmlFile(inputFile);
       uniqueKeys.forEach((key) => {
         // Traverse the file down to the key based on the fragments separated by . (dots), abort if not found
