@@ -4,6 +4,30 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Replace use of sfpowerkit by default command `sfdx force:source:manifest:create`
+- Manage cache for listing orgs
+- Update hardis:package:version:create to allow to
+  - install it later on an org
+  - immediately delete it
+
+## [2.94.3] 2022-09-15
+
+- Automate SSL certificate generation + force:source:deploy replaced by force:source:legacy:deploy
+
+## [2.94.2] 2022-09-09
+
+- [hardis:project:clean:minimizeprofiles](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/minimizeprofiles/): Do not strip tabVisibilities from Profiles
+
+## [2.94.1] 2022-09-01
+
+- Lock sfpowerkit dependency to 4.2.13 to avoid error caused by deprecation of sfpowerkit:org:build:manifest
+
+## [2.94.0] 2022-08-31
+
+- Update documentation to initialize scratch org
+- Update JSON schema to add `scratchOrgInitApexScripts`
+- Fix execution of scripts defined in `scratchOrgInitApexScripts`
+
 ## [2.93.0] 2022-08-02
 
 - Fix handling of new sfdx error format so we can again identify deployment tips

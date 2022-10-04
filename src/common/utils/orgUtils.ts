@@ -2,7 +2,6 @@ import { MetadataUtils } from "../metadata-utils";
 import { prompts } from "./prompts";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as glob from "glob-promise";
 import * as path from "path";
 import { createTempDir, execCommand, execSfdxJson, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
@@ -319,14 +318,12 @@ export async function initPermissionSetAssignments(permSets: Array<any>, orgUser
 // Run initialization apex scripts
 export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: string) {
   uxLog(this, c.cyan("Running apex initialization scripts..."));
-  const allApexScripts = await glob("**/scripts/**/*.apex");
-  // Build ordered list of apex scripts
+  // Build list of apex scripts and check their existence
   const initApexScripts = orgInitApexScripts.map((scriptName: string) => {
-    const matchingScripts = allApexScripts.filter((apexScript: string) => path.basename(apexScript) === scriptName);
-    if (matchingScripts.length === 0) {
-      throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}.apex`));
+    if (!fs.existsSync(scriptName)) {
+      throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}`));
     }
-    return matchingScripts[0];
+    return scriptName;
   });
   // Process apex scripts
   for (const apexScript of initApexScripts) {

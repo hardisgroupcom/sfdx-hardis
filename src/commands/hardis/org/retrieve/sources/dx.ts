@@ -79,7 +79,7 @@ export default class DxSources extends SfdxCommand {
   protected static requiresProject = false;
 
   // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ["sfpowerkit", "sfdx-essentials"];
+  protected static requiresSfdxPlugins = ["sfdx-essentials"];
 
   /* jscpd:ignore-end */
 
