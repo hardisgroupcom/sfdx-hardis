@@ -79,7 +79,7 @@ export default class Find extends SfdxCommand {
    *  Traverse down a XML tree, allProps containing all the properties to be traversed, currentProp being updated as we
    * descend. 
    */
-  traverseDown(parent: Object | Array<any>, currentProp: string, allProps: Array<string>, results: Array<string>) {
+  traverseDown(parent: Record<string, unknown> | Array<any>, currentProp: string, allProps: Array<string>, results: Array<string>) {
     const nextProp = allProps[allProps.indexOf(currentProp) + 1];
 
     // If we're at the end of property path (A.B.C -> parent = A.B, currentProp = C, nextProp = undefined) we add the
