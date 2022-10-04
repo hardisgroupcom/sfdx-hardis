@@ -50,8 +50,20 @@ ${Find.manifestDuplicateFindKeys}
 `,
     `
 $ sfdx hardis:manifest:duplicate:find --file layout.layout-meta.xml
-[sfdx-hardis] hardis:manifest:duplicate:find execution time 0:00:00.307
-[sfdx-hardis] Duplicate value found for key Layout.layoutSections.layoutColumns.layoutItems.field : Name 
+[sfdx-hardis] Duplicate values in layout.layout-meta.xml
+  - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
+  - Values : Name
+`,
+    `
+$ sfdx hardis:manifest:duplicate:find -f "force-app/main/default/**/*.xml" 
+[sfdx-hardis] hardis:manifest:duplicate:find execution time 0:00:00.397
+[sfdx-hardis] Duplicate values in layout1.layout-meta.xml
+  - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
+  - Values : CreatedById
+
+[sfdx-hardis] Duplicate values in layout2.layout-meta.xml
+  - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
+  - Values : LastModifiedById, Name
 `,
   ];
 
@@ -127,7 +139,7 @@ $ sfdx hardis:manifest:duplicate:find --file layout.layout-meta.xml
             this,
             `Duplicate values in ${basename(inputFile)}
   - Key    : ${key}
-  - Values : ${duplicates.toString().replace(',', ', ')}
+  - Values : ${duplicates.toString().replace(",", ", ")}
 `
           );
         }
