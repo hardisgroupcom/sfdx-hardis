@@ -6,7 +6,8 @@ import * as c from "chalk";
 import * as glob from "glob-promise";
 import * as path from "path";
 import { uxLog } from "../../../common/utils";
-import * as fs from "fs-extra";
+//import * as fs from "fs-extra";
+import { parseXmlFile } from "../../../common/utils/xmlUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -40,16 +41,19 @@ export default class Access extends SfdxCommand {
   protected static requiresProject = true;
 
   protected folder: string;
-  protected del = false;
 
   protected static sourceElements = [
     {
       regex: `/**/*.cls`,
-      type : 'Apex classes'
+      type : 'Apex classes',
+      xmlField : 'apexClass',
+      xmlChilds : 'classAccesses'
     },
     {
       regex: `/**/objects/**/fields/*__c.field-meta.xml`,
-      type : 'Object fields'
+      type : 'Object fields',
+      xmlField : 'field',
+      xmlChilds : 'fieldPermissions'
     }
   ];
 
@@ -66,7 +70,6 @@ export default class Access extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     this.folder = this.flags.folder || "./force-app";
-    this.del = this.flags.delete || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Check if elements(apex class and field) are at least in one permission set`));
@@ -74,18 +77,20 @@ export default class Access extends SfdxCommand {
     const rootFolder = path.resolve(this.folder);
     
     
+    const elementsToCheckByType = {apexClass : [], field: [] };
+
+    /* ELEMENTS TO CHECK */
     for(const sourceElement of Access.sourceElements) {
       const findManagedPattern = rootFolder + sourceElement['regex'];
       const matchedElements = await glob(findManagedPattern, { cwd: process.cwd() });
     
-      uxLog(this, c.cyan(`-----${sourceElement['type'] }-----`));
       switch (sourceElement.type) {
         case 'Object fields':
-          this.handleObjectFieldsCheck(matchedElements, rootFolder);
+          elementsToCheckByType.field = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField);
           break;
         
         case 'Apex classes':
-          this.handleApexClassesCheck(matchedElements, rootFolder);
+          elementsToCheckByType.apexClass = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField);
           break;
       
         default:
@@ -94,82 +99,111 @@ export default class Access extends SfdxCommand {
     
     }
 
+    uxLog(this, '-------------' );
+    uxLog(this, '----BEFORE CHECK----' );
+    uxLog(this, '-------------' );
+    uxLog(this, '----FIELDS----' );
+    uxLog(this, JSON.stringify(elementsToCheckByType.field) );
+    uxLog(this, '----APEX CLASSES----' );
+    uxLog(this, JSON.stringify(elementsToCheckByType.apexClass) );
+    uxLog(this, '-------------' );
+    uxLog(this, '----AFTER CHECK----' );
+    uxLog(this, '-------------' );
+    await this.listElementIfNotInProfilOrPermission(rootFolder, elementsToCheckByType);
+
     // Return an object to be displayed with --json
     return { outputString: '' };
   }
 
-  private formatFieldDescriptionForPermissionSet(element) {
-    const fieldRoute = element.substring(element.indexOf('objects/') );
-    const objectField = fieldRoute.substring(fieldRoute.indexOf('/') + 1).replace('/fields/', '.').replace('.field-meta.xml', '');
+  private formatElementNameFromPath(path, type) {
 
-    return objectField;
+    if(type === 'field') {
+      const fieldRoute = path.substring(path.indexOf('objects/') );
+      const objectField = fieldRoute.substring(fieldRoute.indexOf('/') + 1).replace('/fields/', '.').replace('.field-meta.xml', '');
+      return objectField;
+    } else if(type === 'apexClass') {
+      return path.substring(path.indexOf('classes/')).replace('classes/', '').replace('.cls', '');
+    }
+
+
+    return '';
   }
 
-  
-
-  private async handleObjectFieldsCheck(elements, rootFolder) {
+  private async retrieveElementToCheck(elements, xmlField) {
     const fieldsToSearch = [];
 
     for(const element of elements) {
-      const objectField = this.formatFieldDescriptionForPermissionSet(element);
-      
-      fieldsToSearch.push(objectField);
+      const el = this.formatElementNameFromPath(element, xmlField);
+      fieldsToSearch.push(el);
     }
 
-    this.listElementIfNotInProfilOrPermission(rootFolder, fieldsToSearch, 'Field');
+    return fieldsToSearch;
+  }
+
+  private async listElementIfNotInProfilOrPermission(rootFolder, elementsToCheckByType) {
+
+    const profilesFiles = await glob(rootFolder + this.profiles['regex'], { cwd: process.cwd() });
     
+    let remaningElements = await this.retrieveNonAssignedRights('Profile', profilesFiles, elementsToCheckByType);
+    if( !this.hasRemaningElementsToCheck(remaningElements) ) {
+      uxLog(this, 'All elements are included in at least one Permission set or Profile' );
+    } else {
+      const permissionSetFiles = await glob(rootFolder + this.permissionSet['regex'], { cwd: process.cwd() });
+      remaningElements = await this.retrieveNonAssignedRights('PermissionSet', permissionSetFiles, remaningElements);
+
+      if( !this.hasRemaningElementsToCheck(remaningElements) ) {
+        uxLog(this, 'All elements are included in at least one Permission set or Profile' );
+      } else {
+        //list remaning elements after checking on profiles and permissions sets
+        uxLog(this, '----CLASSES---' );
+        uxLog(this, JSON.stringify(remaningElements.apexClass) );
+        uxLog(this, '----FIELDS---' );
+        uxLog(this, JSON.stringify(remaningElements.field) );
+      }
+    }    
   }
 
-  private async handleApexClassesCheck(elements, rootFolder) {
-    const apexClassesToSearch = [];
+  private async retrieveNonAssignedRights(typeFile, files, elementsToCheckByType) {
+    const remaningElements = elementsToCheckByType;
 
-    for(const element of elements) {
+    for(const file of files) {
+      const fileXml = await parseXmlFile(file);
 
-      const apexClass = element.substring(element.indexOf('classes/')).replace('classes/', '').replace('.cls', '');  
-      apexClassesToSearch.push(apexClass);
+      for(const element of Access.sourceElements) {
+        const xmlChilds = element.xmlChilds;
+        const xmlField = element.xmlField;
+
+        //if file doesn't include xml child pass to next element
+        if( !fileXml[typeFile][xmlChilds] ||  fileXml[typeFile][xmlChilds].length == 0) {
+          continue;
+        } 
+
+        fileXml[typeFile][xmlChilds].forEach(permission => {
+          if(elementsToCheckByType[xmlField].includes(permission[xmlField][0]) ) {
+            remaningElements[xmlField] = remaningElements[xmlField].filter(e => e !== permission[xmlField][0]);
+          }
+        });
+
+      }
+
+      //if no remaning elements to check then we stop iterating permissionset or profile files
+      if(!this.hasRemaningElementsToCheck(remaningElements) ) {
+        break;
+      }
     }
 
-    this.listElementIfNotInProfilOrPermission(rootFolder, apexClassesToSearch, 'Class');
+    return remaningElements;
   }
 
-
-  private async listElementIfNotInProfilOrPermission(rootFolder, searchTerms, prefixMessage) {
-
-    for(const searchTerm of searchTerms) {
-      //------CHECK PERMISSION SET----------------
-      const permissionSetsFiles = await glob(rootFolder + this.permissionSet['regex'], { cwd: process.cwd() });
-      let isIncludedInPermissionSet = false;
-
-
-      for(const permissionSetFile of permissionSetsFiles) {
-        const fileText = await fs.readFile(permissionSetFile, "utf8");
-        const fileLines = fileText.split("\n");
-
-        for(const line of fileLines) {
-          if(line.includes(searchTerm) ) {
-            isIncludedInPermissionSet = true;
-          }
-        }
+  private hasRemaningElementsToCheck(remaningElements) {
+    let mustContinue = false;
+    Object.keys(remaningElements).forEach(elementType => {
+      if(remaningElements[elementType].length > 0) {
+        mustContinue = true;
       }
+    });
 
-      //--------CHECK PROFILES-----------------
-      const profilesFiles = await glob(rootFolder + this.profiles['regex'], { cwd: process.cwd() });
-      let isIncludedInProfile = false;
-
-      for(const profileFile of profilesFiles) {
-        const fileText = await fs.readFile(profileFile, "utf8");
-        const fileLines = fileText.split("\n");
-
-        for(const line of fileLines) {
-          if(line.includes(searchTerm) ) {
-            isIncludedInProfile = true;
-          }
-        }
-      }
-
-      if( !isIncludedInPermissionSet && !isIncludedInProfile ) {
-        uxLog(this, c.cyan(`${prefixMessage} ${searchTerm} is in sources but has no rights defined in Profiles of Permission sets`));
-      }
-    }
+    return mustContinue;
   }
+
 }
