@@ -3,7 +3,13 @@
 
 ## Description
 
-Run apex test cases on org
+Run apex tests in Salesforce org
+
+If following configuration is defined, it will fail if apex coverage target is not reached:
+
+- Env `APEX_TESTS_MIN_COVERAGE_ORG_WIDE` or `.sfdx-hardis` property `apexTestsMinCoverageOrgWide`
+- Env `APEX_TESTS_MIN_COVERAGE_ORG_WIDE` or `.sfdx-hardis` property `apexTestsMinCoverageOrgWide`
+
 
 ## Parameters
 
@@ -13,6 +19,7 @@ Run apex test cases on org
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |testlevel<br/>-l|option|Level of tests to apply to validate deployment|RunLocalTests||NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||

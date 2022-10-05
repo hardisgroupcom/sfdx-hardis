@@ -3,7 +3,10 @@
 
 ## Description
 
-Process again the selection of the items that you want to publish to upper level
+Resets the selection that we want to add in the merge request
+
+Calls a soft git reset behind the hood  
+
 
 ## Parameters
 
@@ -13,6 +16,7 @@ Process again the selection of the items that you want to publish to upper level
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
