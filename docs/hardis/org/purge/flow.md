@@ -17,7 +17,8 @@ Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Stat
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |name<br/>-n|option|Filter according to Name criteria||||
 |prompt<br/>-z|boolean|Prompt for confirmation (true by default, use --no-prompt to skip)||||
-|status<br/>-s|option|Filter according to Status criteria|Obsolete|||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|status<br/>-s|option|Filter according to Status criteria||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

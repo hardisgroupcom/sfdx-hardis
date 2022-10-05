@@ -5,17 +5,46 @@
 
 When a work task is completed, guide user to create a merge request
 
+Some properties can be defined in `.sfdx-hardis.yml` to avoid to have to manually update xml files so the deployment will pass.
+
+- `autocleantypes`: List of auto-performed sources cleanings, available on command [hardis:project:clean:references](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/)
+- `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
+
+Example:
+
+```yaml
+autoCleanTypes:
+  - destructivechanges
+  - datadotcom
+  - minimizeProfiles
+  - listViewsMine
+autoRemoveUserPermissions:
+  - EnableCommunityAppLauncher
+  - FieldServiceAccess
+  - OmnichannelInventorySync
+  - SendExternalEmailAvailable
+  - UseOmnichannelInventoryAPIs
+  - ViewDataLeakageEvents
+  - ViewMLModels
+  - ViewPlatformEvents
+  - WorkCalibrationUser
+```
+  
+
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
 |apiversion|option|override the api version used for api requests made by this command||||
+|auto|boolean|No user prompts (when called from CI for example)||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |noclean<br/>-c|boolean|No cleaning of local sources||||
 |nogit<br/>-g|boolean|No automated git operations||||
 |nopull<br/>-n|boolean|No scratch pull before save||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|targetbranch|option|Name of the Merge Request target branch. Will be guessed or prompted if not provided.||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

@@ -18,6 +18,7 @@ Must contain also standard CustomObject and CustomField elements.
 If not provided, it will be generated from a remote org||||
 |packagexmltargetorg<br/>-t|option|Target org username or alias to build package.xml (sfdx must be authenticated).
 If not provided, will be prompted to the user.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples

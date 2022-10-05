@@ -18,6 +18,7 @@ Retrieve Salesforce DX project from org
 |keepmetadatatypes<br/>-k|option|Comma separated list of metadatas types that will be the only ones to be retrieved||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |shape<br/>-o|boolean|Updates project-scratch-def.json from org shape||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |tempfolder<br/>-t|option|Temporary folder|./tmp|||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
