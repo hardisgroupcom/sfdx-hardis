@@ -3,7 +3,12 @@
 
 ## Description
 
-Export files from an org according to a configuration
+Export file attachments from a Salesforce org
+  
+See article below
+
+[![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
+
 
 ## Parameters
 
@@ -16,6 +21,7 @@ Export files from an org according to a configuration
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |path<br/>-p|option|Path to the file export project||||
 |polltimeout<br/>-t|option|Timeout in MS for Bulk API calls|300000|||
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |startchunknumber<br/>-s|option|Chunk number to start from||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||

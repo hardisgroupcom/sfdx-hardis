@@ -14,6 +14,7 @@ Retrieve Salesforce DX project from org
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |packagexml<br/>-x|option|Path to package.xml file||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |template<br/>-t|option|sfdx-hardis package.xml Template name. ex: wave||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
