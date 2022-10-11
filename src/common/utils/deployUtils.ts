@@ -9,6 +9,7 @@ import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { MetadataUtils } from "../metadata-utils";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
+import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils";
@@ -644,16 +645,39 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     }
     targetOrgUsernameAlias = currentOrg.username;
   }
-  // Use sfdx manifest build
-  await execCommand(
-    `sfdx force:source:manifest:create` + ` --manifestname ${manifestName}` + ` --outputdir  ${manifestDir}` + ` --fromorg ${targetOrgUsernameAlias}`,
-    this,
-    {
-      fail: true,
-      debug: process.env.DEBUG,
-      output: true,
-    }
-  );
+  if (isSfdxProject()) {
+    // Use sfdx manifest build in current project
+    await execCommand(
+      `sfdx force:source:manifest:create` +
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${manifestDir}` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
+      this,
+      {
+        fail: true,
+        debug: process.env.DEBUG,
+        output: true,
+      }
+    );
+  }
+  else {
+    const tmpDirSfdxProject = await createTempDir();
+    await createBlankSfdxProject(tmpDirSfdxProject);
+    // Use sfdx manifest build in dummy project
+    await execCommand(
+      `sfdx force:source:manifest:create` +
+        ` --manifestname ${manifestName}` +
+        ` --outputdir  ${manifestDir}` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
+      this,
+      {
+        fail: true,
+        cwd: tmpDirSfdxProject,
+        debug: process.env.DEBUG,
+        output: true,
+      }
+    );
+  }
   const packageXmlFull = packageXmlOutputFile;
   if (!fs.existsSync(packageXmlFull)) {
     throw new SfdxError(
