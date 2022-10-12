@@ -55,7 +55,7 @@ $ sfdx hardis:metadata:duplicate:find --file layout.layout-meta.xml
   - Values : Name
 `,
     `
-$ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml" 
+$ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml"
 [sfdx-hardis] hardis:metadata:duplicate:find execution time 0:00:00.397
 [sfdx-hardis] Duplicate values in layout1.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
@@ -81,7 +81,7 @@ $ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml"
   //protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
-  // protected static supportsDevhubUsername = true;
+  // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;

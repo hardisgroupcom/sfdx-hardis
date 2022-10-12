@@ -56,7 +56,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
-  protected static supportsDevhubUsername = false;
+  protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;

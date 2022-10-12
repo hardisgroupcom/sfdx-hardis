@@ -15,7 +15,7 @@ export default class SourcePush extends SfdxCommand {
   public static title = "Scratch PUSH";
 
   public static description = `Push local files to scratch org
-  
+
 Calls \`sfdx force:source:push\` under the hood
 `;
 
@@ -41,7 +41,7 @@ Calls \`sfdx force:source:push\` under the hood
   protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
-  // protected static supportsDevhubUsername = true;
+  // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;

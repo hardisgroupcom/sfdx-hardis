@@ -43,7 +43,7 @@ export default class DataExport extends SfdxCommand {
   protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
-  // protected static supportsDevhubUsername = true;
+  // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;

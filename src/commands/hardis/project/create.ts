@@ -43,7 +43,7 @@ export default class ProjectCreate extends SfdxCommand {
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
-  protected static supportsDevhubUsername = true;
+  protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
@@ -56,13 +56,34 @@ export default class ProjectCreate extends SfdxCommand {
     this.debugMode = this.flags.debugMode || false;
     // Check git repo
     await ensureGitRepository({ clone: true });
-    // Connect to DevHub
-    await this.config.runHook("auth", {
-      checkAuth: true,
-      Command: this,
-      devHub: true,
-      scratch: false,
+    const devHubPrompt = await prompts({
+      name: "orgType",
+      type: "select",
+      message: "To perform implementation, will your project use scratch org or source tracked sandboxes only ?",
+      choices: [
+        {
+          title: "Scratch orgs only",
+          value: "scratch",
+        },
+        {
+          title: "Source tracked sandboxes only",
+          value: "sandbox",
+        },
+        {
+          title: "Source tracked sandboxes and scratch orgs",
+          value: "sandboxAndScratch",
+        },
+      ],
     });
+    if (["scratch", "sandboxAndScratch"].includes(devHubPrompt.orgType)) {
+      // Connect to DevHub
+      await this.config.runHook("auth", {
+        checkAuth: true,
+        Command: this,
+        devHub: true,
+        scratch: false,
+      });
+    }
     // Project name
     let config = await getConfig("project");
     let projectName = config.projectName;
