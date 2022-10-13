@@ -306,6 +306,7 @@
     "htmlvalue",
     "ignoreerrors",
     "ignorewarnings",
+    "includepackages",
     "includeprofiles",
     "initial",
     "initialisation",

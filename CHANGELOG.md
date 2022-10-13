@@ -10,6 +10,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - install it later on an org
   - immediately delete it
 - New command hardis:project:metadata:findduplicates to detect when git messed during an automated merging of conflicts
+- Factorize check of sfdx project existence
+- Fix default gitlab-ci default pipeline
+- Replace supportsDevhubUsername by requiresDevhubUsername in command classes when necessary
 
 ## [2.94.3] 2022-09-15
 

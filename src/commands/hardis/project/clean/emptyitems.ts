@@ -46,7 +46,7 @@ export default class CleanEmptyItems extends SfdxCommand {
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
-  protected static supportsDevhubUsername = false;
+  protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;

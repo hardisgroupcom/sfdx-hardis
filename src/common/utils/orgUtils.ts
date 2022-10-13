@@ -10,6 +10,7 @@ import * as sortArray from "sort-array";
 import { Connection, SfdxError } from "@salesforce/core";
 import { importData } from "./dataUtils";
 import { soqlQuery } from "./apiUtils";
+import { isSfdxProject } from "./projectUtils";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -170,9 +171,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   if (options.setDefault === true) {
     // Set default username
     const setDefaultUsernameCommand =
-      `sfdx config:set ` +
-      `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${org.username}` +
-      (!fs.existsSync(path.join(process.cwd(), "sfdx-project.json")) ? " --global" : "");
+      `sfdx config:set ` + `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${org.username}` + (!isSfdxProject() ? " --global" : "");
     await execSfdxJson(setDefaultUsernameCommand, commandThis, {
       fail: true,
       output: false,

@@ -43,7 +43,7 @@ export const hook = async (options: any) => {
     return;
   }
   // Manage authentication if DevHub is required but current user is disconnected
-  if ((options.Command && options.Command.supportsDevhubUsername === true) || options.devHub === true) {
+  if ((options.Command && options.Command.requiresDevhubUsername === true) || options.devHub === true) {
     let devHubAlias = configInfo.devHubAlias || process.env.DEVHUB_ALIAS;
     if (devHubAlias == null) {
       await checkConfig(options);
