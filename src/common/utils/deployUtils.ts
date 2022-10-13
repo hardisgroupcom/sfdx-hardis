@@ -651,7 +651,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
       `sfdx force:source:manifest:create` +
         ` --manifestname ${manifestName}` +
         ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked`+
+        ` --includepackages managed,unlocked` +
         ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
@@ -660,8 +660,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
         output: true,
       }
     );
-  }
-  else {
+  } else {
     const tmpDirSfdxProject = await createTempDir();
     await createBlankSfdxProject(tmpDirSfdxProject);
     // Use sfdx manifest build in dummy project
@@ -669,12 +668,12 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
       `sfdx force:source:manifest:create` +
         ` --manifestname ${manifestName}` +
         ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked`+
+        ` --includepackages managed,unlocked` +
         ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
-        cwd: path.join(tmpDirSfdxProject,'sfdx-hardis-blank-project'),
+        cwd: path.join(tmpDirSfdxProject, "sfdx-hardis-blank-project"),
         debug: process.env.DEBUG,
         output: true,
       }

@@ -171,9 +171,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   if (options.setDefault === true) {
     // Set default username
     const setDefaultUsernameCommand =
-      `sfdx config:set ` +
-      `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${org.username}` +
-      (!isSfdxProject() ? " --global" : "");
+      `sfdx config:set ` + `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${org.username}` + (!isSfdxProject() ? " --global" : "");
     await execSfdxJson(setDefaultUsernameCommand, commandThis, {
       fail: true,
       output: false,
