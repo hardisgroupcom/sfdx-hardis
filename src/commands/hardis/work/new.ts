@@ -163,7 +163,7 @@ Under the hood, it can:
           description: "Scratch orgs are configured on my project so I want to create or reuse one",
         },
         {
-          title: "Sandbox org with source tracking (beta)",
+          title: "Sandbox org with source tracking",
           value: "sandbox",
           description: "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one",
         },
@@ -303,5 +303,7 @@ Under the hood, it can:
         fail: true,
       });
     }
+    // Trigger a status refresh on VsCode WebSocket Client
+    WebSocketClient.sendMessage({ event: "refreshStatus" });
   }
 }

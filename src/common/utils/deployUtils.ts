@@ -650,7 +650,8 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     await execCommand(
       `sfdx force:source:manifest:create` +
         ` --manifestname ${manifestName}` +
-        ` --outputdir ${manifestDir}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked`+
         ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
@@ -667,12 +668,13 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     await execCommand(
       `sfdx force:source:manifest:create` +
         ` --manifestname ${manifestName}` +
-        ` --outputdir  ${manifestDir}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked`+
         ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
-        cwd: tmpDirSfdxProject,
+        cwd: path.join(tmpDirSfdxProject,'sfdx-hardis-blank-project'),
         debug: process.env.DEBUG,
         output: true,
       }
