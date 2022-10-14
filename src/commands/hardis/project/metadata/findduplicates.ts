@@ -7,9 +7,14 @@ import { parseXmlFile } from "../../../../common/utils/xmlUtils";
 import { getConfig } from "../../../../config";
 import * as glob from "glob-promise";
 import { basename } from "path";
+import * as c from "chalk";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
+
+// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
+// or any library that is using the messages framework can also be loaded this way.
+const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
@@ -75,6 +80,12 @@ $ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml"
       char: "f",
       description: "XML metadata files path",
     }),
+    websocket: flags.string({
+      description: messages.getMessage("websocket"),
+    }),
+    skipauth: flags.boolean({
+      description: "Skip authentication check when a default username is required",
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -87,8 +98,10 @@ $ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml"
   protected static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
+    uxLog(this, c.cyan(`Start finding duplicate values in XML metadata files.`));
     await this.initConfig();
     this.findDuplicates();
+    uxLog(this, c.cyan(`Done finding duplicate values in XML metadata files.`));
     return;
   }
 
@@ -120,7 +133,7 @@ $ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml"
       const uniqueKeys = Find.metadataDuplicateFindKeys[type];
       if (!uniqueKeys) {
         if (this.logLevel === LoggerLevel.DEBUG) {
-          uxLog(this, `No unicity rule found for metadata type ${type} (processing ${inputFile})`);
+          uxLog(this, c.gray(`No unicity rule found for metadata type ${type} (processing ${inputFile})`));
         }
         continue;
       }
@@ -137,10 +150,10 @@ $ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml"
         if (duplicates.length) {
           uxLog(
             this,
-            `Duplicate values in ${basename(inputFile)}
+            c.red(`Duplicate values in ${basename(inputFile)}
   - Key    : ${key}
   - Values : ${duplicates.toString().replace(",", ", ")}
-`
+`)
           );
         }
       });
