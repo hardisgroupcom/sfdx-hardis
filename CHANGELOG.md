@@ -1,6 +1,6 @@
 # Changelog
 
-## [insiders] (master)
+## [beta] (master)
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
@@ -13,6 +13,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Factorize check of sfdx project existence
 - Fix default gitlab-ci default pipeline
 - Replace supportsDevhubUsername by requiresDevhubUsername in command classes when necessary
+- Add parameters `skipauth` and `websocket` on `sfdx hardis:project:metadata:duplicate`
+- Add missing parameter `skipauth` on `sfdx hardis:package:install`
 
 ## [2.94.3] 2022-09-15
 
