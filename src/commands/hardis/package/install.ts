@@ -51,6 +51,9 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
       default: null,
       description: messages.getMessage("packageInstallationKey"),
     }),
+    skipauth: flags.boolean({
+      description: "Skip authentication check when a default username is required",
+    }),
   };
 
   // Comment this out if your command does not require an org username
