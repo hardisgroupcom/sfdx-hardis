@@ -8,7 +8,7 @@ import * as path from "path";
 import { uxLog } from "../../../common/utils";
 //import * as fs from "fs-extra";
 import { parseXmlFile } from "../../../common/utils/xmlUtils";
-
+//import { getConfig } from "../../../config";
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
@@ -24,10 +24,15 @@ export default class Access extends SfdxCommand {
   public static examples = ["$ sfdx hardis:lint:access"];
 
   protected static flagsConfig = {
-    ignore: flags.boolean({
+    ignore: flags.string({
       char: "i",
-      default: false,
-      description: "Ignore specific elements seperated by commas",
+      default: '',
+      description: "Ignore specific elements seperated by commas (-i \"ApexClass:ClassA, CustomField:Account.CustomField\")",
+    }),
+    folder: flags.string({
+      char: "f",
+      default: "force-app",
+      description: "Root folder",
     }),
   };
 
@@ -47,13 +52,23 @@ export default class Access extends SfdxCommand {
       regex: `/**/*.cls`,
       type : 'Apex classes',
       xmlField : 'apexClass',
-      xmlChilds : 'classAccesses'
+      xmlChilds : 'classAccesses',
+      xmlAccessField : 'enabled',
+      ignore : {
+        all : false,
+        elements : []
+      }
     },
     {
       regex: `/**/objects/**/fields/*__c.field-meta.xml`,
       type : 'Object fields',
       xmlField : 'field',
-      xmlChilds : 'fieldPermissions'
+      xmlChilds : 'fieldPermissions',
+      xmlAccessField : 'readable',
+      ignore : {
+        all : false,
+        elements : []
+      }
     }
   ];
 
@@ -67,12 +82,35 @@ export default class Access extends SfdxCommand {
     type : 'Profiles'
   };
 
+  private static messages = {
+    header : 'Check if elements(apex class and field) are at least in one permission set',
+    allElementsHaveRights : 'All elements are included in at least one Permission set or Profile',
+
+  }
 
   public async run(): Promise<AnyJson> {
+    //getConfig("")
     this.folder = this.flags.folder || "./force-app";
 
-    // Delete standard files when necessary
-    uxLog(this, c.cyan(`Check if elements(apex class and field) are at least in one permission set`));
+    const ignoreElements = this.flags.ignore;
+    ignoreElements.split(',').forEach(ignoredElement => {
+      const elementTrimed = ignoredElement.trim();
+
+      //check if all elements of a type are ignored
+      if(elementTrimed === 'ApexClass') {
+        Access.sourceElements[0].ignore.all = true;
+      } else if(elementTrimed === 'CustomField') {
+        Access.sourceElements[1].ignore.all = true;
+      }
+      //check indivual elements (ex : ApexClass:ClassB)
+      else if(elementTrimed.startsWith('ApexClass') ) {
+        Access.sourceElements[0].ignore.elements.push(elementTrimed.substring(elementTrimed.indexOf(':') + 1).trim() );
+      } else if(elementTrimed.startsWith('CustomField') ) {
+        Access.sourceElements[1].ignore.elements.push(elementTrimed.substring(elementTrimed.indexOf(':') + 1).trim() );
+      }
+    });
+
+    uxLog(this, c.cyan(Access.messages.header));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     
@@ -81,16 +119,21 @@ export default class Access extends SfdxCommand {
 
     /* ELEMENTS TO CHECK */
     for(const sourceElement of Access.sourceElements) {
+      //if the type(apex class, field) is ignored we pass to the next type
+      if(sourceElement.ignore.all ) {
+        continue;
+      }
+
       const findManagedPattern = rootFolder + sourceElement['regex'];
       const matchedElements = await glob(findManagedPattern, { cwd: process.cwd() });
     
       switch (sourceElement.type) {
         case 'Object fields':
-          elementsToCheckByType.field = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField);
+          elementsToCheckByType.field = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField, sourceElement.ignore.elements);
           break;
         
         case 'Apex classes':
-          elementsToCheckByType.apexClass = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField);
+          elementsToCheckByType.apexClass = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField, sourceElement.ignore.elements);
           break;
       
         default:
@@ -99,20 +142,8 @@ export default class Access extends SfdxCommand {
     
     }
 
-    uxLog(this, '-------------' );
-    uxLog(this, '----BEFORE CHECK----' );
-    uxLog(this, '-------------' );
-    uxLog(this, '----FIELDS----' );
-    uxLog(this, JSON.stringify(elementsToCheckByType.field) );
-    uxLog(this, '----APEX CLASSES----' );
-    uxLog(this, JSON.stringify(elementsToCheckByType.apexClass) );
-    uxLog(this, '-------------' );
-    uxLog(this, '----AFTER CHECK----' );
-    uxLog(this, '-------------' );
-    await this.listElementIfNotInProfilOrPermission(rootFolder, elementsToCheckByType);
-
-    // Return an object to be displayed with --json
-    return { outputString: '' };
+    const remaningElements = await this.listElementIfNotInProfilOrPermission(rootFolder, elementsToCheckByType);
+    return { outputString: remaningElements };
   }
 
   private formatElementNameFromPath(path, type) {
@@ -129,58 +160,64 @@ export default class Access extends SfdxCommand {
     return '';
   }
 
-  private async retrieveElementToCheck(elements, xmlField) {
+  private async retrieveElementToCheck(elements, xmlField, excludedElements) {
     const fieldsToSearch = [];
 
     for(const element of elements) {
       const el = this.formatElementNameFromPath(element, xmlField);
-      fieldsToSearch.push(el);
+      
+      //only check elements not ignored
+      if(!excludedElements.includes(el) ) {
+        fieldsToSearch.push(el);
+      }
     }
 
     return fieldsToSearch;
   }
 
   private async listElementIfNotInProfilOrPermission(rootFolder, elementsToCheckByType) {
-
+    const hasToDisplayJsonOnly = process.argv.includes("--json");
     const profilesFiles = await glob(rootFolder + this.profiles['regex'], { cwd: process.cwd() });
     
-    let remaningElements = await this.retrieveNonAssignedRights('Profile', profilesFiles, elementsToCheckByType);
-    if( !this.hasRemaningElementsToCheck(remaningElements) ) {
-      uxLog(this, 'All elements are included in at least one Permission set or Profile' );
+    //CHECK PROFILES FIRST
+    let remaningElements = await this.retrieveElementsWithoutRights('Profile', profilesFiles, elementsToCheckByType);
+    if( !this.hasRemaningElementsToCheck(remaningElements) && !hasToDisplayJsonOnly) {
+      uxLog(this, Access.messages.allElementsHaveRights);
     } else {
+      //THEN CHECK PERMISSION SETS
       const permissionSetFiles = await glob(rootFolder + this.permissionSet['regex'], { cwd: process.cwd() });
-      remaningElements = await this.retrieveNonAssignedRights('PermissionSet', permissionSetFiles, remaningElements);
+      remaningElements = await this.retrieveElementsWithoutRights('PermissionSet', permissionSetFiles, remaningElements);
 
-      if( !this.hasRemaningElementsToCheck(remaningElements) ) {
-        uxLog(this, 'All elements are included in at least one Permission set or Profile' );
+      if( !this.hasRemaningElementsToCheck(remaningElements) && !hasToDisplayJsonOnly) {
+        uxLog(this, Access.messages.allElementsHaveRights);
       } else {
         //list remaning elements after checking on profiles and permissions sets
-        uxLog(this, '----CLASSES---' );
-        uxLog(this, JSON.stringify(remaningElements.apexClass) );
-        uxLog(this, '----FIELDS---' );
-        uxLog(this, JSON.stringify(remaningElements.field) );
+        remaningElements.apexClass = this.constructLogAndDisplayTable(remaningElements.apexClass, "Apex class", hasToDisplayJsonOnly);
+        remaningElements.field = this.constructLogAndDisplayTable(remaningElements.field, "Custom field", hasToDisplayJsonOnly);
       }
-    }    
+    }
+    
+    const json = hasToDisplayJsonOnly ? remaningElements : '';
+
+    return json;
   }
 
-  private async retrieveNonAssignedRights(typeFile, files, elementsToCheckByType) {
+  private async retrieveElementsWithoutRights(typeFile, files, elementsToCheckByType) {
     const remaningElements = elementsToCheckByType;
 
     for(const file of files) {
       const fileXml = await parseXmlFile(file);
 
-      for(const element of Access.sourceElements) {
-        const xmlChilds = element.xmlChilds;
-        const xmlField = element.xmlField;
-
-        //if file doesn't include xml child pass to next element
-        if( !fileXml[typeFile][xmlChilds] ||  fileXml[typeFile][xmlChilds].length == 0) {
+      //checking all elements in the current type
+      for(const currentType of Access.sourceElements) {
+        if( !fileXml[typeFile][currentType.xmlChilds] ||  fileXml[typeFile][currentType.xmlChilds].length == 0) {
           continue;
         } 
 
-        fileXml[typeFile][xmlChilds].forEach(permission => {
-          if(elementsToCheckByType[xmlField].includes(permission[xmlField][0]) ) {
-            remaningElements[xmlField] = remaningElements[xmlField].filter(e => e !== permission[xmlField][0]);
+        fileXml[typeFile][currentType.xmlChilds].forEach(permission => {
+          //only readable(for fields) or enabled(apex class) rights are relevant
+          if(permission[currentType.xmlAccessField][0] == 'true' && elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField][0]) ) {
+            remaningElements[currentType.xmlField] = remaningElements[currentType.xmlField].filter(e => e !== permission[currentType.xmlField][0] );
           }
         });
 
@@ -196,14 +233,17 @@ export default class Access extends SfdxCommand {
   }
 
   private hasRemaningElementsToCheck(remaningElements) {
-    let mustContinue = false;
-    Object.keys(remaningElements).forEach(elementType => {
-      if(remaningElements[elementType].length > 0) {
-        mustContinue = true;
-      }
-    });
-
-    return mustContinue;
+    return Object.keys(remaningElements).some(elementType => remaningElements[elementType].length > 0 );
   }
 
+  private constructLogAndDisplayTable(elements, header, hasToDisplayJsonOnly) {
+    if(elements.length > 0) {
+      //we create an object to have a custom header in the table
+      elements = elements.map(e => { return {[header]: e} });
+      if(!hasToDisplayJsonOnly) {
+        console.table(elements);
+      }
+    }
+    return elements;
+  }
 }
