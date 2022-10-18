@@ -54,14 +54,14 @@ ${Find.metadataDuplicateFindKeys}
 </Layout>
 `,
     `
-$ sfdx hardis:metadata:duplicate:find --file layout.layout-meta.xml
+$ sfdx hardis:metadata:findduplicates --file layout.layout-meta.xml
 [sfdx-hardis] Duplicate values in layout.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
   - Values : Name
 `,
     `
-$ sfdx hardis:metadata:duplicate:find -f "force-app/main/default/**/*.xml"
-[sfdx-hardis] hardis:metadata:duplicate:find execution time 0:00:00.397
+$ sfdx hardis:metadata:findduplicates -f "force-app/main/default/**/*.xml"
+[sfdx-hardis] hardis:metadata:findduplicates execution time 0:00:00.397
 [sfdx-hardis] Duplicate values in layout1.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
   - Values : CreatedById
