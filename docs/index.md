@@ -281,6 +281,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 |[**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)|Fix flexipages for v53|
 |[**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)|Generate Git Delta|
 |[**hardis:project:lint**](hardis/project/lint.md)|Lint|
+|[**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)|XML duplicate values finder|
 
 ### hardis:scratch
 
