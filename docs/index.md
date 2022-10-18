@@ -202,6 +202,13 @@ Anyone is welcome to contribute to this sfdx-hardis
 |[**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)|Generate project documentation|
 |[**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)|Generate SFDX Plugin Documentation|
 
+### hardis:manifest
+
+|Command|Title|
+|:------|:----------|
+|[**hardis:manifest:duplicate:find**](hardis/manifest/duplicate/find.md)|XML duplicate values finder|
+|[**hardis:manifest:duplicate:remove**](hardis/manifest/duplicate/remove.md)|Remove duplicates from manifest|
+
 ### hardis:mdapi
 
 |Command|Title|

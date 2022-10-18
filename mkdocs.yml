@@ -61,6 +61,10 @@ nav:
             permsetgroups: hardis/doc/extract/permsetgroups.md
           plugin:
             generate: hardis/doc/plugin/generate.md
+        manifest:
+          duplicate:
+            find: hardis/manifest/duplicate/find.md
+            remove: hardis/manifest/duplicate/remove.md
         mdapi:
           deploy: hardis/mdapi/deploy.md
         misc:
