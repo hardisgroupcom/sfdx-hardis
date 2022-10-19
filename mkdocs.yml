@@ -140,6 +140,8 @@ nav:
           generate:
             gitdelta: hardis/project/generate/gitdelta.md
           lint: hardis/project/lint.md
+          metadata:
+            findduplicates: hardis/project/metadata/findduplicates.md
         scratch:
           create: hardis/scratch/create.md
           delete: hardis/scratch/delete.md
