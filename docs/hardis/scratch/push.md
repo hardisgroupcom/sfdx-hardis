@@ -4,7 +4,7 @@
 ## Description
 
 Push local files to scratch org
-  
+
 Calls `sfdx force:source:push` under the hood
 
 
