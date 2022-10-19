@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.95.0] 2022-10-19
+
 - Replace use of sfpowerkit by default command `sfdx force:source:manifest:create`
 - Manage cache for listing orgs
 - Update hardis:package:version:create to allow to
