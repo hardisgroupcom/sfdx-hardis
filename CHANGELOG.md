@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.96.0] 2022-11-08
+## [2.95.3] 2022-11-08
 
 - Replace `sfdx force:package:install` with `sfdx force:package:beta:install`
 - Do not cause deployment to fail when a deploying an older managed package version
