@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.95.3] 2022-11-08
+
+- Replace `sfdx force:package:install` with `sfdx force:package:beta:install`
+- Do not cause deployment to fail when a deploying an older managed package version
+  - Instead, deployment will assume the newer version meets the requirement
+
 ## [2.95.2] 2022-10-19
 
 - Replace use of sfpowerkit by default command `sfdx force:source:manifest:create`

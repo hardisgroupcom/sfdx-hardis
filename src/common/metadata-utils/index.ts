@@ -477,20 +477,34 @@ class MetadataUtils {
         }
         const securityType = package1.SecurityType || "AllUsers";
         let packageInstallCommand =
-          "sfdx force:package:install" +
+          "sfdx force:package:beta:install" +
           ` --package ${package1.SubscriberPackageVersionId}` +
           " --noprompt" +
           ` --securitytype ${securityType}` +
           " -w 60" +
+          " --json " +
           (package1.installationkey != null && package1.installationkey != "" ? ` --installationkey ${package1.installationkey}` : "");
         if (orgAlias != null) {
           packageInstallCommand += ` -u ${orgAlias}`;
         }
         elapseStart(`Install package ${package1.SubscriberPackageName}`);
-        await execCommand(packageInstallCommand, this, {
-          fail: true,
-          output: true,
-        });
+        try {
+          await execCommand(packageInstallCommand, this, {
+            fail: true,
+            output: true,
+          });
+        } catch (ex) {
+          const ignoredErrors = ["Une version plus récente de ce package est installée.", "A newer version of this package is currently installed."];
+          let ignore = false;
+          ignoredErrors.forEach((msg) => {
+            if (ex.message && ex.message.includes(msg)) {
+              ignore = true;
+            }
+          });
+          if (!ignore) {
+            throw ex;
+          }
+        }
         elapseEnd(`Install package ${package1.SubscriberPackageName}`);
       } else {
         uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`));
