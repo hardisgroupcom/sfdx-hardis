@@ -496,7 +496,7 @@ class MetadataUtils {
         } catch (ex) {
           const ignoredErrors = ["Une version plus récente de ce package est installée.", "A newer version of this package is currently installed."];
           // If ex.message contains at least one of the ignoredError, don't rethrow exception
-          if (!ignoredErrors.some(msg => (ex.message && ex.message.includes(msg)))) {
+          if (!ignoredErrors.some((msg) => ex.message && ex.message.includes(msg))) {
             throw ex;
           }
         }
