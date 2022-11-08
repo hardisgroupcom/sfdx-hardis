@@ -749,6 +749,14 @@
       "examples": ["deployments@myclient.com", "deployments@google.fr", "deployments@apple.com"],
       "title": "Target Username",
       "type": "string"
+    },
+    "linterIgnoreRightMetadataFile": {
+      "$id": "#/properties/linterIgnoreRightMetadataFile",
+      "default": "",
+      "description": "Ignore profiles or permission sets",
+      "examples": ["Profile", "Profile:ProfileA", "PermissionSet", "PermissionSet:PermissionSetA, Profile:ProfileA"],
+      "title": "Linter ignore permission set or/and profile",
+      "type": "string"
     }
   },
   "title": "sfdx-hardis configuration",
