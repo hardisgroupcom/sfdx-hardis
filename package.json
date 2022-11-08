@@ -20,6 +20,7 @@
     "@types/ws": "^7.4.0",
     "@typescript-eslint/eslint-plugin": "^4.17.0",
     "@typescript-eslint/parser": "^4.17.0",
+    "@xmldom/xmldom": "^0.8.6",
     "axios": "^0.21.1",
     "chalk": "^4.1.0",
     "changed-git-files": "^0.0.1",
@@ -62,7 +63,6 @@
     "which": "^2.0.2",
     "ws": "^7.4.4",
     "xml2js": "^0.4.23",
-    "xmldom": "^0.6.0",
     "xpath": "^0.0.32"
   },
   "devDependencies": {
