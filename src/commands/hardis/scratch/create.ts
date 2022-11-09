@@ -442,7 +442,7 @@ export default class ScratchCreate extends SfdxCommand {
         // Assign to permission set allowing to update SharingCalc
         const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
         await execSfdxJson(assignCommand, this, {
-          fail: true,
+          fail: false, // Do not fail in case permission set already exists
           output: false,
           debug: this.debugMode,
         });

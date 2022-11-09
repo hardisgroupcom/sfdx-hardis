@@ -4,11 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [2.96.0] 2022-11-08
+## [2.96.0] 2022-11-09
 
 - Replace `sfdx force:package:install` with `sfdx force:package:beta:install`
 - Do not cause deployment to fail when a deploying an older managed package version
   - Instead, deployment will assume the newer version meets the requirement
+- hardis:scratch:create : Avoid error in case of already existing assignment of PermissionSet SfdxHardisDeferSharingRecalc
+- Update Node.js minimum version to 16.x
 
 ## [2.95.2] 2022-10-19
 
