@@ -7,7 +7,7 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import * as xmldom from "xmldom";
+import * as xmldom from "@xmldom/xmldom";
 import * as xpath from "xpath";
 import { isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
