@@ -137,7 +137,7 @@ export default class Toml2Csv extends SfdxCommand {
     if (!fs.existsSync(this.transfoConfigFile)) {
       this.triggerError(c.red(`Mapping/Transco config ${c.bold(this.transfoConfigFile)} not found`));
     }
-    const transfoConfigInit = JSON.parse(fs.readFileSync(this.transfoConfigFile, 'utf-8'));
+    const transfoConfigInit = JSON.parse(fs.readFileSync(this.transfoConfigFile, "utf-8"));
     this.transfoConfig = this.completeTransfoConfig(transfoConfigInit);
 
     // Set separators
@@ -555,7 +555,7 @@ export default class Toml2Csv extends SfdxCommand {
       if (!fs.existsSync(transcoFile)) {
         this.triggerError(`Missing transco file ${c.bold(transcoFile)} for enum ${c.bold(transfo.enum)}`, false);
       }
-      this.loadedTranscos[transfo.enum] = JSON.parse(fs.readFileSync(transcoFile, 'utf-8'));
+      this.loadedTranscos[transfo.enum] = JSON.parse(fs.readFileSync(transcoFile, "utf-8"));
       return this.loadedTranscos[transfo.enum];
     }
     this.triggerError(`Missing transco definition in ${c.bold(JSON.stringify(transfo))}`, false);
