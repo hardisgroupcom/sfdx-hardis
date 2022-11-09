@@ -136,7 +136,7 @@ export default class SandboxCreate extends SfdxCommand {
     // Build project-sandbox-def-branch-user.json
     uxLog(this, c.cyan("Building custom project-sandbox-def.json..."));
     if (fs.existsSync("./config/project-sandbox-def.json")) {
-      this.projectSandboxDef = JSON.parse(fs.readFileSync("./config/project-sandbox-def.json"));
+      this.projectSandboxDef = JSON.parse(fs.readFileSync("./config/project-sandbox-def.json", 'utf-8'));
     } else {
       uxLog(this, c.yellow(`Default values used: you may define a file ${c.bold("config/project-sandbox-def.json")}`));
       this.projectSandboxDef = {

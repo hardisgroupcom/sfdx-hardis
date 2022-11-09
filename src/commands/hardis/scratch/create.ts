@@ -216,7 +216,7 @@ export default class ScratchCreate extends SfdxCommand {
   public async createScratchOrg() {
     // Build project-scratch-def-branch-user.json
     uxLog(this, c.cyan("Building custom project-scratch-def.json..."));
-    this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json"));
+    this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json", 'utf-8'));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
     this.projectScratchDef.username = `${this.userEmail.split("@")[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
