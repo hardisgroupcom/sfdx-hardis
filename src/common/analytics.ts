@@ -86,7 +86,7 @@ function getUuidV4() {
   const anonUsrId = uuidv4();
   usrLocalStorage.anonymousUserId = anonUsrId;
   fs.ensureDirSync(path.resolve(os.homedir() + "/.node-stats"), {
-    mode: "0777",
+    mode: 777,
   });
   fs.writeJsonSync(localStorageFileNm, usrLocalStorage);
   return usrLocalStorage.anonymousUserId;

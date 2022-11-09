@@ -11,7 +11,7 @@ const readCache = async (): Promise<void> => {
     return;
   }
   if (MEMORY_CACHE == null) {
-    if (await fs.exists(cacheFileName)) {
+    if (fs.existsSync(cacheFileName)) {
       MEMORY_CACHE = await fs.readJson(cacheFileName);
     } else {
       MEMORY_CACHE = {};
@@ -23,7 +23,7 @@ const storeCache = async (): Promise<void> => {
   if (process.env?.NO_CACHE) {
     return;
   }
-  if (!(await fs.exists(cacheFileName))) {
+  if (!fs.existsSync(cacheFileName)) {
     await fs.ensureDir(path.dirname(cacheFileName));
   }
   await fs.writeJson(cacheFileName, MEMORY_CACHE);

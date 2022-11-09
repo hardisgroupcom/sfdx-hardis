@@ -216,7 +216,7 @@ export default class ScratchCreate extends SfdxCommand {
   public async createScratchOrg() {
     // Build project-scratch-def-branch-user.json
     uxLog(this, c.cyan("Building custom project-scratch-def.json..."));
-    this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json"));
+    this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json", "utf-8"));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
     this.projectScratchDef.username = `${this.userEmail.split("@")[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
@@ -442,7 +442,7 @@ export default class ScratchCreate extends SfdxCommand {
         // Assign to permission set allowing to update SharingCalc
         const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
         await execSfdxJson(assignCommand, this, {
-          fail: true,
+          fail: false, // Do not fail in case permission set already exists
           output: false,
           debug: this.debugMode,
         });
