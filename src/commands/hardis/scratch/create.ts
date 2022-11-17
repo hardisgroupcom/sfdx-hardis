@@ -440,17 +440,22 @@ export default class ScratchCreate extends SfdxCommand {
           soap: true,
         });
         // Assign to permission set allowing to update SharingCalc
-        const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
-        await execSfdxJson(assignCommand, this, {
-          fail: false, // Do not fail in case permission set already exists
-          output: false,
-          debug: this.debugMode,
-        });
-        await execCommand("sfdx texei:sharingcalc:suspend", this, {
-          fail: false,
-          output: true,
-          debug: this.debugMode,
-        });
+        try {
+          const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
+          await execSfdxJson(assignCommand, this, {
+            fail: false, // Do not fail in case permission set already exists
+            output: false,
+            debug: this.debugMode,
+          });
+          await execCommand("sfdx texei:sharingcalc:suspend", this, {
+            fail: false,
+            output: true,
+            debug: this.debugMode,
+          });
+        } catch (e) {
+          uxLog(self, c.yellow("Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"));
+          uxLog(self, c.grey(e.message));
+        }
       }
       await forceSourcePush(this.scratchOrgAlias, this, this.debugMode);
       // Resume sharing calc if necessary
