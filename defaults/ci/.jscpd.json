@@ -10,6 +10,9 @@
     "**/.github/**",
     "**/.idea/**",
     "**/report/**",
-    "**/README.md"
+    "**/README.md",
+    "**/*.json",
+    "**/*.svg",
+    "**/*.xml"
   ]
 }

@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.96.1] 2022-11-17
+
+- Fix error when assigning already existing PS
+- Update default CI config
+
 ## [2.96.0] 2022-11-09
 
 - Replace `sfdx force:package:install` with `sfdx force:package:beta:install`
