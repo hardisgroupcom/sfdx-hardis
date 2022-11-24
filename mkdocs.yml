@@ -52,11 +52,19 @@ nav:
       hardis:
         auth:
           login: hardis/auth/login.md
+        cache:
+          clear: hardis/cache/clear.md
         config:
           get: hardis/config/get.md
         doc:
+          extract:
+            permsetgroups: hardis/doc/extract/permsetgroups.md
           plugin:
             generate: hardis/doc/plugin/generate.md
+        mdapi:
+          deploy: hardis/mdapi/deploy.md
+        misc:
+          toml2csv: hardis/misc/toml2csv.md
         org:
           configure:
             data: hardis/org/configure/data.md
@@ -65,30 +73,37 @@ nav:
           connect: hardis/org/connect.md
           create: hardis/org/create.md
           data:
+            delete: hardis/org/data/delete.md
             export: hardis/org/data/export.md
             import: hardis/org/data/import.md
           diagnose:
             legacyapi: hardis/org/diagnose/legacyapi.md
           files:
             export: hardis/org/files/export.md
+          fix:
+            listviewmine: hardis/org/fix/listviewmine.md
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md
           retrieve:
             packageconfig: hardis/org/retrieve/packageconfig.md
             sources:
+              analytics: hardis/org/retrieve/sources/analytics.md
               dx: hardis/org/retrieve/sources/dx.md
               dx2: hardis/org/retrieve/sources/dx2.md
               metadata: hardis/org/retrieve/sources/metadata.md
+              retrofit: hardis/org/retrieve/sources/retrofit.md
           select: hardis/org/select.md
           test:
             apex: hardis/org/test/apex.md
           user:
+            activateinvalid: hardis/org/user/activateinvalid.md
             freeze: hardis/org/user/freeze.md
             unfreeze: hardis/org/user/unfreeze.md
         package:
           create: hardis/package/create.md
           install: hardis/package/install.md
+          mergexml: hardis/package/mergexml.md
           version:
             create: hardis/package/version/create.md
             list: hardis/package/version/list.md
@@ -102,11 +117,15 @@ nav:
           clean:
             emptyitems: hardis/project/clean/emptyitems.md
             hiddenitems: hardis/project/clean/hiddenitems.md
+            listviews: hardis/project/clean/listviews.md
             manageditems: hardis/project/clean/manageditems.md
+            minimizeprofiles: hardis/project/clean/minimizeprofiles.md
             orgmissingitems: hardis/project/clean/orgmissingitems.md
             references: hardis/project/clean/references.md
             retrievefolders: hardis/project/clean/retrievefolders.md
             standarditems: hardis/project/clean/standarditems.md
+            systemdebug: hardis/project/clean/systemdebug.md
+            xml: hardis/project/clean/xml.md
           configure:
             auth: hardis/project/configure/auth.md
           convert:
@@ -121,6 +140,8 @@ nav:
           generate:
             gitdelta: hardis/project/generate/gitdelta.md
           lint: hardis/project/lint.md
+          metadata:
+            findduplicates: hardis/project/metadata/findduplicates.md
         scratch:
           create: hardis/scratch/create.md
           delete: hardis/scratch/delete.md
@@ -128,9 +149,14 @@ nav:
             create: hardis/scratch/pool/create.md
             localauth: hardis/scratch/pool/localauth.md
             refresh: hardis/scratch/pool/refresh.md
+            reset: hardis/scratch/pool/reset.md
             view: hardis/scratch/pool/view.md
           pull: hardis/scratch/pull.md
           push: hardis/scratch/push.md
+        source:
+          deploy: hardis/source/deploy.md
+          push: hardis/source/push.md
+          retrieve: hardis/source/retrieve.md
         work:
           new: hardis/work/new.md
           refresh: hardis/work/refresh.md

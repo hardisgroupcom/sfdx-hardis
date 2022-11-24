@@ -506,7 +506,14 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  const commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(command)))}`;
+  let commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(command)))}`;
+  const execOptions: any = { maxBuffer: 10000 * 10000 };
+  if (options.cwd) {
+    execOptions.cwd = options.cwd;
+    if (path.resolve(execOptions.cwd) !== path.resolve(process.cwd())) {
+      commandLog += c.grey(` ${c.italic("in directory")} ${execOptions.cwd}`);
+    }
+  }
   let commandResult = null;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
@@ -517,10 +524,6 @@ export async function execCommand(
     spinner = ora({ text: commandLog, spinner: "moon" }).start();
   } else {
     uxLog(this, commandLog);
-  }
-  const execOptions: any = { maxBuffer: 10000 * 10000 };
-  if (options.cwd) {
-    execOptions.cwd = options.cwd;
   }
   try {
     commandResult = await exec(command, execOptions);

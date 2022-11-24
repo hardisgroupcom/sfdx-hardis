@@ -17,6 +17,9 @@
     "**/commands/hardis/work/**",
     "**/freeze.ts",
     "**/unfreeze.ts",
-    "**/redis.ts"
+    "**/redis.ts",
+    "**/*.json",
+    "**/*.svg",
+    "**/*.xml"
   ]
 }

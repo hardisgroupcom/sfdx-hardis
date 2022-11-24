@@ -50,6 +50,7 @@ export default class SandboxCreate extends SfdxCommand {
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
+  protected static requiresDevhubUsername = false;
   protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -135,7 +136,7 @@ export default class SandboxCreate extends SfdxCommand {
     // Build project-sandbox-def-branch-user.json
     uxLog(this, c.cyan("Building custom project-sandbox-def.json..."));
     if (fs.existsSync("./config/project-sandbox-def.json")) {
-      this.projectSandboxDef = JSON.parse(fs.readFileSync("./config/project-sandbox-def.json"));
+      this.projectSandboxDef = JSON.parse(fs.readFileSync("./config/project-sandbox-def.json", "utf-8"));
     } else {
       uxLog(this, c.yellow(`Default values used: you may define a file ${c.bold("config/project-sandbox-def.json")}`));
       this.projectSandboxDef = {

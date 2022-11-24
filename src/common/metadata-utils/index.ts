@@ -8,6 +8,7 @@ import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, ux
 import { CONSTANTS } from "../../config";
 import { getCache, setCache } from "../cache";
 import { buildOrgManifest } from "../utils/deployUtils";
+import { isSfdxProject } from "../utils/projectUtils";
 import { prompts } from "../utils/prompts";
 import { listMetadataTypes } from "./metadataList";
 
@@ -476,20 +477,29 @@ class MetadataUtils {
         }
         const securityType = package1.SecurityType || "AllUsers";
         let packageInstallCommand =
-          "sfdx force:package:install" +
+          "sfdx force:package:beta:install" +
           ` --package ${package1.SubscriberPackageVersionId}` +
           " --noprompt" +
           ` --securitytype ${securityType}` +
           " -w 60" +
+          " --json " +
           (package1.installationkey != null && package1.installationkey != "" ? ` --installationkey ${package1.installationkey}` : "");
         if (orgAlias != null) {
           packageInstallCommand += ` -u ${orgAlias}`;
         }
         elapseStart(`Install package ${package1.SubscriberPackageName}`);
-        await execCommand(packageInstallCommand, this, {
-          fail: true,
-          output: true,
-        });
+        try {
+          await execCommand(packageInstallCommand, this, {
+            fail: true,
+            output: true,
+          });
+        } catch (ex) {
+          const ignoredErrors = ["Une version plus récente de ce package est installée.", "A newer version of this package is currently installed."];
+          // If ex.message contains at least one of the ignoredError, don't rethrow exception
+          if (!ignoredErrors.some((msg) => ex.message && ex.message.includes(msg))) {
+            throw ex;
+          }
+        }
         elapseEnd(`Install package ${package1.SubscriberPackageName}`);
       } else {
         uxLog(commandThis, c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`));
@@ -517,7 +527,7 @@ class MetadataUtils {
     if (options.filterManagedItems) {
       uxLog(commandThis, c.cyan("Filtering managed items from package.Xml manifest..."));
       // List installed packages & collect managed namespaces
-      const installedPackages = fs.existsSync("sfdx-project.json") ? await this.listInstalledPackages(null, commandThis) : [];
+      const installedPackages = isSfdxProject() ? await this.listInstalledPackages(null, commandThis) : [];
       const namespaces = [];
       for (const installedPackage of installedPackages) {
         if (installedPackage?.SubscriberPackageNamespace !== "" && installedPackage?.SubscriberPackageNamespace != null) {

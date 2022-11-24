@@ -14,6 +14,7 @@ Make my local branch and my scratch org up to date with the most recent sources
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |nopull<br/>-n|boolean|No scratch pull before save (careful if you use that!)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

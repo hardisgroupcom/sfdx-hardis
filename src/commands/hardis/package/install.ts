@@ -51,13 +51,16 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
       default: null,
       description: messages.getMessage("packageInstallationKey"),
     }),
+    skipauth: flags.boolean({
+      description: "Skip authentication check when a default username is required",
+    }),
   };
 
   // Comment this out if your command does not require an org username
   protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
-  protected static supportsDevhubUsername = false;
+  protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;

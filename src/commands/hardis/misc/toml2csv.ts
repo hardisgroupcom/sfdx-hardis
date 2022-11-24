@@ -73,7 +73,7 @@ export default class Toml2Csv extends SfdxCommand {
   protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
-  // protected static supportsDevhubUsername = true;
+  // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
@@ -137,7 +137,7 @@ export default class Toml2Csv extends SfdxCommand {
     if (!fs.existsSync(this.transfoConfigFile)) {
       this.triggerError(c.red(`Mapping/Transco config ${c.bold(this.transfoConfigFile)} not found`));
     }
-    const transfoConfigInit = JSON.parse(fs.readFileSync(this.transfoConfigFile));
+    const transfoConfigInit = JSON.parse(fs.readFileSync(this.transfoConfigFile, "utf-8"));
     this.transfoConfig = this.completeTransfoConfig(transfoConfigInit);
 
     // Set separators
@@ -555,7 +555,7 @@ export default class Toml2Csv extends SfdxCommand {
       if (!fs.existsSync(transcoFile)) {
         this.triggerError(`Missing transco file ${c.bold(transcoFile)} for enum ${c.bold(transfo.enum)}`, false);
       }
-      this.loadedTranscos[transfo.enum] = JSON.parse(fs.readFileSync(transcoFile));
+      this.loadedTranscos[transfo.enum] = JSON.parse(fs.readFileSync(transcoFile, "utf-8"));
       return this.loadedTranscos[transfo.enum];
     }
     this.triggerError(`Missing transco definition in ${c.bold(JSON.stringify(transfo))}`, false);

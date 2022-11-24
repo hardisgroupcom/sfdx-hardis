@@ -18,7 +18,7 @@ export default class FilesExport extends SfdxCommand {
   public static title = "Export files";
 
   public static description = `Export file attachments from a Salesforce org
-  
+
 See article below
 
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
@@ -63,7 +63,7 @@ See article below
   protected static requiresUsername = true;
 
   // Comment this out if your command does not support a hub org username
-  // protected static supportsDevhubUsername = true;
+  // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;

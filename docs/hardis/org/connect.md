@@ -3,7 +3,8 @@
 
 ## Description
 
-Connect to an org without setting it as default username
+Connect to an org without setting it as default username, then proposes to open the org in web browser
+  
 
 ## Parameters
 
@@ -12,6 +13,7 @@ Connect to an org without setting it as default username
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples

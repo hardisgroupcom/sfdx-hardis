@@ -14,6 +14,7 @@ Remove unwanted managed items within sfdx project sources
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |namespace<br/>-n|option|Namespace to remove||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples

@@ -74,7 +74,7 @@ export default class ScratchCreate extends SfdxCommand {
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
-  protected static supportsDevhubUsername = true;
+  protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
@@ -216,7 +216,7 @@ export default class ScratchCreate extends SfdxCommand {
   public async createScratchOrg() {
     // Build project-scratch-def-branch-user.json
     uxLog(this, c.cyan("Building custom project-scratch-def.json..."));
-    this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json"));
+    this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json", "utf-8"));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
     this.projectScratchDef.username = `${this.userEmail.split("@")[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
@@ -440,17 +440,22 @@ export default class ScratchCreate extends SfdxCommand {
           soap: true,
         });
         // Assign to permission set allowing to update SharingCalc
-        const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
-        await execSfdxJson(assignCommand, this, {
-          fail: true,
-          output: false,
-          debug: this.debugMode,
-        });
-        await execCommand("sfdx texei:sharingcalc:suspend", this, {
-          fail: false,
-          output: true,
-          debug: this.debugMode,
-        });
+        try {
+          const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
+          await execSfdxJson(assignCommand, this, {
+            fail: false, // Do not fail in case permission set already exists
+            output: false,
+            debug: this.debugMode,
+          });
+          await execCommand("sfdx texei:sharingcalc:suspend", this, {
+            fail: false,
+            output: true,
+            debug: this.debugMode,
+          });
+        } catch (e) {
+          uxLog(self, c.yellow("Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"));
+          uxLog(self, c.grey(e.message));
+        }
       }
       await forceSourcePush(this.scratchOrgAlias, this, this.debugMode);
       // Resume sharing calc if necessary

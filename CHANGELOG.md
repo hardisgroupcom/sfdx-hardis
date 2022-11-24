@@ -1,14 +1,35 @@
 # Changelog
 
-## [insiders] (master)
+## [beta] (master)
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
+
+## [2.96.1] 2022-11-17
+
+- Fix error when assigning already existing PS
+- Update default CI config
+
+## [2.96.0] 2022-11-09
+
+- Replace `sfdx force:package:install` with `sfdx force:package:beta:install`
+- Do not cause deployment to fail when a deploying an older managed package version
+  - Instead, deployment will assume the newer version meets the requirement
+- hardis:scratch:create : Avoid error in case of already existing assignment of PermissionSet SfdxHardisDeferSharingRecalc
+- Update Node.js minimum version to 16.x
+
+## [2.95.2] 2022-10-19
 
 - Replace use of sfpowerkit by default command `sfdx force:source:manifest:create`
 - Manage cache for listing orgs
 - Update hardis:package:version:create to allow to
   - install it later on an org
   - immediately delete it
+- New command hardis:project:metadata:findduplicates to detect when git messed during an automated merging of conflicts
+- Factorize check of sfdx project existence
+- Fix default gitlab-ci default pipeline
+- Replace supportsDevhubUsername by requiresDevhubUsername in command classes when necessary
+- Add parameters `skipauth` and `websocket` on `sfdx hardis:project:metadata:duplicate`
+- Add missing parameter `skipauth` on `sfdx hardis:package:install`
 
 ## [2.94.3] 2022-09-15
 

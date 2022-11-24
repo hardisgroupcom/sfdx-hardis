@@ -74,7 +74,7 @@ check_quality:
   artifacts:
     when: always
     paths:
-      - report
+      - megalinter-reports
     expire_in: 1 week
 
 # Check du déploiement dans l'org cible de la merge request
