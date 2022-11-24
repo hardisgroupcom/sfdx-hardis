@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.96.1] 2022-11-24
+
+- New command hardis:lint:access to analyze of items in sources are not present within profiles and/or permission sets
+
 ## [2.96.1] 2022-11-17
 
 - Fix error when assigning already existing PS
