@@ -57,33 +57,32 @@ export default class Access extends SfdxCommand {
   protected static sourceElements = [
     {
       regex: `/**/*.cls`,
-      type : 'Apex classes',
+      type : 'Apex class',
       xmlField : 'apexClass',
       xmlChilds : 'classAccesses',
       xmlAccessField : 'enabled',
       ignore : {
         all : false,
         elements : []
-      },
-      counterTable: 0
+      }
     },
     {
       regex: `/**/objects/**/fields/*__c.field-meta.xml`,
-      type : 'Object fields',
+      type : 'Object field',
       xmlField : 'field',
       xmlChilds : 'fieldPermissions',
       xmlAccessField : 'readable',
       ignore : {
         all : false,
         elements : []
-      },
-      counterTable: 0
+      }
     }
   ];
 
   private permissionSet = {
     regex: `/**/permissionsets/*.permissionset-meta.xml`,
     type : 'Permission sets',
+    name: 'PermissionSet',
     isIgnoredAll : false,
     elementsIgnored : []
   };
@@ -91,6 +90,7 @@ export default class Access extends SfdxCommand {
   private profiles = {
     regex: `/**/profiles/*.profile-meta.xml`,
     type : 'Profiles',
+    name : 'Profile',
     isIgnoredAll : false,
     elementsIgnored : []
   };
@@ -131,11 +131,11 @@ export default class Access extends SfdxCommand {
       const matchedElements = await glob(findManagedPattern, { cwd: process.cwd() });
     
       switch (sourceElement.type) {
-        case 'Object fields':
+        case 'Object field':
           elementsToCheckByType.field = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField, sourceElement.ignore.elements);
           break;
         
-        case 'Apex classes':
+        case 'Apex class':
           elementsToCheckByType.apexClass = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField, sourceElement.ignore.elements);
           break;
       
@@ -181,19 +181,19 @@ export default class Access extends SfdxCommand {
     for(const ignoredElement of ignoreElements.split(',')) {
       const elementTrimed = ignoredElement.trim();
 
-      if(elementTrimed === 'Profile') {
+      if(elementTrimed === this.profiles.name) {
         this.profiles.isIgnoredAll = true;
-      } else if(elementTrimed.startsWith('Profile') ) {
+      } else if(elementTrimed.startsWith(this.profiles.name) ) {
         this.profiles.elementsIgnored.push(elementTrimed.substring(elementTrimed.indexOf(':') + 1).trim() );
-      } if(elementTrimed === 'PermissionSet') {
+      } if(elementTrimed === this.permissionSet.name) {
         this.permissionSet.isIgnoredAll = true;
-      } else if(elementTrimed.startsWith('PermissionSet') ) {
+      } else if(elementTrimed.startsWith(this.permissionSet.name) ) {
         this.permissionSet.elementsIgnored.push(elementTrimed.substring(elementTrimed.indexOf(':') + 1).trim() );
       }
     }
   }
 
-  private formatElementNameFromPath(path, type) {
+  private formatElementNameFromPath(path, type):string {
 
     if(type === 'field') {
       const fieldRoute = path.substring(path.indexOf('objects/') );
@@ -207,8 +207,8 @@ export default class Access extends SfdxCommand {
     return '';
   }
 
-  private async retrieveElementToCheck(elements, xmlField, excludedElements) {
-    const fieldsToSearch = [];
+  private async retrieveElementToCheck(elements, xmlField, excludedElements):Promise<Array<string>> {
+    let fieldsToSearch = [];
 
     for(const element of elements) {
       const el = this.formatElementNameFromPath(element, xmlField);
@@ -216,10 +216,27 @@ export default class Access extends SfdxCommand {
       //only check elements not ignored
       if(!excludedElements.includes(el) ) {
         fieldsToSearch.push(el);
+        
+        const otherElementsToCheck = this.ruleBasedCheckForFields(el);
+        if(otherElementsToCheck.length > 0) {
+          fieldsToSearch = fieldsToSearch.concat(otherElementsToCheck);
+        }
       }
     }
 
     return fieldsToSearch;
+  }
+
+  private ruleBasedCheckForFields(el:string):Array<string> {
+    const otherElementsToCheck = [];
+
+    if(el.startsWith('Activity.') ) {
+      const field = el.split('.')[1];
+      otherElementsToCheck.push('Task.'+field);
+      otherElementsToCheck.push('Event.'+field);
+    }
+
+    return otherElementsToCheck;
   }
 
   private async listElementIfNotInProfilOrPermission(rootFolder, elementsToCheckByType) {
@@ -228,12 +245,12 @@ export default class Access extends SfdxCommand {
 
     //CHECK PROFILES FIRST
     if(!this.profiles.isIgnoredAll) {
-      remaningElements = await this.retrieveElementsWithoutRights('Profile', profilesFiles, elementsToCheckByType);
+      remaningElements = await this.retrieveElementsWithoutRights(this.profiles.name, profilesFiles, elementsToCheckByType);
     }
     if(this.hasRemaningElementsToCheck(remaningElements) && !this.permissionSet.isIgnoredAll) {
      
       const permissionSetFiles = await glob(rootFolder + this.permissionSet['regex'], { cwd: process.cwd() });
-      remaningElements = await this.retrieveElementsWithoutRights('PermissionSet', permissionSetFiles, remaningElements);
+      remaningElements = await this.retrieveElementsWithoutRights(this.permissionSet.name, permissionSetFiles, remaningElements);
     } 
     
     if( !this.hasRemaningElementsToCheck(remaningElements) ) {
@@ -248,9 +265,9 @@ export default class Access extends SfdxCommand {
   }
 
   private formatPathPermissionSetOrProfile(typeFile, path) {
-    if(typeFile == 'Profile') {
+    if(typeFile == this.profiles.name) {
       return path.substring(path.indexOf('profiles/') ).replace('profiles/', '').replace('.profile-meta.xml', '');
-    } else if(typeFile == 'PermissionSet') {
+    } else if(typeFile == this.permissionSet.name) {
       return path.substring(path.indexOf('permissionsets/') ).replace('permissionsets/', '').replace('.permissionset-meta.xml', '');
     }
     return '';
@@ -259,9 +276,9 @@ export default class Access extends SfdxCommand {
   private async retrieveElementsWithoutRights(typeFile, files, elementsToCheckByType) {
     const remaningElements = elementsToCheckByType;
 
-    if(typeFile == 'Profile') {
+    if(typeFile == this.profiles.name) {
       files = files.filter(e =>  !this.profiles.elementsIgnored.includes(this.formatPathPermissionSetOrProfile(typeFile, e) ) );
-    } else if(typeFile === 'PermissionSet') {
+    } else if(typeFile === this.permissionSet.name) {
       files = files.filter(e =>  !this.permissionSet.elementsIgnored.includes(this.formatPathPermissionSetOrProfile(typeFile, e))  );
       console.log(files);
     }
@@ -292,20 +309,23 @@ export default class Access extends SfdxCommand {
     return remaningElements;
   }
 
-  private hasRemaningElementsToCheck(remaningElements) {
+  private hasRemaningElementsToCheck(remaningElements):boolean {
     return Object.keys(remaningElements).some(elementType => remaningElements[elementType].length > 0 );
   }
 
   private constructLogAndDisplayTable(remaningElements) {
     const remaningElementsTable = [];
+    let counterTable = 0;
 
     for(const currentType of Access.sourceElements) {
       for(const e of remaningElements[currentType.xmlField])  {
-        if( !remaningElementsTable[currentType.counterTable]) {
-          remaningElementsTable[currentType.counterTable] = {};
+        if( !remaningElementsTable[counterTable]) {
+          remaningElementsTable[counterTable] = {};
         }
 
-        remaningElementsTable[currentType.counterTable++][currentType.type] =  e;
+        remaningElementsTable[counterTable]['Type'] =  currentType.type;
+        remaningElementsTable[counterTable]['Element'] =  e;
+        counterTable++;
         this.hasElementsWithNoRights = true;
       }
     }
