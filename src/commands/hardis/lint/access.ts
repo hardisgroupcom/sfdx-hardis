@@ -280,7 +280,6 @@ export default class Access extends SfdxCommand {
       files = files.filter(e =>  !this.profiles.elementsIgnored.includes(this.formatPathPermissionSetOrProfile(typeFile, e) ) );
     } else if(typeFile === this.permissionSet.name) {
       files = files.filter(e =>  !this.permissionSet.elementsIgnored.includes(this.formatPathPermissionSetOrProfile(typeFile, e))  );
-      console.log(files);
     }
     
     for(const file of files) {
