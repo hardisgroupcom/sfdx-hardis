@@ -21,7 +21,7 @@ export default class Access extends SfdxCommand {
 
   public static description = "Check if elements(apex class and field) are at least in one permission set";
 
-  public static examples = ["$ sfdx hardis:lint:access", 
+  public static examples = ["$ sfdx hardis:lint:access",
                             "$ sfdx hardis:lint:access -e \"ApexClass:ClassA, CustomField:Account.CustomField\"",
                             "$ sfdx hardis:lint:access -i \"PermissionSet:permissionSetA, Profile\""];
 
@@ -57,7 +57,7 @@ export default class Access extends SfdxCommand {
   protected static sourceElements = [
     {
       regex: `/**/*.cls`,
-      type : 'Apex class',
+      type : 'ApexClass',
       xmlField : 'apexClass',
       xmlChilds : 'classAccesses',
       xmlAccessField : 'enabled',
@@ -68,7 +68,7 @@ export default class Access extends SfdxCommand {
     },
     {
       regex: `/**/objects/**/fields/*__c.field-meta.xml`,
-      type : 'Object field',
+      type : 'CustomField',
       xmlField : 'field',
       xmlChilds : 'fieldPermissions',
       xmlAccessField : 'readable',
@@ -116,8 +116,8 @@ export default class Access extends SfdxCommand {
     uxLog(this, c.green(Access.messages.header));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
-    
-    
+
+
     const elementsToCheckByType = {apexClass : [], field: [] };
 
     /* ELEMENTS TO CHECK */
@@ -129,20 +129,20 @@ export default class Access extends SfdxCommand {
 
       const findManagedPattern = rootFolder + sourceElement['regex'];
       const matchedElements = await glob(findManagedPattern, { cwd: process.cwd() });
-    
+
       switch (sourceElement.type) {
-        case 'Object field':
+        case 'CustomField':
           elementsToCheckByType.field = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField, sourceElement.ignore.elements);
           break;
-        
-        case 'Apex class':
+
+        case 'ApexClass':
           elementsToCheckByType.apexClass = await this.retrieveElementToCheck(matchedElements, sourceElement.xmlField, sourceElement.ignore.elements);
           break;
-      
+
         default:
           break;
       }
-    
+
     }
 
     const remaningElements = await this.listElementIfNotInProfilOrPermission(rootFolder, elementsToCheckByType);
@@ -212,11 +212,11 @@ export default class Access extends SfdxCommand {
 
     for(const element of elements) {
       const el = this.formatElementNameFromPath(element, xmlField);
-      
+
       //only check elements not ignored
       if(!excludedElements.includes(el) ) {
         fieldsToSearch.push(el);
-        
+
         const otherElementsToCheck = this.ruleBasedCheckForFields(el);
         if(otherElementsToCheck.length > 0) {
           fieldsToSearch = fieldsToSearch.concat(otherElementsToCheck);
@@ -230,6 +230,7 @@ export default class Access extends SfdxCommand {
   private ruleBasedCheckForFields(el:string):Array<string> {
     const otherElementsToCheck = [];
 
+    // Activity is the parent object of Task and Event: check also rights to avoid false positives
     if(el.startsWith('Activity.') ) {
       const field = el.split('.')[1];
       otherElementsToCheck.push('Task.'+field);
@@ -248,11 +249,11 @@ export default class Access extends SfdxCommand {
       remaningElements = await this.retrieveElementsWithoutRights(this.profiles.name, profilesFiles, elementsToCheckByType);
     }
     if(this.hasRemaningElementsToCheck(remaningElements) && !this.permissionSet.isIgnoredAll) {
-     
+
       const permissionSetFiles = await glob(rootFolder + this.permissionSet['regex'], { cwd: process.cwd() });
       remaningElements = await this.retrieveElementsWithoutRights(this.permissionSet.name, permissionSetFiles, remaningElements);
-    } 
-    
+    }
+
     if( !this.hasRemaningElementsToCheck(remaningElements) ) {
       uxLog(this, c.green(Access.messages.allElementsHaveRights) );
       return Access.messages.allElementsHaveRights;
@@ -281,7 +282,7 @@ export default class Access extends SfdxCommand {
     } else if(typeFile === this.permissionSet.name) {
       files = files.filter(e =>  !this.permissionSet.elementsIgnored.includes(this.formatPathPermissionSetOrProfile(typeFile, e))  );
     }
-    
+
     for(const file of files) {
       const fileXml = await parseXmlFile(file);
 
@@ -290,8 +291,8 @@ export default class Access extends SfdxCommand {
         //checking if current type is at least once in the current profile or permission set
         if(!(currentType.xmlChilds in fileXml[typeFile]) ||  fileXml[typeFile][currentType.xmlChilds].length == 0) {
           continue;
-        } 
-        
+        }
+
         for(const permission of fileXml[typeFile][currentType.xmlChilds]) {
           //only readable(for fields) or enabled(apex class) rights are relevant
           if(permission && permission[currentType.xmlAccessField][0] == 'true' && elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField][0]) ) {
@@ -334,7 +335,7 @@ export default class Access extends SfdxCommand {
       uxLog(this, c.red(Access.messages.someElementsDontHaveRights) );
       console.table(remaningElementsTable);
     }
-    
+
     return remaningElements;
   }
 }
