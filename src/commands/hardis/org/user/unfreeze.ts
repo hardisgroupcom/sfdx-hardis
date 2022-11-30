@@ -187,7 +187,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
 
     // Process UserLogin freezing
     const userLoginsFrozen = userLoginsToUnfreeze.map((userLogin) => {
-      return { Id: userLogin.Id, IsFrozen: true };
+      return { Id: userLogin.Id, IsFrozen: false };
     });
     const bulkUpdateRes = await bulkUpdate("UserLogin", "update", userLoginsFrozen, conn);
 
