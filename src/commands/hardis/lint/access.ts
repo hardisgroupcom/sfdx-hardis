@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-//const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class Access extends SfdxCommand {
   public static title = "check permission access";
@@ -42,6 +42,17 @@ export default class Access extends SfdxCommand {
       char: "f",
       default: "force-app",
       description: "Root folder",
+    }),
+    debug: flags.boolean({
+      char: "d",
+      default: false,
+      description: messages.getMessage("debugMode"),
+    }),
+    websocket: flags.string({
+      description: messages.getMessage("websocket"),
+    }),
+    skipauth: flags.boolean({
+      description: "Skip authentication check when a default username is required",
     }),
   };
 
