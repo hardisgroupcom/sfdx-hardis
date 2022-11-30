@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.97.3] 2022-11-30
+
+- QuickFix System.debug removal
+
 ## [2.97.2] 2022-11-30
 
 - QuickFix
