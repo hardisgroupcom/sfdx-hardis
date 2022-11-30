@@ -154,19 +154,19 @@ export default class Access extends SfdxCommand {
     const ignoreElements = this.flags.elementsignored;
 
     for (const ignoredElement of ignoreElements.split(",")) {
-      const elementTrimed = ignoredElement.trim();
+      const elementTrimmed = ignoredElement.trim();
 
       //check if all elements of a type are ignored
-      if (elementTrimed === "ApexClass") {
+      if (elementTrimmed === "ApexClass") {
         Access.sourceElements[0].ignore.all = true;
-      } else if (elementTrimed === "CustomField") {
+      } else if (elementTrimmed === "CustomField") {
         Access.sourceElements[1].ignore.all = true;
       }
       //check individual elements (ex : ApexClass:ClassB)
-      else if (elementTrimed.startsWith("ApexClass")) {
-        Access.sourceElements[0].ignore.elements.push(elementTrimed.substring(elementTrimed.indexOf(":") + 1).trim());
-      } else if (elementTrimed.startsWith("CustomField")) {
-        Access.sourceElements[1].ignore.elements.push(elementTrimed.substring(elementTrimed.indexOf(":") + 1).trim());
+      else if (elementTrimmed.startsWith("ApexClass")) {
+        Access.sourceElements[0].ignore.elements.push(elementTrimmed.substring(elementTrimmed.indexOf(":") + 1).trim());
+      } else if (elementTrimmed.startsWith("CustomField")) {
+        Access.sourceElements[1].ignore.elements.push(elementTrimmed.substring(elementTrimmed.indexOf(":") + 1).trim());
       }
     }
   }
@@ -178,17 +178,17 @@ export default class Access extends SfdxCommand {
     }
 
     for (const ignoredElement of ignoreElements.split(",")) {
-      const elementTrimed = ignoredElement.trim();
+      const elementTrimmed = ignoredElement.trim();
 
-      if (elementTrimed === this.profiles.name) {
+      if (elementTrimmed === this.profiles.name) {
         this.profiles.isIgnoredAll = true;
-      } else if (elementTrimed.startsWith(this.profiles.name)) {
-        this.profiles.elementsIgnored.push(elementTrimed.substring(elementTrimed.indexOf(":") + 1).trim());
+      } else if (elementTrimmed.startsWith(this.profiles.name)) {
+        this.profiles.elementsIgnored.push(elementTrimmed.substring(elementTrimmed.indexOf(":") + 1).trim());
       }
-      if (elementTrimed === this.permissionSet.name) {
+      if (elementTrimmed === this.permissionSet.name) {
         this.permissionSet.isIgnoredAll = true;
-      } else if (elementTrimed.startsWith(this.permissionSet.name)) {
-        this.permissionSet.elementsIgnored.push(elementTrimed.substring(elementTrimed.indexOf(":") + 1).trim());
+      } else if (elementTrimmed.startsWith(this.permissionSet.name)) {
+        this.permissionSet.elementsIgnored.push(elementTrimmed.substring(elementTrimmed.indexOf(":") + 1).trim());
       }
     }
   }
