@@ -12,7 +12,7 @@ If you see a deployment error which is not here yet, please [add it in this file
 
 Example:
 
-![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)
+<div style="text-align:center"><img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg"/></div>
 
 ## Allow deployment with pending Apex Jobs
 

@@ -6,13 +6,16 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 
 ## Computer Installation user guide
 
-- Install [visual Studio code](https://code.visualstudio.com/)
+- Install [Visual Studio code](https://code.visualstudio.com/)
 
 - Install VsCode extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) by searching for **Hardis** is VsCode extensions plugin pane.
 
 - Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar
 
-- Messages will appear at the bottom left and ask you to install additional applications and activate settings. Follow all of them until there is none left.
+- Messages will appear at the bottom right of VsCode and ask you to install additional applications and activate settings. Follow all of them until there is none left.
+  - When later you'll see such messages again from sfdx-hardis, click to apply them to upgrade applications.
+
+<div style="text-align:center"><img src="assets/images/msg-upgrade-plugins.jpg" /></div>
 
 > **_Under the hood_**
 >
@@ -28,6 +31,5 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 >   - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 >   - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 
-[![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-icon.png)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 

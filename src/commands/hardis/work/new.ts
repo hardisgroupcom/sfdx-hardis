@@ -150,28 +150,34 @@ Under the hood, it can:
       }
     }
 
-    // Prompt if you want to use a scratch org or a tracked sandbox org
-    const orgTypeResponse = await prompts({
-      type: "select",
-      name: "value",
-      message: c.cyanBright(`Do you want to use a scratch org or a tracked sandbox org ?`),
-      initial: 0,
-      choices: [
-        {
-          title: "Scratch org",
-          value: "scratch",
-          description: "Scratch orgs are configured on my project so I want to create or reuse one",
-        },
-        {
-          title: "Sandbox org with source tracking",
-          value: "sandbox",
-          description: "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one",
-        },
-      ],
-    });
+    // Get allowed work org types from config if possible
+    const allowedOrgTypes = config?.allowedOrgTypes || [];
+    let selectedOrgType = allowedOrgTypes.length == 1 ? allowedOrgTypes[0] : null;
+    // If necessary, Prompt if you want to use a scratch org or a tracked sandbox org
+    if (selectedOrgType == null) {
+      const orgTypeResponse = await prompts({
+        type: "select",
+        name: "value",
+        message: c.cyanBright(`Do you want to use a scratch org or a tracked sandbox org ?`),
+        initial: 0,
+        choices: [
+          {
+            title: "Scratch org",
+            value: "scratch",
+            description: "Scratch orgs are configured on my project so I want to create or reuse one",
+          },
+          {
+            title: "Sandbox org with source tracking",
+            value: "sandbox",
+            description: "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one",
+          },
+        ],
+      });
+      selectedOrgType = orgTypeResponse.value;
+    }
 
     // Select or create org that user will work in
-    if (orgTypeResponse.value === "scratch") {
+    if (selectedOrgType === "scratch") {
       await this.selectOrCreateScratchOrg(branchName);
     } else {
       await this.selectOrCreateSandbox(branchName);
