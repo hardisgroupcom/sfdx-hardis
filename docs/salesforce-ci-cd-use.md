@@ -29,7 +29,7 @@ In order to respect the best DevOps practices, it's highly recommended for proje
 
 The release manager(s) responsibilities are:
 
-- Train & assist all project members to use Salesforce CI/CD
+- Train & support all project members about the use Salesforce CI/CD on the project
 - [Validate users merge requests](salesforce-ci-cd-validate-merge-requests.md)
 - [Proceed deployments to major branches/org (UAT,Preprod,Production...)](salesforce-ci-cd-deploy-major-branches.md)
 - [Maintain CI/CD configuration](salesforce-ci-cd-maintenance.mdV)

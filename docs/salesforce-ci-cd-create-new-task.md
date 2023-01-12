@@ -16,8 +16,9 @@ The [release manager](salesforce-ci-cd-use.md#release-manager-guide) of the proj
 
 You need credentials to login on the source-tracked sandbox you'll work with. It can be:
 
-- An **existing developer sandbox**
-- A **new developer sandbox** that you can create from production org
+- An **existing source-tracked sandbox**
+  - Existing source-tracked sandboxes must be **refreshed from time to time to avoid too many conflicts**, discuss with your Release Manager !
+- A **new source-tracked sandbox** that you can create from production org
 
 ### Start new task on sandbox
 
