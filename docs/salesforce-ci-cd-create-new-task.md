@@ -22,7 +22,7 @@ You need credentials to login on the source-tracked sandbox you'll work with. It
 
 ### Start new task on sandbox
 
-- Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar
+- Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](assets/images/hardis-button.jpg) in VsCode left bar _(loading can task several seconds)_
 
 - Click on ![Start a new task](assets/images/btn-start-new-task.jpg)
 
@@ -39,7 +39,7 @@ You need the credentials to login on the **Dev Hub Org** (usually the production
 
 ### Start new task on scratch org
 
-- Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar
+- Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](assets/images/hardis-button.jpg) in VsCode left bar
 
 - Click on ![Start a new task](assets/images/btn-start-new-task.jpg)
 
