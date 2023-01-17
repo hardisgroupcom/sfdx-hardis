@@ -17,7 +17,7 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 
 <div style="text-align:center"><img src="assets/images/msg-upgrade-plugins.jpg" /></div>
 
-> **_Under the hood_**
+> ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
 > The installed applications are the following:
 >

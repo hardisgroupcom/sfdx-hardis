@@ -31,6 +31,10 @@ You need credentials to login on the source-tracked sandbox you'll work with. It
 
 - Click on ![Open org in browser](assets/images/btn-open-org.jpg) and you can start working in it :)
 
+> ![Under the hood](assets/images/engine.png) **_Under the hood_**
+>
+> See details in [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/) command documentation
+
 ## Scratch Org mode
 
 ### Pre-requisites (scratch org)
@@ -48,3 +52,7 @@ You need the credentials to login on the **Dev Hub Org** (usually the production
 
 - Wait for the sandbox creation script to be completed, and you can start working in it :)
   - If you see errors while creating the sandbox, request support from the project release manager
+
+> ![Under the hood](assets/images/engine.png) **_Under the hood_**
+>
+> See details in [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/) command documentation

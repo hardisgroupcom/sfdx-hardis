@@ -24,18 +24,36 @@ _The following video shows how to perform theses operations_
 
 - As you committed your files like explained in the previous section, select option ![Message my commit is ready(assets/images/msg-commit-ready.jpg) when prompted.
 
-- Wait for the script to complete
+- Wait for the script to complete, and select **Push commit to server** when prompted
 
-> **_Under the hood_**
+> ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
 > The script performs the following operations
 > - Update `manifest/package.xml` automatically according to the committed updates
 > - Clean XML of metadatas according to .sfdx-hardis.yml config property `autoCleanTypes` and `autoRemoveUserPermissions`
-> - Push commit to git server
+> - New git commit with automated updates
+> - Git push commit to git server
 > 
 > More details in [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/) command documentation
 
 ## Create merge request
 
+### Using Gitlab
 
+- Go in your online repository in your web browser (example: `https://gitlab.com/trailheadapps/dreamhouse-lwc`)
 
+- Go to menu **Merge Requests**
+
+- Create a **New Merge request**
+
+<div style="text-align:center"><img src="assets/images/merge-request-1.jpg"/></div>
+
+<div style="text-align:center"><img src="assets/images/merge-request-2.jpg"/></div>
+
+### Using Github
+
+Same than with Gitlab, but Merge Requests are named **Pull Requests**
+
+### Using Azure
+
+Same than with Gitlab, but Merge Requests are named **Pull Requests**

@@ -32,7 +32,7 @@ Under the hood, it can:
 - Make **git pull** to be up to date with target branch
 - Create **new git branch** with formatted name
 - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using \`config/.sfdx-hardis.yml\`):
-- (and For scratch org only for now):
+- (and for scratch org only for now):
   - **Install packages**
       - Use property \`installedPackages\`
     - **Push sources**
