@@ -22,6 +22,7 @@ Now your computer is ready, let's see how you can use sandboxes or scratch orgs 
 - [Create a new task](salesforce-ci-cd-create-new-task.md)
 - [Work on your current task](salesforce-ci-cd-work-on-task.md)
 - [Publish your task](salesforce-cd-cd-publish-task.md)
+- [Validate a merge request](salesforce-ci-cd-validate-merge-request.md) _(Release manager and advanced user only, depending on the project organization)_
 
 ## Release manager guide
 
@@ -30,6 +31,6 @@ In order to respect the best DevOps practices, it's highly recommended for proje
 The release manager(s) responsibilities are:
 
 - Train & support all project members about the use Salesforce CI/CD on the project
-- [Validate users merge requests](salesforce-ci-cd-validate-merge-requests.md)
+- [Validate users merge requests](salesforce-ci-cd-validate-merge-request.md)
 - [Proceed deployments to major branches/org (UAT,Preprod,Production...)](salesforce-ci-cd-deploy-major-branches.md)
-- [Maintain CI/CD configuration](salesforce-ci-cd-maintenance.mdV)
+- [Maintain CI/CD configuration](salesforce-ci-cd-maintenance.md)

@@ -50,6 +50,13 @@ _The following video shows how to perform theses operations_
 
 <div style="text-align:center"><img src="assets/images/merge-request-2.jpg"/></div>
 
+- Click on **Submit merge request**
+
+- Controlling jobs are automatically launched, you can now ask your release manager to [**validate a merge request**](salesforce-ci-cd-validate-merge-request.md)
+  - _If you are a developer, (or even a business consultant depending on the project organization), you may have the responsibility to make sure than controlling jobs are valid (**check-deploy job** and **code-quality job** in **success**)_
+
+- If you need to add additional updates to an existing merge requests, you just this to follow again this guide from the beginning, except the part "Create a merge request". Any new commit pushed on a branch where there is already a merge request will trigger again the [control jobs](salesforce-ci-cd-validate-merge-request.md#control-jobs). 
+
 ### Using Github
 
 Same than with Gitlab, but Merge Requests are named **Pull Requests**
