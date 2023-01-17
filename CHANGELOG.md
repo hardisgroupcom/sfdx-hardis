@@ -6,7 +6,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Documentation: Add CI/CD user guide and release manager guide
 - New .sfdx-hardis.yml config property **allowedOrgTypes**, allowing to define the type(s) or org that can be used for implementation: (sandbox and/or scratch)
-- Upgrade npm dependencies
 
 ## [2.97.3] 2022-11-30
 
@@ -647,7 +646,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.42.0] 2021-07-12
 
 - New command sfdx hardis:project:lint
-- Update .sfdx-hardis.yml configuration JsonSchema
+- Update .sfdx-hardis.yml configuration jsonschema
 
 ## [2.41.2] 2021-07-12
 

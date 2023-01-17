@@ -7,7 +7,7 @@ import { createTempDir, execCommand, execSfdxJson, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
-import { Connection, SfdxError } from "@salesforce/core";
+import { SfdxError } from "@salesforce/core";
 import { importData } from "./dataUtils";
 import { soqlQuery } from "./apiUtils";
 import { isSfdxProject } from "./projectUtils";
@@ -47,7 +47,7 @@ const profiles = await promptProfiles(this.org.getConnection(),{multiselect: tru
 const profile = await promptProfiles(this.org.getConnection(),{multiselect: false, initialSelection: ["System Administrator","Administrateur Système"]});
 */
 export async function promptProfiles(
-  conn: Connection,
+  conn: any,
   options: any = {
     multiselect: false,
     initialSelection: [],

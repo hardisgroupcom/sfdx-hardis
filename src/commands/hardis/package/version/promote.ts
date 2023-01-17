@@ -56,7 +56,7 @@ export default class PackageVersionPromote extends SfdxCommand {
     const debugMode = this.flags.debug || false;
     const auto = this.flags.auto || false;
     // List project packages
-    const sfdxProjectJson = await this.project.retrieveSfdxProjectJson(false);
+    const sfdxProjectJson = await this.project.retrieveSfProjectJson(false);
     const packageAliases = sfdxProjectJson.get("packageAliases") || [];
     const availablePackageAliases = {};
     for (const packageAlias of Object.keys(packageAliases)
