@@ -28,7 +28,8 @@ _The following video shows how to perform theses operations_
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
-> The script performs the following operations
+> The script performs the following operations:
+>
 > - Update `manifest/package.xml` automatically according to the committed updates
 > - Clean XML of metadatas according to .sfdx-hardis.yml config property `autoCleanTypes` and `autoRemoveUserPermissions`
 > - New git commit with automated updates
