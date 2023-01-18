@@ -20,6 +20,7 @@ theme:
     primary: light blue
 plugins:
   - glightbox
+  - search
 markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
