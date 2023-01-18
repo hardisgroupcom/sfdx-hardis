@@ -11,6 +11,8 @@ description: Learn how to commit and create a merge request
   - [Using Github](#using-github)
   - [Using Azure](#using-azure)
 
+___
+
 ## Commit your updates
 
 - If you made updates on your org that you have not pulled yet, Use command ![Pull from org button](assets/images/btn-pull-from-org.jpg) to **pull your latest updates in local files**
@@ -24,6 +26,8 @@ description: Learn how to commit and create a merge request
 _The following video shows how to perform theses operations_
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
+___
 
 ## Prepare merge request
 
@@ -43,6 +47,8 @@ _The following video shows how to perform theses operations_
 > - Git push commit to git server
 > 
 > More details in [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/) command documentation
+
+___
 
 ## Create merge request
 

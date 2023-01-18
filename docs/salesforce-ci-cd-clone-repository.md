@@ -7,6 +7,8 @@ description: Learn how to clone a Salesforce repository on your computer
 - [Pre-requisites](#pre-requisites)
 - [Clone the repository](#clone-the-repository)
 
+___
+
 ## Pre-requisites
 
 You need to access to a Git repository and the url of the repository to clone.
@@ -14,6 +16,8 @@ You need to access to a Git repository and the url of the repository to clone.
 The [release manager](salesforce-ci-cd-use.md#release-manager-guide) of the project can provide it.
 
 It looks like the following: `https://github.com/trailheadapps/dreamhouse-lwc.git`
+
+___
 
 ## Clone the repository
 

@@ -12,11 +12,15 @@ description: Learn how to create a new task using a tracked sandbox or a scratch
   - [Pre-requisites (scratch org)](#pre-requisites-scratch-org)
   - [Start new task on scratch org](#start-new-task-on-scratch-org)
 
+___
+
 ## Sandbox or scratch org ?
 
 With SFDX, usually each member of the teams has its own sandbox or scratch org to work on it.
 
 The [release manager](salesforce-ci-cd-use.md#release-manager-guide) of the project can tell you if you work with [**scratch orgs**](#scratch-org-mode) or [**source-tracked sandboxes**](#source-tracked-sandbox-mode), and **which sandbox to use if you are in sandbox mode**.
+
+___
 
 ## Source-tracked sandbox mode
 
@@ -42,6 +46,8 @@ You need credentials to login on the source-tracked sandbox you'll work with. It
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
 > See details in [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/) command documentation
+
+___
 
 ## Scratch Org mode
 

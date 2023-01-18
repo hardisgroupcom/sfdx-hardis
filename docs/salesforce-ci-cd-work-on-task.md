@@ -11,6 +11,8 @@ description: Learn how to work on a task with a tracked sandbox or a scratch org
   - [Update code & XML Metadatas](#update-code--xml-metadatas)
   - [Recommendations](#recommendations)
 
+___
+
 ## Salesforce Configuration
 
 ### Open your org
@@ -37,6 +39,8 @@ Please follow as much as possible these recommendations when you work on a CI/CD
   - _If it happens, conflicts are not manageable so one of you will later need to perform the updates again_
 - **Never use hardcoded Ids** in Flows and formulas (or anywhere else)
 - Use **static resources to store images**
+
+___
 
 ## Salesforce Development
 

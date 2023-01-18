@@ -9,9 +9,11 @@ description: Learn how to use Salesforce DX to perform updates in Salesforce (de
   - [Make updates on your Salesforce project](#make-updates-on-your-salesforce-project)
 - [Release manager guide](#release-manager-guide)
 
+___
+
 ## Business consultant / Developer guide
 
-Working on a Salesforce DX project can be described in the following steps
+Working on a Salesforce DX project can be described in the following steps:
 
 ### Initialization
 
@@ -28,6 +30,8 @@ Now your computer is ready, let's see how you can use sandboxes or scratch orgs 
 - [Work on your current task](salesforce-ci-cd-work-on-task.md)
 - [Publish your task](salesforce-ci-cd-publish-task.md)
 - [Validate a merge request](salesforce-ci-cd-validate-merge-request.md) _(Release manager and advanced user only, depending on the project organization)_
+
+___
 
 ## Release manager guide
 

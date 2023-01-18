@@ -10,6 +10,8 @@ description: Learn how to validate a merge request on a Salesforce CI/CD project
   - [Code Quality job](#code-quality-job)
 - [Merge the merge request](#merge-the-merge-request)
 
+___
+
 ## Conflicts
 
 _This section must be managed by team members with git knownledge_
@@ -29,6 +31,8 @@ In case conflicts are too complicated to manage (like on a Flow for example), yo
 - Make again the updates in the Salesforce Setup
 - Sfdx Pull the updated version in your local branch
 - Git Commit & Push to your branch
+
+___
 
 ## Control jobs
 
@@ -64,6 +68,8 @@ If you consider Apex issues to be false-positives, you may [disable some rules u
 
 - Never use `@SuppressWarnings('PMD')`, always name the rule that you want to disable, because you do not want to disable all rules
 - `//NOPMD` at the end of a line will make the issue ignored, but again use it only in case of false positive, never to "Publish more quickly", else you'll create [technical debt](https://en.wikipedia.org/wiki/Technical_debt).
+
+___
 
 ## Merge the merge request
 

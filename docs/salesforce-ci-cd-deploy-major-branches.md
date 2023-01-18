@@ -7,6 +7,8 @@ description: Learn how to deploy from develop to recette, to recette to UAT, to 
 - [Minor and Major branches](#minor-and-major-branches)
 - [Merge requests between major branches](#merge-requests-between-major-branches)
 
+___
+
 ## Minor and Major branches
 
 Minor branches are individual git branches that do not have a CI/CD associated org
@@ -22,6 +24,8 @@ Examples:
 - **Major to Major**: When a merge request from `integration` to `uat` **(3)** is validated and merged, a new state (commit) is detected in branch `uat`, so CI server automatically deploys to `associated Salesforce org UAT` **(4)**
 
 - **Major to Major**: When a merge request from `preprod` to `production` **(5)** is validated and mged, a new state (commit) is detected in branch `production`, so CI server automatically deploys to `associated Salesforce org Production` **(6)**
+
+___
 
 ## Merge requests between major branches
 
