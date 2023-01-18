@@ -164,20 +164,24 @@ nav:
           resetselection: hardis/work/resetselection.md
           save: hardis/work/save.md
           ws: hardis/work/ws.md
-  - "CI/CD":
-    - "CI/CD Home": salesforce-ci-cd-home.md
-    - "CI/CD Usage Guide":
-      - "CI/CD Usage Home": salesforce-ci-cd-use.md
-      - "CD/CD User Guide":
-        - "Create new task": salesforce-ci-cd-create-new-task.md
-        - "Work on a task": salesforce-ci-cd-work-on-task.md
-        - "Publish a task": salesforce-cd-cd-publish-task.md
-      - "CI/CD Release Manager Guide":
-        - "Validate a merge request": salesforce-ci-cd-validate-merge-request.md
-        - "Deploy to major orgs": salesforce-ci-cd-deploy-major-branches.md
-        - "CI/CD configuration": salesforce-ci-cd-config-home.md
-    - "CI/CD Setup Guide":
-        - "CI/CD Setup": salesforce-ci-cd-setup.md
+  - CI/CD:
+    - CI/CD Home: salesforce-ci-cd-home.md
+    - CI/CD Guides:
+      - CI/CD Guides Home: salesforce-ci-cd-use.md
+      - CD/CD User Guide:
+        - Quick Start:
+          - Prepare your computer: "salesforce-ci-cd-use-install.md"
+          - Clone the repository: "salesforce-ci-cd-clone-repository.md"
+        - Work on a CD/CD project:
+          - Create new task: salesforce-ci-cd-create-new-task.md
+          - Work on a task: salesforce-ci-cd-work-on-task.md
+          - Publish a task: salesforce-ci-cd-publish-task.md
+      - CI/CD Release Manager Guide:
+        - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
+        - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
+        - CI/CD configuration: salesforce-ci-cd-config-home.md
+    - CI/CD Setup Guide:
+        - CI/CD Setup: salesforce-ci-cd-setup-home.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://hardisgroupcom.github.io/sfdx-hardis/#articles
   - Contributing: https://hardisgroupcom.github.io/sfdx-hardis/#contributing

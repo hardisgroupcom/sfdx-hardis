@@ -7,7 +7,7 @@ description: Learn how to commit and create a merge request
 ## Commit your updates
 
 - If you made updates on your org that you have not pulled yet, Use command ![Pull from org button](assets/images/btn-pull-from-org.jpg) to **pull your latest updates in local files**
-  - If you updated config elements that you do not see in your local files, you may discuss with your release manager to [update pull configuration](salesforce-ci-cd-admin-update-pull-config.md)
+  - If you updated config elements that you do not see in your local files, you may discuss with your release manager to [update CI/CD configuration](salesforce-ci-cd-config-home.md)
   - If it is not possible to use pull configuration, you may retrieve metadatas using ![Select and retrieve button](assets/images/btn-select-retrieve.jpg) (but it will retrieve locally many files and it will be harder to select the ones you really need)
 
 - In VsCode Git extension, **stage** and **commit** created, updated and deleted files that you want to publish

@@ -15,7 +15,7 @@ You can use Salesforce Setup to configure your org as you would do on any sandbo
 - Click on ![Open current org button](assets/images/btn-open-org.jpg) to open your org in browser
   - _If you want to use another org, use menu ![Select org button](assets/images/btn-select-org.jpg) to select another one_
 - Perform your configurations in the org
-- Once you have finished, you can [publish your task](salesforce-ci-cd-pubish-task.jpg)
+- Once you have finished, you can [publish your task](salesforce-ci-cd-publish-task.md)
 
 ### Recommendations
 
@@ -38,7 +38,7 @@ Please follow as much as possible these recommendations when you work on a CI/CD
 - You can update code and XML metadatas using VsCode IDE
 - When you need to upload the updates to your org, use command ![Push to org button](assets/images/btn-push-to-org.jpg)
 - If you made updates directly on your org, use command ![Pull from org button](assets/images/btn-pull-from-org.jpg) to retrieve into local files the updates that you performed online with point & click
-- Once you have finished, you can [publish your task](salesforce-ci-cd-pubish-task.jpg)
+- Once you have finished, you can [publish your task](salesforce-ci-cd-publish-task.md)
 
 ### Recommendations
 

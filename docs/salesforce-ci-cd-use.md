@@ -21,7 +21,7 @@ Now your computer is ready, let's see how you can use sandboxes or scratch orgs 
 
 - [Create a new task](salesforce-ci-cd-create-new-task.md)
 - [Work on your current task](salesforce-ci-cd-work-on-task.md)
-- [Publish your task](salesforce-cd-cd-publish-task.md)
+- [Publish your task](salesforce-ci-cd-publish-task.md)
 - [Validate a merge request](salesforce-ci-cd-validate-merge-request.md) _(Release manager and advanced user only, depending on the project organization)_
 
 ## Release manager guide
