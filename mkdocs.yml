@@ -13,6 +13,7 @@ theme:
   custom_dir: docs/overrides
   features:
     - navigation.instant
+    - navigation.footer
   logo: assets/images/hardis-logo.png
   favicon: assets/images/hardis-favicon.png
   palette:
@@ -163,7 +164,23 @@ nav:
           resetselection: hardis/work/resetselection.md
           save: hardis/work/save.md
           ws: hardis/work/ws.md
-  - Use in CI: https://hardisgroupcom.github.io/sfdx-hardis/#use-sfdx-hardis-in-ci
+  - Salesforce CI/CD:
+    - CI/CD Home: salesforce-ci-cd-home.md
+    - Quick Start: salesforce-ci-cd-use.md
+    - User Guide:
+      - Pre-requisites:
+        - Prepare your computer: "salesforce-ci-cd-use-install.md"
+        - Clone the repository: "salesforce-ci-cd-clone-repository.md"
+      - Work on a CD/CD project:
+        - Create new task: salesforce-ci-cd-create-new-task.md
+        - Work on a task: salesforce-ci-cd-work-on-task.md
+        - Publish a task: salesforce-ci-cd-publish-task.md
+    - Release Manager Guide:
+      - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
+      - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
+      - CI/CD configuration: salesforce-ci-cd-config-home.md
+    - Setup Guide:
+        - CI/CD Setup: salesforce-ci-cd-setup-home.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://hardisgroupcom.github.io/sfdx-hardis/#articles
   - Contributing: https://hardisgroupcom.github.io/sfdx-hardis/#contributing

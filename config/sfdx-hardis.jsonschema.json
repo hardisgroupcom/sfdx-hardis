@@ -4,6 +4,17 @@
   "additionalProperties": false,
   "description": "Configuration file definition for sfdx-hardis Salesforce DX plugin",
   "properties": {
+    "allowedOrgTypes": {
+      "$id": "#/properties/allowedOrgTypes",
+      "description": "Types of orgs allowed for config & development. If not set, sandbox and scratch are allowed by default",
+      "examples": [["sandbox"]],
+      "items": {
+        "type": "string",
+        "enum": ["sandbox", "scratch"]
+      },
+      "title": "Allowed org types",
+      "type": "array"
+    },
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving a sfdx-hardis task, the list of cleanings will be automatically applied to sfdx sources",
