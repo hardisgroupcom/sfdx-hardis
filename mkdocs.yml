@@ -181,7 +181,10 @@ nav:
     - Release Manager Guide:
       - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
       - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
-      - CI/CD configuration: salesforce-ci-cd-config-home.md
+      - CI/CD Configuration:
+        - CI/CD Config Home: salesforce-ci-cd-config-home.md
+        - Overwrite Management: salesforce-ci-cd-config-overwrite.md
+        - Automated cleaning: salesforce-ci-cd-config-cleaning.md
     - Setup Guide:
         - CI/CD Setup: salesforce-ci-cd-setup-home.md
   - Deployment errors tips: deployTips.md

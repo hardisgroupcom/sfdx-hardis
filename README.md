@@ -18,7 +18,7 @@ Toolbox for Salesforce DX, by [Hardis-Group](https://www.hardis-group.com/en/ser
 It will allow you to:
 
 - Easily automate development & configuration in scratch orgs or sandbox orgs
-- Smart deploy from CI/CD pipelines
+- [Define a complete CI/CD Pipeline for your Salesforce project](https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-home/)
 - Do with simple commands what could be done manually in minutes/hours
 
 [**Please see the full list of commands in Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis)
@@ -68,66 +68,6 @@ _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Docker
 ```sh-session
 sfdx hardis:<COMMAND> <OPTIONS>
 ```
-
-## Use sfdx-hardis in CI
-
-You can use sfdx-hardis within CI scripts
-
-To do that, you need to configure authentication. This will create/update:
-
-- .sfdx-hardis.yml configuration file (repo)
-- Self signed certificate (repo)
-- Connected App (uploaded to org via metadata api)
-- SFDX_CLIENT_ID variable (manually set in a CI variable)
-
-### Initialize a Hardis-style sfdx-project
-
-Run `sfdx hardis:project:create` and follow instructions
-
-### Configure authentication for CI jobs
-
-You need [openssl](https://www.openssl.org/) installed on your computer (available in `Git bash`)
-
-Run the following command and follow instructions
-
-```shell
-sfdx hardis:project:configure:auth
-```
-
-Alternative for DevHub
-
-```shell
-sfdx hardis:project:configure:auth --devhub
-```
-
-### Authentication within CI jobs
-
-Call **sfdx hardis:login** at the root of the repository where you configured authentication
-
-```shell
-sfdx hardis:auth:login
-sfdx hardis:org:purge:flow --no-prompt
-```
-
-Alternative for DevHub
-
-```shell
-sfdx hardis:auth:login --devhub
-```
-
-## MsTeams notifications
-
-In case suspiscious results are found (failures, critical updates to come...), sfdx-hardis can send notifications to Microsoft Teams channels.
-
-You can define hooks using env variables:
-
-- MS_TEAMS_WEBHOOK_URL
-- MS_TEAMS_WEBHOOK_URL_CRITICAL
-- MS_TEAMS_WEBHOOK_URL_SEVERE
-- MS_TEAMS_WEBHOOK_URL_WARNING
-- MS_TEAMS_WEBHOOK_URL_INFO
-
-Ex: `MS_TEAMS_WEBHOOK_URL_CRITICAL=https://mycompany.webhook.office.com/webhookb2/f49c28c6-d10b-412c-b961-fge456bd@c1a7fa9b-90b3-49ab-b5e2-345HG88c/IncomingWebhook/b43c20SDSGFG56712d848bc1cebb17/53ee2e22-a867-4e74-868a-F3fs3935`
 
 ## Articles
 
