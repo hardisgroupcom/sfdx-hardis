@@ -33,4 +33,4 @@ The release manager(s) responsibilities are:
 - Train & support all project members about the use Salesforce CI/CD on the project
 - [Validate users merge requests](salesforce-ci-cd-validate-merge-request.md)
 - [Proceed deployments to major branches/org (UAT,Preprod,Production...)](salesforce-ci-cd-deploy-major-branches.md)
-- [Maintain CI/CD configuration](salesforce-ci-cd-configuration.md)
+- [Configure CI/CD project](salesforce-ci-cd-config-home.md)

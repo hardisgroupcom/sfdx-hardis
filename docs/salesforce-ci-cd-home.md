@@ -1,6 +1,6 @@
 ---
-title: Salesforce CI with sfdx-hardis
-description: Easy use of Salesforce DX on your Salesforce projects
+title: Salesforce CI/CD with sfdx-hardis
+description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on your Salesforce projects
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -12,12 +12,17 @@ We provide a [gitlab CI default template](https://github.com/hardisgroupcom/sfdx
 
 If you speak fluently **git**, **sfdx** & **DevOps**, you can be fully autonomous to setup and use Salesforce CI/CD, otherwise you can contact us at [**Cloudity**](https://cloudity.com/) and we'll be glad to assist you :)
 
+_Here is an advanced example of a Salesforce CI/CD Pipeline that you can easily define using sfdx-hardis._
+_You can define much simpler branch/orgs models, to manage only RUN operations_
+
+<div style="text-align:center"><img src="assets/images/ci-cd-schema-main.jpg"/></div>
+
 ## Setup and maintain sfdx-hardis CI/CD
 
-Please read [Sfdx-hardis Setup Guide](salesforce-ci-cd-setup.md) to know how to initialize and maintain a Salesforce CI/CD project.
+Please read [Sfdx-hardis Setup Guide](salesforce-ci-cd-setup-home.md) to know how to initialize and maintain a Salesforce CI/CD project.
 
 ## Use sfdx-hardis CI/CD
 
-Please read [Sfdx-hardis user guide](salesforce-ci-cd-use.md) to know how to work on CI/CD projects, as an business constant or a developer
+Please read [Sfdx-hardis User Guide](salesforce-ci-cd-use.md) to know how to work on CI/CD projects, as an **Business consultant**, a **Developer** or a **Release Manager**
 
 
