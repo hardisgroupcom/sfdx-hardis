@@ -27,7 +27,7 @@ You need credentials to login on the source-tracked sandbox you'll work with. It
 - Click on ![Start a new task](assets/images/btn-start-new-task.jpg)
 
 - Answer the questions then **select Sandbox** when prompted
-  - If the sandbox is not proposed in the list, selection the option to authenticate to your desired sandbox
+  - If the sandbox is not proposed in the list, select the option to authenticate to your desired sandbox
 
 - Click on ![Open org in browser](assets/images/btn-open-org.jpg) and you can start working in it :)
 
@@ -48,7 +48,7 @@ You need the credentials to login on the **Dev Hub Org** (usually the production
 - Click on ![Start a new task](assets/images/btn-start-new-task.jpg)
 
 - Answer the questions then **select Scratch Org** when prompted
-  - If the sandbox is not proposed in the list, selection the option to authenticate to your desired sandbox
+  - If the sandbox is not proposed in the list, select the option to authenticate to your desired sandbox
 
 - Wait for the sandbox creation script to be completed, and you can start working in it :)
   - If you see errors while creating the sandbox, request support from the project release manager
