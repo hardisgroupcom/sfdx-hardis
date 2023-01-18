@@ -4,7 +4,10 @@ description: Learn how to clone a Salesforce repository on your computer
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Pré-requisites
+- [Pre-requisites](#pre-requisites)
+- [Clone the repository](#clone-the-repository)
+
+## Pre-requisites
 
 You need to access to a Git repository and the url of the repository to clone.
 

@@ -4,6 +4,10 @@ description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on 
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Introduction](#introduction)
+- [Setup and maintain sfdx-hardis CI/CD](#setup-and-maintain-sfdx-hardis-cicd)
+- [Use sfdx-hardis CI/CD](#use-sfdx-hardis-cicd)
+
 ## Introduction
 
 You can setup and use a full CI/CD pipeline for your Salesforce projects using sfdx-hardis.

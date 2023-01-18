@@ -4,6 +4,13 @@ description: Learn how to commit and create a merge request
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Commit your updates](#commit-your-updates)
+- [Prepare merge request](#prepare-merge-request)
+- [Create merge request](#create-merge-request)
+  - [Using Gitlab](#using-gitlab)
+  - [Using Github](#using-github)
+  - [Using Azure](#using-azure)
+
 ## Commit your updates
 
 - If you made updates on your org that you have not pulled yet, Use command ![Pull from org button](assets/images/btn-pull-from-org.jpg) to **pull your latest updates in local files**

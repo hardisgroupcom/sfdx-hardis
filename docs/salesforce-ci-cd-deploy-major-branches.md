@@ -4,6 +4,9 @@ description: Learn how to deploy from develop to recette, to recette to UAT, to 
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Minor and Major branches](#minor-and-major-branches)
+- [Merge requests between major branches](#merge-requests-between-major-branches)
+
 ## Minor and Major branches
 
 Minor branches are individual git branches that do not have a CI/CD associated org

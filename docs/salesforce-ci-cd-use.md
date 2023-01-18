@@ -4,6 +4,11 @@ description: Learn how to use Salesforce DX to perform updates in Salesforce (de
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Business consultant / Developer guide](#business-consultant--developer-guide)
+  - [Initialization](#initialization)
+  - [Make updates on your Salesforce project](#make-updates-on-your-salesforce-project)
+- [Release manager guide](#release-manager-guide)
+
 ## Business consultant / Developer guide
 
 Working on a Salesforce DX project can be described in the following steps

@@ -4,6 +4,14 @@ description: Learn how to create a new task using a tracked sandbox or a scratch
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Sandbox or scratch org ?](#sandbox-or-scratch-org-)
+- [Source-tracked sandbox mode](#source-tracked-sandbox-mode)
+  - [Pre-requisites (sandbox)](#pre-requisites-sandbox)
+  - [Start new task on sandbox](#start-new-task-on-sandbox)
+- [Scratch Org mode](#scratch-org-mode)
+  - [Pre-requisites (scratch org)](#pre-requisites-scratch-org)
+  - [Start new task on scratch org](#start-new-task-on-scratch-org)
+
 ## Sandbox or scratch org ?
 
 With SFDX, usually each member of the teams has its own sandbox or scratch org to work on it.

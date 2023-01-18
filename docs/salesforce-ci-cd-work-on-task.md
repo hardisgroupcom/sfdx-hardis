@@ -4,6 +4,13 @@ description: Learn how to work on a task with a tracked sandbox or a scratch org
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Salesforce Configuration](#salesforce-configuration)
+  - [Open your org](#open-your-org)
+  - [Recommendations](#recommendations)
+- [Salesforce Development](#salesforce-development)
+  - [Update code & XML Metadatas](#update-code--xml-metadatas)
+  - [Recommendations](#recommendations)
+
 ## Salesforce Configuration
 
 ### Open your org

@@ -4,6 +4,12 @@ description: Learn how to validate a merge request on a Salesforce CI/CD project
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Conflicts](#conflicts)
+- [Control jobs](#control-jobs)
+  - [Check deploy job](#check-deploy-job)
+  - [Code Quality job](#code-quality-job)
+- [Merge the merge request](#merge-the-merge-request)
+
 ## Conflicts
 
 _This section must be managed by team members with git knownledge_
