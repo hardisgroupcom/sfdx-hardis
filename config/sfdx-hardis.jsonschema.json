@@ -10,10 +10,7 @@
       "examples": [["sandbox"]],
       "items": {
         "type": "string",
-        "enum": [
-          "sandbox",
-          "scratch"
-        ]
+        "enum": ["sandbox", "scratch"]
       },
       "title": "Allowed org types",
       "type": "array"
