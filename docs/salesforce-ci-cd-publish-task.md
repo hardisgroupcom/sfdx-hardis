@@ -47,9 +47,9 @@ _The following video shows how to perform theses operations_
 
 - Create a **New Merge request**
 
-<div style="text-align:center"><img src="assets/images/merge-request-1.jpg"/></div>
+![](assets/images/merge-request-1.jpg){ align=center }
 
-<div style="text-align:center"><img src="assets/images/merge-request-2.jpg"/></div>
+![](assets/images/merge-request-2.jpg){ align=center }
 
 - Click on **Submit merge request**
 

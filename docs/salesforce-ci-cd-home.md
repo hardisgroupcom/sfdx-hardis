@@ -15,7 +15,7 @@ If you speak fluently **git**, **sfdx** & **DevOps**, you can be fully autonomou
 _Here is an advanced example of a Salesforce CI/CD Pipeline that you can easily define using sfdx-hardis._
 _You can define much simpler branch/orgs models, to manage only RUN operations_
 
-<div style="text-align:center"><img src="assets/images/ci-cd-schema-main.jpg"/></div>
+![](assets/images/ci-cd-schema-main.jpg){ align=center }
 
 ## Setup and maintain sfdx-hardis CI/CD
 

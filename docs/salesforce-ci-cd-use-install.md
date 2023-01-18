@@ -15,7 +15,7 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 - Messages will appear at the bottom right of VsCode and ask you to install additional applications and activate settings. Follow all of them until there is none left.
   - When later you'll see such messages again from sfdx-hardis, click to apply them to upgrade applications.
 
-<div style="text-align:center"><img src="assets/images/msg-upgrade-plugins.jpg" /></div>
+![](assets/images/msg-upgrade-plugins.jpg){ align=center }
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >

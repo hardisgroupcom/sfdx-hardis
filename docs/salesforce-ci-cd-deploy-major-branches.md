@@ -10,7 +10,7 @@ Minor branches are individual git branches that do not have a CI/CD associated o
 
 Major branches are git branches that have a CI/CD associated org, and each new commit in a major branch automatically triggers a deployment to the associated org.
 
-<div style="text-align:center"><img src="assets/images/ci-cd-schema-release.jpg"/></div>
+![](assets/images/ci-cd-schema-release.jpg){ align=center }
 
 Examples:
 
