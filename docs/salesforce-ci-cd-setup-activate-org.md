@@ -1,5 +1,5 @@
 ---
-title: Activate Dev Hub & Sandbox Tracking
+title: Activate Dev Hub and Sandbox Tracking
 description: Learn how to activate Dev Hub and Sandbox Tracking on a CI/CD Salesforce project
 ---
 <!-- markdownlint-disable MD013 -->

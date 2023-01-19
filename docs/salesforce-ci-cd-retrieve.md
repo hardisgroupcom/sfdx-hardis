@@ -2,6 +2,7 @@
 title: Fix sfdx pull issues
 description: Learn how to retrieve updated metadatas when force:source:pull forgets some elements
 ---
+<!-- markdownlint-disable MD013 -->
 
 ## Automated force retrieve
 
