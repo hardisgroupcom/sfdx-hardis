@@ -24,7 +24,7 @@ ___
 - [Create git repository and configure branches](salesforce-ci-cd-setup-git.md)
 - [Activate DevHub or Sandbox Tracking](salesforce-ci-cd-setup-activate-org.md)
 - [Initialize sfdx project](salesforce-ci-cd-setup-init-project.md)
-- [Retrieve sources from an existing org](salesforce-ci-cd-setup-existing-org.md) _(optional)_
 - [Configure authentication](salesforce-ci-cd-setup-auth.md)
+- [Retrieve sources from an existing org](salesforce-ci-cd-setup-existing-org.md) _(optional)_
 - [Configure Salesforce DX project](salesforce-ci-cd-config-home.md)
 - [Configure MS Teams notifications](salesforce-ci-cd-setup-ms-teams.md) _(optional)_
