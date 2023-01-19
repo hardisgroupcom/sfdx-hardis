@@ -2,6 +2,7 @@
 title: Configure a Salesforce CI/CD Project using sfdx-hardis
 description: Learn how to configure your Salesforce CI/CD project so it works easily with VsCode SFDX Hardis
 ---
+<!-- markdownlint-disable MD013 -->
 
 - [Package.xml](#packagexml)
 - [destructiveChanges.xml](#destructivechangesxml)

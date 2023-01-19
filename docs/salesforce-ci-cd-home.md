@@ -5,8 +5,9 @@ description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on 
 <!-- markdownlint-disable MD013 -->
 
 - [Introduction](#introduction)
-- [Setup and maintain sfdx-hardis CI/CD](#setup-and-maintain-sfdx-hardis-cicd)
 - [Use sfdx-hardis CI/CD](#use-sfdx-hardis-cicd)
+- [Release Management](#release-management)
+- [Setup sfdx-hardis CI/CD](#setup-sfdx-hardis-cicd)
 
 ___
 
@@ -25,14 +26,22 @@ _You can define much simpler branch/orgs models, to manage only RUN operations._
 
 ___
 
-## Setup and maintain sfdx-hardis CI/CD
+## Use sfdx-hardis CI/CD
 
-Please read [Sfdx-hardis Setup Guide](salesforce-ci-cd-setup-home.md) to know how to initialize and maintain a Salesforce CI/CD project.
+Please read [User Guide](salesforce-ci-cd-use-home.md) to know how to work on CI/CD projects, as an **Business consultant**, a **Developer** or a **Release Manager**
 
 ___
 
-## Use sfdx-hardis CI/CD
+## Release Management
 
-Please read [Sfdx-hardis User Guide](salesforce-ci-cd-use.md) to know how to work on CI/CD projects, as an **Business consultant**, a **Developer** or a **Release Manager**
+Please read [Release Manager Guide](salesforce-ci-cd-release-home.md) to know how to be a release manager on Salesforce CI/CD project.
+
+___
+
+## Setup sfdx-hardis CI/CD
+
+Please read [Setup Guide](salesforce-ci-cd-setup-home.md) to know how to initialize and maintain a Salesforce CI/CD project.
+
+
 
 
