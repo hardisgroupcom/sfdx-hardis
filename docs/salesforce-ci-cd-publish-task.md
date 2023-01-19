@@ -41,7 +41,7 @@ ___
 
 - **Once your commit is completed**, run command ![Save / publish my current task button](assets/images/btn-save-publish-task.jpg) to prepare your merge request.
 
-- As you committed your files like explained in the previous section, select option ![Message my commit is ready(assets/images/msg-commit-ready.jpg) when prompted.
+- As you committed your files like explained in the previous section, select option ![Message my commit is ready](assets/images/msg-commit-ready.jpg) when prompted.
 
 - Wait for the script to complete, and select **Push commit to server** when prompted
 
