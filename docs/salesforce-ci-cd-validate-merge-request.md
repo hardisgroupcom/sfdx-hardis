@@ -55,7 +55,7 @@ If there are errors, you need to either:
 Under each error, you may see [instructions to solve the error](https://hardisgroupcom.github.io/sfdx-hardis/deployTips/) in yellow.
 
 - If there is no instruction, try to copy-paste the error in google
-- If you are lost or are not sure of what you do, call your [release manager](salesforce-ci-cd-use.md#release-manager-guide)
+- If you are lost or are not sure of what you do, call your [release manager](salesforce-ci-cd-release-home.md)
 - If your release manager is lost or is not sure of what he does, [post an issue](https://github.com/hardisgroupcom/sfdx-hardis/issues) or [call Cloudity](https://cloudity.com/) to ask for support
 
 ### Code Quality job

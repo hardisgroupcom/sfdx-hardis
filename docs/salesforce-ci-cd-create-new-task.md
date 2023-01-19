@@ -18,7 +18,7 @@ ___
 
 With SFDX, usually each member of the teams has its own sandbox or scratch org to work on it.
 
-The [release manager](salesforce-ci-cd-use.md#release-manager-guide) of the project can tell you if you work with [**scratch orgs**](#scratch-org-mode) or [**source-tracked sandboxes**](#source-tracked-sandbox-mode), and **which sandbox to use if you are in sandbox mode**.
+The [release manager](salesforce-ci-cd-release-home.md) of the project can tell you if you work with [**scratch orgs**](#scratch-org-mode) or [**source-tracked sandboxes**](#source-tracked-sandbox-mode), and **which sandbox to use if you are in sandbox mode**.
 
 ___
 

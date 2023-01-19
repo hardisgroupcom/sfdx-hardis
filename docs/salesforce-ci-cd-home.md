@@ -25,14 +25,22 @@ _You can define much simpler branch/orgs models, to manage only RUN operations._
 
 ___
 
-## Setup and maintain sfdx-hardis CI/CD
+## Use sfdx-hardis CI/CD
 
-Please read [Sfdx-hardis Setup Guide](salesforce-ci-cd-setup-home.md) to know how to initialize and maintain a Salesforce CI/CD project.
+Please read [User Guide](salesforce-ci-cd-use-home.md) to know how to work on CI/CD projects, as an **Business consultant**, a **Developer** or a **Release Manager**
 
 ___
 
-## Use sfdx-hardis CI/CD
+## Release Management
 
-Please read [Sfdx-hardis User Guide](salesforce-ci-cd-use.md) to know how to work on CI/CD projects, as an **Business consultant**, a **Developer** or a **Release Manager**
+Please read [Release Manager Guide](salesforce-ci-cd-release-home.md) to know how to be a release manager on Salesforce CI/CD project.
+
+___
+
+## Setup sfdx-hardis CI/CD
+
+Please read [Setup Guide](salesforce-ci-cd-setup-home.md) to know how to initialize and maintain a Salesforce CI/CD project.
+
+
 
 

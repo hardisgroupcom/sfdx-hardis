@@ -13,7 +13,7 @@ ___
 
 You need to access to a Git repository and the url of the repository to clone.
 
-The [release manager](salesforce-ci-cd-use.md#release-manager-guide) of the project can provide it.
+The [release manager](salesforce-ci-cd-release-home.md) of the project can provide it.
 
 It looks like the following: `https://github.com/trailheadapps/dreamhouse-lwc.git`
 

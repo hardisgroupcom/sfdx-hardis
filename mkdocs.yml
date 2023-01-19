@@ -169,8 +169,8 @@ nav:
           ws: hardis/work/ws.md
   - Salesforce CI/CD:
     - CI/CD Home: salesforce-ci-cd-home.md
-    - Quick Start: salesforce-ci-cd-use.md
     - User Guide:
+      - User Guide Home: "salesforce-ci-cd-use-home.md"
       - Pre-requisites:
         - Prepare your computer: "salesforce-ci-cd-use-install.md"
         - Clone the repository: "salesforce-ci-cd-clone-repository.md"
@@ -179,6 +179,7 @@ nav:
         - Work on a task: salesforce-ci-cd-work-on-task.md
         - Publish a task: salesforce-ci-cd-publish-task.md
     - Release Manager Guide:
+      - Release Manager Home: "salesforce-ci-cd-release-home.md"
       - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
       - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
       - CI/CD Configuration:
