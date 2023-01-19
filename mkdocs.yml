@@ -188,7 +188,13 @@ nav:
         - Automated cleaning: salesforce-ci-cd-config-cleaning.md
         - Source retrieve issues: salesforce-ci-cd-retrieve.md
     - Setup Guide:
-        - CI/CD Setup: salesforce-ci-cd-setup-home.md
+        - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
+        - Activate DevHub & Tracking: salesforce-ci-cd-setup-activate-org.md
+        - Init Git repository: salesforce-ci-cd-setup-git.md
+        - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
+        - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
+        - CI Server Authentication: salesforce-ci-cd-setup-auth.md
+        - MsTeams Notifications: salesforce-ci-cd-setup-ms-teams.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://hardisgroupcom.github.io/sfdx-hardis/#articles
   - Contributing: https://hardisgroupcom.github.io/sfdx-hardis/#contributing
