@@ -5,8 +5,9 @@ description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on 
 <!-- markdownlint-disable MD013 -->
 
 - [Introduction](#introduction)
-- [Setup and maintain sfdx-hardis CI/CD](#setup-and-maintain-sfdx-hardis-cicd)
 - [Use sfdx-hardis CI/CD](#use-sfdx-hardis-cicd)
+- [Release Management](#release-management)
+- [Setup sfdx-hardis CI/CD](#setup-sfdx-hardis-cicd)
 
 ___
 

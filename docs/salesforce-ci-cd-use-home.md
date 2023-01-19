@@ -4,6 +4,9 @@ description: Learn how to act as a release manager on a Salesforce DX CI/CD Proj
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Initialization](#initialization)
+- [Make updates on your Salesforce project](#make-updates-on-your-salesforce-project)
+
 ### Initialization
 
 You need a stack of applications and to have Salesforce sources on your computer to be able to start to work on a CI/CD project.
