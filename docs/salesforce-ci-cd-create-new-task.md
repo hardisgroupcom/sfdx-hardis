@@ -32,6 +32,10 @@ You need credentials to login on the source-tracked sandbox you'll work with. It
   - Existing source-tracked sandboxes must be **refreshed from time to time to avoid too many conflicts**, discuss with your Release Manager !
 - A **new source-tracked sandbox** that you can create from production org
 
+It is recommended to create sandbox from the org that is related to the target git branch.
+
+![](assets/images/sandbox-create.jpg){ align=center }
+
 ### Start new task on sandbox
 
 - Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](assets/images/hardis-button.jpg) in VsCode left bar _(loading can task several seconds)_
