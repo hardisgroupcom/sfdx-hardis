@@ -29,7 +29,8 @@
           "localfields",
           "listViewsMine",
           "minimizeProfiles",
-          "productrequest"
+          "productrequest",
+          "systemDebug"
         ]
       },
       "title": "Auto-Cleaning types",
