@@ -14,3 +14,4 @@ You must declare an org (usually production) as a DevHub and activate sandbox tr
 
 - [Activate Sandbox tracking](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_source_tracking_sandboxes.htm)
   - If sandbox were already existing, you need to refresh them if you want their source tracking to be activated
+  - To use **Create from** from an existing sandbox, you need to refresh it before the cloning, else the nex sandbox won't have the tracking activated
