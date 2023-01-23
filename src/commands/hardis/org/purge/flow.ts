@@ -158,7 +158,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
 
     // Build query with name filter if sent
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE Status IN ('${statusFilter.join("','")}')`;
-    if (nameFilter && nameFilter != 'all') {
+    if (nameFilter && nameFilter != "all") {
       query += ` AND MasterLabel LIKE '${nameFilter}%'`;
     }
     query += " ORDER BY MasterLabel,VersionNumber";
