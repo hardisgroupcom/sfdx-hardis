@@ -4,7 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Documentation: Add CI/CD user guide and release manager guide
+## [2.98.0] 2022-01-23
+
+- Documentation: Add CI/CD user guide and release manager guide, available at https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-home/
 - New .sfdx-hardis.yml config property **allowedOrgTypes**, allowing to define the type(s) or org that can be used for implementation: (sandbox and/or scratch)
 
 ## [2.97.3] 2022-11-30
