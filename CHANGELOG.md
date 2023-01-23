@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.98.1] 2022-01-23
+
+- Fix [hardis:org:purge:flow](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/purge/flow/) when flow prompt selection is `all`
+
 ## [2.98.0] 2022-01-23
 
 - Documentation: Add CI/CD user guide and release manager guide, available at https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-home/
