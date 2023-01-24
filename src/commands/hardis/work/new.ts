@@ -96,7 +96,7 @@ Under the hood, it can:
       },
       { title: "Debug", value: "fix", description: "A bug has been identified and you are the right person to solve it !" },
     ];
-    const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices ;
+    const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
 
     // Request info to build branch name. ex features/config/MYTASK
     const response = await prompts([
