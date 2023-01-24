@@ -30,7 +30,7 @@ At the end of the command, it will allow you to work on either a scratch org or 
 Under the hood, it can:
 
 - Make **git pull** to be up to date with target branch
-- Create **new git branch** with formatted name
+- Create **new git branch** with formatted name (you can override the choices using .sfdx-hardis.yml property **branchPrefixChoices**)
 - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using \`config/.sfdx-hardis.yml\`):
 - (and for scratch org only for now):
   - **Install packages**
@@ -88,6 +88,16 @@ Under the hood, it can:
 
     const targetBranch = await selectTargetBranch();
 
+    const defaultBranchPrefixChoices = [
+      {
+        title: "Feature",
+        value: "feat",
+        description: "New feature, evolution of an existing feature... If you don't know, just select Feature",
+      },
+      { title: "Debug", value: "fix", description: "A bug has been identified and you are the right person to solve it !" },
+    ];
+    const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
+
     // Request info to build branch name. ex features/config/MYTASK
     const response = await prompts([
       {
@@ -95,14 +105,7 @@ Under the hood, it can:
         name: "branch",
         message: c.cyanBright("What is the type of the task you want to do ?"),
         initial: 0,
-        choices: [
-          {
-            title: "Feature",
-            value: "features",
-            description: "New feature, evolution of an existing feature... If you don't know, just select Feature",
-          },
-          { title: "Debug", value: "bugs", description: "A bug has been identified and you are the right person to solve it !" },
-        ],
+        choices: branchPrefixChoices,
       },
       {
         type: "select",

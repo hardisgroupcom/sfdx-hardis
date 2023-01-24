@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Allow to override the proposed branch names when calling [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/), using property **branchPrefixChoices**
+
 ## [2.98.1] 2022-01-23
 
 - Fix [hardis:org:purge:flow](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/purge/flow/) when flow prompt selection is `all`
