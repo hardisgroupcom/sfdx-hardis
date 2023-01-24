@@ -74,6 +74,30 @@
       "title": "Available target branches",
       "type": "array"
     },
+    "branchPrefixChoices": {
+      "$id": "#/properties/branchPrefixChoices",
+      "description": "When calling hardis:work:new, you can override the default branch prefixes. Input title, value and description for each of them",
+      "default": [
+        {
+          "title": "Feature",
+          "value": "feat",
+          "description": "New feature, evolution of an existing feature... If you don't know, just select Feature"
+        },
+        { "title": "Debug", "value": "fix", "description": "A bug has been identified and you are the right person to solve it !" }
+      ],
+      "examples": [
+        [
+          {
+            "title": "Feature",
+            "value": "feat",
+            "description": "New feature, evolution of an existing feature... If you don't know, just select Feature"
+          },
+          { "title": "Debug", "value": "fix", "description": "A bug has been identified and you are the right person to solve it !" }
+        ]
+      ],
+      "title": "New branches prefixes choices",
+      "type": "array"
+    },
     "cleanXmlPatterns": {
       "$id": "#/properties/cleanXmlPatterns",
       "examples": [
