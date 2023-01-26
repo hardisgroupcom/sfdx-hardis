@@ -4,5 +4,9 @@
 # include the .d.ts files
 !*.d.ts
 
+# ignore images
+*.jpg
+*.png
+
 # docs
 docs/
