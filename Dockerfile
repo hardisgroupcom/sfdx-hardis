@@ -13,6 +13,14 @@ RUN apk add --update --no-cache \
             musl-locales-lang \
             icu-data-full
 
+# Force locale for custom runners
+ENV TZ Europe/Paris
+RUN apk update && \
+    apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/${TZ} /etc/localtime && \
+    echo ${TZ} > /etc/timezone && \
+    apk del --no-network tzdata
+
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
