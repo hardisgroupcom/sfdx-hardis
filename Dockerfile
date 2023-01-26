@@ -10,7 +10,8 @@ RUN apk add --update --no-cache \
             nodejs \
             npm \
             musl-locales \
-            musl-locales-lang
+            musl-locales-lang \
+            icu-data-full
 
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
