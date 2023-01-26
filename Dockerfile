@@ -8,7 +8,9 @@ RUN apk add --update --no-cache \
             chromium \
             git \
             nodejs \
-            npm
+            npm \
+            musl-locales \
+            musl-locales-lang
 
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
