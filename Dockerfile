@@ -8,7 +8,9 @@ RUN apk add --update --no-cache \
             chromium \
             git \
             nodejs \
-            npm
+            npm \
+            musl-locales \
+            musl-locales-lang
 
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
@@ -23,7 +25,8 @@ ARG SFDX_CLI_VERSION=7.173.0
 ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
-RUN npm install --no-cache sfdx-cli@${SFDX_CLI_VERSION} -g && \
+RUN npm install --no-cache yarn -g && \
+    npm install --no-cache sfdx-cli@${SFDX_CLI_VERSION} -g && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdmu && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
