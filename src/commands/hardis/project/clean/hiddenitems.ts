@@ -61,7 +61,7 @@ export default class CleanHiddenItems extends SfdxCommand {
     uxLog(this, c.cyan(`Removing hidden dx managed source files`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
-    const findManagedPattern = rootFolder + `/**/*.{app,cmp,evt,tokens}`;
+    const findManagedPattern = rootFolder + `/**/*.{app,cmp,evt,tokens,html,css,js,xml}`;
     const matchingCustomFiles = await glob(findManagedPattern, { cwd: process.cwd() });
     let counter = 0;
     for (const matchingCustomFile of matchingCustomFiles) {
