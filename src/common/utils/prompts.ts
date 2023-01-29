@@ -87,7 +87,12 @@ async function terminalPrompts(questions: PromptsQuestion[]) {
       message: question.message,
     }
     if (question.choices) {
-      inquirerQuestion.choices = question.choices
+      inquirerQuestion.choices = question.choices.map(qstn => {
+        return {
+          name: qstn.title,
+          value: qstn.value
+        }
+      })
     }
     if (question.default) {
       inquirerQuestion.default = question.default
@@ -101,7 +106,7 @@ async function terminalPrompts(questions: PromptsQuestion[]) {
     inquirerQuestions.push(inquirerQuestion);
   }
   try {
-    const answers = await inquirer.prompt(questions);
+    const answers = await inquirer.prompt(inquirerQuestions);
     return answers;
   } catch (e) {
     throw new SfdxError("Error while prompting: " + e.message)
