@@ -4,11 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.99.0] 2022-01-30
+
 - Replace [prompts](https://www.npmjs.com/package/prompts) library by [inquirer](https://www.npmjs.com/package/inquirer), because prompts is buggy
+- Dockerfile: Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213 (force:apex:test:run with code coverage crashing on some Gitlab runners with _Invalid time value_)
 - Allow to override the proposed branch names when calling [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/), using property **branchPrefixChoices**
-- Add yarn in dockerfile
 - hardis:project:clean:hiddenitems: Also clean LWC with hidden content
-- Dockerfile: Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
+- Add yarn in dockerfile
 
 ## [2.98.1] 2022-01-23
 
