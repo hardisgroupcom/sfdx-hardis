@@ -19,7 +19,7 @@ ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 # hadolint ignore=DL3044
 ENV PATH="/node_modules/.bin:${PATH}"
 
-ARG SFDX_CLI_VERSION=7.173.0
+ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
@@ -33,3 +33,6 @@ RUN npm install --no-cache yarn -g && \
     sfdx --version && \
     sfdx plugins
 
+# Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
+COPY ref/workarounds/dateUtil.js /usr/local/lib/node_modules/sfdx-cli/node_modules/@salesforce/apex-node/lib/src/utils/dateUtil.js
+COPY ref/workarounds/junitReporter.js /usr/local/lib/node_modules/sfdx-cli/node_modules/@salesforce/apex-node/lib/src/reporters/junitReporter.js
