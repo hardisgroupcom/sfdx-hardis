@@ -1,6 +1,6 @@
 import * as c from "chalk";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const inquirer = require('inquirer');
+const inquirer = require("inquirer");
 import { SfdxError } from "@salesforce/core";
 import { isCI, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
@@ -82,27 +82,24 @@ async function terminalPrompts(questions: PromptsQuestion[]) {
   for (const question of questions) {
     const inquirerQuestion: any = {
       name: question.name,
-      type: question.type === 'text' ? 'input' :
-        question.type === 'multiselect' ? 'checkbox' :
-          question.type === 'select' ? 'list' : question.type,
+      type: question.type === "text" ? "input" : question.type === "multiselect" ? "checkbox" : question.type === "select" ? "list" : question.type,
       message: question.message,
-    }
+    };
     if (question.choices) {
-      inquirerQuestion.choices = question.choices.map(qstn => {
+      inquirerQuestion.choices = question.choices.map((qstn) => {
         return {
           name: qstn.title,
-          value: qstn.value
-        }
-      })
+          value: qstn.value,
+        };
+      });
     }
     if (question.default) {
-      inquirerQuestion.default = question.default
-    }
-    else if (question.initial) {
-      inquirerQuestion.default = question.initial
+      inquirerQuestion.default = question.default;
+    } else if (question.initial) {
+      inquirerQuestion.default = question.initial;
     }
     if (question.validate) {
-      inquirerQuestion.validate = question.validate
+      inquirerQuestion.validate = question.validate;
     }
     inquirerQuestions.push(inquirerQuestion);
   }
@@ -110,6 +107,6 @@ async function terminalPrompts(questions: PromptsQuestion[]) {
     const answers = await inquirer.prompt(inquirerQuestions);
     return answers;
   } catch (e) {
-    throw new SfdxError("Error while prompting: " + e.message)
+    throw new SfdxError("Error while prompting: " + e.message);
   }
 }
