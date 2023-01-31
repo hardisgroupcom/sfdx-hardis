@@ -6,10 +6,14 @@ DEFAULT_BRANCH: main # Usually master or main
 # ENABLE: # If you use ENABLE variable, all other languages/formats/tooling-formats will be disabled by default
 # ENABLE_LINTERS: # If you use ENABLE_LINTERS variable, all other linters will be disabled by default
 DISABLE:
+  - CSS
   - EDITORCONFIG
+  - HTML
+  - JAVASCRIPT
 DISABLE_LINTERS:
   - JSON_JSONLINT
   - SPELL_PROSELINT
+  - REPOSITORY_GIT_DIFF
   - REPOSITORY_SEMGREP
   - TYPESCRIPT_STANDARD
 GITHUB_STATUS_REPORTER: false

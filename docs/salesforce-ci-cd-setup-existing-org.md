@@ -115,3 +115,8 @@ installedPackages:
     installDuringDeployments: true
 ```
 
+## Create first merge request
+
+Time to [create the first merge request](salesforce-ci-cd-setup-merge-request.md) !
+
+You'll probably have many updates to perform in new commits before having all jobs in green :)
