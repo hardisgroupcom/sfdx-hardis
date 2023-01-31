@@ -2409,9 +2409,8 @@ OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
   -f, --folder=folder                                                               [default: force-app] Root folder
 
-  -n, --namespace=namespace                                                         [default:
-                                                                                    <http://soap.sforce.com/2006/04/metad>
-                                                                                    ata] XML Namespace to use
+  -n, --namespace=namespace                                                         [default: <http://soap.sforce.com/200>
+                                                                                    6/04/metadata] XML Namespace to use
 
   -p, --globpattern=globpattern                                                     Glob pattern to find files to clean.
                                                                                     Ex: /**/*.flexipage-meta.xml
@@ -2600,8 +2599,8 @@ DESCRIPTION
   If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
 - `manifest/packageDeployOnce.xml`: Every element defined in this file will be deployed only if it is not existing yet
-  in the target org (can be useful with ListView for example, if the client wants to update them directly in production
-  org)
+   in the target org (can be useful with ListView for example, if the client wants to update them directly in production
+   org)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a
   similar definition in target org (can be useful for SharingRules for example)
 
@@ -3303,9 +3302,9 @@ sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve dep
 ```
 USAGE
   $ sfdx hardis:source:deploy [--soapdeploy] [-w <minutes>] [-q <id> | -x <filepath> | -m <array> | -p <array> | -c | -l
-  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g] [--predestructivechanges <filepath>
-  ] [--postdestructivechanges <filepath> ] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>]
-  [--verbose] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+   NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g] [--predestructivechanges
+  <filepath> ] [--postdestructivechanges <filepath> ] [--debug] [--websocket <string>] [-u <string>] [--apiversion
+  <string>] [--verbose] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -c, --checkonly                                                                   checkonly
@@ -3595,7 +3594,7 @@ When a work task is completed, guide user to create a merge request
 ```
 USAGE
   $ sfdx hardis:work:save [-n] [-g] [-c] [--auto] [--targetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u
-  <string>] [--apiversion <string>] [--json] [--loglevel
+   <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
