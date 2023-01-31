@@ -21,4 +21,4 @@ You can also use command ![](assets/images/btn-select-retrieve.jpg) to manually 
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
-> See details in [hardis:source:retrieve](hardis/source/retrieve/) command documentation
+> See details in [hardis:source:retrieve](https://hardisgroupcom.github.io/sfdx-hardis/hardis/source/retrieve/) command documentation

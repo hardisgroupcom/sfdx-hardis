@@ -49,7 +49,7 @@ Example of branching strategy
 
 ## Protect major branches
 
-To avoid messes, protected branches must be updated only using [Merge Requests](r)
+To avoid messes, protected branches must be updated only using [Merge Requests](https://docs.gitlab.com/ee/user/project/merge_requests/)
 
 - Go to menu `Settings -> Repository`
 - Define your developments target branch (usually _integration_) as **Default Branch**

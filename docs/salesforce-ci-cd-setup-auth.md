@@ -6,7 +6,7 @@ description: Learn how to configure CI Server authentification to automate deplo
 
 ## Major orgs
 
-To automate [deployments from major branches to their related org](salesforce-ci-cd-deploy-major-branches/), you need to **configure the secure authentication from CI server to a SF connected app**.
+To automate [deployments from major branches to their related org](salesforce-ci-cd-deploy-major-branches.md), you need to **configure the secure authentication from CI server to a SF connected app**.
 
 Note: _You need [openssl](https://www.openssl.org/) installed on your computer (available in `Git bash`)_
 
