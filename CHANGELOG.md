@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [2.99.1] 2022-01-31
 
 - Fix `hardis:project:clean:hiddenitems` when multiple files in the same folder match the same glob pattern
+- Update documentation, fix typos and dead links
 
 ## [2.99.0] 2022-01-30
 
