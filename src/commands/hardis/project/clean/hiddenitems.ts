@@ -65,6 +65,9 @@ export default class CleanHiddenItems extends SfdxCommand {
     const matchingCustomFiles = await glob(findManagedPattern, { cwd: process.cwd() });
     let counter = 0;
     for (const matchingCustomFile of matchingCustomFiles) {
+      if (!fs.existsSync(matchingCustomFile)) {
+        continue;
+      }
       const fileContent = await fs.readFile(matchingCustomFile, "utf8");
       if (fileContent.startsWith("(hidden)")) {
         const componentFolder = path.dirname(matchingCustomFile);
