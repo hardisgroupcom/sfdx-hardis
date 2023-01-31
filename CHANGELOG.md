@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.99.1] 2022-01-31
+
+- Fix `hardis:project:clean:hiddenitems` when mutiple files in the same folder match the same glob pattern
+
 ## [2.99.0] 2022-01-30
 
 - Replace [prompts](https://www.npmjs.com/package/prompts) library by [inquirer](https://www.npmjs.com/package/inquirer), because prompts is buggy
