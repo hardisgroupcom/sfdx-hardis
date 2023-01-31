@@ -73,7 +73,7 @@ Salesforce will [deprecate such capability in Spring 26](https://admin.salesforc
 
 Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that exists on a Permission Set !
 
-The folowing XML tags are removed automatically:
+The following XML tags are removed automatically:
 
 - classAccesses
 - customMetadataTypeAccesses

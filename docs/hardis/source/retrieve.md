@@ -13,23 +13,23 @@ sfdx-hardis wrapper for sfdx force:source:retrieve
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|apiversion<br/>-a|option|override the api version used for api requests made by this command||||
-|debug<br/>-d|boolean|debugMode||||
-|forceoverwrite<br/>-f|boolean|forceoverwrite||||
-|json|boolean|format output as json||||
-|loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
-|manifest<br/>-x|option|manifest||||
-|metadata<br/>-m|option|metadata||||
-|packagenames<br/>-n|option|packagenames||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|sourcepath<br/>-p|option|sourcePath||||
-|targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
-|tracksource<br/>-t|boolean|tracksource||||
-|verbose|boolean|verbose||||
-|wait<br/>-w|option|wait||||
-|websocket|option|websocket||||
+| Name                  |  Type   | Description                                                         | Default | Required |                        Options                        |
+|:----------------------|:-------:|:--------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
+| apiversion<br/>-a     | option  | override the api version used for api requests made by this command |         |          |                                                       |
+| debug<br/>-d          | boolean | debugMode                                                           |         |          |                                                       |
+| forceoverwrite<br/>-f | boolean | forceoverwrite                                                      |         |          |                                                       |
+| json                  | boolean | format output as json                                               |         |          |                                                       |
+| loglevel              | option  | logging level for this command invocation                           |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
+| manifest<br/>-x       | option  | manifest                                                            |         |          |                                                       |
+| metadata<br/>-m       | option  | metadata                                                            |         |          |                                                       |
+| packagenames<br/>-n   | option  | packagenames                                                        |         |          |                                                       |
+| skipauth              | boolean | Skip authentication check when a default username is required       |         |          |                                                       |
+| sourcepath<br/>-p     | option  | sourcePath                                                          |         |          |                                                       |
+| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org  |         |          |                                                       |
+| tracksource<br/>-t    | boolean | tracksource                                                         |         |          |                                                       |
+| verbose               | boolean | verbose                                                             |         |          |                                                       |
+| wait<br/>-w           | option  | wait                                                                |         |          |                                                       |
+| websocket             | option  | websocket                                                           |         |          |                                                       |
 
 ## Examples
 
