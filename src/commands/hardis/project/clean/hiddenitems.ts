@@ -72,7 +72,7 @@ export default class CleanHiddenItems extends SfdxCommand {
       if (fileContent.startsWith("(hidden)")) {
         const componentFolder = path.dirname(matchingCustomFile);
         const folderSplit = componentFolder.split(path.sep);
-        const toRemove = (folderSplit.includes("lwc") || folderSplit.includes("aura")) ? componentFolder : matchingCustomFile;
+        const toRemove = folderSplit.includes("lwc") || folderSplit.includes("aura") ? componentFolder : matchingCustomFile;
         await fs.remove(toRemove);
         uxLog(this, c.cyan(`Removed hidden item ${c.yellow(toRemove)}`));
         counter++;
