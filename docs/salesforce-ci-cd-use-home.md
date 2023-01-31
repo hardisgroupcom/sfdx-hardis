@@ -1,6 +1,6 @@
 ---
 title: Salesforce CI/CD User Guide
-description: Learn how to act as a release manager on a Salesforce DX CI/CD Project
+description: Learn how to work on a Salesforce DX CI/CD Project
 ---
 <!-- markdownlint-disable MD013 -->
 

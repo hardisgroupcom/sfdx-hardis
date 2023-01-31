@@ -53,7 +53,7 @@ ___
 > - Clean XML of metadatas according to .sfdx-hardis.yml config property `autoCleanTypes` and `autoRemoveUserPermissions`
 > - New git commit with automated updates
 > - Git push commit to git server
-> 
+>
 > More details in [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/) command documentation
 
 ___
@@ -77,7 +77,7 @@ ___
 - Controlling jobs are automatically launched, you can now ask your release manager to [**validate a merge request**](salesforce-ci-cd-validate-merge-request.md)
   - _If you are a developer, (or even a business consultant depending on the project organization), you may have the responsibility to make sure than controlling jobs are valid (**check-deploy job** and **code-quality job** in **success**)_
 
-- If you need to add additional updates to an existing merge requests, you just this to follow again this guide from the beginning, except the part "Create a merge request". Any new commit pushed on a branch where there is already a merge request will trigger again the [control jobs](salesforce-ci-cd-validate-merge-request.md#control-jobs). 
+- If you need to add additional updates to an existing merge requests, you just this to follow again this guide from the beginning, except the part "Create a merge request". Any new commit pushed on a branch where there is already a merge request will trigger again the [control jobs](salesforce-ci-cd-validate-merge-request.md#control-jobs).
 
 ### Using Github
 

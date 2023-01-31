@@ -22,7 +22,7 @@ ___
 
 Salesforce CI/CD Pipelines does not natively work without many manual operations to update the XML... so the deployments passes !
 
-sfdx-hardis provides a set of commands to automate those boring XML updates that can be called every time a user [prepares a merge request](salesforce-ci-cd-publish-task.md/#prepare-merge-request) using command [sfdx hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
+sfdx-hardis provides a set of commands to automate those boring XML updates that can be called every time a user [prepares a merge request](salesforce-ci-cd-publish-task.md#prepare-merge-request) using command [sfdx hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
 
 Here is the list of available automated cleanings, that can also be called manually using command ![](assets/images/btn-clean-sources.jpg)
 
@@ -73,7 +73,7 @@ Salesforce will [deprecate such capability in Spring 26](https://admin.salesforc
 
 Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that exists on a Permission Set !
 
-The folowing XML tags are removed automatically:
+The following XML tags are removed automatically:
 
 - classAccesses
 - customMetadataTypeAccesses
@@ -93,7 +93,7 @@ Property: **systemDebug**
 
 System.debug are useless, as explained in [this article](https://medium.com/@michael.bobard/get-rid-of-your-system-debug-with-2-clicks-to-improve-your-performance-80febae76755)
 
-Comments automatically all System.debug in the code to enhance peformances.
+Comments automatically all System.debug in the code to enhance performances.
 
 ___
 

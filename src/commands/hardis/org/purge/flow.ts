@@ -68,7 +68,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }),
     instanceurl: flags.string({
       char: "r",
-      default: "https://login.saleforce.com",
+      default: "https://login.salesforce.com",
       description: messages.getMessage("instanceUrl"),
     }),
     debug: flags.boolean({

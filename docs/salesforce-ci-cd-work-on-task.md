@@ -34,7 +34,7 @@ Please follow as much as possible these recommendations when you work on a CI/CD
 - **Do not change the type of custom fields**
 - Use command ![Install package button](assets/images/btn-install-package.jpg) to install package instead of installing them directly with the URL
 - Always **use Permission Sets** instead of Profiles. If you need profiles, discuss with your release manager.
-- Never link configuration items (Queues,Reports...) directly to a user, but use [Salesforce Groups](https://help.salesforce.com/s/articleView?language=en_US&id=sf.user_groups.htm&type=5) 
+- Never link configuration items (Queues,Reports...) directly to a user, but use [Salesforce Groups](https://help.salesforce.com/s/articleView?language=en_US&id=sf.user_groups.htm&type=5)
 - If you need to update Flows, discuss to make sure that no other member of the team is updating the same Flow in another branch/org
   - _If it happens, conflicts are not manageable so one of you will later need to perform the updates again_
 - **Never use hardcoded Ids** in Flows and formulas (or anywhere else)

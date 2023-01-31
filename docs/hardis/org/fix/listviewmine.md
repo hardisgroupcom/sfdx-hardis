@@ -56,11 +56,11 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|apiversion|option|override the api version used for api requests made by this command||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|json|boolean|format output as json||||
+| Name         |  Type   | Description                                                         | Default | Required | Options |
+|:-------------|:-------:|:--------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| apiversion   | option  | override the api version used for api requests made by this command |         |          |         |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                                     |         |          |         |
+| json         | boolean | format output as json                                               |         |          |         |
 |listviews<br/>-l|option|Comma-separated list of listviews following format Object:ListViewName
 Example: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportunities||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
@@ -71,11 +71,11 @@ Example: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportu
 ## Examples
 
 ```shell
-$ sfdx hardis:org:fix:listviewmine
+sfdx hardis:org:fix:listviewmine
 ```
 
 ```shell
-$ sfdx hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
+sfdx hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
 ```
 
 

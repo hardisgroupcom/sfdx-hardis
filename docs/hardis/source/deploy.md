@@ -12,28 +12,28 @@ sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve dep
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|apiversion|option|override the api version used for api requests made by this command||||
-|checkonly<br/>-c|boolean|checkonly||||
-|debug|boolean|debug||||
-|ignoreerrors<br/>-o|boolean|ignoreErrors||||
-|ignorewarnings<br/>-g|boolean|ignoreWarnings||||
-|json|boolean|format output as json||||
-|loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
-|manifest<br/>-x|option|flagsLong.manifest||||
-|metadata<br/>-m|option|metadata||||
-|postdestructivechanges|option|postdestructivechanges||||
-|predestructivechanges|option|predestructivechanges||||
-|runtests<br/>-r|option|runTests||||
-|soapdeploy|boolean|soapDeploy||||
-|sourcepath<br/>-p|option|sourcePath||||
-|targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
-|testlevel<br/>-l|option|testlevel|NoTestRun||NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg|
-|validateddeployrequestid<br/>-q|option|validateDeployRequestId||||
-|verbose|boolean|verbose||||
-|wait<br/>-w|option|wait|60 minutes|||
-|websocket|option|websocket||||
+| Name                            |  Type   | Description                                                         |  Default   | Required |                                Options                                 |
+|:--------------------------------|:-------:|:--------------------------------------------------------------------|:----------:|:--------:|:----------------------------------------------------------------------:|
+| apiversion                      | option  | override the api version used for api requests made by this command |            |          |                                                                        |
+| checkonly<br/>-c                | boolean | checkonly                                                           |            |          |                                                                        |
+| debug                           | boolean | debug                                                               |            |          |                                                                        |
+| ignoreerrors<br/>-o             | boolean | ignoreErrors                                                        |            |          |                                                                        |
+| ignorewarnings<br/>-g           | boolean | ignoreWarnings                                                      |            |          |                                                                        |
+| json                            | boolean | format output as json                                               |            |          |                                                                        |
+| loglevel                        | option  | logging level for this command invocation                           |    warn    |          |         trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal          |
+| manifest<br/>-x                 | option  | flagsLong.manifest                                                  |            |          |                                                                        |
+| metadata<br/>-m                 | option  | metadata                                                            |            |          |                                                                        |
+| postdestructivechanges          | option  | postdestructivechanges                                              |            |          |                                                                        |
+| predestructivechanges           | option  | predestructivechanges                                               |            |          |                                                                        |
+| runtests<br/>-r                 | option  | runTests                                                            |            |          |                                                                        |
+| soapdeploy                      | boolean | soapDeploy                                                          |            |          |                                                                        |
+| sourcepath<br/>-p               | option  | sourcePath                                                          |            |          |                                                                        |
+| targetusername<br/>-u           | option  | username or alias for the target org; overrides default target org  |            |          |                                                                        |
+| testlevel<br/>-l                | option  | testlevel                                                           | NoTestRun  |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| validateddeployrequestid<br/>-q | option  | validateDeployRequestId                                             |            |          |                                                                        |
+| verbose                         | boolean | verbose                                                             |            |          |                                                                        |
+| wait<br/>-w                     | option  | wait                                                                | 60 minutes |          |                                                                        |
+| websocket                       | option  | websocket                                                           |            |          |                                                                        |
 
 ## Examples
 

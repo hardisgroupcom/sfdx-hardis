@@ -18,7 +18,26 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class CleanMinimizeProfiles extends SfdxCommand {
   public static title = "Clean profiles of Permission Set attributes";
 
-  public static description = "Remove all profile attributes that exist on Permission Sets";
+  public static description = `Remove all profile attributes that exist on Permission Sets
+
+It is a bad practice to define on Profiles elements that can be defined on Permission Sets.
+
+Salesforce will deprecate such capability in Spring 26.
+
+Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that exists on a Permission Set !
+
+The following XML tags are removed automatically:
+
+- classAccesses
+- customMetadataTypeAccesses
+- externalDataSourceAccesses
+- fieldPermissions
+- objectPermissions
+- pageAccesses
+- userPermissions (except on Admin Profile)
+
+You can override this list by defining a property minimizeProfilesNodesToRemove in your .sfdx-hardis.yml config file.
+  `;
 
   public static examples = ["$ sfdx hardis:project:clean:minimizeprofiles"];
 

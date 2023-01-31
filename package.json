@@ -135,6 +135,7 @@
   },
   "scripts": {
     "build": "node build.js && generate-schema-doc config/sfdx-hardis.jsonschema.json docs/schema/sfdx-hardis-json-schema-parameters.html --config minify=false --config link_to_reused_ref=false || echo 'Please run \"pip install json-schema-for-humans\" (you need python installed on your computer)'",
+    "build:doc": "sfdx hardis:doc:plugin:generate",
     "compile": "tsc --watch",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

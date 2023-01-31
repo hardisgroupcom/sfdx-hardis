@@ -18,9 +18,9 @@ Toolbox for Salesforce DX, by [Hardis-Group](https://www.hardis-group.com/en/ser
 
 It will allow you to:
 
-- Easily automate development & configuration in scratch orgs or sandbox orgs
-- Smart deploy from CI/CD pipelines
 - Do with simple commands what could be done manually in minutes/hours
+- [Define a complete CI/CD Pipeline for your Salesforce project](https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-home/)
+
 
 [**Please see the full list of commands in Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis)
 
@@ -70,73 +70,13 @@ _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Docker
 sfdx hardis:<COMMAND> <OPTIONS>
 ```
 
-## Use sfdx-hardis in CI
-
-You can use sfdx-hardis within CI scripts
-
-To do that, you need to configure authentication. This will create/update:
-
-- .sfdx-hardis.yml configuration file (repo)
-- Self signed certificate (repo)
-- Connected App (uploaded to org via metadata api)
-- SFDX_CLIENT_ID variable (manually set in a CI variable)
-
-### Initialize a Hardis-style sfdx-project
-
-Run `sfdx hardis:project:create` and follow instructions
-
-### Configure authentication for CI jobs
-
-You need [openssl](https://www.openssl.org/) installed on your computer (available in `Git bash`)
-
-Run the following command and follow instructions
-
-```shell
-sfdx hardis:project:configure:auth
-```
-
-Alternative for DevHub
-
-```shell
-sfdx hardis:project:configure:auth --devhub
-```
-
-### Authentication within CI jobs
-
-Call **sfdx hardis:login** at the root of the repository where you configured authentication
-
-```shell
-sfdx hardis:auth:login
-sfdx hardis:org:purge:flow --no-prompt
-```
-
-Alternative for DevHub
-
-```shell
-sfdx hardis:auth:login --devhub
-```
-
-## MsTeams notifications
-
-In case suspiscious results are found (failures, critical updates to come...), sfdx-hardis can send notifications to Microsoft Teams channels.
-
-You can define hooks using env variables:
-
-- MS_TEAMS_WEBHOOK_URL
-- MS_TEAMS_WEBHOOK_URL_CRITICAL
-- MS_TEAMS_WEBHOOK_URL_SEVERE
-- MS_TEAMS_WEBHOOK_URL_WARNING
-- MS_TEAMS_WEBHOOK_URL_INFO
-
-Ex: `MS_TEAMS_WEBHOOK_URL_CRITICAL=https://mycompany.webhook.office.com/webhookb2/f49c28c6-d10b-412c-b961-fge456bd@c1a7fa9b-90b3-49ab-b5e2-345HG88c/IncomingWebhook/b43c20SDSGFG56712d848bc1cebb17/53ee2e22-a867-4e74-868a-F3fs3935`
-
 ## Articles
 
 Here are some articles with examples of use of [sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis/)
 
 - English
 
-[![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-error.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
+[![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 [![Handle Salesforce API versions Deprecation like a pro](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deprecated-api.jpg)](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
 [![How to freeze / unfreeze users during a Salesforce deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
@@ -179,138 +119,144 @@ Anyone is welcome to contribute to this sfdx-hardis
 
 ### hardis:auth
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:auth:login**](hardis/auth/login.md)|Login|
+| Command                                       | Title |
+|:----------------------------------------------|:------|
+| [**hardis:auth:login**](hardis/auth/login.md) | Login |
 
 ### hardis:cache
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:cache:clear**](hardis/cache/clear.md)|Clear sfdx-hardis cache|
+| Command                                         | Title                   |
+|:------------------------------------------------|:------------------------|
+| [**hardis:cache:clear**](hardis/cache/clear.md) | Clear sfdx-hardis cache |
 
 ### hardis:config
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:config:get**](hardis/config/get.md)|Deploy metadata sources to org|
+| Command                                       | Title                          |
+|:----------------------------------------------|:-------------------------------|
+| [**hardis:config:get**](hardis/config/get.md) | Deploy metadata sources to org |
 
 ### hardis:doc
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)|Generate project documentation|
-|[**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)|Generate SFDX Plugin Documentation|
+| Command                                                                     | Title                              |
+|:----------------------------------------------------------------------------|:-----------------------------------|
+| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) | Generate project documentation     |
+| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             | Generate SFDX Plugin Documentation |
+
+### hardis:lint
+
+| Command                                         | Title                   |
+|:------------------------------------------------|:------------------------|
+| [**hardis:lint:access**](hardis/lint/access.md) | check permission access |
 
 ### hardis:mdapi
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:mdapi:deploy**](hardis/mdapi/deploy.md)|sfdx-hardis wrapper for sfdx force:mdapi:deploy that displays tips to solve deployment errors.|
+| Command                                           | Title                                                                                          |
+|:--------------------------------------------------|:-----------------------------------------------------------------------------------------------|
+| [**hardis:mdapi:deploy**](hardis/mdapi/deploy.md) | sfdx-hardis wrapper for sfdx force:mdapi:deploy that displays tips to solve deployment errors. |
 
 ### hardis:misc
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:misc:toml2csv**](hardis/misc/toml2csv.md)|TOML to CSV|
+| Command                                             | Title       |
+|:----------------------------------------------------|:------------|
+| [**hardis:misc:toml2csv**](hardis/misc/toml2csv.md) | TOML to CSV |
 
 ### hardis:org
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:org:configure:data**](hardis/org/configure/data.md)|Configure Data project|
-|[**hardis:org:configure:files**](hardis/org/configure/files.md)|Configure File export project|
-|[**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)|Configure org monitoring|
-|[**hardis:org:connect**](hardis/org/connect.md)|Connect to an org|
-|[**hardis:org:create**](hardis/org/create.md)|Create sandbox org|
-|[**hardis:org:data:delete**](hardis/org/data/delete.md)|Delete data|
-|[**hardis:org:data:export**](hardis/org/data/export.md)|Export data|
-|[**hardis:org:data:import**](hardis/org/data/import.md)|Import data|
-|[**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)|Check for legacy API use|
-|[**hardis:org:files:export**](hardis/org/files/export.md)|Export files|
-|[**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)|Fix listviews with |
-|[**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)|Purge Apex Logs|
-|[**hardis:org:purge:flow**](hardis/org/purge/flow.md)|Purge Flow versions|
-|[**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)|Retrieve package configuration from an org|
-|[**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)|Retrieve CRM Analytics configuration from an org|
-|[**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)|Retrieve sfdx sources from org|
-|[**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)|Retrieve sfdx sources from org (2)|
-|[**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)|Retrieve sfdx sources from org|
-|[**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)|Retrofit changes from an org|
-|[**hardis:org:select**](hardis/org/select.md)|Select org|
-|[**hardis:org:test:apex**](hardis/org/test/apex.md)|Run apex tests|
-|[**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)|Reactivate sandbox invalid users|
-|[**hardis:org:user:freeze**](hardis/org/user/freeze.md)|Freeze user logins|
-|[**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)|Unfreeze user logins|
+| Command                                                                               | Title                                            |
+|:--------------------------------------------------------------------------------------|:-------------------------------------------------|
+| [**hardis:org:configure:data**](hardis/org/configure/data.md)                         | Configure Data project                           |
+| [**hardis:org:configure:files**](hardis/org/configure/files.md)                       | Configure File export project                    |
+| [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)             | Configure org monitoring                         |
+| [**hardis:org:connect**](hardis/org/connect.md)                                       | Connect to an org                                |
+| [**hardis:org:create**](hardis/org/create.md)                                         | Create sandbox org                               |
+| [**hardis:org:data:delete**](hardis/org/data/delete.md)                               | Delete data                                      |
+| [**hardis:org:data:export**](hardis/org/data/export.md)                               | Export data                                      |
+| [**hardis:org:data:import**](hardis/org/data/import.md)                               | Import data                                      |
+| [**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)                 | Check for legacy API use                         |
+| [**hardis:org:files:export**](hardis/org/files/export.md)                             | Export files                                     |
+| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                     | Fix listviews with                               |
+| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                           | Purge Apex Logs                                  |
+| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                 | Purge Flow versions                              |
+| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         | Retrieve package configuration from an org       |
+| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md) | Retrieve CRM Analytics configuration from an org |
+| [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)               | Retrieve sfdx sources from org                   |
+| [**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)             | Retrieve sfdx sources from org (2)               |
+| [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)   | Retrieve sfdx sources from org                   |
+| [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)   | Retrofit changes from an org                     |
+| [**hardis:org:select**](hardis/org/select.md)                                         | Select org                                       |
+| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                   | Run apex tests                                   |
+| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)             | Reactivate sandbox invalid users                 |
+| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                               | Freeze user logins                               |
+| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                           | Unfreeze user logins                             |
 
 ### hardis:package
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:package:create**](hardis/package/create.md)|Create a new package|
-|[**hardis:package:install**](hardis/package/install.md)|Install packages in an org|
-|[**hardis:package:mergexml**](hardis/package/mergexml.md)|Merge package.xml files|
-|[**hardis:package:version:create**](hardis/package/version/create.md)|Create a new version of a package|
-|[**hardis:package:version:list**](hardis/package/version/list.md)|Create a new version of a package|
-|[**hardis:package:version:promote**](hardis/package/version/promote.md)|Promote new versions of package(s)|
+| Command                                                                 | Title                              |
+|:------------------------------------------------------------------------|:-----------------------------------|
+| [**hardis:package:create**](hardis/package/create.md)                   | Create a new package               |
+| [**hardis:package:install**](hardis/package/install.md)                 | Install packages in an org         |
+| [**hardis:package:mergexml**](hardis/package/mergexml.md)               | Merge package.xml files            |
+| [**hardis:package:version:create**](hardis/package/version/create.md)   | Create a new version of a package  |
+| [**hardis:package:version:list**](hardis/package/version/list.md)       | Create a new version of a package  |
+| [**hardis:package:version:promote**](hardis/package/version/promote.md) | Promote new versions of package(s) |
 
 ### hardis:project
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)|Audit Metadatas API Version|
-|[**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)|Audit CallIns and CallOuts|
-|[**hardis:project:audit:duplicatefiles**](hardis/project/audit/duplicatefiles.md)|Find duplicate sfdx files|
-|[**hardis:project:audit:remotesites**](hardis/project/audit/remotesites.md)|Audit Remote Sites|
-|[**hardis:project:clean:emptyitems**](hardis/project/clean/emptyitems.md)|Clean retrieved empty items in dx sources|
-|[**hardis:project:clean:hiddenitems**](hardis/project/clean/hiddenitems.md)|Clean retrieved hidden items in dx sources|
-|[**hardis:project:clean:listviews**](hardis/project/clean/listviews.md)|Replace Mine by Everything in ListViews|
-|[**hardis:project:clean:manageditems**](hardis/project/clean/manageditems.md)|Clean retrieved managed items in dx sources|
-|[**hardis:project:clean:minimizeprofiles**](hardis/project/clean/minimizeprofiles.md)|Clean profiles of Permission Set attributes|
-|[**hardis:project:clean:orgmissingitems**](hardis/project/clean/orgmissingitems.md)|Clean SFDX items using target org definition|
-|[**hardis:project:clean:references**](hardis/project/clean/references.md)|Clean references in dx sources|
-|[**hardis:project:clean:retrievefolders**](hardis/project/clean/retrievefolders.md)|Retrieve dashboards, documents and report folders in DX sources|
-|[**hardis:project:clean:standarditems**](hardis/project/clean/standarditems.md)|Clean retrieved standard items in dx sources|
-|[**hardis:project:clean:systemdebug**](hardis/project/clean/systemdebug.md)|Clean System debug|
-|[**hardis:project:clean:xml**](hardis/project/clean/xml.md)|Clean retrieved empty items in dx sources|
-|[**hardis:project:configure:auth**](hardis/project/configure/auth.md)|Configure authentication|
-|[**hardis:project:convert:profilestopermsets**](hardis/project/convert/profilestopermsets.md)|Convert Profiles into Permission Sets|
-|[**hardis:project:create**](hardis/project/create.md)|Login|
-|[**hardis:project:deploy:sources:dx**](hardis/project/deploy/sources/dx.md)|Deploy sfdx sources to org|
-|[**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md)|Deploy metadata sources to org|
-|[**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)|Fix flexipages for v53|
-|[**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)|Generate Git Delta|
-|[**hardis:project:lint**](hardis/project/lint.md)|Lint|
-|[**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)|XML duplicate values finder|
+| Command                                                                                       | Title                                                           |
+|:----------------------------------------------------------------------------------------------|:----------------------------------------------------------------|
+| [**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)                     | Audit Metadatas API Version                                     |
+| [**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)               | Audit CallIns and CallOuts                                      |
+| [**hardis:project:audit:duplicatefiles**](hardis/project/audit/duplicatefiles.md)             | Find duplicate sfdx files                                       |
+| [**hardis:project:audit:remotesites**](hardis/project/audit/remotesites.md)                   | Audit Remote Sites                                              |
+| [**hardis:project:clean:emptyitems**](hardis/project/clean/emptyitems.md)                     | Clean retrieved empty items in dx sources                       |
+| [**hardis:project:clean:hiddenitems**](hardis/project/clean/hiddenitems.md)                   | Clean retrieved hidden items in dx sources                      |
+| [**hardis:project:clean:listviews**](hardis/project/clean/listviews.md)                       | Replace Mine by Everything in ListViews                         |
+| [**hardis:project:clean:manageditems**](hardis/project/clean/manageditems.md)                 | Clean retrieved managed items in dx sources                     |
+| [**hardis:project:clean:minimizeprofiles**](hardis/project/clean/minimizeprofiles.md)         | Clean profiles of Permission Set attributes                     |
+| [**hardis:project:clean:orgmissingitems**](hardis/project/clean/orgmissingitems.md)           | Clean SFDX items using target org definition                    |
+| [**hardis:project:clean:references**](hardis/project/clean/references.md)                     | Clean references in dx sources                                  |
+| [**hardis:project:clean:retrievefolders**](hardis/project/clean/retrievefolders.md)           | Retrieve dashboards, documents and report folders in DX sources |
+| [**hardis:project:clean:standarditems**](hardis/project/clean/standarditems.md)               | Clean retrieved standard items in dx sources                    |
+| [**hardis:project:clean:systemdebug**](hardis/project/clean/systemdebug.md)                   | Clean System debug                                              |
+| [**hardis:project:clean:xml**](hardis/project/clean/xml.md)                                   | Clean retrieved empty items in dx sources                       |
+| [**hardis:project:configure:auth**](hardis/project/configure/auth.md)                         | Configure authentication                                        |
+| [**hardis:project:convert:profilestopermsets**](hardis/project/convert/profilestopermsets.md) | Convert Profiles into Permission Sets                           |
+| [**hardis:project:create**](hardis/project/create.md)                                         | Login                                                           |
+| [**hardis:project:deploy:sources:dx**](hardis/project/deploy/sources/dx.md)                   | Deploy sfdx sources to org                                      |
+| [**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md)       | Deploy metadata sources to org                                  |
+| [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                   | Fix flexipages for v53                                          |
+| [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)                   | Generate Git Delta                                              |
+| [**hardis:project:lint**](hardis/project/lint.md)                                             | Lint                                                            |
+| [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)       | XML duplicate values finder                                     |
 
 ### hardis:scratch
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:scratch:create**](hardis/scratch/create.md)|Create and initialize scratch org|
-|[**hardis:scratch:delete**](hardis/scratch/delete.md)|Delete scratch orgs(s)|
-|[**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)|Create and configure scratch org pool|
-|[**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md)|Authenticate locally to scratch org pool|
-|[**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)|Refresh scratch org pool|
-|[**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)|Reset scratch org pool|
-|[**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)|View scratch org pool info|
-|[**hardis:scratch:pull**](hardis/scratch/pull.md)|Scratch PULL|
-|[**hardis:scratch:push**](hardis/scratch/push.md)|Scratch PUSH|
+| Command                                                               | Title                                    |
+|:----------------------------------------------------------------------|:-----------------------------------------|
+| [**hardis:scratch:create**](hardis/scratch/create.md)                 | Create and initialize scratch org        |
+| [**hardis:scratch:delete**](hardis/scratch/delete.md)                 | Delete scratch orgs(s)                   |
+| [**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)       | Create and configure scratch org pool    |
+| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md) | Authenticate locally to scratch org pool |
+| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)     | Refresh scratch org pool                 |
+| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)         | Reset scratch org pool                   |
+| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)           | View scratch org pool info               |
+| [**hardis:scratch:pull**](hardis/scratch/pull.md)                     | Scratch PULL                             |
+| [**hardis:scratch:push**](hardis/scratch/push.md)                     | Scratch PUSH                             |
 
 ### hardis:source
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:source:deploy**](hardis/source/deploy.md)|sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors.|
-|[**hardis:source:push**](hardis/source/push.md)|sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.|
-|[**hardis:source:retrieve**](hardis/source/retrieve.md)|sfdx-hardis wrapper for sfdx force:source:retrieve|
+| Command                                                 | Title                                                                                           |
+|:--------------------------------------------------------|:------------------------------------------------------------------------------------------------|
+| [**hardis:source:deploy**](hardis/source/deploy.md)     | sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors. |
+| [**hardis:source:push**](hardis/source/push.md)         | sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.   |
+| [**hardis:source:retrieve**](hardis/source/retrieve.md) | sfdx-hardis wrapper for sfdx force:source:retrieve                                              |
 
 ### hardis:work
 
-|Command|Title|
-|:------|:----------|
-|[**hardis:work:new**](hardis/work/new.md)|New work task|
-|[**hardis:work:refresh**](hardis/work/refresh.md)|Refresh work task|
-|[**hardis:work:resetselection**](hardis/work/resetselection.md)|Select again|
-|[**hardis:work:save**](hardis/work/save.md)|Save work task|
-|[**hardis:work:ws**](hardis/work/ws.md)|WebSocket operations|
+| Command                                                         | Title                |
+|:----------------------------------------------------------------|:---------------------|
+| [**hardis:work:new**](hardis/work/new.md)                       | New work task        |
+| [**hardis:work:refresh**](hardis/work/refresh.md)               | Refresh work task    |
+| [**hardis:work:resetselection**](hardis/work/resetselection.md) | Select again         |
+| [**hardis:work:save**](hardis/work/save.md)                     | Save work task       |
+| [**hardis:work:ws**](hardis/work/ws.md)                         | WebSocket operations |

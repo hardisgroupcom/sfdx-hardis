@@ -13,13 +13,13 @@ metadataDuplicateFindKeys :
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|files<br/>-f|option|XML metadata files path||||
-|json|boolean|format output as json||||
-|loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                   | Default | Required |                        Options                        |
+|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
+| files<br/>-f | option  | XML metadata files path                                       |         |          |                                                       |
+| json         | boolean | format output as json                                         |         |          |                                                       |
+| loglevel     | option  | logging level for this command invocation                     |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
+| skipauth     | boolean | Skip authentication check when a default username is required |         |          |                                                       |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |                                                       |
 
 ## Examples
 
@@ -46,7 +46,7 @@ metadataDuplicateFindKeys :
 
 ```shell
 
-$ sfdx hardis:metadata:findduplicates --file layout.layout-meta.xml
+$ sfdx hardis:project:metadata:findduplicates --file layout.layout-meta.xml
 [sfdx-hardis] Duplicate values in layout.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
   - Values : Name
@@ -55,8 +55,8 @@ $ sfdx hardis:metadata:findduplicates --file layout.layout-meta.xml
 
 ```shell
 
-$ sfdx hardis:metadata:findduplicates -f "force-app/main/default/**/*.xml"
-[sfdx-hardis] hardis:metadata:findduplicates execution time 0:00:00.397
+$ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
+[sfdx-hardis] hardis:project:metadata:findduplicates execution time 0:00:00.397
 [sfdx-hardis] Duplicate values in layout1.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
   - Values : CreatedById
