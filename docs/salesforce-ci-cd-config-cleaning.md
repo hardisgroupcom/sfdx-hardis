@@ -93,7 +93,7 @@ Property: **systemDebug**
 
 System.debug are useless, as explained in [this article](https://medium.com/@michael.bobard/get-rid-of-your-system-debug-with-2-clicks-to-improve-your-performance-80febae76755)
 
-Comments automatically all System.debug in the code to enhance peformances.
+Comments automatically all System.debug in the code to enhance performances.
 
 ___
 

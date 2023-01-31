@@ -14,7 +14,7 @@ ___
 
 ## Conflicts
 
-_This section must be managed by team members with git knownledge_
+_This section must be managed by team members with git knowledge_
 
 If elements has been modified in another branch, you need to manage conflicts before being able to merge.
 

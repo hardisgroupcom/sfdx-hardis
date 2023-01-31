@@ -1,6 +1,6 @@
 ---
 title: Configure CI Server authentication to Salesforce orgs
-description: Learn how to configure CI Server authentification to automate deployments
+description: Learn how to configure CI Server authentication to automate deployments
 ---
 <!-- markdownlint-disable MD013 -->
 

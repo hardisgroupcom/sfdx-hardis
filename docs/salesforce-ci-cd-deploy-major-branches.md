@@ -23,7 +23,7 @@ Examples:
 
 - **Major to Major**: When a merge request from `integration` to `uat` **(3)** is validated and merged, a new state (commit) is detected in branch `uat`, so CI server automatically deploys to `associated Salesforce org UAT` **(4)**
 
-- **Major to Major**: When a merge request from `preprod` to `production` **(5)** is validated and mged, a new state (commit) is detected in branch `production`, so CI server automatically deploys to `associated Salesforce org Production` **(6)**
+- **Major to Major**: When a merge request from `preprod` to `production` **(5)** is validated and merged, a new state (commit) is detected in branch `production`, so CI server automatically deploys to `associated Salesforce org Production` **(6)**
 
 ___
 
