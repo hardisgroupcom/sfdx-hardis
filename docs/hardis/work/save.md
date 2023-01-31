@@ -5,10 +5,11 @@
 
 When a work task is completed, guide user to create a merge request
 
-Some properties can be defined in `.sfdx-hardis.yml` to avoid to have to manually update xml files so the deployment will pass.
-
-- `autocleantypes`: List of auto-performed sources cleanings, available on command [hardis:project:clean:references](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/)
-- `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
+- Generate package-xml diff using sfdx-git-delta
+- Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
+- Automatically Clean XML files using `.sfdx-hardis.yml` properties
+  - `autocleantypes`: List of auto-performed sources cleanings, available on command [hardis:project:clean:references](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/)
+  - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
 
 Example:
 
@@ -29,6 +30,8 @@ autoRemoveUserPermissions:
   - ViewPlatformEvents
   - WorkCalibrationUser
 ```
+
+- Push commit to server
   
 
 ## Parameters

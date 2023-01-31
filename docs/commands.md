@@ -25,6 +25,12 @@
 |[**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)|Generate project documentation|
 |[**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)|Generate SFDX Plugin Documentation|
 
+## hardis:lint
+
+|Command|Title|
+|:------|:----------|
+|[**hardis:lint:access**](hardis/lint/access.md)|check permission access|
+
 ## hardis:mdapi
 
 |Command|Title|

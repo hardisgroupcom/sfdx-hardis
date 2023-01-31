@@ -65,6 +65,8 @@ nav:
             permsetgroups: hardis/doc/extract/permsetgroups.md
           plugin:
             generate: hardis/doc/plugin/generate.md
+        lint:
+          access: hardis/lint/access.md
         mdapi:
           deploy: hardis/mdapi/deploy.md
         misc:
@@ -168,34 +170,34 @@ nav:
           save: hardis/work/save.md
           ws: hardis/work/ws.md
   - Salesforce CI/CD:
-    - CI/CD Home: salesforce-ci-cd-home.md
-    - User Guide:
-      - User Guide Home: "salesforce-ci-cd-use-home.md"
-      - Pre-requisites:
-        - Prepare your computer: "salesforce-ci-cd-use-install.md"
-        - Clone the repository: "salesforce-ci-cd-clone-repository.md"
-      - Work on a CD/CD project:
-        - Create new task: salesforce-ci-cd-create-new-task.md
-        - Work on a task: salesforce-ci-cd-work-on-task.md
-        - Publish a task: salesforce-ci-cd-publish-task.md
-    - Release Manager Guide:
-      - Release Manager Home: "salesforce-ci-cd-release-home.md"
-      - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
-      - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
-      - CI/CD Configuration:
-        - CI/CD Config Home: salesforce-ci-cd-config-home.md
-        - Overwrite Management: salesforce-ci-cd-config-overwrite.md
-        - Automated cleaning: salesforce-ci-cd-config-cleaning.md
-        - Source retrieve issues: salesforce-ci-cd-retrieve.md
-    - Setup Guide:
-        - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
-        - Init Git repository: salesforce-ci-cd-setup-git.md
-        - DevHub and Sandbox Tracking: salesforce-ci-cd-setup-activate-org.md
-        - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
-        - CI Server Authentication: salesforce-ci-cd-setup-auth.md
-        - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
-        - First merge request: salesforce-ci-cd-setup-merge-request.md
-        - MsTeams Notifications: salesforce-ci-cd-setup-ms-teams.md
+      - CI/CD Home: salesforce-ci-cd-home.md
+      - User Guide:
+          - User Guide Home: salesforce-ci-cd-use-home.md
+          - Pre-requisites:
+              - Prepare your computer: salesforce-ci-cd-use-install.md
+              - Clone the repository: salesforce-ci-cd-clone-repository.md
+          - Work on a CD/CD project:
+              - Create new task: salesforce-ci-cd-create-new-task.md
+              - Work on a task: salesforce-ci-cd-work-on-task.md
+              - Publish a task: salesforce-ci-cd-publish-task.md
+      - Release Manager Guide:
+          - Release Manager Home: salesforce-ci-cd-release-home.md
+          - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
+          - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
+          - CI/CD Configuration:
+              - CI/CD Config Home: salesforce-ci-cd-config-home.md
+              - Overwrite Management: salesforce-ci-cd-config-overwrite.md
+              - Automated cleaning: salesforce-ci-cd-config-cleaning.md
+              - Source retrieve issues: salesforce-ci-cd-retrieve.md
+      - Setup Guide:
+          - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
+          - Init Git repository: salesforce-ci-cd-setup-git.md
+          - DevHub and Sandbox Tracking: salesforce-ci-cd-setup-activate-org.md
+          - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
+          - CI Server Authentication: salesforce-ci-cd-setup-auth.md
+          - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
+          - First merge request: salesforce-ci-cd-setup-merge-request.md
+          - MsTeams Notifications: salesforce-ci-cd-setup-ms-teams.md
   - .sfdx-hardis.yml config file: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://hardisgroupcom.github.io/sfdx-hardis/#articles

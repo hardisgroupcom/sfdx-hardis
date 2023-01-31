@@ -10,17 +10,18 @@ At the end of the command, it will allow you to work on either a scratch org or 
 Under the hood, it can:
 
 - Make **git pull** to be up to date with target branch
-- Create **new git branch** with formatted name
+- Create **new git branch** with formatted name (you can override the choices using .sfdx-hardis.yml property **branchPrefixChoices**)
 - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using `config/.sfdx-hardis.yml`):
+- (and for scratch org only for now):
   - **Install packages**
-    - Use property `installedPackages`
-  - **Push sources**
-  - **Assign permission sets**
-    - Use property `initPermissionSets`
-  - **Run apex initialization scripts**
-    - Use property `scratchOrgInitApexScripts`
-  - **Load data**
-    - Use property `dataPackages`
+      - Use property `installedPackages`
+    - **Push sources**
+    - **Assign permission sets**
+      - Use property `initPermissionSets`
+    - **Run apex initialization scripts**
+      - Use property `scratchOrgInitApexScripts`
+    - **Load data**
+      - Use property `dataPackages`
 
 
 ## Parameters
