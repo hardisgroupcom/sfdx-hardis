@@ -34,7 +34,7 @@ A Salesforce CI/CD repository contains a file **manifest/destructiveChanges.xml*
 
 - It contains **all metadatas** that will be **deleted** by the **CI server**.
 
-- It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task#prepare-merge-request) by command [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
+- It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task.md#prepare-merge-request) by command [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
 
 ___
 
