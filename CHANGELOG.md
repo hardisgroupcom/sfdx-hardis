@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update default API version to 56.0
+- Update CI/CD documentation
+
 ## [2.99.1] 2022-01-31
 
 - Fix `hardis:project:clean:hiddenitems` when multiple files in the same folder match the same glob pattern
