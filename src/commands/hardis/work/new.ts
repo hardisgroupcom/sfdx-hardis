@@ -3,10 +3,18 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
+import * as path from "path";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { checkGitClean, ensureGitBranch, execCommand, execSfdxJson, git, gitCheckOutRemote, uxLog } from "../../../common/utils";
 import { selectTargetBranch } from "../../../common/utils/gitUtils";
-import { promptOrg } from "../../../common/utils/orgUtils";
+import {
+  initApexScripts,
+  initOrgData,
+  initOrgMetadatas,
+  initPermissionSetAssignments,
+  installPackages,
+  promptOrg,
+} from "../../../common/utils/orgUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
 import { getConfig, setConfig } from "../../../config";
@@ -71,6 +79,7 @@ Under the hood, it can:
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
+  protected targetBranch: string;
   protected debugMode = false;
 
   /* jscpd:ignore-end */
@@ -86,7 +95,7 @@ Under the hood, it can:
 
     const config = await getConfig("project");
 
-    const targetBranch = await selectTargetBranch();
+    this.targetBranch = await selectTargetBranch();
 
     const defaultBranchPrefixChoices = [
       {
@@ -133,8 +142,8 @@ Under the hood, it can:
 
     // Checkout development main branch
     const branchName = `${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
-    uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(targetBranch)} on server...`));
-    await gitCheckOutRemote(targetBranch);
+    uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} on server...`));
+    await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
     await git().pull();
     // Create new branch
@@ -142,15 +151,15 @@ Under the hood, it can:
     await ensureGitBranch(branchName);
 
     // Update config if necessary
-    if (config.developmentBranch !== targetBranch) {
+    if (config.developmentBranch !== this.targetBranch) {
       const updateDefaultBranchRes = await prompts({
         type: "confirm",
         name: "value",
-        message: c.cyanBright(`Do you want to update your default target git branch to ${c.green(targetBranch)} ?`),
+        message: c.cyanBright(`Do you want to update your default target git branch to ${c.green(this.targetBranch)} ?`),
         default: false,
       });
       if (updateDefaultBranchRes.value === true) {
-        await setConfig("user", { developmentBranch: targetBranch });
+        await setConfig("user", { developmentBranch: this.targetBranch });
       }
     }
 
@@ -184,7 +193,7 @@ Under the hood, it can:
     if (selectedOrgType === "scratch") {
       await this.selectOrCreateScratchOrg(branchName);
     } else {
-      await this.selectOrCreateSandbox(branchName);
+      await this.selectOrCreateSandbox(branchName, config);
     }
 
     uxLog(this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
@@ -258,7 +267,7 @@ Under the hood, it can:
   }
 
   // Select or create sandbox
-  async selectOrCreateSandbox(branchName) {
+  async selectOrCreateSandbox(branchName, config) {
     const hubOrgUsername = this?.hubOrg?.getUsername();
     const sandboxOrgList = await MetadataUtils.listLocalOrgs("sandbox", { devHubUsername: hubOrgUsername });
     const sandboxResponse = await prompts({
@@ -295,16 +304,19 @@ Under the hood, it can:
       scratchOrgAlias: null,
       scratchOrgUsername: null,
     });
+    let orgUsername = "";
     // Connect to a sandbox
     if (sandboxResponse.value === "connectSandbox") {
-      await promptOrg(this, { setDefault: true, devSandbox: true });
+      const slctdOrg = await promptOrg(this, { setDefault: true, devSandbox: true });
+      orgUsername = slctdOrg.username;
     }
-    // Create a new sandbox
+    // Create a new sandbox ( NOT WORKING YET, DO NOT USE)
     else if (sandboxResponse.value === "newSandbox") {
       const createResult = await SandboxCreate.run();
       if (createResult == null) {
         throw new SfdxError("Unable to create sandbox org");
       }
+      orgUsername = createResult.username;
     }
     // Selected sandbox from list
     else {
@@ -312,7 +324,49 @@ Under the hood, it can:
         output: true,
         fail: true,
       });
+      orgUsername = sandboxResponse.value.username;
     }
+    // Initialize / Update existing sandbox if required
+    const initSandboxResponse = await prompts({
+      type: "confirm",
+      name: "value",
+      message: c.cyanBright(`Do you want to initialize the sandbox (packages,sources,permission set assignments,apex scripts,initial data) ?`),
+      default: false,
+    });
+    if (initSandboxResponse.value === true) {
+      let initSourcesErr: any = null;
+      let initSandboxErr: any = null;
+      try {
+        await installPackages(config.installedPackages || [], orgUsername);
+        try {
+          // Continue initialization even if push did not work... it could work and be not such a problem :)
+          await initOrgMetadatas(config, orgUsername, orgUsername, {}, this.debugMode);
+        } catch (e1) {
+          initSourcesErr = e1;
+        }
+        await initPermissionSetAssignments(config.initPermissionSets || [], orgUsername);
+        await initApexScripts(config.scratchOrgInitApexScripts || [], orgUsername);
+        await initOrgData(path.join(".", "scripts", "data", "ScratchInit"), orgUsername);
+      } catch (e) {
+        initSandboxErr = e;
+      }
+      if (initSandboxErr) {
+        uxLog(this, c.grey("Error(s) while initializing sandbox: " + initSandboxErr.message + "\n" + initSandboxErr.stack));
+        uxLog(this, c.yellow("Your sandbox may not be completely initialized from git. You can send the error above to your release manager"));
+      }
+      if (initSourcesErr) {
+        uxLog(this, c.grey("Error(s) while pushing sources to sandbox: " + initSourcesErr.message + "\n" + initSourcesErr.stack));
+        uxLog(
+          this,
+          c.yellow(`If you really want your sandbox to be up to date with branch ${c.bold(this.targetBranch)}, you may:
+  - ${c.bold("Fix the errors")} (probably by manually updating the target sandbox in setup), then run new task again and select again the same sandbox
+  - ${c.bold("Refresh your sandbox")} (ask your release manager if you don't know how)
+  Else, you can start working now (but beware of conflicts ^^):)
+        `)
+        );
+      }
+    }
+
     // Trigger a status refresh on VsCode WebSocket Client
     WebSocketClient.sendMessage({ event: "refreshStatus" });
   }

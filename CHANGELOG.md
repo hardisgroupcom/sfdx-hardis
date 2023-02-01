@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- **hardis:work:new:**: When creating a new task and using a source-tracked sandbox, ask user to push sources, assign permission sets and load data to initialize it.
 - Update default API version to 56.0
 - Update CI/CD documentation
 

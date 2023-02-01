@@ -3,7 +3,7 @@ import { prompts } from "./prompts";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { createTempDir, execCommand, execSfdxJson, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 import { getConfig, setConfig } from "../../config";
 import * as sortArray from "sort-array";
@@ -11,6 +11,7 @@ import { Connection, SfdxError } from "@salesforce/core";
 import { importData } from "./dataUtils";
 import { soqlQuery } from "./apiUtils";
 import { isSfdxProject } from "./projectUtils";
+import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "./deployUtils";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -295,6 +296,70 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
   if (updated) {
     uxLog(this, "Updated package configuration in sfdx-hardis config");
     await setConfig("project", { installedPackages: projectPackages });
+  }
+}
+
+export async function installPackages(installedPackages: any[], orgAlias: string) {
+  const packages = installedPackages || [];
+  elapseStart("Install all packages");
+  await MetadataUtils.installPackagesOnOrg(packages, orgAlias, this, "scratch");
+  elapseEnd("Install all packages");
+}
+
+export async function initOrgMetadatas(configInfo: any, orgUsername: string, orgAlias: string,projectScratchDef: any, debugMode: boolean) {
+  // Push or deploy according to config (default: push)
+  if ((isCI && process.env.CI_SCRATCH_MODE === "deploy") || process.env.DEBUG_DEPLOY === "true") {
+    // if CI, use force:source:deploy to make sure package.xml is consistent
+    uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(orgAlias)}...`));
+    const packageXmlFile =
+      process.env.PACKAGE_XML_TO_DEPLOY || configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
+        ? "./manifest/package.xml"
+        : "./config/package.xml";
+    await forceSourceDeploy(packageXmlFile, false, "NoTestRun", debugMode, this, {
+      targetUsername: orgUsername,
+    });
+  } else {
+    // Use push for local scratch orgs
+    uxLog(
+      this,
+      c.cyan(`Pushing project sources to scratch org ${c.green(orgAlias)}... (You can see progress in Setup -> Deployment Status)`)
+    );
+    // Suspend sharing calc if necessary
+    const deferSharingCalc = (projectScratchDef.features || []).includes("DeferSharingCalc");
+    if (deferSharingCalc) {
+      // Deploy to permission set allowing to update SharingCalc
+      await deployMetadatas({
+        deployDir: path.join(path.join(__dirname, "../../../../defaults/utils/deferSharingCalc", ".")),
+        testlevel: "NoTestRun",
+        soap: true,
+      });
+      // Assign to permission set allowing to update SharingCalc
+      try {
+        const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${orgUsername}`;
+        await execSfdxJson(assignCommand, this, {
+          fail: false, // Do not fail in case permission set already exists
+          output: false,
+          debug: debugMode,
+        });
+        await execCommand("sfdx texei:sharingcalc:suspend", this, {
+          fail: false,
+          output: true,
+          debug: debugMode,
+        });
+      } catch (e) {
+        uxLog(self, c.yellow("Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"));
+        uxLog(self, c.grey(e.message));
+      }
+    }
+    await forceSourcePush(orgAlias, this, debugMode);
+    // Resume sharing calc if necessary
+    if (deferSharingCalc) {
+      await execCommand("sfdx texei:sharingcalc:resume", this, {
+        fail: false,
+        output: true,
+        debug: debugMode,
+      });
+    }
   }
 }
 
