@@ -111,7 +111,7 @@ export default class ScratchCreate extends SfdxCommand {
     await this.createScratchOrg();
     try {
       await this.updateScratchOrgUser();
-      await installPackages(this.configInfo.installedPackages || [],this.scratchOrgAlias);
+      await installPackages(this.configInfo.installedPackages || [], this.scratchOrgAlias);
       if (this.pool === false) {
         await initOrgMetadatas(this.configInfo, this.scratchOrgUsername, this.scratchOrgAlias, this.projectScratchDef, this.debugMode);
         await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.scratchOrgUsername);
@@ -400,5 +400,4 @@ export default class ScratchCreate extends SfdxCommand {
     const userUpdateCommand = `sfdx force:data:record:update -s User -i ${userQueryRes.result.Id} -v "${updatedUserValues}" -u ${this.scratchOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
   }
-
 }

@@ -306,7 +306,7 @@ export async function installPackages(installedPackages: any[], orgAlias: string
   elapseEnd("Install all packages");
 }
 
-export async function initOrgMetadatas(configInfo: any, orgUsername: string, orgAlias: string,projectScratchDef: any, debugMode: boolean) {
+export async function initOrgMetadatas(configInfo: any, orgUsername: string, orgAlias: string, projectScratchDef: any, debugMode: boolean) {
   // Push or deploy according to config (default: push)
   if ((isCI && process.env.CI_SCRATCH_MODE === "deploy") || process.env.DEBUG_DEPLOY === "true") {
     // if CI, use force:source:deploy to make sure package.xml is consistent
@@ -320,10 +320,7 @@ export async function initOrgMetadatas(configInfo: any, orgUsername: string, org
     });
   } else {
     // Use push for local scratch orgs
-    uxLog(
-      this,
-      c.cyan(`Pushing project sources to scratch org ${c.green(orgAlias)}... (You can see progress in Setup -> Deployment Status)`)
-    );
+    uxLog(this, c.cyan(`Pushing project sources to scratch org ${c.green(orgAlias)}... (You can see progress in Setup -> Deployment Status)`));
     // Suspend sharing calc if necessary
     const deferSharingCalc = (projectScratchDef.features || []).includes("DeferSharingCalc");
     if (deferSharingCalc) {
