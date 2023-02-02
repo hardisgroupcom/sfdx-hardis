@@ -1035,8 +1035,8 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       uxLog(
         commandThis,
         c.yellow(`If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName}:
-- Using certificate ${crtFile}
-- Doc: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
+- Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
+  - Use certificate ${c.bold(crtFile)}
 - Once created, update variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with ConsumerKey of the newly created connected app`)
       );
     }

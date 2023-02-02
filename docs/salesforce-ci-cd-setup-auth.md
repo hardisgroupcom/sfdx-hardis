@@ -16,6 +16,8 @@ Note: _You need [openssl](https://www.openssl.org/) installed on your computer (
 sfdx hardis:project:configure:auth
 ```
 
+_Note: If you have errors in your apex tests classes, you may not be able to configure the app for Production org. You will need do create the connected app manually by following the instructions in yellow in the error message. You can do it later, after having succeeded to merge the first merge request in lower major branch (usually `integration`)_
+
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
 > This command will create/update:
