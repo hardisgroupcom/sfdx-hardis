@@ -20,7 +20,7 @@ _If this is a new Salesforce project, skip this step_
 
 - Run the following command that will retrieve locally all the metadatas of production org
 
-`sfdx hardis:org:retrieve:sources:dx --shape`
+`sfdx hardis:org:retrieve:sources:dx --shape -u YOURSOURCEORGUSERNAME`
 
 ## Automated Metadatas Cleaning
 
