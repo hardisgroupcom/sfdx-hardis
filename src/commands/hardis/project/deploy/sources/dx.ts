@@ -241,6 +241,10 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 
     // Process deployment (or deployment check)
     const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, forceSourceDeployOptions);
+    if (check) {
+      const deployId = messages.find((msg: string) => msg.match(/Deploy ID: (.*)/gm));
+      await fs.writeFile('./deploy-id.txt', deployId);
+    }
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
     if (this.configInfo.listViewsToSetToMine && check === false) {

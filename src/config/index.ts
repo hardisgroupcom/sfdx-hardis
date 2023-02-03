@@ -66,6 +66,7 @@ export const setConfig = async (layer: string, propValues: any): Promise<void> =
 
 export const CONSTANTS = {
   API_VERSION: process.env.SFDX_API_VERSION || "54.0",
+  DEPLOY_ID_REGEX: /Deploy ID: (.*)/gm
 };
 
 // Load configuration from file

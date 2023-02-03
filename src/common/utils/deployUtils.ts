@@ -219,6 +219,13 @@ export async function forceSourceDeploy(
       // Display deployment status
       if (deployRes.status === 0) {
         message = `[sfdx-hardis] Successfully ${check ? "checked deployment of" : "deployed"} ${c.bold(deployment.label)} to target Salesforce org`;
+        if (check) {
+          const result = deployRes.stdout.match(CONSTANTS.DEPLOY_ID_REGEX);
+          const deployId = result ? result[1] : null;
+          if (deployId) {
+            messages.push(`Deploy ID: ${deployId}`);
+          }
+        }
         uxLog(commandThis, c.green(message));
       } else {
         message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org`;
@@ -258,7 +265,7 @@ export function truncateProgressLogLines(rawLog: string) {
 // Display deployment link in target org
 async function displayDeploymentLink(rawLog: string, options: any) {
   let deploymentUrl = "lightning/setup/DeployStatus/home";
-  const regex = /Deploy ID: (.*)/gm;
+  const regex = CONSTANTS.DEPLOY_ID_REGEX;
   if (rawLog && rawLog.match(regex)) {
     const deploymentId = regex.exec(rawLog)[1];
     const detailedDeploymentUrl =

@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [alpha]
+
+Retrieve deployment id created in check_deploy_to_target_branch_org job and use it in _actual_ merge commit to validate this
+check instead of rechecking the whole deployment (huge speed improvement).
+
 ## [2.99.1] 2022-01-31
 
 - Fix `hardis:project:clean:hiddenitems` when multiple files in the same folder match the same glob pattern
