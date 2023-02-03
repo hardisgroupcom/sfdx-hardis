@@ -74,7 +74,7 @@ Under the hood, it can:
   protected static requiresUsername = false;
 
   // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = true;
+  protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
@@ -240,6 +240,12 @@ Under the hood, it can:
       await setConfig("user", {
         scratchOrgAlias: null,
         scratchOrgUsername: null,
+      });
+      // Check if DevHub is connected
+      await this.config.runHook("auth", {
+        Command: this,
+        devHub: true,
+        scratch: false,
       });
       const createResult = await ScratchCreate.run(["--forcenew"]);
       if (createResult == null) {
