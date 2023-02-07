@@ -18,7 +18,7 @@ Generate list of remote sites
 ## Examples
 
 ```shell
-$ sfdx hardis:project:audit:remotesites
+sfdx hardis:project:audit:remotesites
 ```
 
 

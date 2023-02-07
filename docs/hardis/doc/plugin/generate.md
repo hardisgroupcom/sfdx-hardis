@@ -29,7 +29,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
 ## Examples
 
 ```shell
-$ sfdx hardis:doc:plugin:generate
+sfdx hardis:doc:plugin:generate
 ```
 
 

@@ -37,7 +37,7 @@ autoRetrieveWhenPull:
 ## Examples
 
 ```shell
-$ sfdx hardis:scratch:pull
+sfdx hardis:scratch:pull
 ```
 
 

@@ -25,19 +25,19 @@ Split TOML file into distinct CSV files
 ## Examples
 
 ```shell
-$ sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' 
+sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' 
 ```
 
 ```shell
-$ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' 
+sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' 
 ```
 
 ```shell
-$ sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'
+sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'
 ```
 
 ```shell
-$ NODE_OPTIONS=--max_old_space_size=9096 sfdx hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' --outputdir './output' --filtersections 'COMPTES,SOUS'
+NODE_OPTIONS=--max_old_space_size=9096 sfdx hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' --outputdir './output' --filtersections 'COMPTES,SOUS'
 ```
 
 

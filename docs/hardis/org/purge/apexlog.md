@@ -21,11 +21,11 @@ Purge apex logs in selected org
 ## Examples
 
 ```shell
-$ sfdx hardis:org:purge:apexlog
+sfdx hardis:org:purge:apexlog
 ```
 
 ```shell
-$ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com
+sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com
 ```
 
 

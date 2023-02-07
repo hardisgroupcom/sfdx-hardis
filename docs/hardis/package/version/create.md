@@ -24,7 +24,7 @@ Create a new version of an unlocked package
 ## Examples
 
 ```shell
-$ sfdx hardis:package:version:create
+sfdx hardis:package:version:create
 ```
 
 

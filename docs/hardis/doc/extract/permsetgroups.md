@@ -19,7 +19,7 @@ Generate markdown files with project documentation
 ## Examples
 
 ```shell
-$ sfdx hardis:doc:extract:permsetgroups
+sfdx hardis:doc:extract:permsetgroups
 ```
 
 

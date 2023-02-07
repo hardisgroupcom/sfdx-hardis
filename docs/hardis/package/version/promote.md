@@ -21,11 +21,11 @@ Promote package(s) version(s): convert it from beta to released
 ## Examples
 
 ```shell
-$ sfdx hardis:package:version:promote
+sfdx hardis:package:version:promote
 ```
 
 ```shell
-$ sfdx hardis:package:version:promote --auto
+sfdx hardis:package:version:promote --auto
 ```
 
 

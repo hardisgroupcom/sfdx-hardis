@@ -21,7 +21,7 @@ Login to salesforce org
 ## Examples
 
 ```shell
-$ sfdx hardis:auth:login
+sfdx hardis:auth:login
 ```
 
 

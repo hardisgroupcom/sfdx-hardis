@@ -20,7 +20,7 @@ Calls the related storage service to request api keys and secrets that allows a 
 ## Examples
 
 ```shell
-$ sfdx hardis:scratch:pool:localauth
+sfdx hardis:scratch:pool:localauth
 ```
 
 

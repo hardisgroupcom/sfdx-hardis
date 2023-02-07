@@ -38,7 +38,7 @@ You can override this list by defining a property minimizeProfilesNodesToRemove 
 ## Examples
 
 ```shell
-$ sfdx hardis:project:clean:minimizeprofiles
+sfdx hardis:project:clean:minimizeprofiles
 ```
 
 

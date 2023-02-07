@@ -23,7 +23,7 @@ Retrieve Salesforce DX project from org
 ## Examples
 
 ```shell
-$ sfdx hardis:org:retrieve:sources:metadata
+sfdx hardis:org:retrieve:sources:metadata
 ```
 
 

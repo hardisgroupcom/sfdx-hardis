@@ -20,7 +20,7 @@ Reset scratch org pool (delete all scratches in the pool)
 ## Examples
 
 ```shell
-$ sfdx hardis:scratch:pool:refresh
+sfdx hardis:scratch:pool:refresh
 ```
 
 

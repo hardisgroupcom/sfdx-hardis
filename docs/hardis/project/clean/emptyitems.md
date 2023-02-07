@@ -19,7 +19,7 @@ Remove unwanted empty items within sfdx project sources
 ## Examples
 
 ```shell
-$ sfdx hardis:project:clean:emptyitems
+sfdx hardis:project:clean:emptyitems
 ```
 
 
