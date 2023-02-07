@@ -231,7 +231,8 @@ async function authOrg(orgAlias: string, options: any) {
                 `
         );
       }
-      instanceUrl = await promptInstanceUrl();
+      const orgTypes = isDevHub ? ["login"] : ["login", "test"];
+      instanceUrl = await promptInstanceUrl(orgTypes, orgAlias);
 
       const configInfoUsr = await getConfig("user");
       const loginResult = await execCommand(

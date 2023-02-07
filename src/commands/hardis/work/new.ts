@@ -143,7 +143,7 @@ Under the hood, it can:
 
     // Checkout development main branch
     const branchName = `${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
-    uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} on server...`));
+    uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`));
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
     await git().pull();

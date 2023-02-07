@@ -368,6 +368,12 @@ export default class ScratchCreate extends SfdxCommand {
           "This is probably a Salesforce error, try again manually or launch again CI job"
         )}\n${JSON.stringify(createResult, null, 2)}`
       );
+    } else if (createResult.status === 1 && createResult.errorMessage.includes("LIMIT_EXCEEDED")) {
+      return c.red(
+        `[sfdx-hardis] Error creating scratch org. ${c.bold(
+          'It seems you have no more scratch orgs available, go delete some in "Active Scratch Orgs" tab in the Dev Hub org'
+        )}\n${JSON.stringify(createResult, null, 2)}`
+      );
     }
     return c.red(
       `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
