@@ -20,7 +20,7 @@ Retrieve all CRM Analytics sources from an org, with workarounds for SFDX bugs
 ## Examples
 
 ```shell
-sfdx hardis:org:retrieve:sources:analytics
+$ sfdx hardis:org:retrieve:sources:analytics
 ```
 
 

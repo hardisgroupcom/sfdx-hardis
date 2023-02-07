@@ -21,7 +21,7 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json
 ## Examples
 
 ```shell
-sfdx hardis:project:fix:v53flexipages
+$ sfdx hardis:project:fix:v53flexipages
 ```
 
 

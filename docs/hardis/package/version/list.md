@@ -20,7 +20,7 @@ List versions of unlocked package
 ## Examples
 
 ```shell
-sfdx hardis:package:version:list
+$ sfdx hardis:package:version:list
 ```
 
 

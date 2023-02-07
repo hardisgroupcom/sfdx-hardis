@@ -117,11 +117,11 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
 ## Examples
 
 ```shell
-sfdx hardis:project:deploy:sources:dx
+$ sfdx hardis:project:deploy:sources:dx
 ```
 
 ```shell
-sfdx hardis:project:deploy:sources:dx --check
+$ sfdx hardis:project:deploy:sources:dx --check
 ```
 
 

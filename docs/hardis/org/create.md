@@ -20,7 +20,7 @@ Create and initialize sandbox org
 ## Examples
 
 ```shell
-sfdx hardis:org:create
+$ sfdx hardis:org:create
 ```
 
 

@@ -18,7 +18,7 @@ Remove unwanted standard items within sfdx project sources
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:standarditems
+$ sfdx hardis:project:clean:standarditems
 ```
 
 

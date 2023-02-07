@@ -300,9 +300,9 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     const deploymentItems = [mainPackageXmlItem];
 
     // Work on deploymentPlan packages before deploying them
-    const skipSplitPackages = process.env.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES === "true";
+    const skipSplitPackages = (process.env.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES || "true") !== "false";
     if (skipSplitPackages === true) {
-      uxLog(this, c.yellow("Do not split package.xml, as SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES = true has been found in ENV vars"));
+      uxLog(this, c.yellow("Do not split package.xml, as SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES=false has not been found in ENV vars"));
     } else {
       for (const deploymentItem of config.deploymentPlan.packages) {
         if (deploymentItem.packageXmlFile) {
@@ -649,10 +649,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -666,10 +666,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,

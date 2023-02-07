@@ -21,7 +21,7 @@ Delete data in org using sfdmu
 ## Examples
 
 ```shell
-sfdx hardis:org:data:delete
+$ sfdx hardis:org:data:delete
 ```
 
 

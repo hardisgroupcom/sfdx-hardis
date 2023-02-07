@@ -21,7 +21,7 @@ Generate package.xml git delta between 2 commits
 ## Examples
 
 ```shell
-sfdx hardis:project:generate:gitdelta
+$ sfdx hardis:project:generate:gitdelta
 ```
 
 

@@ -23,7 +23,7 @@ Calls a soft git reset behind the hood
 ## Examples
 
 ```shell
-sfdx hardis:work:resetsave
+$ sfdx hardis:work:resetsave
 ```
 
 

@@ -20,7 +20,7 @@ Configure monitoring of an org
 ## Examples
 
 ```shell
-sfdx hardis:org:configure:monitoring
+$ sfdx hardis:org:configure:monitoring
 ```
 
 

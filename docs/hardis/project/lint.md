@@ -21,11 +21,11 @@ Apply syntactic analysis (linters) on the repository sources, using Mega-Linter
 ## Examples
 
 ```shell
-sfdx hardis:project:lint
+$ sfdx hardis:project:lint
 ```
 
 ```shell
-sfdx hardis:project:lint --fix
+$ sfdx hardis:project:lint --fix
 ```
 
 

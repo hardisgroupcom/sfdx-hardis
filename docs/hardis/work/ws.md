@@ -19,7 +19,7 @@ Technical calls to WebSocket functions
 ## Examples
 
 ```shell
-sfdx hardis:work:ws --event refreshStatus
+$ sfdx hardis:work:ws --event refreshStatus
 ```
 
 

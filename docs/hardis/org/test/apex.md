@@ -27,7 +27,7 @@ If following configuration is defined, it will fail if apex coverage target is n
 ## Examples
 
 ```shell
-sfdx hardis:org:test:apex
+$ sfdx hardis:org:test:apex
 ```
 
 

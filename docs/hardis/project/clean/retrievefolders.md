@@ -20,7 +20,7 @@ Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:retrievefolders
+$ sfdx hardis:project:clean:retrievefolders
 ```
 
 

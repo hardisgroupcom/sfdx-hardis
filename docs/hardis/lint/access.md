@@ -21,15 +21,15 @@ Check if elements(apex class and field) are at least in one permission set
 ## Examples
 
 ```shell
-sfdx hardis:lint:access
+$ sfdx hardis:lint:access
 ```
 
 ```shell
-sfdx hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"
+$ sfdx hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"
 ```
 
 ```shell
-sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"
+$ sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"
 ```
 
 
