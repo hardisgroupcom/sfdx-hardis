@@ -20,7 +20,7 @@ Retrieve package configuration from an org
 ## Examples
 
 ```shell
-$ sfdx hardis:org:retrieve:packageconfig
+sfdx hardis:org:retrieve:packageconfig
 ```
 
 ```shell

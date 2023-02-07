@@ -649,10 +649,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -666,10 +666,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,

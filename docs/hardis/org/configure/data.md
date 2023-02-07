@@ -23,7 +23,7 @@ See article:
 ## Examples
 
 ```shell
-$ sfdx hardis:org:configure:data
+sfdx hardis:org:configure:data
 ```
 
 

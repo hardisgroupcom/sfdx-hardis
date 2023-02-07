@@ -20,7 +20,7 @@ Interactive org selection for user
 ## Examples
 
 ```shell
-$ sfdx hardis:org:select
+sfdx hardis:org:select
 ```
 
 

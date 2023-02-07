@@ -20,7 +20,7 @@ Remove unwanted managed items within sfdx project sources
 ## Examples
 
 ```shell
-$ sfdx hardis:project:clean:manageditems --namespace crta
+sfdx hardis:project:clean:manageditems --namespace crta
 ```
 
 

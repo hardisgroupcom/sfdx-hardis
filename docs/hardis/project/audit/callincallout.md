@@ -18,7 +18,7 @@ Generate list of callIn and callouts from sfdx project
 ## Examples
 
 ```shell
-$ sfdx hardis:project:audit:callouts
+sfdx hardis:project:audit:callouts
 ```
 
 

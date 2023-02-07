@@ -26,7 +26,7 @@ Deploy metadatas to source org
 ## Examples
 
 ```shell
-$ sfdx hardis:project:deploy:sources:metadata
+sfdx hardis:project:deploy:sources:metadata
 ```
 
 

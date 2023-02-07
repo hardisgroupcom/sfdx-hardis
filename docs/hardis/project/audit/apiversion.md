@@ -20,7 +20,7 @@ Audit API version
 ## Examples
 
 ```shell
-$ sfdx hardis:project:audit:apiversion
+sfdx hardis:project:audit:apiversion
 ```
 
 

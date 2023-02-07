@@ -28,15 +28,15 @@ See article below
 ## Examples
 
 ```shell
-$ sfdx hardis:org:user:activateinvalid
+sfdx hardis:org:user:activateinvalid
 ```
 
 ```shell
-$ sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com
+sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com
 ```
 
 ```shell
-$ sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername myuser@myorg.com
+sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername myuser@myorg.com
 ```
 
 

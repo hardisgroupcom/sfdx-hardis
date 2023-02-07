@@ -14,7 +14,7 @@ Under the hood, it can:
 - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using `config/.sfdx-hardis.yml`):
 - (and for scratch org only for now):
   - **Install packages**
-      - Use property `installedPackages`
+    - Use property `installedPackages`
     - **Push sources**
     - **Assign permission sets**
       - Use property `initPermissionSets`
@@ -39,7 +39,7 @@ Under the hood, it can:
 ## Examples
 
 ```shell
-$ sfdx hardis:work:task:new
+sfdx hardis:work:task:new
 ```
 
 

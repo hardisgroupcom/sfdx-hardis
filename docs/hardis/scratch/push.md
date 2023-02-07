@@ -23,7 +23,7 @@ Calls `sfdx force:source:push` under the hood
 ## Examples
 
 ```shell
-$ sfdx hardis:scratch:push
+sfdx hardis:scratch:push
 ```
 
 

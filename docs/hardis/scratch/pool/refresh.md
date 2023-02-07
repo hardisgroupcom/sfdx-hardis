@@ -20,7 +20,7 @@ Create enough scratch orgs to fill the pool
 ## Examples
 
 ```shell
-$ sfdx hardis:scratch:pool:refresh
+sfdx hardis:scratch:pool:refresh
 ```
 
 

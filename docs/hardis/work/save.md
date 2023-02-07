@@ -54,11 +54,11 @@ autoRemoveUserPermissions:
 ## Examples
 
 ```shell
-$ sfdx hardis:work:task:save
+sfdx hardis:work:task:save
 ```
 
 ```shell
-$ sfdx hardis:work:task:save --nopull --nogit --noclean
+sfdx hardis:work:task:save --nopull --nogit --noclean
 ```
 
 

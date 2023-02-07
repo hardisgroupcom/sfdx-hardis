@@ -22,7 +22,7 @@ Retrieve Salesforce DX project from org
 ## Examples
 
 ```shell
-$ sfdx hardis:org:retrieve:sources:dx2
+sfdx hardis:org:retrieve:sources:dx2
 ```
 
 

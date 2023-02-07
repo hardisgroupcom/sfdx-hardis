@@ -19,7 +19,7 @@ Returns sfdx-hardis project config for a given level
 ## Examples
 
 ```shell
-$ sfdx hardis:project:deploy:sources:metadata
+sfdx hardis:project:deploy:sources:metadata
 ```
 
 

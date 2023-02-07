@@ -20,7 +20,7 @@ Create a new package
 ## Examples
 
 ```shell
-$ sfdx hardis:package:create
+sfdx hardis:package:create
 ```
 
 

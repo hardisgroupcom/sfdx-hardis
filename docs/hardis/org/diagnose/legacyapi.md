@@ -30,19 +30,19 @@ See article below
 ## Examples
 
 ```shell
-$ sfdx hardis:org:diagnose:legacyapi
+sfdx hardis:org:diagnose:legacyapi
 ```
 
 ```shell
-$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com
+sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com
 ```
 
 ```shell
-$ sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'
+sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'
 ```
 
 ```shell
-$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv
+sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv
 ```
 
 

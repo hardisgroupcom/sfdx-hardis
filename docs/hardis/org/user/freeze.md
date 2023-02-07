@@ -30,19 +30,19 @@ See user guide in the following article
 ## Examples
 
 ```shell
-$ sfdx hardis:org:user:freeze
+sfdx hardis:org:user:freeze
 ```
 
 ```shell
-$ sfdx hardis:org:user:freeze --targetusername myuser@myorg.com
+sfdx hardis:org:user:freeze --targetusername myuser@myorg.com
 ```
 
 ```shell
-$ sfdx hardis:org:user:freeze --includeprofiles 'Standard'
+sfdx hardis:org:user:freeze --includeprofiles 'Standard'
 ```
 
 ```shell
-$ sfdx hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other Profile'
+sfdx hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other Profile'
 ```
 
 

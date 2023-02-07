@@ -19,7 +19,7 @@ Find duplicate files in sfdx folder (often from past sfdx-cli bugs)
 ## Examples
 
 ```shell
-$ sfdx hardis:project:audit:duplicatefiles
+sfdx hardis:project:audit:duplicatefiles
 ```
 
 

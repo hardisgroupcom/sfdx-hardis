@@ -22,7 +22,7 @@ Configure authentication from git branch to target org
 ## Examples
 
 ```shell
-$ sfdx hardis:project:configure:auth
+sfdx hardis:project:configure:auth
 ```
 
 
