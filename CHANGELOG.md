@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [2.100.0] 2022-02-07
+
 - **hardis:work:new:**: When creating a new task and using a source-tracked sandbox, ask user to push sources, assign permission sets and load data to initialize it.
 - Add explicit error message when scratch org creation is caused by a limit reach
 - Update default API version to 56.0
