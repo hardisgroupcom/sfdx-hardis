@@ -1,5 +1,5 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-[![Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/doc/docs/assets/images/cloudity-banner-1.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
+[![Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/cloudity-banner-1.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
 
 # sfdx-hardis
 
