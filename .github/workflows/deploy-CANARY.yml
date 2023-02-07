@@ -65,4 +65,3 @@ jobs:
           vuln-type: "os,library"
           security-checks: vuln
           severity: "CRITICAL,HIGH"
-

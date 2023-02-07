@@ -128,7 +128,7 @@ export async function checkAppDependency(appName) {
     });
 }
 
-export async function promptInstanceUrl(orgTypes=["login","test"],alias="default org") {
+export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org") {
   const allChoices = [
     {
       title: "Sandbox or Scratch org (test.salesforce.com)",
@@ -146,7 +146,7 @@ export async function promptInstanceUrl(orgTypes=["login","test"],alias="default
       value: "custom",
     },
   ];
-  const choices = allChoices.filter(choice => {
+  const choices = allChoices.filter((choice) => {
     if (choice.value === "https://login.salesforce.com" && !orgTypes.includes("login")) {
       return false;
     }
@@ -154,7 +154,7 @@ export async function promptInstanceUrl(orgTypes=["login","test"],alias="default
       return false;
     }
     return true;
-  })
+  });
   const orgTypeResponse = await prompts({
     type: "select",
     name: "value",
