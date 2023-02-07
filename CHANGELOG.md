@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.1.0] 2022-02-07
+
+- Reset local sfdx tracking when reusing a sandbox for a new task
+
 ## [3.0.0] 2022-02-07
 
 - Breaking change: SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES is now "true" by default. If you want to apply the deploymentPlan in .sfdx-hardis, you need to define variable SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES="false"

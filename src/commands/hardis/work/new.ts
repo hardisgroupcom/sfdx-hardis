@@ -350,6 +350,8 @@ Under the hood, it can:
         await installPackages(config.installedPackages || [], orgUsername);
         try {
           // Continue initialization even if push did not work... it could work and be not such a problem :)
+          uxLog(this, c.cyan("Resetting local sfdx tracking..."));
+          await execCommand(`sfdx force:source:tracking:clear --noprompt -u ${orgUsername}`, this, { fail: false, output: true });
           await initOrgMetadatas(config, orgUsername, orgUsername, {}, this.debugMode);
         } catch (e1) {
           initSourcesErr = e1;
