@@ -1,46 +1,32 @@
 ---
 ##################################################################
-# Pipeline de test et déploiement d'un projet DX géré en CI/CD   #
-#                      NE PAS MODIFIER !!                        #
+# Test and deployment pipeline for a Salesforce CI/CD Project    #
+#         Update it only if you know what you are doing :)       #
 ##################################################################
 
-# Ce pipeline est mis à jour automatiquement par sfdx-hardis
-# Vous ne pouvez donc pas le modifier sous peine de voir ces modifications ultérieurement écrasées
-# Cependant, vous pouvez configurer des comportements dynamiques en modifiant le fichier ".gitlab-ci-config.yml"
-# .gitlab-ci-config.yml ne sera jamais écrasé par sfdx-hardis
+# More info at https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-home/
+
+# To add custom behaviors, please use side config file .gitlab-ci-config.yml
 include:
   - local: ".gitlab-ci-config.yml"
 
-# Liste ordonnée des étapes du pipeline
+# Pipeline stages
 stages:
-  - build # Controle de qualité des sources et création d'une scratch org CI
-  - test # Tests effectués sur la scratch org effectuée lors de l'étape précédente
-  - clean # Suppression de la scratch org CI
-  - check_deploy # Simulation de déploiement du contenu de la branche vers l'org (Sandbox ou autre) associée
-  - deploy # Déploiement du contenu de la branche vers l'org (Sandbox ou autre) associée
+  - build           # Check code quality (+ create testing scratch org if necessary)
+  - test            # Apex unit tests on testing scratch org (if used)
+  - clean           # Delete testing scratch org (if used)
+  - check_deploy    # Simulate deployment to target branch
+  - deploy          # After a merge, automatically deploys the new commit state into the related Salesforce org
 
-# On execute les jobs sur l'image hardisgroupcom/sfdx-hardis qui contient les applications necessaires
-# Version latest recommandée, cependant beta et alpha peuvent être utilisées pour les tests
+# Jobs are run on sfdx-hardis image, that includes all required dependencies.
+# You can use latest, beta or latest-recommended
 image: hardisgroupcom/sfdx-hardis:latest
 
-# Variables globales aux jobs
+# Force color for output logs for better readability
 variables:
   FORCE_COLOR: "1"
 
-# Décommenter pour utiliser un des 2 trucs commencés en dessous :)
-#default:
-
-# décommenter le jour ou on a un vrai cache pour les runners gitlab concurrents
-# En attendant on utilise les artifacts, même si c est pas joli joli...
-#  cache:
-#    key: toto #${CI_COMMIT_REF_SLUG}_CACHE_SFDX_HARDIS
-#    paths:
-#      - .cache/sfdx-hardis/.sfdx
-#      - .sfdx/
-#      - config/user/
-#    policy: pull
-
-# Décommenter pour tester une version de sfdx-hardis en cours de dev
+# Uncomment to test your sfdx-hardis fork
 #  before_script:
 #    - apk add tree
 #    - npm install -g typescript
@@ -51,11 +37,11 @@ variables:
 #    - sfdx plugins:link
 #    - cd ..
 
-# Controle de la qualité des sources avec Mega-Linter, qui contient sfdx-scanner (apex PMD),
-# mais aussi d'autres linters et détecteurs de mauvaises pratiques
+# Code quality and security controls using MegaLinter Salesforce flavor
+# https://megalinter.io/latest/flavors/salesforce/
 check_quality:
   stage: build
-  tags:
+  tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -77,10 +63,11 @@ check_quality:
       - megalinter-reports
     expire_in: 1 week
 
-# Check du déploiement dans l'org cible de la merge request
+# Check deployment in target branch org.
+# If auth not configure yet, check this doc: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/
 check_deploy_to_target_branch_org:
   stage: build
-  tags:
+  tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
     refs:
@@ -97,13 +84,10 @@ check_deploy_to_target_branch_org:
     - sfdx hardis:auth:login
     - sfdx hardis:project:deploy:sources:dx --check
 
-# Création d'une scratch org, pour:
-# - vérifier que les métadatas se déploient bien
-# - exécuter les classes de test Apex
-# - executer les tests automatisés
+# Create scratch org to check the sources push & the unit tests
 create_scratch_org:
   stage: build
-  tags:
+  tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -112,6 +96,7 @@ create_scratch_org:
     variables:
       - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
+      - $USE_SCRATCH_ORGS == "false"
   script:
     - sfdx hardis:auth:login --devhub
     - sfdx hardis:scratch:create
@@ -123,9 +108,10 @@ create_scratch_org:
       - .sfdx
       - config/user
 
+# Refresh scratch org pool: IF you use scratch orgs, job to schedule with variable SCRATCH_ORG_POOL: true
 refresh_scratch_org_pool:
   stage: build
-  tags:
+  tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
     variables:
@@ -136,10 +122,10 @@ refresh_scratch_org_pool:
   artifacts:
     when: always
 
-# Execution des classes de test Apex dans la scratch org créée par le job
+# Run apex unit tests in testing scratch org
 test_apex:
   stage: test
-  tags:
+  tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -148,11 +134,12 @@ test_apex:
     variables:
       - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
+      - $USE_SCRATCH_ORGS == "false"
   needs:
     - job: create_scratch_org
       artifacts: true
   script:
-    - sleep 120 # Les scratch orgs nouvellement créées peuvent poser problème, attendons 2 minutes avant de lancer les tests
+    - sleep 120 # Orgs just created can be not ready yet, let's wait a while before running tests
     - sfdx hardis:auth:login --scratchorg || true
     - sfdx hardis:org:test:apex
   artifacts:
@@ -161,7 +148,7 @@ test_apex:
       - hardis-report
     expire_in: 1 week
 
-# Execution des tests automatisés
+# Automated tests
 #test_automation:
 #  stage: test
 #  tags:
@@ -176,10 +163,10 @@ test_apex:
 #    - sfdx hardis:auth:login --scratchorg
 #    - echo "Automated tests not implemented yet"
 
-# Suppression de la scratch org de test temporaire
+# Delete testing scratch org
 clean:
   stage: clean
-  tags:
+  tags: # Change or even remove tags if standard runners
     - ubuntu
   when: on_success
   only:
@@ -190,6 +177,7 @@ clean:
       - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
       - $CI_DELETE_SCRATCH_ORG == "false"
       - $SCRATCH_ORG_POOL == "true"
+      - $USE_SCRATCH_ORGS == "false"
   needs:
     - job: create_scratch_org
     - job: test_apex
@@ -198,11 +186,11 @@ clean:
     - sfdx hardis:auth:login --scratchorg || true
     - sfdx force:org:delete --noprompt || true
 
-# Simulation de déploiement vers l'org Salesforce cible
-# Se déclenche en cas de planification ou lancement manuel
+# Simulate deployment to related org
+# Is triggered only when scheduled, or via manual launch
 check_deploy_to_current_branch_org:
   stage: check_deploy
-  tags:
+  tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
     - schedules
@@ -215,11 +203,11 @@ check_deploy_to_current_branch_org:
     - sfdx hardis:auth:login
     - sfdx hardis:project:deploy:sources:dx --check
 
-# Déploiement vers l'org Salesforce cible
-# Se déclenche en cas de push vers une des branches décrites dans la regex DEPLOY_BRANCHES de .gitlab-ci-config.yml
+# Deploy to branch related org when detecting new commit (after a merged merge request)
+# Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
 deploy_to_org:
   stage: deploy
-  tags:
+  tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
     - pushes
