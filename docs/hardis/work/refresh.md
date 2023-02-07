@@ -21,7 +21,7 @@ Make my local branch and my scratch org up to date with the most recent sources
 ## Examples
 
 ```shell
-sfdx hardis:work:refresh
+$ sfdx hardis:work:refresh
 ```
 
 

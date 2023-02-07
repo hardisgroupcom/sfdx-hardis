@@ -20,7 +20,7 @@ Displays all stored content of project scratch org pool if defined
 ## Examples
 
 ```shell
-sfdx hardis:scratch:pool:view
+$ sfdx hardis:scratch:pool:view
 ```
 
 

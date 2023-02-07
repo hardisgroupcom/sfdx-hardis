@@ -24,7 +24,7 @@ If not provided, will be prompted to the user.||||
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:orgmissingitems
+$ sfdx hardis:project:clean:orgmissingitems
 ```
 
 

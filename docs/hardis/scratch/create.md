@@ -33,7 +33,7 @@ Create and initialize a scratch org or a source-tracked sandbox (config can be d
 ## Examples
 
 ```shell
-sfdx hardis:scratch:create
+$ sfdx hardis:scratch:create
 ```
 
 

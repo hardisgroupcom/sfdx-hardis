@@ -19,7 +19,7 @@ Clean System.debug() lines in APEX Code (classes and triggers)
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:systemdebug
+$ sfdx hardis:project:clean:systemdebug
 ```
 
 

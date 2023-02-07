@@ -19,7 +19,7 @@ Creates permission sets from existing profiles, with id PS_PROFILENAME
 ## Examples
 
 ```shell
-sfdx hardis:project:convert:profilestopermsets
+$ sfdx hardis:project:convert:profilestopermsets
 ```
 
 

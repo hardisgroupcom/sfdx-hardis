@@ -20,7 +20,7 @@ Assisted menu to delete scratch orgs associated to a DevHub
 ## Examples
 
 ```shell
-sfdx hardis:scratch:delete
+$ sfdx hardis:scratch:delete
 ```
 
 

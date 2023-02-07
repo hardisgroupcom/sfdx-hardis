@@ -26,7 +26,7 @@ See article:
 ## Examples
 
 ```shell
-sfdx hardis:org:data:import
+$ sfdx hardis:org:data:import
 ```
 
 

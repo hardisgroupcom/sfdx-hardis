@@ -19,7 +19,7 @@ Remove unwanted hidden items within sfdx project sources
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:hiddenitems
+$ sfdx hardis:project:clean:hiddenitems
 ```
 
 

@@ -19,7 +19,7 @@ Connect to an org without setting it as default username, then proposes to open 
 ## Examples
 
 ```shell
-sfdx hardis:org:connect
+$ sfdx hardis:org:connect
 ```
 
 

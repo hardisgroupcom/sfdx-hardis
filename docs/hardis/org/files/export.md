@@ -29,7 +29,7 @@ See article below
 ## Examples
 
 ```shell
-sfdx hardis:org:files:export
+$ sfdx hardis:org:files:export
 ```
 
 

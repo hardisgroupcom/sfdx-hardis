@@ -1,5 +1,5 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-[![Hardis Group Logo](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-banner.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
+[![Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/doc/docs/assets/images/cloudity-banner-1.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
 
 # sfdx-hardis
 
@@ -14,7 +14,7 @@
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Toolbox for Salesforce DX, by [Hardis-Group](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
+Toolbox for Salesforce DX, by [Cloudity](https://cloudity.com/)
 
 It will allow you to:
 
@@ -25,6 +25,8 @@ It will allow you to:
 [**Please see the full list of commands in Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis)
 
 **sfdx-hardis** commands are also available with UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+
+
 
 ## Installation
 
