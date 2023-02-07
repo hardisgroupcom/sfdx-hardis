@@ -49,6 +49,7 @@ check_quality:
   except:
     variables:
       - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
   image: oxsecurity/megalinter-salesforce:latest
   script: ["true"]
   variables:
@@ -76,6 +77,7 @@ check_deploy_to_target_branch_org:
   except:
     variables:
       - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
   variables:
     CONFIG_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
@@ -97,6 +99,7 @@ create_scratch_org:
       - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
       - $USE_SCRATCH_ORGS == "false"
+  interruptible: true
   script:
     - sfdx hardis:auth:login --devhub
     - sfdx hardis:scratch:create
@@ -116,6 +119,7 @@ refresh_scratch_org_pool:
   only:
     variables:
       - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
   script:
     - sfdx hardis:auth:login --devhub
     - sfdx hardis:scratch:pool:refresh
@@ -135,6 +139,7 @@ test_apex:
       - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
       - $USE_SCRATCH_ORGS == "false"
+  interruptible: true
   needs:
     - job: create_scratch_org
       artifacts: true
@@ -199,6 +204,7 @@ check_deploy_to_current_branch_org:
     variables:
       - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
   script:
     - sfdx hardis:auth:login
     - sfdx hardis:project:deploy:sources:dx --check
@@ -216,6 +222,7 @@ deploy_to_org:
     variables:
       - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
       - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
   script:
     - sfdx hardis:auth:login
     - sfdx hardis:project:deploy:sources:dx
