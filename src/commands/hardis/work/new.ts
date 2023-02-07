@@ -75,6 +75,7 @@ Under the hood, it can:
 
   // Comment this out if your command does not support a hub org username
   protected static requiresDevhubUsername = false;
+  protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
@@ -100,10 +101,10 @@ Under the hood, it can:
     const defaultBranchPrefixChoices = [
       {
         title: "Feature",
-        value: "feat",
+        value: "features",
         description: "New feature, evolution of an existing feature... If you don't know, just select Feature",
       },
-      { title: "Debug", value: "fix", description: "A bug has been identified and you are the right person to solve it !" },
+      { title: "Debug", value: "fixes", description: "A bug has been identified and you are the right person to solve it !" },
     ];
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
 
@@ -247,7 +248,10 @@ Under the hood, it can:
         devHub: true,
         scratch: false,
       });
-      const createResult = await ScratchCreate.run(["--forcenew"]);
+      this.assignHubOrg();
+      // Create scratch org
+      const config = await getConfig();
+      const createResult = await ScratchCreate.run(["--forcenew", "--targetdevhubusername", config.devHubAlias]);
       if (createResult == null) {
         throw new SfdxError("Unable to create scratch org");
       }
