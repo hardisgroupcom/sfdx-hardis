@@ -41,7 +41,7 @@ If you need to deploy in multiple steps, you can define a property \`deploymentP
 
 - If a file \`manifest/destructiveChanges.xml\` is found, it will be executed as --postdestructivechanges
 
-- If env var \`SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES\` is defined as \`true\` , split of package.xml will be ignored
+- If env var \`SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES\` is defined as \`false\` , split of package.xml will be applied
 
 Example:
 
