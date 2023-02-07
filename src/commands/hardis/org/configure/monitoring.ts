@@ -107,7 +107,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     }
 
     // Request instanceUrl
-    const instanceUrl = await promptInstanceUrl();
+    const instanceUrl = await promptInstanceUrl(["login", "test"], "Org to monitor");
 
     // Request username
     const usernameMsTeamsResponse = await prompts([

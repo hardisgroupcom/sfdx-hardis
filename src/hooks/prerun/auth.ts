@@ -231,7 +231,8 @@ async function authOrg(orgAlias: string, options: any) {
                 `
         );
       }
-      instanceUrl = await promptInstanceUrl();
+      const orgTypes = isDevHub ? ["login"] : ["login", "test"];
+      instanceUrl = await promptInstanceUrl(orgTypes, orgAlias);
 
       const configInfoUsr = await getConfig("user");
       const loginResult = await execCommand(
@@ -271,9 +272,7 @@ async function authOrg(orgAlias: string, options: any) {
       }
       // Display warning message in case of local usage (not CI), and not login command
       if (!(options?.Command?.id || "").startsWith("hardis:auth:login")) {
-        console.warn(c.yellow("*********************************************************************"));
         console.warn(c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
-        console.warn(c.yellow("*********************************************************************"));
       }
     } else {
       console.error(c.red("[sfdx-hardis][ERROR] You must be logged to an org to perform this action"));

@@ -10,10 +10,8 @@ import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { clearCache } from "../../../common/cache";
-import { MetadataUtils } from "../../../common/metadata-utils";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
-import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "../../../common/utils/deployUtils";
-import { initApexScripts, initOrgData, initPermissionSetAssignments } from "../../../common/utils/orgUtils";
+import { initApexScripts, initOrgData, initOrgMetadatas, initPermissionSetAssignments, installPackages } from "../../../common/utils/orgUtils";
 import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
@@ -113,9 +111,9 @@ export default class ScratchCreate extends SfdxCommand {
     await this.createScratchOrg();
     try {
       await this.updateScratchOrgUser();
-      await this.installPackages();
+      await installPackages(this.configInfo.installedPackages || [], this.scratchOrgAlias);
       if (this.pool === false) {
-        await this.initOrgMetadatas();
+        await initOrgMetadatas(this.configInfo, this.scratchOrgUsername, this.scratchOrgAlias, this.projectScratchDef, this.debugMode);
         await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.scratchOrgUsername);
         await initApexScripts(this.configInfo.scratchOrgInitApexScripts || [], this.scratchOrgUsername);
         await initOrgData(path.join(".", "scripts", "data", "ScratchInit"), this.scratchOrgUsername);
@@ -370,6 +368,12 @@ export default class ScratchCreate extends SfdxCommand {
           "This is probably a Salesforce error, try again manually or launch again CI job"
         )}\n${JSON.stringify(createResult, null, 2)}`
       );
+    } else if (createResult.status === 1 && createResult.errorMessage.includes("LIMIT_EXCEEDED")) {
+      return c.red(
+        `[sfdx-hardis] Error creating scratch org. ${c.bold(
+          'It seems you have no more scratch orgs available, go delete some in "Active Scratch Orgs" tab in the Dev Hub org'
+        )}\n${JSON.stringify(createResult, null, 2)}`
+      );
     }
     return c.red(
       `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
@@ -401,71 +405,5 @@ export default class ScratchCreate extends SfdxCommand {
     }
     const userUpdateCommand = `sfdx force:data:record:update -s User -i ${userQueryRes.result.Id} -v "${updatedUserValues}" -u ${this.scratchOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
-  }
-
-  // Install packages
-  public async installPackages() {
-    const packages = this.configInfo.installedPackages || [];
-    elapseStart("Install all packages");
-    await MetadataUtils.installPackagesOnOrg(packages, this.scratchOrgAlias, this, "scratch");
-    elapseEnd("Install all packages");
-  }
-
-  // Push or deploy metadatas to the scratch org
-  public async initOrgMetadatas() {
-    // Push or deploy according to config (default: push)
-    if ((isCI && process.env.CI_SCRATCH_MODE === "deploy") || process.env.DEBUG_DEPLOY === "true") {
-      // if CI, use force:source:deploy to make sure package.xml is consistent
-      uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(this.scratchOrgAlias)}...`));
-      const packageXmlFile =
-        process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
-          ? "./manifest/package.xml"
-          : "./config/package.xml";
-      await forceSourceDeploy(packageXmlFile, false, "NoTestRun", this.debugMode, this, {
-        targetUsername: this.scratchOrgUsername,
-      });
-    } else {
-      // Use push for local scratch orgs
-      uxLog(
-        this,
-        c.cyan(`Pushing project sources to scratch org ${c.green(this.scratchOrgAlias)}... (You can see progress in Setup -> Deployment Status)`)
-      );
-      // Suspend sharing calc if necessary
-      const deferSharingCalc = (this.projectScratchDef.features || []).includes("DeferSharingCalc");
-      if (deferSharingCalc) {
-        // Deploy to permission set allowing to update SharingCalc
-        await deployMetadatas({
-          deployDir: path.join(path.join(__dirname, "../../../../defaults/utils/deferSharingCalc", ".")),
-          testlevel: "NoTestRun",
-          soap: true,
-        });
-        // Assign to permission set allowing to update SharingCalc
-        try {
-          const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${this.scratchOrgUsername}`;
-          await execSfdxJson(assignCommand, this, {
-            fail: false, // Do not fail in case permission set already exists
-            output: false,
-            debug: this.debugMode,
-          });
-          await execCommand("sfdx texei:sharingcalc:suspend", this, {
-            fail: false,
-            output: true,
-            debug: this.debugMode,
-          });
-        } catch (e) {
-          uxLog(self, c.yellow("Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"));
-          uxLog(self, c.grey(e.message));
-        }
-      }
-      await forceSourcePush(this.scratchOrgAlias, this, this.debugMode);
-      // Resume sharing calc if necessary
-      if (deferSharingCalc) {
-        await execCommand("sfdx texei:sharingcalc:resume", this, {
-          fail: false,
-          output: true,
-          debug: this.debugMode,
-        });
-      }
-    }
   }
 }

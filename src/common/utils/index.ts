@@ -128,28 +128,38 @@ export async function checkAppDependency(appName) {
     });
 }
 
-export async function promptInstanceUrl() {
+export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org") {
+  const allChoices = [
+    {
+      title: "Sandbox or Scratch org (test.salesforce.com)",
+      description: "The org I want to connect is a sandbox",
+      value: "https://test.salesforce.com",
+    },
+    {
+      title: "Other: Dev, Enterprise or DevHub org (login.salesforce.com)",
+      description: "The org I want to connect is NOT a sandbox",
+      value: "https://login.salesforce.com",
+    },
+    {
+      title: "Custom login URL",
+      description: "When it's not possible to login via login.salesforce.com or test.salesforce.com",
+      value: "custom",
+    },
+  ];
+  const choices = allChoices.filter((choice) => {
+    if (choice.value === "https://login.salesforce.com" && !orgTypes.includes("login")) {
+      return false;
+    }
+    if (choice.value === "https://test.salesforce.com" && !orgTypes.includes("test")) {
+      return false;
+    }
+    return true;
+  });
   const orgTypeResponse = await prompts({
     type: "select",
     name: "value",
-    message: c.cyanBright("Is the org you need to connect a sandbox or another type of org (dev org, enterprise org...)"),
-    choices: [
-      {
-        title: "Sandbox or Scratch org (test.salesforce.com)",
-        description: "The org I want to connect is a sandbox",
-        value: "https://test.salesforce.com",
-      },
-      {
-        title: "Other: Dev, Enterprise or DevHub org (login.salesforce.com)",
-        description: "The org I want to connect is NOT a sandbox",
-        value: "https://login.salesforce.com",
-      },
-      {
-        title: "Custom login URL",
-        description: "When it's not possible to login via login.salesforce.com or test.salesforce.com",
-        value: "custom",
-      },
-    ],
+    message: c.cyanBright(`What is the base URL or the org you want to connect to, as ${alias} ?`),
+    choices: choices,
     initial: 1,
   });
   // login.salesforce.com or test.salesforce.com
@@ -1035,8 +1045,8 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       uxLog(
         commandThis,
         c.yellow(`If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName}:
-- Using certificate ${crtFile}
-- Doc: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
+- Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
+  - Use certificate ${c.bold(crtFile)}
 - Once created, update variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with ConsumerKey of the newly created connected app`)
       );
     }

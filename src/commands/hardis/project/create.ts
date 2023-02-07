@@ -134,12 +134,9 @@ export default class ProjectCreate extends SfdxCommand {
     uxLog(
       this,
       c.cyan(
-        "SFDX Project has been created. You can now customize config/project-scratch-def.json file to add required features and settings.\nhttps://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm"
+        "SFDX Project has been created. You can now proceed to configuration, following documentation at https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-home/"
       )
     );
-    uxLog(this, c.cyan(`Then, create a new scratch org using ${c.italic(c.white("sfdx hardis:scratch:create"))}`));
-    uxLog(this, c.cyan(`It is also recommended to install FFLib using ${c.italic(c.white("sfdx hardis:package:install"))}`));
-    uxLog(this, c.cyan("Then, you can stage, commit and make a pull request to developpement branch"));
 
     // Trigger commands refresh on VsCode WebSocket Client
     WebSocketClient.sendMessage({ event: "refreshCommands" });

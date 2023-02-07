@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- **hardis:work:new:**: When creating a new task and using a source-tracked sandbox, ask user to push sources, assign permission sets and load data to initialize it.
+- Add explicit error message when scratch org creation is caused by a limit reach
+- Update default API version to 56.0
+- Improve labels when prompting to select an org
+- Update CI/CD documentation
+
 ## [2.99.1] 2022-01-31
 
 - Fix `hardis:project:clean:hiddenitems` when multiple files in the same folder match the same glob pattern

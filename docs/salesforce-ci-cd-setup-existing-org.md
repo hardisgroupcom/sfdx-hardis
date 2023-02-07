@@ -20,7 +20,7 @@ _If this is a new Salesforce project, skip this step_
 
 - Run the following command that will retrieve locally all the metadatas of production org
 
-`sfdx hardis:org:retrieve:sources:dx --shape`
+`sfdx hardis:org:retrieve:sources:dx --shape -u YOURSOURCEORGUSERNAME`
 
 ## Automated Metadatas Cleaning
 
@@ -68,16 +68,18 @@ Automated Metadata cleaning removed a lot of items, but many are remaining that 
 
 Manually delete files (or even folders) that are maintained directly in production org
 
+- `applications`: Delete the ones **starting with `standard__`**
+- `àppMenus`: Delete all folder
 - `cleanDataServices`: Delete all folder
-- `dashboards`: Delete all user dashboards
+- `dashboards`: Delete **all user dashboards**
 - `emailServices`: Delete all folder
 - `flowDefinitions` : Delete all folder (Salesforce now uses `flow` folder)
 - `installedPackages`: Delete all folder
-- `layouts`: Delete all standard layouts that has not been customized
+- `layouts`: Delete all **standard layouts that has not been customized**
 - `profiles` : Delete all **standard** profiles
 - `profilePasswordPolicies`: Delete all folder
 - `profileSessionSettings`: Delete all folder,
-- `reports`: Delete all reports that have been created directly in production org
+- `reports`: Delete **all reports that have been created directly in production org**
 
 ## Retrieve installed packages
 

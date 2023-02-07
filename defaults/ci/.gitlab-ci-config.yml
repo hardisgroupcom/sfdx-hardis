@@ -1,4 +1,5 @@
-# Vous pouvez personnaliser l'éxécution de votre pipeline ici
+# You can customize your pipeline process here
 variables:
   DEPLOY_BRANCHES: /(developpement|integration|recette|preprod|master)/ # Regex contenant la liste des branches où un push va déclencher un déploiement
   CI_DELETE_SCRATCH_ORG: "true" # Set to "false" only to investigate issues. When solved, always put back this value to "true" !
+  USE_SCRATCH_ORGS: "true" # Set to "false" to not use scratch orgs on your Salesforce project
