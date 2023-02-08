@@ -194,7 +194,7 @@ export async function forceSourceDeploy(
         (options.postDestructiveChanges ? ` --postdestructivechanges ${options.postDestructiveChanges}` : "") +
         (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
         (check ? " --checkonly" : "") +
-        (debugMode ? " --verbose" : "") +
+        " --verbose" +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? " --dev-debug" : "");
       let deployRes;
       try {
@@ -544,7 +544,7 @@ export async function deployMetadatas(
     (options.soap ? " --soapdeploy" : "") +
     (options.check ? " --checkonly" : "") +
     (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
-    (options.debug ? " --verbose" : "");
+    " --verbose";
   let deployRes;
   try {
     deployRes = await execCommand(deployCommand, this, {
