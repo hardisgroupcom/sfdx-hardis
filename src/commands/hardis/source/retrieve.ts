@@ -89,8 +89,7 @@ export class SourceRetrieve extends SfdxCommand {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
       if (orgUsername) {
         args.push(...["--targetusername", `"${orgUsername}"`]);
-      }
-      else {
+      } else {
         throw new SfdxError(c.yellow("For technical reasons, run again this command and select your org in the list :)"));
       }
     }
