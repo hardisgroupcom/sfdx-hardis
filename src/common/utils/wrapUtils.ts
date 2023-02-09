@@ -1,10 +1,9 @@
 import { SfdxCommand } from "@salesforce/command";
-import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execCommand, uxLog } from ".";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
-export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfdxCommand, debug = false): Promise<AnyJson> {
+export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfdxCommand, debug = false): Promise<any> {
   const endArgs = [...argv].splice(3).map((arg) => {
     // Add quotes to avoid problems if arguments contain spaces
     if (!arg.startsWith("-") && !arg.startsWith(`"`) && !arg.startsWith(`'`)) {
@@ -28,6 +27,10 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
   const skipAuthPos = endArgs.indexOf("--skipauth");
   if (skipAuthPos > -1) {
     endArgs.splice(skipAuthPos, 1);
+  }
+  const checkCoveragePos = endArgs.indexOf("--checkcoverage");
+  if (checkCoveragePos > -1) {
+    endArgs.splice(checkCoveragePos, 1);
   }
   // Build wrapped sfdx command
   const commandsArgs = endArgs.join(" ");

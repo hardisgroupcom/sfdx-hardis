@@ -1,4 +1,6 @@
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
+import { SfdxError } from "@salesforce/core";
+import * as c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { isCI } from "../../../common/utils";
 import { promptOrgUsernameDefault } from "../../../common/utils/orgUtils";
@@ -85,7 +87,12 @@ export class SourceRetrieve extends SfdxCommand {
     if (!isCI && !this.flags.targetusername) {
       let orgUsername = this.org.getUsername();
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
-      args.push(...["--targetusername", `"${orgUsername}"`]);
+      if (orgUsername) {
+        args.push(...["--targetusername", `"${orgUsername}"`]);
+      }
+      else {
+        throw new SfdxError(c.yellow("For technical reasons, run again this command and select your org in the list :)"));
+      }
     }
     return await wrapSfdxCoreCommand("sfdx force:source:retrieve", args, this, this.flags.debug);
   }

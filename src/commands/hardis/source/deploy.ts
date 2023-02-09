@@ -1,17 +1,22 @@
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
+import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfdxCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors.
 
+Additional to the base command wrapper: If using **--checkonly**, add options **--checkcoverage** and **--coverageformatters json-summary** to check that org coverage is > 75% (or value defined in .sfdx-hardis.yml property **apexTestsMinCoverageOrgWide**)
+
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
 `;
-  public static readonly examples = [];
+  public static readonly examples = [
+    "$ sfdx hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername nicolas.vuillamy@hardis-group.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary"
+  ];
   public static readonly requiresProject = true;
   public static readonly requiresUsername = true;
   public static readonly flagsConfig: FlagsConfig = {
@@ -79,6 +84,24 @@ export class Deploy extends SfdxCommand {
       description: "postdestructivechanges",
       dependsOn: ["manifest"],
     }),
+    tracksource: flags.boolean({
+      char: "t",
+      description: "tracksource",
+      exclusive: ["checkonly", "validateddeployrequestid"],
+    }),
+    forceoverwrite: flags.boolean({
+      char: "f",
+      description: "forceoverwrite",
+      dependsOn: ["tracksource"],
+    }),
+    resultsdir: flags.directory({
+      description: "resultsdir",
+    }),
+    coverageformatters: flags.array({
+      description: "coverageformatters",
+    }),
+    junit: flags.boolean({ description: "junit" }),
+    checkcoverage: flags.boolean({ description: "Check Apex org coverage" }),
     debug: flags.boolean({
       default: false,
       description: "debug",
@@ -90,6 +113,14 @@ export class Deploy extends SfdxCommand {
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
-    return await wrapSfdxCoreCommand("sfdx force:source:deploy", process.argv, this, this.flags.debug);
+    const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", process.argv, this, this.flags.debug);
+    // Check org coverage if requested
+    if (this.flags.checkcoverage && result.outputstring) {
+      const orgCoveragePercent = await extractOrgCoverageFromLog(result.outputString || "");
+      if (orgCoveragePercent) {
+        await checkDeploymentOrgCoverage(orgCoveragePercent);
+      }
+    }
+    return result;
   }
 }
