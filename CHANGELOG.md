@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Fix issue when logging to a new org during command **hardis:source:retrieve**
 - Implement check of code coverage when calling **sfdx hardis:project:deploy:sources:dx --check**
-  - 75% minimul by default, overridable in property **apexTestsMinCoverageOrgWide** in .sfdx-hardis.yml, or using env var **APEX_TESTS_MIN_COVERAGE_ORG_WIDE**
+  - 75% minimum by default, overridable in property **apexTestsMinCoverageOrgWide** in .sfdx-hardis.yml, or using env var **APEX_TESTS_MIN_COVERAGE_ORG_WIDE**
 - Add **--checkcoverage** option to wrapper command **hardis:source:deploy**
   - Example: `sfdx hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername nicolas.vuillamy@cloudity.com --checkonly --checkcoverage --verbose --coverageformatters json-summary`
 

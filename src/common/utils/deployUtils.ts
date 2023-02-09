@@ -768,7 +768,7 @@ export async function extractOrgCoverageFromLog(stdout) {
       .resolve(process.cwd() + path.sep + writtenToPath[1].replace(/\\/g, "/") + path.sep + "coverage-summary.json")
       .replace(/\\/g, "/");
     if (fs.existsSync(jsonFile)) {
-      const coverageInfo = JSON.parse(fs.readFileSync(jsonFile));
+      const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, "utf-8"));
       orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
       if (orgCoverage > 0) {
         return orgCoverage;
