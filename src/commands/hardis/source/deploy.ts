@@ -115,8 +115,8 @@ Additional to the base command wrapper: If using **--checkonly**, add options **
   public async run(): Promise<AnyJson> {
     const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", process.argv, this, this.flags.debug);
     // Check org coverage if requested
-    if (this.flags.checkcoverage && result.outputstring) {
-      const orgCoveragePercent = await extractOrgCoverageFromLog(result.outputString || "");
+    if (this.flags.checkcoverage && result.stdout) {
+      const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || "");
       if (orgCoveragePercent) {
         await checkDeploymentOrgCoverage(orgCoveragePercent);
       }
