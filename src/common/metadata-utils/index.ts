@@ -540,7 +540,7 @@ class MetadataUtils {
       } else {
         // Get namespace list from package.xml
         const packageXmlContent = await parsePackageXmlFile("package-full.xml");
-        namespaces = (packageXmlContent["InstalledPackage"] || {}).members || [];
+        namespaces = packageXmlContent["InstalledPackage"] || [];
       }
 
       // Filter package XML to remove identified metadatas

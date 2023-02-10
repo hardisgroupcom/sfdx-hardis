@@ -687,6 +687,7 @@ export async function filterPackageXml(
   const manifest = await xml2js.parseStringPromise(initialFileContent);
   // Remove namespaces
   if ((options.removeNamespaces || []).length > 0) {
+    uxLog(this,c.grey(`Removing items from namespaces ${options.removeNamespaces.join(",")} ...`));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         return options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length === 0;
