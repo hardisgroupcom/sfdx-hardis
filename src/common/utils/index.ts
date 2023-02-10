@@ -1092,6 +1092,9 @@ Hit ENTER when you are ready`
 }
 
 export async function isMonitoringJob() {
+  if (process.env.SFDX_HARDIS_MONITORING === "true") {
+    return true;
+  }
   if (!isCI) {
     return false;
   }
