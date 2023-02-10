@@ -521,8 +521,8 @@ class MetadataUtils {
     await fs.ensureDir(metadataFolder);
 
     // Build package.xml for all org
-    await buildOrgManifest(commandThis.org.getUsername(), "package.xml");
-
+    await buildOrgManifest(commandThis.org.getUsername(), "package-full.xml");
+    await fs.copyFile("package-full.xml","package.xml")
     // Filter managed items if requested
     if (options.filterManagedItems) {
       uxLog(commandThis, c.cyan("Filtering managed items from package.Xml manifest..."));

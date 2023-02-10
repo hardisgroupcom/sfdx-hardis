@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- **hardis:org:retrieve:source:metadata** new option **--includemanaged**, disabled by default, to avoid having too many items to retrieve during monitoring job
+
 ## [3.2.0] 2022-02-10
 
 - Fix issue when logging to a new org during command **hardis:source:retrieve**
