@@ -10,6 +10,7 @@ import { getCache, setCache } from "../cache";
 import { buildOrgManifest } from "../utils/deployUtils";
 import { isSfdxProject } from "../utils/projectUtils";
 import { prompts } from "../utils/prompts";
+import { parsePackageXmlFile } from "../utils/xmlUtils";
 import { listMetadataTypes } from "./metadataList";
 
 class MetadataUtils {
@@ -521,18 +522,25 @@ class MetadataUtils {
     await fs.ensureDir(metadataFolder);
 
     // Build package.xml for all org
-    await buildOrgManifest(commandThis.org.getUsername(), "package.xml");
-
+    await buildOrgManifest(commandThis.org.getUsername(), "package-full.xml");
+    await fs.copyFile("package-full.xml", "package.xml");
     // Filter managed items if requested
     if (options.filterManagedItems) {
       uxLog(commandThis, c.cyan("Filtering managed items from package.Xml manifest..."));
       // List installed packages & collect managed namespaces
-      const installedPackages = isSfdxProject() ? await this.listInstalledPackages(null, commandThis) : [];
-      const namespaces = [];
-      for (const installedPackage of installedPackages) {
-        if (installedPackage?.SubscriberPackageNamespace !== "" && installedPackage?.SubscriberPackageNamespace != null) {
-          namespaces.push(installedPackage.SubscriberPackageNamespace);
+      let namespaces = [];
+      if (isSfdxProject()) {
+        // Use sfdx command if possible
+        const installedPackages = await this.listInstalledPackages(null, commandThis);
+        for (const installedPackage of installedPackages) {
+          if (installedPackage?.SubscriberPackageNamespace !== "" && installedPackage?.SubscriberPackageNamespace != null) {
+            namespaces.push(installedPackage.SubscriberPackageNamespace);
+          }
         }
+      } else {
+        // Get namespace list from package.xml
+        const packageXmlContent = await parsePackageXmlFile("package-full.xml");
+        namespaces = packageXmlContent["InstalledPackage"] || [];
       }
 
       // Filter package XML to remove identified metadatas

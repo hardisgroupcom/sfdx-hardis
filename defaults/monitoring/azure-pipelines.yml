@@ -1,0 +1,96 @@
+# Pipeline for Salesforce monitoring using sfdx-hardis
+#
+# You need to
+# - manually add environment secret variables in step "sfdx-hardis login" (they are used for authentication)
+# - configure the bypass in Azure settings -> https://www.programmingwithwolfgang.com/create-git-commits-in-azure-devops-yaml-pipeline/#configure-the-pipeline-to-bypass-pull-request-policies
+# - add branches to monitor in schedules:branches:include
+#
+# You may also:
+# - Define a file remove-items-package.xml at the root of the repo to filter elements to retrieve
+#
+# Doc & support: https://hardisgroupcom.github.io/sfdx-hardis/
+
+trigger:
+- integ
+
+schedules:
+- cron: "0 0 1 1/1 *"
+  always: "true"
+  branches:
+    include:
+    - integ
+    - qa
+    - preprod
+    - production
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - name: FORCE_COLOR
+    value: "1"
+  - name: BRANCH_NAME
+    value: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
+
+jobs:
+- job: OrgMonitoring
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    persistCredentials: "true"
+    displayName: Git checkout
+
+  - script: |
+      git config --global user.email $(Build.RequestedForEmail) && git config --global user.name "sfdx-hardis monitoring"
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Git config
+
+  - script: |
+      npm install sfdx-cli -g
+      echo y | sfdx plugins:install sfdx-hardis
+      echo y | sfdx plugins:install sfdx-essentials
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Install sfdx-cli & sfdx-hardis
+
+  - script: |
+      git checkout -b "$BRANCH_NAME"
+    displayName: Checkout git branch
+    env:
+      CI: "true"
+
+  - script: |
+      sfdx hardis:auth:login
+    displayName: sfdx-hardis login
+    env:
+      SFDX_CLIENT_ID_INTEG: $(SFDX_CLIENT_ID_INTEG)
+      SFDX_CLIENT_KEY_INTEG: $(SFDX_CLIENT_KEY_INTEG)
+      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+      CONFIG_BRANCH: $(BRANCH_NAME)
+      ORG_ALIAS: $(BRANCH_NAME)
+      CI: "true"
+
+  - script: |
+      sfdx hardis:org:retrieve:sources:metadata --folder metadatas
+    displayName: sfdx-hardis monitoring
+    env:
+      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+      CONFIG_BRANCH: $(BRANCH_NAME)
+      ORG_ALIAS: $(BRANCH_NAME)
+      SFDX_HARDIS_MONITORING: "true"
+      CI: "true"
+
+  - script: |
+      git status
+      git add --all
+      git commit -m "$BRANCH_NAME org state on $(date -u +'%Y-%m-%d %H:%M') [skip ci]" || echo "No changes to commit"
+      git push --set-upstream origin "$BRANCH_NAME"
+    displayName: Add new commit to Monitoring Repo
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    env:
+      CI: "true"
+
+  - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+    artifact: hardis-report
+    displayName: Publish logs as artifacts

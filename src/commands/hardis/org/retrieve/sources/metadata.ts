@@ -35,6 +35,10 @@ export default class DxSources extends SfdxCommand {
       char: "p",
       description: messages.getMessage("packageXml"),
     }),
+    includemanaged: flags.boolean({
+      default: false,
+      description: "Include items from managed packages",
+    }),
     instanceurl: flags.string({
       char: "r",
       description: messages.getMessage("instanceUrl"),
@@ -72,6 +76,7 @@ export default class DxSources extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     const folder = path.resolve(this.flags.folder || ".");
     const packageXml = path.resolve(this.flags.packagexml || "package.xml");
+    const includeManaged = this.flags.includemanaged || false;
     const debug = this.flags.debug || false;
 
     // Check required pre-requisites
@@ -81,7 +86,8 @@ export default class DxSources extends SfdxCommand {
     // Retrieve metadatas
     let message = "";
     try {
-      await MetadataUtils.retrieveMetadatas(packageXml, folder, false, [], {}, this, debug);
+      const filterManagedItems = includeManaged === false;
+      await MetadataUtils.retrieveMetadatas(packageXml, folder, false, [], { filterManagedItems: filterManagedItems }, this, debug);
 
       // Copy to destination
       await fs.copy(path.join(folder, "unpackaged"), path.resolve(folder));

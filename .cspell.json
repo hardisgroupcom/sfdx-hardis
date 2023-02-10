@@ -333,6 +333,7 @@
     "ignoreerrors",
     "ignorerights",
     "ignorewarnings",
+    "includemanaged",
     "includepackages",
     "includeprofiles",
     "initial",
