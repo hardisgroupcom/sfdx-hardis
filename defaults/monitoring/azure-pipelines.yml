@@ -33,6 +33,7 @@ variables:
     value: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
 
 jobs:
+# Metadata backup + apex tests + other checks
 - job: OrgMonitoring
   pool:
     vmImage: 'ubuntu-latest'
@@ -94,3 +95,29 @@ jobs:
   - publish: $(System.DefaultWorkingDirectory)/hardis-report/
     artifact: hardis-report
     displayName: Publish logs as artifacts
+
+# Run MegaLinter to detect linting and security issues
+- job: MegaLinter
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  # Pull MegaLinter docker image
+  - script: docker pull oxsecurity/megalinter-salesforce:latest
+    displayName: Pull MegaLinter
+  # Run MegaLinter
+  - script: |
+      docker run -v $(System.DefaultWorkingDirectory):/tmp/lint \
+        -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
+        -e CI=true \
+        -e TF_BUILD=true \
+        -e SYSTEM_ACCESSTOKEN=$(System.AccessToken) \
+        -e SYSTEM_COLLECTIONURI=$(System.CollectionUri) \
+        -e SYSTEM_PULLREQUEST_PULLREQUESTID=$(System.PullRequest.PullRequestId) \
+        -e SYSTEM_TEAMPROJECT="$(System.TeamProject)" \
+        -e BUILD_BUILD_ID=$(Build.BuildId) \
+        -e BUILD_REPOSITORY_ID=$(Build.Repository.ID) \
+        oxsecurity/megalinter-salesforce:latest
+    displayName: Run MegaLinter
+  - publish: $(System.DefaultWorkingDirectory)/megalinter-reports/
+    artifact: megalinter-reports
+    displayName: Publish reports as artifacts
