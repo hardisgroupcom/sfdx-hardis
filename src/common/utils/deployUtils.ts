@@ -194,7 +194,8 @@ export async function forceSourceDeploy(
         (options.postDestructiveChanges ? ` --postdestructivechanges ${options.postDestructiveChanges}` : "") +
         (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
         (check ? " --checkonly" : "") +
-        (debugMode ? " --verbose" : "") +
+        " --verbose" +
+        " --coverageformatters json-summary" +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? " --dev-debug" : "");
       let deployRes;
       try {
@@ -216,6 +217,13 @@ export async function forceSourceDeploy(
         elapseEnd(`deploy ${deployment.label}`);
         throw new SfdxError("Deployment failure. Check messages above");
       }
+
+      // Check org coverage if found in logs
+      const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || "");
+      if (orgCoveragePercent) {
+        await checkDeploymentOrgCoverage(orgCoveragePercent);
+      }
+
       // Display deployment status
       if (deployRes.status === 0) {
         message = `[sfdx-hardis] Successfully ${check ? "checked deployment of" : "deployed"} ${c.bold(deployment.label)} to target Salesforce org`;
@@ -544,7 +552,7 @@ export async function deployMetadatas(
     (options.soap ? " --soapdeploy" : "") +
     (options.check ? " --checkonly" : "") +
     (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
-    (options.debug ? " --verbose" : "");
+    " --verbose";
   let deployRes;
   try {
     deployRes = await execCommand(deployCommand, this, {
@@ -741,6 +749,58 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   }
 
   return packageXmlFull;
+}
+
+export async function extractOrgCoverageFromLog(stdout) {
+  let orgCoverage = null;
+  // Get from output text
+  const fromTest = /Org Wide Coverage *(.*)/.exec(stdout);
+  if (fromTest && fromTest[1]) {
+    orgCoverage = parseFloat(fromTest[1].replace("%", ""));
+  }
+  if (orgCoverage > 0) {
+    return orgCoverage;
+  }
+  // Get from output file
+  const writtenToPath = /written to (.*coverage)/.exec(stdout);
+  if (writtenToPath && writtenToPath[1]) {
+    const jsonFile = path
+      .resolve(process.cwd() + path.sep + writtenToPath[1].replace(/\\/g, "/") + path.sep + "coverage-summary.json")
+      .replace(/\\/g, "/");
+    if (fs.existsSync(jsonFile)) {
+      const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, "utf-8"));
+      orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
+      if (orgCoverage > 0) {
+        return orgCoverage;
+      }
+    }
+  }
+  uxLog(
+    this,
+    c.italic(
+      c.grey("Unable to get org coverage from results. Maybe try to add --coverageformatters json-summary to your call to force:source:deploy ?")
+    )
+  );
+  return null;
+}
+
+// Check if min org coverage is reached
+export async function checkDeploymentOrgCoverage(orgCoverage: number) {
+  const config = await getConfig("branch");
+  const minCoverageOrgWide =
+    process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
+    process.env.APEX_TESTS_MIN_COVERAGE ||
+    config.apexTestsMinCoverageOrgWide ||
+    config.apexTestsMinCoverage ||
+    75.0;
+  if (minCoverageOrgWide < 75.0) {
+    throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
+  }
+  if (orgCoverage < minCoverageOrgWide) {
+    throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${orgCoverage}% should be > to ${minCoverageOrgWide}%`);
+  } else {
+    uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(orgCoverage))}% is > to ${c.bold(minCoverageOrgWide)}%`));
+  }
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {

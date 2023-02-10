@@ -47,6 +47,8 @@ It is recommended to create sandbox from the org that is related to the target g
 
 - Click on ![Open org in browser](assets/images/btn-open-org.jpg) and you can start working in it :)
 
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/WOqssZwjPhw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
 > See details in [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/) command documentation
