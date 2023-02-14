@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.3.0] 2022-02-14
+
 - Compliance of monitoring setup with **Azure Pipelines**
 - **hardis:org:retrieve:source:metadata** enhancements
   - new option **--includemanaged**, disabled by default, to avoid having too many items to retrieve during monitoring job
