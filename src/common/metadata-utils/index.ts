@@ -500,6 +500,12 @@ class MetadataUtils {
           if (!ignoredErrors.some((msg) => ex.message && ex.message.includes(msg))) {
             throw ex;
           }
+          uxLog(
+            this,
+            c.yellow(
+              `A newer version of ${package1.SubscriberPackageName} has been found. You may update installedPackages property in .sfdx-hardis.yml`
+            )
+          );
         }
         elapseEnd(`Install package ${package1.SubscriberPackageName}`);
       } else {

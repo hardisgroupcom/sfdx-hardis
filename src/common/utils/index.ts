@@ -547,7 +547,9 @@ export async function execCommand(
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes("--json") || options.fail) {
-      console.error(c.red(truncateProgressLogLines(`${e.stdout}\n${e.stderr}`)));
+      const strErr = truncateProgressLogLines(`${e.stdout}\n${e.stderr}`);
+      console.error(c.red(strErr));
+      e.message = e.message += "\n" + strErr;
       // Manage retry if requested
       if (options.retry != null) {
         options.retry.tryCount = (options.retry.tryCount || 0) + 1;
