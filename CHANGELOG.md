@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.3.1] 2022-02-16
+
+- Fix check of newer package installed
+
 ## [3.3.0] 2022-02-14
 
 - Compliance of monitoring setup with **Azure Pipelines**
