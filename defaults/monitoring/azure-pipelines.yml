@@ -10,11 +10,8 @@
 #
 # Doc & support: https://hardisgroupcom.github.io/sfdx-hardis/
 
-trigger:
-- integ
-
 schedules:
-- cron: "0 0 1 1/1 *"
+- cron: "0 4 * * *"
   always: "true"
   branches:
     include:
@@ -44,7 +41,8 @@ jobs:
     displayName: Git checkout
 
   - script: |
-      git config --global user.email $(Build.RequestedForEmail) && git config --global user.name "sfdx-hardis monitoring"
+      git config --global user.email "contact@cloudity.com"
+      git config --global user.name "sfdx-hardis monitoring"
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: Git config
 
@@ -67,6 +65,8 @@ jobs:
     env:
       SFDX_CLIENT_ID_INTEG: $(SFDX_CLIENT_ID_INTEG)
       SFDX_CLIENT_KEY_INTEG: $(SFDX_CLIENT_KEY_INTEG)
+      SFDX_CLIENT_ID_PRODUCTION: $(SFDX_CLIENT_ID_PRODUCTION)
+      SFDX_CLIENT_KEY_PRODUCTION: $(SFDX_CLIENT_KEY_PRODUCTION)
       CI_COMMIT_REF_NAME: $(BRANCH_NAME)
       CONFIG_BRANCH: $(BRANCH_NAME)
       ORG_ALIAS: $(BRANCH_NAME)
