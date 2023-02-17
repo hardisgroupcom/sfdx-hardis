@@ -17,6 +17,10 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 
 ![](assets/images/msg-upgrade-plugins.jpg){ align=center }
 
+- When no warning in displayed in the dependencies panel, you're all set !
+
+![](assets/images/dependencies-ok.jpg){ align=center }
+
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
 > The installed applications are the following:

@@ -64,6 +64,11 @@ It is now time to create your merge request to technically publish your updates 
 
 Depending on the CI platform you use, follow the related guide.
 
+_**Important**: If you are **publishing to a RUN branch** (ex: `preprod`), **AND** the **project also has a BUILD branch** (ex: `integration`), you need to create **2 merge requests**:_
+
+- _One from your feature or fix branch with the BUILD branch as target_
+- _One from your feature or fix branch with the RUN branch as target_
+
 ### Using Gitlab
 
 See [Create a merge request using Gitlab](salesforce-ci-cd-merge-request-gitlab.md)
