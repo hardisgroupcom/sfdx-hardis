@@ -60,29 +60,18 @@ ___
 
 ## Create merge request
 
+It is now time to create your merge request to technically publish your updates at the upper level !
+
+Depending on the CI platform you use, follow the related guide.
+
 ### Using Gitlab
 
-- Go in your online repository in your web browser (example: `https://gitlab.com/trailheadapps/dreamhouse-lwc`)
-
-- Go to menu **Merge Requests**
-
-- Create a **New Merge request**
-
-![](assets/images/merge-request-1.jpg){ align=center }
-
-![](assets/images/merge-request-2.jpg){ align=center }
-
-- Click on **Submit merge request**
-
-- Controlling jobs are automatically launched, you can now ask your release manager to [**validate a merge request**](salesforce-ci-cd-validate-merge-request.md)
-  - _If you are a developer, (or even a business consultant depending on the project organization), you may have the responsibility to make sure than controlling jobs are valid (**check-deploy job** and **code-quality job** in **success**)_
-
-- If you need to add additional updates to an existing merge requests, you just this to follow again this guide from the beginning, except the part "Create a merge request". Any new commit pushed on a branch where there is already a merge request will trigger again the [control jobs](salesforce-ci-cd-validate-merge-request.md#control-jobs).
-
-### Using Github
-
-Same than with Gitlab, but Merge Requests are named **Pull Requests**
+See [Create a merge request using Gitlab](salesforce-ci-cd-merge-request-gitlab.md)
 
 ### Using Azure
 
-Same than with Gitlab, but Merge Requests are named **Pull Requests**
+See [Create a merge request using Azure](salesforce-ci-cd-pull-request-azure.md)
+
+### Using GitHub
+
+See [Create a merge request using Github](salesforce-ci-cd-pull-request-github.md)
