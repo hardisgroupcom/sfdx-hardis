@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
-  "description": "Hardis-Group Toolbox for Salesforce DX",
-  "version": "3.3.1",
+  "description": "Cloudity Toolbox for Salesforce",
+  "version": "3.3.2",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "dependencies": {
@@ -95,7 +95,14 @@
   ],
   "homepage": "https://hardisgroupcom.github.io/sfdx-hardis/",
   "keywords": [
-    "sfdx-plugin"
+    "salesforce",
+    "sfdx",
+    "devops",
+    "automation",
+    "cicd",
+    "sfdx-plugin",
+    "cloudity",
+    "hardis"
   ],
   "license": "AGPL-3.0",
   "oclif": {
