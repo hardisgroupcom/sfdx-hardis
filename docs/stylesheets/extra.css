@@ -22,4 +22,11 @@
   --md-primary-fg-color--dark: #6A2BFF;
   --md-primary-bg-color: #fff;
   --md-primary-bg-color--light: #fff;
+
+  --md-accent-fg-color: #6A2BFF;
+  --md-accent-fg-color--transparent: #6A2BFF;
+  --md-accent-bg-color: #B95CE4;
+  --md-accent-bg-color--light: #FD80CD;
+
+  --md-footer-bg-color: #1B1464;
 }
