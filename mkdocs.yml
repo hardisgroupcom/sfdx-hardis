@@ -17,7 +17,7 @@ theme:
   logo: assets/images/cloudity-text-logo.svg
   favicon: assets/images/cloudity-logo.svg
   palette:
-    primary: white
+    primary: indigo
 plugins:
   - glightbox
   - search
