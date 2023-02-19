@@ -202,7 +202,7 @@ nav:
           - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
           - First merge request: salesforce-ci-cd-setup-merge-request.md
           - MsTeams Notifications: salesforce-ci-cd-setup-ms-teams.md
-  - .sfdx-hardis.yml config file: sfdx-hardis-config-file.md
+  - Configuration reference: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://hardisgroupcom.github.io/sfdx-hardis/#articles
   - Contributing: https://hardisgroupcom.github.io/sfdx-hardis/#contributing
