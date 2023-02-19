@@ -6,3 +6,8 @@
 .md-typeset table:not([class]) {
   display: table;
 }
+
+:root>* {
+  --md-primary-fg-color: #1B1464;
+  --md-footer-bg-color: #1B1464;
+}
