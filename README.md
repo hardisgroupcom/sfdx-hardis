@@ -1,4 +1,4 @@
-[![Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/cloudity-banner-1.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
+[![Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/cloudity-banner-1.jpg)](https://www.cloudity.com)
 
 # sfdx-hardis
 
@@ -18,14 +18,14 @@ Toolbox for Salesforce DX, by [Cloudity](https://cloudity.com/)
 It will allow you to:
 
 - Do with simple commands what could be done manually in minutes/hours
-- [Define a complete CI/CD Pipeline for your Salesforce project](https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-home/)
+- [Define a complete CI/CD Pipeline for your Salesforce project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
 
-[**Please see the full list of commands in Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis)
+[**Please see the full list of commands in Online documentation**](https://sfdx-hardis.cloudity.com)
 
 **sfdx-hardis** commands are also available with UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-
+[![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/doc/docs/assets/images/extension-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 ## Installation
 
@@ -73,7 +73,7 @@ sfdx hardis:<COMMAND> <OPTIONS>
 
 ## Articles
 
-Here are some articles with examples of use of [sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis/)
+Here are some articles with examples of use of [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 - English
 
@@ -423,7 +423,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 0 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -2596,8 +2596,8 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  In case of errors, [tips to fix them](https://hardisgroupcom.github.io/sfdx-hardis/deployTips/) will be included
-  within the error messages.
+  In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error
+  messages.
 
 ### Dynamic deployment items
 
@@ -2674,7 +2674,7 @@ DESCRIPTION
 #### List view with scope Mine
 
   If you defined a property **listViewsToSetToMine** in your .sfdx-hardis.yml, related ListViews will be set to Mine (
-  see command <https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/fix/listviewmine/> )
+  see command <https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/> )
 
   Example:
 
@@ -3328,7 +3328,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   -x, --manifest=manifest                                                           flagsLong.manifest
 
@@ -3397,7 +3397,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -3658,7 +3658,7 @@ DESCRIPTION
 - Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
 - Automatically Clean XML files using `.sfdx-hardis.yml` properties
   - `autocleantypes`: List of auto-performed sources cleanings, available on command
-  [hardis:project:clean:references](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/)
+  [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/)
   - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
 
   Example:

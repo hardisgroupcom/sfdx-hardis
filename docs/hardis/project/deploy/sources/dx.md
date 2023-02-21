@@ -5,7 +5,7 @@
 
 Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
-In case of errors, [tips to fix them](https://hardisgroupcom.github.io/sfdx-hardis/deployTips/) will be included within the error messages.
+In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
 ### Dynamic deployment items
 
@@ -74,7 +74,7 @@ installedPackages:
 
 #### List view with scope Mine
 
-If you defined a property **listViewsToSetToMine** in your .sfdx-hardis.yml, related ListViews will be set to Mine ( see command <https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/fix/listviewmine/> )
+If you defined a property **listViewsToSetToMine** in your .sfdx-hardis.yml, related ListViews will be set to Mine ( see command <https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/> )
 
 Example:
 

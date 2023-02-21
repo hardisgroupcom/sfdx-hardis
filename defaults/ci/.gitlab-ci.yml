@@ -4,7 +4,7 @@
 #         Update it only if you know what you are doing :)       #
 ##################################################################
 
-# More info at https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-home/
+# More info at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/
 
 # To add custom behaviors, please use side config file .gitlab-ci-config.yml
 include:
@@ -65,7 +65,7 @@ check_quality:
     expire_in: 1 week
 
 # Check deployment in target branch org.
-# If auth not configure yet, check this doc: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/
+# If auth not configure yet, check this doc: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/
 check_deploy_to_target_branch_org:
   stage: build
   tags: # Change or even remove tags if standard runners

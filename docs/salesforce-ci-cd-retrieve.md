@@ -6,7 +6,7 @@ description: Learn how to retrieve updated metadatas when force:source:pull forg
 
 ## Automated force retrieve
 
-It happens that when calling [sfdx hardis:scratch:pull](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/pull/), some elements are not retrieved.
+It happens that when calling [sfdx hardis:scratch:pull](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/), some elements are not retrieved.
 
 The most usual cases are updates on:
 
@@ -21,4 +21,4 @@ You can also use command ![](assets/images/btn-select-retrieve.jpg) to manually 
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
-> See details in [hardis:source:retrieve](https://hardisgroupcom.github.io/sfdx-hardis/hardis/source/retrieve/) command documentation
+> See details in [hardis:source:retrieve](https://sfdx-hardis.cloudity.com/hardis/source/retrieve/) command documentation

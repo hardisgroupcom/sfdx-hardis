@@ -134,7 +134,7 @@ export default class ProjectCreate extends SfdxCommand {
     uxLog(
       this,
       c.cyan(
-        "SFDX Project has been created. You can now proceed to configuration, following documentation at https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-home/"
+        "SFDX Project has been created. You can now proceed to configuration, following documentation at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/"
       )
     );
 
