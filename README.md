@@ -3719,3 +3719,4 @@ EXAMPLE
 
 _See code: [lib/commands/hardis/work/ws.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.4.0/lib/commands/hardis/work/ws.js)_
 <!-- commandsstop -->
+  
