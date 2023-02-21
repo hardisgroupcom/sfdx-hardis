@@ -52,7 +52,7 @@ If there are errors, you need to either:
   - Manual **activation of features** (ex: Account teams, State and country picklists...)
   - Manual **updates in setup** in case of renaming of API Names (which is a bad practice to avoid as much as possible :) )
 
-Under each error, you may see [instructions to solve the error](https://hardisgroupcom.github.io/sfdx-hardis/deployTips/) in yellow.
+Under each error, you may see [instructions to solve the error](https://sfdx-hardis.cloudity.com/deployTips/) in yellow.
 
 - If there is no instruction, try to copy-paste the error in google
 - If you are lost or are not sure of what you do, call your [release manager](salesforce-ci-cd-release-home.md)

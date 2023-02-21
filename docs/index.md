@@ -19,10 +19,10 @@ Toolbox for Salesforce DX, by [Cloudity](https://cloudity.com/)
 It will allow you to:
 
 - Do with simple commands what could be done manually in minutes/hours
-- [Define a complete CI/CD Pipeline for your Salesforce project](https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-home/)
+- [Define a complete CI/CD Pipeline for your Salesforce project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
 
-[**Please see the full list of commands in Online documentation**](https://hardisgroupcom.github.io/sfdx-hardis)
+[**Please see the full list of commands in Online documentation**](https://sfdx-hardis.cloudity.com)
 
 **sfdx-hardis** commands are also available with UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
@@ -74,7 +74,7 @@ sfdx hardis:<COMMAND> <OPTIONS>
 
 ## Articles
 
-Here are some articles with examples of use of [sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis/)
+Here are some articles with examples of use of [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 - English
 

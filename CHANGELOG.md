@@ -53,17 +53,17 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Replace [prompts](https://www.npmjs.com/package/prompts) library by [inquirer](https://www.npmjs.com/package/inquirer), because prompts is buggy
 - Dockerfile: Workaround for <https://github.com/forcedotcom/salesforcedx-apex/issues/213> (force:apex:test:run with code coverage crashing on some Gitlab runners with _Invalid time value_)
-- Allow to override the proposed branch names when calling [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/), using property **branchPrefixChoices**
+- Allow to override the proposed branch names when calling [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/), using property **branchPrefixChoices**
 - hardis:project:clean:hiddenitems: Also clean LWC with hidden content
 - Add yarn in dockerfile
 
 ## [2.98.1] 2022-01-23
 
-- Fix [hardis:org:purge:flow](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/purge/flow/) when flow prompt selection is `all`
+- Fix [hardis:org:purge:flow](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/) when flow prompt selection is `all`
 
 ## [2.98.0] 2022-01-23
 
-- Documentation: Add CI/CD user guide and release manager guide, available at <https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-home/>
+- Documentation: Add CI/CD user guide and release manager guide, available at <https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/>
 - New .sfdx-hardis.yml config property **allowedOrgTypes**, allowing to define the type(s) or org that can be used for implementation: (sandbox and/or scratch)
 
 ## [2.97.3] 2022-11-30
@@ -115,7 +115,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [2.94.2] 2022-09-09
 
-- [hardis:project:clean:minimizeprofiles](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/minimizeprofiles/): Do not strip tabVisibilities from Profiles
+- [hardis:project:clean:minimizeprofiles](https://sfdx-hardis.cloudity.com/hardis/project/clean/minimizeprofiles/): Do not strip tabVisibilities from Profiles
 
 ## [2.94.1] 2022-09-01
 
@@ -269,7 +269,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Simplify and document more hardis:work:new , hardis:work:pull and hardis:work:save
 - Open org in browser when fetched from scratch org pool
-- More [deploymentTips](https://hardisgroupcom.github.io/sfdx-hardis/deployTips/)
+- More [deploymentTips](https://sfdx-hardis.cloudity.com/deployTips/)
 - Add `customPlugins` definition in json schema
 
 ## [2.79.0] 2022-04-10

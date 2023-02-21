@@ -51,7 +51,7 @@ It is recommended to create sandbox from the org that is related to the target g
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
-> See details in [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/) command documentation
+> See details in [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) command documentation
 
 ___
 
@@ -75,4 +75,4 @@ You need the credentials to login on the **Dev Hub Org** (usually the production
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
-> See details in [hardis:work:new](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/) command documentation
+> See details in [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) command documentation

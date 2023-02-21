@@ -54,7 +54,7 @@ ___
 > - New git commit with automated updates
 > - Git push commit to git server
 >
-> More details in [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/) command documentation
+> More details in [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) command documentation
 
 ___
 

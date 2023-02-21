@@ -15,7 +15,7 @@ A Salesforce CI/CD repository contains a file **manifest/package.xml**.
 
 - It contains **all metadatas** that will be **deployed** by the **CI server**.
 
-- It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task.md#prepare-merge-request) by command [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
+- It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task.md#prepare-merge-request) by command [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
 
 - It is highly recommended to [**configure overwrite management**](salesforce-ci-cd-config-overwrite.md), to **avoid to overwrite metadatas that are maintained directly in production on purpose**
   - Dashboards
@@ -34,13 +34,13 @@ A Salesforce CI/CD repository contains a file **manifest/destructiveChanges.xml*
 
 - It contains **all metadatas** that will be **deleted** by the **CI server**.
 
-- It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task.md#prepare-merge-request) by command [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
+- It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task.md#prepare-merge-request) by command [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
 
 ___
 
 ## Automated sources cleaning
 
-You can configure automated cleaning of sources before creating merge requests, using command [hardis:work:save](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
+You can configure automated cleaning of sources before creating merge requests, using command [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
 
 Those cleanings can be:
 
