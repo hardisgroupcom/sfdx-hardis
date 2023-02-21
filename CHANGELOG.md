@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [3.4.0] 2022-02-21
 
-- Move documentation to https://sfdx-hardis.cloudity.com
+- Move documentation to <https://sfdx-hardis.cloudity.com>
 
 ## [3.3.2] 2022-02-17
 
