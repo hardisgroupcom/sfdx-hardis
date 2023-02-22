@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update default overwrite config (packageDeployOnce.xml)
+- Setup CI: Define default Azure pipelines YML files
+
 ## [3.4.0] 2022-02-21
 
 - Move documentation to <https://sfdx-hardis.cloudity.com>
