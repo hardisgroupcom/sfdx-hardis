@@ -71,6 +71,17 @@ export function isGitRepo() {
   return isInsideWorkTree.status === 0;
 }
 
+export async function getGitRepoName() {
+  if (!isGitRepo) {
+    return null;
+  }
+  const origin = await git().getConfig("remote.origin.url");
+  if (origin.value && origin.value.includes("/")) {
+    return /[^/]*$/.exec(origin.value)[0];
+  }
+  return null;
+}
+
 export async function gitHasLocalUpdates(options = { show: false }) {
   const changes = await git().status();
   if (options.show) {

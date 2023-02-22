@@ -1,0 +1,64 @@
+# Pipeline for Salesforce deployment check & MegaLinter check
+#
+# This pipeline is triggered when a commit is added to a Pull Request
+#
+# This means the Pull Request should already exist before commiting your work or you'll have to push an empty commit
+# to trigger the pipeline.
+#
+# Setup:
+#   - Go to Pipelines
+#   - Select or create a new pipeline (you may have to Create new -> Existing Azure Pipelines YAML file)
+#   - Edit this new pipeline
+#   - Add your variables in the "variables" section and tick "Keep this value secret"
+
+#  /!\ This part is only for deployment pipeline
+
+#   - Go to Pipelines and select your pipeline then Edit it
+#   - Open the menu ⋮ and select Triggers
+#   - In "Branch filters", tick "Override the YAML continuous integration trigger from here"
+#   - "Include" all your major branches
+
+name: Deploy to org
+
+# Mandatory variables, used by jobs
+variables:
+  - name: FORCE_COLOR
+    value: "1"
+  - name: BRANCH_NAME
+    value: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
+
+jobs:
+  # Deploy source with SFDX
+  - job: Deployment
+    pool:
+      vmImage: ubuntu-20.04
+    steps:
+
+      # Setup Node.js
+      - task: UseNode@1
+        inputs:
+          version: ">=16.0.0"
+        displayName: "Setup Node.js"
+
+      # Install SFDX & Dependencies
+      - script: |
+          npm install sfdx-cli --global
+          echo 'y' | sfdx plugins:install sfdx-hardis
+          echo 'y' | sfdx plugins:install sfdx-essentials
+          echo 'y' | sfdx plugins:install sfdmu
+          sfdx --version
+          sfdx plugins
+        displayName: "Install SFDX & plugins"
+
+      # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
+      - script: |
+          sfdx hardis:auth:login
+          sfdx hardis:project:deploy:sources:dx
+        env:
+          SFDX_CLIENT_ID_INTEGRATION: $(SFDX_CLIENT_ID_INTEGRATION)
+          SFDX_CLIENT_KEY_INTEGRATION: $(SFDX_CLIENT_KEY_INTEGRATION)
+          CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+          CONFIG_BRANCH: $(BRANCH_NAME)
+          ORG_ALIAS: $(BRANCH_NAME)
+          CI: "true"
+        displayName: "Deploy sources to related SF Org"

@@ -41,6 +41,16 @@ This means that **an item matching packageDeployOnce.xml** will be **deployed th
 ```xml
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+  <!-- Approval processes can contain reference to usernames -->
+  <types>
+      <members>*</members>
+      <name>ApprovalProcess</name>
+  </types>
+  <!-- Connected apps contain org unique auth info so must never be overwritten -->
+  <types>
+      <members>*</members>
+      <name>ConnectedApp</name>
+  </types>
   <types>
     <!-- Apps that contain hardcoded dashboard its must be managed directly in production -->
     <members>DeclareWork</members>
@@ -81,6 +91,11 @@ This means that **an item matching packageDeployOnce.xml** will be **deployed th
     <!-- Reports are maintained directly in production -->
     <members>*</members>
     <name>Report</name>
+  </types>
+    <!-- SSO Config must be performed directly in org setup -->  
+  <types>
+      <members>*</members>
+      <name>SamlSsoConfig</name>
   </types>
   <!-- Wave items in case you want to manage them directly in production -->
   <types>
