@@ -1,6 +1,6 @@
 import * as changedGitFiles from "changed-git-files";
 import * as c from "chalk";
-import { elapseEnd, isGitRepo, uxLog } from "../../common/utils";
+import { elapseEnd, getCurrentGitBranch, getGitRepoName, isGitRepo, uxLog } from "../../common/utils";
 import { canSendNotifications, sendNotification } from "../../common/utils/notifUtils";
 
 export const hook = async (options: any) => {
@@ -38,8 +38,8 @@ export const hook = async (options: any) => {
     }
     // Send WebHook
     const jobUrl = process.env.CI_JOB_URL || "Missing CI_JOB_URL variable";
-    const projectName = process.env.CI_PROJECT_NAME || "Missing CI_PROJECT_NAME variable";
-    const branchName = process.env.CI_COMMIT_REF_NAME || "Missing CI_COMMIT_REF_NAME variable";
+    const projectName = process.env.CI_PROJECT_NAME || (await getGitRepoName()) || "Missing CI_PROJECT_NAME variable";
+    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
     const envName = projectName + "/" + branchName;
     await sendNotification({
       title: `Updates detected in org ${envName}`,
