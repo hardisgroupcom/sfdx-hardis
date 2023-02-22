@@ -4,8 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Update default overwrite config (packageDeployOnce.xml)
+## [3.5.0] 2022-02-22
+
+- Update default overwrite config (`packageDeployOnce.xml`)
 - Setup CI: Define default Azure pipelines YML files
+- Fix notification logs for Azure Pipelines
 
 ## [3.4.0] 2022-02-21
 
