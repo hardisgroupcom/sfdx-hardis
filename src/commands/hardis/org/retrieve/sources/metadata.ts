@@ -3,13 +3,16 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
+import * as child from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository, isCI, isMonitoringJob, uxLog } from "../../../../../common/utils";
+import { ensureGitRepository, execCommand, isCI, isMonitoringJob, uxLog } from "../../../../../common/utils";
 import { canSendNotifications, sendNotification } from "../../../../../common/utils/notifUtils";
 import LegacyApi from "../../diagnose/legacyapi";
 import OrgTestApex from "../../test/apex";
+import * as util from "util";
+const exec = util.promisify(child.exec);
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -71,13 +74,15 @@ export default class DxSources extends SfdxCommand {
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
 
+  protected debugMode = false;
+
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const folder = path.resolve(this.flags.folder || ".");
     const packageXml = path.resolve(this.flags.packagexml || "package.xml");
     const includeManaged = this.flags.includemanaged || false;
-    const debug = this.flags.debug || false;
+    this.debugMode = this.flags.debug || false;
 
     // Check required pre-requisites
     await ensureGitRepository({ init: true });
@@ -87,7 +92,7 @@ export default class DxSources extends SfdxCommand {
     let message = "";
     try {
       const filterManagedItems = includeManaged === false;
-      await MetadataUtils.retrieveMetadatas(packageXml, folder, false, [], { filterManagedItems: filterManagedItems }, this, debug);
+      await MetadataUtils.retrieveMetadatas(packageXml, folder, false, [], { filterManagedItems: filterManagedItems }, this, this.debugMode);
 
       // Copy to destination
       await fs.copy(path.join(folder, "unpackaged"), path.resolve(folder));
@@ -136,6 +141,38 @@ export default class DxSources extends SfdxCommand {
         await fs.writeFile(localGitlabCiFile, latestGitlabCiContent);
         uxLog(this, c.cyan("Updated .gitlab-ci.yml file"));
       }
+    }
+
+    // Also trace updates with sfdx sources, for better readability
+    uxLog(this, c.cyan("Convert into sfdx format..."));
+    if (fs.existsSync("metadatas")) {
+      // Create sfdx project if not existing yet
+      if (!fs.existsSync("sfdx-project")) {
+        const createCommand = "sfdx force:project:create" + ` --projectname "sfdx-project"`;
+        uxLog(this, c.cyan("Creating sfdx-project..."));
+        await execCommand(createCommand, this, {
+          output: true,
+          fail: true,
+          debug: this.debugMode,
+        });
+      }
+      // Convert metadatas into sfdx sources
+      const mdapiConvertCommand = `sfdx force:mdapi:convert --rootdir "../metadatas"`;
+      uxLog(this, c.cyan("Converting metadata to source formation into sfdx-project..."));
+      uxLog(this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
+      const prevCwd = process.cwd();
+      process.chdir(path.join(process.cwd(), "./sfdx-project"));
+      try {
+        const convertRes = await exec(mdapiConvertCommand, {
+          maxBuffer: 10000 * 10000,
+        });
+        if (this.debug) {
+          uxLog(this, convertRes.stdout + convertRes.stderr);
+        }
+      } catch (e) {
+        uxLog(this, c.yellow("Error while converting metadatas to sources:\n" + e.message));
+      }
+      process.chdir(prevCwd);
     }
 
     // Run test classes

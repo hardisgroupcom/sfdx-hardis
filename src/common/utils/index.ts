@@ -989,7 +989,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       {
         type: "text",
         name: "contactEmail",
-        message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@hardis-group.com)"),
+        message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@cloudity.com)"),
       },
     ]);
     const profile = await promptProfiles(conn, {
