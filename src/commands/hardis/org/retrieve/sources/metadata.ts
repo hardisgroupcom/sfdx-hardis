@@ -158,7 +158,7 @@ export default class DxSources extends SfdxCommand {
       }
       // Convert metadatas into sfdx sources
       const mdapiConvertCommand = `sfdx force:mdapi:convert --rootdir "../metadatas"`;
-      uxLog(this, c.cyan("Converting metadata to source formatin into sfdx-project..."));
+      uxLog(this, c.cyan("Converting metadata to source formation into sfdx-project..."));
       uxLog(this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
       const prevCwd = process.cwd();
       process.chdir(path.join(process.cwd(), "./sfdx-project"));
