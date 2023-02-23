@@ -31,7 +31,7 @@ You can use Salesforce Setup to configure your org as you would do on any sandbo
 Please follow as much as possible these recommendations when you work on a CI/CD Salesforce project:
 
 - **Do not rename API names** (field names, picklist values, pages...)
-- **Do not prefix API Names with numbers**: Git provides historisation of updates, so it's better to have elements sorted by alphabetical order than by order of creation
+- **Do not prefix API Names with numbers**: Git provides historization of updates, so it's better to have elements sorted by alphabetical order than by order of creation
 - **Do not change the type of custom fields**
 - Use command ![Install package button](assets/images/btn-install-package.jpg) to install package instead of installing them directly with the URL
 - Always **use Permission Sets** instead of Profiles. If you need profiles, discuss with your release manager.
