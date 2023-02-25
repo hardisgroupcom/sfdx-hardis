@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.6.0] 2022-02-23
+
+- Add sfdx sources to monitoring for better readability
+- Change example of email addresses for prompts
+- Update CI/CD recommendations in documentation
+
 ## [3.5.0] 2022-02-22
 
 - Update default overwrite config (`packageDeployOnce.xml`)

@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
   "description": "Cloudity Toolbox for Salesforce",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "dependencies": {
