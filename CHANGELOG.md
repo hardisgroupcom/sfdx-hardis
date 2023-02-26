@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add demo video about [configuring authentication between CI and Salesforce orgs](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/)
+- Update CI/CD documentation
+
 ## [3.6.0] 2022-02-23
 
 - Add sfdx sources to monitoring for better readability

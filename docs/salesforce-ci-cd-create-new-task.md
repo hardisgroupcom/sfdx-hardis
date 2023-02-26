@@ -30,6 +30,7 @@ You need credentials to login on the source-tracked sandbox you'll work with. It
 
 - An **existing source-tracked sandbox**
   - Existing source-tracked sandboxes must be **refreshed from time to time to avoid too many conflicts**, discuss with your Release Manager !
+  - Release managers: When you create or refresh a sandbox, you can [easily activate invalid users with a few clicks](https://sfdx-hardis.cloudity.com/hardis/org/user/activateinvalid/)
 - A **new source-tracked sandbox** that you can create from production org
 
 It is recommended to create sandbox from the org that is related to the target git branch.

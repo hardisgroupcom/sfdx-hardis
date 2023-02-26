@@ -29,11 +29,13 @@ This means that **an item matching packageDeployOnce.xml** will be **deployed th
 - It has the **same format than a package.xml**, but must be **written manually**
 - It can contain named items, or wildcards `*`
 - Theoretically, any metadata can be added in packageDeployOnce.xml, but here are the most commonly present:
-  - Reports
+  - Connected apps
   - Dashboards
   - Named Credentials
   - Profiles
   - Remote Site Settings
+  - Reports
+  - SAML SSO Configuration
   - Wave items (CRM Analytics)
 
 ### Example
