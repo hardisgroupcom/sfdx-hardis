@@ -13,7 +13,7 @@ ___
 
 ## Introduction
 
-There are many ways to do DevOps with Salesforce, each of them have their advantages and inconvenients, like showed in the following comparison table.
+There are many ways to do DevOps with Salesforce, each of them have their advantages and inconveniences, like showed in the following comparison table.
 
 ![](assets/images/devops-comparison.png){ align=center }
 
