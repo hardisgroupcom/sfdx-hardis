@@ -64,7 +64,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const tempDir = "./tmp";
     await fs.ensureDir(tempDir);
     const apexLogsToDeleteCsv = path.join(tempDir, "ApexLogsToDelete_" + Math.random() + ".csv");
-    const queryCommand = `sfdx force:data:soql:query -q "SELECT Id FROM ApexLog" -r "csv" > "${apexLogsToDeleteCsv}"`;
+    const queryCommand = `sfdx force:data:soql:query -q "SELECT Id FROM ApexLog" -t -r "csv" > "${apexLogsToDeleteCsv}"`;
     await execCommand(queryCommand, this, {
       output: true,
       debug: debugMode,
