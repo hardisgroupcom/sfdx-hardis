@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.7.1] 2022-02-27
+
+- Use tooling API to retrieve ApexLogs for deletion, by @thvd in https://github.com/hardisgroupcom/sfdx-hardis/pull/321
+
 ## [3.7.0] 2022-02-27
 
 - Add demo video about [configuring authentication between CI and Salesforce orgs](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/)
