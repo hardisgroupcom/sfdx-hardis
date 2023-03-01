@@ -92,7 +92,7 @@ export default class ProjectCreate extends SfdxCommand {
       const projectRes = await prompts({
         type: "text",
         name: "projectName",
-        message: "What is the name of your project ?",
+        message: "What is the name of your project ? (example: MyClient)",
       });
       projectName = projectRes.projectName.toLowerCase().replace(" ", "_");
     }
@@ -122,7 +122,7 @@ export default class ProjectCreate extends SfdxCommand {
       const devBranchRes = await prompts({
         type: "text",
         name: "devBranch",
-        message: "What is the name of your default development branch ?",
+        message: "What is the name of your default development branch ? (Examples: if you manage RUN and BUILD, it can be integration. If you manage RUN only, it can be preprod)",
         initial: "develop",
       });
       await setConfig("project", { developmentBranch: devBranchRes.devBranch });
@@ -134,7 +134,7 @@ export default class ProjectCreate extends SfdxCommand {
     uxLog(
       this,
       c.cyan(
-        "SFDX Project has been created. You can now proceed to configuration, following documentation at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/"
+        "SFDX Project has been created. You can continue the steps in documentation at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/"
       )
     );
 

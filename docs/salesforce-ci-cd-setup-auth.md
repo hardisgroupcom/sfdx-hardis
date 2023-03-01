@@ -10,11 +10,14 @@ To automate [deployments from major branches to their related org](salesforce-ci
 
 Note: _You need [openssl](https://www.openssl.org/) installed on your computer (available in `Git bash`)_
 
-- For each branch to link to an org, run the following command and follow instructions
+- Remain in your initialization branch `cicd`
+- For each major branch to link to an org, run the following command and follow instructions
 
 ```shell
 sfdx hardis:project:configure:auth
 ```
+
+For example, run the following command to configure integration, uat, preprod and production major branches.
 
 _Note: If you have errors in your apex tests classes, you may not be able to configure the app for Production org. You will need do create the connected app manually by following the instructions in yellow in the error message. You can do it later, after having succeeded to merge the first merge request in lower major branch (usually `integration`)_
 

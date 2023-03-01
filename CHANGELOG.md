@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Update CI/CD documentation
   - Initialize orgs
+- Update labels of prompts when creating a new sfdx-hardis project
 
 ## [3.7.1] 2022-02-27
 

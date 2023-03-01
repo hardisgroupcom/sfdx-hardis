@@ -20,6 +20,8 @@ You must declare an org (usually production) as a DevHub and activate sandbox tr
 
 ## Major orgs
 
+When there is a new state of a major branch (after a merge), a deployment to the related major Org will be automatically triggered by the CI server.
+
 You need to have a Salesforce sandbox corresponding to each major branch.
 
 Example:
