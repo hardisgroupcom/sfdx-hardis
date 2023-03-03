@@ -19,7 +19,7 @@ Or the command line version:
 sfdx hardis:project:configure:auth
 ```
 
-For example, run the command for integration, uat, preprod and production major branches.
+For example, run the command for `integration`, `uat`, `preprod` and `production` major branches.
 
 _Note: If you have errors in your apex tests classes, you may not be able to configure the app for Production org. You will need do create the connected app manually by following the instructions in yellow in the error message. You can do it later, after having succeeded to merge the first merge request in lower major branch (usually `integration`)_
 
