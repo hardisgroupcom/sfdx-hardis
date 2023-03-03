@@ -11,7 +11,9 @@ To automate [deployments from major branches to their related org](salesforce-ci
 Note: _You need [openssl](https://www.openssl.org/) installed on your computer (available in `Git bash`)_
 
 - Remain in your initialization branch `cicd`
-- For each major branch to link to an org, run the following command and follow instructions
+- For each major branch to link to an org, run the sfdx-hardis command **Configuration -> Configure Org Ci Authentication**
+
+Or the command line version:
 
 ```shell
 sfdx hardis:project:configure:auth
