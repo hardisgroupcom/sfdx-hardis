@@ -31,14 +31,23 @@ You can use Salesforce Setup to configure your org as you would do on any sandbo
 Please follow as much as possible these recommendations when you work on a CI/CD Salesforce project:
 
 - **Do not rename API names** (field names, picklist values, pages...)
+
 - **Do not prefix API Names with numbers**: Git provides historization of updates, so it's better to have elements sorted by alphabetical order than by order of creation
+
 - **Do not change the type of custom fields**
+
 - Use command ![Install package button](assets/images/btn-install-package.jpg) to install package instead of installing them directly with the URL
+  - If you installed a package using an URL, use command [Retrieve packages button](assets/images/btn-retrieve-packages.jpg) to retrieve package config before creating your merge request (be careful of what you commit in .sfdx-hardis.yml file !)
+
 - Always **use Permission Sets** instead of Profiles. If you need profiles, discuss with your release manager.
+
 - Never link configuration items (Queues,Reports...) directly to a user, but use [Salesforce Groups](https://help.salesforce.com/s/articleView?language=en_US&id=sf.user_groups.htm&type=5)
+
 - If you need to update Flows, discuss to make sure that no other member of the team is updating the same Flow in another branch/org
   - _If it happens, conflicts are not manageable so one of you will later need to perform the updates again_
+  
 - **Never use hardcoded Ids** in Flows and formulas (or anywhere else)
+
 - Use **static resources to store images**
 
 ___

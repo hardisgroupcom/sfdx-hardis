@@ -544,7 +544,7 @@ export async function deployMetadatas(
 ) {
   // Perform deployment
   const deployCommand =
-    "sfdx force:mdapi:legacy:deploy" +
+    "sfdx force:mdapi:deploy" +
     ` --deploydir ${options.deployDir || "."}` +
     " --wait 60" +
     ` --testlevel ${options.testlevel || "RunLocalTests"}` +

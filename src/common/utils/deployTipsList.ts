@@ -558,6 +558,12 @@ If you already did that, please try again to run the job`,
       tip: `If you changed a field from MasterDetail to Lookup, you must do it manually in the target org before being able to deploy`,
     },
     {
+      name: "send-email-disabled",
+      label: "Send email is disabled",
+      expressionString: ["Send Email is disabled or activities are not allowed"],
+      tip: ``,
+    },
+    {
       name: "test-case-async-exception",
       label: "Async exception in test class",
       expressionRegex: [/System.AsyncException: (.*) Apex/gm],
