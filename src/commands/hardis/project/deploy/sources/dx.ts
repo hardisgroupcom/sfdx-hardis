@@ -11,6 +11,7 @@ import { CONSTANTS, getConfig } from "../../../../../config";
 import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
+import { GitlabProvider } from "../../../../../common/gitProvider/gitlab";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -166,6 +167,10 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
     const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
     const packageXml = this.flags.packagexml || null;
     this.debugMode = this.flags.debug || false;
+
+    console.log(process.env);
+    const gitlab = new GitlabProvider(this.configInfo.gitHost, this.configInfo.gitToken);
+    gitlab.getParentMergeRequestId();
 
     // Get target org
     let targetUsername = this.org.getUsername();
