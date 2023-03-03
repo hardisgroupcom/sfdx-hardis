@@ -8,11 +8,11 @@ description: Learn how to fix issues that can happen during sfdx deployments
 
 This page summarizes all errors that can be detected by sfdx-hardis wrapper commands
 
-| sfdx command                                                                                                                                                                                | sfdx-hardis wrapper command                                                         |
-|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
-| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)   | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) |
-| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)       | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
-| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy) | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)   |
+| sfdx command             | sfdx-hardis wrapper command |
+| :-----------             | :-------------------------- |
+| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy) | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/)   |
+| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)   | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
+| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy)  | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)    |
 
 You can also use this function on a [sfdx-hardis Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
@@ -347,7 +347,7 @@ If {1} is a Flow, it can not be deleted using deployments, please delete it manu
 ```shell
 Replace Mine by Everything in the list view SFDX source XML.
 Have a look at this command to manage that automatically :)
-https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/fix/listviewmine/
+https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/
 
 ```
 
@@ -804,6 +804,16 @@ Are you sure you need this sharing rule ? You may remove it from the sfdx projec
 If you changed a field from MasterDetail to Lookup, you must do it manually in the target org before being able to deploy
 ```
 
+## Send email is disabled
+
+- `Send Email is disabled or activities are not allowed`
+
+**Resolution tip**
+
+```shell
+Go to Email -> Deliverability -> Select value "All emails"
+```
+
 ## Async exception in test class
 
 - `System.AsyncException: (.*) Apex`
@@ -817,7 +827,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 

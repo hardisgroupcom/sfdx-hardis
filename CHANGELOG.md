@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.8.0] 2022-03-03
+
 - Manage deprecation of force:mdapi:legacy:deploy, replaced by force:mdapi:deploy
 - Update default packageDeployOnce.xml when creating a new project (related to [Overwrite management](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/))
 - Update CI/CD documentation
