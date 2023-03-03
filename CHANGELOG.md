@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update default packageDeployOnce.xml when creating a new project (related to [Overwrite management](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/))
 - Update CI/CD documentation
   - Initialize orgs
 - Update labels of prompts when creating a new sfdx-hardis project

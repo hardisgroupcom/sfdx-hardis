@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+  <!-- Approval processes can contain reference to usernames -->
+  <types>
+      <members>*</members>
+      <name>ApprovalProcess</name>
+  </types>
+  <!-- Connected apps contain org unique auth info so must never be overwritten -->
+  <types>
+      <members>*</members>
+      <name>ConnectedApp</name>
+  </types>
+  <types>
+    <!-- Once a dashboard is published, it is always managed directly in production -->
+    <members>*</members>
+    <name>Dashboard</name>
+  </types>
+  <types>
+    <!-- Name Credentials can contain auth info that are different between dev, uat, preprod and prod: let's not overwrite them ! -->
+    <members>*</members>
+    <name>NamedCredentials</name>
+  </types>
+  <types>
+    <!-- Remote site settings can be different between dev, uat, preprod and prod: let's not overwrite them ! -->
+    <members>*</members>
+    <name>RemoteSiteSettings</name>
+  </types>
+  <types>
+    <!-- Reports are maintained directly in production -->
+    <members>*</members>
+    <name>Report</name>
+  </types>
+    <!-- SSO Config must be performed directly in org setup -->
+  <types>
+      <members>*</members>
+      <name>SamlSsoConfig</name>
+  </types>
+  <!-- Wave items in case you want to manage them directly in production -->
+  <types>
+    <members>*</members>
+    <name>WaveApplication</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveDashboard</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveDataflow</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveDataset</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveRecipe</name>
+  </types>
+  <types>
+    <members>*</members>
+    <name>WaveXmd</name>
+  </types>
+  <version>56.0</version>
+</Package>
