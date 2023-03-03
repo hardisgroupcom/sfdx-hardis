@@ -122,7 +122,8 @@ export default class ProjectCreate extends SfdxCommand {
       const devBranchRes = await prompts({
         type: "text",
         name: "devBranch",
-        message: "What is the name of your default development branch ? (Examples: if you manage RUN and BUILD, it can be integration. If you manage RUN only, it can be preprod)",
+        message:
+          "What is the name of your default development branch ? (Examples: if you manage RUN and BUILD, it can be integration. If you manage RUN only, it can be preprod)",
         initial: "develop",
       });
       await setConfig("project", { developmentBranch: devBranchRes.devBranch });

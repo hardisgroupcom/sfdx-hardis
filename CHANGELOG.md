@@ -12,7 +12,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [3.7.1] 2022-02-27
 
-- Use tooling API to retrieve ApexLogs for deletion, by @thvd in https://github.com/hardisgroupcom/sfdx-hardis/pull/321
+- Use tooling API to retrieve ApexLogs for deletion, by @thvd in <https://github.com/hardisgroupcom/sfdx-hardis/pull/321>
 
 ## [3.7.0] 2022-02-27
 
