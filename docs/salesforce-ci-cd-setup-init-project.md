@@ -21,5 +21,7 @@ description: Learn how to initialize a Salesforce DX Project for CI/CD
 </Package>
 ```
 
+- IF you are using Gitlab CI and sandboxes only (not scratch orgs), open **gitlab-ci-config.yml** at the root of the repository, and set variable **USE_SCRATCH_ORGS** to `"false"`
+
 You can now go to step [Setup CI Authentication](salesforce-ci-cd-setup-auth.md)
 
