@@ -7,7 +7,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { isCI, uxLog } from "../../../../../common/utils";
-import { getConfig } from "../../../../../config";
+import { CONSTANTS, getConfig } from "../../../../../config";
 import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
@@ -242,7 +242,8 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
     // Process deployment (or deployment check)
     const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, forceSourceDeployOptions);
     if (check) {
-      const deployId = messages.find((msg: string) => msg.match(/Deploy ID: (.*)/gm));
+      const message = messages.find((msg: string) => msg.match(CONSTANTS.DEPLOY_ID_REGEX));
+      const deployId = message.match(CONSTANTS.DEPLOY_ID_REGEX)[1];
       await fs.writeFile('./deploy-id.txt', deployId);
     }
 
