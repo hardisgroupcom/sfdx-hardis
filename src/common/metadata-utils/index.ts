@@ -425,18 +425,19 @@ class MetadataUtils {
     }
     // Sandbox
     else if (type === "devSandbox") {
-      const allSandboxes = (
+      const allSandboxes =
         orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
           return org.loginUrl.includes("--") || org.loginUrl.includes("test.salesforce.com");
-        }) || []
-      );
+        }) || [];
       const majorOrgs = await listMajorOrgs();
       const devSandboxes = allSandboxes.filter((org: any) => {
-        return majorOrgs.filter(majorOrg =>
-          majorOrg.targetUsername === org.username
-          ||
-          (majorOrg.instanceUrl === org.instanceUrl && !majorOrg.instanceUrl.includes("test.salesforce.com"))
-        ).length === 0
+        return (
+          majorOrgs.filter(
+            (majorOrg) =>
+              majorOrg.targetUsername === org.username ||
+              (majorOrg.instanceUrl === org.instanceUrl && !majorOrg.instanceUrl.includes("test.salesforce.com"))
+          ).length === 0
+        );
       });
       return devSandboxes;
     }
