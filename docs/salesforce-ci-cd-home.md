@@ -30,6 +30,10 @@ _You can define much simpler branch/orgs models, to manage only RUN operations._
 
 ![](assets/images/ci-cd-schema-main.jpg){ align=center }
 
+See detailed article on SalesforceDevOps.net
+
+[![](assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/)
+
 ___
 
 ## Use sfdx-hardis CI/CD
