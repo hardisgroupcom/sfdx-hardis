@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New task with source tracked sandbox:
+  - Do not allow to select a major org for dev or config
+  - Open SF org if selected from the already connected list
+  - Init packages only if defined in config
+  - Enhance labels
+
 ## [3.8.0] 2022-03-03
 
 - Manage deprecation of force:mdapi:legacy:deploy, replaced by force:mdapi:deploy

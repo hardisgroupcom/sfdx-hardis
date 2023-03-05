@@ -279,7 +279,7 @@ Under the hood, it can:
   // Select or create sandbox
   async selectOrCreateSandbox(branchName, config) {
     const hubOrgUsername = this?.hubOrg?.getUsername();
-    const sandboxOrgList = await MetadataUtils.listLocalOrgs("sandbox", { devHubUsername: hubOrgUsername });
+    const sandboxOrgList = await MetadataUtils.listLocalOrgs("devSandbox", { devHubUsername: hubOrgUsername });
     const sandboxResponse = await prompts({
       type: "select",
       name: "value",
@@ -293,12 +293,13 @@ Under the hood, it can:
         ...[
           {
             title: c.yellow("Connect to a sandbox not appearing in this list"),
+            description: "Login in web browser to your source-tracked sandbox",
             value: "connectSandbox",
           },
-          {
+          /* {
             title: c.yellow("Create new sandbox from another sandbox or production org (ALPHA -> UNSTABLE, DO NOT USE YET)"),
             value: "newSandbox",
-          },
+          }, */
         ],
         ...sandboxOrgList.map((sandboxOrg: any) => {
           return {
@@ -315,6 +316,7 @@ Under the hood, it can:
       scratchOrgUsername: null,
     });
     let orgUsername = "";
+    let openOrg = false;
     // Connect to a sandbox
     if (sandboxResponse.value === "connectSandbox") {
       const slctdOrg = await promptOrg(this, { setDefault: true, devSandbox: true });
@@ -335,6 +337,7 @@ Under the hood, it can:
         fail: true,
       });
       orgUsername = sandboxResponse.value.username;
+      openOrg = true;
     }
     // Initialize / Update existing sandbox if required
     const initSandboxResponse = await prompts({
@@ -347,7 +350,9 @@ Under the hood, it can:
       let initSourcesErr: any = null;
       let initSandboxErr: any = null;
       try {
-        await installPackages(config.installedPackages || [], orgUsername);
+        if (config.installedPackages) {
+          await installPackages(config.installedPackages || [], orgUsername);
+        }
         try {
           // Continue initialization even if push did not work... it could work and be not such a problem :)
           uxLog(this, c.cyan("Resetting local sfdx tracking..."));
@@ -377,6 +382,14 @@ Under the hood, it can:
         `)
         );
       }
+    }
+    // Open of if not already open
+    if (openOrg === true) {
+      await execSfdxJson("sfdx force:org:open", this, {
+        fail: true,
+        output: false,
+        debug: this.debugMode,
+      });
     }
 
     // Trigger a status refresh on VsCode WebSocket Client

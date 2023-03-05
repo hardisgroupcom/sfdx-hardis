@@ -8,6 +8,7 @@ import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, ux
 import { CONSTANTS } from "../../config";
 import { getCache, setCache } from "../cache";
 import { buildOrgManifest } from "../utils/deployUtils";
+import { listMajorOrgs } from "../utils/orgConfigUtils";
 import { isSfdxProject } from "../utils/projectUtils";
 import { prompts } from "../utils/prompts";
 import { parsePackageXmlFile } from "../utils/xmlUtils";
@@ -410,15 +411,37 @@ class MetadataUtils {
       orgListResult = await execSfdxJson("sfdx force:org:list", this);
       await setCache("force:org:list", orgListResult);
     }
+    // All orgs
     if (type === "any") {
       return orgListResult?.result || [];
-    } else if (type === "sandbox") {
+    }
+    // Sandbox
+    else if (type === "sandbox") {
       return (
         orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
           return org.loginUrl.includes("--") || org.loginUrl.includes("test.salesforce.com");
         }) || []
       );
-    } else if (type === "scratch") {
+    }
+    // Sandbox
+    else if (type === "devSandbox") {
+      const allSandboxes = (
+        orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
+          return org.loginUrl.includes("--") || org.loginUrl.includes("test.salesforce.com");
+        }) || []
+      );
+      const majorOrgs = await listMajorOrgs();
+      const devSandboxes = allSandboxes.filter((org: any) => {
+        return majorOrgs.filter(majorOrg =>
+          majorOrg.targetUsername === org.username
+          ||
+          (majorOrg.instanceUrl === org.instanceUrl && !majorOrg.instanceUrl.includes("test.salesforce.com"))
+        ).length === 0
+      });
+      return devSandboxes;
+    }
+    // scratch
+    else if (type === "scratch") {
       return (
         orgListResult?.result?.scratchOrgs?.filter((org: any) => {
           return org.status === "Active" && (options.devHubUsername && org.devHubUsername !== options.devHubUsername ? false : true);

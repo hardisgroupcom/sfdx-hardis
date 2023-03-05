@@ -1,5 +1,8 @@
 import * as c from "chalk";
+import * as fs from "fs-extra";
+import * as glob from "glob-promise";
 import * as puppeteer from "puppeteer";
+import * as yaml from "js-yaml";
 import { uxLog } from ".";
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
@@ -103,4 +106,22 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   // Close puppeteer browser
   await browser.close();
   return { success, failed, unnecessary };
+}
+
+// List all yml files in config/branches and build list of major orgs from them
+export async function listMajorOrgs() {
+  const majorOrgs = [];
+  const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
+  const configFiles = await glob(branchConfigPattern);
+  const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
+  for (const configFile of configFiles) {
+    const props = yaml.load(fs.readFileSync(configFile, "utf-8"));
+    listViewRegex.lastIndex = 0;
+    const m = branchNameRegex.exec(configFile);
+    if (m) {
+      props.branchName = m[1];
+    }
+    majorOrgs.push(props);
+  }
+  return majorOrgs;
 }
