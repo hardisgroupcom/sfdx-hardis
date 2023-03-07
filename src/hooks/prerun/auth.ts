@@ -223,6 +223,7 @@ async function authOrg(orgAlias: string, options: any) {
       );
 
       if (isCI) {
+        console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
         throw new SfdxError(
           `In CI context, you may define:
                 - a .sfdx-hardis.yml file with instanceUrl and targetUsername properties (or INSTANCE_URL and TARGET_USERNAME repo variables)
@@ -300,6 +301,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
         )} than SFDX_CLIENT_ID`
       )
     );
+    console.warn(c.yellow(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
     return process.env.SFDX_CLIENT_ID;
   }
   // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
@@ -310,6 +312,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
     console.error(
       c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientIdVarNameUpper)} with the Consumer Key value defined on SFDX Connected app`)
     );
+    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }
@@ -333,6 +336,7 @@ async function getKey(orgAlias: string, config: any) {
         )} than SFDX_CLIENT_KEY`
       )
     );
+    console.warn(c.yellow(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
     return process.env.SFDX_CLIENT_KEY;
   }
   // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
@@ -343,6 +347,7 @@ async function getKey(orgAlias: string, config: any) {
     console.error(
       c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientKeyVarNameUpper)} with the value of SSH private key encryption key`)
     );
+    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }
@@ -370,6 +375,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
   }
   if (isCI) {
     console.error(c.red(`[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join("\n  -")}`));
+    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }

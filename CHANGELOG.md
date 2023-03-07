@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Open SF org if selected from the already connected list
   - Init packages only if defined in config
   - Enhance labels
+- Improve login error messages
 
 ## [3.8.0] 2022-03-03
 
