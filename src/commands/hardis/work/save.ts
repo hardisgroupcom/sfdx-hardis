@@ -177,7 +177,16 @@ autoRemoveUserPermissions:
     // const remote = await git().listRemote();
     // const remoteMergeRequest = `${remote.replace('.git','-/merge_requests/new')}`;
     // await open(remoteMergeRequest, {wait: true});
-
+    uxLog(
+      this,
+      c.cyan(
+        c.bold(
+          `${c.yellow("When your Merge Request will have been merged:")}
+  - ${c.yellow("DO NOT REUSE THE SAME BRANCH")}
+  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`
+        )
+      )
+    );
     // Return an object to be displayed with --json
     return { outputString: "Saved the task" };
   }

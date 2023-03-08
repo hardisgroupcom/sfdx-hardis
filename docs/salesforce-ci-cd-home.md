@@ -23,7 +23,7 @@ We provide [Gitlab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defa
 
 If you speak fluently **git**, **sfdx** & **DevOps**, you can be fully autonomous to setup and use Salesforce CI/CD, otherwise you can contact us at [**Cloudity**](https://cloudity.com/) (or your favorite Salesforce integrator) and we'll be glad to assist you :)
 
-As everything is open-source, there is no license costs !
+As everything is **open-source**, there is **no license costs** !
 
 _Here is an advanced example of a Salesforce CI/CD Pipeline that you can easily define using sfdx-hardis._
 _You can define much simpler branch/orgs models, to manage only RUN operations._
