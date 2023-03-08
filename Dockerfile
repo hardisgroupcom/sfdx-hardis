@@ -31,7 +31,8 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sfdx plugins:install sfdx-essentials && \
     echo 'y' | sfdx plugins:install texei-sfdx-plugin && \
     sfdx --version && \
-    sfdx plugins
+    sfdx plugins && \
+    rm -rf /root/.npm/_cacache
 
 # Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
 COPY ref/workarounds/dateUtil.js /usr/local/lib/node_modules/sfdx-cli/node_modules/@salesforce/apex-node/lib/src/utils/dateUtil.js
