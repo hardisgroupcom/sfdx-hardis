@@ -272,9 +272,9 @@ async function authOrg(orgAlias: string, options: any) {
         // options.Command.assignOrg(); // seems to be automatically done by SfdxCommand under the hook
       }
       // Display warning message in case of local usage (not CI), and not login command
-      if (!(options?.Command?.id || "").startsWith("hardis:auth:login")) {
-        console.warn(c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
-      }
+      // if (!(options?.Command?.id || "").startsWith("hardis:auth:login")) {
+      //   console.warn(c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
+      // }
     } else {
       console.error(c.red("[sfdx-hardis][ERROR] You must be logged to an org to perform this action"));
       process.exit(1); // Exit because we should succeed to connect
