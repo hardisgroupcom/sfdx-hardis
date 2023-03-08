@@ -181,7 +181,9 @@ autoRemoveUserPermissions:
       this,
       c.cyan(
         c.bold(
-          `Once your merge request will be merged, do not reuse the same branch, use New task menu (hardis:work:new), even if you work in the same sandbox or scratch org :)`
+          `When your Merge Request will have been merged:
+  - ${c.yellow("DO NOT REUSE THE SAME BRANCH")}
+  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`
         )
       )
     );
