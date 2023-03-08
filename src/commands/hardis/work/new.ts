@@ -185,6 +185,11 @@ Under the hood, it can:
             value: "sandbox",
             description: "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one",
           },
+          {
+            title: "I'm hardcore, I don't need an org !",
+            value: "noOrg",
+            description: "You just want to play with XML and sfdx-hardis configuration, and you know what you are doing !",
+          },
         ],
       });
       selectedOrgType = orgTypeResponse.value;
@@ -192,9 +197,13 @@ Under the hood, it can:
 
     // Select or create org that user will work in
     if (selectedOrgType === "scratch") {
+      // scratch org
       await this.selectOrCreateScratchOrg(branchName);
-    } else {
+    } else if (selectedOrgType === "sandbox") {
+      // source tracked sandbox
       await this.selectOrCreateSandbox(branchName, config);
+    } else {
+      uxLog(this, c.yellow(`No org selected... I hope you know what you are doing, don't break anything :)`));
     }
 
     uxLog(this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));

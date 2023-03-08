@@ -9,7 +9,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Open SF org if selected from the already connected list
   - Init packages only if defined in config
   - Enhance labels
+- Save task: Notify that once the merge request is merged, you must create a new task that will create a new branch
 - Improve login error messages
+- Use latest version of [MegaLinter](https://megalinter.io)
 
 ## [3.8.0] 2022-03-03
 
