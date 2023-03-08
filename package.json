@@ -1,6 +1,6 @@
 {
   "name": "sfdx-hardis",
-  "description": "Cloudity Toolbox for Salesforce",
+  "description": "Swiss-army-knife Toolbox for Salesforce\nAllows you to define a complete CD/CD Pipeline\nOrchestrate base command and assist users with interactive wizards",
   "version": "3.8.0",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
@@ -102,7 +102,16 @@
     "cicd",
     "sfdx-plugin",
     "cloudity",
-    "hardis"
+    "hardis",
+    "deployment",
+    "apex",
+    "code-quality",
+    "gitlab",
+    "github",
+    "azure",
+    "pipeline",
+    "trailblazer",
+    "metadata"
   ],
   "license": "AGPL-3.0",
   "oclif": {
