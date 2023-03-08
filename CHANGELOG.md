@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.9.1] 2022-03-08
+
 - Improve logs for false positive after package installation failure
 - Remove useless and scary log after a successful login :)
 - Remove npm cache from Docker image
