@@ -560,7 +560,7 @@ If you already did that, please try again to run the job`,
     {
       name: "send-email-disabled",
       label: "Send email is disabled",
-      expressionString: ["Send Email is disabled or activities are not allowed"],
+      expressionString: ["Send Email is disabled or activities are not allowed", "Unknown user permission: SendExternalEmailAvailable"],
       tip: `Go to Email -> Deliverability -> Select value "All emails"`,
     },
     {
