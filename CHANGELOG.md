@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.9.2] 2022-03-09
+
 - Update deploy tips for error _Unknown user permission: SendExternalEmailAvailable_
 
 ## [3.9.1] 2022-03-08
