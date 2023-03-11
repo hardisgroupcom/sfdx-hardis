@@ -3,7 +3,7 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
     for (const err of errorsAndTips) {
         if (err.tip) {
             md += `<details><summary>🛠️ ${err.error.message}</summary>
-${err.tip.message}
+${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 </details>
 
 `
@@ -14,3 +14,5 @@ ${err.tip.message}
     }
     return md;
 }
+
+
