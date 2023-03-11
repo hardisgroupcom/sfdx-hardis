@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Post a Gitlab Merge Request note with deployment results and error tips
+
 ## [3.9.2] 2022-03-09
 
 - Update deploy tips for error _Unknown user permission: SendExternalEmailAvailable_

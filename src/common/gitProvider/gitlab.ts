@@ -1,12 +1,23 @@
 import { Gitlab } from "@gitbeaker/node";
 import { GitProvider } from ".";
+import * as c from "chalk";
+import { uxLog } from "../utils";
+import { PullRequestMessageRequest, PullRequestMessageResult } from "./gitProvider";
 
 export class GitlabProvider extends GitProvider {
-  private api: InstanceType<typeof Gitlab>;
+  private gitlabApi: InstanceType<typeof Gitlab>;
 
-  constructor(host: string, token: string) {
-    super(host, token);
-    this.api = new Gitlab({ host: this.host, token: this.token });
+  constructor() {
+    super()
+    // Gitlab URL is always provided by default CI variables
+    this.serverUrl = process.env.CI_SERVER_URL;
+    // It's better to have a project token efined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
+    this.token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.CI_JOB_TOKEN;
+    this.gitlabApi = new Gitlab({ host: process.env.CI_SERVER_URL, token: this.token });
+  }
+
+  getLabel(): string {
+    return "sfdx-hardis Gitlab connector";
   }
 
   async getParentMergeRequestId(): Promise<number> {
@@ -18,9 +29,64 @@ export class GitlabProvider extends GitProvider {
   async getPipelineId(): Promise<string> {
     const projectId: string = process.env.CI_PROJECT_ID;
     const parentMergeRequestId: number = await this.getParentMergeRequestId();
-    const pipelines = await this.api.MergeRequests.pipelines(projectId, parentMergeRequestId);
+    const pipelines = await this.gitlabApi.MergeRequests.pipelines(projectId, parentMergeRequestId);
     console.log(pipelines);
     return '';
+  }
+
+  // Posts a note on the merge request
+  async postPullRequestMessage(prMessageRequest: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
+    // Get CI variables
+    const projectId = process.env.CI_PROJECT_ID;
+    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID;
+    const gitlabCiJobName = process.env.CI_JOB_NAME;
+    const gitlabCIJobUrl = process.env.CI_JOB_URL;
+    // Build note message
+    const messageBody = `**${prMessageRequest.title || ""}**
+
+${prMessageRequest.message}
+
+_Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
+`;
+    // Check for existing note from a previous run
+    const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
+    let existingNoteId = null;
+    for (const existingNote of existingNotes) {
+      if (existingNote.body.includes(`_Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}]`)) {
+        existingNoteId = existingNote.id;
+      }
+    }
+
+    // Create or update MR note
+    if (existingNoteId) {
+      // Update existing note
+      uxLog(this,c.grey("Updating Merge Request Note on Gitlab..."));
+      const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(
+        projectId,
+        mergeRequestId,
+        existingNoteId,
+        messageBody
+      )
+      const prResult: PullRequestMessageResult = {
+        posted: gitlabEditNoteResult.id > 0,
+        providerResult: gitlabEditNoteResult
+      }
+      return prResult;
+    }
+    else {
+      // Create new note if no existing not was found
+      uxLog(this,c.grey("Adding Merge Request Note on Gitlab..."));
+      const gitlabPostNoteResult = await this.gitlabApi.MergeRequestNotes.create(
+        projectId,
+        mergeRequestId,
+        messageBody
+      )
+      const prResult: PullRequestMessageResult = {
+        posted: gitlabPostNoteResult.id > 0,
+        providerResult: gitlabPostNoteResult
+      }
+      return prResult;
+    }
   }
 
 }
