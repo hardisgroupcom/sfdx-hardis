@@ -16,17 +16,17 @@ export class GitlabProvider extends GitProviderRoot {
     this.gitlabApi = new Gitlab({ host: process.env.CI_SERVER_URL, token: this.token });
   }
 
-  getLabel(): string {
+  public getLabel(): string {
     return "sfdx-hardis Gitlab connector";
   }
 
-  async getParentMergeRequestId(): Promise<number> {
+  protected async getParentMergeRequestId(): Promise<number> {
     // CI_COMMIT_MESSAGE contains "See merge request !<MR_ID>"
     const commitMsg = process.env.CI_COMMIT_MESSAGE;
     return parseInt(commitMsg.split("!").pop());
   }
 
-  async getPipelineId(): Promise<string> {
+  protected async getPipelineId(): Promise<string> {
     const projectId: string = process.env.CI_PROJECT_ID;
     const parentMergeRequestId: number = await this.getParentMergeRequestId();
     const pipelines = await this.gitlabApi.MergeRequests.pipelines(projectId, parentMergeRequestId);
@@ -35,7 +35,7 @@ export class GitlabProvider extends GitProviderRoot {
   }
 
   // Posts a note on the merge request
-  async postPullRequestMessage(prMessageRequest: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
+  public async postPullRequestMessage(prMessageRequest: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
     const projectId = process.env.CI_PROJECT_ID;
     const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID;
