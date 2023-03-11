@@ -25,3 +25,4 @@ site/
 config/user/
 
 megalinter-reports/
+oclif.manifest.json

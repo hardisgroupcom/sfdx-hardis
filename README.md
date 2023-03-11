@@ -426,7 +426,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 0 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -453,9 +453,8 @@ DESCRIPTION
   errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
   s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
-  rce_mdapi.htm#cli_reference_force_mdapi_deploy)
+  [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
+  dx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_deploy)
 ```
 
 _See code: [lib/commands/hardis/mdapi/deploy.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.9.2/lib/commands/hardis/mdapi/deploy.js)_
@@ -880,7 +879,8 @@ OPTIONS
 
   -p, --path=path                                                                   Path to the file export project
 
-  -s, --startchunknumber=startchunknumber                                           Chunk number to start from
+  -s, --startchunknumber=startchunknumber                                           [default: 0] Chunk number to start
+                                                                                    from
 
   -t, --polltimeout=polltimeout                                                     [default: 300000] Timeout in MS for
                                                                                     Bulk API calls
@@ -925,30 +925,30 @@ USAGE
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
-  -d, --debug
-      Activate debug mode (more logs)
+  -d, --debug                                                                       Activate debug mode (more logs)
 
-  -l, --listviews=listviews
-      Comma-separated list of listviews following format Object:ListViewName
-      Example: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportunities
+  -l, --listviews=listviews                                                         Comma-separated list of listviews
+                                                                                    following format Object:ListViewName
+                                                                                    Example: Contact:MyContacts,Contact:
+                                                                                    MyActiveContacts,Opportunity:MYClose
+                                                                                    dOpportunities
 
-  -u, --targetusername=targetusername
-      username or alias for the target org; overrides default target org
+  -u, --targetusername=targetusername                                               username or alias for the target
+                                                                                    org; overrides default target org
 
-  --apiversion=apiversion
-      override the api version used for api requests made by this command
+  --apiversion=apiversion                                                           override the api version used for
+                                                                                    api requests made by this command
 
-  --json
-      format output as json
+  --json                                                                            format output as json
 
-  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)
-      [default: warn] logging level for this command invocation
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
 
-  --skipauth
-      Skip authentication check when a default username is required
+  --skipauth                                                                        Skip authentication check when a
+                                                                                    default username is required
 
-  --websocket=websocket
-      Websocket host:port for VsCode SFDX Hardis UI integration
+  --websocket=websocket                                                             Websocket host:port for VsCode SFDX
+                                                                                    Hardis UI integration
 
 DESCRIPTION
   [![Invalid scope:Mine, not allowed ? Deploy your ListViews anyway 
@@ -960,36 +960,36 @@ DESCRIPTION
   - read from .sfdx-hardis.yml file in property **listViewsToSetToMine**
   - sent in argument listviews
 
-  Note: property **listViewsToSetToMine** can be auto-generated by command hardis:work:save if .sfdx-hardis.yml contains 
-  the following configuration
+  Note: property **listViewsToSetToMine** can be auto-generated by command hardis:work:save if .sfdx-hardis.yml contains
+   the following configuration
 
   ```yaml
   autoCleanTypes:
-     - listViewsMine
+    - listViewsMine
   ```
 
   - Example of sfdx-hardis.yml property `listViewsToSetToMine`:
 
   ```yaml
   listViewsToSetToMine:
-     - "force-app/main/default/objects/Operation__c/listViews/MyCurrentOperations.listView-meta.xml"
-     - "force-app/main/default/objects/Operation__c/listViews/MyFinalizedOperations.listView-meta.xml"
-     - "force-app/main/default/objects/Opportunity/listViews/Default_Opportunity_Pipeline.listView-meta.xml"
-     - "force-app/main/default/objects/Opportunity/listViews/MyCurrentSubscriptions.listView-meta.xml"
-     - "force-app/main/default/objects/Opportunity/listViews/MySubscriptions.listView-meta.xml"
-     - "force-app/main/default/objects/Account/listViews/MyActivePartners.listView-meta.xml"
+    - "force-app/main/default/objects/Operation__c/listViews/MyCurrentOperations.listView-meta.xml"
+    - "force-app/main/default/objects/Operation__c/listViews/MyFinalizedOperations.listView-meta.xml"
+    - "force-app/main/default/objects/Opportunity/listViews/Default_Opportunity_Pipeline.listView-meta.xml"
+    - "force-app/main/default/objects/Opportunity/listViews/MyCurrentSubscriptions.listView-meta.xml"
+    - "force-app/main/default/objects/Opportunity/listViews/MySubscriptions.listView-meta.xml"
+    - "force-app/main/default/objects/Account/listViews/MyActivePartners.listView-meta.xml"
   ```
 
   - If manually written, this could also be:
 
   ```yaml
   listViewsToSetToMine:
-     - "Operation__c:MyCurrentOperations"
-     - "Operation__c:MyFinalizedOperations"
-     - "Opportunity:Default_Opportunity_Pipeline"
-     - "Opportunity:MyCurrentSubscriptions"
-     - "Opportunity:MySubscriptions"
-     - "Account:MyActivePartners"
+    - "Operation__c:MyCurrentOperations"
+    - "Operation__c:MyFinalizedOperations"
+    - "Opportunity:Default_Opportunity_Pipeline"
+    - "Opportunity:MyCurrentSubscriptions"
+    - "Opportunity:MySubscriptions"
+    - "Account:MyActivePartners"
   ```
 
   Troubleshooting: if you need to run this command from an alpine-linux based docker image, use this workaround in your 
@@ -1096,25 +1096,25 @@ OPTIONS
 
 EXAMPLES
   $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
-     Found 1 records:
-     ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
-     30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
-     Are you sure you want to delete this list of records (y/n)?: y
-     Successfully deleted record: 30109000000kX7uAAE.
-     Deleted the following list of records:
-     ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
-     30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
+    Found 1 records:
+    ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
+    30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
+    Are you sure you want to delete this list of records (y/n)?: y
+    Successfully deleted record: 30109000000kX7uAAE.
+    Deleted the following list of records:
+    ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
+    30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   
   $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name 
   TestFlow"
-     Found 4 records:
-     ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
-     30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
-     30109000000kX8EAAU TestFlow    6             test flowwww InvalidDraft
-     30109000000kX8AAAU TestFlow    5             test flowwww InvalidDraft
-     30109000000kX89AAE TestFlow    4             test flowwww Draft
-     Are you sure you want to delete this list of records (y/n)?: n
-     No record deleted
+    Found 4 records:
+    ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
+    30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
+    30109000000kX8EAAU TestFlow    6             test flowwww InvalidDraft
+    30109000000kX8AAAU TestFlow    5             test flowwww InvalidDraft
+    30109000000kX89AAE TestFlow    4             test flowwww Draft
+    Are you sure you want to delete this list of records (y/n)?: n
+    No record deleted
 ```
 
 _See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.9.2/lib/commands/hardis/org/purge/flow.js)_
@@ -1384,52 +1384,52 @@ DESCRIPTION
   present in that branch sources, commit them and create a merge request against the default branch. If a merge request 
   already exists, it will simply add a new commit.
 
-     Define the following properties in **.sfdx-hardis.yml**
+    Define the following properties in **.sfdx-hardis.yml**
 
-     - **productionBranch** : Name of the git branch that is corresponding to production org
-     - **retrofitBranch** : Name of the git branch that will be used as merge request target
+    - **productionBranch** : Name of the git branch that is corresponding to production org
+    - **retrofitBranch** : Name of the git branch that will be used as merge request target
 
-     List of metadata to retrieve can be set in three way, in order of priority :
+    List of metadata to retrieve can be set in three way, in order of priority :
 
-     - `CI_SOURCES_TO_RETROFIT`: env variable (can be defined in CI context)
-     - `sourcesToRetrofit` property in `.sfdx-hardis.yml`
-     - Default list:
+    - `CI_SOURCES_TO_RETROFIT`: env variable (can be defined in CI context)
+    - `sourcesToRetrofit` property in `.sfdx-hardis.yml`
+    - Default list:
 
-       - CompactLayout
-       - CustomApplication
-       - CustomField
-       - CustomLabel
-       - CustomLabels
-       - CustomMetadata
-       - CustomObject
-       - CustomObjectTranslation
-       - CustomTab
-       - DuplicateRule
-       - EmailTemplate
-       - FlexiPage
-       - GlobalValueSet
-       - Layout
-       - ListView
-       - MatchingRules
-       - PermissionSet
-       - RecordType
-       - StandardValueSet
-       - Translations
-       - ValidationRule
+      - CompactLayout
+      - CustomApplication
+      - CustomField
+      - CustomLabel
+      - CustomLabels
+      - CustomMetadata
+      - CustomObject
+      - CustomObjectTranslation
+      - CustomTab
+      - DuplicateRule
+      - EmailTemplate
+      - FlexiPage
+      - GlobalValueSet
+      - Layout
+      - ListView
+      - MatchingRules
+      - PermissionSet
+      - RecordType
+      - StandardValueSet
+      - Translations
+      - ValidationRule
 
-     You can also ignore some files even if they have been updated in production. To do that, define property 
+    You can also ignore some files even if they have been updated in production. To do that, define property 
   **retrofitIgnoredFiles** in .sfdx-hardis.yml
 
-     Example of full retrofit configuration:
+    Example of full retrofit configuration:
 
-     ```yaml
-     productionBranch: master
-     retrofitBranch: preprod
-     retrofitIgnoredFiles:
-     - force-app/main/default/applications/MyApp.app-meta.xml
-     - force-app/main/default/applications/MyOtherApp.app-meta.xml
-     - force-app/main/default/flexipages/MyFlexipageContainingDashboards.flexipage-meta.xml
-     ```
+    ```yaml
+    productionBranch: master
+    retrofitBranch: preprod
+    retrofitIgnoredFiles:
+    - force-app/main/default/applications/MyApp.app-meta.xml
+    - force-app/main/default/applications/MyOtherApp.app-meta.xml
+    - force-app/main/default/flexipages/MyFlexipageContainingDashboards.flexipage-meta.xml
+    ```
 
 EXAMPLES
   $ sfdx hardis:org:retrieve:sources:retrofit
@@ -2000,13 +2000,13 @@ Find duplicate files in sfdx folder (often from past sfdx-cli bugs)
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:duplicatefiles [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
-  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+  $ sfdx hardis:project:audit:duplicatefiles [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: D:\git\sfdx-hardis1703]
+  -p, --path=path                                                                   [default: C:\git\pro\sfdx-hardis2]
                                                                                     Root path to check
 
   --json                                                                            format output as json
@@ -2147,8 +2147,8 @@ Remove unwanted managed items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] 
-  [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+  $ sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json]
+   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
@@ -2416,9 +2416,8 @@ OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
   -f, --folder=folder                                                               [default: force-app] Root folder
 
-  -n, --namespace=namespace                                                         [default:
-                                                                                    http://soap.sforce.com/2006/04/metad
-                                                                                    ata] XML Namespace to use
+  -n, --namespace=namespace                                                         [default: http://soap.sforce.com/200
+                                                                                    6/04/metadata] XML Namespace to use
 
   -p, --globpattern=globpattern                                                     Glob pattern to find files to clean.
                                                                                     Ex: /**/*.flexipage-meta.xml
@@ -2451,8 +2450,8 @@ DESCRIPTION
   ![How to build cleaning 
   XPath](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-clean-xml.jpg)
 
-  Note: If globpattern and xpath are not sent, elements defined in property **cleanXmlPatterns** in **.sfdx-hardis.yml** 
-  config file will be used
+  Note: If globpattern and xpath are not sent, elements defined in property **cleanXmlPatterns** in **.sfdx-hardis.yml**
+   config file will be used
 
 EXAMPLES
   $ sfdx hardis:project:clean:xml
@@ -2606,9 +2605,9 @@ DESCRIPTION
 
   If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
-  - `manifest/packageDeployOnce.xml`: Every element defined in this file will be deployed only if it is not existing yet 
-  in the target org (can be useful with ListView for example, if the client wants to update them directly in production 
-  org)
+  - `manifest/packageDeployOnce.xml`: Every element defined in this file will be deployed only if it is not existing yet
+   in the target org (can be useful with ListView for example, if the client wants to update them directly in production
+   org)
   - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a 
   similar definition in target org (can be useful for SharingRules for example)
 
@@ -2626,14 +2625,14 @@ DESCRIPTION
 
   ```yaml
   deploymentPlan:
-     packages:
-       - label: Deploy Flow-Workflow
-         packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
-         order: 6
-       - label: Deploy SharingRules - Case
-         packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
-         order: 30
-         waitAfter: 30
+    packages:
+      - label: Deploy Flow-Workflow
+        packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
+        order: 6
+      - label: Deploy SharingRules - Case
+        packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
+        order: 30
+        waitAfter: 30
   ```
 
   ### Packages installation
@@ -2649,27 +2648,27 @@ DESCRIPTION
 
   ```yaml
   installedPackages:
-     - Id: 0A35r0000009EtECAU
-       SubscriberPackageId: 033i0000000LVMYAA4
-       SubscriberPackageName: Marketing Cloud
-       SubscriberPackageNamespace: et4ae5
-       SubscriberPackageVersionId: 04t6S000000l11iQAA
-       SubscriberPackageVersionName: Marketing Cloud
-       SubscriberPackageVersionNumber: 236.0.0.2
-       installOnScratchOrgs: true                  // true or false depending you want to install this package when 
+    - Id: 0A35r0000009EtECAU
+      SubscriberPackageId: 033i0000000LVMYAA4
+      SubscriberPackageName: Marketing Cloud
+      SubscriberPackageNamespace: et4ae5
+      SubscriberPackageVersionId: 04t6S000000l11iQAA
+      SubscriberPackageVersionName: Marketing Cloud
+      SubscriberPackageVersionNumber: 236.0.0.2
+      installOnScratchOrgs: true                  // true or false depending you want to install this package when 
   creating a new scratch org
-       installDuringDeployments: true              // set as true to install package during a deployment using sfdx 
+      installDuringDeployments: true              // set as true to install package during a deployment using sfdx 
   hardis:project:deploy:sources:dx
-       installationkey: xxxxxxxxxxxxxxxxxxxx       // if the package has a password, write it in this property
-       - Id: 0A35r0000009F9CCAU
-       SubscriberPackageId: 033b0000000Pf2AAAS
-       SubscriberPackageName: Declarative Lookup Rollup Summaries Tool
-       SubscriberPackageNamespace: dlrs
-       SubscriberPackageVersionId: 04t5p000001BmLvAAK
-       SubscriberPackageVersionName: Release
-       SubscriberPackageVersionNumber: 2.15.0.9
-       installOnScratchOrgs: true
-       installDuringDeployments: true
+      installationkey: xxxxxxxxxxxxxxxxxxxx       // if the package has a password, write it in this property
+      - Id: 0A35r0000009F9CCAU
+      SubscriberPackageId: 033b0000000Pf2AAAS
+      SubscriberPackageName: Declarative Lookup Rollup Summaries Tool
+      SubscriberPackageNamespace: dlrs
+      SubscriberPackageVersionId: 04t5p000001BmLvAAK
+      SubscriberPackageVersionName: Release
+      SubscriberPackageVersionNumber: 2.15.0.9
+      installOnScratchOrgs: true
+      installDuringDeployments: true
   ```
 
   ### Automated fixes post deployments
@@ -2683,12 +2682,12 @@ DESCRIPTION
 
   ```yaml
   listViewsToSetToMine:
-     - "Operation__c:MyCurrentOperations"
-     - "Operation__c:MyFinalizedOperations"
-     - "Opportunity:Default_Opportunity_Pipeline"
-     - "Opportunity:MyCurrentSubscriptions"
-     - "Opportunity:MySubscriptions"
-     - "Account:MyActivePartners"
+    - "Operation__c:MyCurrentOperations"
+    - "Operation__c:MyFinalizedOperations"
+    - "Opportunity:Default_Opportunity_Pipeline"
+    - "Opportunity:MyCurrentSubscriptions"
+    - "Opportunity:MySubscriptions"
+    - "Account:MyActivePartners"
   ```
 
   Troubleshooting: if you need to fix ListViews with mine from an alpine-linux based docker image, use this workaround 
@@ -2773,7 +2772,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default: D:\git\sfdx-hardis1703]
+  -p, --path=path                                                                   [default: C:\git\pro\sfdx-hardis2]
                                                                                     Root folder
 
   --json                                                                            format output as json
@@ -2900,37 +2899,37 @@ EXAMPLES
 
   <?xml version="1.0" encoding="UTF-8"?>
   <Layout xmlns="http://soap.sforce.com/2006/04/metadata">
-     <layoutSections>
-         ...
-         <layoutColumns>
-             <layoutItems>
-                 <behavior>Required</behavior>
-                 <field>Name</field>
-             </layoutItems>
-             <layoutItems>
-                 <behavior>Required</behavior>
-                 <field>Name</field>
-             </layoutItems>
-         </layoutColumns>
-       </layoutSections>
+    <layoutSections>
+        ...
+        <layoutColumns>
+            <layoutItems>
+                <behavior>Required</behavior>
+                <field>Name</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Required</behavior>
+                <field>Name</field>
+            </layoutItems>
+        </layoutColumns>
+      </layoutSections>
   </Layout>
 
 
   $ sfdx hardis:project:metadata:findduplicates --file layout.layout-meta.xml
   [sfdx-hardis] Duplicate values in layout.layout-meta.xml
-     - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
-     - Values : Name
+    - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
+    - Values : Name
 
 
   $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
   [sfdx-hardis] hardis:project:metadata:findduplicates execution time 0:00:00.397
   [sfdx-hardis] Duplicate values in layout1.layout-meta.xml
-     - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
-     - Values : CreatedById
+    - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
+    - Values : CreatedById
 
   [sfdx-hardis] Duplicate values in layout2.layout-meta.xml
-     - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
-     - Values : LastModifiedById, Name
+    - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
+    - Values : LastModifiedById, Name
 ```
 
 _See code: [lib/commands/hardis/project/metadata/findduplicates.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.9.2/lib/commands/hardis/project/metadata/findduplicates.js)_
@@ -2972,14 +2971,14 @@ OPTIONS
 
 DESCRIPTION
   - **Install packages**
-     - Use property `installedPackages`
+    - Use property `installedPackages`
   - **Push sources**
   - **Assign permission sets**
-     - Use property `initPermissionSets`
+    - Use property `initPermissionSets`
   - **Run apex initialization scripts**
-     - Use property `scratchOrgInitApexScripts`
+    - Use property `scratchOrgInitApexScripts`
   - **Load data**
-     - Use property `dataPackages`
+    - Use property `dataPackages`
 
 EXAMPLE
   $ sfdx hardis:scratch:create
@@ -3054,13 +3053,13 @@ OPTIONS
 DESCRIPTION
   Run the command, follow instruction, then you need to schedule a daily CI job for the pool maintenance:
 
-     - Define CI ENV variable SCRATCH_ORG_POOL with value "true"
+    - Define CI ENV variable SCRATCH_ORG_POOL with value "true"
 
-     - Call the following lines in the CI job:
+    - Call the following lines in the CI job:
 
   ```shell
-     sfdx hardis:auth:login --devhub
-     sfdx hardis:scratch:pool:refresh
+    sfdx hardis:auth:login --devhub
+    sfdx hardis:scratch:pool:refresh
   ```
 
 EXAMPLE
@@ -3254,9 +3253,9 @@ DESCRIPTION
   Example:
   ```yaml
   autoRetrieveWhenPull:
-     - CustomApplication:MyCustomApplication
-     - CustomApplication:MyOtherCustomApplication
-     - CustomApplication:MyThirdCustomApp
+    - CustomApplication:MyCustomApplication
+    - CustomApplication:MyOtherCustomApplication
+    - CustomApplication:MyThirdCustomApp
   ```
 
 EXAMPLE
@@ -3331,7 +3330,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   -x, --manifest=manifest                                                           flagsLong.manifest
 
@@ -3372,9 +3371,8 @@ DESCRIPTION
   errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
   s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
-  rce_source.htm#cli_reference_force_source_deploy)
+  [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
+  dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
 
 EXAMPLE
   $ sfdx hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests 
@@ -3400,7 +3398,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -3421,9 +3419,8 @@ DESCRIPTION
   errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
   s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
-  rce_source.htm#cli_reference_force_source_push)
+  [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
+  dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)
 ```
 
 _See code: [lib/commands/hardis/source/push.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.9.2/lib/commands/hardis/source/push.js)_
@@ -3477,9 +3474,8 @@ DESCRIPTION
   - If no retrieve constraint is sent, as assisted menu will request the list of metadatas to retrieve
   - If no org is selected , an assisted menu will request the user to choose one
 
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
-  rce_source.htm#cli_reference_force_source_retrieve)
+  [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
+  dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_retrieve)
 ```
 
 _See code: [lib/commands/hardis/source/retrieve.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.9.2/lib/commands/hardis/source/retrieve.js)_
@@ -3524,15 +3520,15 @@ DESCRIPTION
   - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using 
   `config/.sfdx-hardis.yml`):
   - (and for scratch org only for now):
-     - **Install packages**
-         - Use property `installedPackages`
-       - **Push sources**
-       - **Assign permission sets**
-         - Use property `initPermissionSets`
-       - **Run apex initialization scripts**
-         - Use property `scratchOrgInitApexScripts`
-       - **Load data**
-         - Use property `dataPackages`
+    - **Install packages**
+        - Use property `installedPackages`
+      - **Push sources**
+      - **Assign permission sets**
+        - Use property `initPermissionSets`
+      - **Run apex initialization scripts**
+        - Use property `scratchOrgInitApexScripts`
+      - **Load data**
+        - Use property `dataPackages`
 
 EXAMPLE
   $ sfdx hardis:work:task:new
@@ -3622,8 +3618,8 @@ When a work task is completed, guide user to create a merge request
 
 ```
 USAGE
-  $ sfdx hardis:work:save [-n] [-g] [-c] [--auto] [--targetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:save [-n] [-g] [-c] [--auto] [--targetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u
+   <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3660,28 +3656,28 @@ DESCRIPTION
   - Generate package-xml diff using sfdx-git-delta
   - Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
   - Automatically Clean XML files using `.sfdx-hardis.yml` properties
-     - `autocleantypes`: List of auto-performed sources cleanings, available on command 
+    - `autocleantypes`: List of auto-performed sources cleanings, available on command 
   [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/)
-     - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
+    - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
 
   Example:
 
   ```yaml
   autoCleanTypes:
-     - destructivechanges
-     - datadotcom
-     - minimizeProfiles
-     - listViewsMine
+    - destructivechanges
+    - datadotcom
+    - minimizeProfiles
+    - listViewsMine
   autoRemoveUserPermissions:
-     - EnableCommunityAppLauncher
-     - FieldServiceAccess
-     - OmnichannelInventorySync
-     - SendExternalEmailAvailable
-     - UseOmnichannelInventoryAPIs
-     - ViewDataLeakageEvents
-     - ViewMLModels
-     - ViewPlatformEvents
-     - WorkCalibrationUser
+    - EnableCommunityAppLauncher
+    - FieldServiceAccess
+    - OmnichannelInventorySync
+    - SendExternalEmailAvailable
+    - UseOmnichannelInventoryAPIs
+    - ViewDataLeakageEvents
+    - ViewMLModels
+    - ViewPlatformEvents
+    - WorkCalibrationUser
   ```
 
   - Push commit to server

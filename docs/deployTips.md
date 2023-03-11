@@ -807,6 +807,7 @@ If you changed a field from MasterDetail to Lookup, you must do it manually in t
 ## Send email is disabled
 
 - `Send Email is disabled or activities are not allowed`
+- `Unknown user permission: SendExternalEmailAvailable`
 
 **Resolution tip**
 
