@@ -14,11 +14,11 @@ export abstract class GitProvider {
     }
     // GitHub
     else if (process.env.CI_JOB_TOKEN) {
-      return new GithubProvider();
+      return new GitlabProvider();
     }
     // Gitlab
     else if (process.env.GITHUB_TOKEN) {
-      return new GitlabProvider();
+      return new GithubProvider();
     }
     else if (isCI) {
       uxLog(this, c.grey("To use sfdx-hardis GitProvider capabilities, SYSTEM_ACCESSTOKEN, CI_JOB_TOKEN or GITHUB_TOKEN must be accessible for Azure Pipelines, Gitlab or GitHub"))
