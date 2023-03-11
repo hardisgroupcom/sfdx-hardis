@@ -6,6 +6,7 @@ import { GitProvider } from "../gitProvider";
 import { PullRequestMessageRequest } from "../gitProvider/types/gitProvider";
 import { GitProviderRoot } from "../gitProvider/gitProviderRoot";
 import { getAllTips } from "./deployTipsList";
+import { deployErrorsToMarkdown } from "../gitProvider/utilsMarkdown";
 
 let logRes = null;
 let errorsAndTips = []
@@ -139,13 +140,14 @@ async function postResultAsPullRequestComment(errorsAndTips: Array<any>, gitProv
   }
   else {
     title = "Deployment error";
-    markdownBody = JSON.stringify(errorsAndTips, null, 2);
+    markdownBody = deployErrorsToMarkdown(errorsAndTips);
     status = "invalid"
   }
   const prMessageRequest: PullRequestMessageRequest = {
     title: title,
     message: markdownBody,
-    status: status
+    status: status,
+    messageKey: "deployment"
   }
   await gitProvider.postPullRequestMessage(prMessageRequest);
 }

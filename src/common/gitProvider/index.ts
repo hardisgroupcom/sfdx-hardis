@@ -12,11 +12,16 @@ export abstract class GitProvider {
     if (process.env.SYSTEM_ACCESSTOKEN) {
       return new AzureDevopsProvider();
     }
-    // GitHub
+    // Gitlab
     else if (process.env.CI_JOB_TOKEN) {
+      const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || null ;
+      if (token == null) {
+        uxLog(this,c.yellow("To benefit from Gitlab advanced integration, you need to create a project token with developer rights and api scope, then to set its value in CI/CD variable CI_SFDX_HARDIS_GITLAB_TOKEN"));
+        return null ;
+      }
       return new GitlabProvider();
     }
-    // Gitlab
+    // Github
     else if (process.env.GITHUB_TOKEN) {
       return new GithubProvider();
     }
