@@ -1,6 +1,10 @@
-import { GitProvider } from ".";
+import { GitProviderRoot } from "./gitProviderRoot";
 
-export class AzureDevopsProvider extends GitProvider {
+export class AzureDevopsProvider extends GitProviderRoot {
+
+    constructor() {
+        super()
+    }
 
     getLabel(): string {
         return "sfdx-hardis Gitlab connector";

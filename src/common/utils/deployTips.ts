@@ -4,6 +4,7 @@ import * as format from "string-template";
 import stripAnsi = require("strip-ansi");
 import { GitProvider } from "../gitProvider";
 import { PullRequestMessageRequest } from "../gitProvider/gitProvider";
+import { GitProviderRoot } from "../gitProvider/gitProviderRoot";
 import { getAllTips } from "./deployTipsList";
 
 let logRes = null;
@@ -127,7 +128,7 @@ function returnErrorLines(strIn) {
 }
 
 
-async function postResultAsPullRequestComment(errorsAndTips: Array<any>, gitProvider: GitProvider) {
+async function postResultAsPullRequestComment(errorsAndTips: Array<any>, gitProvider: GitProviderRoot) {
   let title = null;
   let markdownBody = null;
   let status = null;

@@ -1,10 +1,10 @@
 import { Gitlab } from "@gitbeaker/node";
-import { GitProvider } from ".";
 import * as c from "chalk";
 import { uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./gitProvider";
+import { GitProviderRoot } from "./gitProviderRoot";
 
-export class GitlabProvider extends GitProvider {
+export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
 
   constructor() {
