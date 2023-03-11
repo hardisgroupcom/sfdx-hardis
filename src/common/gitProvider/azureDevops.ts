@@ -7,7 +7,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
     }
 
     public getLabel(): string {
-        return "sfdx-hardis Gitlab connector";
+        return "sfdx-hardis Azure Devops connector";
     }
 
 }

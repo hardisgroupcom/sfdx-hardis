@@ -7,7 +7,7 @@ export class GithubProvider extends GitProviderRoot {
     }
 
     public getLabel(): string {
-        return "sfdx-hardis Gitlab connector";
+        return "sfdx-hardis GitHub connector";
     }
 
 }

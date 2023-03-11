@@ -3,11 +3,11 @@ import { isCI, uxLog } from "../utils";
 import { AzureDevopsProvider } from "./azureDevops";
 import { GithubProvider } from "./github";
 import { GitlabProvider } from "./gitlab";
-import { GitProviderInterface } from "./gitProviderInterface";
+import { GitProviderRoot } from "./gitProviderRoot";
 
 export abstract class GitProvider {
 
-  static getInstance(): GitProviderInterface {
+  static getInstance(): GitProviderRoot {
     // Azure
     if (process.env.SYSTEM_ACCESSTOKEN) {
       return new AzureDevopsProvider();
