@@ -134,12 +134,12 @@ async function postResultAsPullRequestComment(errorsAndTips: Array<any>, gitProv
   let markdownBody = null;
   let status = null;
   if (errorsAndTips.length === 0) {
-    title = "Deployment success";
+    title = "✅ Deployment success";
     markdownBody = "No error has been found during the deployment";
     status = "valid"
   }
   else {
-    title = "Deployment error";
+    title = "❌ There has been deployment error(s)";
     markdownBody = deployErrorsToMarkdown(errorsAndTips);
     status = "invalid"
   }
