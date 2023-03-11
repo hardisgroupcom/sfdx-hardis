@@ -35,16 +35,16 @@ export class GitlabProvider extends GitProviderRoot {
   }
 
   // Posts a note on the merge request
-  public async postPullRequestMessage(prMessageRequest: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
+  public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
     const projectId = process.env.CI_PROJECT_ID;
     const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID;
     const gitlabCiJobName = process.env.CI_JOB_NAME;
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
-    const messageBody = `**${prMessageRequest.title || ""}**
+    const messageBody = `**${prMessage.title || ""}**
 
-${prMessageRequest.message}
+${prMessage.message}
 
 _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
 `;
