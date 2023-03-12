@@ -27,10 +27,10 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true): 
   const logResLines = [];
   const updatedLogLines = returnErrorLines(logRes);
   updatedLogLines.forEach((logLine, index) => {
-    logResLines.push(logLine);
+    logResLines.push(logLine.trim());
     if (
-      (logLine.startsWith("Error") || logLine.startsWith(" Error")) &&
-      !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].startsWith("Error"))
+      logLine.trim().startsWith("Error") &&
+      !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].trim().startsWith("Error"))
     ) {
       logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. Try google ?"));
       logResLines.push(c.yellow(""));
