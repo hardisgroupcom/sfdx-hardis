@@ -17,7 +17,7 @@ ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 `
         }
         else {
-            md += "🧐 " + err.error.message + "\n\n"
+            md += "🧐 " + errorMessage + "\n\n"
         }
     }
     return md;

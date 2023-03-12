@@ -35,9 +35,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true): 
       logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. Try google ?"));
       logResLines.push(c.yellow(""));
       errorsAndTips.push({
-        error: {
-          message: stripAnsi(logLine)
-        }
+        error: { message: stripAnsi(logLine.trim()) }
       });
     }
   });
@@ -101,14 +99,14 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
           const matches = [...line.matchAll(expressionRegex)];
           for (const m of matches) {
             const replacements = m.map((str: string) => c.bold(str.trim()));
-            const replacementsMarkdown = m.map((str: string) => `\`${str.trim()}\``);
+            const replacementsMarkdown = m.map((str: string) => `**${str.trim()}**`);
             newLogLines.push(c.yellow(c.italic(format(tipDefinition.label, replacements))));
             const tip = tipDefinition.tip;
             newLogLines.push(...tip.split(/\r?\n/).map((str: string) => c.yellow(format(str, replacements))));
             newLogLines.push(c.yellow(" "));
             // Update output list
             errorsAndTips.push({
-              error: { message: stripAnsi(format(line, replacementsMarkdown)).replace(/`.`/gm, ".") },
+              error: { message: stripAnsi(format(line, replacementsMarkdown)).replace(/\*\*.\*\*/gm, ".") },
               tip: {
                 label: tipDefinition.label,
                 message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/`.`/gm, "."))
