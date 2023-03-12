@@ -13,7 +13,7 @@ export class GitlabProvider extends GitProviderRoot {
     this.serverUrl = process.env.CI_SERVER_URL;
     // It's better to have a project token efined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
     this.token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN;
-    this.gitlabApi = new Gitlab({ host: process.env.CI_SERVER_URL, token: this.token });
+    this.gitlabApi = new Gitlab({ host: this.serverUrl, token: this.token });
   }
 
   public getLabel(): string {
