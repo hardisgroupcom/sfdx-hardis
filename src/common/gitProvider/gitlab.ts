@@ -8,7 +8,7 @@ export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
 
   constructor() {
-    super()
+    super();
     // Gitlab URL is always provided by default CI variables
     this.serverUrl = process.env.CI_SERVER_URL;
     // It's better to have a project token defined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
@@ -31,7 +31,7 @@ export class GitlabProvider extends GitProviderRoot {
     const parentMergeRequestId: number = await this.getParentMergeRequestId();
     const pipelines = await this.gitlabApi.MergeRequests.pipelines(projectId, parentMergeRequestId);
     console.log(pipelines);
-    return '';
+    return "";
   }
 
   // Posts a note on the merge request
@@ -64,32 +64,21 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabC
     if (existingNoteId) {
       // Update existing note
       uxLog(this, c.grey("Updating Merge Request Note on Gitlab..."));
-      const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(
-        projectId,
-        mergeRequestId,
-        existingNoteId,
-        messageBody
-      )
+      const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: gitlabEditNoteResult.id > 0,
-        providerResult: gitlabEditNoteResult
-      }
+        providerResult: gitlabEditNoteResult,
+      };
       return prResult;
-    }
-    else {
+    } else {
       // Create new note if no existing not was found
       uxLog(this, c.grey("Adding Merge Request Note on Gitlab..."));
-      const gitlabPostNoteResult = await this.gitlabApi.MergeRequestNotes.create(
-        projectId,
-        mergeRequestId,
-        messageBody
-      )
+      const gitlabPostNoteResult = await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: gitlabPostNoteResult.id > 0,
-        providerResult: gitlabPostNoteResult
-      }
+        providerResult: gitlabPostNoteResult,
+      };
       return prResult;
     }
   }
-
 }

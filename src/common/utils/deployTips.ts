@@ -9,13 +9,13 @@ import { getAllTips } from "./deployTipsList";
 import { deployErrorsToMarkdown } from "../gitProvider/utilsMarkdown";
 
 let logRes = null;
-let errorsAndTips = []
+let errorsAndTips = [];
 const firstYellowChar = c.yellow("*")[0];
 
 // Checks for deploy tips in a log string
 // returns formatted and completed error log
 export async function analyzeDeployErrorLogs(log: string, includeInLog = true): Promise<any> {
-  errorsAndTips = [] // reset
+  errorsAndTips = []; // reset
   logRes = returnErrorLines(log).join("\n"); // reset
   const tips: any = [];
   for (const tipDefinition of getAllTips()) {
@@ -28,14 +28,11 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true): 
   const updatedLogLines = returnErrorLines(logRes);
   updatedLogLines.forEach((logLine, index) => {
     logResLines.push(logLine.trim());
-    if (
-      logLine.trim().startsWith("Error") &&
-      !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].trim().startsWith("Error"))
-    ) {
+    if (logLine.trim().startsWith("Error") && !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].trim().startsWith("Error"))) {
       logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. Try google ?"));
       logResLines.push(c.yellow(""));
       errorsAndTips.push({
-        error: { message: stripAnsi(logLine.trim()) }
+        error: { message: stripAnsi(logLine.trim()) },
       });
     }
   });
@@ -71,8 +68,8 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
               error: { message: stripAnsi(line) },
               tip: {
                 label: tipDefinition.label,
-                message: tipDefinition.tip
-              }
+                message: tipDefinition.tip,
+              },
             });
           }
         }
@@ -109,8 +106,8 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
               error: { message: stripAnsi(format(line, replacementsMarkdown)).replace(/\*\*.\*\*/gm, ".") },
               tip: {
                 label: tipDefinition.label,
-                message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/\*\*.\*\*/gm, "."))
-              }
+                message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/\*\*.\*\*/gm, ".")),
+              },
             });
           }
         }
@@ -127,7 +124,6 @@ function returnErrorLines(strIn) {
   return strIn.split(/\r?\n/).filter((str) => str.startsWith("Error") || str.startsWith(" Error") || str.startsWith(firstYellowChar));
 }
 
-
 async function postResultAsPullRequestComment(errorsAndTips: Array<any>, gitProvider: GitProviderRoot) {
   let title = null;
   let markdownBody = null;
@@ -135,18 +131,17 @@ async function postResultAsPullRequestComment(errorsAndTips: Array<any>, gitProv
   if (errorsAndTips.length === 0) {
     title = "✅ Deployment success";
     markdownBody = "No error has been found during the deployment";
-    status = "valid"
-  }
-  else {
+    status = "valid";
+  } else {
     title = "❌ There has been deployment error(s)";
     markdownBody = deployErrorsToMarkdown(errorsAndTips);
-    status = "invalid"
+    status = "invalid";
   }
   const prMessageRequest: PullRequestMessageRequest = {
     title: title,
     message: markdownBody,
     status: status,
-    messageKey: "deployment"
-  }
+    messageKey: "deployment",
+  };
   await gitProvider.postPullRequestMessage(prMessageRequest);
 }

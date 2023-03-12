@@ -4,7 +4,6 @@ import { uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./types/gitProvider";
 
 export abstract class GitProviderRoot {
-
   protected serverUrl: string;
   protected token: string;
 
@@ -13,8 +12,7 @@ export abstract class GitProviderRoot {
   }
 
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
-    uxLog(this, c.yellow("Method postPullRequestMessage is not yet implemented on " + this.getLabel() +
-      " to post " + JSON.stringify(prMessage)));
+    uxLog(this, c.yellow("Method postPullRequestMessage is not yet implemented on " + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return null;
   }
 
