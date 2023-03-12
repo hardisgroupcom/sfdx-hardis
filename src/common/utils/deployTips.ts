@@ -108,10 +108,10 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
             newLogLines.push(c.yellow(" "));
             // Update output list
             errorsAndTips.push({
-              error: { message: stripAnsi(format(line,replacementsMarkdown)) },
+              error: { message: stripAnsi(format(line, replacementsMarkdown)).replace(/`.`/gm, ".") },
               tip: {
                 label: tipDefinition.label,
-                message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown))
+                message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/`.`/gm, "."))
               }
             });
           }
