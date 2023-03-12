@@ -14,7 +14,7 @@ const firstYellowChar = c.yellow("*")[0];
 
 // Checks for deploy tips in a log string
 // returns formatted and completed error log
-export function analyzeDeployErrorLogs(log: string, includeInLog = true): any {
+export async function analyzeDeployErrorLogs(log: string, includeInLog = true): Promise<any> {
   errorsAndTips = [] // reset
   logRes = returnErrorLines(log).join("\n"); // reset
   const tips: any = [];
@@ -43,7 +43,7 @@ export function analyzeDeployErrorLogs(log: string, includeInLog = true): any {
   });
   const gitProvider = GitProvider.getInstance();
   if (gitProvider) {
-    postResultAsPullRequestComment(errorsAndTips, gitProvider);
+    await postResultAsPullRequestComment(errorsAndTips, gitProvider);
   }
   return { tips, errorsAndTips, errLog: logResLines.join("\n") };
 }
