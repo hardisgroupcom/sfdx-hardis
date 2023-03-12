@@ -28,5 +28,5 @@ ___
 - [Retrieve sources from an existing org](salesforce-ci-cd-setup-existing-org.md) _(optional)_
 - [Configure Salesforce DX project](salesforce-ci-cd-config-home.md)
 - [Integrations](salesforce-ci-cd-setup-integrations-home.md) _(optional)_
-  - [Configure MS Teams notifications](salesforce-ci-cd-setup-integration-ms-teams.md) _(optional)_
+  - [Configure Microsoft Teams notifications](salesforce-ci-cd-setup-integration-ms-teams.md) _(optional)_
   - [Configure Gitlab to receive deployment results on on Merge Requests](salesforce-ci-cd-setup-integration-gitlab.md) _(optional)_
