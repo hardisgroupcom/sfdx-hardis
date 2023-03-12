@@ -16,7 +16,9 @@ export abstract class GitProvider {
     else if (process.env.CI_JOB_TOKEN) {
       const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || null ;
       if (token == null) {
-        uxLog(this,c.yellow("To benefit from Gitlab advanced integration, you need to create a project token with developer rights and api scope, then to set its value in CI/CD variable CI_SFDX_HARDIS_GITLAB_TOKEN"));
+        uxLog(this,c.yellow(`To benefit from Gitlab advanced integration, you need to :
+- Go to Settings -> Access tokens -> create a project token named "SFDX HARDIS BOT" with developer access and scope "api", then copy its value
+- Go to Settings -> CI/CD -> Variables -> Create a masked variable named CI_SFDX_HARDIS_GITLAB_TOKEN, and paste the access token value`));
         return null ;
       }
       return new GitlabProvider();
