@@ -109,7 +109,7 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
               error: { message: stripAnsi(format(line, replacementsMarkdown)).replace(/\*\*.\*\*/gm, ".") },
               tip: {
                 label: tipDefinition.label,
-                message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/`.`/gm, "."))
+                message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/\*\*.\*\*/gm, "."))
               }
             });
           }
