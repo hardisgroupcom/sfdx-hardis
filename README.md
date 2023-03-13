@@ -117,6 +117,12 @@ Anyone is welcome to contribute to this sfdx-hardis
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 
+## Contributors
+
+<a href="https://github.com/hardisgroupcom/sfdx-hardis/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=hardisgroupcom/sfdx-hardis" />
+</a>
+
 ## Commands
 
 <!-- commands -->
