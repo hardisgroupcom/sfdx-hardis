@@ -58,6 +58,8 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:beta:push"));
       const pullRes = await forceSourcePush(scratchOrgAlias, commandThis, debug, options);
       return pullRes;
+    } else if (stdOut.includes(`getaddrinfo EAI_AGAIN`)) {
+      uxLog(this, c.red(c.bold("The error has been caused by your unstable internet connexion. Please Try again !")));
     }
     // Analyze errors
     const { tips, errLog } = await analyzeDeployErrorLogs(stdOut);

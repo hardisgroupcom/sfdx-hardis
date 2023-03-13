@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Post a Gitlab Merge Request note with deployment results and error tips
+- Catch and display errors when caused by internet connexion issue
 
 ## [3.9.2] 2022-03-09
 
