@@ -64,7 +64,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       uxLog(this, c.red(c.bold("The error has been caused by your unstable internet connection. Please Try again !")));
     }
     // Analyze errors
-    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut);
+    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut,true, {});
     uxLog(commandThis, c.red("Sadly there has been push error(s)"));
     uxLog(this, c.red("\n" + errLog));
     uxLog(
@@ -100,7 +100,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false, op
       return pullRes;
     }
     // Analyze errors
-    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut);
+    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(this, c.red("Sadly there has been pull error(s)"));
     uxLog(this, c.red("\n" + errLog));
     // List unknown elements from output
@@ -210,7 +210,7 @@ export async function forceSourceDeploy(
           retry: deployment.retry || null,
         });
       } catch (e) {
-        const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr);
+        const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, {check: check});
         uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
         uxLog(this, c.red("\n" + errLog));
         uxLog(
@@ -519,7 +519,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
       fail: true,
     });
   } catch (e) {
-    const { errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr);
+    const { errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, {});
     uxLog(this, c.red("Sadly there has been destruction error(s)"));
     uxLog(this, c.red("\n" + errLog));
     uxLog(
@@ -819,7 +819,7 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number) {
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr);
+  const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr,true, options);
   uxLog(commandThis, c.red(c.bold("Sadly there has been Metadata deployment error(s)...")));
   uxLog(this, c.red("\n" + errLog));
   uxLog(

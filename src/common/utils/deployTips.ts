@@ -11,7 +11,7 @@ const firstYellowChar = c.yellow("*")[0];
 
 // Checks for deploy tips in a log string
 // returns formatted and completed error log
-export async function analyzeDeployErrorLogs(log: string, includeInLog = true): Promise<any> {
+export async function analyzeDeployErrorLogs(log: string, includeInLog = true, options: any): Promise<any> {
   errorsAndTips = []; // reset
   logRes = returnErrorLines(log).join("\n"); // reset
   const tips: any = [];
@@ -33,7 +33,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true): 
       });
     }
   });
-  updatePullRequestResult(errorsAndTips);
+  updatePullRequestResult(errorsAndTips, options);
   return { tips, errorsAndTips, errLog: logResLines.join("\n") };
 }
 
@@ -119,15 +119,15 @@ function returnErrorLines(strIn) {
 }
 
 // This data will be caught later to build a pull request message
-async function updatePullRequestResult(errorsAndTips: Array<any>) {
+async function updatePullRequestResult(errorsAndTips: Array<any>, options: any) {
   const prData: any = {
     messageKey: "deployment",
-    title: "✅ Deployment success",
+    title: options.check ? "✅ Deployment check success" : "✅ Deployment success",
     deployErrorsMarkdownBody: "No error has been found during the deployment",
     deployStatus: "valid",
   };
   if (errorsAndTips.length > 0) {
-    prData.title = "❌ There has been deployment error(s)";
+    prData.title = options.check ? "❌ Deployment check failure":"❌ Deployment failure";
     prData.deployErrorsMarkdownBody = deployErrorsToMarkdown(errorsAndTips);
     prData.status = "invalid";
   }

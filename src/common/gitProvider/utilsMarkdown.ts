@@ -29,6 +29,6 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
   if (orgCoverage < orgCoverageTarget) {
     return `❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`;
   } else {
-    return `✅ Your code coverage is ok :) **${orgCoverage}**, while target is **${orgCoverageTarget}**`;
+    return `✅ Your code coverage is ok :) **${orgCoverage}%**, while target is **${orgCoverageTarget}%**`;
   }
 }
