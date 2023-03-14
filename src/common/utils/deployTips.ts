@@ -44,27 +44,27 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
       .split("\n")
       .map((s) => s.trim());
     let failedTest = null;
-    const skipIndexes = [];
     // Parse strings to extract main error line then stack
-    failedTestsLines.forEach((line, lineIndex) => {
-      if (skipIndexes.includes(lineIndex)) {
-        return;
-      }
+    for (const line of failedTestsLines) {
       const regex = /^(\w+[\d_]*)\s+(\w+[\d_]*)\s*(.*)$/;
       const match = line.match(regex);
       if (match) {
+        if (match[1]=== "Name") {
+          // header column
+          continue;
+        }
+        const errSplit = match[3].split("Class.");
         failedTest = {
           class: match[1],
           method: match[2],
-          error: match[3],
+          error: errSplit.shift().trim(),
         };
-        if (failedTestsLines[lineIndex + 1]) {
-          failedTest.stack = failedTestsLines[lineIndex + 1];
-          skipIndexes.push(lineIndex + 1);
+        if (errSplit.length > 0) {
+          failedTest.stack = "Class."+errSplit.join("\nClass.");
         }
         failedTests.push(failedTest);
       }
-    });
+    }
   }
 
   updatePullRequestResult(errorsAndTips, failedTests, options);
