@@ -165,7 +165,7 @@ async function updatePullRequestResult(errorsAndTips: Array<any>, failedTests: A
     prData.deployErrorsMarkdownBody = deployErrorsToMarkdown(errorsAndTips);
     prData.status = "invalid";
   } else if (failedTests.length > 0) {
-    prData.title = options.check ? "❌ Deployment check ok but failing test classes" : "❌ Deployment check ok but failing test classes";
+    prData.title = options.check ? "❌ Deployment check ok, but failing test classes" : "❌ Deployment check ok, but failing test classes";
     prData.deployErrorsMarkdownBody = testFailuresToMarkdown(failedTests);
     prData.status = "invalid";
   }

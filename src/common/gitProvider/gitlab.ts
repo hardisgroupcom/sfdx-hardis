@@ -43,13 +43,17 @@ export class GitlabProvider extends GitProviderRoot {
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
     const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
-    const messageBody = `**${prMessage.title || ""}**
+    let messageBody = `**${prMessage.title || ""}**
 
 ${prMessage.message}
 
 _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
+    // Add deployment id if present
+    if (globalThis.pullRequestDeploymentId) {
+      messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`
+    }
     // Check for existing note from a previous run
     uxLog(this, c.grey("Listing Notes of Merge Request..."));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);

@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Post a Gitlab Merge Request note when checking a deployment
+- Post a Gitlab Merge Request note when checking a deployment **(beta)**
   - Deployment errors with resolution tips
   - Failing test classes
   - Code coverage

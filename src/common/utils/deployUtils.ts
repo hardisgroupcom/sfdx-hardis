@@ -223,6 +223,9 @@ export async function forceSourceDeploy(
         throw new SfdxError("Deployment failure. Check messages above");
       }
 
+      // Set deployment id
+      await getDeploymentId(deployRes.stdout + deployRes.stderr || "");
+
       // Check org coverage if found in logs
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || "");
       if (orgCoveragePercent) {
@@ -275,12 +278,21 @@ export function truncateProgressLogLines(rawLog: string) {
   return rawLogCleaned;
 }
 
-// Display deployment link in target org
-async function displayDeploymentLink(rawLog: string, options: any) {
-  let deploymentUrl = "lightning/setup/DeployStatus/home";
+async function getDeploymentId(rawLog: string) {
   const regex = /Deploy ID: (.*)/gm;
   if (rawLog && rawLog.match(regex)) {
     const deploymentId = regex.exec(rawLog)[1];
+    globalThis.pullRequestDeploymentId = deploymentId;
+    return deploymentId;
+  }
+  return null;
+}
+
+// Display deployment link in target org
+async function displayDeploymentLink(rawLog: string, options: any) {
+  let deploymentUrl = "lightning/setup/DeployStatus/home";
+  const deploymentId = await getDeploymentId(rawLog);
+  if (deploymentId) {
     const detailedDeploymentUrl =
       "/changemgmt/monitorDeploymentsDetails.apexp?" + encodeURIComponent(`retURL=/changemgmt/monitorDeployment.apexp&asyncId=${deploymentId}`);
     deploymentUrl = "lightning/setup/DeployStatus/page?address=" + encodeURIComponent(detailedDeploymentUrl);
