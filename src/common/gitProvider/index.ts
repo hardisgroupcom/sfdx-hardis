@@ -4,6 +4,7 @@ import { AzureDevopsProvider } from "./azureDevops";
 import { GithubProvider } from "./github";
 import { GitlabProvider } from "./gitlab";
 import { GitProviderRoot } from "./gitProviderRoot";
+import { PullRequestMessageRequest } from "./types/gitProvider";
 
 export abstract class GitProvider {
   static getInstance(): GitProviderRoot {
@@ -37,5 +38,26 @@ export abstract class GitProvider {
       );
     }
     return null;
+  }
+
+  static async managePostPullRequestComment(): Promise<void> {
+    const gitProvider = GitProvider.getInstance();
+    const prData = globalThis.pullRequestData;
+    let markdownBody = "";
+    if (prData.deployErrorsMarkdownBody) {
+      markdownBody += prData.deployErrorsMarkdownBody;
+    }
+    if (prData.codeCoverageMarkdownBody) {
+      markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
+    }
+    if (prData && gitProvider) {
+      const prMessageRequest: PullRequestMessageRequest = {
+        title: prData.title,
+        message: markdownBody,
+        status: prData.status,
+        messageKey: prData.messageKey,
+      };
+      await gitProvider.postPullRequestMessage(prMessageRequest);
+    }
   }
 }

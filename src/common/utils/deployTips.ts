@@ -2,9 +2,6 @@
 import * as c from "chalk";
 import * as format from "string-template";
 import stripAnsi = require("strip-ansi");
-import { GitProvider } from "../gitProvider";
-import { PullRequestMessageRequest } from "../gitProvider/types/gitProvider";
-import { GitProviderRoot } from "../gitProvider/gitProviderRoot";
 import { getAllTips } from "./deployTipsList";
 import { deployErrorsToMarkdown } from "../gitProvider/utilsMarkdown";
 
@@ -36,10 +33,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true): 
       });
     }
   });
-  const gitProvider = GitProvider.getInstance();
-  if (gitProvider) {
-    await postResultAsPullRequestComment(errorsAndTips, gitProvider);
-  }
+  updatePullRequestResult(errorsAndTips);
   return { tips, errorsAndTips, errLog: logResLines.join("\n") };
 }
 
@@ -124,24 +118,18 @@ function returnErrorLines(strIn) {
   return strIn.split(/\r?\n/).filter((str) => str.startsWith("Error") || str.startsWith(" Error") || str.startsWith(firstYellowChar));
 }
 
-async function postResultAsPullRequestComment(errorsAndTips: Array<any>, gitProvider: GitProviderRoot) {
-  let title = null;
-  let markdownBody = null;
-  let status = null;
-  if (errorsAndTips.length === 0) {
-    title = "✅ Deployment success";
-    markdownBody = "No error has been found during the deployment";
-    status = "valid";
-  } else {
-    title = "❌ There has been deployment error(s)";
-    markdownBody = deployErrorsToMarkdown(errorsAndTips);
-    status = "invalid";
-  }
-  const prMessageRequest: PullRequestMessageRequest = {
-    title: title,
-    message: markdownBody,
-    status: status,
+// This data will be caught later to build a pull request message
+async function updatePullRequestResult(errorsAndTips: Array<any>) {
+  const prData: any = {
     messageKey: "deployment",
+    title: "✅ Deployment success",
+    deployErrorsMarkdownBody: "No error has been found during the deployment",
+    deployStatus: "valid",
   };
-  await gitProvider.postPullRequestMessage(prMessageRequest);
+  if (errorsAndTips.length > 0) {
+    prData.title = "❌ There has been deployment error(s)";
+    prData.deployErrorsMarkdownBody = deployErrorsToMarkdown(errorsAndTips);
+    prData.status = "invalid";
+  }
+  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
 }

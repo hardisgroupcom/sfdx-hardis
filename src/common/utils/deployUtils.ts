@@ -6,6 +6,8 @@ import * as path from "path";
 import * as sortArray from "sort-array";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
+import { GitProvider } from "../gitProvider";
+import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
 import { MetadataUtils } from "../metadata-utils";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
@@ -223,8 +225,15 @@ export async function forceSourceDeploy(
       // Check org coverage if found in logs
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || "");
       if (orgCoveragePercent) {
-        await checkDeploymentOrgCoverage(orgCoveragePercent);
+        try {
+          await checkDeploymentOrgCoverage(orgCoveragePercent);
+        } catch (errCoverage) {
+          await GitProvider.managePostPullRequestComment();
+          throw errCoverage;
+        }
       }
+      // Post pull request comment if available
+      await GitProvider.managePostPullRequestComment();
 
       // Display deployment status
       if (deployRes.status === 0) {
@@ -796,11 +805,14 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number) {
     config.apexTestsMinCoverage ||
     75.0;
   if (minCoverageOrgWide < 75.0) {
+    await updatePullRequestResultCoverage("invalid", 75.0, minCoverageOrgWide);
     throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
   }
   if (orgCoverage < minCoverageOrgWide) {
+    await updatePullRequestResultCoverage("invalid", minCoverageOrgWide, orgCoverage);
     throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${orgCoverage}% should be > to ${minCoverageOrgWide}%`);
   } else {
+    await updatePullRequestResultCoverage("invalid", minCoverageOrgWide, orgCoverage);
     uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(orgCoverage))}% is > to ${c.bold(minCoverageOrgWide)}%`));
   }
 }
@@ -814,5 +826,26 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
     c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the metadata deployment issues :)`))
   );
   await displayDeploymentLink(e.stdout + e.stderr, options);
+  // Post pull requests comments if necessary
+  await GitProvider.managePostPullRequestComment();
   throw new SfdxError("Metadata deployment failure. Check messages above");
+}
+
+// This data will be caught later to build a pull request message
+async function updatePullRequestResultCoverage(coverageStatus: string, coverageTarget: number, coverageResult: number) {
+  const existingPrData = globalThis.pullRequestData || {};
+  const prDataCodeCoverage: any = {
+    messageKey: existingPrData.messageKey ?? "deployment",
+    title: existingPrData.title ?? "✅ Deployment success",
+    codeCoverageMarkdownBody: "Code coverage is valid",
+    deployStatus: existingPrData ?? coverageStatus,
+  };
+  if (coverageStatus === "invalid") {
+    prDataCodeCoverage.title = existingPrData.deployStatus === "valid" ? "❌ Deployment failed: Code coverage error" : prDataCodeCoverage.title;
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(coverageTarget, coverageResult);
+    prDataCodeCoverage.status = "invalid";
+  } else {
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(coverageTarget, coverageResult);
+  }
+  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
 }

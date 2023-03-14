@@ -24,3 +24,12 @@ ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
   }
   return md;
 }
+
+export function deployCodeCoverageToMarkdown(coverageTarget: number, coverageResult: number) {
+  if (coverageTarget < coverageResult) {
+    return `❌ Your code coverage is insufficient: **${coverageResult}**, while your target is **${coverageTarget}**`
+  }
+  else {
+    return `✅ Your code coverage is ok :) **${coverageResult}**, while target is **${coverageTarget}**`
+  }
+}
