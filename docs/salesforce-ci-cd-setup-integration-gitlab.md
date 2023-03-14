@@ -15,6 +15,10 @@ To use this capability:
 
 Everytime you will make a pull request, the CI job will post its result as comment !
 
+- Example with deployment errors
+
 ![](assets/images/gitlab-mr-comment.jpg)
+
+- Example with failing test classes
 
 ![](assets/images/gitlab-mr-comment-failed-tests.jpg)
