@@ -366,7 +366,7 @@ Under the hood, it can:
           // Continue initialization even if push did not work... it could work and be not such a problem :)
           uxLog(this, c.cyan("Resetting local sfdx tracking..."));
           await execCommand(`sfdx force:source:tracking:clear --noprompt -u ${orgUsername}`, this, { fail: false, output: true });
-          await initOrgMetadatas(config, orgUsername, orgUsername, {}, this.debugMode, {scratch:false});
+          await initOrgMetadatas(config, orgUsername, orgUsername, {}, this.debugMode, { scratch: false });
         } catch (e1) {
           initSourcesErr = e1;
         }

@@ -113,7 +113,9 @@ export default class ScratchCreate extends SfdxCommand {
       await this.updateScratchOrgUser();
       await installPackages(this.configInfo.installedPackages || [], this.scratchOrgAlias);
       if (this.pool === false) {
-        await initOrgMetadatas(this.configInfo, this.scratchOrgUsername, this.scratchOrgAlias, this.projectScratchDef, this.debugMode, {scratch: true});
+        await initOrgMetadatas(this.configInfo, this.scratchOrgUsername, this.scratchOrgAlias, this.projectScratchDef, this.debugMode, {
+          scratch: true,
+        });
         await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.scratchOrgUsername);
         await initApexScripts(this.configInfo.scratchOrgInitApexScripts || [], this.scratchOrgUsername);
         await initOrgData(path.join(".", "scripts", "data", "ScratchInit"), this.scratchOrgUsername);
