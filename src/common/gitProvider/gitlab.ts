@@ -52,7 +52,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabC
 `;
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {
-      messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`
+      messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Check for existing note from a previous run
     uxLog(this, c.grey("Listing Notes of Merge Request..."));
