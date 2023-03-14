@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Post a Gitlab Merge Request note with deployment results and error tips
 - Do not remove then restore lookup filters when source:push on a source-tracked sandbox
-- Catch and display errors when caused by internet connexion issue
+- Catch and display errors when caused by internet connection issue
 
 ## [3.9.2] 2022-03-09
 
