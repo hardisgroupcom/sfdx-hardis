@@ -167,7 +167,7 @@ async function updatePullRequestResult(errorsAndTips: Array<any>, failedTests: A
   } else if (failedTests.length > 0) {
     prData.title = options.check ? "❌ Deployment check ok but failing test classes" : "❌ Deployment check ok but failing test classes";
     prData.deployErrorsMarkdownBody = testFailuresToMarkdown(failedTests);
-    prData.status = "invalid"
+    prData.status = "invalid";
   }
   globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
 }

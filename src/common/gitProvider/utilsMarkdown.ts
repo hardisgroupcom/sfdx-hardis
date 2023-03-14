@@ -25,10 +25,10 @@ ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
   return md;
 }
 
-export function testFailuresToMarkdown(testFailures:any[]) {
+export function testFailuresToMarkdown(testFailures: any[]) {
   let md = "";
   for (const err of testFailures) {
-    const errorMessage = md += `**${err.class}.${err.method}**<br/>${err.error}`
+    const errorMessage = (md += `**${err.class}.${err.method}**<br/>${err.error}`);
     if (err.stack) {
       md += `<details><summary>💥 ${errorMessage}</summary>
 
