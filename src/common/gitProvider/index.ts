@@ -43,14 +43,14 @@ export abstract class GitProvider {
   static async managePostPullRequestComment(): Promise<void> {
     const gitProvider = GitProvider.getInstance();
     const prData = globalThis.pullRequestData;
-    let markdownBody = "";
-    if (prData.deployErrorsMarkdownBody) {
-      markdownBody += prData.deployErrorsMarkdownBody;
-    }
-    if (prData.codeCoverageMarkdownBody) {
-      markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
-    }
     if (prData && gitProvider) {
+      let markdownBody = "";
+      if (prData.deployErrorsMarkdownBody) {
+        markdownBody += prData.deployErrorsMarkdownBody;
+      }
+      if (prData.codeCoverageMarkdownBody) {
+        markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
+      }
       const prMessageRequest: PullRequestMessageRequest = {
         title: prData.title,
         message: markdownBody,

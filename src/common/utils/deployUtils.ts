@@ -219,6 +219,7 @@ export async function forceSourceDeploy(
         );
         await displayDeploymentLink(e.stdout + e.stderr, options);
         elapseEnd(`deploy ${deployment.label}`);
+        await GitProvider.managePostPullRequestComment();
         throw new SfdxError("Deployment failure. Check messages above");
       }
 
