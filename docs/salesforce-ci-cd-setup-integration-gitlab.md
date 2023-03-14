@@ -12,3 +12,7 @@ To use this capability:
 
 - Go to Settings -> Access Tokens -> Create a project access token with level **Developer** and scope **api**, and name it **SFDX HARDIS BOT**
 - Go to Settings -> CI/CD -> Variables -> Create a variable named **CI_SFDX_HARDIS_GITLAB_TOKEN** and past the access token value
+
+Everytime you will make a pull request, the CI job will post its result as comment !
+
+![](assets/images/gitlab-mr-comment.jpg)
