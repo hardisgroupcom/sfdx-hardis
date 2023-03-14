@@ -770,8 +770,8 @@ export async function extractOrgCoverageFromLog(stdout) {
   if (fromTest && fromTest[1]) {
     orgCoverage = parseFloat(fromTest[1].replace("%", ""));
   }
-  if (orgCoverage > 0) {
-    return orgCoverage;
+  if (orgCoverage && orgCoverage > 0.0) {
+    return orgCoverage.toFixed(2);
   }
   // Get from output file
   const writtenToPath = /written to (.*coverage)/.exec(stdout);
@@ -782,8 +782,8 @@ export async function extractOrgCoverageFromLog(stdout) {
     if (fs.existsSync(jsonFile)) {
       const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, "utf-8"));
       orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
-      if (orgCoverage > 0) {
-        return orgCoverage;
+      if (orgCoverage && orgCoverage.toFixed(2) > 0.0) {
+        return orgCoverage.toFixed(2);
       }
     }
   }
@@ -799,12 +799,13 @@ export async function extractOrgCoverageFromLog(stdout) {
 // Check if min org coverage is reached
 export async function checkDeploymentOrgCoverage(orgCoverage: number) {
   const config = await getConfig("branch");
-  const minCoverageOrgWide =
+  const minCoverageOrgWide = (
     process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
     process.env.APEX_TESTS_MIN_COVERAGE ||
     config.apexTestsMinCoverageOrgWide ||
     config.apexTestsMinCoverage ||
-    75.0;
+    75.0
+  ).toFixed(2);
   if (minCoverageOrgWide < 75.0) {
     throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
   }

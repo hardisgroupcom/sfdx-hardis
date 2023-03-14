@@ -27,7 +27,7 @@ ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 
 export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTarget: number) {
   if (orgCoverage < orgCoverageTarget) {
-    return `❌ Your code coverage is insufficient: **${orgCoverage}**, while your target is **${orgCoverageTarget}**`;
+    return `❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`;
   } else {
     return `✅ Your code coverage is ok :) **${orgCoverage}**, while target is **${orgCoverageTarget}**`;
   }
