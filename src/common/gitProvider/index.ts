@@ -43,7 +43,8 @@ export abstract class GitProvider {
   static async managePostPullRequestComment(): Promise<void> {
     const gitProvider = GitProvider.getInstance();
     const prData = globalThis.pullRequestData;
-    if (prData && gitProvider) {
+    const prCommentSent = globalThis.pullRequestCommentSent || false ;
+    if (prData && gitProvider && prCommentSent === false) {
       let markdownBody = "";
       if (prData.deployErrorsMarkdownBody) {
         markdownBody += prData.deployErrorsMarkdownBody;
@@ -58,6 +59,7 @@ export abstract class GitProvider {
         messageKey: prData.messageKey,
       };
       await gitProvider.postPullRequestMessage(prMessageRequest);
+      globalThis.pullRequestCommentSent = true ;
     }
   }
 }
