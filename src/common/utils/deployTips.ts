@@ -3,7 +3,7 @@ import * as c from "chalk";
 import * as format from "string-template";
 import stripAnsi = require("strip-ansi");
 import { getAllTips } from "./deployTipsList";
-import { deployErrorsToMarkdown } from "../gitProvider/utilsMarkdown";
+import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown";
 
 let logRes = null;
 let errorsAndTips = [];
@@ -33,7 +33,41 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
       });
     }
   });
-  updatePullRequestResult(errorsAndTips, options);
+
+  // Extract failed test classes
+  const failedTests = [];
+  const logRaw = stripAnsi(log);
+  const regexFailedTests = /Test Failures([\S\s]*?)Test Success/gm;
+  if (logRaw.match(regexFailedTests)) {
+    const failedTestsLines = regexFailedTests
+      .exec(logRaw)[1]
+      .split("\n")
+      .map((s) => s.trim());
+    let failedTest = null;
+    const skipIndexes = [];
+    // Parse strings to extract main error line then stack
+    failedTestsLines.forEach((line, lineIndex) => {
+      if (skipIndexes.includes(lineIndex)) {
+        return;
+      }
+      const regex = /^(\w+[\d_]*)\s+(\w+[\d_]*)\s*(.*)$/;
+      const match = line.match(regex);
+      if (match) {
+        failedTest = {
+          class: match[1],
+          method: match[2],
+          error: match[3],
+        };
+        if (failedTestsLines[lineIndex + 1]) {
+          failedTest.stack = failedTestsLines[lineIndex + 1];
+          skipIndexes.push(lineIndex + 1);
+        }
+        failedTests.push(failedTest);
+      }
+    });
+  }
+
+  updatePullRequestResult(errorsAndTips, failedTests, options);
   return { tips, errorsAndTips, errLog: logResLines.join("\n") };
 }
 
@@ -119,7 +153,7 @@ function returnErrorLines(strIn) {
 }
 
 // This data will be caught later to build a pull request message
-async function updatePullRequestResult(errorsAndTips: Array<any>, options: any) {
+async function updatePullRequestResult(errorsAndTips: Array<any>, failedTests: Array<any>, options: any) {
   const prData: any = {
     messageKey: "deployment",
     title: options.check ? "✅ Deployment check success" : "✅ Deployment success",
@@ -127,9 +161,13 @@ async function updatePullRequestResult(errorsAndTips: Array<any>, options: any) 
     deployStatus: "valid",
   };
   if (errorsAndTips.length > 0) {
-    prData.title = options.check ? "❌ Deployment check failure":"❌ Deployment failure";
+    prData.title = options.check ? "❌ Deployment check failure" : "❌ Deployment failure";
     prData.deployErrorsMarkdownBody = deployErrorsToMarkdown(errorsAndTips);
     prData.status = "invalid";
+  } else if (failedTests.length > 0) {
+    prData.title = options.check ? "❌ Deployment check ok but failing test classes" : "❌ Deployment check ok but failing test classes";
+    prData.deployErrorsMarkdownBody = testFailuresToMarkdown(failedTests);
+    prData.status = "invalid"
   }
   globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
 }
