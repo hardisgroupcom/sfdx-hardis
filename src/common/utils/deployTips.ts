@@ -89,8 +89,8 @@ function matchesTip(tipDefinition: any, includeInLog = true): boolean | any {
           expressionRegex.lastIndex = 0; // reset regex last index to be able to reuse it
           const matches = [...line.matchAll(expressionRegex)];
           for (const m of matches) {
-            const replacements = m.map((str: string) => c.bold(str.trim()));
-            const replacementsMarkdown = m.map((str: string) => `**${str.trim()}**`);
+            const replacements = m.map((str: string) => c.bold(str.trim().replace(/'/gm,"")));
+            const replacementsMarkdown = m.map((str: string) => `**${str.trim().replace(/'/gm,"")}**`);
             newLogLines.push(c.yellow(c.italic(format(tipDefinition.label, replacements))));
             const tip = tipDefinition.tip;
             newLogLines.push(...tip.split(/\r?\n/).map((str: string) => c.yellow(format(str, replacements))));
