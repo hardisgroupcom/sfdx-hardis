@@ -49,7 +49,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
       const regex = /^(\w+[\d_]*)\s+(\w+[\d_]*)\s*(.*)$/;
       const match = line.match(regex);
       if (match) {
-        if (match[1]=== "Name") {
+        if (match[1] === "Name") {
           // header column
           continue;
         }
@@ -60,7 +60,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
           error: errSplit.shift().trim(),
         };
         if (errSplit.length > 0) {
-          failedTest.stack = "Class."+errSplit.join("\nClass.");
+          failedTest.stack = "Class." + errSplit.join("\nClass.");
         }
         failedTests.push(failedTest);
       }
