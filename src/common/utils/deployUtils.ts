@@ -806,14 +806,13 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number) {
     config.apexTestsMinCoverage ||
     75.0;
   if (minCoverageOrgWide < 75.0) {
-    await updatePullRequestResultCoverage("invalid", 75.0, minCoverageOrgWide);
     throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
   }
   if (orgCoverage < minCoverageOrgWide) {
-    await updatePullRequestResultCoverage("invalid", minCoverageOrgWide, orgCoverage);
+    await updatePullRequestResultCoverage("invalid",  orgCoverage, minCoverageOrgWide);
     throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${orgCoverage}% should be > to ${minCoverageOrgWide}%`);
   } else {
-    await updatePullRequestResultCoverage("invalid", minCoverageOrgWide, orgCoverage);
+    await updatePullRequestResultCoverage("valid", orgCoverage, minCoverageOrgWide);
     uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(orgCoverage))}% is > to ${c.bold(minCoverageOrgWide)}%`));
   }
 }
@@ -833,7 +832,7 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
 }
 
 // This data will be caught later to build a pull request message
-async function updatePullRequestResultCoverage(coverageStatus: string, coverageTarget: number, coverageResult: number) {
+async function updatePullRequestResultCoverage(coverageStatus: string, orgCoverage: number, orgCoverageTarget: number) {
   const existingPrData = globalThis.pullRequestData || {};
   const prDataCodeCoverage: any = {
     messageKey: existingPrData.messageKey ?? "deployment",
@@ -843,10 +842,10 @@ async function updatePullRequestResultCoverage(coverageStatus: string, coverageT
   };
   if (coverageStatus === "invalid") {
     prDataCodeCoverage.title = existingPrData.deployStatus === "valid" ? "❌ Deployment failed: Code coverage error" : prDataCodeCoverage.title;
-    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(coverageTarget, coverageResult);
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
     prDataCodeCoverage.status = "invalid";
   } else {
-    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(coverageTarget, coverageResult);
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
   }
   globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
 }

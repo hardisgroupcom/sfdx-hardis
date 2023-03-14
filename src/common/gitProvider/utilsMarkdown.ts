@@ -25,10 +25,10 @@ ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
   return md;
 }
 
-export function deployCodeCoverageToMarkdown(coverageTarget: number, coverageResult: number) {
-  if (coverageTarget < coverageResult) {
-    return `❌ Your code coverage is insufficient: **${coverageResult}**, while your target is **${coverageTarget}**`;
+export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTarget: number) {
+  if (orgCoverage < orgCoverageTarget) {
+    return `❌ Your code coverage is insufficient: **${orgCoverage}**, while your target is **${orgCoverageTarget}**`;
   } else {
-    return `✅ Your code coverage is ok :) **${coverageResult}**, while target is **${coverageTarget}**`;
+    return `✅ Your code coverage is ok :) **${orgCoverage}**, while target is **${orgCoverageTarget}**`;
   }
 }
