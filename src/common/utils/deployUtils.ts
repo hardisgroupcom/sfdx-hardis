@@ -809,7 +809,7 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number) {
     throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
   }
   if (orgCoverage < minCoverageOrgWide) {
-    await updatePullRequestResultCoverage("invalid",  orgCoverage, minCoverageOrgWide);
+    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverageOrgWide);
     throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${orgCoverage}% should be > to ${minCoverageOrgWide}%`);
   } else {
     await updatePullRequestResultCoverage("valid", orgCoverage, minCoverageOrgWide);
