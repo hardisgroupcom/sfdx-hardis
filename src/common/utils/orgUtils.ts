@@ -306,7 +306,14 @@ export async function installPackages(installedPackages: any[], orgAlias: string
   elapseEnd("Install all packages");
 }
 
-export async function initOrgMetadatas(configInfo: any, orgUsername: string, orgAlias: string, projectScratchDef: any, debugMode: boolean) {
+export async function initOrgMetadatas(
+  configInfo: any,
+  orgUsername: string,
+  orgAlias: string,
+  projectScratchDef: any,
+  debugMode: boolean,
+  options: any = {}
+) {
   // Push or deploy according to config (default: push)
   if ((isCI && process.env.CI_SCRATCH_MODE === "deploy") || process.env.DEBUG_DEPLOY === "true") {
     // if CI, use force:source:deploy to make sure package.xml is consistent
@@ -348,7 +355,7 @@ export async function initOrgMetadatas(configInfo: any, orgUsername: string, org
         uxLog(self, c.grey(e.message));
       }
     }
-    await forceSourcePush(orgAlias, this, debugMode);
+    await forceSourcePush(orgAlias, this, debugMode, options);
     // Resume sharing calc if necessary
     if (deferSharingCalc) {
       await execCommand("sfdx texei:sharingcalc:resume", this, {
@@ -431,4 +438,26 @@ export async function getOrgAliasUsername(alias: string) {
     return matchingItems[0].value;
   }
   return null;
+}
+
+// Returns true if the org is a sandbox and not a scratch org
+export async function isSandbox(options: any) {
+  if (options.conn) {
+    const orgRes = await soqlQuery("SELECT IsSandbox,TrialExpirationDate FROM Organization LIMIT 1", options.conn);
+    return orgRes[0].IsSandbox === true && orgRes[0].TrialExpirationDate == null;
+  }
+  else {
+    return options?.scratch === false
+  }
+}
+
+// Returns true if the org is a scratch org and not a sandbox
+export async function isScratchOrg(options: any) {
+  if (options.conn) {
+    const orgRes = await soqlQuery("SELECT IsSandbox,TrialExpirationDate FROM Organization LIMIT 1", options.conn);
+    return orgRes[0].IsSandbox === true && orgRes[0].TrialExpirationDate !== null;
+  }
+  else {
+    return options?.scratch === true
+  }
 }

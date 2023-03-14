@@ -22,7 +22,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
   const currentBranch = await getCurrentGitBranch();
   let arrangedFiles = [];
   if (!(config[`tmp_${currentBranch}_pushed`] === true)) {
-    arrangedFiles = await arrangeFilesBefore(commandThis);
+    arrangedFiles = await arrangeFilesBefore(commandThis, options);
   }
   try {
     const sfdxPushCommand = options.sfdxPushCommand || "force:source:push";
