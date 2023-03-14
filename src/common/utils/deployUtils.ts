@@ -6,6 +6,8 @@ import * as path from "path";
 import * as sortArray from "sort-array";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
+import { GitProvider } from "../gitProvider";
+import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
 import { MetadataUtils } from "../metadata-utils";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
@@ -22,7 +24,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
   const currentBranch = await getCurrentGitBranch();
   let arrangedFiles = [];
   if (!(config[`tmp_${currentBranch}_pushed`] === true)) {
-    arrangedFiles = await arrangeFilesBefore(commandThis);
+    arrangedFiles = await arrangeFilesBefore(commandThis, options);
   }
   try {
     const sfdxPushCommand = options.sfdxPushCommand || "force:source:push";
@@ -58,9 +60,11 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:beta:push"));
       const pullRes = await forceSourcePush(scratchOrgAlias, commandThis, debug, options);
       return pullRes;
+    } else if (stdOut.includes(`getaddrinfo EAI_AGAIN`)) {
+      uxLog(this, c.red(c.bold("The error has been caused by your unstable internet connection. Please Try again !")));
     }
     // Analyze errors
-    const { tips, errLog } = analyzeDeployErrorLogs(stdOut);
+    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(commandThis, c.red("Sadly there has been push error(s)"));
     uxLog(this, c.red("\n" + errLog));
     uxLog(
@@ -96,7 +100,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false, op
       return pullRes;
     }
     // Analyze errors
-    const { tips, errLog } = analyzeDeployErrorLogs(stdOut);
+    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(this, c.red("Sadly there has been pull error(s)"));
     uxLog(this, c.red("\n" + errLog));
     // List unknown elements from output
@@ -206,7 +210,7 @@ export async function forceSourceDeploy(
           retry: deployment.retry || null,
         });
       } catch (e) {
-        const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+        const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, { check: check });
         uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
         uxLog(this, c.red("\n" + errLog));
         uxLog(
@@ -215,14 +219,25 @@ export async function forceSourceDeploy(
         );
         await displayDeploymentLink(e.stdout + e.stderr, options);
         elapseEnd(`deploy ${deployment.label}`);
+        await GitProvider.managePostPullRequestComment();
         throw new SfdxError("Deployment failure. Check messages above");
       }
+
+      // Set deployment id
+      await getDeploymentId(deployRes.stdout + deployRes.stderr || "");
 
       // Check org coverage if found in logs
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || "");
       if (orgCoveragePercent) {
-        await checkDeploymentOrgCoverage(orgCoveragePercent);
+        try {
+          await checkDeploymentOrgCoverage(orgCoveragePercent);
+        } catch (errCoverage) {
+          await GitProvider.managePostPullRequestComment();
+          throw errCoverage;
+        }
       }
+      // Post pull request comment if available
+      await GitProvider.managePostPullRequestComment();
 
       // Display deployment status
       if (deployRes.status === 0) {
@@ -263,12 +278,21 @@ export function truncateProgressLogLines(rawLog: string) {
   return rawLogCleaned;
 }
 
-// Display deployment link in target org
-async function displayDeploymentLink(rawLog: string, options: any) {
-  let deploymentUrl = "lightning/setup/DeployStatus/home";
+async function getDeploymentId(rawLog: string) {
   const regex = /Deploy ID: (.*)/gm;
   if (rawLog && rawLog.match(regex)) {
     const deploymentId = regex.exec(rawLog)[1];
+    globalThis.pullRequestDeploymentId = deploymentId;
+    return deploymentId;
+  }
+  return null;
+}
+
+// Display deployment link in target org
+async function displayDeploymentLink(rawLog: string, options: any) {
+  let deploymentUrl = "lightning/setup/DeployStatus/home";
+  const deploymentId = await getDeploymentId(rawLog);
+  if (deploymentId) {
     const detailedDeploymentUrl =
       "/changemgmt/monitorDeploymentsDetails.apexp?" + encodeURIComponent(`retURL=/changemgmt/monitorDeployment.apexp&asyncId=${deploymentId}`);
     deploymentUrl = "lightning/setup/DeployStatus/page?address=" + encodeURIComponent(detailedDeploymentUrl);
@@ -507,7 +531,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
       fail: true,
     });
   } catch (e) {
-    const { errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    const { errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, {});
     uxLog(this, c.red("Sadly there has been destruction error(s)"));
     uxLog(this, c.red("\n" + errLog));
     uxLog(
@@ -758,8 +782,8 @@ export async function extractOrgCoverageFromLog(stdout) {
   if (fromTest && fromTest[1]) {
     orgCoverage = parseFloat(fromTest[1].replace("%", ""));
   }
-  if (orgCoverage > 0) {
-    return orgCoverage;
+  if (orgCoverage && orgCoverage > 0.0) {
+    return orgCoverage.toFixed(2);
   }
   // Get from output file
   const writtenToPath = /written to (.*coverage)/.exec(stdout);
@@ -770,8 +794,8 @@ export async function extractOrgCoverageFromLog(stdout) {
     if (fs.existsSync(jsonFile)) {
       const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, "utf-8"));
       orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
-      if (orgCoverage > 0) {
-        return orgCoverage;
+      if (orgCoverage && orgCoverage.toFixed(2) > 0.0) {
+        return orgCoverage.toFixed(2);
       }
     }
   }
@@ -787,24 +811,27 @@ export async function extractOrgCoverageFromLog(stdout) {
 // Check if min org coverage is reached
 export async function checkDeploymentOrgCoverage(orgCoverage: number) {
   const config = await getConfig("branch");
-  const minCoverageOrgWide =
+  const minCoverageOrgWide = (
     process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
     process.env.APEX_TESTS_MIN_COVERAGE ||
     config.apexTestsMinCoverageOrgWide ||
     config.apexTestsMinCoverage ||
-    75.0;
+    75.0
+  ).toFixed(2);
   if (minCoverageOrgWide < 75.0) {
     throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
   }
   if (orgCoverage < minCoverageOrgWide) {
+    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverageOrgWide);
     throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${orgCoverage}% should be > to ${minCoverageOrgWide}%`);
   } else {
+    await updatePullRequestResultCoverage("valid", orgCoverage, minCoverageOrgWide);
     uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(orgCoverage))}% is > to ${c.bold(minCoverageOrgWide)}%`));
   }
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { tips, errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+  const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, options);
   uxLog(commandThis, c.red(c.bold("Sadly there has been Metadata deployment error(s)...")));
   uxLog(this, c.red("\n" + errLog));
   uxLog(
@@ -812,5 +839,26 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
     c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the metadata deployment issues :)`))
   );
   await displayDeploymentLink(e.stdout + e.stderr, options);
+  // Post pull requests comments if necessary
+  await GitProvider.managePostPullRequestComment();
   throw new SfdxError("Metadata deployment failure. Check messages above");
+}
+
+// This data will be caught later to build a pull request message
+async function updatePullRequestResultCoverage(coverageStatus: string, orgCoverage: number, orgCoverageTarget: number) {
+  const existingPrData = globalThis.pullRequestData || {};
+  const prDataCodeCoverage: any = {
+    messageKey: existingPrData.messageKey ?? "deployment",
+    title: existingPrData.title ?? "✅ Deployment success",
+    codeCoverageMarkdownBody: "Code coverage is valid",
+    deployStatus: existingPrData ?? coverageStatus,
+  };
+  if (coverageStatus === "invalid") {
+    prDataCodeCoverage.title = existingPrData.deployStatus === "valid" ? "❌ Deployment failed: Code coverage error" : prDataCodeCoverage.title;
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
+    prDataCodeCoverage.status = "invalid";
+  } else {
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
+  }
+  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
 }

@@ -45,7 +45,7 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
     });
   } catch (e) {
     // Add deployment tips in error logs
-    const { errLog } = analyzeDeployErrorLogs(e.stdout + e.stderr);
+    const { errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, { check: endArgs.includes("--checkonly") });
     uxLog(commandThis, c.red(c.bold("Sadly there has been error(s)")));
     uxLog(commandThis, c.red("\n" + errLog));
     deployRes = errLog;

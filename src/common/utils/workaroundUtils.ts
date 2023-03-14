@@ -4,13 +4,16 @@ import * as path from "path";
 import { createTempDir, uxLog } from ".";
 import * as glob from "glob-promise";
 import { parseXmlFile, writeXmlFile } from "./xmlUtils";
+import { isScratchOrg } from "./orgUtils";
 
 // Update files for special cases
 export async function arrangeFilesBefore(commandThis: any, options: any = {}) {
   const tempDir = await createTempDir();
   const arrangedFiles = [];
-  const arrangedLookupFields = await removeLookupFilters(tempDir, commandThis, options);
-  arrangedFiles.push(...arrangedLookupFields);
+  if ((await isScratchOrg(options)) === true) {
+    const arrangedLookupFields = await removeLookupFilters(tempDir, commandThis, options);
+    arrangedFiles.push(...arrangedLookupFields);
+  }
   return arrangedFiles;
 }
 

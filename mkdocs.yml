@@ -201,7 +201,10 @@ nav:
           - CI Server Authentication: salesforce-ci-cd-setup-auth.md
           - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
           - First merge request: salesforce-ci-cd-setup-merge-request.md
-          - MsTeams Notifications: salesforce-ci-cd-setup-ms-teams.md
+          - Integrations:
+              - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
+              - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+              - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
   - Configuration reference: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles

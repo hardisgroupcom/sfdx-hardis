@@ -50,7 +50,7 @@ Calls \`sfdx force:source:push\` under the hood
 
   public async run(): Promise<AnyJson> {
     const debugMode = this.flags.debug || false;
-    await forceSourcePush(this.org.getUsername(), this, debugMode);
+    await forceSourcePush(this.org.getUsername(), this, debugMode, { conn: this.org.getConnection() });
     // Return an object to be displayed with --json
     return { outputString: "Pushed local git branch in scratch org" };
   }

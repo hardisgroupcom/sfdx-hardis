@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Post a Gitlab Merge Request note when checking a deployment **(beta)**
+  - Deployment errors with resolution tips
+  - Failing test classes
+  - Code coverage
+- Do not remove then restore lookup filters when source:push on a source-tracked sandbox
+- Catch and display errors when caused by internet connection issue
+
 ## [3.9.2] 2022-03-09
 
 - Update deploy tips for error _Unknown user permission: SendExternalEmailAvailable_

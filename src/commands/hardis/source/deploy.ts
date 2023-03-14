@@ -1,6 +1,7 @@
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
+import { GitProvider } from "../../../common/gitProvider";
 import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
@@ -118,9 +119,15 @@ Additional to the base command wrapper: If using **--checkonly**, add options **
     if (this.flags.checkcoverage && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || "");
       if (orgCoveragePercent) {
-        await checkDeploymentOrgCoverage(orgCoveragePercent);
+        try {
+          await checkDeploymentOrgCoverage(orgCoveragePercent);
+        } catch (errCoverage) {
+          await GitProvider.managePostPullRequestComment();
+          throw errCoverage;
+        }
       }
     }
+    await GitProvider.managePostPullRequestComment();
     return result;
   }
 }
