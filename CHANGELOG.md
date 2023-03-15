@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [3.10.0] 2022-03-09
+## [3.10.0] 2022-03-15
 
 - Post a Gitlab Merge Request note when checking a deployment **(beta)**
   - Deployment errors with resolution tips
