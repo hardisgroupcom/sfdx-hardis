@@ -14,7 +14,7 @@ Under the hood, it can:
 - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using `config/.sfdx-hardis.yml`):
 - (and for scratch org only for now):
   - **Install packages**
-    - Use property `installedPackages`
+      - Use property `installedPackages`
     - **Push sources**
     - **Assign permission sets**
       - Use property `initPermissionSets`
@@ -26,20 +26,20 @@ Under the hood, it can:
 
 ## Parameters
 
-| Name                        |  Type   | Description                                                          | Default | Required |                        Options                        |
-|:----------------------------|:-------:|:---------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
-| apiversion                  | option  | override the api version used for api requests made by this command  |         |          |                                                       |
-| debug<br/>-d                | boolean | Activate debug mode (more logs)                                      |         |          |                                                       |
-| json                        | boolean | format output as json                                                |         |          |                                                       |
-| loglevel                    | option  | logging level for this command invocation                            |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| skipauth                    | boolean | Skip authentication check when a default username is required        |         |          |                                                       |
-| targetdevhubusername<br/>-v | option  | username or alias for the dev hub org; overrides default dev hub org |         |          |                                                       |
-| websocket                   | option  | Websocket host:port for VsCode SFDX Hardis UI integration            |         |          |                                                       |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|apiversion|option|override the api version used for api requests made by this command||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|json|boolean|format output as json||||
+|loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|targetdevhubusername<br/>-v|option|username or alias for the dev hub org; overrides default dev hub org||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sfdx hardis:work:task:new
+$ sfdx hardis:work:task:new
 ```
 
 
