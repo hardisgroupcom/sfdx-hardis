@@ -37,8 +37,12 @@ export class GitlabProvider extends GitProviderRoot {
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
-    const projectId = process.env.CI_PROJECT_ID;
-    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID;
+    const projectId = process.env.CI_PROJECT_ID || null;
+    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
+    if (projectId == null || mergeRequestId == null) {
+      uxLog(this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
+      return ;
+    }
     const gitlabCiJobName = process.env.CI_JOB_NAME;
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
@@ -55,7 +59,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabC
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Check for existing note from a previous run
-    uxLog(this, c.grey("Listing Notes of Merge Request..."));
+    uxLog(this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId = null;
     for (const existingNote of existingNotes) {
@@ -67,7 +71,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabC
     // Create or update MR note
     if (existingNoteId) {
       // Update existing note
-      uxLog(this, c.grey("Updating Merge Request Note on Gitlab..."));
+      uxLog(this, c.grey("[Gitlab integration] Updating Merge Request Note on Gitlab..."));
       const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: gitlabEditNoteResult.id > 0,
@@ -76,7 +80,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabC
       return prResult;
     } else {
       // Create new note if no existing not was found
-      uxLog(this, c.grey("Adding Merge Request Note on Gitlab..."));
+      uxLog(this, c.grey("[Gitlab integration] Adding Merge Request Note on Gitlab..."));
       const gitlabPostNoteResult = await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: gitlabPostNoteResult.id > 0,
