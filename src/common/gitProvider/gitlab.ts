@@ -41,7 +41,7 @@ export class GitlabProvider extends GitProviderRoot {
     const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
     if (projectId == null || mergeRequestId == null) {
       uxLog(this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
-      return ;
+      return;
     }
     const gitlabCiJobName = process.env.CI_JOB_NAME;
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
