@@ -6,8 +6,8 @@
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-![Docker Pulls](https://img.shields.io/docker/pulls/hardisgroupcom/sfdx-hardis)
-[![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis?maxAge=2592000)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/hardisgroupcom/sfdx-hardis)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
+[![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
 [![GitHub contributors](https://img.shields.io/github/contributors/hardisgroupcom/sfdx-hardis.svg)](https://gitHub.com/hardisgroupcom/sfdx-hardis/graphs/contributors/)
 [![Mega-Linter](https://github.com/hardisgroupcom/sfdx-hardis/workflows/Mega-Linter/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions?query=workflow%3AMega-Linter+branch%3Amain)
 [![Secured with Trivy](https://img.shields.io/badge/Trivy-secured-green?logo=docker)](https://github.com/aquasecurity/trivy)
@@ -20,7 +20,6 @@ It will allow you to:
 
 - Do with simple commands what could be done manually in minutes/hours
 - [Define a complete CI/CD Pipeline for your Salesforce project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
-
 
 [**Please see the full list of commands in Online documentation**](https://sfdx-hardis.cloudity.com)
 
@@ -46,7 +45,10 @@ sfdx plugins:install sfdx-hardis
 For advanced use, please also install dependencies
 
 ```sh-session
-sfdx plugins:install sfdmu sfdx-git-delta sfdx-essentials texei-sfdx-plugin
+sfdx plugins:install sfdmu
+sfdx plugins:install sfdx-git-delta
+sfdx plugins:install sfdx-essentials
+sfdx plugins:install texei-sfdx-plugin
 ```
 
 ### With IDE
@@ -78,6 +80,7 @@ Here are some articles with examples of use of [sfdx-hardis](https://sfdx-hardis
 
 - English
 
+[![sfdx-hardis: A release management tool for open-source](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/)
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 [![Handle Salesforce API versions Deprecation like a pro](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deprecated-api.jpg)](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
@@ -114,6 +117,12 @@ Anyone is welcome to contribute to this sfdx-hardis
 - [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
+
+## Contributors
+
+<a href="https://github.com/hardisgroupcom/sfdx-hardis/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=hardisgroupcom/sfdx-hardis" />
+</a>
 
 
 

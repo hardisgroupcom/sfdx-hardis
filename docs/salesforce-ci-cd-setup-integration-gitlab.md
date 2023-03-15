@@ -22,3 +22,7 @@ Everytime you will make a pull request, the CI job will post its result as comme
 - Example with failing test classes
 
 ![](assets/images/gitlab-mr-comment-failed-tests.jpg)
+
+Notes:
+
+- This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) instead of `sfdx force:source:deploy` !
