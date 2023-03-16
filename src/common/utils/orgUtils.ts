@@ -444,7 +444,7 @@ export async function getOrgAliasUsername(alias: string) {
 export async function isSandbox(options: any) {
   if (options.conn) {
     const orgRes = await soqlQuery("SELECT IsSandbox,TrialExpirationDate FROM Organization LIMIT 1", options.conn);
-    return orgRes[0].IsSandbox === true && orgRes[0].TrialExpirationDate == null;
+    return orgRes.records[0].IsSandbox === true && orgRes.records[0].TrialExpirationDate == null;
   } else {
     return options?.scratch === false;
   }
@@ -454,7 +454,7 @@ export async function isSandbox(options: any) {
 export async function isScratchOrg(options: any) {
   if (options.conn) {
     const orgRes = await soqlQuery("SELECT IsSandbox,TrialExpirationDate FROM Organization LIMIT 1", options.conn);
-    return orgRes[0].IsSandbox === true && orgRes[0].TrialExpirationDate !== null;
+    return orgRes.records[0].IsSandbox === true && orgRes.records[0].TrialExpirationDate !== null;
   } else {
     return options?.scratch === true;
   }
