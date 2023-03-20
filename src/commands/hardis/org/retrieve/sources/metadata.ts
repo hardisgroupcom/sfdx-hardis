@@ -2,6 +2,7 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as child from "child_process";
 import * as fs from "fs-extra";
@@ -135,7 +136,7 @@ export default class DxSources extends SfdxCommand {
     const localGitlabCiFile = path.join(process.cwd(), ".gitlab-ci.yml");
     if (fs.existsSync(localGitlabCiFile) && process.env?.AUTO_UPDATE_GITLAB_CI_YML) {
       const localGitlabCiContent = await fs.readFile(localGitlabCiFile, "utf8");
-      const latestGitlabCiFile = path.join(__dirname, "../../../../../../defaults/monitoring/.gitlab-ci.yml");
+      const latestGitlabCiFile = path.join(appRootPath.toString(), "defaults/monitoring/.gitlab-ci.yml");
       const latestGitlabCiContent = await fs.readFile(latestGitlabCiFile, "utf8");
       if (localGitlabCiContent !== latestGitlabCiContent) {
         await fs.writeFile(localGitlabCiFile, latestGitlabCiContent);

@@ -2,6 +2,7 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -74,7 +75,7 @@ export default class DxSources2 extends SfdxCommand {
 
     // Use package.xml template provided by sfdx-hardis
     if (template) {
-      packageXml = path.join(__dirname, `../../../../../../ref`, `${template}-package.xml`);
+      packageXml = path.join(appRootPath.toString(), `ref`, `${template}-package.xml`);
     }
 
     // Prompt for package.xml if not sent

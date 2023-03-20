@@ -2,6 +2,7 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -219,7 +220,7 @@ export default class CleanReferences extends SfdxCommand {
   }
 
   private async getFilterConfigFile(cleaningType) {
-    const templateFile = path.join(path.join(__dirname, "../../../../../defaults/clean", "template.txt"));
+    const templateFile = path.join(path.join(appRootPath.toString(), "defaults/clean", "template.txt"));
     // Read and complete cleaning template
     let templateContent = await fs.readFile(templateFile, "utf8");
     if (cleaningType === "destructivechanges" || cleaningType.endsWith(".xml")) {
@@ -235,7 +236,7 @@ export default class CleanReferences extends SfdxCommand {
       // Predefined destructive items file
       const filterConfigFileConfigPath = cleaningType.endsWith(".json")
         ? cleaningType
-        : path.join(path.join(__dirname, "../../../../../defaults/clean", cleaningType + ".json"));
+        : path.join(path.join(appRootPath.toString(), "defaults/clean", cleaningType + ".json"));
       const filterConfigFileConfig = JSON.parse(await fs.readFile(filterConfigFileConfigPath, "utf8"));
       for (const type of Object.keys(filterConfigFileConfig.items)) {
         templateContent = templateContent.replace(new RegExp(`{{ ${type} }}`, "g"), JSON.stringify(filterConfigFileConfig.items[type], null, 2));

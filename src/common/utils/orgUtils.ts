@@ -1,5 +1,6 @@
 import { MetadataUtils } from "../metadata-utils";
 import { prompts } from "./prompts";
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -333,7 +334,7 @@ export async function initOrgMetadatas(
     if (deferSharingCalc) {
       // Deploy to permission set allowing to update SharingCalc
       await deployMetadatas({
-        deployDir: path.join(path.join(__dirname, "../../../../defaults/utils/deferSharingCalc", ".")),
+        deployDir: path.join(path.join(appRootPath.toString(), "defaults/utils/deferSharingCalc", ".")),
         testlevel: "NoTestRun",
         soap: true,
       });

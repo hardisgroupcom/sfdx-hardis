@@ -4,6 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { ensureGitRepository, execCommand, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -114,7 +115,7 @@ export default class ProjectCreate extends SfdxCommand {
     }
     // Copy default project files
     uxLog(this, "Copying default files...");
-    await fs.copy(path.join(__dirname, "../../../../defaults/ci", "."), process.cwd(), { overwrite: false });
+    await fs.copy(path.join(appRootPath.toString(), "defaults/ci", "."), process.cwd(), { overwrite: false });
 
     config = await getConfig("project");
     if (config.developmentBranch == null) {

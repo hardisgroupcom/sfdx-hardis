@@ -9,6 +9,7 @@ import * as path from "path";
 import * as sortArray from "sort-array";
 import * as set from "set-value";
 import * as yaml from "js-yaml";
+import * as appRootPath from "app-root-path";
 import { uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
@@ -93,7 +94,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     // Copy default files (mkdocs.yml and other files can be updated by the sfdx plugin developer later)
     const mkdocsYmlFile = path.join(process.cwd(), "mkdocs.yml");
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
-    await fs.copy(path.join(__dirname, "../../../../../defaults/mkdocs", "."), process.cwd(), { overwrite: false });
+    await fs.copy(path.join(appRootPath.toString(), "defaults/mkdocs", "."), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
       uxLog(this, c.blue("Base mkdocs files copied in your sfdx plugin folder"));
       uxLog(this, c.yellow("You should probably manually update mkdocs.yml and build-deploy-docs.yml with your repo & plugin information"));
