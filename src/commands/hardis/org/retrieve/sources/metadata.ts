@@ -2,7 +2,7 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as appRootPath from 'app-root-path';
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as child from "child_process";
 import * as fs from "fs-extra";

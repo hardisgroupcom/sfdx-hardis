@@ -9,7 +9,7 @@ import * as path from "path";
 import * as sortArray from "sort-array";
 import * as set from "set-value";
 import * as yaml from "js-yaml";
-import * as appRootPath from 'app-root-path';
+import * as appRootPath from "app-root-path";
 import { uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory

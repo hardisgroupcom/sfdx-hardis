@@ -15,7 +15,7 @@ import {
   promptInstanceUrl,
   uxLog,
 } from "../../../../common/utils";
-import * as appRootPath from 'app-root-path';
+import * as appRootPath from "app-root-path";
 import { prompts } from "../../../../common/utils/prompts";
 import { getConfig, setInConfigFile } from "../../../../config";
 

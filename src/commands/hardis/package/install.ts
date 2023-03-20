@@ -2,7 +2,7 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as appRootPath from 'app-root-path';
+import * as appRootPath from "app-root-path";
 import * as axios1 from "axios";
 import * as c from "chalk";
 import * as fs from "fs-extra";

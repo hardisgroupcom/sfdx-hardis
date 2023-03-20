@@ -1,5 +1,5 @@
 import { SfdxError } from "@salesforce/core";
-import * as appRootPath from 'app-root-path';
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";

@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { ensureGitRepository, execCommand, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
-import * as appRootPath from 'app-root-path';
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";

@@ -1,6 +1,6 @@
 import { MetadataUtils } from "../metadata-utils";
 import { prompts } from "./prompts";
-import * as appRootPath from 'app-root-path';
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";

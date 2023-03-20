@@ -1,5 +1,5 @@
 import { Connection } from "@salesforce/core";
-import * as appRootPath from 'app-root-path';
+import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as he from "he";
 import * as path from "path";
