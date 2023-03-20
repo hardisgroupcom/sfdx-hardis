@@ -4,13 +4,13 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { ensureGitRepository, execCommand, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
-import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { getConfig, setConfig } from "../../../config";
 import { WebSocketClient } from "../../../common/websocketClient";
 import { isSfdxProject } from "../../../common/utils/projectUtils";
+import { PACKAGE_ROOT_DIR } from "../../../settings";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -115,7 +115,7 @@ export default class ProjectCreate extends SfdxCommand {
     }
     // Copy default project files
     uxLog(this, "Copying default files...");
-    await fs.copy(path.join(appRootPath.toString(), "defaults/ci", "."), process.cwd(), { overwrite: false });
+    await fs.copy(path.join(PACKAGE_ROOT_DIR, "defaults/ci", "."), process.cwd(), { overwrite: false });
 
     config = await getConfig("project");
     if (config.developmentBranch == null) {

@@ -15,9 +15,9 @@ import {
   promptInstanceUrl,
   uxLog,
 } from "../../../../common/utils";
-import * as appRootPath from "app-root-path";
 import { prompts } from "../../../../common/utils/prompts";
 import { getConfig, setInConfigFile } from "../../../../config";
+import { PACKAGE_ROOT_DIR } from "../../../../settings";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -69,7 +69,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       // Remove default README if necessary
       await fs.remove("README.md");
     }
-    await fs.copy(path.join(appRootPath.toString(), "defaults/monitoring", "."), process.cwd(), { overwrite: false });
+    await fs.copy(path.join(PACKAGE_ROOT_DIR, "defaults/monitoring", "."), process.cwd(), { overwrite: false });
 
     const gitLabInfo = `- If you're using GitLab, ACCESS_TOKEN must be defined in ${c.bold("Project -> Settings -> Access Token")}
     - name: ${c.bold("ACCESS_TOKEN")}

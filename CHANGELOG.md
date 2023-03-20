@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.11.1] 2022-03-20
+
+- Better fix for root path issues (internal error)
+
 ## [3.11.0] 2022-03-20
 
 - Fix root path issues (internal error)
