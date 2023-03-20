@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [3.11.0] 2022-03-20
 
-- Fix sandbox check when calling hardis:source:push
+- Fix root path issues (internal error)
 
 ## [3.10.2] 2022-03-16
 
