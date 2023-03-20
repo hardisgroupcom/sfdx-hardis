@@ -1,7 +1,7 @@
 import { Gitlab } from "@gitbeaker/node";
 import * as c from "chalk";
+import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
 import { uxLog } from "../utils";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./types/gitProvider";
 import { GitProviderRoot } from "./gitProviderRoot";
 
 export class GitlabProvider extends GitProviderRoot {

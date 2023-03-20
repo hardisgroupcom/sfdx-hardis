@@ -2,6 +2,7 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
+import * as appRootPath from 'app-root-path';
 import * as axios1 from "axios";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -67,7 +68,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
 
   /* jscpd:ignore-end */
 
-  protected allPackagesFileName = path.join(__dirname, "./../../../../defaults/packages.json");
+  protected allPackagesFileName = path.join(appRootPath.toString(), "defaults/packages.json");
   protected sfdxProjectJsonFileName = path.join(process.cwd(), "sfdx-project.json");
 
   public async run(): Promise<AnyJson> {

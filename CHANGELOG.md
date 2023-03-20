@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.11.0] 2022-03-20
+
+- Fix sandbox check when calling hardis:source:push
+
 ## [3.10.2] 2022-03-16
 
 - Fix sandbox check when calling hardis:source:push

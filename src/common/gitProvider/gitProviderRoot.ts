@@ -1,7 +1,7 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
+import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
 import { uxLog } from "../utils";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./types/gitProvider";
 
 export abstract class GitProviderRoot {
   protected serverUrl: string;

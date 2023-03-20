@@ -1,4 +1,5 @@
 import { SfdxError } from "@salesforce/core";
+import * as appRootPath from 'app-root-path';
 import * as c from "chalk";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
@@ -578,7 +579,7 @@ class MetadataUtils {
       // Filter package XML to remove identified metadatas
       const packageXmlToRemove = fs.existsSync("./remove-items-package.xml")
         ? path.resolve("./remove-items-package.xml")
-        : path.resolve(__dirname + "/../../../defaults/remove-items-package.xml");
+        : path.resolve(appRootPath.toString() + "/defaults/remove-items-package.xml");
       const removeStandard = options.removeStandard === false ? false : true;
       const filterNamespaceRes = await filterPackageXml(packageXml, packageXml, {
         removeNamespaces: namespaces,
