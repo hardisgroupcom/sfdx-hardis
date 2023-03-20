@@ -2,7 +2,6 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -10,6 +9,7 @@ import * as path from "path";
 import { execCommand, uxLog } from "../../../../../common/utils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { prompts } from "../../../../../common/utils/prompts";
+import { PACKAGE_ROOT_DIR } from "../../../../../settings";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -75,7 +75,7 @@ export default class DxSources2 extends SfdxCommand {
 
     // Use package.xml template provided by sfdx-hardis
     if (template) {
-      packageXml = path.join(appRootPath.toString(), `ref`, `${template}-package.xml`);
+      packageXml = path.join(PACKAGE_ROOT_DIR, `ref`, `${template}-package.xml`);
     }
 
     // Prompt for package.xml if not sent

@@ -1,9 +1,9 @@
 import { Connection } from "@salesforce/core";
-import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as he from "he";
 import * as path from "path";
 import { getConfig } from "../../config";
+import { PACKAGE_ROOT_DIR } from "../../settings";
 import { uxLog } from "../utils";
 import { soqlQuery } from "../utils/apiUtils";
 import { deployMetadatas } from "../utils/deployUtils";
@@ -87,7 +87,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
     // Deploy KeyValueStore object on DevHub org
     try {
       await deployMetadatas({
-        deployDir: path.join(path.join(appRootPath.toString(), "defaults/utils/sfdxHardisKeyValueStore", ".")),
+        deployDir: path.join(path.join(PACKAGE_ROOT_DIR, "defaults/utils/sfdxHardisKeyValueStore", ".")),
         soap: true,
         targetUsername: options.devHubConn.options.authInfo.fields.username,
       });

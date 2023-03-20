@@ -1,6 +1,5 @@
 import { MetadataUtils } from "../metadata-utils";
 import { prompts } from "./prompts";
-import * as appRootPath from "app-root-path";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -13,6 +12,7 @@ import { importData } from "./dataUtils";
 import { soqlQuery } from "./apiUtils";
 import { isSfdxProject } from "./projectUtils";
 import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "./deployUtils";
+import { PACKAGE_ROOT_DIR } from "../../settings";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -334,7 +334,7 @@ export async function initOrgMetadatas(
     if (deferSharingCalc) {
       // Deploy to permission set allowing to update SharingCalc
       await deployMetadatas({
-        deployDir: path.join(path.join(appRootPath.toString(), "defaults/utils/deferSharingCalc", ".")),
+        deployDir: path.join(path.join(PACKAGE_ROOT_DIR, "defaults/utils/deferSharingCalc", ".")),
         testlevel: "NoTestRun",
         soap: true,
       });
