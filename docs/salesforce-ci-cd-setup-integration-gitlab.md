@@ -30,7 +30,7 @@ Notes:
 - This integration use the following variables:
   - CI_SFDX_HARDIS_GITLAB_TOKEN
   - CI_SERVER_URL (provided by Gitlab CI)
-  - CI_PROJECT_ID (prvided by Gitlab CI)
-  - CI_MERGE_REQUEST_IID (prvided by Gitlab CI)
-  - CI_JOB_NAME (prvided by Gitlab CI)
-  - CI_JOB_URL (prvided by Gitlab CI)
+  - CI_PROJECT_ID (provided by Gitlab CI)
+  - CI_MERGE_REQUEST_IID (provided by Gitlab CI)
+  - CI_JOB_NAME (provided by Gitlab CI)
+  - CI_JOB_URL (provided by Gitlab CI)
