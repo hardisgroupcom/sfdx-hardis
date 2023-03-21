@@ -28,10 +28,11 @@ Notes:
 - This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) instead of `sfdx force:source:deploy` !
 
 - This integration use the following variables:
-  - SYSTEM_ACCESSTOKEN
-  - CI_SFDX_HARDIS_AZURE_TOKEN
-  - SYSTEM_COLLECTION_URI
-  - BUILD_BUILD_URI
-  - BUILD_REPOSITORY_ID
-  - SYSTEM_JOB_DISPLAY_NAME
-  - SYSTEM_PULLREQUEST_PULLREQUESTID
+  - SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+  - CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+  - SYSTEM_COLLECTION_URI: $(System.CollectionUri)
+  - SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+  - SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+  - SYSTEM_TEAMPROJECT: $(System.TeamProject)
+  - BUILD_BUILD_ID: $(Build.BuildId)
+  - BUILD_REPOSITORY_ID: $(Build.Repository.ID)
