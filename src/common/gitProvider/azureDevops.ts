@@ -40,6 +40,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
 
 ${prMessage.message}
 
+
 _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJobName}](${azureBuildUri})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
@@ -56,7 +57,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     let existingThreadComment: GitPullRequestCommentThread = null;
     for (const existingThread of existingThreads) {
       if (existingThread?.comments[0]?.content.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
-        existingThreadComment = existingThread.comments[0];
+        existingThreadComment = existingThread;
         existingThreadId = existingThread.id;
       }
     }
