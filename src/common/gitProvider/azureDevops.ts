@@ -11,10 +11,10 @@ export class AzureDevopsProvider extends GitProviderRoot {
   constructor() {
     super();
     // Azure server url must be provided in AZURE_SERVER_URL. ex: https:/dev.azure.com/mycompany
-    this.serverUrl = process.env.AZURE_SERVER_URL;
+    this.serverUrl = process.env.SYSTEM_COLLECTION_URI;
     // a Personal Access Token must be defined
-    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN;
-    const authHandler = azdev.getPersonalAccessTokenHandler(this.token);
+    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN;
+    const authHandler = azdev.getHandlerFromToken(this.token);
     this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
   }
 
@@ -32,7 +32,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
       return;
     }
     const pullRequestId = Number(pullRequestIdStr);
-    const azureJobName = process.env.SYSTEM_JOB_NAME;
+    const azureJobName = process.env.SYSTEM_JOB_DISPLAY_NAME;
     const azureBuildUri = process.env.BUILD_BUILD_URI;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
@@ -78,7 +78,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       uxLog(this, c.grey("[Azure integration] Adding Pull Request Thread on Azure..."));
       const newThreadComment: GitPullRequestCommentThread = {
         comments: [{ content: messageBody }],
-        status: this.pullRequestStatusToAzureThreadStatus(prMessage)
+        status: this.pullRequestStatusToAzureThreadStatus(prMessage),
       };
       const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId);
       const prResult: PullRequestMessageResult = {
