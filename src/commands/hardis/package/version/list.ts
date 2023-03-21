@@ -47,7 +47,7 @@ export default class PackageVersionCreate extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     const debugMode = this.flags.debug || false;
-    const createCommand = "sfdx force:package:version:list";
+    const createCommand = "sfdx package:version:list";
     await execCommand(createCommand, this, {
       fail: true,
       output: true,

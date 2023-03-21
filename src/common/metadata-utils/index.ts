@@ -455,7 +455,7 @@ class MetadataUtils {
 
   // List installed packages on a org
   public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
-    let listCommand = "sfdx force:package:installed:list";
+    let listCommand = "sfdx package:installed:list";
     if (orgAlias != null) {
       listCommand += ` -u ${orgAlias}`;
     }
@@ -503,7 +503,7 @@ class MetadataUtils {
         }
         const securityType = package1.SecurityType || "AllUsers";
         let packageInstallCommand =
-          "sfdx force:package:beta:install" +
+          "sfdx package:install" +
           ` --package ${package1.SubscriberPackageVersionId}` +
           " --noprompt" +
           ` --securitytype ${securityType}` +

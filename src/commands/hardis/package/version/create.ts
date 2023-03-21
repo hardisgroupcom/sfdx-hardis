@@ -123,7 +123,7 @@ export default class PackageVersionCreate extends SfdxCommand {
     // Create package version
     uxLog(this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
     const createCommand =
-      "sfdx force:package:version:create" +
+      "sfdx package:version:create" +
       ` --package "${pckgDirectory.package}"` +
       (this.installKey ? ` --installationkey "${this.installKey}"` : " --installationkeybypass") +
       " --codecoverage" +
@@ -139,7 +139,7 @@ export default class PackageVersionCreate extends SfdxCommand {
     if (this.deleteAfter) {
       // Delete package version
       uxLog(this, c.cyan(`Delete new package version ${c.green(latestVersion)} of package ${c.green(pckgDirectory.package)}...`));
-      const deleteVersionCommand = "sfdx force:package:version:delete --noprompt -p " + latestVersion;
+      const deleteVersionCommand = "sfdx package:version:delete --noprompt -p " + latestVersion;
       const deleteVersionResult = await execSfdxJson(deleteVersionCommand, this, {
         fail: true,
         output: true,
