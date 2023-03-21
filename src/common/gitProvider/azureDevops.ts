@@ -1,8 +1,9 @@
 import { GitProviderRoot } from "./gitProviderRoot";
 import * as azdev from "azure-devops-node-api";
-import * as c from 'chalk';
+import * as c from "chalk";
 import { uxLog } from "../utils";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./types/gitProvider";
+import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
+import { CommentThreadStatus, GitPullRequestCommentThread } from "azure-devops-node-api/interfaces/GitInterfaces";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -13,8 +14,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
     this.serverUrl = process.env.AZURE_SERVER_URL;
     // a Personal Access Token must be defined
     this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN;
-    const authHandler = azdev.getPersonalAccessTokenHandler(this.token); 
-    this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);    
+    const authHandler = azdev.getPersonalAccessTokenHandler(this.token);
+    this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
   }
 
   public getLabel(): string {
@@ -24,56 +25,76 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
-    const projectId = process.env.CI_PROJECT_ID || null;
-    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
-    if (projectId == null || mergeRequestId == null) {
-      uxLog(this, c.grey("[Azure integration] No project and pull request, so no note posted..."));
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
+    if (repositoryId == null || pullRequestIdStr == null) {
+      uxLog(this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
       return;
     }
-    const gitlabCiJobName = process.env.CI_JOB_NAME;
-    const gitlabCIJobUrl = process.env.CI_JOB_URL;
-    // Build note message
-    const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
+    const pullRequestId = Number(pullRequestIdStr);
+    const azureJobName = process.env.SYSTEM_JOB_NAME;
+    const azureBuildUri = process.env.BUILD_BUILD_URI;
+    // Build thread message
+    const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
 
 ${prMessage.message}
 
-_Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
+_Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJobName}](${azureBuildUri})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
-    // Check for existing note from a previous run
-    uxLog(this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
-    const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
-    let existingNoteId = null;
-    for (const existingNote of existingNotes) {
-      if (existingNote.body.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
-        existingNoteId = existingNote.id;
+    // Get Azure Git API
+    const azureGitApi = await this.azureApi.getGitApi();
+    // Check for existing threads from a previous run
+    uxLog(this, c.grey("[Azure integration] Listing Threads of Pull Request..."));
+    const existingThreads = await azureGitApi.getThreads(repositoryId, pullRequestId);
+    let existingThreadId: number = null;
+    let existingThreadComment: GitPullRequestCommentThread = null;
+    for (const existingThread of existingThreads) {
+      if (existingThread?.comments[0]?.content.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+        existingThreadComment = existingThread.comments[0];
+        existingThreadId = existingThread.id;
       }
     }
 
     // Create or update MR note
-    if (existingNoteId) {
+    if (existingThreadId) {
       // Update existing note
-      uxLog(this, c.grey("[Azure integration] Updating Pull Request Note on Azure..."));
-      const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, messageBody);
+      uxLog(this, c.grey("[Azure integration] Updating Pull Request Thread on Azure..."));
+      existingThreadComment.comments[0] = { content: messageBody };
+      existingThreadComment.status = this.pullRequestStatusToAzureThreadStatus(prMessage);
+      const azureEditThreadResult = await azureGitApi.updateThread(existingThreadComment, repositoryId, pullRequestId, existingThreadId);
       const prResult: PullRequestMessageResult = {
-        posted: gitlabEditNoteResult.id > 0,
-        providerResult: gitlabEditNoteResult,
+        posted: azureEditThreadResult.id > 0,
+        providerResult: azureEditThreadResult,
       };
       return prResult;
     } else {
       // Create new note if no existing not was found
-      uxLog(this, c.grey("[Azure integration] Adding Pull Request Note on Azure..."));
-      const gitlabPostNoteResult = await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, messageBody);
+      uxLog(this, c.grey("[Azure integration] Adding Pull Request Thread on Azure..."));
+      const newThreadComment: GitPullRequestCommentThread = {
+        comments: [{ content: messageBody }],
+        status: this.pullRequestStatusToAzureThreadStatus(prMessage)
+      };
+      const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId);
       const prResult: PullRequestMessageResult = {
-        posted: gitlabPostNoteResult.id > 0,
-        providerResult: gitlabPostNoteResult,
+        posted: azureEditThreadResult.id > 0,
+        providerResult: azureEditThreadResult,
       };
       return prResult;
     }
+  }
+
+  // Convert sfdx-hardis PR status to Azure Thread status value
+  private pullRequestStatusToAzureThreadStatus(prMessage: PullRequestMessageRequest) {
+    return prMessage.status === "valid"
+      ? CommentThreadStatus.Fixed
+      : prMessage.status === "invalid"
+      ? CommentThreadStatus.Active
+      : CommentThreadStatus.Unknown;
   }
 }

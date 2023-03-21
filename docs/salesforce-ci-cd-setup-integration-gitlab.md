@@ -13,7 +13,7 @@ To use this capability:
 - Go to Settings -> Access Tokens -> Create a project access token with level **Developer** and scope **api**, and name it **SFDX HARDIS BOT**
 - Go to Settings -> CI/CD -> Variables -> Create a variable named **CI_SFDX_HARDIS_GITLAB_TOKEN** and past the access token value
 
-Everytime you will make a pull request, the CI job will post its result as comment !
+Everytime you will make a merge request, the CI job will post its result as comment !
 
 - Example with deployment errors
 
@@ -26,3 +26,11 @@ Everytime you will make a pull request, the CI job will post its result as comme
 Notes:
 
 - This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) instead of `sfdx force:source:deploy` !
+
+- This integration use the following variables:
+  - CI_SFDX_HARDIS_GITLAB_TOKEN
+  - CI_SERVER_URL (provided by Gitlab CI)
+  - CI_PROJECT_ID (prvided by Gitlab CI)
+  - CI_MERGE_REQUEST_IID (prvided by Gitlab CI)
+  - CI_JOB_NAME (prvided by Gitlab CI)
+  - CI_JOB_URL (prvided by Gitlab CI)

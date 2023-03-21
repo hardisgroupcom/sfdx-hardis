@@ -30,3 +30,4 @@ ___
 - [Integrations](salesforce-ci-cd-setup-integrations-home.md) _(optional)_
   - [Configure Microsoft Teams notifications](salesforce-ci-cd-setup-integration-ms-teams.md) _(optional)_
   - [Configure Gitlab to receive deployment results on on Merge Requests](salesforce-ci-cd-setup-integration-gitlab.md) _(optional)_
+  - [Configure Azure Pipelines to receive deployment results on on Pull Requests](salesforce-ci-cd-setup-integration-azure.md) _(optional)_

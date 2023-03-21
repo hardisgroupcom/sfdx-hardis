@@ -205,6 +205,7 @@ nav:
               - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
               - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
+              - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
   - Configuration reference: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles
