@@ -30,6 +30,7 @@ In VsCode Git extension, **stage** and **commit** created, updated and deleted f
 
 - By selecting the metadata files you can **see the differences** with the previous versions, to know if you want to publish or not an updated file
 - **Never use Stage all function**
+- If you see standard items like standard fields that do not contain customizations, do not commit them
 
 _The following video shows how to perform theses operations_
 
