@@ -78,36 +78,27 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     if (existingThreadId) {
       // Delete previous comment
       uxLog(this, c.grey("[Azure integration] Deleting previous comment..."));
-      const deletedCommentResult = await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
-      uxLog(this, c.grey("[Azure integration] Retrieve updated thread..."));
+      await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
+      uxLog(this, c.grey("[Azure integration] Retrieve again existing thread..."));
       existingThreadComment = await azureGitApi.getPullRequestThread(repositoryId, pullRequestId, existingThreadId);
       // Update existing thread
-      uxLog(this, c.grey("[Azure integration] Updating Pull Request Thread on Azure..."));
-      const updatedComments = existingThreadComment.comments || [];
-      updatedComments.push({ content: messageBody });
-      existingThreadComment.comments = updatedComments;
-      existingThreadComment.status = this.pullRequestStatusToAzureThreadStatus(prMessage);
-      const azureEditThreadResult = await azureGitApi.updateThread(existingThreadComment, repositoryId, pullRequestId, existingThreadId);
-      const prResult: PullRequestMessageResult = {
-        posted: azureEditThreadResult.id > 0,
-        providerResult: azureEditThreadResult,
-        additionalProviderResult: { deletedCommentResult: deletedCommentResult },
-      };
-      return prResult;
-    } else {
-      // Create new thread
-      uxLog(this, c.grey("[Azure integration] Adding Pull Request Thread on Azure..."));
-      const newThreadComment: GitPullRequestCommentThread = {
-        comments: [{ content: messageBody }],
-        status: this.pullRequestStatusToAzureThreadStatus(prMessage),
-      };
-      const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId);
-      const prResult: PullRequestMessageResult = {
-        posted: azureEditThreadResult.id > 0,
-        providerResult: azureEditThreadResult,
-      };
-      return prResult;
+      uxLog(this, c.grey("[Azure integration] Closing previous Pull Request Thread on Azure..."));
+      existingThreadComment.status = CommentThreadStatus.Closed;
+      await azureGitApi.updateThread(existingThreadComment, repositoryId, pullRequestId, existingThreadId);
     }
+
+    // Create new thread
+    uxLog(this, c.grey("[Azure integration] Adding Pull Request Thread on Azure..."));
+    const newThreadComment: GitPullRequestCommentThread = {
+      comments: [{ content: messageBody }],
+      status: this.pullRequestStatusToAzureThreadStatus(prMessage),
+    };
+    const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId);
+    const prResult: PullRequestMessageResult = {
+      posted: azureEditThreadResult.id > 0,
+      providerResult: azureEditThreadResult,
+    };
+    return prResult;
   }
 
   // Convert sfdx-hardis PR status to Azure Thread status value
