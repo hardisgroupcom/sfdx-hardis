@@ -11,7 +11,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
   constructor() {
     super();
     // Azure server url must be provided in AZURE_SERVER_URL. ex: https:/dev.azure.com/mycompany
-    this.serverUrl = process.env.SYSTEM_COLLECTION_URI;
+    this.serverUrl = process.env.SYSTEM_COLLECTIONURI;
     // a Personal Access Token must be defined
     this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN;
     const authHandler = azdev.getHandlerFromToken(this.token);
