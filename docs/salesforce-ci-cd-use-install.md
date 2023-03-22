@@ -35,5 +35,5 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 >   - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 >   - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 
-
+Now your computer is all set, you can [clone your project git repository](salesforce-ci-cd-clone-repository.md) :)
 
