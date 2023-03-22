@@ -57,8 +57,10 @@ export abstract class GitProvider {
         status: prData.status,
         messageKey: prData.messageKey,
       };
-      await gitProvider.postPullRequestMessage(prMessageRequest);
-      globalThis.pullRequestCommentSent = true;
+      const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
+      if (postResult.posted === true) {
+        globalThis.pullRequestCommentSent = true;
+      }
     }
   }
 }
@@ -73,4 +75,5 @@ export declare type PullRequestMessageRequest = {
 export declare type PullRequestMessageResult = {
   posted: boolean;
   providerResult: any;
+  additionalProviderResult?: any;
 };

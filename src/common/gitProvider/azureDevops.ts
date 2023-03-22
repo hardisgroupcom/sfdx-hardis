@@ -26,7 +26,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
-    const buildId = process.env.BUILD_BUILD_ID || null ;
+    const buildId = process.env.BUILD_BUILD_ID || null;
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     if (repositoryId == null || pullRequestIdStr == null) {
       uxLog(this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
@@ -34,7 +34,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
     }
     const pullRequestId = Number(pullRequestIdStr);
     const azureJobName = process.env.SYSTEM_JOB_DISPLAY_NAME;
-    const azureBuildUri = `${process.env.SYSTEM_COLLECTION_URI}${process.env.SYSTEM_TEAMPROJECT}/_build/results?buildId=${buildId}`
+    const azureBuildUri = `${process.env.SYSTEM_COLLECTION_URI}${process.env.SYSTEM_TEAMPROJECT}/_build/results?buildId=${buildId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
@@ -56,16 +56,21 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     const existingThreads = await azureGitApi.getThreads(repositoryId, pullRequestId);
     let existingThreadId: number = null;
     let existingThreadComment: GitPullRequestCommentThread = null;
+    let existingThreadCommentId: number = null;
     for (const existingThread of existingThreads) {
       if (existingThread?.comments[0]?.content.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
         existingThreadComment = existingThread;
+        existingThreadCommentId = existingThread.comments[0].id;
         existingThreadId = existingThread.id;
       }
     }
 
     // Create or update MR note
     if (existingThreadId) {
-      // Update existing note
+      // Delete previous comment
+      uxLog(this, c.grey("[Azure integration] Deleting previous comment..."));
+      const deletedCommentResult = await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
+      // Update existing thread
       uxLog(this, c.grey("[Azure integration] Updating Pull Request Thread on Azure..."));
       existingThreadComment.comments[0] = { content: messageBody };
       existingThreadComment.status = this.pullRequestStatusToAzureThreadStatus(prMessage);
@@ -73,10 +78,11 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       const prResult: PullRequestMessageResult = {
         posted: azureEditThreadResult.id > 0,
         providerResult: azureEditThreadResult,
+        additionalProviderResult: { deletedCommentResult: deletedCommentResult },
       };
       return prResult;
     } else {
-      // Create new note if no existing not was found
+      // Create new thread
       uxLog(this, c.grey("[Azure integration] Adding Pull Request Thread on Azure..."));
       const newThreadComment: GitPullRequestCommentThread = {
         comments: [{ content: messageBody }],
