@@ -81,9 +81,13 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
       uxLog(this, c.grey("[Azure integration] Retrieve again existing thread..."));
       existingThreadComment = await azureGitApi.getPullRequestThread(repositoryId, pullRequestId, existingThreadId);
+      uxLog(this, c.white(JSON.stringify(existingThreadComment)));
       // Update existing thread
       uxLog(this, c.grey("[Azure integration] Closing previous Pull Request Thread on Azure..."));
-      existingThreadComment.status = CommentThreadStatus.Closed;
+      existingThreadComment = {
+        id  : existingThreadComment.id,
+        status : CommentThreadStatus.Closed
+      }
       await azureGitApi.updateThread(existingThreadComment, repositoryId, pullRequestId, existingThreadId);
     }
 
