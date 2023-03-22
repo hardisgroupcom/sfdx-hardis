@@ -11,7 +11,7 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
 }
 
 let spinnerQ;
-const maxRetry = process.env.BULK_QUERY_RETRY || 5;
+const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0): Promise<any> {
   uxLog(this, c.grey("SOQL BULK: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));

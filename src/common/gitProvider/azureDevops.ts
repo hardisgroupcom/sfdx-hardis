@@ -34,14 +34,16 @@ export class AzureDevopsProvider extends GitProviderRoot {
     }
     const pullRequestId = Number(pullRequestIdStr);
     const azureJobName = process.env.SYSTEM_JOB_DISPLAY_NAME;
-    const azureBuildUri = `${process.env.SYSTEM_COLLECTION_URI}${process.env.SYSTEM_TEAMPROJECT}/_build/results?buildId=${buildId}`;
+    const SYSTEM_COLLECTIONURI = process.env.SYSTEM_COLLECTIONURI.replace(/ /g, "%20");
+    const SYSTEM_TEAMPROJECT = process.env.SYSTEM_TEAMPROJECT.replace(/ /g, "%20");
+    const azureBuildUri = `${SYSTEM_COLLECTIONURI}${SYSTEM_TEAMPROJECT}/_build/results?buildId=${buildId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
 
 ${prMessage.message}
 
-
+<br/>
 _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJobName}](${azureBuildUri})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;

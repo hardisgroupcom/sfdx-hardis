@@ -30,7 +30,7 @@ Notes:
 - This integration use the following variables:
   - SYSTEM_ACCESSTOKEN: $(System.AccessToken)
   - CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
-  - SYSTEM_COLLECTION_URI: $(System.CollectionUri)
+  - SYSTEM_COLLECTIONURI: $(System.CollectionUri)
   - SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
   - SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
   - SYSTEM_TEAMPROJECT: $(System.TeamProject)
