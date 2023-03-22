@@ -85,9 +85,9 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       // Update existing thread
       uxLog(this, c.grey("[Azure integration] Closing previous Pull Request Thread on Azure..."));
       existingThreadComment = {
-        id  : existingThreadComment.id,
-        status : CommentThreadStatus.Closed
-      }
+        id: existingThreadComment.id,
+        status: CommentThreadStatus.Closed,
+      };
       await azureGitApi.updateThread(existingThreadComment, repositoryId, pullRequestId, existingThreadId);
     }
 
