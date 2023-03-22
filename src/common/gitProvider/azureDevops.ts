@@ -79,9 +79,13 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       // Delete previous comment
       uxLog(this, c.grey("[Azure integration] Deleting previous comment..."));
       const deletedCommentResult = await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
+      uxLog(this, c.grey("[Azure integration] Retrieve updated thread..."));
+      existingThreadComment = await azureGitApi.getPullRequestThread(repositoryId, pullRequestId, existingThreadId);
       // Update existing thread
       uxLog(this, c.grey("[Azure integration] Updating Pull Request Thread on Azure..."));
-      existingThreadComment.comments.push({ content: messageBody });
+      const updatedComments = existingThreadComment.comments || [];
+      updatedComments.push({ content: messageBody });
+      existingThreadComment.comments = updatedComments;
       existingThreadComment.status = this.pullRequestStatusToAzureThreadStatus(prMessage);
       const azureEditThreadResult = await azureGitApi.updateThread(existingThreadComment, repositoryId, pullRequestId, existingThreadId);
       const prResult: PullRequestMessageResult = {
