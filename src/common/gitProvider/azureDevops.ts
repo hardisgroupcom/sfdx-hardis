@@ -61,10 +61,16 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     let existingThreadComment: GitPullRequestCommentThread = null;
     let existingThreadCommentId: number = null;
     for (const existingThread of existingThreads) {
-      if (existingThread?.comments[0]?.content.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
-        existingThreadComment = existingThread;
-        existingThreadCommentId = existingThread.comments[0].id;
-        existingThreadId = existingThread.id;
+      for (const comment of existingThread?.comments || []) {
+        if ((comment?.content || "").includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+          existingThreadComment = existingThread;
+          existingThreadCommentId = existingThread.comments[0].id;
+          existingThreadId = existingThread.id;
+          break;
+        }
+      }
+      if (existingThreadId) {
+        break;
       }
     }
 
@@ -75,7 +81,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       const deletedCommentResult = await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
       // Update existing thread
       uxLog(this, c.grey("[Azure integration] Updating Pull Request Thread on Azure..."));
-      existingThreadComment.comments[0] = { content: messageBody };
+      existingThreadComment.comments.push({ content: messageBody });
       existingThreadComment.status = this.pullRequestStatusToAzureThreadStatus(prMessage);
       const azureEditThreadResult = await azureGitApi.updateThread(existingThreadComment, repositoryId, pullRequestId, existingThreadId);
       const prResult: PullRequestMessageResult = {
