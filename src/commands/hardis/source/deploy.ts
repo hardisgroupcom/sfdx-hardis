@@ -124,10 +124,10 @@ You can also have deployment results as pull request comments, on:
     // Check org coverage if requested
     if (this.flags.checkcoverage && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || "");
-      const checkOnly = this.flags.checkonly || false 
+      const checkOnly = this.flags.checkonly || false;
       if (orgCoveragePercent) {
         try {
-          await checkDeploymentOrgCoverage(orgCoveragePercent, {check: checkOnly});
+          await checkDeploymentOrgCoverage(orgCoveragePercent, { check: checkOnly });
         } catch (errCoverage) {
           await GitProvider.managePostPullRequestComment();
           throw errCoverage;

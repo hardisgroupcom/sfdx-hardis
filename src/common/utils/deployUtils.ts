@@ -809,7 +809,7 @@ export async function extractOrgCoverageFromLog(stdout) {
 }
 
 // Check if min org coverage is reached
-export async function checkDeploymentOrgCoverage(orgCoverage: number,options: any) {
+export async function checkDeploymentOrgCoverage(orgCoverage: number, options: any) {
   const config = await getConfig("branch");
   const minCoverageOrgWide = (
     process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
@@ -845,7 +845,7 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
 }
 
 // This data will be caught later to build a pull request message
-async function updatePullRequestResultCoverage(coverageStatus: string, orgCoverage: number, orgCoverageTarget: number,options: any) {
+async function updatePullRequestResultCoverage(coverageStatus: string, orgCoverage: number, orgCoverageTarget: number, options: any) {
   const existingPrData = globalThis.pullRequestData || {};
   const prDataCodeCoverage: any = {
     messageKey: existingPrData.messageKey ?? "deployment",
