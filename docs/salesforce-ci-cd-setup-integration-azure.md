@@ -17,7 +17,7 @@ Everytime you will make a pull request, the CI job will post its result as comme
 
 - Example with deployment errors
 
-![](assets/images/zure-mr-comment.jpg)
+![](assets/images/azure-mr-comment.jpg)
 
 - Example with failing test classes
 

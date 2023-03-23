@@ -78,13 +78,10 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     // Create or update MR note
     if (existingThreadId) {
       // Delete previous comment
-      uxLog(this, c.grey("[Azure integration] Deleting previous comment..."));
+      uxLog(this, c.grey("[Azure integration] Deleting previous comment and closing previous thread..."));
       await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
-      uxLog(this, c.grey("[Azure integration] Retrieve again existing thread..."));
       existingThreadComment = await azureGitApi.getPullRequestThread(repositoryId, pullRequestId, existingThreadId);
-      uxLog(this, c.white(JSON.stringify(existingThreadComment)));
       // Update existing thread
-      uxLog(this, c.grey("[Azure integration] Closing previous Pull Request Thread on Azure..."));
       existingThreadComment = {
         id: existingThreadComment.id,
         status: CommentThreadStatus.Closed,
