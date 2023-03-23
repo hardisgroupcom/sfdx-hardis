@@ -27,6 +27,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
     // Get CI variables
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     const buildId = process.env.BUILD_BUILD_ID || null;
+    const jobId = process.env.SYSTEM_JOB_ID || null;
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     if (repositoryId == null || pullRequestIdStr == null) {
       uxLog(this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
@@ -36,7 +37,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const azureJobName = process.env.SYSTEM_JOB_DISPLAY_NAME;
     const SYSTEM_COLLECTIONURI = process.env.SYSTEM_COLLECTIONURI.replace(/ /g, "%20");
     const SYSTEM_TEAMPROJECT = process.env.SYSTEM_TEAMPROJECT.replace(/ /g, "%20");
-    const azureBuildUri = `${SYSTEM_COLLECTIONURI}${SYSTEM_TEAMPROJECT}/_build/results?buildId=${buildId}`;
+    const azureBuildUri = `${SYSTEM_COLLECTIONURI}${SYSTEM_TEAMPROJECT}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
