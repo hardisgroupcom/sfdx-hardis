@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Integration with Azure Pipelines Pull Request threads
 - **hardis:work:new**: Allow to select no org even of sandbox or scratch is forced on the project using config property **allowedOrgTypes**
+- Doc: rename User Guide into [Contributor Guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-use-home/)
 
 ## [3.11.1] 2022-03-20
 

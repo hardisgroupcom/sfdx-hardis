@@ -1,5 +1,5 @@
 ---
-title: Salesforce CI/CD User Guide
+title: Salesforce CI/CD Contributor Guide
 description: Learn how to work on a Salesforce DX CI/CD Project
 ---
 <!-- markdownlint-disable MD013 -->
