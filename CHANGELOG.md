@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Integration with Azure Pipelines Pull Request threads
+- **hardis:work:new**: Allow to select no org even of sandbox or scratch is forced on the project using config property **allowedOrgTypes**
+- Doc: rename User Guide into [Contributor Guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-use-home/)
+
 ## [3.11.1] 2022-03-20
 
 - Better fix for root path issues (internal error)
@@ -212,7 +216,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Fix handling of new sfdx error format so we can again identify deployment tips
 - New deployment tips:
   - Cannot update a field to a Summary from something else
-  
+
 ## [2.92.0] 2022-07-29
 
 - New command hardis:org:retrieve:source:analytics to retrieve all analytics (CRM Analytics/TCRM) sources
@@ -224,7 +228,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Fix issue when force:source command wrappers arguments contain spaces [(#269)](https://github.com/hardisgroupcom/sfdx-hardis/issues/269))
 - Upgrade [MegaLinter](https://oxsecurity.github.io/megalinter/latest/) to v6
 - Upgrade yarn dependencies
-
 
 ## [2.90.0] 2022-06-24
 
@@ -868,6 +871,7 @@ dataPackages:
 ## [2.26.1] 2021-06-17
 
 - Take in account testLevel from `.sfdx-hardis.yml` in deployments
+
 ## [2.26.0] 2021-06-16
 
 - New command hardis:project:generate:gitdelta to generate the package.xml calculated between two commits
@@ -945,6 +949,7 @@ dataPackages:
 ## [2.18.0] 2021-05-18
 
 - New commands
+
   - **hardis:org:retrieve:packageconfig**: Retrieves .sfdx-hardis.yml property installedPackaged from an existing org
   - **hardis:project:clean:emptyitems**: Delete empty items from SFD project
   - **hardis:project:clean:hiddenitems**: Delete hidden items (from managed packages) from SFDX project

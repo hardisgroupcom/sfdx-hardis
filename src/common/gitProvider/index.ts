@@ -57,8 +57,10 @@ export abstract class GitProvider {
         status: prData.status,
         messageKey: prData.messageKey,
       };
-      await gitProvider.postPullRequestMessage(prMessageRequest);
-      globalThis.pullRequestCommentSent = true;
+      const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
+      if (postResult.posted === true) {
+        globalThis.pullRequestCommentSent = true;
+      }
     }
   }
 }
@@ -67,10 +69,11 @@ export declare type PullRequestMessageRequest = {
   title: string;
   message: string;
   messageKey: string;
-  status: ["valid", "invalid", "tovalidate"];
+  status: "valid" | "invalid" | "tovalidate";
 };
 
 export declare type PullRequestMessageResult = {
   posted: boolean;
   providerResult: any;
+  additionalProviderResult?: any;
 };

@@ -13,7 +13,7 @@ In order to enhance the user experience, integrations with external tools can be
   - Alerts
 - [Gitlab](salesforce-ci-cd-setup-integration-gitlab.md)
   - Deployment status in Merge Request notes
-- Azure Pipelines
-  - Soon !
+- [Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md)
+  - Deployment status in Pull Request threads
 - Github
   - Soon !

@@ -171,8 +171,8 @@ nav:
           ws: hardis/work/ws.md
   - Salesforce CI/CD:
       - CI/CD Home: salesforce-ci-cd-home.md
-      - User Guide:
-          - User Guide Home: salesforce-ci-cd-use-home.md
+      - Contributor Guide:
+          - Contributor Guide Home: salesforce-ci-cd-use-home.md
           - Pre-requisites:
               - Prepare your computer: salesforce-ci-cd-use-install.md
               - Clone the repository: salesforce-ci-cd-clone-repository.md
@@ -205,6 +205,7 @@ nav:
               - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
               - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
+              - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
   - Configuration reference: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles

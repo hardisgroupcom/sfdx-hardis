@@ -38,7 +38,7 @@ ___
 
 ## Use sfdx-hardis CI/CD
 
-Please read [User Guide](salesforce-ci-cd-use-home.md) to know how to work on CI/CD projects, as an **Business consultant**, a **Developer** or a **Release Manager**
+Please read [Contributor Guide](salesforce-ci-cd-use-home.md) to know how to work on CI/CD projects, as an **Business consultant**, a **Developer** or a **Release Manager**
 
 ___
 
