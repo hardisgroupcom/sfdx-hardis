@@ -230,7 +230,7 @@ export async function forceSourceDeploy(
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || "");
       if (orgCoveragePercent) {
         try {
-          await checkDeploymentOrgCoverage(orgCoveragePercent);
+          await checkDeploymentOrgCoverage(orgCoveragePercent, { check: check });
         } catch (errCoverage) {
           await GitProvider.managePostPullRequestComment();
           throw errCoverage;
@@ -809,7 +809,7 @@ export async function extractOrgCoverageFromLog(stdout) {
 }
 
 // Check if min org coverage is reached
-export async function checkDeploymentOrgCoverage(orgCoverage: number) {
+export async function checkDeploymentOrgCoverage(orgCoverage: number,options: any) {
   const config = await getConfig("branch");
   const minCoverageOrgWide = (
     process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
@@ -822,10 +822,10 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number) {
     throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
   }
   if (orgCoverage < minCoverageOrgWide) {
-    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverageOrgWide);
+    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverageOrgWide, options);
     throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${orgCoverage}% should be > to ${minCoverageOrgWide}%`);
   } else {
-    await updatePullRequestResultCoverage("valid", orgCoverage, minCoverageOrgWide);
+    await updatePullRequestResultCoverage("valid", orgCoverage, minCoverageOrgWide, options);
     uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(orgCoverage))}% is > to ${c.bold(minCoverageOrgWide)}%`));
   }
 }
@@ -845,11 +845,11 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
 }
 
 // This data will be caught later to build a pull request message
-async function updatePullRequestResultCoverage(coverageStatus: string, orgCoverage: number, orgCoverageTarget: number) {
+async function updatePullRequestResultCoverage(coverageStatus: string, orgCoverage: number, orgCoverageTarget: number,options: any) {
   const existingPrData = globalThis.pullRequestData || {};
   const prDataCodeCoverage: any = {
     messageKey: existingPrData.messageKey ?? "deployment",
-    title: existingPrData.title ?? "✅ Deployment success",
+    title: existingPrData.title ?? options.check ? "✅ Deployment check success" : "✅ Deployment success",
     codeCoverageMarkdownBody: "Code coverage is valid",
     deployStatus: existingPrData ?? coverageStatus,
   };

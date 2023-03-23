@@ -10,18 +10,27 @@ In order to avoid to have to open job logs to see deployment errors, sfdx-hardis
 
 To use this capability:
 
-- Go to Settings -> Access Tokens -> Create a project access token with level **Developer** and scope **api**, and name it **SFDX HARDIS BOT**
-- Go to Settings -> CI/CD -> Variables -> Create a variable named **CI_SFDX_HARDIS_AZURE_TOKEN** and past the access token value
+- A build policy must be defined
+
+  - See <https://docs.microsoft.com/en-US/azure/devops/repos/git/branch-policies?view=azure-devops&tabs=browser#build-validation>
+
+- You must allow **Contribute** and **Contribute to Pull Requests** on your Build Service (Settings -> Repositories -> Select your build service)
+
+![Screenshot](assets/images/AzureReporterConfigContribute.jpg)
 
 Everytime you will make a pull request, the CI job will post its result as comment !
 
 - Example with deployment errors
 
-![](assets/images/azure-mr-comment.jpg)
+![](assets/images/azure-pr-comment-failed.jpg)
 
 - Example with failing test classes
 
-![](assets/images/azure-mr-comment-failed-tests.jpg)
+![](assets/images/azure-pr-comment-failed-tests.jpg)
+
+- Example when all is ok :)
+
+![](assets/images/azure-pr-comment.jpg)
 
 Notes:
 
