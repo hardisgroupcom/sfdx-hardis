@@ -4,13 +4,14 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { GitProvider } from "../gitProvider";
 import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
 import { MetadataUtils } from "../metadata-utils";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
+import { callSfdxGitDelta } from "./gitUtils";
 import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
@@ -445,15 +446,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
-  const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: debugMode })).stdout;
-  const packageXmlGitDeltaCommand =
-    `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}` + (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
-  const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
-    output: true,
-    fail: false,
-    debug: debugMode,
-    cwd: await getGitRepoRoot(),
-  });
+  const gitDeltaCommandRes = await callSfdxGitDelta("HEAD","*",tmpDir,{debug: debugMode});
 
   // Now that the diff is computed, we can discard staged items and undo changes
   await git().reset(["--hard"]);

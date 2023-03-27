@@ -1,7 +1,7 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { uxLog } from ".";
+import { execCommand, execSfdxJson, getGitRepoRoot, uxLog } from ".";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -31,4 +31,19 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
   ]);
   const targetBranch = response.targetBranch || "developpement";
   return targetBranch;
+}
+
+export async function callSfdxGitDelta(from: string, to: string, outputDir: string, options: any = {}) {
+  const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: options?.debugMode || false }))
+    .stdout;
+  const packageXmlGitDeltaCommand =
+    `sfdx sgd:source:delta --from "${from}" --to "${to}" --output ${outputDir}` +
+    (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
+  const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
+    output: true,
+    fail: false,
+    debug: options?.debugMode || false,
+    cwd: await getGitRepoRoot(),
+  });
+  return gitDeltaCommandRes;
 }

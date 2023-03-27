@@ -19,7 +19,7 @@ import {
 } from "../../../common/utils";
 import { exportData } from "../../../common/utils/dataUtils";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
-import { selectTargetBranch } from "../../../common/utils/gitUtils";
+import { callSfdxGitDelta, selectTargetBranch } from "../../../common/utils/gitUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { WebSocketClient } from "../../../common/websocketClient";
@@ -297,15 +297,7 @@ autoRemoveUserPermissions:
       c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`)
     );
     const tmpDir = await createTempDir();
-    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
-      toCommit ? toCommit.hash : masterBranchLatestCommit
-    } --output ${tmpDir}`;
-    const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
-      output: true,
-      fail: false,
-      debug: this.debugMode,
-      cwd: await getGitRepoRoot(),
-    });
+    const packageXmlResult = await callSfdxGitDelta(masterBranchLatestCommit, toCommit ? toCommit.hash : masterBranchLatestCommit, tmpDir);
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml
       const localDestructiveChangesXml = path.join("manifest", "destructiveChanges.xml");
