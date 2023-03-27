@@ -4,14 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as path from "path";
-import {
-  createTempDir,
-  ensureGitRepository,
-  git,
-  gitCheckOutRemote,
-  selectGitBranch,
-  uxLog,
-} from "../../../../common/utils";
+import { createTempDir, ensureGitRepository, git, gitCheckOutRemote, selectGitBranch, uxLog } from "../../../../common/utils";
 import { callSfdxGitDelta } from "../../../../common/utils/gitUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -124,7 +117,7 @@ export default class GenerateGitDelta extends SfdxCommand {
 
     // Generate package.xml & destructiveChanges.xml using sfdx git delta
     const tmpDir = await createTempDir();
-    await callSfdxGitDelta(fromCommit,toCommit,tmpDir,{debug: this.debugMode});
+    await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
 
     const diffPackageXml = path.join(tmpDir, "package", "package.xml");
     const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
