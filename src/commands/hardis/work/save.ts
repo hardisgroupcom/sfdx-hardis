@@ -6,17 +6,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import open = require("open");
 import * as path from "path";
-import {
-  createTempDir,
-  execCommand,
-  execSfdxJson,
-  getCurrentGitBranch,
-  getGitRepoRoot,
-  git,
-  gitHasLocalUpdates,
-  normalizeFileStatusPath,
-  uxLog,
-} from "../../../common/utils";
+import { createTempDir, execCommand, getCurrentGitBranch, git, gitHasLocalUpdates, normalizeFileStatusPath, uxLog } from "../../../common/utils";
 import { exportData } from "../../../common/utils/dataUtils";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
 import { callSfdxGitDelta, selectTargetBranch } from "../../../common/utils/gitUtils";

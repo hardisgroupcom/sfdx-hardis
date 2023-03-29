@@ -467,7 +467,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 }
 
 // Remove content of a package.xml file from another package.xml file
-async function removePackageXmlContent(
+export async function removePackageXmlContent(
   packageXmlFile: string,
   packageXmlFileToRemove: string,
   removedOnly = false,

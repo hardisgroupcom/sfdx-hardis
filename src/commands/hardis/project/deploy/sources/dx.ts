@@ -5,12 +5,14 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
+import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { isCI, uxLog } from "../../../../../common/utils";
+import { createTempDir, isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
-import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
+import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
+import { callSfdxGitDelta } from "../../../../../common/utils/gitUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -138,6 +140,10 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
       char: "p",
       description: "Path to package.xml containing what you want to deploy in target org",
     }),
+    delta: flags.boolean({
+      default: false,
+      description: "Applies sfdx-git-delta to package.xml before other deployment processes",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -165,6 +171,7 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
   public async run(): Promise<AnyJson> {
     this.configInfo = await getConfig("branch");
     const check = this.flags.check || false;
+    const deltaFromArgs = this.flags.delta || false;
     const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
     const packageXml = this.flags.packagexml || null;
     this.debugMode = this.flags.debug || false;
@@ -198,24 +205,6 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
       }
     }
 
-    // Get package.xml
-    const packageXmlFile =
-      packageXml || process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
-        ? "./manifest/package.xml"
-        : "./config/package.xml";
-    const forceSourceDeployOptions: any = {
-      targetUsername: targetUsername,
-      conn: this.org?.getConnection(),
-    };
-    // Get destructiveChanges.xml and add it in options if existing
-    const packageDeletedXmlFile =
-      process.env.PACKAGE_XML_TO_DELETE || this.configInfo.packageXmlToDelete || fs.existsSync("./manifest/destructiveChanges.xml")
-        ? "./manifest/destructiveChanges.xml"
-        : "./config/destructiveChanges.xml";
-    if (fs.existsSync(packageDeletedXmlFile)) {
-      forceSourceDeployOptions.postDestructiveChanges = packageDeletedXmlFile;
-    }
-
     // Display missing packages message
     if (missingPackages.length > 0) {
       for (const package1 of missingPackages) {
@@ -239,6 +228,49 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
           )
         )
       );
+    }
+
+    // Get package.xml
+    let packageXmlFile =
+      packageXml || process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
+        ? "./manifest/package.xml"
+        : "./config/package.xml";
+    const forceSourceDeployOptions: any = {
+      targetUsername: targetUsername,
+      conn: this.org?.getConnection(),
+    };
+    // Get destructiveChanges.xml and add it in options if existing
+    const packageDeletedXmlFile =
+      process.env.PACKAGE_XML_TO_DELETE || this.configInfo.packageXmlToDelete || fs.existsSync("./manifest/destructiveChanges.xml")
+        ? "./manifest/destructiveChanges.xml"
+        : "./config/destructiveChanges.xml";
+    if (fs.existsSync(packageDeletedXmlFile)) {
+      forceSourceDeployOptions.postDestructiveChanges = packageDeletedXmlFile;
+    }
+
+    // Compute and apply delta if required
+    if (deltaFromArgs === true || process.env.USE_DELTA_DEPLOYMENT === "true" || this.configInfo.useDeltaDeployment === true) {
+      // call delta
+      uxLog(this,c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."))
+      const tmpDir = await createTempDir();
+      await callSfdxGitDelta("HEAD", "HEAD~1", tmpDir, { debug: this.debugMode });
+
+      // Update package.xml
+      const packageXmlFileDeltaDeploy = path.join(tmpDir, "package", "packageDelta.xml");
+      await fs.copy(packageXmlFile,packageXmlFileDeltaDeploy);
+      packageXmlFile = packageXmlFileDeltaDeploy;
+      const diffPackageXml = path.join(tmpDir, "package", "package.xml");
+      await removePackageXmlContent(packageXmlFile, diffPackageXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
+
+      // Update destructiveChanges.xml
+      if (forceSourceDeployOptions.postDestructiveChanges) {
+        const destructiveXmlFileDeploy = path.join(tmpDir, "destructiveChanges", "destructiveChangesDelta.xml");
+        await fs.copy(forceSourceDeployOptions.postDestructiveChanges,destructiveXmlFileDeploy);
+        packageXmlFile = packageXmlFileDeltaDeploy;        
+        const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
+        await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
+        forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
+      }
     }
 
     // Process deployment (or deployment check)
