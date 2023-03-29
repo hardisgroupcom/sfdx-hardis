@@ -58,7 +58,7 @@ export abstract class GitProvider {
         messageKey: prData.messageKey,
       };
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
-      if (postResult.posted === true) {
+      if (postResult && postResult.posted === true) {
         globalThis.pullRequestCommentSent = true;
       }
     }
