@@ -251,13 +251,13 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
     // Compute and apply delta if required
     if (deltaFromArgs === true || process.env.USE_DELTA_DEPLOYMENT === "true" || this.configInfo.useDeltaDeployment === true) {
       // call delta
-      uxLog(this,c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."))
+      uxLog(this, c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."));
       const tmpDir = await createTempDir();
       await callSfdxGitDelta("HEAD", "HEAD~1", tmpDir, { debug: this.debugMode });
 
       // Update package.xml
       const packageXmlFileDeltaDeploy = path.join(tmpDir, "package", "packageDelta.xml");
-      await fs.copy(packageXmlFile,packageXmlFileDeltaDeploy);
+      await fs.copy(packageXmlFile, packageXmlFileDeltaDeploy);
       packageXmlFile = packageXmlFileDeltaDeploy;
       const diffPackageXml = path.join(tmpDir, "package", "package.xml");
       await removePackageXmlContent(packageXmlFile, diffPackageXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
@@ -265,10 +265,13 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
       // Update destructiveChanges.xml
       if (forceSourceDeployOptions.postDestructiveChanges) {
         const destructiveXmlFileDeploy = path.join(tmpDir, "destructiveChanges", "destructiveChangesDelta.xml");
-        await fs.copy(forceSourceDeployOptions.postDestructiveChanges,destructiveXmlFileDeploy);
-        packageXmlFile = packageXmlFileDeltaDeploy;        
+        await fs.copy(forceSourceDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
+        packageXmlFile = packageXmlFileDeltaDeploy;
         const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
-        await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
+        await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
+          debugMode: this.debugMode,
+          keepEmptyTypes: false,
+        });
         forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
       }
     }
