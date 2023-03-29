@@ -31,7 +31,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     if (repositoryId == null || pullRequestIdStr == null) {
       uxLog(this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
-      return;
+      return { posted: false, providerResult: { info: "No related pull request" } };
     }
     const pullRequestId = Number(pullRequestIdStr);
     const azureJobName = process.env.SYSTEM_JOB_DISPLAY_NAME;
