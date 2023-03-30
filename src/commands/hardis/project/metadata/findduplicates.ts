@@ -18,11 +18,16 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
+function getCommonPermissionPatterns(rootTagName: "Profile" | "PermissionSet") {
+  return [`${rootTagName}.fieldPermissions.field`, `${rootTagName}.objectPermissions.object`, `${rootTagName}.classAccesses.apexClass`];
+}
 
 export default class Find extends SfdxCommand {
   protected static metadataDuplicateFindKeys = {
     layout: ["Layout.layoutSections.layoutColumns.layoutItems.field", "Layout.quickActionListItems.quickActionName"],
-    profile: ["Profile.fieldPermissions.field"],
+    profile: getCommonPermissionPatterns("Profile"),
+    labels: ["CustomLabels.labels.fullName"],
+    permissionset: getCommonPermissionPatterns("PermissionSet"),
   };
 
   public static title = "XML duplicate values finder";
@@ -88,21 +93,18 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
     }),
   };
 
-  // Comment this out if your command does not require an org username
-  //protected static requiresUsername = true;
-
-  // Comment this out if your command does not support a hub org username
-  // protected static requiresDevhubUsername = true;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
     uxLog(this, c.cyan(`Start finding duplicate values in XML metadata files.`));
     await this.initConfig();
-    this.findDuplicates();
+    const filesWithDuplicates = await this.findDuplicates();
     uxLog(this, c.cyan(`Done finding duplicate values in XML metadata files.`));
-    return;
+    if (filesWithDuplicates.length > 0) {
+      process.exitCode = 1;
+    }
+    return filesWithDuplicates;
   }
 
   async initConfig() {
@@ -123,6 +125,7 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
       inputFiles.push(...files);
     }
 
+    const foundFilesWithDuplicates = [];
     for (const inputFile of inputFiles) {
       // Extract given metadata type based on filename using type-meta.xml
       // For example PersonAccount.layout-meta.xml returns layout and Admin.profile-meta.xml returns profile
@@ -148,16 +151,22 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
         // https://stackoverflow.com/a/840808
         const duplicates = valuesFound.filter((e, i, a) => a.indexOf(e) !== i);
         if (duplicates.length) {
+          foundFilesWithDuplicates.push({
+            file: inputFile,
+            key,
+            duplicates,
+          });
           uxLog(
             this,
             c.red(`Duplicate values in ${basename(inputFile)}
   - Key    : ${key}
-  - Values : ${duplicates.toString().replace(",", ", ")}
+  - Values : ${duplicates.join(", ")}
 `)
           );
         }
       });
     }
+    return foundFilesWithDuplicates;
   }
 
   /**
