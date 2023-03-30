@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.12.1] 2022-03-29
+
+- Fix false positive error in deployment job when there is no related Pull/Merge request
+
 ## [3.12.0] 2022-03-23
 
 - Integration with [Azure Pipelines Pull Request threads](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
