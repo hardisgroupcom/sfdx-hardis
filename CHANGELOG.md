@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New deployment error tips
+  - SortOrder must be in sequential order from 1. (Duplicate Rules issue)
+  - Invalid field:ACCOUNT.NAME in related list:RelatedContactAccountRelationList
+- Add more matchers for duplicate detector
+
 ## [3.12.1] 2022-03-29
 
 - Fix false positive error in deployment job when there is no related Pull/Merge request

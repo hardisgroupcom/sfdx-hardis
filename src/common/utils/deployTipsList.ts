@@ -313,7 +313,10 @@ If it is already done, you may manually check "MarketingUser" field on the scrat
     {
       name: "missing-feature-account-contact-relation",
       label: "Missing feature ContactToMultipleAccounts",
-      expressionString: ["no CustomObject named AccountContactRelation found"],
+      expressionString: [
+        "no CustomObject named AccountContactRelation found",
+        "Invalid field:ACCOUNT.NAME in related list:RelatedContactAccountRelationList",
+      ],
       tip: `Contacts to multiple accounts be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=sf.shared_contacts_set_up.htm&type=5
 - Scratch org setting:
@@ -562,6 +565,13 @@ If you already did that, please try again to run the job`,
       label: "Send email is disabled",
       expressionString: ["Send Email is disabled or activities are not allowed", "Unknown user permission: SendExternalEmailAvailable"],
       tip: `Go to Email -> Deliverability -> Select value "All emails"`,
+    },
+    {
+      name: "sort-order-error",
+      label: "Sort order must be in sequential order",
+      expressionRegex: [/Error (.*) SortOrder must be in sequential order from/gm],
+      tip: `You probably have a default DuplicateRule in the target org. Retrieve it from target org, or delete it manually in target org, so you can deploy.
+Ref: https://developer.salesforce.com/forums/?id=9060G000000I6SoQAK`,
     },
     {
       name: "test-case-async-exception",
