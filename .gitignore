@@ -26,3 +26,4 @@ config/user/
 
 megalinter-reports/
 
+.idea
