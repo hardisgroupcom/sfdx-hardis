@@ -578,7 +578,8 @@ autoRemoveUserPermissions:
       return config.separateDeploymentConfig || [];
     }
     const separateDeploymentConfig = [
-      {
+      /*  NV: Commented because seems to be now useless
+     {
         types: ["EmailTemplate"],
         file: "manifest/splits/packageXmlEmails.xml",
         filePos: -20,
@@ -591,7 +592,7 @@ autoRemoveUserPermissions:
         file: "manifest/splits/packageXmlFlowWorkflow.xml",
         filePos: 6,
         content: {},
-      },
+      }, */
       {
         types: ["SharingRules", "SharingOwnerRule"],
         files: "manifest/splits/packageXmlSharingRules{{name}}.xml",

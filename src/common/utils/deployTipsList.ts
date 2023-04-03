@@ -410,6 +410,12 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 - Org & Scratch: https://developer.salesforce.com/docs/atlas.en-us.workdotcom_dev_guide.meta/workdotcom_dev_guide/wdc_cc_setup_dev_org.htm`,
     },
     {
+      name: "missing-multi-currency",
+      label: "Missing multi-currency field",
+      expressionRegex: [/A reference to a custom field (.*)CurrencyIsoCode/gm],
+      tip: `You probably need to activate MultiCurrency (from Setup -> Company information)`,
+    },
+    {
       name: "missing-object-package-xml",
       label: "Missing object referenced in package.xml",
       expressionRegex: [/An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory/gm],

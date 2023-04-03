@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.12.3] 2022-03-04
+
+- Do not add EmailTemplate and Flows as separate items in deploymentPlan, as metadata API now can handle their deployment with the rest of the sources
+- Add new deployTip: Missing multi-currency field
+- Update label when creating a new task using an existing sandbox
+
 ## [3.12.2] 2022-03-30
 
 - New deployment error tips
