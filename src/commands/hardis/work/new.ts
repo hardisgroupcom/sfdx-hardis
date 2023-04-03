@@ -354,7 +354,8 @@ Under the hood, it can:
     const initSandboxResponse = await prompts({
       type: "confirm",
       name: "value",
-      message: c.cyanBright(`Do you want to initialize the sandbox (packages,sources,permission set assignments,apex scripts,initial data) ?`),
+      message: c.cyanBright(`Do you want to initialize the sandbox (packages,SOURCES,permission set assignments,apex scripts,initial data) ?
+ WARNING: If you have config/dev in your sandbox that is not in a Pull Request/Merge request yet, click NO or it may be overwritten !`),
       default: false,
     });
     if (initSandboxResponse.value === true) {
