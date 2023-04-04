@@ -17,6 +17,7 @@ ___
 ## Use cases
 
 You use this command when you want to :
+
 - Create a dedicated new branch
 - Create a scratch org linked to the branch OR assign a dedicated sandbox to the newly created branch
 
