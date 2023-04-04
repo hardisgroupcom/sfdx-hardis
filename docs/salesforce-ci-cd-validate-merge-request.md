@@ -110,4 +110,4 @@ ___
 
 If post-deployment actions are required, perform them before clicking on the button to merge the Merge Request / Pull Request
 
-Postre-deployment actions can usually be found in README.md
+Post-deployment actions can usually be found in README.md
