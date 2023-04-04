@@ -4,6 +4,7 @@ description: Learn how to create a new task using a tracked sandbox or a scratch
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Use cases](#use-cases)
 - [Sandbox or scratch org ?](#sandbox-or-scratch-org-)
 - [Source-tracked sandbox mode](#source-tracked-sandbox-mode)
   - [Pre-requisites (sandbox)](#pre-requisites-sandbox)
