@@ -14,6 +14,14 @@ description: Learn how to create a new task using a tracked sandbox or a scratch
 
 ___
 
+## Use cases
+
+You use this command when you want to :
+- Create a dedicated new branch
+- Create a scratch org linked to the branch OR assign a dedicated sandbox to the newly created branch
+
+___
+
 ## Sandbox or scratch org ?
 
 With SFDX, usually each member of the teams has its own sandbox or scratch org to work on it.
