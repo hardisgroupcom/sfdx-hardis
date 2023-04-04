@@ -8,7 +8,10 @@ description: Learn how to validate a merge request on a Salesforce CI/CD project
 - [Control jobs](#control-jobs)
   - [Check deploy job](#check-deploy-job)
   - [Code Quality job](#code-quality-job)
-- [Merge the merge request](#merge-the-merge-request)
+- [Merge the Pull Request / Merge Request](#merge)
+  - [Pre-deployment actions](#pre-deployment-actions)
+  - [Effective merge](#effective-merge)
+  - [Post-deployment actions](#pre-deployment-actions)
 
 ___
 
@@ -38,6 +41,8 @@ ___
 
 Each merge request runs automatically the control jobs that will insure that the future deployment with be valid.
 
+___
+
 ### Check deploy job
 
 This CI job **simulates a deployment to the target org** (corresponding to the target branch of the merge request)
@@ -58,6 +63,8 @@ Under each error, you may see [instructions to solve the error](https://sfdx-har
 - If you are lost or are not sure of what you do, call your [release manager](salesforce-ci-cd-release-home.md)
 - If your release manager is lost or is not sure of what he does, [post an issue](https://github.com/hardisgroupcom/sfdx-hardis/issues) or [call Cloudity](https://cloudity.com/) to ask for support
 
+___
+
 ### Code Quality job
 
 [MegaLinter](https://megalinter.io/latest/) is used to perform code quality and security checks in Salesforce CI/CD repositories.
@@ -71,14 +78,36 @@ If you consider Apex issues to be false-positives, you may [disable some rules u
 
 ___
 
-## Merge the merge request
+## Merge
 
 _Depending on the project organization, this action can be allowed only to Release managers, or to more team members_
 
 If there are no conflicts and if all control jobs are in success, you can proceed to the merge of the merge request.
+
+___
+
+### Pre deployment actions
+
+If pre-deployment actions are required, perform them before clicking on the button to merge the Merge Request / Pull Request
+
+Pre-deployment actions can usually be found in README.md
+
+**IMPORTANT**: If **Custom Profiles** are deployed for the **first time**, you MUST **create them manually** in target org, by **cloning them from "Minimal access" Profile**
+
+___
+
+### Effective merge
 
 - **Click on Merge**
   - If the merge request is from a **minor branch** (dev or config task), make sure that **Squash commits** and **Delete after merge** are **checked**
   - If the merge request if from a major branch (develop, recette, uat, preprod...), make sure that **Squash commits** and **Delete after merge** are **NOT checked**
 
 - The merge commit in the target branch will **trigger a new job** that will automatically **deploy the updated source to the corresponding Salesforce org**
+
+___
+
+### Post deployment actions
+
+If post-deployment actions are required, perform them before clicking on the button to merge the Merge Request / Pull Request
+
+Post-deployment actions can usually be found in README.md
