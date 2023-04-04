@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add new deploy tip: Error parsing file
+
 ## [3.12.3] 2022-03-04
 
 - Do not add EmailTemplate and Flows as separate items in deploymentPlan, as metadata API now can handle their deployment with the rest of the sources

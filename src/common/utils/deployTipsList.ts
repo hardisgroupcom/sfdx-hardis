@@ -190,6 +190,13 @@ To remove them, please run sfdx:hardis:project:clean:emptyitems`,
 You probably also need to add CRM Analytics Admin Permission Set assignment to the deployment user`,
     },
     {
+      name: "error-parsing-file",
+      label: "Error parsing file",
+      expressionRegex: [/Error (.*) Error parsing file: (.*) /gm],
+      tip: `There has been an error parsing the XML file of {1}: {2}
+- Open file {1} and look where the error can be ! (merge issue, typo, XML tag not closed...)`,
+    },
+    {
       name: "field-must-not-be-required",
       label: "Formula picklist field issue",
       expressionRegex: [/Field:(.*) must not be Required/gm],
