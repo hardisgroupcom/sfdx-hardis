@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Change defaut package install mode to **AdminsOnly**
+- When minimizing Profiles, do not remove the **personAccountDefault=true** elements
 - Add new deploy tip: Error parsing file
 
 ## [3.12.3] 2022-03-04
