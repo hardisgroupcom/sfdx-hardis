@@ -39,7 +39,12 @@ export async function minimizeProfile(profileFile: string) {
   for (const node of nodesHavingDefault) {
     if (profileXml.Profile[node]) {
       const prevLen = profileXml.Profile[node].length;
-      profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => nodeVal?.default[0] === "true");
+      profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => {
+        if ((nodeVal?.default && nodeVal?.default[0] === "true") || (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true")) {
+          return true;
+        }
+        return false;
+      });
       if (profileXml.Profile[node].length !== prevLen) {
         updatedDefaults = true;
       }

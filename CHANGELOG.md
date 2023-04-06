@@ -4,9 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.13.0] 2022-04-06
+
+- Change defaut package install mode to **AdminsOnly**
+- When minimizing Profiles, do not remove the **personAccountDefault=true** elements
 - Add new deploy tip: Error parsing file
 
-## [3.12.3] 2022-03-04
+## [3.12.3] 2022-04-04
 
 - Do not add EmailTemplate and Flows as separate items in deploymentPlan, as metadata API now can handle their deployment with the rest of the sources
 - Add new deployTip: Missing multi-currency field
