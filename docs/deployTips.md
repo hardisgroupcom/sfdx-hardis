@@ -8,11 +8,11 @@ description: Learn how to fix issues that can happen during sfdx deployments
 
 This page summarizes all errors that can be detected by sfdx-hardis wrapper commands
 
-| sfdx command                                                                                                                                                                                | sfdx-hardis wrapper command                                                         |
-|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
-| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)   | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) |
-| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)       | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
-| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy) | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)   |
+| sfdx command             | sfdx-hardis wrapper command |
+| :-----------             | :-------------------------- |
+| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy) | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/)   |
+| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)   | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
+| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy)  | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)    |
 
 You can also use this function on a [sfdx-hardis Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
@@ -282,6 +282,17 @@ To remove them, please run sfdx:hardis:project:clean:emptyitems
 ```shell
 You must enable CRM Analytics (ex Wave, Einstein Analytics & Tableau CRM) in the target org.
 You probably also need to add CRM Analytics Admin Permission Set assignment to the deployment user
+```
+
+## Error parsing file
+
+- `Error (.*) Error parsing file: (.*) `
+
+**Resolution tip**
+
+```shell
+There has been an error parsing the XML file of {1}: {2}
+- Open file {1} and look where the error can be ! (merge issue, typo, XML tag not closed...)
 ```
 
 ## Formula picklist field issue
@@ -850,7 +861,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 
