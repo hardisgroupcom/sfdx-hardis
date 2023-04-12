@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.13.1] 2022-04-12
+
+- Fix missing sfdx-git-delta in Docker image
+
 ## [3.13.0] 2022-04-06
 
 - Change defaut package install mode to **AdminsOnly**
