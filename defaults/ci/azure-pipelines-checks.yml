@@ -50,8 +50,9 @@ jobs:
       # Install SFDX & Dependencies
       - script: |
           npm install sfdx-cli --global
-          echo 'y' | sfdx plugins:install sfdx-hardis@latest
+          echo 'y' | sfdx plugins:install sfdx-hardis
           echo 'y' | sfdx plugins:install sfdx-essentials
+          echo 'y' | sfdx plugins:install sfdx-git-delta@5.13.3
           sfdx --version
           sfdx plugins
         displayName: "Install SFDX & plugins"
