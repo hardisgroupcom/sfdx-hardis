@@ -440,14 +440,18 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
     }
   );
 
-  // Stage updates so sfdx git delta can build diff package.xml
-  await git().add("--all");
+  // "Temporarily" commit updates so sfdx git delta can build diff package.xml
+  await git().commit("chore: hardis temp commit", {
+    "--all": null,
+    "--no-verify": null
+  });
+
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
   const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: debugMode })).stdout;
   const packageXmlGitDeltaCommand =
-    `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}` + (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
+    `sfdx sgd:source:delta --from "HEAD~1" --to "HEAD" --output ${tmpDir}` + (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
   const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
     output: true,
     fail: false,
@@ -455,8 +459,8 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
     cwd: await getGitRepoRoot(),
   });
 
-  // Now that the diff is computed, we can discard staged items and undo changes
-  await git().reset(["--hard"]);
+  // Now that the diff is computed, we can dump the temporary commit
+  await git().reset(["--hard", 'HEAD~1']);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
