@@ -157,19 +157,8 @@ Example of element to delete:
       name: "email-template-missing",
       label: "Missing e-mail template",
       expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
-      tip: `Lightning EmailTemplates records must also be imported with metadatas.
-If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)
-- Create a file scripts/data/EmailTemplates/export.json:
-{
-    "objects": [
-        {
-            "query": "SELECT id,name,developername,namespaceprefix,foldername,templatestyle,isactive,templatetype,encoding,description,subject,htmlvalue,body,apiversion,markup,uitype,relatedentitytype,isbuildercontent FROM EmailTemplate",
-            "operation": "Upsert",
-            "externalId": "Name"
-        }
-    ]
-}
-- Run sfdx hardis:work:save`,
+      tip: `An email template should be present in the sources. To retrieve it, you can run:
+sfdx force:source:retrieve -m EmailTemplate:{1} -u YOUR_ORG_USERNAME`,
     },
     {
       name: "empty-item",
@@ -229,6 +218,14 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       label: "Insufficient access rights on cross-reference id",
       expressionRegex: [/Error (.*) insufficient access rights on cross-reference id/gm],
       tip: `If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow`,
+    },
+    {
+      name: "invalid-report-type",
+      label: "Invalid report type",
+      expressionRegex: [/Error (.*) invalid report type/gm],
+      tip: `Report type is missing for report {1}
+- Open report {1} to se what report type is used
+- Retrieve the report type from an org and add it to the sfdx sources`,
     },
     {
       name: "invalid-scope-mine",
@@ -442,6 +439,15 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 <quickActionListItems>
   <quickActionName>FeedItem.RypplePost</quickActionName>
 </quickActionListItems>`,
+    },
+    {
+      name: "missing-report",
+      label: "Missing report",
+      expressionRegex: [/Error (.*) The (.*) report chart has a problem with the "reportName" field/gm],
+      tip: `{1} is referring to unknown report {2}. To retrieve it, you can run:
+- sfdx force:source:retrieve -m Report:{2} -u YOUR_ORG_USERNAME
+- If it fails, looks for the report folder and add it before report name to the retrieve command (ex: MYFOLDER/MYREPORTNAME)
+`,
     },
     {
       name: "missing-sales-team",
