@@ -15,6 +15,7 @@ import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils";
+import { ResetMode } from "simple-git";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -441,11 +442,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   );
 
   // "Temporarily" commit updates so sfdx git delta can build diff package.xml
-  await git().commit("chore: hardis temp commit", {
-    "--all": null,
-    "--no-verify": null
-  });
-
+  await git().commit("chore: `sfdx-hardis` temporary commit", ["--all", "--no-verify"]);
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
@@ -460,7 +457,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   });
 
   // Now that the diff is computed, we can dump the temporary commit
-  await git().reset(["--hard", 'HEAD~1']);
+  await git().reset(ResetMode.HARD, ["HEAD~1"]);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
