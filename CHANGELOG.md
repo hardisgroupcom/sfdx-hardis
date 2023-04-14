@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix breaking change of sfdx-git-delta (many thanks @scolladon !)
 - Deploy tips
   - Invalid report type
   - Missing report
