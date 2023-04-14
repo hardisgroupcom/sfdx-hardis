@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.14.0] 2022-04-14
+
 - Fix breaking change of sfdx-git-delta (many thanks @scolladon !)
 - Deploy tips
   - Invalid report type
@@ -11,6 +13,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Update missing email template message
 - Add more space between error lines in PR/MR comments
 - Upgrade xml2js dependency
+- Update call to MegaLinter in Azure integrations
 
 ## [3.13.1] 2022-04-12
 
