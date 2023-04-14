@@ -444,6 +444,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   // Do not call delta if no updated file has been retrieved
   const hasGitLocalUpdates = await gitHasLocalUpdates()
   if (hasGitLocalUpdates === false) {
+    uxLog(this, c.grey("No diff retrieved from packageDeployOnChange.xml"));
     return null ;
   }
 
@@ -466,7 +467,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   });
 
   // Now that the diff is computed, we can dump the temporary commit
-  await git().reset(ResetMode.HARD, ['"HEAD~1"']);
+  await git().reset(ResetMode.HARD, ["HEAD~1"]);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
