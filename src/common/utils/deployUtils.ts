@@ -441,10 +441,10 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   );
 
   // "Temporarily" commit updates so sfdx git delta can build diff package.xml
+  await git().addConfig("user.email", "bot@hardis.com", false, "global");
+  await git().addConfig("user.name", "Hardis", false, "global");
   await git().add("--all");
-  await git().addConfig("user.email", "dummy@dummy.com", false, "global");
-  await git().addConfig("user.name", "Dummy Commit", false, "global");
-  await git().commit("dummyCommit", ["--no-verify"]);
+  await git().commit("\"temp\"", ["--no-verify"]);
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
@@ -459,7 +459,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   });
 
   // Now that the diff is computed, we can dump the temporary commit
-  await git().reset(["HEAD~1","--hard"]);
+  await git().reset(ResetMode.HARD, ["\"HEAD~1\""]);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
