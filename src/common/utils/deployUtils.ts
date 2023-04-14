@@ -460,7 +460,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   });
 
   // Now that the diff is computed, we can dump the temporary commit
-  await git().reset(ResetMode.HARD, ["HEAD~1"]);
+  await git().reset(["HEAD~1","--hard"]);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
