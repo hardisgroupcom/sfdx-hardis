@@ -443,6 +443,8 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // "Temporarily" commit updates so sfdx git delta can build diff package.xml
   await git().add("--all");
+  await git().addConfig("user.email", "dummy@dummy.com", false, "global");
+  await git().addConfig("user.name", "Dummy Commit", false, "global");
   await git().commit("chore: `sfdx-hardis` temporary commit", ["--no-verify"]);
 
   // Generate package.xml git delta
