@@ -441,11 +441,12 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
     }
   );
 
-  // Early exit when there is no difference with the org
+  // Do not call delta if no updated file has been retrieved
   const hasGitLocalUpdates = await gitHasLocalUpdates()
-  if(hasGitLocalUpdates === false){
-    return null;
-  } 
+  if (hasGitLocalUpdates === false) {
+    uxLog(this, c.grey("No diff retrieved from packageDeployOnChange.xml"));
+    return null ;
+  }
 
   // "Temporarily" commit updates so sfdx git delta can build diff package.xml
   await git().addConfig("user.email", "bot@hardis.com", false, "global");
@@ -466,7 +467,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   });
 
   // Now that the diff is computed, we can dump the temporary commit
-  await git().reset(ResetMode.HARD, ['"HEAD~1"']);
+  await git().reset(ResetMode.HARD, ["HEAD~1"]);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");

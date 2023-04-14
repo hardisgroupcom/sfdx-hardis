@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Deploy tips
+  - Invalid report type
+  - Missing report
+  - Update missing email template message
+- Add more space between error lines in PR/MR comments
+- Upgrade xml2js dependency
+
 ## [3.13.1] 2022-04-12
 
 - Fix missing sfdx-git-delta in Docker image
