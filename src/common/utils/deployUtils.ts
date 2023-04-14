@@ -4,7 +4,7 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, isCI, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, gitHasLocalUpdates, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { GitProvider } from "../gitProvider";
 import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
@@ -15,6 +15,7 @@ import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils";
+import { ResetMode } from "simple-git";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -440,14 +441,24 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
     }
   );
 
-  // Stage updates so sfdx git delta can build diff package.xml
+  // Do not call delta if no updated file has been retrieved
+  const hasGitLocalUpdates = await gitHasLocalUpdates()
+  if (hasGitLocalUpdates === false) {
+    uxLog(this, c.grey("No diff retrieved from packageDeployOnChange.xml"));
+    return null ;
+  }
+
+  // "Temporarily" commit updates so sfdx git delta can build diff package.xml
+  await git().addConfig("user.email", "bot@hardis.com", false, "global");
+  await git().addConfig("user.name", "Hardis", false, "global");
   await git().add("--all");
+  await git().commit('"temp"', ["--no-verify"]);
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
   const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: debugMode })).stdout;
   const packageXmlGitDeltaCommand =
-    `sfdx sgd:source:delta --from "HEAD" --to "*" --output ${tmpDir}` + (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
+    `sfdx sgd:source:delta --from "HEAD~1" --to "HEAD" --output ${tmpDir}` + (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
   const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
     output: true,
     fail: false,
@@ -455,8 +466,8 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
     cwd: await getGitRepoRoot(),
   });
 
-  // Now that the diff is computed, we can discard staged items and undo changes
-  await git().reset(["--hard"]);
+  // Now that the diff is computed, we can dump the temporary commit
+  await git().reset(ResetMode.HARD, ["HEAD~1"]);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
