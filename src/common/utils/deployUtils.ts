@@ -442,8 +442,10 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   );
 
   // "Temporarily" commit updates so sfdx git delta can build diff package.xml
+  await git().addConfig("user.email", "bot@hardis.com", false, "global");
+  await git().addConfig("user.name", "Hardis", false, "global");
   await git().add("--all");
-  await git().commit("chore: sfdx-hardis temporary commit", ["--no-verify"]);
+  await git().commit("chore: temporary commit", ["--no-verify"]);
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
