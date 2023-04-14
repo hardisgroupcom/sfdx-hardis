@@ -15,6 +15,7 @@ import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils";
+import { ResetMode } from "simple-git";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -440,11 +441,11 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
     }
   );
 
-  // Earky exit when there is no difference with the org
+  // Do not call delta if no updated file has been retrieved
   const hasGitLocalUpdates = await gitHasLocalUpdates()
-  if(hasGitLocalUpdates === false){
-    return null;
-  } 
+  if (hasGitLocalUpdates === false) {
+    return null ;
+  }
 
   // "Temporarily" commit updates so sfdx git delta can build diff package.xml
   await git().addConfig("user.email", "bot@hardis.com", false, "global");
