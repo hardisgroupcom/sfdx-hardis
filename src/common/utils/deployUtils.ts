@@ -4,7 +4,19 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, gitHasLocalUpdates, isCI, uxLog } from ".";
+import {
+  createTempDir,
+  elapseEnd,
+  elapseStart,
+  execCommand,
+  execSfdxJson,
+  getCurrentGitBranch,
+  getGitRepoRoot,
+  git,
+  gitHasLocalUpdates,
+  isCI,
+  uxLog,
+} from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { GitProvider } from "../gitProvider";
 import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
@@ -442,10 +454,10 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   );
 
   // Do not call delta if no updated file has been retrieved
-  const hasGitLocalUpdates = await gitHasLocalUpdates()
+  const hasGitLocalUpdates = await gitHasLocalUpdates();
   if (hasGitLocalUpdates === false) {
     uxLog(this, c.grey("No diff retrieved from packageDeployOnChange.xml"));
-    return null ;
+    return null;
   }
 
   // "Temporarily" commit updates so sfdx git delta can build diff package.xml
