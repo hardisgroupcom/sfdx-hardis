@@ -271,7 +271,7 @@
       "additionalProperties": true,
       "description": "Custom colors set by VsCode SFDX Hardis",
       "title": "Custom Org Colors",
-      "type": "object"      
+      "type": "object"
     },
     "customPlugins": {
       "$id": "#/properties/customPlugins",
