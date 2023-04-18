@@ -266,6 +266,54 @@
       "title": "Custom commands position",
       "type": "string"
     },
+    "customOrgColors": {
+      "$id": "#/properties/customOrgColors",
+      "additionalProperties": true,
+      "description": "Custom colors set by VsCode SFDX Hardis",
+      "title": "Custom Org Colors",
+      "type": "object"
+    },
+    "customPlugins": {
+      "$id": "#/properties/customPlugins",
+      "description": "List of additional plugins that will be displayed in VsCode SFDX-Hardis Dependencies panel",
+      "examples": [
+        [
+          {
+            "name": "mo-dx-plugin",
+            "helpUrl": "https://github.com/msrivastav13/mo-dx-plugin"
+          },
+          {
+            "name": "shane-sfdx-plugins",
+            "helpUrl": "https://github.com/mshanemc/shane-sfdx-plugins"
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/customPlugins/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Plugin definition",
+        "properties": {
+          "name": {
+            "$Id": "#/properties/customPlugins/items/properties/name",
+            "description": "Name of the plugin npm package",
+            "examples": ["mo-dx-plugin", "shane-sfdx-plugins"],
+            "title": "Name",
+            "type": "string"
+          },
+          "helpUrl": {
+            "$Id": "#/properties/customPlugins/items/properties/helpUrl",
+            "description": "Url of plugin documentation",
+            "examples": ["https://github.com/msrivastav13/mo-dx-plugin", "https://github.com/mshanemc/shane-sfdx-plugins"],
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "title": "Plugin"
+      },
+      "title": "Custom plugins",
+      "type": "array"
+    },
     "dataPackages": {
       "$id": "#/properties/dataPackages",
       "description": "List of data packages",
@@ -626,47 +674,6 @@
       "examples": ["https://my.msteams.webhook.url"],
       "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
-    },
-    "customPlugins": {
-      "$id": "#/properties/customPlugins",
-      "description": "List of additional plugins that will be displayed in VsCode SFDX-Hardis Dependencies panel",
-      "examples": [
-        [
-          {
-            "name": "mo-dx-plugin",
-            "helpUrl": "https://github.com/msrivastav13/mo-dx-plugin"
-          },
-          {
-            "name": "shane-sfdx-plugins",
-            "helpUrl": "https://github.com/mshanemc/shane-sfdx-plugins"
-          }
-        ]
-      ],
-      "items": {
-        "$id": "#/properties/customPlugins/items",
-        "type": "object",
-        "additionalProperties": false,
-        "description": "Plugin definition",
-        "properties": {
-          "name": {
-            "$Id": "#/properties/customPlugins/items/properties/name",
-            "description": "Name of the plugin npm package",
-            "examples": ["mo-dx-plugin", "shane-sfdx-plugins"],
-            "title": "Name",
-            "type": "string"
-          },
-          "helpUrl": {
-            "$Id": "#/properties/customPlugins/items/properties/helpUrl",
-            "description": "Url of plugin documentation",
-            "examples": ["https://github.com/msrivastav13/mo-dx-plugin", "https://github.com/mshanemc/shane-sfdx-plugins"],
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "title": "Plugin"
-      },
-      "title": "Custom plugins",
-      "type": "array"
     },
     "poolConfig": {
       "$id": "#/properties/poolConfig",
