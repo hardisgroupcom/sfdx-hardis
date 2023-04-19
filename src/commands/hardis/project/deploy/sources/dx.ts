@@ -116,6 +116,8 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
 ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 \`\`\`
+
+If you need to increase the deployment waiting time (force:source:deploy --wait arg), you can define env var SFDX_DEPLOY_WAIT_MINUTES
   `;
 
   public static examples = ["$ sfdx hardis:project:deploy:sources:dx", "$ sfdx hardis:project:deploy:sources:dx --check"];

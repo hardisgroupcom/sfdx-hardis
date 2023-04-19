@@ -204,7 +204,7 @@ export async function forceSourceDeploy(
       );
       const deployCommand =
         `sfdx force:source:deploy -x "${deployment.packageXmlFile}"` +
-        " --wait 60" +
+        ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
         " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
         ` --testlevel ${testlevel}` +
         (options.preDestructiveChanges ? ` --predestructivechanges ${options.postDestructiveChanges}` : "") +

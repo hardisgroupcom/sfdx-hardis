@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.14.1] 2022-04-19
+
+- Allow to override the default deployment wait time (60) using variable SFDX_DEPLOY_WAIT_MINUTES
+- Update JSON schema to add customOrgColors
+
 ## [3.14.0] 2022-04-14
 
 - Fix breaking change of sfdx-git-delta (many thanks @scolladon !)
