@@ -354,18 +354,18 @@ Under the hood, it can:
       type: "select",
       name: "value",
       message: c.cyanBright(
-        `Do you want to update the sandbox according to git branch ${this.targetBranch} current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
+        `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
       ),
       choices: [
         {
-          title: "No, please don't touch my sandbox !",
+          title: "No, continue working on my current sandbox state",
           value: "no",
-          description: "Continue working on your current sandbox state",
+          description: "(especially if you have uncomitted changes in your sandbox)",
         },
         {
           title: "Yes, please try to update my sandbox !",
           value: "init",
-          description: "ONLY If you do have config/dev in your sandbox that is not committed yet in a Pull Request/Merge request",
+          description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task`,
         },
       ],
     });
