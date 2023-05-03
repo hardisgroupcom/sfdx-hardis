@@ -150,9 +150,8 @@ Under the hood, it can:
     // Create new branch
     uxLog(this, c.cyan(`Creating new git branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
-
     // Update config if necessary
-    if (config.developmentBranch !== this.targetBranch) {
+    if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
       const updateDefaultBranchRes = await prompts({
         type: "confirm",
         name: "value",
@@ -352,13 +351,26 @@ Under the hood, it can:
     }
     // Initialize / Update existing sandbox if required
     const initSandboxResponse = await prompts({
-      type: "confirm",
+      type: "select",
       name: "value",
-      message: c.cyanBright(`Do you want to initialize the sandbox (packages,SOURCES,permission set assignments,apex scripts,initial data) ?
- WARNING: If you have config/dev in your sandbox that is not in a Pull Request/Merge request yet, click NO or it may be overwritten !`),
-      default: false,
+      message: c.cyanBright(
+        `Do you want to update the sandbox according to git branch ${this.targetBranch} current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
+      ),
+      choices: [
+        {
+          title: "No, please don't touch my sandbox !",
+          value: "no",
+          description: "Continue working on your current sandbox state",
+        },
+        {
+          title: "Yes, please try to update my sandbox !",
+          value: "init",
+          description:
+            "ONLY If you do have config/dev in your sandbox that is not committed yet in a Pull Request/Merge request",
+        },
+      ],
     });
-    if (initSandboxResponse.value === true) {
+    if (initSandboxResponse.value === "init") {
       let initSourcesErr: any = null;
       let initSandboxErr: any = null;
       try {
