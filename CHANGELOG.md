@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.14.2] 2022-05-03
+
+- More explicit text to ask user if he/she wants to update its selected sandbox while creating a new task
+- Do not ask to change default target branch if there are multiple available branches
+
 ## [3.14.1] 2022-04-19
 
 - Allow to override the default deployment wait time (60) using variable SFDX_DEPLOY_WAIT_MINUTES
