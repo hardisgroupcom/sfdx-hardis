@@ -365,8 +365,7 @@ Under the hood, it can:
         {
           title: "Yes, please try to update my sandbox !",
           value: "init",
-          description:
-            "ONLY If you do have config/dev in your sandbox that is not committed yet in a Pull Request/Merge request",
+          description: "ONLY If you do have config/dev in your sandbox that is not committed yet in a Pull Request/Merge request",
         },
       ],
     });
