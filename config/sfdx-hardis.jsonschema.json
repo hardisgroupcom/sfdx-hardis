@@ -64,6 +64,16 @@
       "title": "Minimum apex test coverage %",
       "type": "number"
     },
+    "availableProjects": {
+      "$id": "#/properties/availableProjects",
+      "description": "List of business projects that are managed in the same repository. Will be used to build git branch name when using hardis:work:new",
+      "examples": [["sales_cloud", "service_cloud","community"]],
+      "items": {
+        "type": "string"
+      },
+      "title": "Available projects",
+      "type": "array"
+    },
     "availableTargetBranches": {
       "$id": "#/properties/availableTargetBranches",
       "description": "List of git branches that can be used as target for merge requests",
