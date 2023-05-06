@@ -109,17 +109,17 @@ Under the hood, it can:
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
 
     // Select project if multiple projects are defined in availableProjectList .sfdx-hardis.yml property
-    let projectBranchPart = ""
+    let projectBranchPart = "";
     const availableProjectList = config.availableProjectList || [];
     if (availableProjectList.length > 1) {
-      const projectResponse = await prompts(
-        {
-          type: "select",
-          name: "project",
-          message: c.cyanBright("Please select the project your task is for"),
-          choices: availableProjectList.map((project: string) => { return { title: project, value: project } }),
-        }
-      );
+      const projectResponse = await prompts({
+        type: "select",
+        name: "project",
+        message: c.cyanBright("Please select the project your task is for"),
+        choices: availableProjectList.map((project: string) => {
+          return { title: project, value: project };
+        }),
+      });
       projectBranchPart = projectResponse.project + "/";
     }
 

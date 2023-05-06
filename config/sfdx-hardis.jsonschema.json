@@ -67,7 +67,7 @@
     "availableProjects": {
       "$id": "#/properties/availableProjects",
       "description": "List of business projects that are managed in the same repository. Will be used to build git branch name when using hardis:work:new",
-      "examples": [["sales_cloud", "service_cloud","community"]],
+      "examples": [["sales_cloud", "service_cloud", "community"]],
       "items": {
         "type": "string"
       },
