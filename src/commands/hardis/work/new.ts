@@ -109,17 +109,17 @@ Under the hood, it can:
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
 
     // Select project if multiple projects are defined in availableProjectList .sfdx-hardis.yml property
-    let projectBranchPart = ""
+    let projectBranchPart = "";
     const availableProjects = config.availableProjects || [];
     if (availableProjects.length > 1) {
-      const projectResponse = await prompts(
-        {
-          type: "select",
-          name: "project",
-          message: c.cyanBright("Please select the project your task is for"),
-          choices: availableProjects.map((project: string) => { return { title: project, value: project } }),
-        }
-      );
+      const projectResponse = await prompts({
+        type: "select",
+        name: "project",
+        message: c.cyanBright("Please select the project your task is for"),
+        choices: availableProjects.map((project: string) => {
+          return { title: project, value: project };
+        }),
+      });
       projectBranchPart = projectResponse.project + "/";
     }
 
@@ -181,7 +181,7 @@ Under the hood, it can:
     const currentUserConfig = await getConfig("user");
     const localStorageBranchTargets = currentUserConfig.localStorageBranchTargets || {};
     localStorageBranchTargets[branchName] = this.targetBranch;
-    await setConfig("user", { localStorageBranchTargets: localStorageBranchTargets })
+    await setConfig("user", { localStorageBranchTargets: localStorageBranchTargets });
 
     // Get allowed work org types from config if possible
     const allowedOrgTypes = config?.allowedOrgTypes || [];
