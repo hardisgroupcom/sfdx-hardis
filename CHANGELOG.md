@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Allow to define property **availableProjects** so when user clicks on New task (hardis:work:new), he/she is asked to select a project, that will be used to build the new git branch name
+- When creating new task, store the target branch so it is not prompted again when waiting to save/publish the task.
 
 ## [3.14.2] 2022-05-03
 

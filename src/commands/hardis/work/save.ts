@@ -143,6 +143,12 @@ autoRemoveUserPermissions:
     this.gitUrl = await git().listRemote(["--get-url"]);
     this.currentBranch = await getCurrentGitBranch();
     if (this.targetBranch == null) {
+      const userConfig = await getConfig("user");
+      if (userConfig?.localStorageBranchTargets[localBranch]) {
+        this.targetBranch = userConfig?.localStorageBranchTargets[localBranch];
+      }
+    }
+    if (this.targetBranch == null) {
       this.targetBranch = await selectTargetBranch({ message: "Please select the target branch of your Merge Request" });
     }
     // User log info
@@ -297,9 +303,8 @@ autoRemoveUserPermissions:
       c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`)
     );
     const tmpDir = await createTempDir();
-    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
-      toCommit ? toCommit.hash : masterBranchLatestCommit
-    } --output ${tmpDir}`;
+    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit ? toCommit.hash : masterBranchLatestCommit
+      } --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
       output: true,
       fail: false,
@@ -323,7 +328,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr)
+        c.red(destructivePackageXmlDiffStr)
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +
