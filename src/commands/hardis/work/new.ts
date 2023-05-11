@@ -108,6 +108,21 @@ Under the hood, it can:
     ];
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
 
+    // Select project if multiple projects are defined in availableProjects .sfdx-hardis.yml property
+    let projectBranchPart = "";
+    const availableProjects = config.availableProjects || [];
+    if (availableProjects.length > 1) {
+      const projectResponse = await prompts({
+        type: "select",
+        name: "project",
+        message: c.cyanBright("Please select the project your task is for"),
+        choices: availableProjects.map((project: string) => {
+          return { title: project, value: project };
+        }),
+      });
+      projectBranchPart = projectResponse.project + "/";
+    }
+
     // Request info to build branch name. ex features/config/MYTASK
     const response = await prompts([
       {
@@ -136,13 +151,13 @@ Under the hood, it can:
         type: "text",
         name: "taskName",
         message: c.cyanBright(
-          "What is the name of your new task ? (examples: webservice-get-account, flow-process-opportunity...). Please avoid accents or special characters"
+          "What is the name of your new task ? (examples: JIRA123-webservice-get-account, T1000-flow-process-opportunity...). Please avoid accents or special characters"
         ),
       },
     ]);
 
     // Checkout development main branch
-    const branchName = `${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
+    const branchName = `${projectBranchPart}${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`));
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
@@ -162,6 +177,11 @@ Under the hood, it can:
         await setConfig("user", { developmentBranch: this.targetBranch });
       }
     }
+    // Update local user config files to store the target of the just created branch
+    const currentUserConfig = await getConfig("user");
+    const localStorageBranchTargets = currentUserConfig.localStorageBranchTargets || {};
+    localStorageBranchTargets[branchName] = this.targetBranch;
+    await setConfig("user", { localStorageBranchTargets: localStorageBranchTargets });
 
     // Get allowed work org types from config if possible
     const allowedOrgTypes = config?.allowedOrgTypes || [];
