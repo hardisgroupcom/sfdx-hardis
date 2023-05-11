@@ -619,7 +619,7 @@ class MetadataUtils {
         "sfdx force:mdapi:retrieve" +
         ` --retrievetargetdir ${metadataFolder}` +
         ` --unpackaged ${packageXml}` +
-        " --wait 60" +
+        ` --wait ${process.env.SFDX_RETRIEVE_WAIT_MINUTES || "60"}` +
         (debug ? " --verbose" : "");
       const retrieveRes = await execSfdxJson(retrieveCommand, this, {
         output: false,
