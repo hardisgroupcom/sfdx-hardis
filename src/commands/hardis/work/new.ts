@@ -108,7 +108,7 @@ Under the hood, it can:
     ];
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
 
-    // Select project if multiple projects are defined in availableProjectList .sfdx-hardis.yml property
+    // Select project if multiple projects are defined in availableProjects .sfdx-hardis.yml property
     let projectBranchPart = "";
     const availableProjects = config.availableProjects || [];
     if (availableProjects.length > 1) {
