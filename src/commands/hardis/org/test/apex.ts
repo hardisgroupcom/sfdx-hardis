@@ -23,6 +23,8 @@ If following configuration is defined, it will fail if apex coverage target is n
 
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
+
+You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
 `;
 
   public static examples = ["$ sfdx hardis:org:test:apex"];
@@ -72,7 +74,7 @@ If following configuration is defined, it will fail if apex coverage target is n
       " --codecoverage" +
       " --resultformat human" +
       ` --outputdir ${reportDir}` +
-      " --wait 60" +
+      ` --wait ${process.env.SFDX_TEST_WAIT_MINUTES || "60"}` +
       ` --testlevel ${testlevel}` +
       (check ? " --checkonly" : "") +
       (debugMode ? " --verbose" : "");

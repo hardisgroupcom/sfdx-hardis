@@ -539,7 +539,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, "destructiveChanges.xml"));
   const deployDelete =
     `sfdx force:mdapi:deploy -d ${tmpDir}` +
-    " --wait 60" +
+    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
     ` --testlevel ${options.testLevel || "NoTestRun"}` +
     " --ignorewarnings" + // So it does not fail in case metadata is already deleted
     (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
@@ -593,7 +593,7 @@ export async function deployMetadatas(
   const deployCommand =
     "sfdx force:mdapi:deploy" +
     ` --deploydir ${options.deployDir || "."}` +
-    " --wait 60" +
+    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
     ` --testlevel ${options.testlevel || "RunLocalTests"}` +
     ` --apiversion ${options.apiVersion || CONSTANTS.API_VERSION}` +
     (options.soap ? " --soapdeploy" : "") +

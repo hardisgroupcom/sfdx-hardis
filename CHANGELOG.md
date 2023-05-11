@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New ENV variables to override default wait on retrieve/deploy/test commands
+  - SFDX_RETRIEVE_WAIT_MINUTES
+  - SFDX_DEPLOY_WAIT_MINUTES
+  - SFDX_TEST_WAIT_MINUTES
+
 ## [3.15.0] 2022-05-11
 
 - Allow to define property **availableProjects** so when user clicks on New task (hardis:work:new), he/she is asked to select a project, that will be used to build the new git branch name
