@@ -9,5 +9,7 @@
   "search.exclude": {
     "**/lib": true,
     "**/bin": true
-  }
+  },
+  "workbench.colorCustomizations": {},
+  "sarif-viewer.connectToGithubCodeScanning": "off"
 }

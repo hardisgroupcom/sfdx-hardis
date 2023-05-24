@@ -4,10 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.16.0] 2022-05-24
+
 - New ENV variables to override default wait on retrieve/deploy/test commands
   - SFDX_RETRIEVE_WAIT_MINUTES
   - SFDX_DEPLOY_WAIT_MINUTES
   - SFDX_TEST_WAIT_MINUTES
+- Update default .forceignore content
 
 ## [3.15.0] 2022-05-11
 
