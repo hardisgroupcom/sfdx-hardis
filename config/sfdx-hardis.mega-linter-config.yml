@@ -1,5 +1,5 @@
 # Configuration file for Mega-Linter
-# See all available variables at https://oxsecurity.github.io/megalinter/configuration/ and in linters documentation
+# See all available variables at https://megalinter.io/config-file/ and in linters documentation
 
 # To use this config from your local .mega-linter.yml file, add the following lines:
 # EXTENDS:

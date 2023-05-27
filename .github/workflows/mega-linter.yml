@@ -1,6 +1,6 @@
 ---
 # Mega-Linter GitHub Action configuration file
-# More info at https://oxsecurity.github.io/megalinter
+# More info at https://megalinter.io
 name: Mega-Linter
 
 on:
@@ -31,11 +31,11 @@ jobs:
       - name: Mega-Linter
         id: ml
         # You can override Mega-Linter flavor used to have faster performances
-        # More info at https://oxsecurity.github.io/megalinter/flavors/
-        uses: oxsecurity/megalinter/flavors/javascript@latest
+        # More info at https://megalinter.io/flavors/
+        uses: oxsecurity/megalinter/flavors/javascript@v7
         env:
           # All available variables are described in documentation
-          # https://oxsecurity.github.io/megalinter/configuration/
+          # https://megalinter.io/config-file/
           VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/master&#39; }} to validate only diff with master branch
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
