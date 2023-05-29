@@ -1,6 +1,15 @@
 export function getAllTips() {
   return [
     {
+      name: "api-version-error",
+      label: "API Version error",
+      expressionRegex: [/Error (.*) The (.*) apiVersion can't be "([0-9]+)"/gm],
+      tip: `{1} metadata has probably been created/updated in a sandbox already upgraded to next platform version (ex: Sandbox in Summer'23 and Production in Spring'23)
+- First, try to update the api version in the XML of {1} metadata file (decrement the number in <apiVersion>{3}.0</apiVersion>)
+- If it still doesn't work because the metadata structure has changed between version, you may try a force:source:retrieve of the metadata by forcing --apiversion at the end of the command.
+      `,
+    },
+    {
       name: "allow-deployments-apex-jobs",
       label: "Allow deployment with pending Apex Jobs",
       expressionString: ["You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup."],
@@ -67,8 +76,9 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
       label: "Can not find user",
       expressionRegex: [/Error (.*) Cannot find a user that matches any of the following usernames/gm],
       tip: `You made reference to username(s) in {1}, and those users probably do not exist in target org.
-- Do not use named users, but user groups for assignments
-- Remove the XML part referring to hardcoded usernames
+- Do not use named users, but user public groups for assignments -> https://help.salesforce.com/s/articleView?id=sf.creating_and_editing_groups.htm&type=5
+- or Create matching user(s) in the target deployment org
+- or Remove the XML part referring to hardcoded usernames
 
 Example of XML you have to remove in {1}:
 
@@ -77,6 +87,15 @@ Example of XML you have to remove in {1}:
   <sharedTo>nicolas.vuillamy@hardis-scratch-po-tgci-root-develop_20220412_0604.com</sharedTo>
   <sharedToType>User</sharedToType>
 </folderShares>`,
+    },
+    {
+      name: "can-not-find-user-2",
+      label: "Can not find user (2)",
+      expressionRegex: [/Error (.*) In field: (.*) - no User named (.*) found/gm],
+      tip: `You made reference to username {3} in {1}, and it probably does not exist in the target org.
+- Do not use named users, but user public groups for assignments -> https://help.salesforce.com/s/articleView?id=sf.creating_and_editing_groups.htm&type=5
+- or Create matching user {3} in the target deployment org
+- or open {1} metadata and remove the XML part referring to hardcoded username {3}`,
     },
     {
       name: "can-not-update-field-to-something-else",
