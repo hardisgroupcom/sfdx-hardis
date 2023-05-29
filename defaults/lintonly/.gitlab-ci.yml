@@ -26,7 +26,7 @@ check_quality:
   script: ["true"]
   variables:
     # All available variables are described in documentation
-    # https://oxsecurity.github.io/megalinter/configuration/
+    # https://megalinter.io/config-file/
     DEFAULT_WORKSPACE: $CI_PROJECT_DIR
     DEFAULT_BRANCH: master
   artifacts:

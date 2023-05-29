@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Also remove standard fields when running **hardis:project:clean:standarditems**
+- Upgrade to MegaLinter v7
+
 ## [3.16.0] 2022-05-24
 
 - New ENV variables to override default wait on retrieve/deploy/test commands
