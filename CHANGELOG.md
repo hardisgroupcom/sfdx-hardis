@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.16.1] 2022-05-29
+
 - Also remove standard fields when running **hardis:project:clean:standarditems**
 - New Deployment tips
   - Wrong api Version of a Metadata

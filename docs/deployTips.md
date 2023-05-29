@@ -8,11 +8,11 @@ description: Learn how to fix issues that can happen during sfdx deployments
 
 This page summarizes all errors that can be detected by sfdx-hardis wrapper commands
 
-| sfdx command                                                                                                                                                                                | sfdx-hardis wrapper command                                                         |
-|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
-| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)   | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) |
-| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)       | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
-| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy) | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)   |
+| sfdx command             | sfdx-hardis wrapper command |
+| :-----------             | :-------------------------- |
+| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy) | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/)   |
+| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)   | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
+| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy)  | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)    |
 
 You can also use this function on a [sfdx-hardis Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
@@ -21,6 +21,19 @@ If you see a deployment error which is not here yet, please [add it in this file
 Example:
 
 ![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)
+
+## API Version error
+
+- `Error (.*) The (.*) apiVersion can't be "([0-9]+)"`
+
+**Resolution tip**
+
+```shell
+{1} metadata has probably been created/updated in a sandbox already upgraded to next platform version (ex: Sandbox in Summer'23 and Production in Spring'23)
+- First, try to update the api version in the XML of {1} metadata file (decrement the number in <apiVersion>{3}.0</apiVersion>)
+- If it still doesn't work because the metadata structure has changed between version, you may try a force:source:retrieve of the metadata by forcing --apiversion at the end of the command.
+      
+```
 
 ## Allow deployment with pending Apex Jobs
 
@@ -119,8 +132,9 @@ Folder {2} is missing.
 
 ```shell
 You made reference to username(s) in {1}, and those users probably do not exist in target org.
-- Do not use named users, but user groups for assignments
-- Remove the XML part referring to hardcoded usernames
+- Do not use named users, but user public groups for assignments -> https://help.salesforce.com/s/articleView?id=sf.creating_and_editing_groups.htm&type=5
+- or Create matching user(s) in the target deployment org
+- or Remove the XML part referring to hardcoded usernames
 
 Example of XML you have to remove in {1}:
 
@@ -129,6 +143,19 @@ Example of XML you have to remove in {1}:
   <sharedTo>nicolas.vuillamy@hardis-scratch-po-tgci-root-develop_20220412_0604.com</sharedTo>
   <sharedToType>User</sharedToType>
 </folderShares>
+```
+
+## Can not find user (2)
+
+- `Error (.*) In field: (.*) - no User named (.*) found`
+
+**Resolution tip**
+
+```shell
+You made reference to username {3} in {1}, and it probably does not exist in the target org.
+- Do not use named users, but user public groups for assignments -> https://help.salesforce.com/s/articleView?id=sf.creating_and_editing_groups.htm&type=5
+- or Create matching user {3} in the target deployment org
+- or open {1} metadata and remove the XML part referring to hardcoded username {3}
 ```
 
 ## Cannot update a field to a Summary from something else
@@ -275,7 +302,7 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
 
 ## Error parsing file
 
-- `Error (.*) Error parsing file: (.*)`
+- `Error (.*) Error parsing file: (.*) `
 
 **Resolution tip**
 
@@ -875,7 +902,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 
