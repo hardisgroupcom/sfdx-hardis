@@ -22,7 +22,7 @@ export default class Unused extends SfdxCommand {
 		'$ sfdx hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"',
 		'$ sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
 	];
-
+/* jscpd:ignore-start */
 	protected static flagsConfig = {
 		debug: flags.boolean({
 			char: "d",
@@ -36,6 +36,8 @@ export default class Unused extends SfdxCommand {
 			description: "Skip authentication check when a default username is required",
 		}),
 	};
+  /* jscpd:ignore-end */
+
 	// Comment this out if your command does not require an org username
 	protected static requiresUsername = false;
 	// Comment this out if your command does not support a hub org username
@@ -109,7 +111,7 @@ export default class Unused extends SfdxCommand {
 
 	private async verifyFields(): Promise<string[]> {
 		const nonReferencedFields = [];
-		const ignoreNames = ['Activity', 'CustomButtonsSettings__c'];
+		const ignoreNames = ['Activity'];
 		const ignoreSuffixes = ['__mdt', '__e'];
 		const fieldFiles = await glob(this.objectFieldsDirectory);
 		const filteredFieldFiles = fieldFiles.filter(file => {
