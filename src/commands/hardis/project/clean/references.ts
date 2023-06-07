@@ -37,7 +37,7 @@ export default class CleanReferences extends SfdxCommand {
     type: flags.string({
       char: "t",
       description: "Cleaning type",
-      options: ["all", "caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields", "productrequest"],
+      options: ["all", "caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields", "productrequest", "entitlement"],
     }),
     config: flags.string({
       char: "c",
@@ -105,6 +105,10 @@ export default class CleanReferences extends SfdxCommand {
     {
       value: "productrequest",
       title: "References to ProductRequest object",
+    },
+    {
+      value: "entitlement",
+      title: "References to Entitlement object",
     },
     {
       value: "systemDebug",
