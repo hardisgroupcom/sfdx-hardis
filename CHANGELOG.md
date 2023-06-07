@@ -1,12 +1,12 @@
 # Changelog
 
-## 2023-06-07
-
-- To clean entitlement items
-
 ## [beta] (master)
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
+
+## [3.18.0] 2023-06-07
+
+- Clean entitlement items, by @yamioliva in https://github.com/hardisgroupcom/sfdx-hardis/pull/381
 
 ## [3.17.0] 2022-05-30
 
