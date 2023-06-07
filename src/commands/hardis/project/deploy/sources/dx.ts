@@ -7,12 +7,12 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { createTempDir, isCI, uxLog } from "../../../../../common/utils";
+import { createTempDir, getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
-import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
-import { callSfdxGitDelta } from "../../../../../common/utils/gitUtils";
+import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
+import { callSfdxGitDelta, getParentBranch } from "../../../../../common/utils/gitUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -165,6 +165,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
+  protected checkOnly = false;
   protected configInfo: any = {};
   protected debugMode = false;
 
@@ -172,7 +173,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
   public async run(): Promise<AnyJson> {
     this.configInfo = await getConfig("branch");
-    const check = this.flags.check || false;
+    this.checkOnly = this.flags.check || false;
     const deltaFromArgs = this.flags.delta || false;
     const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
     const packageXml = this.flags.packagexml || null;
@@ -189,11 +190,11 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     const packages = this.configInfo.installedPackages || [];
     const missingPackages = [];
     const installPackages =
-      check === false || process.env.INSTALL_PACKAGES_DURING_CHECK_DEPLOY === "true" || this.configInfo.installPackagesDuringCheckDeploy === true;
+      this.checkOnly === false || process.env.INSTALL_PACKAGES_DURING_CHECK_DEPLOY === "true" || this.configInfo.installPackagesDuringCheckDeploy === true;
     if (packages.length > 0 && installPackages) {
       // Install packages only if we are in real deployment mode
       await MetadataUtils.installPackagesOnOrg(packages, targetUsername, this, "deploy");
-    } else if (packages.length > 0 && check === true) {
+    } else if (packages.length > 0 && this.checkOnly === true) {
       // If check mode, warn if there are missing packages
       const alreadyInstalled = await MetadataUtils.listInstalledPackages(targetUsername, this);
       for (const package1 of packages) {
@@ -252,40 +253,55 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
     // Compute and apply delta if required
     if (deltaFromArgs === true || process.env.USE_DELTA_DEPLOYMENT === "true" || this.configInfo.useDeltaDeployment === true) {
-      // call delta
-      uxLog(this, c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."));
-      const tmpDir = await createTempDir();
-      await callSfdxGitDelta("HEAD", "HEAD~1", tmpDir, { debug: this.debugMode });
+      if ((await this.isDeltaAllowed()) === true) {
+        // call delta
+        uxLog(this, c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."));
+        const tmpDir = await createTempDir();
+        await callSfdxGitDelta("HEAD", "HEAD~1", tmpDir, { debug: this.debugMode });
 
-      // Update package.xml
-      const packageXmlFileDeltaDeploy = path.join(tmpDir, "package", "packageDelta.xml");
-      await fs.copy(packageXmlFile, packageXmlFileDeltaDeploy);
-      packageXmlFile = packageXmlFileDeltaDeploy;
-      const diffPackageXml = path.join(tmpDir, "package", "package.xml");
-      await removePackageXmlContent(packageXmlFile, diffPackageXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
-
-      // Update destructiveChanges.xml
-      if (forceSourceDeployOptions.postDestructiveChanges) {
-        const destructiveXmlFileDeploy = path.join(tmpDir, "destructiveChanges", "destructiveChangesDelta.xml");
-        await fs.copy(forceSourceDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
+        // Update package.xml
+        const packageXmlFileDeltaDeploy = path.join(tmpDir, "package", "packageDelta.xml");
+        await fs.copy(packageXmlFile, packageXmlFileDeltaDeploy);
         packageXmlFile = packageXmlFileDeltaDeploy;
-        const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
-        await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
-          debugMode: this.debugMode,
-          keepEmptyTypes: false,
-        });
-        forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
+        const diffPackageXml = path.join(tmpDir, "package", "package.xml");
+        await removePackageXmlContent(packageXmlFile, diffPackageXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
+
+        // Update destructiveChanges.xml
+        if (forceSourceDeployOptions.postDestructiveChanges) {
+          const destructiveXmlFileDeploy = path.join(tmpDir, "destructiveChanges", "destructiveChangesDelta.xml");
+          await fs.copy(forceSourceDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
+          packageXmlFile = packageXmlFileDeltaDeploy;
+          const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
+          await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
+            debugMode: this.debugMode,
+            keepEmptyTypes: false,
+          });
+          forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
+        }
       }
     }
 
     // Process deployment (or deployment check)
-    const { messages } = await forceSourceDeploy(packageXmlFile, check, testlevel, this.debugMode, this, forceSourceDeployOptions);
+    const { messages } = await forceSourceDeploy(packageXmlFile, this.checkOnly, testlevel, this.debugMode, this, forceSourceDeployOptions);
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
-    if (this.configInfo.listViewsToSetToMine && check === false) {
+    if (this.configInfo.listViewsToSetToMine && this.checkOnly === false) {
       await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
     }
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
+  }
+
+  async isDeltaAllowed() {
+    const currentBranch = await getCurrentGitBranch();
+    const parentBranch = await getParentBranch();
+    const majorOrgs = await listMajorOrgs();
+    const currentBranchIsMajor = majorOrgs.some(majorOrg => majorOrg.branchName === currentBranch);
+    const parentBranchIsMajor = majorOrgs.some(majorOrg => majorOrg.branchName === parentBranch);
+    if (currentBranchIsMajor && (parentBranchIsMajor === true || parentBranch == null)) {
+      uxLog(this, c.yellow(`This is not safe to use delta between major branches (${currentBranch} to ${parentBranch}): using full deployment mode`));
+      return false;
+    }
+    return true;
   }
 }

@@ -1,6 +1,7 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
+import * as  child_process from 'child_process';
 import { execCommand, execSfdxJson, getGitRepoRoot, uxLog } from ".";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
@@ -23,8 +24,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+          return { title: branch, value: branch };
+        })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -46,4 +47,21 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     cwd: await getGitRepoRoot(),
   });
   return gitDeltaCommandRes;
+}
+
+export async function getParentBranch() {
+  const gitGetParentCommands = [
+    'git show-branch -a 2>/dev/null', //  Get git branch
+    'grep \'*\'',
+    'grep -v "$(git rev-parse --abbrev-ref HEAD)"',
+    'head -n1',
+    'sed \'s/.*\\[\\(.*\\)\\].*/\\1/\'',
+    'sed \'s/[\\^~].*//\''
+  ];
+
+  const res = child_process.execSync(gitGetParentCommands.join(' | '), { cwd: process.cwd() }).toString().trim();
+  if (res) {
+    return res;
+  }
+  return null;
 }
