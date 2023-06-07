@@ -190,7 +190,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     const packages = this.configInfo.installedPackages || [];
     const missingPackages = [];
     const installPackages =
-      this.checkOnly === false || process.env.INSTALL_PACKAGES_DURING_CHECK_DEPLOY === "true" || this.configInfo.installPackagesDuringCheckDeploy === true;
+      this.checkOnly === false ||
+      process.env.INSTALL_PACKAGES_DURING_CHECK_DEPLOY === "true" ||
+      this.configInfo.installPackagesDuringCheckDeploy === true;
     if (packages.length > 0 && installPackages) {
       // Install packages only if we are in real deployment mode
       await MetadataUtils.installPackagesOnOrg(packages, targetUsername, this, "deploy");
@@ -296,8 +298,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     const currentBranch = await getCurrentGitBranch();
     const parentBranch = await getParentBranch();
     const majorOrgs = await listMajorOrgs();
-    const currentBranchIsMajor = majorOrgs.some(majorOrg => majorOrg.branchName === currentBranch);
-    const parentBranchIsMajor = majorOrgs.some(majorOrg => majorOrg.branchName === parentBranch);
+    const currentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === currentBranch);
+    const parentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === parentBranch);
     if (currentBranchIsMajor && (parentBranchIsMajor === true || parentBranch == null)) {
       uxLog(this, c.yellow(`This is not safe to use delta between major branches (${currentBranch} to ${parentBranch}): using full deployment mode`));
       return false;
