@@ -16,7 +16,7 @@ _${err.tip.label}_
 
 ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 </details>
-
+<br/>
 `;
     } else {
       md += "🔨 " + errorMessage + "\n\n";

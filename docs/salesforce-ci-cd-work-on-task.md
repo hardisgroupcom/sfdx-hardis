@@ -41,6 +41,9 @@ Please follow as much as possible these recommendations when you work on a CI/CD
 
 - Always **use Permission Sets** instead of Profiles. If you need profiles, discuss with your release manager.
 
+- If you create a **Custom Profile**, please notify your release manager.
+  - Before the first deployment, this Profile **must be created manually in the target org by cloning "Minimum access" Profile**
+
 - Never link configuration items (Queues,Reports...) directly to a user, but use [Salesforce Groups](https://help.salesforce.com/s/articleView?language=en_US&id=sf.user_groups.htm&type=5)
 
 - If you need to update Flows, discuss to make sure that no other member of the team is updating the same Flow in another branch/org

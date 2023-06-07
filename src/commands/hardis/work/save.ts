@@ -133,6 +133,12 @@ autoRemoveUserPermissions:
     this.gitUrl = await git().listRemote(["--get-url"]);
     this.currentBranch = await getCurrentGitBranch();
     if (this.targetBranch == null) {
+      const userConfig = await getConfig("user");
+      if (userConfig?.localStorageBranchTargets[localBranch]) {
+        this.targetBranch = userConfig?.localStorageBranchTargets[localBranch];
+      }
+    }
+    if (this.targetBranch == null) {
       this.targetBranch = await selectTargetBranch({ message: "Please select the target branch of your Merge Request" });
     }
     // User log info
@@ -560,7 +566,8 @@ autoRemoveUserPermissions:
       return config.separateDeploymentConfig || [];
     }
     const separateDeploymentConfig = [
-      {
+      /*  NV: Commented because seems to be now useless
+     {
         types: ["EmailTemplate"],
         file: "manifest/splits/packageXmlEmails.xml",
         filePos: -20,
@@ -573,7 +580,7 @@ autoRemoveUserPermissions:
         file: "manifest/splits/packageXmlFlowWorkflow.xml",
         filePos: 6,
         content: {},
-      },
+      }, */
       {
         types: ["SharingRules", "SharingOwnerRule"],
         files: "manifest/splits/packageXmlSharingRules{{name}}.xml",

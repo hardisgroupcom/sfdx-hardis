@@ -144,6 +144,12 @@ async function getHardisForceIgnoreContent() {
   const forceIgnoreContent = [
     "**/appMenu/**",
     "**/appSwitcher/**",
+    "**/appMenus/AppSwitcher.appMenu-meta.xml",
+
+    "**/connectedApps/**",
+    "**/certs/**",
+    "**/profilePasswordPolicies/**",
+
     //"**/objectTranslations/**",
     // "**/profiles/**",
     // "**/settings/**",

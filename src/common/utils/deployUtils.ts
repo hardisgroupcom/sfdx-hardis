@@ -16,6 +16,7 @@ import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils";
+import { ResetMode } from "simple-git";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -192,7 +193,7 @@ export async function forceSourceDeploy(
       );
       const deployCommand =
         `sfdx force:source:deploy -x "${deployment.packageXmlFile}"` +
-        " --wait 60" +
+        ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
         " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
         ` --testlevel ${testlevel}` +
         (options.preDestructiveChanges ? ` --predestructivechanges ${options.postDestructiveChanges}` : "") +
@@ -441,15 +442,25 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
     }
   );
 
-  // Stage updates so sfdx git delta can build diff package.xml
+  // Do not call delta if no updated file has been retrieved
+  const hasGitLocalUpdates = await gitHasLocalUpdates();
+  if (hasGitLocalUpdates === false) {
+    uxLog(this, c.grey("No diff retrieved from packageDeployOnChange.xml"));
+    return null;
+  }
+
+  // "Temporarily" commit updates so sfdx git delta can build diff package.xml
+  await git().addConfig("user.email", "bot@hardis.com", false, "global");
+  await git().addConfig("user.name", "Hardis", false, "global");
   await git().add("--all");
+  await git().commit('"temp"', ["--no-verify"]);
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
   const gitDeltaCommandRes = await callSfdxGitDelta("HEAD", "*", tmpDir, { debug: debugMode });
 
-  // Now that the diff is computed, we can discard staged items and undo changes
-  await git().reset(["--hard"]);
+  // Now that the diff is computed, we can dump the temporary commit
+  await git().reset(ResetMode.HARD, ["HEAD~1"]);
 
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
@@ -509,7 +520,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, "destructiveChanges.xml"));
   const deployDelete =
     `sfdx force:mdapi:deploy -d ${tmpDir}` +
-    " --wait 60" +
+    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
     ` --testlevel ${options.testLevel || "NoTestRun"}` +
     " --ignorewarnings" + // So it does not fail in case metadata is already deleted
     (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
@@ -563,7 +574,7 @@ export async function deployMetadatas(
   const deployCommand =
     "sfdx force:mdapi:deploy" +
     ` --deploydir ${options.deployDir || "."}` +
-    " --wait 60" +
+    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
     ` --testlevel ${options.testlevel || "RunLocalTests"}` +
     ` --apiversion ${options.apiVersion || CONSTANTS.API_VERSION}` +
     (options.soap ? " --soapdeploy" : "") +

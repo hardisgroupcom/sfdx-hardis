@@ -4,6 +4,75 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.17.0] 2022-05-30
+
+- New command **hardis:org:generate:packagexmlfull** to generate the full package.xml of a selected Salesforce org
+
+## [3.16.1] 2022-05-29
+
+- Also remove standard fields when running **hardis:project:clean:standarditems**
+- New Deployment tips
+  - Wrong api Version of a Metadata
+  - Unknown user
+- Upgrade to MegaLinter v7
+
+## [3.16.0] 2022-05-24
+
+- New ENV variables to override default wait on retrieve/deploy/test commands
+  - SFDX_RETRIEVE_WAIT_MINUTES
+  - SFDX_DEPLOY_WAIT_MINUTES
+  - SFDX_TEST_WAIT_MINUTES
+- Update default .forceignore content
+
+## [3.15.0] 2022-05-11
+
+- Allow to define property **availableProjects** so when user clicks on New task (hardis:work:new), he/she is asked to select a project, that will be used to build the new git branch name
+- When creating new task, store the target branch so it is not prompted again when waiting to save/publish the task.
+
+## [3.14.2] 2022-05-03
+
+- More explicit text to ask user if he/she wants to update its selected sandbox while creating a new task
+- Do not ask to change default target branch if there are multiple available branches
+
+## [3.14.1] 2022-04-19
+
+- Allow to override the default deployment wait time (60) using variable SFDX_DEPLOY_WAIT_MINUTES
+- Update JSON schema to add customOrgColors
+
+## [3.14.0] 2022-04-14
+
+- Fix breaking change of sfdx-git-delta (many thanks @scolladon !)
+- Deploy tips
+  - Invalid report type
+  - Missing report
+  - Update missing email template message
+- Add more space between error lines in PR/MR comments
+- Upgrade xml2js dependency
+- Update call to MegaLinter in Azure integrations
+
+## [3.13.1] 2022-04-12
+
+- Fix missing sfdx-git-delta in Docker image
+
+## [3.13.0] 2022-04-06
+
+- Change defaut package install mode to **AdminsOnly**
+- When minimizing Profiles, do not remove the **personAccountDefault=true** elements
+- Add new deploy tip: Error parsing file
+
+## [3.12.3] 2022-04-04
+
+- Do not add EmailTemplate and Flows as separate items in deploymentPlan, as metadata API now can handle their deployment with the rest of the sources
+- Add new deployTip: Missing multi-currency field
+- Update label when creating a new task using an existing sandbox
+
+## [3.12.2] 2022-03-30
+
+- New deployment error tips
+  - SortOrder must be in sequential order from 1. (Duplicate Rules issue)
+  - Invalid field:ACCOUNT.NAME in related list:RelatedContactAccountRelationList
+- Add more matchers for duplicate detector
+
 ## [3.12.1] 2022-03-29
 
 - Fix false positive error in deployment job when there is no related Pull/Merge request

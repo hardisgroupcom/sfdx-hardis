@@ -64,14 +64,26 @@ export default class CleanStandardItems extends SfdxCommand {
         const findCustomFieldsPattern = `${objectDir}/fields/*__*`;
         const matchingCustomFiles = await glob(findCustomFieldsPattern, { cwd: process.cwd() });
         if (matchingCustomFiles.length === 0) {
+          // Remove the whole folder
           await fs.remove(objectDir);
           uxLog(this, c.cyan(`Removed folder ${c.yellow(objectDir)}`));
           const sharingRuleFile = path.join(sourceRootFolder, "sharingRules", objectDirName + ".sharingRules-meta.xml");
           if (fs.existsSync(sharingRuleFile)) {
+            // Remove sharingRule if existing
             await fs.remove(sharingRuleFile);
             uxLog(this, c.cyan(`Removed sharing rule ${c.yellow(sharingRuleFile)}`));
           }
         } else {
+          // Remove only standard fields
+          const findAllFieldsPattern = `${objectDir}/fields/*.field-meta.xml`;
+          const matchingAllFields = await glob(findAllFieldsPattern, { cwd: process.cwd() });
+          for (const field of matchingAllFields) {
+            if (!field.includes("__")) {
+              await fs.remove(field);
+              uxLog(this, c.cyan(`  - removed standard field ${c.yellow(field)}`));
+            }
+          }
+
           uxLog(this, c.cyan(`Keep folder ${c.green(objectDir)} because of custom fields found`));
         }
       }

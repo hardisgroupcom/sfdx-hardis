@@ -8,11 +8,11 @@ description: Learn how to fix issues that can happen during sfdx deployments
 
 This page summarizes all errors that can be detected by sfdx-hardis wrapper commands
 
-| sfdx command                                                                                                                                                                                | sfdx-hardis wrapper command                                                         |
-|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
-| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)   | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) |
-| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)       | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
-| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy) | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)   |
+| sfdx command             | sfdx-hardis wrapper command |
+| :-----------             | :-------------------------- |
+| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy) | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/)   |
+| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)   | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
+| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy)  | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)    |
 
 You can also use this function on a [sfdx-hardis Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
@@ -21,6 +21,19 @@ If you see a deployment error which is not here yet, please [add it in this file
 Example:
 
 ![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)
+
+## API Version error
+
+- `Error (.*) The (.*) apiVersion can't be "([0-9]+)"`
+
+**Resolution tip**
+
+```shell
+{1} metadata has probably been created/updated in a sandbox already upgraded to next platform version (ex: Sandbox in Summer'23 and Production in Spring'23)
+- First, try to update the api version in the XML of {1} metadata file (decrement the number in <apiVersion>{3}.0</apiVersion>)
+- If it still doesn't work because the metadata structure has changed between version, you may try a force:source:retrieve of the metadata by forcing --apiversion at the end of the command.
+      
+```
 
 ## Allow deployment with pending Apex Jobs
 
@@ -119,8 +132,9 @@ Folder {2} is missing.
 
 ```shell
 You made reference to username(s) in {1}, and those users probably do not exist in target org.
-- Do not use named users, but user groups for assignments
-- Remove the XML part referring to hardcoded usernames
+- Do not use named users, but user public groups for assignments -> https://help.salesforce.com/s/articleView?id=sf.creating_and_editing_groups.htm&type=5
+- or Create matching user(s) in the target deployment org
+- or Remove the XML part referring to hardcoded usernames
 
 Example of XML you have to remove in {1}:
 
@@ -129,6 +143,19 @@ Example of XML you have to remove in {1}:
   <sharedTo>nicolas.vuillamy@hardis-scratch-po-tgci-root-develop_20220412_0604.com</sharedTo>
   <sharedToType>User</sharedToType>
 </folderShares>
+```
+
+## Can not find user (2)
+
+- `Error (.*) In field: (.*) - no User named (.*) found`
+
+**Resolution tip**
+
+```shell
+You made reference to username {3} in {1}, and it probably does not exist in the target org.
+- Do not use named users, but user public groups for assignments -> https://help.salesforce.com/s/articleView?id=sf.creating_and_editing_groups.htm&type=5
+- or Create matching user {3} in the target deployment org
+- or open {1} metadata and remove the XML part referring to hardcoded username {3}
 ```
 
 ## Cannot update a field to a Summary from something else
@@ -245,19 +272,8 @@ You probably renamed the picklist API name for {2}. Please update manually the p
 **Resolution tip**
 
 ```shell
-Lightning EmailTemplates records must also be imported with metadatas.
-If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)
-- Create a file scripts/data/EmailTemplates/export.json:
-{
-    "objects": [
-        {
-            "query": "SELECT id,name,developername,namespaceprefix,foldername,templatestyle,isactive,templatetype,encoding,description,subject,htmlvalue,body,apiversion,markup,uitype,relatedentitytype,isbuildercontent FROM EmailTemplate",
-            "operation": "Upsert",
-            "externalId": "Name"
-        }
-    ]
-}
-- Run sfdx hardis:work:save
+An email template should be present in the sources. To retrieve it, you can run:
+sfdx force:source:retrieve -m EmailTemplate:{1} -u YOUR_ORG_USERNAME
 ```
 
 ## Empty source items
@@ -282,6 +298,17 @@ To remove them, please run sfdx:hardis:project:clean:emptyitems
 ```shell
 You must enable CRM Analytics (ex Wave, Einstein Analytics & Tableau CRM) in the target org.
 You probably also need to add CRM Analytics Admin Permission Set assignment to the deployment user
+```
+
+## Error parsing file
+
+- `Error (.*) Error parsing file: (.*) `
+
+**Resolution tip**
+
+```shell
+There has been an error parsing the XML file of {1}: {2}
+- Open file {1} and look where the error can be ! (merge issue, typo, XML tag not closed...)
 ```
 
 ## Formula picklist field issue
@@ -336,6 +363,18 @@ Flow {1} can not be deleted using deployments, please delete it manually in the 
 
 ```shell
 If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
+```
+
+## Invalid report type
+
+- `Error (.*) invalid report type`
+
+**Resolution tip**
+
+```shell
+Report type is missing for report {1}
+- Open report {1} to se what report type is used
+- Retrieve the report type from an org and add it to the sfdx sources
 ```
 
 ## Invalid scope:Mine, not allowed
@@ -459,6 +498,7 @@ Quotes must be activated in the target org.
 ## Missing feature ContactToMultipleAccounts
 
 - `no CustomObject named AccountContactRelation found`
+- `Invalid field:ACCOUNT.NAME in related list:RelatedContactAccountRelationList`
 
 **Resolution tip**
 
@@ -592,6 +632,16 @@ Work.com feature must be activated in the target org.
 - Org & Scratch: https://developer.salesforce.com/docs/atlas.en-us.workdotcom_dev_guide.meta/workdotcom_dev_guide/wdc_cc_setup_dev_org.htm
 ```
 
+## Missing multi-currency field
+
+- `A reference to a custom field (.*)CurrencyIsoCode`
+
+**Resolution tip**
+
+```shell
+You probably need to activate MultiCurrency (from Setup -> Company information)
+```
+
 ## Missing object referenced in package.xml
 
 - `An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory`
@@ -619,6 +669,19 @@ QuickAction {2} referred in {1} is unknown. You can either:
 <quickActionListItems>
   <quickActionName>FeedItem.RypplePost</quickActionName>
 </quickActionListItems>
+```
+
+## Missing report
+
+- `Error (.*) The (.*) report chart has a problem with the "reportName" field`
+
+**Resolution tip**
+
+```shell
+{1} is referring to unknown report {2}. To retrieve it, you can run:
+- sfdx force:source:retrieve -m Report:{2} -u YOUR_ORG_USERNAME
+- If it fails, looks for the report folder and add it before report name to the retrieve command (ex: MYFOLDER/MYREPORTNAME)
+
 ```
 
 ## Missing Sales Team
@@ -815,6 +878,17 @@ If you changed a field from MasterDetail to Lookup, you must do it manually in t
 Go to Email -> Deliverability -> Select value "All emails"
 ```
 
+## Sort order must be in sequential order
+
+- `Error (.*) SortOrder must be in sequential order from`
+
+**Resolution tip**
+
+```shell
+You probably have a default DuplicateRule in the target org. Retrieve it from target org, or delete it manually in target org, so you can deploy.
+Ref: https://developer.salesforce.com/forums/?id=9060G000000I6SoQAK
+```
+
 ## Async exception in test class
 
 - `System.AsyncException: (.*) Apex`
@@ -828,7 +902,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 

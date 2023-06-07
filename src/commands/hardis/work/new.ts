@@ -108,6 +108,21 @@ Under the hood, it can:
     ];
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
 
+    // Select project if multiple projects are defined in availableProjects .sfdx-hardis.yml property
+    let projectBranchPart = "";
+    const availableProjects = config.availableProjects || [];
+    if (availableProjects.length > 1) {
+      const projectResponse = await prompts({
+        type: "select",
+        name: "project",
+        message: c.cyanBright("Please select the project your task is for"),
+        choices: availableProjects.map((project: string) => {
+          return { title: project, value: project };
+        }),
+      });
+      projectBranchPart = projectResponse.project + "/";
+    }
+
     // Request info to build branch name. ex features/config/MYTASK
     const response = await prompts([
       {
@@ -136,13 +151,13 @@ Under the hood, it can:
         type: "text",
         name: "taskName",
         message: c.cyanBright(
-          "What is the name of your new task ? (examples: webservice-get-account, flow-process-opportunity...). Please avoid accents or special characters"
+          "What is the name of your new task ? (examples: JIRA123-webservice-get-account, T1000-flow-process-opportunity...). Please avoid accents or special characters"
         ),
       },
     ]);
 
     // Checkout development main branch
-    const branchName = `${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
+    const branchName = `${projectBranchPart}${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`));
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
@@ -150,9 +165,8 @@ Under the hood, it can:
     // Create new branch
     uxLog(this, c.cyan(`Creating new git branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
-
     // Update config if necessary
-    if (config.developmentBranch !== this.targetBranch) {
+    if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
       const updateDefaultBranchRes = await prompts({
         type: "confirm",
         name: "value",
@@ -163,6 +177,11 @@ Under the hood, it can:
         await setConfig("user", { developmentBranch: this.targetBranch });
       }
     }
+    // Update local user config files to store the target of the just created branch
+    const currentUserConfig = await getConfig("user");
+    const localStorageBranchTargets = currentUserConfig.localStorageBranchTargets || {};
+    localStorageBranchTargets[branchName] = this.targetBranch;
+    await setConfig("user", { localStorageBranchTargets: localStorageBranchTargets });
 
     // Get allowed work org types from config if possible
     const allowedOrgTypes = config?.allowedOrgTypes || [];
@@ -352,12 +371,25 @@ Under the hood, it can:
     }
     // Initialize / Update existing sandbox if required
     const initSandboxResponse = await prompts({
-      type: "confirm",
+      type: "select",
       name: "value",
-      message: c.cyanBright(`Do you want to initialize the sandbox (packages,sources,permission set assignments,apex scripts,initial data) ?`),
-      default: false,
+      message: c.cyanBright(
+        `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
+      ),
+      choices: [
+        {
+          title: "No, continue working on my current sandbox state",
+          value: "no",
+          description: "(especially if you have uncommitted changes in your sandbox)",
+        },
+        {
+          title: "Yes, please try to update my sandbox !",
+          value: "init",
+          description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task`,
+        },
+      ],
     });
-    if (initSandboxResponse.value === true) {
+    if (initSandboxResponse.value === "init") {
       let initSourcesErr: any = null;
       let initSandboxErr: any = null;
       try {

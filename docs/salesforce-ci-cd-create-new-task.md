@@ -4,6 +4,7 @@ description: Learn how to create a new task using a tracked sandbox or a scratch
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Use cases](#use-cases)
 - [Sandbox or scratch org ?](#sandbox-or-scratch-org-)
 - [Source-tracked sandbox mode](#source-tracked-sandbox-mode)
   - [Pre-requisites (sandbox)](#pre-requisites-sandbox)
@@ -11,6 +12,15 @@ description: Learn how to create a new task using a tracked sandbox or a scratch
 - [Scratch Org mode](#scratch-org-mode)
   - [Pre-requisites (scratch org)](#pre-requisites-scratch-org)
   - [Start new task on scratch org](#start-new-task-on-scratch-org)
+
+___
+
+## Use cases
+
+You use this command when you want to :
+
+- Create a dedicated new branch
+- Create a scratch org linked to the branch OR assign a dedicated sandbox to the newly created branch
 
 ___
 

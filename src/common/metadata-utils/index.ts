@@ -501,9 +501,9 @@ class MetadataUtils {
             c.red(`[sfdx-hardis] You must define ${c.bold("SubscriberPackageVersionId")} in .sfdx-hardis.yml (in installedPackages property)`)
           );
         }
-        const securityType = package1.SecurityType || "AllUsers";
+        const securityType = package1.SecurityType || "AdminsOnly";
         let packageInstallCommand =
-          "sfdx force:package:beta:install" +
+          "sfdx force:package:install" +
           ` --package ${package1.SubscriberPackageVersionId}` +
           " --noprompt" +
           ` --securitytype ${securityType}` +
@@ -619,7 +619,7 @@ class MetadataUtils {
         "sfdx force:mdapi:retrieve" +
         ` --retrievetargetdir ${metadataFolder}` +
         ` --unpackaged ${packageXml}` +
-        " --wait 60" +
+        ` --wait ${process.env.SFDX_RETRIEVE_WAIT_MINUTES || "60"}` +
         (debug ? " --verbose" : "");
       const retrieveRes = await execSfdxJson(retrieveCommand, this, {
         output: false,

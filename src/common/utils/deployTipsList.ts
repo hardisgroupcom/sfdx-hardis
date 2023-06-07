@@ -1,6 +1,15 @@
 export function getAllTips() {
   return [
     {
+      name: "api-version-error",
+      label: "API Version error",
+      expressionRegex: [/Error (.*) The (.*) apiVersion can't be "([0-9]+)"/gm],
+      tip: `{1} metadata has probably been created/updated in a sandbox already upgraded to next platform version (ex: Sandbox in Summer'23 and Production in Spring'23)
+- First, try to update the api version in the XML of {1} metadata file (decrement the number in <apiVersion>{3}.0</apiVersion>)
+- If it still doesn't work because the metadata structure has changed between version, you may try a force:source:retrieve of the metadata by forcing --apiversion at the end of the command.
+      `,
+    },
+    {
       name: "allow-deployments-apex-jobs",
       label: "Allow deployment with pending Apex Jobs",
       expressionString: ["You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup."],
@@ -67,8 +76,9 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
       label: "Can not find user",
       expressionRegex: [/Error (.*) Cannot find a user that matches any of the following usernames/gm],
       tip: `You made reference to username(s) in {1}, and those users probably do not exist in target org.
-- Do not use named users, but user groups for assignments
-- Remove the XML part referring to hardcoded usernames
+- Do not use named users, but user public groups for assignments -> https://help.salesforce.com/s/articleView?id=sf.creating_and_editing_groups.htm&type=5
+- or Create matching user(s) in the target deployment org
+- or Remove the XML part referring to hardcoded usernames
 
 Example of XML you have to remove in {1}:
 
@@ -77,6 +87,15 @@ Example of XML you have to remove in {1}:
   <sharedTo>nicolas.vuillamy@hardis-scratch-po-tgci-root-develop_20220412_0604.com</sharedTo>
   <sharedToType>User</sharedToType>
 </folderShares>`,
+    },
+    {
+      name: "can-not-find-user-2",
+      label: "Can not find user (2)",
+      expressionRegex: [/Error (.*) In field: (.*) - no User named (.*) found/gm],
+      tip: `You made reference to username {3} in {1}, and it probably does not exist in the target org.
+- Do not use named users, but user public groups for assignments -> https://help.salesforce.com/s/articleView?id=sf.creating_and_editing_groups.htm&type=5
+- or Create matching user {3} in the target deployment org
+- or open {1} metadata and remove the XML part referring to hardcoded username {3}`,
     },
     {
       name: "can-not-update-field-to-something-else",
@@ -157,19 +176,8 @@ Example of element to delete:
       name: "email-template-missing",
       label: "Missing e-mail template",
       expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
-      tip: `Lightning EmailTemplates records must also be imported with metadatas.
-If this type of error is displayed in a deployment with --check, you may ignore it and validate the PR anyway (it may not happen when the deployment will be really performed and split in steps, including the one importing EmailTemplate records)
-- Create a file scripts/data/EmailTemplates/export.json:
-{
-    "objects": [
-        {
-            "query": "SELECT id,name,developername,namespaceprefix,foldername,templatestyle,isactive,templatetype,encoding,description,subject,htmlvalue,body,apiversion,markup,uitype,relatedentitytype,isbuildercontent FROM EmailTemplate",
-            "operation": "Upsert",
-            "externalId": "Name"
-        }
-    ]
-}
-- Run sfdx hardis:work:save`,
+      tip: `An email template should be present in the sources. To retrieve it, you can run:
+sfdx force:source:retrieve -m EmailTemplate:{1} -u YOUR_ORG_USERNAME`,
     },
     {
       name: "empty-item",
@@ -188,6 +196,13 @@ To remove them, please run sfdx:hardis:project:clean:emptyitems`,
       expressionString: ["It should be created by enabling the CRM Analytics Cloud preference"],
       tip: `You must enable CRM Analytics (ex Wave, Einstein Analytics & Tableau CRM) in the target org.
 You probably also need to add CRM Analytics Admin Permission Set assignment to the deployment user`,
+    },
+    {
+      name: "error-parsing-file",
+      label: "Error parsing file",
+      expressionRegex: [/Error (.*) Error parsing file: (.*) /gm],
+      tip: `There has been an error parsing the XML file of {1}: {2}
+- Open file {1} and look where the error can be ! (merge issue, typo, XML tag not closed...)`,
     },
     {
       name: "field-must-not-be-required",
@@ -222,6 +237,14 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       label: "Insufficient access rights on cross-reference id",
       expressionRegex: [/Error (.*) insufficient access rights on cross-reference id/gm],
       tip: `If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow`,
+    },
+    {
+      name: "invalid-report-type",
+      label: "Invalid report type",
+      expressionRegex: [/Error (.*) invalid report type/gm],
+      tip: `Report type is missing for report {1}
+- Open report {1} to se what report type is used
+- Retrieve the report type from an org and add it to the sfdx sources`,
     },
     {
       name: "invalid-scope-mine",
@@ -313,7 +336,10 @@ If it is already done, you may manually check "MarketingUser" field on the scrat
     {
       name: "missing-feature-account-contact-relation",
       label: "Missing feature ContactToMultipleAccounts",
-      expressionString: ["no CustomObject named AccountContactRelation found"],
+      expressionString: [
+        "no CustomObject named AccountContactRelation found",
+        "Invalid field:ACCOUNT.NAME in related list:RelatedContactAccountRelationList",
+      ],
       tip: `Contacts to multiple accounts be activated in the target org.
 - Help: https://help.salesforce.com/articleView?id=sf.shared_contacts_set_up.htm&type=5
 - Scratch org setting:
@@ -407,6 +433,12 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 - Org & Scratch: https://developer.salesforce.com/docs/atlas.en-us.workdotcom_dev_guide.meta/workdotcom_dev_guide/wdc_cc_setup_dev_org.htm`,
     },
     {
+      name: "missing-multi-currency",
+      label: "Missing multi-currency field",
+      expressionRegex: [/A reference to a custom field (.*)CurrencyIsoCode/gm],
+      tip: `You probably need to activate MultiCurrency (from Setup -> Company information)`,
+    },
+    {
       name: "missing-object-package-xml",
       label: "Missing object referenced in package.xml",
       expressionRegex: [/An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory/gm],
@@ -426,6 +458,15 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 <quickActionListItems>
   <quickActionName>FeedItem.RypplePost</quickActionName>
 </quickActionListItems>`,
+    },
+    {
+      name: "missing-report",
+      label: "Missing report",
+      expressionRegex: [/Error (.*) The (.*) report chart has a problem with the "reportName" field/gm],
+      tip: `{1} is referring to unknown report {2}. To retrieve it, you can run:
+- sfdx force:source:retrieve -m Report:{2} -u YOUR_ORG_USERNAME
+- If it fails, looks for the report folder and add it before report name to the retrieve command (ex: MYFOLDER/MYREPORTNAME)
+`,
     },
     {
       name: "missing-sales-team",
@@ -562,6 +603,13 @@ If you already did that, please try again to run the job`,
       label: "Send email is disabled",
       expressionString: ["Send Email is disabled or activities are not allowed", "Unknown user permission: SendExternalEmailAvailable"],
       tip: `Go to Email -> Deliverability -> Select value "All emails"`,
+    },
+    {
+      name: "sort-order-error",
+      label: "Sort order must be in sequential order",
+      expressionRegex: [/Error (.*) SortOrder must be in sequential order from/gm],
+      tip: `You probably have a default DuplicateRule in the target org. Retrieve it from target org, or delete it manually in target org, so you can deploy.
+Ref: https://developer.salesforce.com/forums/?id=9060G000000I6SoQAK`,
     },
     {
       name: "test-case-async-exception",
