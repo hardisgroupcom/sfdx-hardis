@@ -7,7 +7,7 @@ import { uxLog } from "../../../common/utils";
 import * as fs from "fs-extra";
 //TODO getConfig Unused how to use this ?
 // import { getConfig } from "../../../config";
-import * as xml2js from 'xml2js';
+import * as xml2js from "xml2js";
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
