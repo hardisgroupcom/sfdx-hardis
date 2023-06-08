@@ -1,0 +1,26 @@
+{
+  "items": {
+    "CustomField": [
+      "Entitlement.AssetId",
+      "Entitlement.BusinessHoursId",
+      "Entitlement.CasesPerEntitlement",
+      "Entitlement.ContractLineItemId",
+      "Entitlement.EndDate",
+      "Entitlement.IsPerIncident",
+      "Entitlement.LocationId",
+      "Entitlement.RemainingCases",
+      "Entitlement.ServiceContractId",
+      "Entitlement.SlaProcessId",
+      "Entitlement.StartDate",
+      "Entitlement.Status",
+      "Entitlement.StatusIndicator",
+      "Entitlement.Type"
+    ],
+    "CustomObject": [
+      "Entitlement"
+    ],
+    "CustomTab": [
+      "standard-Entitlement"
+    ]
+  }
+}
