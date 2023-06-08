@@ -36,7 +36,7 @@ export default class Unused extends SfdxCommand {
 			description: "Skip authentication check when a default username is required",
 		}),
 	};
-  /* jscpd:ignore-end */
+	/* jscpd:ignore-end */
 
 	// Comment this out if your command does not require an org username
 	protected static requiresUsername = false;
@@ -46,7 +46,7 @@ export default class Unused extends SfdxCommand {
 	protected static requiresProject = true;
 
 	private parser: xml2js.Parser;
-	private directories = [
+	private directories =[
 		"force-app/main/default/lwc",
 		"force-app/main/default/flows",
 		"force-app/main/default/classes",
@@ -54,7 +54,7 @@ export default class Unused extends SfdxCommand {
 		"force-app/main/default/aura",
 		"force-app/main/default/flexipages",
 		"force-app/main/default/quickActions",
-		"/force-app/main/default/objects",
+		"force-app/main/default/objects",
 		"force-app/main/default/pages",
 		"force-app/main/default/staticresources"
 	];
@@ -66,11 +66,8 @@ export default class Unused extends SfdxCommand {
 	public async run(): Promise<AnyJson> {
 		// const config = await getConfig("user");
 		this.parser = new xml2js.Parser();
-		const fileData = await fs.readFile(this.filePath, 'utf-8');
-		const result = await this.parser.parseStringPromise(fileData);
-		const labelsArray = result.CustomLabels.labels.map(label => label.fullName[0]);
 		const [unusedLabels, nonReferencedFields, draftFiles] = await Promise.all([
-			this.verifyLabels(labelsArray),
+			this.verifyLabels(),
 			this.verifyFields(),
 			this.verifyFlows(),
 		]);
@@ -155,17 +152,35 @@ export default class Unused extends SfdxCommand {
 		return false;
 	}
 
-	private async verifyLabels(labelsArray: string[]): Promise<string[]> {
-		const filePromises = this.directories.map(dir => glob(`${dir}/**/*.*`));
-		const directoryFiles = await Promise.all(filePromises);
-		const fileContentsPromises = directoryFiles.flat().map(file => fs.readFile(file, 'utf-8'));
-		const fileContents = await Promise.all(fileContentsPromises);
-		const lowerCaseFileContents = fileContents.map(content => content.toLowerCase());
-		return labelsArray.filter(label => {
-			const labelLower = `label.${label.toLowerCase()}`;
-			const cLower = `c.${label.toLowerCase()}`;
-			return !lowerCaseFileContents.some(content => content.includes(labelLower) || content.includes(cLower));
+	private async verifyLabels(): Promise<string[]> {
+		const unusedLabels = [];
+		fs.readFile(this.filePath, 'utf-8', (errorReadingFile, data) => {
+			if (errorReadingFile) throw errorReadingFile;
+
+			xml2js.parseString(data, (errorParseString, result) => {
+				if (errorParseString) throw errorParseString;
+
+				const labelsArray = result.CustomLabels.labels.map(label => label.fullName[0]);
+				const files = [];
+				this.directories.forEach(directory => {
+					const directoryFiles = glob.sync(`${directory}/**/*.*`);
+					directoryFiles.forEach(file => {
+						const content = fs.readFileSync(file, 'utf-8').toLowerCase();
+						files.push(content);
+					});
+				});
+
+				labelsArray.forEach(label => {
+					const labelLower = `label.${label.toLowerCase()}`;
+					const cLower = `c.${label.toLowerCase()}`;
+					const found = files.some(content => content.includes(labelLower) || content.includes(cLower));
+					if (!found) {
+						unusedLabels.push(label);
+					}
+				});
+			});
 		});
+		return unusedLabels;
 	}
 
 	private async verifyFlows(): Promise<string[]> {
