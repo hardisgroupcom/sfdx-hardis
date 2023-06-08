@@ -2470,7 +2470,7 @@ OPTIONS
   -f, --folder=folder                                                               [default: force-app] Root folder
 
 
-  -n, --namespace=namespace                                                         [default: http://soap.sforce.com/200
+  -n, --namespace=namespace                                                         [default: <http://soap.sforce.com/200>
                                                                                     6/04/metadata] XML Namespace to use
 
 
@@ -2621,8 +2621,8 @@ Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 ```
 USAGE
 
-  $ sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p 
-  <string>] [--delta] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] 
+  $ sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p
+  <string>] [--delta] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 
@@ -2668,15 +2668,15 @@ DESCRIPTION
 
   If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
-  - `manifest/packageDeployOnce.xml`: Every element defined in this file will be deployed only if it is not existing yet
+- `manifest/packageDeployOnce.xml`: Every element defined in this file will be deployed only if it is not existing yet
    in the target org (can be useful with ListView for example, if the client wants to update them directly in production
    org)
-  - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a 
+- `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a
   similar definition in target org (can be useful for SharingRules for example)
 
   See more in [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
 
-  ### Deployment plan
+### Deployment plan
 
 
   If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
@@ -3039,15 +3039,15 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  - **Install packages**
-    - Use property `installedPackages`
-  - **Push sources**
-  - **Assign permission sets**
-    - Use property `initPermissionSets`
-  - **Run apex initialization scripts**
-    - Use property `scratchOrgInitApexScripts`
-  - **Load data**
-    - Use property `dataPackages`
+- **Install packages**
+  - Use property `installedPackages`
+- **Push sources**
+- **Assign permission sets**
+  - Use property `initPermissionSets`
+- **Run apex initialization scripts**
+  - Use property `scratchOrgInitApexScripts`
+- **Load data**
+  - Use property `dataPackages`
 
 EXAMPLE
   $ sfdx hardis:scratch:create
@@ -3599,7 +3599,7 @@ DESCRIPTION
   `config/.sfdx-hardis.yml`):
   - (and for scratch org only for now):
     - **Install packages**
-        - Use property `installedPackages`
+      - Use property `installedPackages`
       - **Push sources**
       - **Assign permission sets**
         - Use property `initPermissionSets`
@@ -3697,7 +3697,7 @@ When a work task is completed, guide user to create a merge request
 ```
 USAGE
   $ sfdx hardis:work:save [-n] [-g] [-c] [--auto] [--targetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u
-   <string>] [--apiversion <string>] [--json] [--loglevel 
+   <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3732,12 +3732,12 @@ OPTIONS
 
 DESCRIPTION
 
-  - Generate package-xml diff using sfdx-git-delta
-  - Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
-  - Automatically Clean XML files using `.sfdx-hardis.yml` properties
-    - `autocleantypes`: List of auto-performed sources cleanings, available on command 
+- Generate package-xml diff using sfdx-git-delta
+- Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
+- Automatically Clean XML files using `.sfdx-hardis.yml` properties
+  - `autocleantypes`: List of auto-performed sources cleanings, available on command
   [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/)
-    - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
+  - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
 
   Example:
 
