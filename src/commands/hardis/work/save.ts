@@ -144,7 +144,7 @@ autoRemoveUserPermissions:
     this.currentBranch = await getCurrentGitBranch();
     if (this.targetBranch == null) {
       const userConfig = await getConfig("user");
-      if (userConfig?.localStorageBranchTargets[localBranch]) {
+      if (userConfig?.localStorageBranchTargets && userConfig?.localStorageBranchTargets[localBranch]) {
         this.targetBranch = userConfig?.localStorageBranchTargets[localBranch];
       }
     }
@@ -329,7 +329,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr)
+        c.red(destructivePackageXmlDiffStr)
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +

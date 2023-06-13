@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.18.1] 2023-06-13
+
+- QuickFix hardis:work:save when branch has not been created on the computer
+
 ## [3.18.0] 2023-06-07
 
 - Clean entitlement items, by @yamioliva in https://github.com/hardisgroupcom/sfdx-hardis/pull/381
