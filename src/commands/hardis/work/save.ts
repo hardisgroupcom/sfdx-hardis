@@ -144,7 +144,7 @@ autoRemoveUserPermissions:
     this.currentBranch = await getCurrentGitBranch();
     if (this.targetBranch == null) {
       const userConfig = await getConfig("user");
-      if (userConfig?.localStorageBranchTargets[localBranch]) {
+      if (userConfig?.localStorageBranchTargets && userConfig?.localStorageBranchTargets[localBranch]) {
         this.targetBranch = userConfig?.localStorageBranchTargets[localBranch];
       }
     }
