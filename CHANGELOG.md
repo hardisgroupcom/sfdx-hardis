@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.19.0] 2023-07-03
+
+- Monitoring: Do not exclude custom fields on managed objects
+  -ex: Remove `Ns__Object__c.Ns__Field__c`, but keep `Ns__Object__c.Field__c`
+
 ## [3.18.1] 2023-06-13
 
 - QuickFix hardis:work:save when branch has not been created on the computer
