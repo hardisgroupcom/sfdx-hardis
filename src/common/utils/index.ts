@@ -403,11 +403,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n")
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n")
         )
       );
     }
@@ -706,11 +706,9 @@ export async function filterPackageXml(
         const startsWithNamespace = options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length > 0;
         if (startsWithNamespace) {
           const splits = member.split(".");
-          if (splits.length === 2 &&
-            (
-              (splits[1].match(/__/g) || []).length == 1 && splits[1].endsWith('__c') ||
-              (splits[1].match(/__/g) || []).length == 0
-            )
+          if (
+            splits.length === 2 &&
+            (((splits[1].match(/__/g) || []).length == 1 && splits[1].endsWith("__c")) || (splits[1].match(/__/g) || []).length == 0)
           ) {
             // Keep ns__object__c.field__c and ns__object.stuff
             return true;
