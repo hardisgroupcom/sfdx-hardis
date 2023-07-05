@@ -30,7 +30,7 @@ ___
 ## Merge requests between major branches
 
 - Create a **New Merge request**
-  - Set a meaningful title, like **recette to uat** or **uat to production**
+  - Set a meaningful title, like **MAJOR: recette to uat** or **MAJOR: uat to production**
   - Make sure that **Delete source after merge** and **Squash commits** are **UNCHECKED**
 - Click on **Submit merge request**
 
