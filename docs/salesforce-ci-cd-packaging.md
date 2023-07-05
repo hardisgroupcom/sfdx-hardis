@@ -54,7 +54,7 @@ Before being able to generate a new package version, you need to increment the p
   ],
   "name": "astran",
   "namespace": "Astran",
-  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sfdcLoginUrl": "https://my-devhub-org.salesforce.com",
   "sourceApiVersion": "57.0"
 }
 ```
@@ -65,7 +65,13 @@ ___
 
 Run sfdx-hardis command **Packaging -> Create new package version**
 
+![](assets/images/btn-package-version.jpg)
+
 Select the package you want to create a version, and input an installation if necessary (otherwise let it blank)
+
+![](assets/images/select-package.jpg)
+
+![](assets/images/package-password.jpg)
 
 After some time, the new package version will be generated, and you will be able to find its ID in your `sfdx-project.json`
 
@@ -73,12 +79,16 @@ After some time, the new package version will be generated, and you will be able
 {
     ...
       "packageAliases": {
-        "Astran": "0Ho7S0000010wEASAY",
-        "Astran@0.1.0-1": "04t7S000000gYzPQAF",
-        "Astran@0.1.0-2": "04t7S000000gYz1QAE",
-        "Astran@0.1.0-3": "04t7S000000gYp7QAG",
+        "Astran": "0Ho7S0123010wZWSAU",
+        "Astran@0.1.0-1": "04t7S000000gYxPQAF",
+        "Astran@0.1.0-2": "04t7S000000gYm1QAE",
+        "Astran@0.1.0-3": "04t7S000000gYp7WAG",
 }
 ```
+
+If you have issues, it might be because you incremented the version as a patch whereas the updates with the previous version require at least a minor version.
+
+For example, `1.1.4.NEXT` can fail, and `1.2.0.NEXT` will pass
 
 ___
 
@@ -112,10 +122,15 @@ To promote a package version, run the following command
 
 Example: `sfdx force:package:version:promote -p 04t7S000000gYp7QAG`
 
+Note: When later you will **create a new scratch org** in a new development branch, if you have issues, just increment again the `versionNumber` in `sfdx-project.json`
+
 ___
 
 ### Create version git tag
 
-Once you promoted a package, create a git tag with the version id on the commit corresponding to your merged Pull Request
+Once you promoted a package, **create a git tag** with the version id on the commit corresponding to your merged Pull Request
+
+Example: `v1.1.0`
 
 Push the git tag to origin
+
