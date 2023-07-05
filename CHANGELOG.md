@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.19.1] 2023-07-05
+
+- Add Hotfix management (BUILD vs RUN) in CI/CD documentation
+- Add Packaging & package version instructions in documentation 
+
 ## [3.19.0] 2023-07-03
 
 - Monitoring: Do not exclude custom fields on managed objects
