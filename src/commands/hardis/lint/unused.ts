@@ -104,7 +104,7 @@ export default class Unused extends SfdxCommand {
 
   private async verifyFields(): Promise<string[]> {
     const nonReferencedFields = [];
-    const ignoreNames = ["Activity"];
+    const ignoreNames = ["Activity", 'ContentVersion'];
     const ignoreSuffixes = ["__mdt", "__e"];
     const fieldFiles = await glob(this.objectFieldsDirectory);
     const filteredFieldFiles = fieldFiles.filter((file) => {
