@@ -32,20 +32,20 @@ The **hotfix process** is the following:
 
 - IMPLEMENT **HOTFIX** _**(1)**_
 
-    -	Create new task with **preprod as target when prompted**, named `my-very-hot-hotfix` for example
+  - Create new task with **preprod as target when prompted**, named `my-very-hot-hotfix` for example
 
-    -	Work on a dev sandbox that has been cloned from production
+  - Work on a dev sandbox that has been cloned from production
 
--	DEPLOYMENT IN **RUN LAYER** _**(2)**_
+- DEPLOYMENT IN **RUN LAYER** _**(2)**_
 
-    - Create Pull Request from `my-very-hot-hotfix` to `preprod` & merge it after controls (do not select “delete after merge” )
+  - Create Pull Request from `my-very-hot-hotfix` to `preprod` & merge it after controls (do not select “delete after merge” )
 
-    - Create Pull request from `preprod` to `production`
+  - Create Pull request from `preprod` to `production`
 
-    - Merge `preprod` to `production` after control checks are green.
+  - Merge `preprod` to `production` after control checks are green.
 
--	RETROFIT IN **BUILD LAYER** _**(3)**_
+- RETROFIT IN **BUILD LAYER** _**(3)**_
 
-    - Create Pull Request from `my-very-hot-hotfix` to `integration` & merge it after controls
-    
-    - If there are issues (conflicts…), you can solve them directly in  my-very-hot-hotfix then complete your retrofit PR to integration
+  - Create Pull Request from `my-very-hot-hotfix` to `integration` & merge it after controls
+
+  - If there are issues (conflicts…), you can solve them directly in  my-very-hot-hotfix then complete your retrofit PR to integration
