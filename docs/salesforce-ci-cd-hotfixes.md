@@ -14,7 +14,7 @@ Except for projects in maintenance that contain RUN only, a project is separated
 
 This is the layer where you prepare the **next major or minor version**.
 
-Such new features will go trhough **integration level**, then **uat level** where they will be **qualified and validated by business users**.
+Such new features will go through **integration level**, then **uat level** where they will be **qualified and validated by business users**.
 
 When the User Acceptance Test will be validated in **uat org**, then **uat can be merged into preprod**, and just after minimal tests (mostly technical), **preprod will soon be merged into production**.
 
