@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.19.2] 2023-07-06
+
+- Add packaging in online doc menu
+
 ## [3.19.1] 2023-07-05
 
 - Add Hotfix management (BUILD vs RUN) in CI/CD documentation

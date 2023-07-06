@@ -194,6 +194,7 @@ nav:
               - Overwrite Management: salesforce-ci-cd-config-overwrite.md
               - Automated cleaning: salesforce-ci-cd-config-cleaning.md
               - Source retrieve issues: salesforce-ci-cd-retrieve.md
+          - sfdx-hardis for packaging: salesforce-ci-cd-packaging.md
       - Setup Guide:
           - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
           - Init Git repository: salesforce-ci-cd-setup-git.md
