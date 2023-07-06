@@ -1053,7 +1053,7 @@ OPTIONS
 EXAMPLES
   $ sfdx hardis:org:generate:packagexmlfull
   $ sfdx hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml
-  $ sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com
+  $ sfdx hardis:org:generate:packagexmlfull --targetusername <nico@example.com>
 ```
 
 _See code: [lib/commands/hardis/org/generate/packagexmlfull.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.19.2/lib/commands/hardis/org/generate/packagexmlfull.js)_
@@ -1092,7 +1092,7 @@ OPTIONS
 
 EXAMPLES
   $ sfdx hardis:org:purge:apexlog
-  $ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com
+  $ sfdx hardis:org:purge:apexlog --targetusername <nicolas.vuillamy@gmail.com>
 ```
 
 _See code: [lib/commands/hardis/org/purge/apexlog.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.19.2/lib/commands/hardis/org/purge/apexlog.js)_
@@ -1143,7 +1143,7 @@ OPTIONS
                                                                                     Hardis UI integration
 
 EXAMPLES
-  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
+  $ sfdx hardis:org:purge:flow --targetusername <nicolas.vuillamy@gmail.com>
      Found 1 records:
      ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
      30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -1153,7 +1153,7 @@ EXAMPLES
      ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
      30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   
-  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name
+  $ sfdx hardis:org:purge:flow --targetusername <nicolas.vuillamy@gmail.com> --status "Obsolete,Draft,InvalidDraft --name
   TestFlow"
      Found 4 records:
      ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
@@ -1615,9 +1615,9 @@ DESCRIPTION
 
 EXAMPLES
   $ sfdx hardis:org:user:activateinvalid
-  $ sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com
+  $ sfdx hardis:org:user:activateinvalid --targetusername <myuser@myorg.com>
   $ sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername
-  myuser@myorg.com
+  <myuser@myorg.com>
 ```
 
 _See code: [lib/commands/hardis/org/user/activateinvalid.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v3.19.2/lib/commands/hardis/org/user/activateinvalid.js)_
@@ -1669,12 +1669,12 @@ DESCRIPTION
   <https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3>
 
   [![How to freeze / unfreeze users during a Salesforce
-  deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://med
+  deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](<https://med>
   ium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
 
 EXAMPLES
   $ sfdx hardis:org:user:freeze
-  $ sfdx hardis:org:user:freeze --targetusername myuser@myorg.com
+  $ sfdx hardis:org:user:freeze --targetusername <myuser@myorg.com>
   $ sfdx hardis:org:user:freeze --includeprofiles 'Standard'
   $ sfdx hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other Profile'
 ```
@@ -1728,12 +1728,12 @@ DESCRIPTION
   <https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3>
 
   [![How to freeze / unfreeze users during a Salesforce
-  deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://med
+  deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](<https://med>
   ium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
 
 EXAMPLES
   $ sfdx hardis:org:user:unfreeze
-  $ sfdx hardis:org:user:unfreeze --targetusername myuser@myorg.com
+  $ sfdx hardis:org:user:unfreeze --targetusername <myuser@myorg.com>
   $ sfdx hardis:org:user:unfreeze --includeprofiles 'Standard'
   $ sfdx hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'
 ```
@@ -2051,7 +2051,7 @@ Find duplicate files in sfdx folder (often from past sfdx-cli bugs)
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:duplicatefiles [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
+  $ sfdx hardis:project:audit:duplicatefiles [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2198,7 +2198,7 @@ Remove unwanted managed items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] 
+  $ sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json]
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2494,7 +2494,7 @@ DESCRIPTION
   ![How to build cleaning
   XPath](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-clean-xml.jpg)
 
-  Note: If globpattern and xpath are not sent, elements defined in property **cleanXmlPatterns** in **.sfdx-hardis.yml** 
+  Note: If globpattern and xpath are not sent, elements defined in property **cleanXmlPatterns** in **.sfdx-hardis.yml**
   config file will be used
 
 EXAMPLES
@@ -2607,8 +2607,8 @@ Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
 ```
 USAGE
-  $ sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p 
-  <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-p
+  <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2649,13 +2649,13 @@ DESCRIPTION
 
   If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
-  - `manifest/packageDeployOnce.xml`: Every element defined in this file will be deployed only if it is not existing yet 
-  in the target org (can be useful with ListView for example, if the client wants to update them directly in production 
+- `manifest/packageDeployOnce.xml`: Every element defined in this file will be deployed only if it is not existing yet
+  in the target org (can be useful with ListView for example, if the client wants to update them directly in production
   org)
-  - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a 
+- `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a
   similar definition in target org (can be useful for SharingRules for example)
 
-  ### Deployment plan
+### Deployment plan
 
   If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
 
@@ -3017,15 +3017,15 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  - **Install packages**
-     - Use property `installedPackages`
-  - **Push sources**
-  - **Assign permission sets**
-     - Use property `initPermissionSets`
-  - **Run apex initialization scripts**
-     - Use property `scratchOrgInitApexScripts`
-  - **Load data**
-     - Use property `dataPackages`
+- **Install packages**
+  - Use property `installedPackages`
+- **Push sources**
+- **Assign permission sets**
+  - Use property `initPermissionSets`
+- **Run apex initialization scripts**
+  - Use property `scratchOrgInitApexScripts`
+- **Load data**
+  - Use property `dataPackages`
 
 EXAMPLE
   $ sfdx hardis:scratch:create
@@ -3426,13 +3426,13 @@ DESCRIPTION
   errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
   s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
+  [See documentation of Salesforce
+  command](<https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo>
   rce_source.htm#cli_reference_force_source_deploy)
 
 EXAMPLE
   $ sfdx hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests
-  --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername nicolas.vuillamy@cloudity.com.sfdxhardis
+  --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername <nicolas.vuillamy@cloudity.com.sfdxhardis>
   --checkonly --checkcoverage --verbose --coverageformatters json-summary
 ```
 
@@ -3475,8 +3475,8 @@ DESCRIPTION
   errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
   s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
+  [See documentation of Salesforce
+  command](<https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo>
   rce_source.htm#cli_reference_force_source_push)
 ```
 
@@ -3531,8 +3531,8 @@ DESCRIPTION
 - If no retrieve constraint is sent, as assisted menu will request the list of metadatas to retrieve
 - If no org is selected , an assisted menu will request the user to choose one
 
-  [See documentation of Salesforce 
-  command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo
+  [See documentation of Salesforce
+  command](<https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_fo>
   rce_source.htm#cli_reference_force_source_retrieve)
 ```
 
@@ -3578,15 +3578,15 @@ DESCRIPTION
 - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using
   `config/.sfdx-hardis.yml`):
   - (and for scratch org only for now):
-     - **Install packages**
-         - Use property `installedPackages`
-       - **Push sources**
-       - **Assign permission sets**
-         - Use property `initPermissionSets`
-       - **Run apex initialization scripts**
-         - Use property `scratchOrgInitApexScripts`
-       - **Load data**
-         - Use property `dataPackages`
+    - **Install packages**
+      - Use property `installedPackages`
+      - **Push sources**
+      - **Assign permission sets**
+        - Use property `initPermissionSets`
+      - **Run apex initialization scripts**
+        - Use property `scratchOrgInitApexScripts`
+      - **Load data**
+        - Use property `dataPackages`
 
 EXAMPLE
   $ sfdx hardis:work:task:new
@@ -3676,8 +3676,8 @@ When a work task is completed, guide user to create a merge request
 
 ```
 USAGE
-  $ sfdx hardis:work:save [-n] [-g] [-c] [--auto] [--targetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u 
-  <string>] [--apiversion <string>] [--json] [--loglevel 
+  $ sfdx hardis:work:save [-n] [-g] [-c] [--auto] [--targetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u
+  <string>] [--apiversion <string>] [--json] [--loglevel
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3711,12 +3711,12 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  - Generate package-xml diff using sfdx-git-delta
-  - Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
-  - Automatically Clean XML files using `.sfdx-hardis.yml` properties
-     - `autocleantypes`: List of auto-performed sources cleanings, available on command 
+- Generate package-xml diff using sfdx-git-delta
+- Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
+- Automatically Clean XML files using `.sfdx-hardis.yml` properties
+  - `autocleantypes`: List of auto-performed sources cleanings, available on command
   [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/)
-     - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
+  - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
 
   Example:
 
