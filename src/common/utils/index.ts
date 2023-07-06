@@ -703,7 +703,20 @@ export async function filterPackageXml(
     uxLog(this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(",")} ...`));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
-        return options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length === 0;
+        const startsWithNamespace = options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length > 0;
+        if (startsWithNamespace) {
+          const splits = member.split(".");
+          if (
+            splits.length === 2 &&
+            (((splits[1].match(/__/g) || []).length == 1 && splits[1].endsWith("__c")) || (splits[1].match(/__/g) || []).length == 0)
+          ) {
+            // Keep ns__object__c.field__c and ns__object.stuff
+            return true;
+          }
+          // Do not keep ns__object__c.ns__field__c or ns__object__c.ns__stuff
+          return false;
+        }
+        return true;
       });
       return type;
     });
