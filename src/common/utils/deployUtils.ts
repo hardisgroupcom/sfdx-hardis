@@ -225,7 +225,11 @@ export async function forceSourceDeploy(
       } catch (e) {
         const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, { check: check });
         uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
-        uxLog(this, c.red("\n" + errLog));
+        if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === "false") {
+          uxLog(this, "\n" + errLog);
+        } else {
+          uxLog(this, c.red("\n" + errLog));
+        }
         uxLog(
           commandThis,
           c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`))
