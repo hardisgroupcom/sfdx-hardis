@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.19.3] 2023-07-10
+
+- Allow to disable red colors for force:source:deploy output using env variable **SFDX_HARDIS_DEPLOY_ERR_COLORS=false**
+
 ## [3.19.2] 2023-07-06
 
 - Add packaging in online doc menu
