@@ -1,0 +1,109 @@
+image: node:16
+definitions:
+  services:
+    docker:
+      memory: 3072
+  steps:
+    -step: &deploy-to-prg
+      name: Deploy to org
+      caches:
+        - sfdx
+      script:
+        - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
+        - |
+          export SFDX_CLIENT_ID_INTEGRATION=$BITBUCKET_ENV_FILE_SFDX_CLIENT_ID_INTEGRATION
+          export SFDX_CLIENT_KEY_INTEGRATION=$BITBUCKET_ENV_FILE_SFDX_CLIENT_KEY_INTEGRATION
+          export CI_COMMIT_REF_NAME=$BRANCH_NAME
+          export CONFIG_BRANCH=$BRANCH_NAME
+          export ORG_ALIAS=$BRANCH_NAME
+          export CI="true"
+          apt-get update && apt-get install -y jq
+          npm install sfdx-cli --global
+          echo 'y' | sfdx plugins:install sfdx-hardis
+          echo 'y' | sfdx plugins:install sfdx-essentials
+          echo 'y' | sfdx plugins:install sfdmu
+          echo 'y' | sfdx plugins:install sfdx-git-delta@5.13.3
+          sfdx --version
+          sfdx plugins
+          sfdx hardis:auth:login
+          sfdx hardis:project:deploy:sources:dx
+
+pipelines:
+  pull-requests:
+    "**":
+      - step:
+          name: Run MegaLinter
+          services:
+            - docker
+          script:
+            - apt-get update && apt-get install -y jq
+            - docker pull oxsecurity/megalinter-salesforce:latest
+            - env | grep -e BITBUCKET_ > env_file
+            - docker run
+              -v $BITBUCKET_CLONE_DIR:/tmp/lint
+              --env-file env_file
+              -e CI=true
+              -e SYSTEM_ACCESSTOKEN=$BITBUCKET_ENV_FILE_SYSTEM_ACCESSTOKEN
+              -e GIT_AUTHORIZATION_BEARER=$BITBUCKET_ENV_FILE_SYSTEM_ACCESSTOKEN
+              -e DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR
+              oxsecurity/megalinter-salesforce:latest
+          artifacts:
+            - megalinter-reports/**
+      - step:
+          name: Simulate SFDX deployment
+          script:
+            - apt-get update && apt-get install -y jq
+            - npm install sfdx-cli --global
+            - echo 'y' | sfdx plugins:install sfdx-hardis
+            - echo 'y' | sfdx plugins:install sfdx-essentials
+            - echo 'y' | sfdx plugins:install sfdx-git-delta@5.13.3
+            - sfdx --version
+            - sfdx plugins
+            - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" | sed 's/refs\/heads\///')
+            - export SFDX_CLIENT_ID_INTEGRATION=$BITBUCKET_ENV_FILE_SFDX_CLIENT_ID_INTEGRATION
+            - export SFDX_CLIENT_KEY_INTEGRATION=$BITBUCKET_ENV_FILE_SFDX_CLIENT_KEY_INTEGRATION
+            - export CI_COMMIT_REF_NAME=$BRANCH_NAME
+            - export CONFIG_BRANCH=$BRANCH_NAME
+            - export ORG_ALIAS=$BRANCH_NAME
+            - export CI="true"
+            - export SYSTEM_ACCESSTOKEN=$BITBUCKET_ENV_FILE_SYSTEM_ACCESSTOKEN
+            - export CI_SFDX_HARDIS_AZURE_TOKEN=$BITBUCKET_ENV_FILE_SYSTEM_ACCESSTOKEN
+            - export SYSTEM_COLLECTIONURI=$BITBUCKET_ENV_FILE_SYSTEM_COLLECTIONURI
+            - export SYSTEM_JOB_DISPLAY_NAME=$BITBUCKET_ENV_FILE_SYSTEM_JOB_DISPLAYNAME
+            - export SYSTEM_JOB_ID=$BITBUCKET_ENV_FILE_SYSTEM_JOB_ID
+            - export SYSTEM_PULLREQUEST_PULLREQUESTID=$BITBUCKET_PR_ID
+            - export SYSTEM_TEAMPROJECT=$BITBUCKET_REPO_FULL_NAME
+            - export BUILD_BUILD_ID=$BITBUCKET_BUILD_NUMBER
+            - export BUILD_REPOSITORY_ID=$BITBUCKET_REPO_UUID
+            - sfdx hardis:auth:login
+            - sfdx hardis:project:deploy:sources:dx --check
+
+  branches:
+    # branches must be named according your own git branching strategy
+    # "deployment" can be used - see https://support.atlassian.com/bitbucket-cloud/docs/set-up-and-monitor-bitbucket-deployments/ for more information
+    "integration":
+      - step:
+          <<: *deploy-to-prg
+          name: Deploy to Integration org
+          deployment: integration
+    "uat":
+      - step:
+          <<: *deploy-to-prg
+          name: Deploy to UAT org
+          deployment: uat
+    "hotfix":
+      - step:
+          <<: *deploy-to-prg
+          name: Deploy to Hotfix org
+          deployment: hotfix
+
+    "preprod":
+      - step:
+          <<: *deploy-to-prg
+          name: Deploy to PreProd org
+          deployment: preprod
+    "main":
+      - step:
+          <<: *deploy-to-prg
+          name: Deploy to Production org
+          deployment: production
