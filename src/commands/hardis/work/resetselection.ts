@@ -69,12 +69,11 @@ Calls a soft git reset behind the hood
     // Ask user to confirm
     const confirm = await prompts({
       type: "confirm",
-      message: `This command will git reset (soft) your branch ${currentGitBranch}. You will need to select and commit again your files. Are you sure ?`
+      message: `This command will git reset (soft) your branch ${currentGitBranch}. You will need to select and commit again your files. Are you sure ?`,
     });
     if (confirm.value === false) {
       throw new SfdxError(c.red("[sfdx-hardis] Cancelled by user"));
     }
-
 
     // List all commits since the branch creation
     const logResult = await git().log([`${targetBranch}..${currentGitBranch}`]);
