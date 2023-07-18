@@ -6,6 +6,7 @@ import * as c from "chalk";
 import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
 import { selectTargetBranch } from "../../../common/utils/gitUtils";
 import { setConfig } from "../../../config";
+import { prompts } from "../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -64,6 +65,16 @@ Calls a soft git reset behind the hood
     if (currentGitBranch === targetBranch) {
       throw new SfdxError(c.red("[sfdx-hardis] You can not revert commits of a protected branch !"));
     }
+
+    // Ask user to confirm
+    const confirm = await prompts({
+      type: "confirm",
+      message: `This command will git reset (soft) your branch ${currentGitBranch}. You will need to select and commit again your files. Are you sure ?`
+    });
+    if (confirm.value === false) {
+      throw new SfdxError(c.red("[sfdx-hardis] Cancelled by user"));
+    }
+
 
     // List all commits since the branch creation
     const logResult = await git().log([`${targetBranch}..${currentGitBranch}`]);
