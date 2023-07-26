@@ -1,5 +1,8 @@
 image: node:16
 definitions:
+  caches:
+    sfdx: /var/cache/sfdx
+    megalinter: /var/cache/megalinter
   services:
     docker:
       memory: 3072
