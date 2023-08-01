@@ -71,7 +71,7 @@ ___
 
 It embeds [SAST tools](https://megalinter.io/latest/flavors/salesforce/) that check Apex, Aura, LWC, copy-pastes and security issues.
 
-If you consider Apex issues to be false-positives, you may [disable some rules using annotations and comments](https://pmd.github.io/latest/pmd_userdocs_suppressing_warnings.html)
+If you consider Apex issues to be false-positives, you may [disable some rules using annotations and comments](https://docs.pmd-code.org/latest/pmd_userdocs_suppressing_warnings.html)
 
 - Never use `@SuppressWarnings('PMD')`, always name the rule that you want to disable, because you do not want to disable all rules
 - `//NOPMD` at the end of a line will make the issue ignored, but again use it only in case of false positive, never to "Publish more quickly", else you'll create [technical debt](https://en.wikipedia.org/wiki/Technical_debt).
