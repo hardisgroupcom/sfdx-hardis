@@ -37,57 +37,78 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  push_alpha_to_registry:
-    name: Push alpha Docker image to Docker Hub
-    needs: deploy
-    runs-on: ubuntu-latest
+  docker_images:
+    runs-on: ${{ matrix.os }}
+    permissions:
+      packages: write
+    environment:
+      name: alpha
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        os: [ubuntu-latest]
+        # flavors-start
+        vars:
+          [
+            {
+              tag: alpha,
+              sfdx_hardis_version: alpha,
+              cli: sfdx-cli,
+              cli_version: latest
+            },
+            {
+              tag: alpha-sfdx-recommended,
+              sfdx_hardis_version: alpha,
+              cli: sfdx-cli,
+              cli_version: latest
+            },
+            {
+              tag: alpha-sf-cli,
+              sfdx_hardis_version: alpha,
+              cli: "@salesforce/cli",
+              cli_version: latest
+            }
+          ]
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      - name: Publish alpha to Registry
-        uses: elgohr/Publish-Docker-Github-Action@v4
-        env:
-          SFDX_HARDIS_VERSION: alpha
-          SFDX_CLI_VERSION: latest
-        with:
-          name: hardisgroupcom/sfdx-hardis
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          buildargs: SFDX_HARDIS_VERSION,SFDX_CLI_VERSION
-          tags: "alpha"
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:alpha"
-          format: "table"
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          security-checks: vuln
-          severity: "CRITICAL,HIGH"
 
-  push_alpha_to_registry_sfdx_recommended:
-    name: Push alpha Docker image to Docker Hub (with sfdx-cli version recommended by hardis)
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-      - name: Publish alpha to Registry
-        uses: elgohr/Publish-Docker-Github-Action@v4
-        env:
-          SFDX_HARDIS_VERSION: alpha
-          SFDX_CLI_VERSION: "latest"
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         with:
-          name: hardisgroupcom/sfdx-hardis
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          buildargs: SFDX_HARDIS_VERSION,SFDX_CLI_VERSION
-          tags: "alpha-sfdx-recommended"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            CLI_PACKAGE=${{ matrix.vars.cli }}
+            SFDX_HARDIS_VERSION=${{ matrix.vars.sfdx_hardis_version }}
+            SFDX_CLI_VERSION=${{ matrix.vars.cli_version }}
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            docker.io/hardisgroupcom/sfdx-hardis:${{ matrix.vars.tag }}
+            ghcr.io/hardisgroupcom/sfdx-hardis:${{ matrix.vars.tag }}
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended"
+          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:${{ matrix.vars.tag }}"
           format: "table"
           exit-code: "1"
           ignore-unfixed: true

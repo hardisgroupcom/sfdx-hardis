@@ -19,12 +19,13 @@ ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 # hadolint ignore=DL3044
 ENV PATH="/node_modules/.bin:${PATH}"
 
+ARG CLI_PACKAGE=sfdx-cli
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
-    npm install --no-cache sfdx-cli@${SFDX_CLI_VERSION} -g && \
+    npm install --no-cache ${CLI_PACKAGE}@${SFDX_CLI_VERSION} -g && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdmu && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
