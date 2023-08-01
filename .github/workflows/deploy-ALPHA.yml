@@ -92,7 +92,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
           build-args: |
             CLI_PACKAGE=${{ matrix.vars.cli }}
             SFDX_HARDIS_VERSION=${{ matrix.vars.sfdx_hardis_version }}
