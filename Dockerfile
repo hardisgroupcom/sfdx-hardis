@@ -26,6 +26,7 @@ ARG SFDX_HARDIS_VERSION=latest
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
     npm install --no-cache ${CLI_PACKAGE}@${SFDX_CLI_VERSION} -g && \
+    yarn config set network-timeout 1000000 && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdmu && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
