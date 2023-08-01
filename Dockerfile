@@ -28,9 +28,13 @@ RUN npm install --no-cache yarn -g && \
     npm install --no-cache ${CLI_PACKAGE}@${SFDX_CLI_VERSION} -g && \
     yarn config set network-timeout 1000000 && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
+    rm -rf /root/.local/share/sfdx/yarn.lock && \
     echo 'y' | sfdx plugins:install sfdmu && \
+    rm -rf /root/.local/share/sfdx/yarn.lock && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
+    rm -rf /root/.local/share/sfdx/yarn.lock && \
     echo 'y' | sfdx plugins:install sfdx-essentials && \
+    rm -rf /root/.local/share/sfdx/yarn.lock && \
     echo 'y' | sfdx plugins:install texei-sfdx-plugin && \
     sfdx --version && \
     sfdx plugins && \
