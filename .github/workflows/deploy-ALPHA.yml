@@ -33,12 +33,14 @@ jobs:
       - run: yarn
       - run: yarn config set version-git-tag false && tsc -b
       - run: ALPHAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$ALPHAID"
-      - run: yarn config set network-timeout 300000 && yarn publish --tag alpha
+      - run: echo "temporary skipped" # yarn config set network-timeout 300000 && yarn publish --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker_images:
     runs-on: ${{ matrix.os }}
+    needs:
+      - deploy
     permissions:
       packages: write
     environment:
@@ -98,7 +100,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/arm/v6,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           build-args: |
             CLI_PACKAGE=${{ matrix.vars.cli }}
             SFDX_HARDIS_VERSION=${{ matrix.vars.sfdx_hardis_version }}
