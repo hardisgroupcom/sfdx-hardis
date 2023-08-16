@@ -33,7 +33,7 @@ It will allow you to:
 #### Pre-requisites
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install Salesforce DX by running `npm install sfdx-cli --global` command line
+- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
 
 #### Plugin installation
 
@@ -62,8 +62,8 @@ Once installed, click on ![Hardis Group button](https://github.com/hardisgroupco
 
 You can use sfdx-hardis docker images to run in CI
 
-- [**hardisgroupcom/sfdx-hardis:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with latest sfdx-cli version)
-- [**hardisgroupcom/sfdx-hardis:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with recommended sfdx-cli version, in case the latest version of sfdx-cli is buggy)
+- [**hardisgroupcom/sfdx-hardis:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with latest @salesforce/cli version)
+- [**hardisgroupcom/sfdx-hardis:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with recommended @salesforce/cli version, in case the latest version of @salesforce/cli is buggy)
 
 _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Dockerfile)_
 
@@ -101,7 +101,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 - Install Node.js ([recommended version](https://nodejs.org/en/))
 - Install typescript by running `npm install typescript --global`
 - Install yarn by running `npm install yarn --global`
-- Install Salesforce DX by running `npm install sfdx-cli --global` command line
+- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
 - Fork this repo and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies

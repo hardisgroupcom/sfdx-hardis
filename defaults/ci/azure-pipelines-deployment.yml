@@ -42,7 +42,7 @@ jobs:
 
       # Install SFDX & Dependencies
       - script: |
-          npm install sfdx-cli --global
+          npm install @salesforce/cli --global
           echo 'y' | sfdx plugins:install sfdx-hardis
           echo 'y' | sfdx plugins:install sfdx-essentials
           echo 'y' | sfdx plugins:install sfdmu

@@ -261,7 +261,7 @@ export default class ScratchCreate extends SfdxCommand {
       }
     }
 
-    // Fix sfdx-cli bug: remove shape.zip if found
+    // Fix @salesforce/cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), "shape");
     if (fs.existsSync(tmpShapeFolder) && this.pool === false) {
       await fs.remove(tmpShapeFolder);

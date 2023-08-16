@@ -74,7 +74,7 @@ jobs:
           severity: "CRITICAL,HIGH"
 
   push_to_registry_sfdx_recommended:
-    name: Push Docker image to Docker Hub (with sfdx-cli version recommended by hardis)
+    name: Push Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
     needs: deploy
     runs-on: ubuntu-latest
     steps:

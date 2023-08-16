@@ -151,7 +151,7 @@ export default class SandboxCreate extends SfdxCommand {
     await fs.ensureDir(path.dirname(projectSandboxDefLocal));
     await fs.writeFile(projectSandboxDefLocal, JSON.stringify(this.projectSandboxDef, null, 2));
 
-    // Fix sfdx-cli bug: remove shape.zip if found
+    // Fix @salesforce/cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), "shape");
     if (fs.existsSync(tmpShapeFolder)) {
       await fs.remove(tmpShapeFolder);

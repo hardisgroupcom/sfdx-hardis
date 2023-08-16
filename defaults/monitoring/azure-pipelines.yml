@@ -47,11 +47,11 @@ jobs:
     displayName: Git config
 
   - script: |
-      npm install sfdx-cli -g
+      npm install @salesforce/cli -g
       echo y | sfdx plugins:install sfdx-hardis
       echo y | sfdx plugins:install sfdx-essentials
     workingDirectory: $(System.DefaultWorkingDirectory)
-    displayName: Install sfdx-cli & sfdx-hardis
+    displayName: Install @salesforce/cli & sfdx-hardis
 
   - script: |
       git checkout -b "$BRANCH_NAME"

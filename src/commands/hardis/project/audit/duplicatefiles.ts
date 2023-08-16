@@ -17,7 +17,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class AuditDuplicateFiles extends SfdxCommand {
   public static title = "Find duplicate sfdx files";
 
-  public static description = "Find duplicate files in sfdx folder (often from past sfdx-cli bugs)";
+  public static description = "Find duplicate files in sfdx folder (often from past @salesforce/cli bugs)";
 
   public static examples = ["$ sfdx hardis:project:audit:duplicatefiles"];
 
