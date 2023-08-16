@@ -9,6 +9,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Internal CI refactorization
   - Secure releases with GitHub Actions permissions & environments
   - Switch to [official docker build & push action](https://github.com/docker/build-push-action)
+  - Upgrade MegaLinter
+  - Upgrade npm dependencies
 
 ## [3.19.4] 2023-07-18
 
