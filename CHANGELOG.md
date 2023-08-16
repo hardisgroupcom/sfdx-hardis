@@ -5,6 +5,10 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Upgrade CI/CD scripts and sfdx-hardis docker images from **sfdx-cli** to **@salesforce/cli** (sfdx commands remain called in background)
+- Now also release sfdx-hardis images on GitHub Packages (ghcr.io)
+- Internal CI refactorization
+  - Secure releases with GitHub Actions permissions & environments
+  - Switch to [official docker build & push action](https://github.com/docker/build-push-action)
 
 ## [3.19.4] 2023-07-18
 

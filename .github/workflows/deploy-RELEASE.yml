@@ -19,6 +19,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions: read-all
+    environment:
+      name: release
     steps:
       - uses: actions/checkout@v3
       # Setup .npmrc file to publish to npm
@@ -37,31 +40,39 @@ jobs:
     name: Push Docker image to Docker Hub
     needs: deploy
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: release
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      - name: Publish version to Registry
-        uses: elgohr/Publish-Docker-Github-Action@master
-        env:
-          SFDX_HARDIS_VERSION: latest
-          SFDX_CLI_VERSION: latest
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build & Push Docker Image (Latest)
+        uses: docker/build-push-action@v4
         with:
-          name: hardisgroupcom/sfdx-hardis
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          buildargs: SFDX_HARDIS_VERSION,SFDX_CLI_VERSION
-          tag_semver: true
-      - name: Publish latest to Registry
-        uses: elgohr/Publish-Docker-Github-Action@v4
-        env:
-          SFDX_HARDIS_VERSION: latest
-          SFDX_CLI_VERSION: latest
-        with:
-          name: hardisgroupcom/sfdx-hardis
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          buildargs: SFDX_HARDIS_VERSION,SFDX_CLI_VERSION
-          tags: "latest"
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            docker.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+            docker.io/hardisgroupcom/sfdx-hardis:latest
+            ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+            ghcr.io/hardisgroupcom/sfdx-hardis:latest
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -77,20 +88,50 @@ jobs:
     name: Push Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
     needs: deploy
     runs-on: ubuntu-latest
+    environment:
+      name: release
+    permissions:
+      packages: write
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      - name: Publish latest to Registry
-        uses: elgohr/Publish-Docker-Github-Action@v4
-        env:
-          SFDX_HARDIS_VERSION: latest
-          SFDX_CLI_VERSION: "latest"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         with:
-          name: hardisgroupcom/sfdx-hardis
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          buildargs: SFDX_HARDIS_VERSION,SFDX_CLI_VERSION
-          tags: "latest-sfdx-recommended"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker Image (Latest)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
+            ghcr.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
