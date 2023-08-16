@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [3.19.4] 2023-07-18
+
+- Add confirmation before resetting a git branch from VsCode command "Reset selected list of items to merge" (from an original idea of @derroman)
+
 ## [3.19.3] 2023-07-10
 
 - Allow to disable red colors for force:source:deploy output using env variable **SFDX_HARDIS_DEPLOY_ERR_COLORS=false**
