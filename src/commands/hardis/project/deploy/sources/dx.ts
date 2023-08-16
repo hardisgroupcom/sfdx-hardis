@@ -259,7 +259,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         // call delta
         uxLog(this, c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."));
         const tmpDir = await createTempDir();
-        await callSfdxGitDelta("HEAD", "HEAD~1", tmpDir, { debug: this.debugMode });
+        await callSfdxGitDelta("HEAD", "HEAD^", tmpDir, { debug: this.debugMode });
 
         // Update package.xml
         const packageXmlFileDeltaDeploy = path.join(tmpDir, "package", "packageDelta.xml");
