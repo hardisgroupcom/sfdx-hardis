@@ -113,7 +113,7 @@ export default class PackageVersionCreate extends SfdxCommand {
     }
     // Identify package directory
     const pckgDirectory = packageDirectories.filter(
-      (pckgDirectory) => pckgDirectory.name === this.package || pckgDirectory.package === this.package
+      (pckgDirectory) => pckgDirectory.name === this.package || pckgDirectory.package === this.package,
     )[0];
     if (config.defaultPackageInstallationKey !== this.installKey && this.installKey != null) {
       await setConfig("project", {

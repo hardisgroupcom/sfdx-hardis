@@ -223,9 +223,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
           this,
           c.yellow(
             `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-              package1.SubscriberPackageVersionId
-            )} in target org to validate the deployment check`
-          )
+              package1.SubscriberPackageVersionId,
+            )} in target org to validate the deployment check`,
+          ),
         );
       }
       uxLog(this, "");
@@ -234,10 +234,10 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         c.yellow(
           c.italic(
             `If you want deployment checks to automatically install packages, please define ${c.bold(
-              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true"
-            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`
-          )
-        )
+              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true",
+            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`,
+          ),
+        ),
       );
     }
 

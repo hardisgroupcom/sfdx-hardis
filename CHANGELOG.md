@@ -4,6 +4,16 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+**BREAKING CHANGE**: You need to **manually update your CI/CD pipelines** scripts using sfdx-hardis (gitlab-ci.yml, azure-pipelines.yml...) to **replace `sfdx-cli` by `@salesforce/cli`**
+
+- Upgrade CI/CD scripts and sfdx-hardis docker images from **sfdx-cli** to **@salesforce/cli** (sfdx commands remain called in background)
+- Now also release sfdx-hardis images on GitHub Packages (ghcr.io)
+- Internal CI refactorization
+  - Secure releases with GitHub Actions permissions & environments
+  - Switch to [official docker build & push action](https://github.com/docker/build-push-action)
+  - Upgrade MegaLinter
+  - Upgrade npm dependencies
+
 ## [3.19.4] 2023-07-18
 
 - Add confirmation before resetting a git branch from VsCode command "Reset selected list of items to merge" (from an original idea of @derroman)

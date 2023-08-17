@@ -136,8 +136,8 @@ export default class ProjectCreate extends SfdxCommand {
     uxLog(
       this,
       c.cyan(
-        "SFDX Project has been created. You can continue the steps in documentation at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/"
-      )
+        "SFDX Project has been created. You can continue the steps in documentation at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/",
+      ),
     );
 
     // Trigger commands refresh on VsCode WebSocket Client

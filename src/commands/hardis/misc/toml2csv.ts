@@ -322,7 +322,7 @@ export default class Toml2Csv extends SfdxCommand {
     const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
       this,
-      c.cyan(`TOML file ${c.green(tomlFile)} has been split into ${c.green(this.csvFiles.length)} CSV files in directory ${c.green(this.outputDir)}`)
+      c.cyan(`TOML file ${c.green(tomlFile)} has been split into ${c.green(this.csvFiles.length)} CSV files in directory ${c.green(this.outputDir)}`),
     );
     return { outputString: message, csvfiles: this.csvFiles, stats: this.stats };
   }
@@ -350,7 +350,7 @@ export default class Toml2Csv extends SfdxCommand {
       // Create SF Object output file name
       const outputFile = path.join(
         this.outputDir,
-        `${errMode ? "errors" + path.sep + "err__" : ""}${this.transfoConfig.entities[section].outputFile.salesforceObjectApiName}___${section}.csv`
+        `${errMode ? "errors" + path.sep + "err__" : ""}${this.transfoConfig.entities[section].outputFile.salesforceObjectApiName}___${section}.csv`,
       );
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: "utf8" });
@@ -425,10 +425,10 @@ export default class Toml2Csv extends SfdxCommand {
             this.triggerError(
               c.red(
                 `${c.bold(this.transfoConfig.entities[this.currentSection].outputFile.salesforceObjectApiName)}.${c.bold(
-                  colDefinition.name
-                )}: Missing required value`
+                  colDefinition.name,
+                )}: Missing required value`,
               ),
-              false
+              false,
             );
           }
           // Manage truncate value
@@ -490,9 +490,9 @@ export default class Toml2Csv extends SfdxCommand {
         if (colNamePosition === null || colNamePosition < 0) {
           this.triggerError(
             `Concat error: Unable to find output field "${concatColName}" in ${JSON.stringify(
-              this.transfoConfig.entities[section].outputFile.colOutputPositions
+              this.transfoConfig.entities[section].outputFile.colOutputPositions,
             )}`,
-            false
+            false,
           );
         }
         const colNameValue = linesSfArray[colNamePosition];
@@ -533,10 +533,10 @@ export default class Toml2Csv extends SfdxCommand {
       this.triggerError(
         c.red(
           `${c.bold(this.transfoConfig.entities[this.currentSection].outputFile.salesforceObjectApiName)}.${c.bold(
-            colDefinition.name
-          )}: Missing matching value for ${c.bold(colVal)} in ${c.grey(JSON.stringify(Object.keys(enumValues)))}`
+            colDefinition.name,
+          )}: Missing matching value for ${c.bold(colVal)} in ${c.grey(JSON.stringify(Object.keys(enumValues)))}`,
         ),
-        false
+        false,
       );
     }
     return transcodedValue;
