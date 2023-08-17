@@ -19,7 +19,12 @@ There are many ways to do DevOps with Salesforce, each of them have their advant
 
 You can setup and use a full CI/CD pipeline for your Salesforce projects using sfdx-hardis.
 
-We provide [Gitlab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml) & [Azure](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml) pipelines, and they can easily be adapted to other platforms like [Github Actions](https://github.com/features/actions), [Jenkins](https://www.jenkins.io/)...
+We provide following CI/CD example pipelines:
+- [Gitlab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml)
+- [Azure](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml)
+- [Github](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/deploy.yml)
+
+Pipelines can easily be adapted to other platforms like [Bitbucket](https://bitbucket.org/), [Jenkins](https://www.jenkins.io/)
 
 If you speak fluently **git**, **sfdx** & **DevOps**, you can be fully autonomous to setup and use Salesforce CI/CD, otherwise you can contact us at [**Cloudity**](https://cloudity.com/) (or your favorite Salesforce integrator) and we'll be glad to assist you :)
 

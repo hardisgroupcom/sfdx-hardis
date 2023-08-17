@@ -1,0 +1,28 @@
+name: Deploy - DEV
+
+on: 
+  push:
+    branches:    
+      - dev
+  schedule:
+    - cron:  '0 4 * * 1-5'
+
+jobs:
+  # Apex and JS code should be scanned for issues before actual deployment step could start
+  # Check step could utilize MegaLinter/PMD/Eslint and alert developers about findings
+  #check:
+  #  uses: ./.github/workflows/code-scan.yml
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    # Passing only necessary secrets to re-usable workflow
+    secrets:
+      client_id: ${{ secrets.SFDX_CLIENT_ID_DEV }}
+      client_key: ${{ secrets.SFDX_CLIENT_KEY_DEV }}
+    with:
+      target: dev
+      # Disclaimer: You should always run all the tests as early as possible in CI/CD pipeline so it is recommended to use "RunLocalTests"
+      # 
+      # Run all local tests only when cron schedule happens
+      # This trick is handly for big orgs having thousand tests or more and you want to deploy often to lowest dev/integration sandbox during the day
+      # Regular merges/pushes to dev branch go quicker towards Salesforce sandbox when skipping tests, also the org configuration is not locked that long
+      testlevel: ${{ github.event.schedule == '' && 'NoTestRun' || 'RunLocalTests' }}

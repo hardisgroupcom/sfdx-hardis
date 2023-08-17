@@ -1,0 +1,21 @@
+name: Deploy - UAT
+
+on: 
+  push:
+    branches:    
+      - uat
+
+jobs:
+  # Apex and JS code should be scanned for issues before actual deployment step could start
+  # Check step could utilize MegaLinter/PMD/Eslint and alert developers about findings
+  #check:
+  #  uses: ./.github/workflows/code-scan.yml
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    # Passing only necessary secrets to re-usable workflow
+    secrets:
+      client_id: ${{ secrets.SFDX_CLIENT_ID_UAT }}
+      client_key: ${{ secrets.SFDX_CLIENT_KEY_UAT }}
+    with:
+      # UAT example will not define testlevel, defaulting to RunLocalTests
+      target: uat

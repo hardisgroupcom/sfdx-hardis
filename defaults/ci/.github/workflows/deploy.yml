@@ -1,0 +1,66 @@
+################################################################################
+# Test and deployment GHA reusable workflow for a Salesforce CI/CD Project     #
+# Check deploy-dev.yml and deploy-uat.yml as examples how to invoke workflow   #
+################################################################################
+
+# More info at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/
+
+on: 
+  workflow_call:
+    # Using only given secrets, workflow will not have access to all secrets
+    secrets:
+      client_id:
+        description: 'SFDX client ID'
+        required: true
+      client_key:
+        description: 'SFDX client key'
+        required: true
+    inputs:
+      target:
+        description: 'Target branch for the deploy'
+        required: true
+        type: string
+      testlevel:
+        description: 'SFDX test level'
+        default: 'RunLocalTests' # Running all local tests by default
+        required: false
+        type: string
+jobs:
+  salesforce:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.target }} # Fetch given git branch code
+        fetch-depth: 0 # Faster code checkout fetching only latest commit
+    - name: Setup Node LTS Hydrogen
+      uses: actions/setup-node@v3
+      with:
+        node-version: "18"
+    # SFDX installation step will be removed later when SFDX Hardis has Ubuntu based Docker hub image available
+    - name: Install SFDX and plugins
+      run: |
+        npm install --no-cache yarn -g
+        npm install --no-cache sfdx-cli
+        echo 'y' | sfdx plugins:install sfdx-hardis
+        echo 'y' | sfdx plugins:install sfdmu
+        echo 'y' | sfdx plugins:install sfdx-git-delta
+        echo 'y' | sfdx plugins:install sfdx-essentials
+        echo 'y' | sfdx plugins:install texei-sfdx-plugin
+        sfdx --version
+        sfdx plugins
+    - name: Deploy to Salesforce org
+      env:
+        SFDX_CLIENT_ID: ${{ secrets.client_id }}
+        SFDX_CLIENT_KEY: ${{ secrets.client_key }}
+        SFDX_DEPLOY_WAIT_MINUTES: 180 # Wait up to 3 hours for deployment to finish
+        SFDX_TEST_WAIT_MINUTES: 180 # Wait up to 3 hours for tests to finish
+        SFDX_TEST_LEVEL: ${{ inputs.testlevel }} # Specify APEX test level
+        DEPLOY_BRANCHES: /(dev|uat|main)/ # Whitelist all branches allowed to deploy
+        CONFIG_BRANCH: ${{ inputs.target }} # Define the branch which one to deploy
+        CI: "true" # Inform Hardis that deployment happens in CI mode
+      run: |
+        echo "Perform SFDX deployment using Hardis against $CONFIG_BRANCH"
+        sfdx hardis:auth:login -d
+        sfdx hardis:project:deploy:sources:dx --debug --testlevel $SFDX_TEST_LEVEL
