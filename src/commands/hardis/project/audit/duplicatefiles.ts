@@ -64,7 +64,7 @@ export default class AuditDuplicateFiles extends SfdxCommand {
     const duplicates = {};
     for (const file of allFiles) {
       const doublingFiles = allFiles.filter(
-        (f) => f.fileName === file.fileName && f.fullPath !== file.fullPath && !this.checkDoublingAllowed(file, f)
+        (f) => f.fileName === file.fileName && f.fullPath !== file.fullPath && !this.checkDoublingAllowed(file, f),
       );
       if (doublingFiles.length > 0) {
         const doublingFullPaths = duplicates[file.fileName] || [];

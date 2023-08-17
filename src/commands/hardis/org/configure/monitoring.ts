@@ -123,7 +123,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         name: "teamsHook",
         initial: config.msTeamsWebhookUrl,
         message: c.cyanBright(
-          "If you want notifications of updates in orgs in a Microsoft Teams channel:\n- Create the WebHook: https://docs.microsoft.com/fr-fr/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook#add-an-incoming-webhook-to-a-teams-channel\n- paste the hook Url here\nIf you do not want Ms Team notifications, just leave empty and hit ENTER"
+          "If you want notifications of updates in orgs in a Microsoft Teams channel:\n- Create the WebHook: https://docs.microsoft.com/fr-fr/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook#add-an-incoming-webhook-to-a-teams-channel\n- paste the hook Url here\nIf you do not want Ms Team notifications, just leave empty and hit ENTER",
         ),
       },
     ]);
@@ -136,7 +136,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         instanceUrl,
         msTeamsWebhookUrl: usernameMsTeamsResponse.teamsHook ? usernameMsTeamsResponse.teamsHook : null,
       },
-      "./.sfdx-hardis.yml"
+      "./.sfdx-hardis.yml",
     );
 
     // Generate SSL certificate (requires openssl to be installed on computer)
@@ -163,8 +163,8 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     uxLog(
       this,
       c.greenBright(
-        `You may schedule monitoring to be automatically run every day. To do that, go in ${c.bold("Project -> CI -> Schedules -> New schedule")}`
-      )
+        `You may schedule monitoring to be automatically run every day. To do that, go in ${c.bold("Project -> CI -> Schedules -> New schedule")}`,
+      ),
     );
     // Return an object to be displayed with --json
     return { outputString: "Configured branch for authentication" };

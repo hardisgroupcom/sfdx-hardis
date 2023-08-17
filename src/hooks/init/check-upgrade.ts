@@ -21,9 +21,9 @@ export const hook = async (options: any) => {
     console.warn(
       c.yellow(
         `WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to ${notifier.update.latest} by running ${c.green(
-          "sfdx plugins:install sfdx-hardis"
-        )}`
-      )
+          "sfdx plugins:install sfdx-hardis",
+        )}`,
+      ),
     );
     console.warn(c.yellow("***********************************************************************************************************************"));
   }

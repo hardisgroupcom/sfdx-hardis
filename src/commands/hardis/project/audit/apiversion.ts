@@ -113,7 +113,7 @@ export default class CallInCallOut extends SfdxCommand {
       resultsLight.map((item: any) => {
         delete item.detail;
         return item;
-      })
+      }),
     );
 
     // Generate output files
@@ -134,9 +134,9 @@ export default class CallInCallOut extends SfdxCommand {
         this,
         c.yellow(
           `[sfdx-hardis] WARNING: Your sources contain ${c.bold(numberOfInvalid)} metadata files with API Version lesser than ${c.bold(
-            minimumApiVersion
-          )}`
-        )
+            minimumApiVersion,
+          )}`,
+        ),
       );
       if (failIfError) {
         throw new SfdxError(c.red(`[sfdx-hardis][ERROR] ${c.bold(numberOfInvalid)} metadata files with wrong API version detected`));
@@ -146,9 +146,9 @@ export default class CallInCallOut extends SfdxCommand {
         this,
         c.green(
           `[sfdx-hardis] SUCCESS: Your sources contain ${c.bold(numberOfValid)} metadata files with API Version superior to ${c.bold(
-            minimumApiVersion
-          )}`
-        )
+            minimumApiVersion,
+          )}`,
+        ),
       );
     }
 

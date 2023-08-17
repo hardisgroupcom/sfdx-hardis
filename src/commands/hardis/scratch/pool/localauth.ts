@@ -60,8 +60,8 @@ export default class ScratchPoolLocalAuth extends SfdxCommand {
       uxLog(
         this,
         c.yellow(
-          `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
-        )
+          `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`,
+        ),
       );
       return { outputString: "Scratch org pool configuration to create" };
     }

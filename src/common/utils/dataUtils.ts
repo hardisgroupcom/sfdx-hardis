@@ -41,7 +41,7 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl.isDelete === false) {
     throw new SfdxError(
-      "Your export.json does not contain deletion information. Please check http://help.sfdmu.com/full-documentation/advanced-features/delete-from-source"
+      "Your export.json does not contain deletion information. Please check http://help.sfdmu.com/full-documentation/advanced-features/delete-from-source",
     );
   }
   uxLog(commandThis, c.cyan(`Deleting data from ${c.green(dtl.full_label)} ...`));
@@ -85,7 +85,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
 export async function selectDataWorkspace(opts = { selectDataLabel: "Please select a data workspace to export" }) {
   if (!fs.existsSync(dataFolderRoot)) {
     throw new SfdxError(
-      "There is no sfdmu root folder 'scripts/data' in your workspace. Create it and define sfdmu exports using sfdmu: https://help.sfdmu.com/"
+      "There is no sfdmu root folder 'scripts/data' in your workspace. Create it and define sfdmu exports using sfdmu: https://help.sfdmu.com/",
     );
   }
 

@@ -73,8 +73,8 @@ export default class ScratchPoolCreate extends SfdxCommand {
         this,
         c.yellow(
           `There is already an existing scratch org pool configuration: ${JSON.stringify(config.poolConfig)}.
-If you really want to replace it, please remove poolConfig property from .sfdx-hardis.yml and run again this command`
-        )
+If you really want to replace it, please remove poolConfig property from .sfdx-hardis.yml and run again this command`,
+        ),
       );
       return { outputString: "Scratch org pool configuration already existing" };
     }
@@ -116,9 +116,9 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
         this,
         c.yellow(
           `You'll probably need to define CI masked variable ${c.green(
-            "SFDX_AUTH_URL_DEV_HUB"
-          )} with content of sfdxAuthUrl that you can retrieve with ${c.white("sfdx force:org:display -u YOURDEVHUBUSERNAME --verbose --json")}`
-        )
+            "SFDX_AUTH_URL_DEV_HUB",
+          )} with content of sfdxAuthUrl that you can retrieve with ${c.white("sfdx force:org:display -u YOURDEVHUBUSERNAME --verbose --json")}`,
+        ),
       );
     }
 
