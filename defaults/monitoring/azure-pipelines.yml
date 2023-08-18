@@ -48,6 +48,7 @@ jobs:
 
   - script: |
       npm install @salesforce/cli -g
+      sf plugins install @salesforce/plugin-packaging
       echo y | sfdx plugins:install sfdx-hardis
       echo y | sfdx plugins:install sfdx-essentials
     workingDirectory: $(System.DefaultWorkingDirectory)
