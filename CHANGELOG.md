@@ -4,7 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-**BREAKING CHANGE**: You need to **manually update your CI/CD pipelines** scripts using sfdx-hardis (gitlab-ci.yml, azure-pipelines.yml...) to **replace `sfdx-cli` by `@salesforce/cli`**
+**BREAKING CHANGE**: If you are not using sfdx-hardis docker images, you need to **manually update your CI/CD pipelines** scripts using sfdx-hardis (gitlab-ci.yml, azure-pipelines.yml...) to:
+
+- **replace `sfdx-cli` by `@salesforce/cli`**
+- **Add `sf plugins install @salesforce/plugin-packaging` just after `npm install @salesforce/cli --global`**
+
+Other upgrades 
 
 - Upgrade CI/CD scripts and sfdx-hardis docker images from **sfdx-cli** to **@salesforce/cli** (sfdx commands remain called in background)
 - Now also release sfdx-hardis images on GitHub Packages (ghcr.io)
