@@ -9,7 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - **replace `sfdx-cli` by `@salesforce/cli`**
 - **Add `sf plugins install @salesforce/plugin-packaging` just after `npm install @salesforce/cli --global`**
 
-Other upgrades 
+Other upgrades
 
 - Upgrade CI/CD scripts and sfdx-hardis docker images from **sfdx-cli** to **@salesforce/cli** (sfdx commands remain called in background), and add `@salesforce/plugin-packaging` by default
 - Now also release sfdx-hardis images on GitHub Packages (ghcr.io)
