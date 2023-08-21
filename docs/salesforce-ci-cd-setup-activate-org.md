@@ -26,8 +26,8 @@ You need to have a Salesforce sandbox corresponding to each major branch.
 
 Example:
 
-- Branch `integration` - create a sandbox named `Integration`
-- Branch `uat` - create a sandbox named `UAT`
-- Branch `preprod` - create a sandbox named `Preprod`
+- Branch `preprod` - create a sandbox named `Preprod`, cloned from Production org
+- Branch `uat` - create a sandbox named `UAT`, cloned from PreProd org
+- Branch `integration` - create a sandbox named `Integration`, cloned from UAT org
 
 If you are converting an existing project to CI/CD and already have existing orgs, just create an org `Integration`, and you'll refresh later `UAT` and `PreProd`, once your setup will be more advanced.
