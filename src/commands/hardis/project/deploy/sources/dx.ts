@@ -2,11 +2,11 @@
 /*
 To test locally, you can call the command like that:
 
-Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=glpat-_ksdf4566734uGPFT CI_PROJECT_ID=43298752 CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
+Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
 
-Azure: CI=true SYSTEM_ACCESSTOKEN=4v54dm6dku7775q6oi24wpdffkk4567lksuqe73646pkq SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=0e91f45f-876r-4b4f-acc8-c97d96401b0e CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.muuuurf
+Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.muuuurf
 
-- Before, you need to make a sfdx alias:set mybranch=myusername
+- Before, you need to make a sfdx alias:set myBranch=myUsername
 - You can find CI_PROJECT_ID with https://gitlab.com/api/v4/projects?search=YOUR-REPO-NAME
 
 */
