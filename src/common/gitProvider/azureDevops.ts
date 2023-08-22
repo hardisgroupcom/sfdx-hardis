@@ -3,7 +3,7 @@ import * as azdev from "azure-devops-node-api";
 import * as c from "chalk";
 import { uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
-import { CommentThreadStatus, GitPullRequestCommentThread, PullRequestAsyncStatus } from "azure-devops-node-api/interfaces/GitInterfaces";
+import { CommentThreadStatus, GitPullRequestCommentThread, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -28,7 +28,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
-      targetRefName: gitBranch
+      targetRefName: `refs/heads/${gitBranch}`,
+      status: PullRequestStatus.Completed
     });
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter(pr => pr.mergeStatus === PullRequestAsyncStatus.Succeeded);
     if (latestMergedPullRequestOnBranch.length > 0) {
@@ -36,6 +37,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
       const latestPullRequestId = latestPullRequest.pullRequestId;
       const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
       for (const existingThread of existingThreads) {
+        if (existingThread.isDeleted) {
+          continue;
+        }
         for (const comment of existingThread?.comments || []) {
           if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
             const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment.content);
@@ -94,6 +98,9 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     let existingThreadComment: GitPullRequestCommentThread = null;
     let existingThreadCommentId: number = null;
     for (const existingThread of existingThreads) {
+      if (existingThread.isDeleted) {
+        continue;
+      }
       for (const comment of existingThread?.comments || []) {
         if ((comment?.content || "").includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
           existingThreadComment = existingThread;
