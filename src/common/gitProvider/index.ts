@@ -1,5 +1,5 @@
 import * as c from "chalk";
-import { isCI, uxLog } from "../utils";
+import { getCurrentGitBranch, isCI, uxLog } from "../utils";
 import { AzureDevopsProvider } from "./azureDevops";
 import { GithubProvider } from "./github";
 import { GitlabProvider } from "./gitlab";
@@ -61,6 +61,17 @@ export abstract class GitProvider {
       if (postResult && postResult.posted === true) {
         globalThis.pullRequestCommentSent = true;
       }
+    }
+  }
+
+  static async getDeploymentCheckId(): Promise<string> {
+    try {
+      const gitProvider = GitProvider.getInstance();
+      const currentGitBranch = await getCurrentGitBranch();
+      return gitProvider.getBranchDeploymentCheckId(currentGitBranch);
+    } catch (e) {
+      uxLog(this, c.yellow(`Error while trying to retrieve deployment check id:\n${e.message}`));
+      return null;
     }
   }
 }

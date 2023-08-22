@@ -20,18 +20,31 @@ export class GitlabProvider extends GitProviderRoot {
     return "sfdx-hardis Gitlab connector";
   }
 
-  protected async getParentMergeRequestId(): Promise<number> {
-    // CI_COMMIT_MESSAGE contains "See merge request !<MR_ID>"
-    const commitMsg = process.env.CI_COMMIT_MESSAGE;
-    return parseInt(commitMsg.split("!").pop());
-  }
-
-  protected async getPipelineId(): Promise<string> {
-    const projectId: string = process.env.CI_PROJECT_ID;
-    const parentMergeRequestId: number = await this.getParentMergeRequestId();
-    const pipelines = await this.gitlabApi.MergeRequests.pipelines(projectId, parentMergeRequestId);
-    console.log(pipelines);
-    return "";
+  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
+    let deploymentCheckId = null;
+    const projectId = process.env.CI_PROJECT_ID || null;
+    const latestMergeRequestsOnBranch = await this.gitlabApi.MergeRequests.all({
+      projectId: projectId,
+      state: "merged",
+      sort: "desc",
+      targetBranch: gitBranch
+    });
+    if (latestMergeRequestsOnBranch.length > 0) {
+      const latestMergeRequest = latestMergeRequestsOnBranch[0];
+      const latestMergeRequestId = latestMergeRequest.iid;
+      const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
+      for (const existingNote of existingNotes) {
+        if (existingNote.body.includes('<!-- sfdx-hardis deployment-id ')) {
+          const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
+          if (matches) {
+            deploymentCheckId = matches[1];
+            uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
+          }
+          break;
+        }
+      }
+    }
+    return deploymentCheckId;
   }
 
   // Posts a note on the merge request
