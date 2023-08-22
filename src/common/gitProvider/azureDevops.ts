@@ -3,7 +3,7 @@ import * as azdev from "azure-devops-node-api";
 import * as c from "chalk";
 import { uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
-import { CommentThreadStatus, GitPullRequestCommentThread } from "azure-devops-node-api/interfaces/GitInterfaces";
+import { CommentThreadStatus, GitPullRequestCommentThread, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -20,6 +20,42 @@ export class AzureDevopsProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Azure Devops connector";
+  }
+
+  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
+    let deploymentCheckId = null;
+    // Get Azure Git API
+    const azureGitApi = await this.azureApi.getGitApi();
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
+      targetRefName: `refs/heads/${gitBranch}`,
+      status: PullRequestStatus.Completed
+    });
+    const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter(pr => pr.mergeStatus === PullRequestAsyncStatus.Succeeded);
+    if (latestMergedPullRequestOnBranch.length > 0) {
+      const latestPullRequest = latestMergedPullRequestOnBranch[0];
+      const latestPullRequestId = latestPullRequest.pullRequestId;
+      const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
+      for (const existingThread of existingThreads) {
+        if (existingThread.isDeleted) {
+          continue;
+        }
+        for (const comment of existingThread?.comments || []) {
+          if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
+            const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment.content);
+            if (matches) {
+              deploymentCheckId = matches[1];
+              uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
+            }
+            break;
+          }
+        }
+        if (deploymentCheckId) {
+          break ;
+        }
+      }
+    }
+    return deploymentCheckId;
   }
 
   // Posts a note on the merge request
@@ -62,6 +98,9 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     let existingThreadComment: GitPullRequestCommentThread = null;
     let existingThreadCommentId: number = null;
     for (const existingThread of existingThreads) {
+      if (existingThread.isDeleted) {
+        continue;
+      }
       for (const comment of existingThread?.comments || []) {
         if ((comment?.content || "").includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
           existingThreadComment = existingThread;
@@ -108,7 +147,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     return prMessage.status === "valid"
       ? CommentThreadStatus.Fixed
       : prMessage.status === "invalid"
-      ? CommentThreadStatus.Active
-      : CommentThreadStatus.Unknown;
+        ? CommentThreadStatus.Active
+        : CommentThreadStatus.Unknown;
   }
 }
