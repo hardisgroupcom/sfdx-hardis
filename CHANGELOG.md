@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.1.0] 2023-08-22
+
 - Manage QuickDeploy when available (disable by defining env var `SFDX_HARDIS_QUICK_DEPLOY=false`)
 
 ## [4.0.1] 2023-08-18
