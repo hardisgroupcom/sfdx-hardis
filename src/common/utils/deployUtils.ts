@@ -202,6 +202,31 @@ export async function forceSourceDeploy(
         commandThis,
         c.cyan(`${check ? "Simulating deployment of" : "Deploying"} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`),
       );
+      // Try QuickDeploy
+      if (check === false && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || '') !== "false") {
+        const deploymentCheckId = await GitProvider.getDeploymentCheckId();
+        if (deploymentCheckId) {
+          const quickDeployCommand = `sfdx force:source:deploy` +
+            ` --validateddeployrequestid ${deploymentCheckId} ` +
+            (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
+            ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
+            ` --verbose` +
+            (process.env.SFDX_DEPLOY_DEV_DEBUG ? " --dev-debug" : "");
+          const quickDeployRes = await execSfdxJson(quickDeployCommand, commandThis, {
+            output: true,
+            debug: debugMode,
+            fail: false
+          });
+          if (quickDeployRes.status === 0) {
+            uxLog(commandThis, c.green(`Successfully processed QuickDeploy for deploymentId ${deploymentCheckId}`));
+            break;
+          }
+          else {
+            uxLog(commandThis, c.yellow(`Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}\n Switching back to effective deployment.`));
+          }
+        }
+      }
+      // No QuickDeploy Available, or QuickDeploy failing : try full deploy
       const deployCommand =
         `sfdx force:source:deploy -x "${deployment.packageXmlFile}"` +
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
@@ -708,10 +733,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -725,10 +750,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,

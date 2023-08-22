@@ -1,4 +1,15 @@
 /* jscpd:ignore-start */
+/*
+To test locally, you can call the command like that:
+
+Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=glpat-_ksdf4566734uGPFT CI_PROJECT_ID=43298752 CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
+
+Azure: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=glpat-_kM7oBgdfgkkh34uGPFT CI_PROJECT_ID=43298752 CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
+
+- Before, you need to make a sfdx alias:set mybranch=myusername
+- You can find CI_PROJECT_ID with https://gitlab.com/api/v4/projects?search=YOUR-REPO-NAME
+
+*/
 
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
