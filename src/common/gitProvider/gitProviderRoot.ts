@@ -13,7 +13,7 @@ export abstract class GitProviderRoot {
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
     uxLog(this, `Method getBranchDeploymentCheckId(${gitBranch}) is not implemented yet on ${this.getLabel()}`);
-    return null ;
+    return null;
   }
 
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
@@ -32,5 +32,4 @@ export abstract class GitProviderRoot {
     }
     return prResult;
   }
-
 }

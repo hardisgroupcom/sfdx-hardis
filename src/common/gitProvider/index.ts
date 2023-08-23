@@ -17,8 +17,8 @@ export abstract class GitProvider {
           this,
           c.yellow(`To benefit from Azure Pipelines advanced integration, you need to define the following variables as ENV vars:
 - SYSTEM_COLLECTIONURI
-- SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN`
-          ));
+- SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN`),
+        );
         return null;
       }
       return new AzureDevopsProvider();

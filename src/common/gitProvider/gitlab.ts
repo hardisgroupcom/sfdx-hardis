@@ -27,14 +27,14 @@ export class GitlabProvider extends GitProviderRoot {
       projectId: projectId,
       state: "merged",
       sort: "desc",
-      targetBranch: gitBranch
+      targetBranch: gitBranch,
     });
     if (latestMergeRequestsOnBranch.length > 0) {
       const latestMergeRequest = latestMergeRequestsOnBranch[0];
       const latestMergeRequestId = latestMergeRequest.iid;
       const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
       for (const existingNote of existingNotes) {
-        if (existingNote.body.includes('<!-- sfdx-hardis deployment-id ')) {
+        if (existingNote.body.includes("<!-- sfdx-hardis deployment-id ")) {
           const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
           if (matches) {
             deploymentCheckId = matches[1];
