@@ -27,6 +27,10 @@ export class AzureDevopsProvider extends GitProviderRoot {
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    if (repositoryId == null) {
+      uxLog(this, c.yellow('BUILD_REPOSITORY_ID must be defined'));
+      return null;
+    }
     const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
       targetRefName: `refs/heads/${gitBranch}`,
       status: PullRequestStatus.Completed
@@ -51,7 +55,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
           }
         }
         if (deploymentCheckId) {
-          break ;
+          break;
         }
       }
     }
@@ -67,6 +71,15 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     if (repositoryId == null || pullRequestIdStr == null) {
       uxLog(this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
+      uxLog(this, c.yellow(`Following variables must be defined when available:
+- BUILD_REPOSITORY_ID
+- BUILD_BUILD_ID
+- SYSTEM_JOB_ID
+- SYSTEM_PULLREQUEST_PULLREQUESTID
+- SYSTEM_JOB_DISPLAY_NAME
+- SYSTEM_COLLECTIONURI
+- SYSTEM_TEAMPROJECT
+      `));
       return { posted: false, providerResult: { info: "No related pull request" } };
     }
     const pullRequestId = Number(pullRequestIdStr);
