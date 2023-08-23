@@ -9,9 +9,9 @@ export abstract class GitProvider {
   static getInstance(): GitProviderRoot {
     // Azure
     if (process.env.SYSTEM_ACCESSTOKEN) {
-      const serverUrl = process.env.SYSTEM_COLLECTIONURI;
+      const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
       // a Personal Access Token must be defined
-      const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN;
+      const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
       if (serverUrl == null || token == null) {
         uxLog(
           this,
