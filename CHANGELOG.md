@@ -4,6 +4,18 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.1.1] 2023-08-23
+
+- Improve error message when Git Provider not available
+- Update default azure-pipelines-deployment.yml to add mandatory variables for QuickDeploy
+
+```yaml
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+```
+
 ## [4.1.0] 2023-08-22
 
 - Manage QuickDeploy when available (disable by defining env var `SFDX_HARDIS_QUICK_DEPLOY=false`)

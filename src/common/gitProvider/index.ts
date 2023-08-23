@@ -9,6 +9,18 @@ export abstract class GitProvider {
   static getInstance(): GitProviderRoot {
     // Azure
     if (process.env.SYSTEM_ACCESSTOKEN) {
+      const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
+      // a Personal Access Token must be defined
+      const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
+      if (serverUrl == null || token == null) {
+        uxLog(
+          this,
+          c.yellow(`To benefit from Azure Pipelines advanced integration, you need to define the following variables as ENV vars:
+- SYSTEM_COLLECTIONURI
+- SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN`),
+        );
+        return null;
+      }
       return new AzureDevopsProvider();
     }
     // Gitlab
@@ -41,6 +53,9 @@ export abstract class GitProvider {
 
   static async managePostPullRequestComment(): Promise<void> {
     const gitProvider = GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
     const prData = globalThis.pullRequestData;
     const prCommentSent = globalThis.pullRequestCommentSent || false;
     if (prData && gitProvider && prCommentSent === false) {
@@ -65,8 +80,11 @@ export abstract class GitProvider {
   }
 
   static async getDeploymentCheckId(): Promise<string> {
+    const gitProvider = GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
     try {
-      const gitProvider = GitProvider.getInstance();
       const currentGitBranch = await getCurrentGitBranch();
       return gitProvider.getBranchDeploymentCheckId(currentGitBranch);
     } catch (e) {
