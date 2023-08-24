@@ -476,9 +476,12 @@ class MetadataUtils {
   public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null, context = "none") {
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(orgAlias, this);
     if (globalThis?.workaroundCliPackages === true) {
-      uxLog(commandThis, c.yellow(`Skip packages installation because of a @salesforce/cli bug.
+      uxLog(
+        commandThis,
+        c.yellow(`Skip packages installation because of a @salesforce/cli bug.
 Until it is solved, please install packages manually in target org if necessary.
-Issue tracking: https://github.com/forcedotcom/cli/issues/2426`));
+Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
+      );
       return;
     }
     for (const package1 of packages) {
@@ -540,7 +543,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`));
           uxLog(
             this,
             c.yellow(
-              `${c.bold("This is not a real error")}: A newer version of ${package1.SubscriberPackageName
+              `${c.bold("This is not a real error")}: A newer version of ${
+                package1.SubscriberPackageName
               } has been found. You may update installedPackages property in .sfdx-hardis.yml`,
             ),
           );
