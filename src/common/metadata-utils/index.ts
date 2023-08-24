@@ -467,6 +467,7 @@ class MetadataUtils {
       return alreadyInstalled?.result || [];
     } catch (e) {
       uxLog(this, c.yellow(`Unable to list installed packages: This is probably a @salesforce/cli bug !\n${e.message}\n${e.stack}`));
+      globalThis.workaroundCliPackages = true;
       return [];
     }
   }
@@ -474,6 +475,15 @@ class MetadataUtils {
   // Install package on existing org
   public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null, context = "none") {
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(orgAlias, this);
+    if (globalThis?.workaroundCliPackages === true) {
+      uxLog(
+        commandThis,
+        c.yellow(`Skip packages installation because of a @salesforce/cli bug.
+Until it is solved, please install packages manually in target org if necessary.
+Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
+      );
+      return;
+    }
     for (const package1 of packages) {
       if (
         alreadyInstalled.filter((installedPackage: any) => package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId)
