@@ -533,7 +533,8 @@ class MetadataUtils {
           uxLog(
             this,
             c.yellow(
-              `${c.bold("This is not a real error")}: A newer version of ${package1.SubscriberPackageName
+              `${c.bold("This is not a real error")}: A newer version of ${
+                package1.SubscriberPackageName
               } has been found. You may update installedPackages property in .sfdx-hardis.yml`,
             ),
           );
