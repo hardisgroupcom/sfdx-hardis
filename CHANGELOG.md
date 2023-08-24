@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.1.2] 2023-08-24
+
+- When there is a crash in force:package:installed:list , do not crash but return empty array and display an error message
+
 ## [4.1.1] 2023-08-23
 
 - Improve error message when Git Provider not available
