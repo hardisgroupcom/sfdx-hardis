@@ -459,11 +459,16 @@ class MetadataUtils {
     if (orgAlias != null) {
       listCommand += ` -u ${orgAlias}`;
     }
-    const alreadyInstalled = await execSfdxJson(listCommand, commandThis, {
-      fail: true,
-      output: true,
-    });
-    return alreadyInstalled?.result || [];
+    try {
+      const alreadyInstalled = await execSfdxJson(listCommand, commandThis, {
+        fail: true,
+        output: true,
+      });
+      return alreadyInstalled?.result || [];
+    } catch (e) {
+      uxLog(this, c.yellow(`Unable to list installed packages: This is probably a @salesforce/cli bug !\n${e.message}\n${e.stack}`));
+      return [];
+    }
   }
 
   // Install package on existing org
