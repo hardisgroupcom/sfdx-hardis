@@ -37,12 +37,23 @@ export default class DxSources extends SfdxCommand {
 
 In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
-### Dynamic deployment items
+### Quick Deploy
+
+In case Pull Request comments are configured on the project, Quick Deploy will try to be used (equivalent to button Quick Deploy)
+
+If you do not want to use QuickDeploy, define variable \`SFDX_HARDIS_QUICK_DEPLOY=false\`
+
+- [Gitlab merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
+- [Azure PR comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+
+### Dynamic deployment items / Overwrite mangement
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
 - \`manifest/packageDeployOnce.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
 - \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
+
+See [Overwrite mangement documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
 
 ### Deployment plan
 
