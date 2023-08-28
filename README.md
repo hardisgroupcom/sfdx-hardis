@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD034 -->
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
 # sfdx-hardis
@@ -439,7 +440,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 0 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -1058,7 +1059,7 @@ OPTIONS
 EXAMPLES
   $ sfdx hardis:org:generate:packagexmlfull
   $ sfdx hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml
-  $ sfdx hardis:org:generate:packagexmlfull --targetusername <nico@example.com>
+  $ sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com
 ```
 
 _See code: [lib/commands/hardis/org/generate/packagexmlfull.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.1.2/lib/commands/hardis/org/generate/packagexmlfull.js)_
@@ -1097,7 +1098,7 @@ OPTIONS
 
 EXAMPLES
   $ sfdx hardis:org:purge:apexlog
-  $ sfdx hardis:org:purge:apexlog --targetusername <nicolas.vuillamy@gmail.com>
+  $ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com
 ```
 
 _See code: [lib/commands/hardis/org/purge/apexlog.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.1.2/lib/commands/hardis/org/purge/apexlog.js)_
@@ -1148,7 +1149,7 @@ OPTIONS
                                                                                     Hardis UI integration
 
 EXAMPLES
-  $ sfdx hardis:org:purge:flow --targetusername <nicolas.vuillamy@gmail.com>
+  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
     Found 1 records:
     ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
     30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -1158,7 +1159,7 @@ EXAMPLES
     ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
     30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   
-  $ sfdx hardis:org:purge:flow --targetusername <nicolas.vuillamy@gmail.com> --status "Obsolete,Draft,InvalidDraft --name
+  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name
   TestFlow"
     Found 4 records:
     ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
@@ -1620,9 +1621,9 @@ DESCRIPTION
 
 EXAMPLES
   $ sfdx hardis:org:user:activateinvalid
-  $ sfdx hardis:org:user:activateinvalid --targetusername <myuser@myorg.com>
+  $ sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com
   $ sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername
-  <myuser@myorg.com>
+  myuser@myorg.com
 ```
 
 _See code: [lib/commands/hardis/org/user/activateinvalid.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.1.2/lib/commands/hardis/org/user/activateinvalid.js)_
@@ -1674,12 +1675,12 @@ DESCRIPTION
   <https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3>
 
   [![How to freeze / unfreeze users during a Salesforce
-  deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](<https://med>
+  deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://med
   ium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
 
 EXAMPLES
   $ sfdx hardis:org:user:freeze
-  $ sfdx hardis:org:user:freeze --targetusername <myuser@myorg.com>
+  $ sfdx hardis:org:user:freeze --targetusername myuser@myorg.com
   $ sfdx hardis:org:user:freeze --includeprofiles 'Standard'
   $ sfdx hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other Profile'
 ```
@@ -1733,12 +1734,12 @@ DESCRIPTION
   <https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3>
 
   [![How to freeze / unfreeze users during a Salesforce
-  deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](<https://med>
+  deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://med
   ium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
 
 EXAMPLES
   $ sfdx hardis:org:user:unfreeze
-  $ sfdx hardis:org:user:unfreeze --targetusername <myuser@myorg.com>
+  $ sfdx hardis:org:user:unfreeze --targetusername myuser@myorg.com
   $ sfdx hardis:org:user:unfreeze --includeprofiles 'Standard'
   $ sfdx hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'
 ```
@@ -2649,7 +2650,17 @@ DESCRIPTION
   In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error
   messages.
 
-### Dynamic deployment items
+### Quick Deploy
+
+  In case Pull Request comments are configured on the project, Quick Deploy will try to be used (equivalent to button
+  Quick Deploy)
+
+  If you do not want to use QuickDeploy, define variable `SFDX_HARDIS_QUICK_DEPLOY=false`
+
+- [Gitlab merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
+- [Azure PR comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+
+### Dynamic deployment items / Overwrite management
 
   If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
@@ -2658,6 +2669,8 @@ DESCRIPTION
    org)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a
   similar definition in target org (can be useful for SharingRules for example)
+
+  See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
 
 ### Deployment plan
 
@@ -3381,7 +3394,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   -x, --manifest=manifest                                                           flagsLong.manifest
 
@@ -3434,12 +3447,12 @@ DESCRIPTION
 
 - You can disable coloring of errors in red by defining env variable SFDX_HARDIS_DEPLOY_ERR_COLORS=false
 
-  [See documentation of Salesforce command](<https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf>
+  [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
   dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
 
 EXAMPLE
   $ sfdx hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests
-  --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername <nicolas.vuillamy@cloudity.com.sfdxhardis>
+  --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername nicolas.vuillamy@cloudity.com.sfdxhardis
   --checkonly --checkcoverage --verbose --coverageformatters json-summary
 ```
 
@@ -3461,7 +3474,7 @@ OPTIONS
   -u, --targetusername=targetusername                                               username or alias for the target
                                                                                     org; overrides default target org
 
-  -w, --wait=wait                                                                   [default: 60 minutes] wait
+  -w, --wait=wait                                                                   [default: [object Object]] wait
 
   --apiversion=apiversion                                                           override the api version used for
                                                                                     api requests made by this command
@@ -3482,7 +3495,7 @@ DESCRIPTION
   errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
   s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
-  [See documentation of Salesforce command](<https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf>
+  [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
   dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)
 ```
 
@@ -3537,7 +3550,7 @@ DESCRIPTION
 - If no retrieve constraint is sent, as assisted menu will request the list of metadatas to retrieve
 - If no org is selected , an assisted menu will request the user to choose one
 
-  [See documentation of Salesforce command](<https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf>
+  [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
   dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_retrieve)
 ```
 
