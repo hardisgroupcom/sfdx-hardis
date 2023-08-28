@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update documentation to add workaround in case there is a crash when retrieving all sources when initializing a DX project from an existing org
+- Add output to explain how to not use QuickDeploy if not wanted
+
 ## [4.1.2] 2023-08-24
 
 - When there is a crash in force:package:installed:list , do not crash but return empty array and display an error message
