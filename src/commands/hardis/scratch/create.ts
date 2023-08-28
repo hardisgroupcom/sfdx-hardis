@@ -142,7 +142,7 @@ export default class ScratchCreate extends SfdxCommand {
     if (this.scratchOrgPassword) {
       uxLog(
         this,
-        c.cyan(`You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(this.scratchOrgPassword)}`)
+        c.cyan(`You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(this.scratchOrgPassword)}`),
       );
     }
     elapseEnd(`Create and initialize scratch org`);
@@ -179,8 +179,8 @@ export default class ScratchCreate extends SfdxCommand {
         name: "value",
         message: c.cyanBright(
           `You are about to reuse scratch org ${c.green(this.scratchOrgAlias)}. Are you sure that's what you want to do ?\n${c.grey(
-            "(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)"
-          )}`
+            "(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)",
+          )}`,
         ),
         default: false,
       });
@@ -261,7 +261,7 @@ export default class ScratchCreate extends SfdxCommand {
       }
     }
 
-    // Fix sfdx-cli bug: remove shape.zip if found
+    // Fix @salesforce/cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), "shape");
     if (fs.existsSync(tmpShapeFolder) && this.pool === false) {
       await fs.remove(tmpShapeFolder);
@@ -331,8 +331,8 @@ export default class ScratchCreate extends SfdxCommand {
           uxLog(
             this,
             c.yellow(
-              `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using auth:sfdxurl or auth:web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sfdx hardis:scratch:pool:refresh`
-            )
+              `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using auth:sfdxurl or auth:web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sfdx hardis:scratch:pool:refresh`,
+            ),
           );
           this.scratchOrgSfdxAuthUrl = null;
         }
@@ -367,22 +367,22 @@ export default class ScratchCreate extends SfdxCommand {
     } else if (createResult.status === 1 && createResult.errorMessage.includes("Socket timeout occurred while listening for results")) {
       return c.red(
         `[sfdx-hardis] Error creating scratch org. ${c.bold(
-          "This is probably a Salesforce error, try again manually or launch again CI job"
-        )}\n${JSON.stringify(createResult, null, 2)}`
+          "This is probably a Salesforce error, try again manually or launch again CI job",
+        )}\n${JSON.stringify(createResult, null, 2)}`,
       );
     } else if (createResult.status === 1 && createResult.errorMessage.includes("LIMIT_EXCEEDED")) {
       return c.red(
         `[sfdx-hardis] Error creating scratch org. ${c.bold(
-          'It seems you have no more scratch orgs available, go delete some in "Active Scratch Orgs" tab in the Dev Hub org'
-        )}\n${JSON.stringify(createResult, null, 2)}`
+          'It seems you have no more scratch orgs available, go delete some in "Active Scratch Orgs" tab in the Dev Hub org',
+        )}\n${JSON.stringify(createResult, null, 2)}`,
       );
     }
     return c.red(
       `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
         createResult,
         null,
-        2
-      )}`
+        2,
+      )}`,
     );
   }
 

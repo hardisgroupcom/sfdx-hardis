@@ -121,9 +121,9 @@ export default class RefreshTask extends SfdxCommand {
       this,
       c.cyan(
         `sfdx-hardis will refresh your local branch ${c.green(localBranch)} and your local scratch org ${c.green(
-          this.org.getUsername()
-        )} with the latest state of ${c.green(this.mergeBranch)}`
-      )
+          this.org.getUsername(),
+        )} with the latest state of ${c.green(this.mergeBranch)}`,
+      ),
     );
 
     if (localBranch === this.mergeBranch) {
@@ -143,9 +143,9 @@ export default class RefreshTask extends SfdxCommand {
       this,
       c.cyan(
         `Stashing your uncommitted updates in ${c.green(localBranch)} before merging ${c.green(this.mergeBranch)} into your local branch ${c.green(
-          localBranch
-        )}...`
-      )
+          localBranch,
+        )}...`,
+      ),
     );
     const stashResult = await git({ output: true }).stash(["save", `[sfdx-hardis] Stash of ${localBranch}`]);
     const stashed = stashResult.includes("Saved working directory");
@@ -173,7 +173,7 @@ export default class RefreshTask extends SfdxCommand {
           type: "select",
           name: "value",
           message: c.cyanBright(
-            "There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help :)"
+            "There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help :)",
           ),
           choices: [
             { value: true, title: "If finished to merge conflicts" },

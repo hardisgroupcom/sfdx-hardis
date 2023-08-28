@@ -42,7 +42,8 @@ jobs:
 
       # Install SFDX & Dependencies
       - script: |
-          npm install sfdx-cli --global
+          npm install @salesforce/cli --global
+          sf plugins install @salesforce/plugin-packaging
           echo 'y' | sfdx plugins:install sfdx-hardis
           echo 'y' | sfdx plugins:install sfdx-essentials
           echo 'y' | sfdx plugins:install sfdmu
@@ -62,4 +63,8 @@ jobs:
           CONFIG_BRANCH: $(BRANCH_NAME)
           ORG_ALIAS: $(BRANCH_NAME)
           CI: "true"
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
         displayName: "Deploy sources to related SF Org"

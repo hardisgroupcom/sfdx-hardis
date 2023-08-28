@@ -75,7 +75,7 @@ export class RedisProvider implements KeyValueProviderInterface {
     uxLog(this, c.cyan(`You need a redis account. You can create one for free at ${c.bold("https://redis.com/try-free/")}`));
     uxLog(
       this,
-      c.cyan("Create a database that you can name scratchPool, then build auth URL by appending default user password and public endpoint")
+      c.cyan("Create a database that you can name scratchPool, then build auth URL by appending default user password and public endpoint"),
     );
     const response = await prompts([
       {

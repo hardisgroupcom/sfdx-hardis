@@ -33,7 +33,7 @@ export async function getRecordTypeId(recordTypeInfo: { sObjectType: string; dev
     `SELECT Id FROM RecordType WHERE SobjectType='${recordTypeInfo.sObjectType}' AND` +
       ` DeveloperName='${recordTypeInfo.developerName}'` +
       ` LIMIT 1`,
-    conn
+    conn,
   );
   if (recordTypeQueryRes.records[0].Id) {
     recordTypeIdCache[cacheKey] = recordTypeQueryRes.records[0].Id;
@@ -59,7 +59,7 @@ export async function promptProfiles(
     allowSelectAllErrorMessage: "You can not select all profiles",
     allowSelectMine: true,
     allowSelectMineErrorMessage: "You can not select the profile your user is assigned to",
-  }
+  },
 ) {
   const profiles = await listProfiles(conn);
   // Profiles returned by active connection
@@ -257,8 +257,10 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
       uxLog(
         this,
         c.cyan(
-          `Updated package ${c.green(installedPackage.SubscriberPackageName)} with version id ${c.green(installedPackage.SubscriberPackageVersionId)}`
-        )
+          `Updated package ${c.green(installedPackage.SubscriberPackageName)} with version id ${c.green(
+            installedPackage.SubscriberPackageVersionId,
+          )}`,
+        ),
       );
       updated = true;
     } else if (matchInstalled.length > 0 && matchLocal.length === 0) {
@@ -313,7 +315,7 @@ export async function initOrgMetadatas(
   orgAlias: string,
   projectScratchDef: any,
   debugMode: boolean,
-  options: any = {}
+  options: any = {},
 ) {
   // Push or deploy according to config (default: push)
   if ((isCI && process.env.CI_SCRATCH_MODE === "deploy") || process.env.DEBUG_DEPLOY === "true") {

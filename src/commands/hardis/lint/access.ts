@@ -312,7 +312,7 @@ export default class Access extends SfdxCommand {
             elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField][0])
           ) {
             remainingElements[currentType.xmlField] = remainingElements[currentType.xmlField].filter(
-              (e) => e !== permission[currentType.xmlField][0]
+              (e) => e !== permission[currentType.xmlField][0],
             );
           }
         }

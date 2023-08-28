@@ -23,9 +23,9 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
           this,
           c.red(
             `Unable to find list view object and name from ${listViewStr}. Use format ${c.bold("Object:ListViewName")} , or ${c.bold(
-              ".../objects/OBJECT/listViews/LISTVIEWNAME.listview-meta.xml"
-            )}`
-          )
+              ".../objects/OBJECT/listViews/LISTVIEWNAME.listview-meta.xml",
+            )}`,
+          ),
         );
         continue;
       }

@@ -4,6 +4,43 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.1.2] 2023-08-24
+
+- When there is a crash in force:package:installed:list , do not crash but return empty array and display an error message
+
+## [4.1.1] 2023-08-23
+
+- Improve error message when Git Provider not available
+- Update default azure-pipelines-deployment.yml to add mandatory variables for QuickDeploy
+
+```yaml
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+```
+
+## [4.1.0] 2023-08-22
+
+- Manage QuickDeploy when available (disable by defining env var `SFDX_HARDIS_QUICK_DEPLOY=false`)
+
+## [4.0.1] 2023-08-18
+
+**BREAKING CHANGE**: If you are not using sfdx-hardis docker images, you need to **manually update your CI/CD pipelines** scripts using sfdx-hardis (gitlab-ci.yml, azure-pipelines.yml...) to:
+
+- **replace `sfdx-cli` by `@salesforce/cli`**
+- **Add `sf plugins install @salesforce/plugin-packaging` just after `npm install @salesforce/cli --global`**
+
+Other upgrades
+
+- Upgrade CI/CD scripts and sfdx-hardis docker images from **sfdx-cli** to **@salesforce/cli** (sfdx commands remain called in background), and add `@salesforce/plugin-packaging` by default
+- Now also release sfdx-hardis images on GitHub Packages (ghcr.io)
+- Internal CI refactorization
+  - Secure releases with GitHub Actions permissions & environments
+  - Switch to [official docker build & push action](https://github.com/docker/build-push-action)
+  - Upgrade MegaLinter
+  - Upgrade npm dependencies
+
 ## [3.19.4] 2023-07-18
 
 - Add confirmation before resetting a git branch from VsCode command "Reset selected list of items to merge" (from an original idea of @derroman)

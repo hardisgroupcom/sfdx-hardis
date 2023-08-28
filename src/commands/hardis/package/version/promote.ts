@@ -111,9 +111,9 @@ export default class PackageVersionPromote extends SfdxCommand {
           this,
           c.cyan(
             `Promoted package version ${c.green(packageToPromote)} with id ${c.green(
-              promoteResult.result.id
-            )}. It is now installable on production orgs`
-          )
+              promoteResult.result.id,
+            )}. It is now installable on production orgs`,
+          ),
         );
         promotedPackageVersions.push({ package: packageToPromote, result: promoteResult });
       } else {

@@ -1,5 +1,5 @@
 # Configuration file for Mega-Linter
-# See all available variables at https://megalinter.io/config-file/ and in linters documentation
+# See all available variables at https://megalinter.io/latest/config-file/ and in linters documentation
 
 APPLY_FIXES: all # all, none, or list of linter keys
 DEFAULT_BRANCH: main # Usually master or main
@@ -19,6 +19,7 @@ DISABLE_LINTERS:
   - TYPESCRIPT_STANDARD
 DISABLE_ERRORS_LINTERS:
   - MARKDOWN_MARKDOWN_LINK_CHECK
+  - REPOSITORY_GRYPE
 GITHUB_STATUS_REPORTER: false
 MARKDOWN_MARKDOWN_LINK_CHECK_FILTER_REGEX_EXCLUDE: (README\.md)
 YAML_V8R_DISABLE_ERRORS: true

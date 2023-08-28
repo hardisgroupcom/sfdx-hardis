@@ -24,7 +24,8 @@ ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
-    npm install --no-cache sfdx-cli@${SFDX_CLI_VERSION} -g && \
+    npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
+    sf plugins install @salesforce/plugin-packaging && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdmu && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
@@ -35,5 +36,5 @@ RUN npm install --no-cache yarn -g && \
     rm -rf /root/.npm/_cacache
 
 # Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
-COPY ref/workarounds/dateUtil.js /usr/local/lib/node_modules/sfdx-cli/node_modules/@salesforce/apex-node/lib/src/utils/dateUtil.js
-COPY ref/workarounds/junitReporter.js /usr/local/lib/node_modules/sfdx-cli/node_modules/@salesforce/apex-node/lib/src/reporters/junitReporter.js
+COPY ref/workarounds/dateUtil.js /usr/local/lib/node_modules/@salesforce/cli/node_modules/@salesforce/apex-node/lib/src/utils/dateUtil.js
+COPY ref/workarounds/junitReporter.js /usr/local/lib/node_modules/@salesforce/cli/node_modules/@salesforce/apex-node/lib/src/reporters/junitReporter.js

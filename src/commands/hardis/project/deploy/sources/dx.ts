@@ -1,4 +1,15 @@
 /* jscpd:ignore-start */
+/*
+To test locally, you can call the command like that:
+
+Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
+
+Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.muuuurf
+
+- Before, you need to make a sfdx alias:set myBranch=myUsername
+- You can find CI_PROJECT_ID with https://gitlab.com/api/v4/projects?search=YOUR-REPO-NAME
+
+*/
 
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
@@ -223,9 +234,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
           this,
           c.yellow(
             `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-              package1.SubscriberPackageVersionId
-            )} in target org to validate the deployment check`
-          )
+              package1.SubscriberPackageVersionId,
+            )} in target org to validate the deployment check`,
+          ),
         );
       }
       uxLog(this, "");
@@ -234,10 +245,10 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         c.yellow(
           c.italic(
             `If you want deployment checks to automatically install packages, please define ${c.bold(
-              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true"
-            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`
-          )
-        )
+              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true",
+            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`,
+          ),
+        ),
       );
     }
 
