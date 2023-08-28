@@ -23,14 +23,14 @@ _If this is a new Salesforce project, skip this step_
 `sfdx hardis:org:retrieve:sources:dx --shape -u YOURSOURCEORGUSERNAME`
 
 - In case you get an error:
-    - Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
-    - Clean up the generated package created by removing the unnecessary metadatas
-    - Run retrieve metadata command : [hardis:source:retrieve](https://sfdx-hardis.cloudity.com/hardis/source/retrieve/)
+  - Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
+  - Clean up the generated package created by removing the unnecessary metadatas
+  - Run retrieve metadata command : [hardis:source:retrieve](https://sfdx-hardis.cloudity.com/hardis/source/retrieve/)
 
 Example :
   
-  - `sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com --outputfile ./packagexmlfull.xml`
-  - Remove Document part on packagexmlfull.xml
+- `sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com --outputfile ./packagexmlfull.xml`
+- Remove Document part on packagexmlfull.xml
   ```xml
       <types>
           <members>Doc1</members>
@@ -39,7 +39,7 @@ Example :
           <name>Document</name>
       </types>
   ```
-  - `sfdx hardis:source:retrieve -x ./packagexmlfull.xml`
+- `sfdx hardis:source:retrieve -x ./packagexmlfull.xml`
 
 
 

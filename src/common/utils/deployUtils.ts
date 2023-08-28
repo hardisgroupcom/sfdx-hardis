@@ -220,7 +220,7 @@ export async function forceSourceDeploy(
           });
           if (quickDeployRes.status === 0) {
             uxLog(commandThis, c.green(`Successfully processed QuickDeploy for deploymentId ${deploymentCheckId}`));
-            uxLog(commandThis,c.yellow('If you do not want to use QuickDeploy feature, define env variable SFDX_HARDIS_QUICK_DEPLOY=false'));
+            uxLog(commandThis, c.yellow("If you do not want to use QuickDeploy feature, define env variable SFDX_HARDIS_QUICK_DEPLOY=false"));
             break;
           } else {
             uxLog(
