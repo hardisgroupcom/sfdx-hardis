@@ -27,7 +27,7 @@ _If this is a new Salesforce project, skip this step_
     - Clean up the generated package created by removing the unnecessary metadatas
     - Run retrieve metadata command : [hardis:source:retrieve](https://sfdx-hardis.cloudity.com/hardis/source/retrieve/)
 
-Exemple :
+Example :
   
   - `sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com --outputfile ./packagexmlfull.xml`
   - Remove Document part on packagexmlfull.xml

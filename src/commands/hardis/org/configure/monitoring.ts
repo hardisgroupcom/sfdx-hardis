@@ -91,7 +91,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       type: "text",
       name: "value",
       initial: currentBranch,
-      message: c.cyanBright("What is the name of the git branch you want to configure ? Exemples: developpement,recette,production"),
+      message: c.cyanBright("What is the name of the git branch you want to configure ? Examples: developpement,uat,production"),
     });
     const branchName = branchResponse.value;
 
