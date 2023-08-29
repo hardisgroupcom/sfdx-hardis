@@ -17,6 +17,9 @@ To use this capability:
 
 - Go to Settings -> CI/CD -> Variables -> Create a variable named **CI_SFDX_HARDIS_GITLAB_TOKEN** and past the access token value
 
+![image](https://github.com/hardisgroupcom/sfdx-hardis/assets/129843004/e4e0b473-0327-4856-88e4-070c2084ba48)
+
+
 Everytime you will make a merge request, the CI job will post its result as comment !
 
 - Example with deployment errors
