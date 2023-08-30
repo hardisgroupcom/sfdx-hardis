@@ -18,7 +18,7 @@ import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../confi
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
-import { promptProfiles } from "./orgUtils";
+import { promptProfiles, promptUserEmail } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
 import moment = require("moment");
 import { writeXmlFile } from "./xmlUtils";
@@ -1008,13 +1008,8 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         name: "appName",
         initial: ("sfdxhardis"+Math.floor(Math.random() * 9) + 1),
         message: c.cyanBright("How would you like to name the Connected App (ex: sfdx_hardis) ?"),
-      },
-      {
-        type: "text",
-        name: "contactEmail",
-        message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@cloudity.com)"),
-      },
-    ]);
+      }]);
+    const contactEmail = await promptUserEmail("Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)")
     const profile = await promptProfiles(conn, {
       multiselect: false,
       message: "What profile will be used for the connected app ? (ex: System Administrator)",
@@ -1024,7 +1019,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     // Build ConnectedApp metadata
     const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
-  <contactEmail>${promptResponses.contactEmail}</contactEmail>
+  <contactEmail>${contactEmail}</contactEmail>
   <label>${promptResponses.appName.replace(/\s/g, "_") || "sfdx-hardis"}</label>
   <oauthConfig>
       <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
