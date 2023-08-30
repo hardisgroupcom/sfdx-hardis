@@ -76,7 +76,7 @@ export class SourceRetrieve extends SfdxCommand {
   };
 
   public async run(): Promise<any> {
-    const args = process.argv;
+    const args = this.argv;
     // Manage user selection for metadatas
     if (!isCI && !this.flags.sourcepath && !this.flags.manifest && !this.flags.metadata && !this.flags.packagenames) {
       const metadatas = await MetadataUtils.promptMetadataTypes();

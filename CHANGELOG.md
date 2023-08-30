@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.2.1] 2023-08-30
+
+- Fix issue in sfdx commands wrapping following the use of @salesforce/cli
+- Config auth: phrases in bold when needing to relaunch the same command after org selection
+
 ## [4.2.0] 2023-08-30
 
 - Simplify UX of hardis:project:configure:auth

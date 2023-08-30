@@ -40,6 +40,6 @@ export default class Push extends SfdxCommand {
   protected static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
-    return await wrapSfdxCoreCommand("sfdx force:source:push", process.argv, this, this.flags.debug);
+    return await wrapSfdxCoreCommand("sfdx force:source:push", this.argv, this, this.flags.debug);
   }
 }
