@@ -111,8 +111,8 @@ export default class ConfigureAuth extends SfdxCommand {
       name: "value",
       initial: (devHub ? this.hubOrg.getUsername() : this.org.getUsername()) || "",
       message: c.cyanBright(
-        `What is the username you will use for sfdx in the org you want to ${
-          devHub ? "use as Dev Hub" : "deploy to"
+        `What is the Salesforce username that will be ${
+          devHub ? "used as Dev Hub" : "used for deployments by CI server"
         } ? Example: admin.sfdx@myclient.com`,
       ),
     });

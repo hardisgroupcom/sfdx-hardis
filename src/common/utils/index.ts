@@ -994,9 +994,10 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         )}`,
       ),
     );
+    uxLog(commandThis,c.yellow("Help to configure CI variables are here: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/"));
     await prompts({
       type: "confirm",
-      message: c.cyanBright("In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done"),
+      message: c.cyanBright("In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done. If you are not using Gitlab, check link in the console."),
     });
     // Request info for deployment
     const promptResponses = await prompts([
@@ -1091,11 +1092,11 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       await prompts({
         type: "confirm",
         message: c.cyanBright(
-          `You need to give rights to profile ${c.green("System Administrator")} (or related Permission Set) on Connected App ${c.green(
+          `You need to verify that rights to profile ${c.green("System Administrator")} (or related Permission Set) are set on Connected App ${c.green(
             promptResponses.appName,
           )}
 On the page that will open, ${c.green(`find app ${promptResponses.appName}, then click Manage`)}
-On the app managing page, ${c.green("click Manage profiles, then add profile System Administrator")} (or related Permission set)
+On the app managing page, ${c.green("click Manage profiles, then check profile System Administrator")} (or related Permission set)
 Hit ENTER when you are ready`,
         ),
       });
