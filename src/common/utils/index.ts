@@ -1006,7 +1006,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       {
         type: "text",
         name: "appName",
-        initial: "sfdx_hardis",
+        initial: ("sfdxhardis"+Math.floor(Math.random() * 9) + 1),
         message: c.cyanBright("How would you like to name the Connected App (ex: sfdx_hardis) ?"),
       },
       {
