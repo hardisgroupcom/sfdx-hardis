@@ -1006,10 +1006,11 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       {
         type: "text",
         name: "appName",
-        initial: ("sfdxhardis"+Math.floor(Math.random() * 9) + 1),
+        initial: "sfdxhardis" + Math.floor(Math.random() * 9) + 1,
         message: c.cyanBright("How would you like to name the Connected App (ex: sfdx_hardis) ?"),
-      }]);
-    const contactEmail = await promptUserEmail("Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)")
+      },
+    ]);
+    const contactEmail = await promptUserEmail("Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)");
     const profile = await promptProfiles(conn, {
       multiselect: false,
       message: "What profile will be used for the connected app ? (ex: System Administrator)",
@@ -1035,7 +1036,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   </oauthConfig>
   <oauthPolicy>
       <ipRelaxation>ENFORCE</ipRelaxation>
-      <refreshTokenPolicy>infinite</refreshTokenPolicy>
+      <refreshTokenPolicy>specific_lifetime:3:HOURS</refreshTokenPolicy>
   </oauthPolicy>
   <profileName>${profile || "System Administrator"}</profileName>
 </ConnectedApp>

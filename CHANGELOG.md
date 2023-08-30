@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Simplify UX of hardis:project:configure:auth
 - Factorize prompting of email
+- Expire sfdx-hardis connected app token after 3h
 - Update documentation to add workaround in case there is a crash when retrieving all sources when initializing a DX project from an existing org
 - Add output to explain how to not use QuickDeploy if not wanted
 - Update Quick Deploy documentation
