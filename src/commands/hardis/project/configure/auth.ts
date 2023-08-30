@@ -86,7 +86,7 @@ export default class ConfigureAuth extends SfdxCommand {
 
     if (prevUserName !== newUsername) {
       const returnMsg = "Default org has changed. This is ok but for technical reasons, please run again the same command :)";
-      uxLog(this, c.yellow(returnMsg));
+      uxLog(this, c.yellow(c.bold(returnMsg)));
       return { outputString: returnMsg };
     }
 

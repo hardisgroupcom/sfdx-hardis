@@ -103,7 +103,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       await execCommand("sfdx auth:logout --noprompt || true", this, {
         fail: true,
       });
-      uxLog(this, c.yellow("You need to login to new org, please run again the same command :)"));
+      uxLog(this, c.yellow(c.bold("You need to login to new org, please run again the same command :)")));
       process.exit(0);
     }
 
