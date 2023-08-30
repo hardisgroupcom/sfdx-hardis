@@ -18,7 +18,7 @@ import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../confi
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
-import { promptProfiles } from "./orgUtils";
+import { promptProfiles, promptUserEmail } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
 import moment = require("moment");
 import { writeXmlFile } from "./xmlUtils";
@@ -139,7 +139,7 @@ export async function checkAppDependency(appName) {
     });
 }
 
-export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org") {
+export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org", defaultOrgChoice: any = null) {
   const allChoices = [
     {
       title: "Sandbox or Scratch org (test.salesforce.com)",
@@ -166,6 +166,13 @@ export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "d
     }
     return true;
   });
+  if (defaultOrgChoice != null) {
+    choices.push({
+      title: defaultOrgChoice.instanceUrl,
+      description: "Your current default org",
+      value: defaultOrgChoice.instanceUrl,
+    });
+  }
   const orgTypeResponse = await prompts({
     type: "select",
     name: "value",
@@ -970,7 +977,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     type: "confirm",
     name: "value",
     initial: true,
-    message: c.cyanBright("Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't now)"),
+    message: c.cyanBright("Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't know)"),
   });
   if (confirmResponse.value === true) {
     uxLog(
@@ -987,24 +994,23 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         )}`,
       ),
     );
+    uxLog(commandThis, c.yellow("Help to configure CI variables are here: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/"));
     await prompts({
       type: "confirm",
-      message: c.cyanBright("In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done"),
+      message: c.cyanBright(
+        "In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done. If you are not using Gitlab, check link in the console.",
+      ),
     });
     // Request info for deployment
     const promptResponses = await prompts([
       {
         type: "text",
         name: "appName",
-        initial: "sfdx_hardis",
+        initial: "sfdxhardis" + Math.floor(Math.random() * 9) + 1,
         message: c.cyanBright("How would you like to name the Connected App (ex: sfdx_hardis) ?"),
       },
-      {
-        type: "text",
-        name: "contactEmail",
-        message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@cloudity.com)"),
-      },
     ]);
+    const contactEmail = await promptUserEmail("Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)");
     const profile = await promptProfiles(conn, {
       multiselect: false,
       message: "What profile will be used for the connected app ? (ex: System Administrator)",
@@ -1014,7 +1020,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     // Build ConnectedApp metadata
     const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
-  <contactEmail>${promptResponses.contactEmail}</contactEmail>
+  <contactEmail>${contactEmail}</contactEmail>
   <label>${promptResponses.appName.replace(/\s/g, "_") || "sfdx-hardis"}</label>
   <oauthConfig>
       <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
@@ -1030,7 +1036,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   </oauthConfig>
   <oauthPolicy>
       <ipRelaxation>ENFORCE</ipRelaxation>
-      <refreshTokenPolicy>infinite</refreshTokenPolicy>
+      <refreshTokenPolicy>specific_lifetime:3:HOURS</refreshTokenPolicy>
   </oauthPolicy>
   <profileName>${profile || "System Administrator"}</profileName>
 </ConnectedApp>
@@ -1084,11 +1090,11 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       await prompts({
         type: "confirm",
         message: c.cyanBright(
-          `You need to give rights to profile ${c.green("System Administrator")} (or related Permission Set) on Connected App ${c.green(
-            promptResponses.appName,
-          )}
+          `You need to verify that rights to profile ${c.green(
+            "System Administrator",
+          )} (or related Permission Set) are set on Connected App ${c.green(promptResponses.appName)}
 On the page that will open, ${c.green(`find app ${promptResponses.appName}, then click Manage`)}
-On the app managing page, ${c.green("click Manage profiles, then add profile System Administrator")} (or related Permission set)
+On the app managing page, ${c.green("click Manage profiles, then check profile System Administrator")} (or related Permission set)
 Hit ENTER when you are ready`,
         ),
       });
