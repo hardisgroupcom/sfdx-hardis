@@ -4,14 +4,13 @@ import { AuthInfo, Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { assert } from "console";
-import * as EmailValidator from "email-validator";
 import * as fs from "fs-extra";
 import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { clearCache } from "../../../common/cache";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
-import { initApexScripts, initOrgData, initOrgMetadatas, initPermissionSetAssignments, installPackages } from "../../../common/utils/orgUtils";
+import { initApexScripts, initOrgData, initOrgMetadatas, initPermissionSetAssignments, installPackages, promptUserEmail } from "../../../common/utils/orgUtils";
 import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
@@ -199,16 +198,7 @@ export default class ScratchCreate extends SfdxCommand {
       if (this.pool === true) {
         throw new SfdxError(c.red("You need to define userEmail property in .sfdx-hardis.yml"));
       }
-      const promptResponse = await prompts({
-        type: "text",
-        name: "value",
-        message: c.cyanBright("Please input your email address"),
-        validate: (value: string) => EmailValidator.validate(value),
-      });
-      this.userEmail = promptResponse.value;
-      await setConfig("user", {
-        userEmail: this.userEmail,
-      });
+      this.userEmail = await promptUserEmail();
     }
   }
 

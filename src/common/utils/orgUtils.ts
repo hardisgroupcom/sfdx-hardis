@@ -6,6 +6,7 @@ import * as path from "path";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 import { getConfig, setConfig } from "../../config";
+import * as EmailValidator from "email-validator";
 import * as sortArray from "sort-array";
 import { Connection, SfdxError } from "@salesforce/core";
 import { importData } from "./dataUtils";
@@ -31,8 +32,8 @@ export async function getRecordTypeId(recordTypeInfo: { sObjectType: string; dev
   }
   const recordTypeQueryRes = await soqlQuery(
     `SELECT Id FROM RecordType WHERE SobjectType='${recordTypeInfo.sObjectType}' AND` +
-      ` DeveloperName='${recordTypeInfo.developerName}'` +
-      ` LIMIT 1`,
+    ` DeveloperName='${recordTypeInfo.developerName}'` +
+    ` LIMIT 1`,
     conn,
   );
   if (recordTypeQueryRes.records[0].Id) {
@@ -103,7 +104,7 @@ export async function promptProfiles(
   }
 }
 
-export async function promptOrg(commandThis: any, options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false }) {
+export async function promptOrg(commandThis: any, options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null }) {
   // List all local orgs and request to user
   const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? "sandbox" : "any");
   let orgList = [
@@ -131,7 +132,7 @@ export async function promptOrg(commandThis: any, options: any = { devHub: false
   const orgResponse = await prompts({
     type: "select",
     name: "org",
-    message: c.cyanBright("Please select an org"),
+    message: c.cyanBright(options.promptMessage || "Please select an org"),
     choices: orgList.map((org: any) => {
       const title = org.username || org.alias || org.instanceUrl;
       const description = (title !== org.instanceUrl ? org.instanceUrl : "") + (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : "-");
@@ -226,6 +227,25 @@ export async function promptOrgUsernameDefault(commandThis: any, defaultOrg: str
     const selectedOrg = await promptOrg(commandThis, options);
     return selectedOrg.username;
   }
+}
+
+export async function promptUserEmail(promptMessage: string | null = null) {
+  const userConfig = await getConfig("user");
+  const promptResponse = await prompts({
+    type: "text",
+    name: "value",
+    initial: userConfig.userEmail || "",
+    message: c.cyanBright(promptMessage || "Please input your email address (it will be stored locally for later use)"),
+    validate: (value: string) => EmailValidator.validate(value),
+  });
+  const userEmail = promptResponse.value;
+  // Store email in user .sfdx-hardis.USERNAME.yml file for later reuse
+  if (userConfig.userEmail !== userEmail) {
+    await setConfig("user", {
+      userEmail: this.userEmail,
+    });
+  }
+  return userEmail;
 }
 
 // Authenticate with SfdxUrlStore

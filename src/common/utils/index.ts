@@ -139,7 +139,7 @@ export async function checkAppDependency(appName) {
     });
 }
 
-export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org") {
+export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org", defaultOrgChoice: any = null) {
   const allChoices = [
     {
       title: "Sandbox or Scratch org (test.salesforce.com)",
@@ -166,6 +166,13 @@ export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "d
     }
     return true;
   });
+  if (defaultOrgChoice != null) {
+    choices.push({
+      title: defaultOrgChoice.instanceUrl,
+      description: "Your current default org",
+      value: defaultOrgChoice.instanceUrl,
+    });
+  }
   const orgTypeResponse = await prompts({
     type: "select",
     name: "value",
@@ -403,11 +410,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n"),
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n"),
         ),
       );
     }
@@ -970,7 +977,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     type: "confirm",
     name: "value",
     initial: true,
-    message: c.cyanBright("Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't now)"),
+    message: c.cyanBright("Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't know)"),
   });
   if (confirmResponse.value === true) {
     uxLog(
