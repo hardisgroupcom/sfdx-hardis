@@ -72,7 +72,7 @@ export default class ConfigureAuth extends SfdxCommand {
     await promptOrg(this, {
       setDefault: true,
       devHub: devHub,
-      promptMessage: "Please select org login into the org you want to configure the SFDX Authentication"
+      promptMessage: "Please select org login into the org you want to configure the SFDX Authentication",
     });
     await checkConfig(this);
 
@@ -101,10 +101,9 @@ export default class ConfigureAuth extends SfdxCommand {
         message: c.cyanBright("What is the name of the git branch you want to configure ? Examples: developpement,recette,production"),
       });
       branchName = branchResponse.value.replace(/\s/g, "-");
-      instanceUrl = await promptInstanceUrl(
-        ["login", "test"],
-        `${branchName} related org`,
-        { instanceUrl: (devHub ? this.hubOrg.getConnection().instanceUrl : this.org.getConnection().instanceUrl) });
+      instanceUrl = await promptInstanceUrl(["login", "test"], `${branchName} related org`, {
+        instanceUrl: devHub ? this.hubOrg.getConnection().instanceUrl : this.org.getConnection().instanceUrl,
+      });
     }
     // Request username
     const usernameResponse = await prompts({
@@ -112,7 +111,8 @@ export default class ConfigureAuth extends SfdxCommand {
       name: "value",
       initial: (devHub ? this.hubOrg.getUsername() : this.org.getUsername()) || "",
       message: c.cyanBright(
-        `What is the username you will use for sfdx in the org you want to ${devHub ? "use as Dev Hub" : "deploy to"
+        `What is the username you will use for sfdx in the org you want to ${
+          devHub ? "use as Dev Hub" : "deploy to"
         } ? Example: admin.sfdx@myclient.com`,
       ),
     });

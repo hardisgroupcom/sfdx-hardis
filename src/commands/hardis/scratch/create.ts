@@ -10,7 +10,14 @@ import * as os from "os";
 import * as path from "path";
 import { clearCache } from "../../../common/cache";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
-import { initApexScripts, initOrgData, initOrgMetadatas, initPermissionSetAssignments, installPackages, promptUserEmail } from "../../../common/utils/orgUtils";
+import {
+  initApexScripts,
+  initOrgData,
+  initOrgMetadatas,
+  initPermissionSetAssignments,
+  installPackages,
+  promptUserEmail,
+} from "../../../common/utils/orgUtils";
 import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
