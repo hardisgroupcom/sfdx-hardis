@@ -18,7 +18,7 @@ import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../confi
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
-import { promptProfiles } from "./orgUtils";
+import { promptProfiles, promptUserEmail } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
 import moment = require("moment");
 import { writeXmlFile } from "./xmlUtils";
@@ -108,9 +108,9 @@ export async function checkSfdxPlugin(pluginName: string) {
       this,
       c.yellow(
         `[dependencies] Installing sfdx plugin ${c.green(pluginName)}... \nIf is stays stuck for too long, please run ${c.green(
-          `sfdx plugins:install ${pluginName}`
-        )})`
-      )
+          `sfdx plugins:install ${pluginName}`,
+        )})`,
+      ),
     );
     const installCommand = `echo y|sfdx plugins:install ${pluginName}`;
     await execCommand(installCommand, this, { fail: true, output: false });
@@ -139,7 +139,7 @@ export async function checkAppDependency(appName) {
     });
 }
 
-export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org") {
+export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org", defaultOrgChoice: any = null) {
   const allChoices = [
     {
       title: "Sandbox or Scratch org (test.salesforce.com)",
@@ -166,6 +166,13 @@ export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "d
     }
     return true;
   });
+  if (defaultOrgChoice != null) {
+    choices.push({
+      title: defaultOrgChoice.instanceUrl,
+      description: "Your current default org",
+      value: defaultOrgChoice.instanceUrl,
+    });
+  }
   const orgTypeResponse = await prompts({
     type: "select",
     name: "value",
@@ -204,7 +211,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           type: "text",
           name: "value",
           message: c.cyanBright(
-            "What is the URL of your git repository ? example: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git"
+            "What is the URL of your git repository ? example: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git",
           ),
         });
         cloneUrl = cloneUrlPrompt.value;
@@ -318,8 +325,8 @@ export async function checkGitClean(options: any) {
     } else {
       throw new SfdxError(
         `[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold(
-          "commit or reset"
-        )} the following local updates:\n${c.yellow(localUpdates)}`
+          "commit or reset",
+        )} the following local updates:\n${c.yellow(localUpdates)}`,
       );
     }
   }
@@ -373,7 +380,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         type: "multiselect",
         name: "files",
         message: c.cyanBright(
-          `Please select ${c.red("carefully")} the ${c.bgWhite(c.red(c.bold(group.label.toUpperCase())))} files you want to commit (save)}`
+          `Please select ${c.red("carefully")} the ${c.bgWhite(c.red(c.bold(group.label.toUpperCase())))} files you want to commit (save)}`,
         ),
         choices: matchingFiles.map((fileStatus: FileStatusResult) => {
           return {
@@ -390,12 +397,12 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       result.added.push(
         ...selectFilesStatus.files
           .filter((fileStatus: FileStatusResult) => fileStatus.working_dir !== "D")
-          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ""))
+          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', "")),
       );
       result.removed.push(
         ...selectFilesStatus.files
           .filter((fileStatus: FileStatusResult) => fileStatus.working_dir === "D")
-          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', ""))
+          .map((fileStatus: FileStatusResult) => fileStatus.path.replace('"', "")),
       );
     }
     if (filesFiltered.length > 0) {
@@ -407,8 +414,8 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
               .map((fileStatus: FileStatusResult) => {
                 return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
               })
-              .join("\n")
-        )
+              .join("\n"),
+        ),
       );
     }
     // Ask user for confirmation
@@ -469,7 +476,7 @@ export async function gitAddCommitPush(
     pattern: "./*",
     commitMessage: "Updated by sfdx-hardis",
     branch: null,
-  }
+  },
 ) {
   if (git == null) {
     if (options.init) {
@@ -508,7 +515,7 @@ export async function execSfdxJson(
     fail: false,
     output: false,
     debug: false,
-  }
+  },
 ): Promise<any> {
   if (!command.includes("--json")) {
     command += " --json";
@@ -525,7 +532,7 @@ export async function execCommand(
     output: false,
     debug: false,
     spinner: true,
-  }
+  },
 ): Promise<any> {
   let commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(command)))}`;
   const execOptions: any = { maxBuffer: 10000 * 10000 };
@@ -613,7 +620,7 @@ export async function execCommand(
     return {
       status: 1,
       errorMessage: c.red(
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`
+        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`,
       ),
     };
   }
@@ -692,7 +699,7 @@ export async function filterPackageXml(
     removeStandard: false,
     removeFromPackageXmlFile: null,
     updateApiVersion: null,
-  }
+  },
 ): Promise<{ updated: boolean; message: string }> {
   let updated = false;
   let message = `[sfdx-hardis] ${packageXmlFileOut} not updated`;
@@ -781,7 +788,7 @@ export async function filterPackageXml(
 
   // Remove metadata types (named, and empty ones)
   manifest.Package.types = manifest.Package.types.filter(
-    (type: any) => !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0
+    (type: any) => !(options.removeMetadatas || []).includes(type.name[0]) && (type?.members?.length || 0) > 0,
   );
   const builder = new xml2js.Builder({ renderOpts: { pretty: true, indent: "  ", newline: "\n" } });
   const updatedFileContent = builder.buildObject(manifest);
@@ -851,7 +858,7 @@ export async function generateReports(
   resultSorted: any[],
   columns: any[],
   commandThis: any,
-  options: any = { logFileName: null, logLabel: "Generated report files:" }
+  options: any = { logFileName: null, logLabel: "Generated report files:" },
 ): Promise<any[]> {
   const logLabel = options.logLabel || "Generated report files:";
   let logFileName = options.logFileName || null;
@@ -970,41 +977,40 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     type: "confirm",
     name: "value",
     initial: true,
-    message: c.cyanBright("Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't now)"),
+    message: c.cyanBright("Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't know)"),
   });
   if (confirmResponse.value === true) {
     uxLog(
       commandThis,
       c.cyanBright(
-        `You must configure CI variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with value ${c.bold(c.green(consumerKey))}`
-      )
+        `You must configure CI variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with value ${c.bold(c.green(consumerKey))}`,
+      ),
     );
     uxLog(
       commandThis,
       c.cyanBright(
         `You must configure CI variable ${c.green(c.bold(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`))} with value ${c.bold(
-          c.green(encryptionKey)
-        )}`
-      )
+          c.green(encryptionKey),
+        )}`,
+      ),
     );
+    uxLog(commandThis, c.yellow("Help to configure CI variables are here: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/"));
     await prompts({
       type: "confirm",
-      message: c.cyanBright("In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done"),
+      message: c.cyanBright(
+        "In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done. If you are not using Gitlab, check link in the console.",
+      ),
     });
     // Request info for deployment
     const promptResponses = await prompts([
       {
         type: "text",
         name: "appName",
-        initial: "sfdx_hardis",
+        initial: "sfdxhardis" + Math.floor(Math.random() * 9) + 1,
         message: c.cyanBright("How would you like to name the Connected App (ex: sfdx_hardis) ?"),
       },
-      {
-        type: "text",
-        name: "contactEmail",
-        message: c.cyanBright("Enter a contact email (ex: nicolas.vuillamy@cloudity.com)"),
-      },
     ]);
+    const contactEmail = await promptUserEmail("Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)");
     const profile = await promptProfiles(conn, {
       multiselect: false,
       message: "What profile will be used for the connected app ? (ex: System Administrator)",
@@ -1014,7 +1020,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     // Build ConnectedApp metadata
     const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
-  <contactEmail>${promptResponses.contactEmail}</contactEmail>
+  <contactEmail>${contactEmail}</contactEmail>
   <label>${promptResponses.appName.replace(/\s/g, "_") || "sfdx-hardis"}</label>
   <oauthConfig>
       <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
@@ -1030,7 +1036,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   </oauthConfig>
   <oauthPolicy>
       <ipRelaxation>ENFORCE</ipRelaxation>
-      <refreshTokenPolicy>infinite</refreshTokenPolicy>
+      <refreshTokenPolicy>specific_lifetime:3:HOURS</refreshTokenPolicy>
   </oauthPolicy>
   <profileName>${profile || "System Administrator"}</profileName>
 </ConnectedApp>
@@ -1067,14 +1073,16 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       deployError = true;
       uxLog(
         commandThis,
-        c.red("Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name")
+        c.red("Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name"),
       );
       uxLog(
         commandThis,
         c.yellow(`If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName}:
 - Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
   - Use certificate ${c.bold(crtFile)}
-- Once created, update variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))} with ConsumerKey of the newly created connected app`)
+- Once created, update variable ${c.green(
+          c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`),
+        )} with ConsumerKey of the newly created connected app`),
       );
     }
     // Last manual step
@@ -1082,12 +1090,12 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       await prompts({
         type: "confirm",
         message: c.cyanBright(
-          `You need to give rights to profile ${c.green("System Administrator")} (or related Permission Set) on Connected App ${c.green(
-            promptResponses.appName
-          )}
+          `You need to verify that rights to profile ${c.green(
+            "System Administrator",
+          )} (or related Permission Set) are set on Connected App ${c.green(promptResponses.appName)}
 On the page that will open, ${c.green(`find app ${promptResponses.appName}, then click Manage`)}
-On the app managing page, ${c.green("click Manage profiles, then add profile System Administrator")} (or related Permission set)
-Hit ENTER when you are ready`
+On the app managing page, ${c.green("click Manage profiles, then check profile System Administrator")} (or related Permission set)
+Hit ENTER when you are ready`,
         ),
       });
       await execCommand("sfdx force:org:open -p lightning/setup/NavigationMenus/home", this);
@@ -1102,16 +1110,18 @@ Hit ENTER when you are ready`
     uxLog(
       commandThis,
       `Follow instructions here: ${c.bold(
-        "https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm"
-      )}`
+        "https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm",
+      )}`,
     );
     uxLog(
       commandThis,
-      `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`
+      `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(`then delete ${crtFile} for security`)}`,
     );
     uxLog(
       commandThis,
-      `- configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`
+      `- configure CI variable ${c.green(
+        `SFDX_CLIENT_ID_${branchName.toUpperCase()}`,
+      )} with value of ConsumerKey on Connected App configuration page`,
     );
     uxLog(commandThis, `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(encryptionKey)} key`);
   }

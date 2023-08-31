@@ -129,7 +129,7 @@ export async function tryFetchScratchOrg(options: any) {
     if (authFileContent == null) {
       uxLog(
         this,
-        c.yellow(`[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername} (missing sfdxAuthUrl)`)
+        c.yellow(`[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername} (missing sfdxAuthUrl)`),
       );
       return null;
     }
@@ -140,8 +140,8 @@ export async function tryFetchScratchOrg(options: any) {
       uxLog(
         this,
         c.yellow(
-          `[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername}\n${c.grey(JSON.stringify(authRes))}`
-        )
+          `[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername}\n${c.grey(JSON.stringify(authRes))}`,
+        ),
       );
       return null;
     }
@@ -163,9 +163,9 @@ export async function tryFetchScratchOrg(options: any) {
     "[pool]" +
       c.yellow(
         `No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchOrgsNumber")} or schedule call to ${c.white(
-          "sfdx hardis:scratch:pool:refresh"
-        )} more often in CI`
-      )
+          "sfdx hardis:scratch:pool:refresh",
+        )} more often in CI`,
+      ),
   );
   return null;
 }

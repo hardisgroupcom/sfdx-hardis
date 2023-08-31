@@ -110,8 +110,8 @@ async function authOrg(orgAlias: string, options: any) {
       uxLog(
         this,
         `[sfdx-hardis] You are already ${c.green("connected")} as ${c.green(orgInfoResult.result.username)} on org ${c.green(
-          orgInfoResult.result.instanceUrl
-        )}`
+          orgInfoResult.result.instanceUrl,
+        )}`,
       );
       if (orgInfoResult.result.expirationDate) {
         uxLog(this, c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
@@ -122,10 +122,10 @@ async function authOrg(orgAlias: string, options: any) {
           c.yellow(
             c.italic(
               `[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold("hit CTRL+C"))}, then input ${c.whiteBright(
-                c.bold("sfdx hardis:org:select")
-              )}`
-            )
-          )
+                c.bold("sfdx hardis:org:select"),
+              )}`,
+            ),
+          ),
         );
       }
       if (setDefaultUsername) {
@@ -178,9 +178,9 @@ async function authOrg(orgAlias: string, options: any) {
               ? "devHubUsername in .sfdx-hardis.yml"
               : options.scratch
               ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
-              : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`
-          )} `
-        )
+              : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`,
+          )} `,
+        ),
       );
       process.exit(1);
     }
@@ -219,7 +219,7 @@ async function authOrg(orgAlias: string, options: any) {
       // Login with web auth
       const orgLabel = `org ${orgAlias}`;
       console.warn(
-        c.yellow(c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`))
+        c.yellow(c.bold(`[sfdx-hardis] You must be connected to ${orgLabel} to perform this command. Please login in the open web browser`)),
       );
 
       if (isCI) {
@@ -229,7 +229,7 @@ async function authOrg(orgAlias: string, options: any) {
                 - a .sfdx-hardis.yml file with instanceUrl and targetUsername properties (or INSTANCE_URL and TARGET_USERNAME repo variables)
                 - a repository secret variable SFDX_CLIENT_ID with consumer key of sfdx connected app
                 - store server.key file within ssh folder
-                `
+                `,
         );
       }
       const orgTypes = isDevHub ? ["login"] : ["login", "test"];
@@ -242,7 +242,7 @@ async function authOrg(orgAlias: string, options: any) {
           ` --instanceurl ${instanceUrl}` +
           (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : ""),
         this,
-        { output: true, fail: true, spinner: false }
+        { output: true, fail: true, spinner: false },
       );
       await clearCache("force:org:list");
       uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));
@@ -297,9 +297,9 @@ async function getSfdxClientId(orgAlias: string, config: any) {
     console.warn(
       c.yellow(
         `[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define CI variable ${c.bold(
-          sfdxClientIdVarNameUpper
-        )} than SFDX_CLIENT_ID`
-      )
+          sfdxClientIdVarNameUpper,
+        )} than SFDX_CLIENT_ID`,
+      ),
     );
     console.warn(c.yellow(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
     return process.env.SFDX_CLIENT_ID;
@@ -310,7 +310,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
   }
   if (isCI) {
     console.error(
-      c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientIdVarNameUpper)} with the Consumer Key value defined on SFDX Connected app`)
+      c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientIdVarNameUpper)} with the Consumer Key value defined on SFDX Connected app`),
     );
     console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
   }
@@ -332,9 +332,9 @@ async function getKey(orgAlias: string, config: any) {
     console.warn(
       c.yellow(
         `[sfdx-hardis] If you use CI on multiple branches & orgs, you should better define CI variable ${c.bold(
-          sfdxClientKeyVarNameUpper
-        )} than SFDX_CLIENT_KEY`
-      )
+          sfdxClientKeyVarNameUpper,
+        )} than SFDX_CLIENT_KEY`,
+      ),
     );
     console.warn(c.yellow(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
     return process.env.SFDX_CLIENT_KEY;
@@ -345,7 +345,7 @@ async function getKey(orgAlias: string, config: any) {
   }
   if (isCI) {
     console.error(
-      c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientKeyVarNameUpper)} with the value of SSH private key encryption key`)
+      c.red(`[sfdx-hardis] You must set env variable ${c.bold(sfdxClientKeyVarNameUpper)} with the value of SSH private key encryption key`),
     );
     console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
   }

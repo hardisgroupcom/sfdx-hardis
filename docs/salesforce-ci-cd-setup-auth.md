@@ -25,6 +25,13 @@ _Note: If you have errors in your apex tests classes, you may not be able to con
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/OzREUu5utVI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
+How to set CI variables on different Git providers:
+
+- [Gitlab](https://docs.gitlab.com/ee/ci/variables/#for-a-project): Protect variables = false, Mask variables = true
+- [Azure](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=classic%2Cbatch): Set Variables in Pipeline -> Tab **Classic**
+- [GitHub](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository)
+- [BitBucket](https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/#Secured-variables)
+
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
 > This command will create/update:

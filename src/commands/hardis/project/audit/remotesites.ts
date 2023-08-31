@@ -114,7 +114,7 @@ export default class RemoteSites extends SfdxCommand {
         delete item.detail;
         delete item.matches;
         return item;
-      })
+      }),
     );
 
     // Export into csv & excel file

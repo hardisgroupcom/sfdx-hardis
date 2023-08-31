@@ -144,7 +144,7 @@ autoRemoveUserPermissions:
     // User log info
     uxLog(
       this,
-      c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(this.targetBranch)}`)
+      c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(this.targetBranch)}`),
     );
     // Make sure git is clean before starting operations
     await this.cleanGitStatus();
@@ -167,7 +167,7 @@ autoRemoveUserPermissions:
     uxLog(this, c.cyan(`If your work is ${c.bold("completed")}, you can create a ${c.bold("merge request")}:`));
     uxLog(
       this,
-      c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + this.currentBranch + ", visit")}`)
+      c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + this.currentBranch + ", visit")}`),
     );
     uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`));
     // const remote = await git().listRemote();
@@ -179,9 +179,9 @@ autoRemoveUserPermissions:
         c.bold(
           `${c.yellow("When your Merge Request will have been merged:")}
   - ${c.yellow("DO NOT REUSE THE SAME BRANCH")}
-  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`
-        )
-      )
+  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`,
+        ),
+      ),
     );
     // Return an object to be displayed with --json
     return { outputString: "Saved the task" };
@@ -290,7 +290,7 @@ autoRemoveUserPermissions:
     const toCommitMessage = toCommit ? toCommit.message : "";
     uxLog(
       this,
-      c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`)
+      c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`),
     );
     const tmpDir = await createTempDir();
     const packageXmlResult = await callSfdxGitDelta(masterBranchLatestCommit, toCommit ? toCommit.hash : masterBranchLatestCommit, tmpDir);
@@ -311,7 +311,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr)
+          c.red(destructivePackageXmlDiffStr),
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +

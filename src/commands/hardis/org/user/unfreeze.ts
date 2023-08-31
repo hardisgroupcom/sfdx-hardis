@@ -175,7 +175,7 @@ export default class OrgUnfreezeUser extends SfdxCommand {
         name: "value",
         initial: true,
         message: c.cyanBright(
-          `Are you sure you want to unfreeze these ${c.bold(userLoginsToUnfreeze.length)} users in org ${c.green(this.org.getUsername())} (y/n)?`
+          `Are you sure you want to unfreeze these ${c.bold(userLoginsToUnfreeze.length)} users in org ${c.green(this.org.getUsername())} (y/n)?`,
         ),
       });
       if (confirmunfreeze.value !== true) {

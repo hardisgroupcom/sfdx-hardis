@@ -54,7 +54,7 @@ check_quality:
   script: ["true"]
   variables:
     # All available variables are described in documentation
-    # https://megalinter.io/config-file/
+    # https://megalinter.io/latest/config-file/
     DEFAULT_WORKSPACE: $CI_PROJECT_DIR
     DEFAULT_BRANCH: master
     # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY

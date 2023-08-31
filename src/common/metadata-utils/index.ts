@@ -436,7 +436,7 @@ class MetadataUtils {
           majorOrgs.filter(
             (majorOrg) =>
               majorOrg.targetUsername === org.username ||
-              (majorOrg.instanceUrl === org.instanceUrl && !majorOrg.instanceUrl.includes("test.salesforce.com"))
+              (majorOrg.instanceUrl === org.instanceUrl && !majorOrg.instanceUrl.includes("test.salesforce.com")),
           ).length === 0
         );
       });
@@ -459,16 +459,31 @@ class MetadataUtils {
     if (orgAlias != null) {
       listCommand += ` -u ${orgAlias}`;
     }
-    const alreadyInstalled = await execSfdxJson(listCommand, commandThis, {
-      fail: true,
-      output: true,
-    });
-    return alreadyInstalled?.result || [];
+    try {
+      const alreadyInstalled = await execSfdxJson(listCommand, commandThis, {
+        fail: true,
+        output: true,
+      });
+      return alreadyInstalled?.result || [];
+    } catch (e) {
+      uxLog(this, c.yellow(`Unable to list installed packages: This is probably a @salesforce/cli bug !\n${e.message}\n${e.stack}`));
+      globalThis.workaroundCliPackages = true;
+      return [];
+    }
   }
 
   // Install package on existing org
   public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null, context = "none") {
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(orgAlias, this);
+    if (globalThis?.workaroundCliPackages === true) {
+      uxLog(
+        commandThis,
+        c.yellow(`Skip packages installation because of a @salesforce/cli bug.
+Until it is solved, please install packages manually in target org if necessary.
+Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
+      );
+      return;
+    }
     for (const package1 of packages) {
       if (
         alreadyInstalled.filter((installedPackage: any) => package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId)
@@ -477,14 +492,14 @@ class MetadataUtils {
         if (context === "scratch" && package1.installOnScratchOrgs === false) {
           uxLog(
             commandThis,
-            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`)
+            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`),
           );
           continue;
         }
         if (context === "deploy" && package1.installDuringDeployments === false) {
           uxLog(
             commandThis,
-            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`)
+            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`),
           );
           continue;
         }
@@ -492,13 +507,13 @@ class MetadataUtils {
           commandThis,
           c.cyan(
             `Installing package ${c.green(
-              `${c.bold(package1.SubscriberPackageName || "")} - ${c.bold(package1.SubscriberPackageVersionName || "")}`
-            )}...`
-          )
+              `${c.bold(package1.SubscriberPackageName || "")} - ${c.bold(package1.SubscriberPackageVersionName || "")}`,
+            )}...`,
+          ),
         );
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(
-            c.red(`[sfdx-hardis] You must define ${c.bold("SubscriberPackageVersionId")} in .sfdx-hardis.yml (in installedPackages property)`)
+            c.red(`[sfdx-hardis] You must define ${c.bold("SubscriberPackageVersionId")} in .sfdx-hardis.yml (in installedPackages property)`),
           );
         }
         const securityType = package1.SecurityType || "AdminsOnly";
@@ -530,8 +545,8 @@ class MetadataUtils {
             c.yellow(
               `${c.bold("This is not a real error")}: A newer version of ${
                 package1.SubscriberPackageName
-              } has been found. You may update installedPackages property in .sfdx-hardis.yml`
-            )
+              } has been found. You may update installedPackages property in .sfdx-hardis.yml`,
+            ),
           );
         }
         elapseEnd(`Install package ${package1.SubscriberPackageName}`);
@@ -549,7 +564,7 @@ class MetadataUtils {
     filteredMetadatas: string[],
     options: any = {},
     commandThis: any,
-    debug: boolean
+    debug: boolean,
   ) {
     // Create output folder if not existing
     await fs.ensureDir(metadataFolder);
