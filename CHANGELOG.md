@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.2.2] 2023-09-01
+
+- Fix upgrade warning message that should not appear when there is no upgrade to perform (detected by @mamasse19)
+
 ## [4.2.1] 2023-08-30
 
 - Fix issue in sfdx commands wrapping following the use of @salesforce/cli
