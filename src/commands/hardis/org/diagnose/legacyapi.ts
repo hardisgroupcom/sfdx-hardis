@@ -236,7 +236,9 @@ See article to solve issue before it's too late:
       });
     }
 
-    process.exitCode = statusCode;
+    if ((this.argv || []).includes("legacyapi")) {
+      process.exitCode = statusCode;
+    }
 
     // Return an object to be displayed with --json
     return {

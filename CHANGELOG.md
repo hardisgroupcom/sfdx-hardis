@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.2.3] 2023-09-04
+
+- Fix issues with Org monitoring when there are issues with Legacy API
+
 ## [4.2.2] 2023-09-01
 
 - Fix upgrade warning message that should not appear when there is no upgrade to perform (detected by @mamasse19)
