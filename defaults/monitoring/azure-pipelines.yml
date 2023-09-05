@@ -49,7 +49,6 @@ jobs:
   - script: |
       npm install @salesforce/cli -g
       sf plugins install @salesforce/plugin-packaging
-      sf plugins install @salesforce/plugin-deploy-retrieve@1.17.6
       echo y | sfdx plugins:install sfdx-hardis
       echo y | sfdx plugins:install sfdx-essentials
       sf version --verbose --json
