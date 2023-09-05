@@ -24,13 +24,15 @@ ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
-    npm install --no-cache sfdx-cli@${SFDX_CLI_VERSION} -g && \
+    npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
+    cli_path=$(which sf | sed 's/\/bin\/sf/\/lib\/node_modules\/@salesforce\/cli/g') && \
+    ( cd $cli_path && npm install @salesforce/source-deploy-retrieve@9.7.6 --save-exact ) && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdmu && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
     echo 'y' | sfdx plugins:install sfdx-essentials && \
     echo 'y' | sfdx plugins:install texei-sfdx-plugin && \
-    sfdx plugins && \
+    sf version --verbose --json && \
     rm -rf /root/.npm/_cacache
 
 # Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
