@@ -49,8 +49,6 @@ jobs:
   - script: |
       npm install @salesforce/cli -g
       sf plugins install @salesforce/plugin-packaging
-      cli_path=$(which sf | sed 's/\/bin\/sf/\/lib\/node_modules\/@salesforce\/cli/g')
-      ( cd $cli_path && npm install @salesforce/source-deploy-retrieve@9.7.6 --save-exact )
       echo y | sfdx plugins:install sfdx-hardis
       echo y | sfdx plugins:install sfdx-essentials
       sf version --verbose --json

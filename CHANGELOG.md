@@ -4,9 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.2.6] 2023-09-05
+## [4.3.0] 2023-09-05
 
-- Workaround about https://github.com/forcedotcom/cli/issues/2445 by @AllanOricil
+- Back to normal since https://github.com/forcedotcom/cli/issues/2445 is fixed
+
 ## [4.2.5] 2023-09-05
 
 - Downgrade to sfdx-cli until https://github.com/forcedotcom/cli/issues/2445 is solved.

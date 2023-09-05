@@ -25,8 +25,7 @@ ARG SFDX_HARDIS_VERSION=latest
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
     npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
-    cli_path=$(which sf | sed 's/\/bin\/sf/\/lib\/node_modules\/@salesforce\/cli/g') && \
-    ( cd $cli_path && npm install @salesforce/source-deploy-retrieve@9.7.6 --save-exact ) && \
+    sf plugins install @salesforce/plugin-packaging && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdmu && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
