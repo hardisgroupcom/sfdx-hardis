@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.2.4] 2023-09-05
+
+- Downgrade @salesforce/plugin-deploy-retrieve to v1.17.6 as workaround for SF cli bug https://github.com/forcedotcom/cli/issues/2445
+
 ## [4.2.3] 2023-09-04
 
 - Fix issues with Org monitoring when there are issues with Legacy API

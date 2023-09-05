@@ -51,11 +51,11 @@ jobs:
       - script: |
           npm install @salesforce/cli --global
           sf plugins install @salesforce/plugin-packaging
+          sf plugins install @salesforce/plugin-deploy-retrieve@1.17.6
           echo 'y' | sfdx plugins:install sfdx-hardis
           echo 'y' | sfdx plugins:install sfdx-essentials
-          echo 'y' | sfdx plugins:install sfdx-git-delta@5.13.3
-          sfdx --version
-          sfdx plugins
+          echo 'y' | sfdx plugins:install sfdx-git-delta
+          sf version --verbose --json
         displayName: "Install SFDX & plugins"
       
       # Login & check deployment to PR target branch related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
