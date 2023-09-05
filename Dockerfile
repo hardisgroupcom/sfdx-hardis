@@ -26,7 +26,7 @@ ARG SFDX_HARDIS_VERSION=latest
 RUN npm install --no-cache yarn -g && \
     npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
     sf plugins install @salesforce/plugin-packaging && \
-    sf plugins install @salesforce/plugin-deploy-retrieve@1.17.6 \
+    sf plugins install @salesforce/plugin-deploy-retrieve@1.17.6 && \
     echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sfdx plugins:install sfdmu && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
