@@ -32,7 +32,7 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sfdx plugins:install sfdx-git-delta && \
     echo 'y' | sfdx plugins:install sfdx-essentials && \
     echo 'y' | sfdx plugins:install texei-sfdx-plugin && \
-    sf version --verbose --json
+    sf version --verbose --json \
     rm -rf /root/.npm/_cacache
 
 # Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
