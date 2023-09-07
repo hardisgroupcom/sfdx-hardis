@@ -410,11 +410,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n"),
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n"),
         ),
       );
     }
@@ -1059,6 +1059,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
 
     // Deploy metadatas
     try {
+      uxLog(commandThis, c.cyan(`Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${(options.targetUsername || '')} ...`));
       const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
         testlevel: branchName.includes("production") ? "RunLocalTests" : "NoTestRun",

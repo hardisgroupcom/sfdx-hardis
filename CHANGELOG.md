@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Improve message when deploying metadata to org from local sfdx-hardis
+
 ## [4.3.0] 2023-09-05
 
 - Back to normal since <https://github.com/forcedotcom/cli/issues/2445> is fixed
