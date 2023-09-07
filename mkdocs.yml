@@ -183,9 +183,9 @@ nav:
               - On Azure: salesforce-ci-cd-pull-request-azure.md
               - On Github: salesforce-ci-cd-pull-request-github.md
           - Check merge request results:
-            - Merge Request results Home: salesforce-ci-cd-handle-merge-request-results.md
-            - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
-            - Solve MegaLinter errors: salesforce-ci-cd-solve-megalinter-errors.md
+              - Merge Request results Home: salesforce-ci-cd-handle-merge-request-results.md
+              - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
+              - Solve MegaLinter errors: salesforce-ci-cd-solve-megalinter-errors.md
       - Release Manager Guide:
           - Release Manager Home: salesforce-ci-cd-release-home.md
           - Validate a merge request: salesforce-ci-cd-validate-merge-request.md

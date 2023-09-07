@@ -25,7 +25,7 @@ You can solve the issue, create a new commit and run again command ![](assets/im
 
 If the issue is caused by the fact that you committed files that you finally decided to not publish, you can reset your selection.
 
--  Click on ![](assets/images/btn-reset-items.jpg): that will rollback all the previous commits of your current git branch
+- Click on ![](assets/images/btn-reset-items.jpg): that will rollback all the previous commits of your current git branch
 
 - Stage and commit again the elements that you want to publish
 
@@ -45,7 +45,7 @@ Don't be lazy, **write the missing test classes :)**
 
 You know you'll need them to be able to deploy in production anyway :)
 
-## SOS, I'm lost !
+## SOS, I'm lost
 
 - Call your [release manager](salesforce-ci-cd-release-home.md), he/she's here to help you !
 - Google / ChatGPT / Bard the issue
