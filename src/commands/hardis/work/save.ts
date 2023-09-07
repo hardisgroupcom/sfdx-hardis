@@ -193,6 +193,14 @@ autoRemoveUserPermissions:
         ),
       ),
     );
+    uxLog(
+      this,
+      c.cyan(
+        `Merge request documentation is available here -> ${c.bold(
+          "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request",
+        )}`,
+      ),
+    );
     // Return an object to be displayed with --json
     return { outputString: "Saved the task" };
   }

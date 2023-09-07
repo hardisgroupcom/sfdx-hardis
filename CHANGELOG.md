@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.3.1] 2023-09-07
+
+- Improve message when deploying metadata to org from local sfdx-hardis
+- Improve documentation to handle merge requests and display links at the end of hardis:work:save
+
 ## [4.3.0] 2023-09-05
 
 - Back to normal since <https://github.com/forcedotcom/cli/issues/2445> is fixed

@@ -1059,6 +1059,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
 
     // Deploy metadatas
     try {
+      uxLog(commandThis, c.cyan(`Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ""} ...`));
       const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
         testlevel: branchName.includes("production") ? "RunLocalTests" : "NoTestRun",
