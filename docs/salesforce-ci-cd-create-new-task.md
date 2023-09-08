@@ -72,7 +72,7 @@ _Example of manual deploy of a metadata that you think could have been updated i
 
 ![](assets/images/screenshot-deploy-to-org.png)
 
-#### Work !
+#### Work
 
 - At the end of the script execution:
 
