@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.3.2] 2023-09-08
+
+- Updates new task, commit & save task documentation & screenshots
+
 ## [4.3.1] 2023-09-07
 
 - Improve message when deploying metadata to org from local sfdx-hardis
