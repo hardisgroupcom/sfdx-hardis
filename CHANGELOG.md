@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add info about uninstalling SFDX that has been installed using Windows Installer
+
 ## [4.3.2] 2023-09-08
 
 - Updates new task, commit & save task documentation & screenshots
