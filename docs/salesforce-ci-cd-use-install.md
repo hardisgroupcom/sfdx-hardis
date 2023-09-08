@@ -6,6 +6,8 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 
 ## Computer Installation user guide
 
+> **If you installed Salesforce DX or Salesforce CLI using Windows installer**, please **uninstall it** using Windows -> Programs > Uninstall
+
 - Install [Visual Studio code](https://code.visualstudio.com/)
 
 - Install VsCode extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) by searching for **Hardis** is VsCode extensions plugin pane.
