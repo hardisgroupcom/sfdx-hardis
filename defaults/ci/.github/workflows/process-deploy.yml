@@ -47,9 +47,9 @@ jobs:
         SFDX_CLIENT_KEY_MAIN: ${{ secrets.SFDX_CLIENT_KEY_MAIN}}
         SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
         SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
-        CI_COMMIT_REF_NAME: ${{ github.ref }} # Defines the target branch of the PR
-        ORG_ALIAS: ${{ github.ref }} # Defines the target branch of the PR
-        CONFIG_BRANCH: ${{ github.ref }} # Defines the target branch of the PR
+        CI_COMMIT_REF_NAME: ${{ github.ref_name }} # Defines the target branch of the PR
+        ORG_ALIAS: ${{ github.ref_name }} # Defines the target branch of the PR
+        CONFIG_BRANCH: ${{ github.ref_name }} # Defines the target branch of the PR
       run: |
         echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
         sfdx hardis:auth:login
