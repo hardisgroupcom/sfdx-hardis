@@ -20,7 +20,7 @@ jobs:
         fetch-depth: 0 # Faster code checkout fetching only latest commit
     # Setup node
     - name: Setup Node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v3
       with:
         node-version: "18"
     # SFDX & plugins
@@ -50,6 +50,6 @@ jobs:
         ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
         CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
       run: |
-        echo "Perform SFDX deployment using Hardis against ${CONFIG_BRANCH}"
+        echo "Perform SFDX deployment using Hardis against $CONFIG_BRANCH"
         sfdx hardis:auth:login
         sfdx hardis:project:deploy:sources:dx
