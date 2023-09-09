@@ -34,6 +34,9 @@ jobs:
         echo 'y' | sfdx plugins:install sfdmu
         echo 'y' | sfdx plugins:install sfdx-git-delta
         sf version --verbose --json
+    # Set env branch variable (github.ref_name seems to not work)
+    - name: Set env.BRANCH
+      run: echo "BRANCH=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
     # Login & check deploy with test classes & code coverage
     - name: Login & Process Deployment
       env:
@@ -47,9 +50,9 @@ jobs:
         SFDX_CLIENT_KEY_MAIN: ${{ secrets.SFDX_CLIENT_KEY_MAIN}}
         SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
         SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
-        CI_COMMIT_REF_NAME: ${{ github.ref_name }} # Defines the target branch of the PR
-        ORG_ALIAS: ${{ github.ref_name }} # Defines the target branch of the PR
-        CONFIG_BRANCH: ${{ github.ref_name }} # Defines the target branch of the PR
+        CI_COMMIT_REF_NAME: ${{ env.BRANCH }} # Defines the target branch of the PR
+        ORG_ALIAS: ${{ env.BRANCH }} # Defines the target branch of the PR
+        CONFIG_BRANCH: ${{ env.BRANCH }} # Defines the target branch of the PR
       run: |
         echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
         sfdx hardis:auth:login
