@@ -37,7 +37,7 @@ jobs:
       # Setup Node.js
       - task: UseNode@1
         inputs:
-          version: ">=16.0.0"
+          version: ">=18.0.0"
         displayName: "Setup Node.js"
 
       # Install SFDX & Dependencies
