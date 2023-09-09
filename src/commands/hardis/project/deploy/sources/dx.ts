@@ -1,4 +1,15 @@
 /* jscpd:ignore-start */
+/*
+To test locally, you can call the command like that:
+
+Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
+
+Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.muuuurf
+
+- Before, you need to make a sfdx alias:set myBranch=myUsername
+- You can find CI_PROJECT_ID with https://gitlab.com/api/v4/projects?search=YOUR-REPO-NAME
+
+*/
 
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
@@ -26,12 +37,23 @@ export default class DxSources extends SfdxCommand {
 
 In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
-### Dynamic deployment items
+### Quick Deploy
+
+In case Pull Request comments are configured on the project, Quick Deploy will try to be used (equivalent to button Quick Deploy)
+
+If you do not want to use QuickDeploy, define variable \`SFDX_HARDIS_QUICK_DEPLOY=false\`
+
+- [Gitlab merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
+- [Azure PR comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+
+### Dynamic deployment items / Overwrite management
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
 - \`manifest/packageDeployOnce.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
 - \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
+
+See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
 
 ### Deployment plan
 
@@ -223,9 +245,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
           this,
           c.yellow(
             `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-              package1.SubscriberPackageVersionId
-            )} in target org to validate the deployment check`
-          )
+              package1.SubscriberPackageVersionId,
+            )} in target org to validate the deployment check`,
+          ),
         );
       }
       uxLog(this, "");
@@ -234,10 +256,10 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         c.yellow(
           c.italic(
             `If you want deployment checks to automatically install packages, please define ${c.bold(
-              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true"
-            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`
-          )
-        )
+              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true",
+            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`,
+          ),
+        ),
       );
     }
 

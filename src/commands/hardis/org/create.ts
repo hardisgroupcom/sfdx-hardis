@@ -4,17 +4,15 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { assert } from "console";
-import * as EmailValidator from "email-validator";
 import * as fs from "fs-extra";
 import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { clearCache } from "../../../common/cache";
 import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from "../../../common/utils";
-import { initApexScripts, initOrgData, initPermissionSetAssignments } from "../../../common/utils/orgUtils";
-import { prompts } from "../../../common/utils/prompts";
+import { initApexScripts, initOrgData, initPermissionSetAssignments, promptUserEmail } from "../../../common/utils/orgUtils";
 import { WebSocketClient } from "../../../common/websocketClient";
-import { getConfig, setConfig } from "../../../config";
+import { getConfig } from "../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -118,16 +116,7 @@ export default class SandboxCreate extends SfdxCommand {
 
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
-      const promptResponse = await prompts({
-        type: "text",
-        name: "value",
-        message: c.cyanBright("Please input your email address (it will be stored locally for later use)"),
-        validate: (value: string) => EmailValidator.validate(value),
-      });
-      this.userEmail = promptResponse.value;
-      await setConfig("user", {
-        userEmail: this.userEmail,
-      });
+      this.userEmail = await promptUserEmail();
     }
   }
 
@@ -151,7 +140,7 @@ export default class SandboxCreate extends SfdxCommand {
     await fs.ensureDir(path.dirname(projectSandboxDefLocal));
     await fs.writeFile(projectSandboxDefLocal, JSON.stringify(this.projectSandboxDef, null, 2));
 
-    // Fix sfdx-cli bug: remove shape.zip if found
+    // Fix @salesforce/cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), "shape");
     if (fs.existsSync(tmpShapeFolder)) {
       await fs.remove(tmpShapeFolder);
@@ -195,16 +184,16 @@ export default class SandboxCreate extends SfdxCommand {
     } else if (createResult.status === 1 && createResult.errorMessage.includes("Socket timeout occurred while listening for results")) {
       return c.red(
         `[sfdx-hardis] Error creating sandbox org. ${c.bold(
-          "This is probably a Salesforce error, try again manually or launch again CI job"
-        )}\n${JSON.stringify(createResult, null, 2)}`
+          "This is probably a Salesforce error, try again manually or launch again CI job",
+        )}\n${JSON.stringify(createResult, null, 2)}`,
       );
     }
     return c.red(
       `[sfdx-hardis] Error creating sandbox org. Maybe try ${c.yellow(c.bold("sfdx hardis:sandbox:create --forcenew"))} ?\n${JSON.stringify(
         createResult,
         null,
-        2
-      )}`
+        2,
+      )}`,
     );
   }
 

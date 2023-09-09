@@ -105,8 +105,8 @@ See article below
         initial: true,
         message: c.cyanBright(
           `Do you want to replace invalid mails by valid mails for all ${c.bold(usersToActivate.length)} found users in org ${c.green(
-            this.org.getUsername()
-          )} ?`
+            this.org.getUsername(),
+          )} ?`,
         ),
         choices: [
           { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: "all" },

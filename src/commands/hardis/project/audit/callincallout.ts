@@ -113,9 +113,9 @@ export default class CallInCallOut extends SfdxCommand {
                     (extractedText: string) =>
                       extractedText
                         .replace(/(\r\n|\n|\r)/gm, "") // Remove new lines from result
-                        .replace(/\s+/g, " ") // Replace multiple whitespaces by single whitespaces
+                        .replace(/\s+/g, " "), // Replace multiple whitespaces by single whitespaces
                   )
-                  .join(" | ")
+                  .join(" | "),
             )
             .join(" || ") || "",
       };
@@ -133,7 +133,7 @@ export default class CallInCallOut extends SfdxCommand {
       resultsLight.map((item: any) => {
         delete item.detail;
         return item;
-      })
+      }),
     );
 
     // Generate output files

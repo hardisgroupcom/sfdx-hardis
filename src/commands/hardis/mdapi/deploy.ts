@@ -86,6 +86,6 @@ export class Deploy extends SfdxCommand {
   };
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
-    return await wrapSfdxCoreCommand("sfdx force:mdapi:deploy", process.argv, this, this.flags.debug);
+    return await wrapSfdxCoreCommand("sfdx force:mdapi:deploy", this.argv, this, this.flags.debug);
   }
 }

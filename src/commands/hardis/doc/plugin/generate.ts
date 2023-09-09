@@ -113,7 +113,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
       fs
         .readFileSync(mkdocsYmlFile, "utf-8")
         .replace("!!python/name:materialx.emoji.twemoji", "'!!python/name:materialx.emoji.twemoji'")
-        .replace("!!python/name:materialx.emoji.to_svg", "'!!python/name:materialx.emoji.to_svg'")
+        .replace("!!python/name:materialx.emoji.to_svg", "'!!python/name:materialx.emoji.to_svg'"),
     );
     mkdocsYml.nav = mkdocsYml.nav.map((navItem: any) => {
       if (navItem["Commands"]) {

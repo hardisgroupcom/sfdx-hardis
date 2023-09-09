@@ -4,6 +4,88 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add info about uninstalling SFDX that has been installed using Windows Installer
+
+## [4.3.2] 2023-09-08
+
+- Updates new task, commit & save task documentation & screenshots
+
+## [4.3.1] 2023-09-07
+
+- Improve message when deploying metadata to org from local sfdx-hardis
+- Improve documentation to handle merge requests and display links at the end of hardis:work:save
+
+## [4.3.0] 2023-09-05
+
+- Back to normal since <https://github.com/forcedotcom/cli/issues/2445> is fixed
+
+## [4.2.5] 2023-09-05
+
+- Downgrade to sfdx-cli until <https://github.com/forcedotcom/cli/issues/2445> is solved.
+
+## [4.2.4] 2023-09-05
+
+- Downgrade @salesforce/plugin-deploy-retrieve to v1.17.6 as workaround for SF cli bug <https://github.com/forcedotcom/cli/issues/2445>
+
+## [4.2.3] 2023-09-04
+
+- Fix issues with Org monitoring when there are issues with Legacy API
+
+## [4.2.2] 2023-09-01
+
+- Fix upgrade warning message that should not appear when there is no upgrade to perform (detected by @mamasse19)
+
+## [4.2.1] 2023-08-30
+
+- Fix issue in sfdx commands wrapping following the use of @salesforce/cli
+- Config auth: phrases in bold when needing to relaunch the same command after org selection
+
+## [4.2.0] 2023-08-30
+
+- Simplify UX of hardis:project:configure:auth
+- Factorize prompting of email
+- Expire sfdx-hardis connected app token after 3h
+- Update documentation to add workaround in case there is a crash when retrieving all sources when initializing a DX project from an existing org
+- Add output to explain how to not use QuickDeploy if not wanted
+- Update Quick Deploy documentation
+
+## [4.1.2] 2023-08-24
+
+- When there is a crash in force:package:installed:list , do not crash but return empty array and display an error message
+
+## [4.1.1] 2023-08-23
+
+- Improve error message when Git Provider not available
+- Update default azure-pipelines-deployment.yml to add mandatory variables for QuickDeploy
+
+```yaml
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+```
+
+## [4.1.0] 2023-08-22
+
+- Manage QuickDeploy when available (disable by defining env var `SFDX_HARDIS_QUICK_DEPLOY=false`)
+
+## [4.0.1] 2023-08-18
+
+**BREAKING CHANGE**: If you are not using sfdx-hardis docker images, you need to **manually update your CI/CD pipelines** scripts using sfdx-hardis (gitlab-ci.yml, azure-pipelines.yml...) to:
+
+- **replace `sfdx-cli` by `@salesforce/cli`**
+- **Add `sf plugins install @salesforce/plugin-packaging` just after `npm install @salesforce/cli --global`**
+
+Other upgrades
+
+- Upgrade CI/CD scripts and sfdx-hardis docker images from **sfdx-cli** to **@salesforce/cli** (sfdx commands remain called in background), and add `@salesforce/plugin-packaging` by default
+- Now also release sfdx-hardis images on GitHub Packages (ghcr.io)
+- Internal CI refactorization
+  - Secure releases with GitHub Actions permissions & environments
+  - Switch to [official docker build & push action](https://github.com/docker/build-push-action)
+  - Upgrade MegaLinter
+  - Upgrade npm dependencies
+
 ## [3.19.4] 2023-07-18
 
 - Add confirmation before resetting a git branch from VsCode command "Reset selected list of items to merge" (from an original idea of @derroman)

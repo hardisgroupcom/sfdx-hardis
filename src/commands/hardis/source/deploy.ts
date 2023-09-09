@@ -124,7 +124,7 @@ Notes:
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
-    const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", process.argv, this, this.flags.debug);
+    const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, this.flags.debug);
     // Check org coverage if requested
     if (this.flags.checkcoverage && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || "");
