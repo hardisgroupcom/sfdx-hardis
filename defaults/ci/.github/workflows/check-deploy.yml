@@ -13,6 +13,7 @@ name: Simulate Deployment (sfdx-hardis)
 jobs:
   check_deployment:
     runs-on: ubuntu-latest
+    name: Simulate Deployment to Major Org
     steps:
     # Checkout repo
     - name: Checkout code
@@ -50,6 +51,6 @@ jobs:
         ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
         CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
       run: |
-        echo "Perform SFDX deployment using Hardis against $CONFIG_BRANCH"
+        echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
         sfdx hardis:auth:login
         sfdx hardis:project:deploy:sources:dx --check
