@@ -2,10 +2,11 @@
 # If you do, also add SFDX_CLIENT_ID / KEY variables in job step "Login & Process Deployment" below
 on:
   push:
-    - main
-    - preprod
-    - uat
-    - integration
+    branches:
+      - main
+      - preprod
+      - uat
+      - integration
 
 name: Process Deployment (sfdx-hardis)
 jobs:
@@ -49,6 +50,6 @@ jobs:
         ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
         CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
       run: |
-        echo "Perform SFDX deployment using Hardis against $CONFIG_BRANCH"
+        echo "Perform SFDX deployment using Hardis against ${CONFIG_BRANCH}"
         sfdx hardis:auth:login
-        sfdx hardis:project:deploy:sources:dx --check
+        sfdx hardis:project:deploy:sources:dx

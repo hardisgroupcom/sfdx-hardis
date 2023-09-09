@@ -8,6 +8,7 @@ on:
       - uat
       - integration
 
+
 name: Simulate Deployment (sfdx-hardis)
 jobs:
   check_deployment:

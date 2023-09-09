@@ -15,10 +15,18 @@ env: # Comment env block if you do not want to apply fixes
   APPLY_FIXES_EVENT: pull_request # Decide which event triggers application of fixes in a commit or a PR (pull_request, push, all)
   APPLY_FIXES_MODE: commit # If APPLY_FIXES is used, defines if the fixes are directly committed (commit) or posted in a PR (pull_request)
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Mega-Linter
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
       # Git Checkout
       - name: Checkout Code
@@ -32,7 +40,7 @@ jobs:
         id: ml
         # You can override Mega-Linter flavor used to have faster performances
         # More info at https://megalinter.io/flavors/
-        uses: oxsecurity/megalinter/flavors/javascript@v7
+        uses: oxsecurity/megalinter/flavors/salesforce@v7
         env:
           # All available variables are described in documentation
           # https://megalinter.io/latest/config-file/
