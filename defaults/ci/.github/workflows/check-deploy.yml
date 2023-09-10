@@ -54,6 +54,7 @@ jobs:
         CI_COMMIT_REF_NAME: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
         ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
         CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
+        FORCE_COLOR: "1"
       run: |
         echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
         sfdx hardis:auth:login

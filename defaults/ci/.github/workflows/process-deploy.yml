@@ -58,6 +58,7 @@ jobs:
         CI_COMMIT_REF_NAME: ${{ env.BRANCH }} # Defines the target branch of the PR
         ORG_ALIAS: ${{ env.BRANCH }} # Defines the target branch of the PR
         CONFIG_BRANCH: ${{ env.BRANCH }} # Defines the target branch of the PR
+        FORCE_COLOR: "1"
       run: |
         echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
         sfdx hardis:auth:login
