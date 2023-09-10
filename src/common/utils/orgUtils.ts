@@ -245,7 +245,7 @@ export async function promptUserEmail(promptMessage: string | null = null) {
   // Store email in user .sfdx-hardis.USERNAME.yml file for later reuse
   if (userConfig.userEmail !== userEmail) {
     await setConfig("user", {
-      userEmail: this.userEmail,
+      userEmail: userEmail,
     });
   }
   return userEmail;
