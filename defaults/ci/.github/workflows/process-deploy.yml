@@ -9,6 +9,11 @@ on:
       - integration
 
 name: Process Deployment (sfdx-hardis)
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   process_deployment:
     name: Process Deployment to Major Org

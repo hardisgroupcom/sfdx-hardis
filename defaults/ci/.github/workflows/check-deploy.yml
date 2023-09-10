@@ -9,6 +9,11 @@ on:
       - integration
 
 name: Simulate Deployment (sfdx-hardis)
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   check_deployment:
     runs-on: ubuntu-latest
