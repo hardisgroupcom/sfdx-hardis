@@ -32,7 +32,7 @@ export class GithubProvider extends GitProviderRoot {
       return { posted: false, providerResult: { info: "No related pull request" } };
     }
     const githubWorkflowName = github.context.workflow;
-    const githubJobUrl = `${github.context.serverUrl}/${github.context.repo.repo}/actions/runs/${github.context.runId}`;
+    const githubJobUrl = `${github.context.serverUrl}/${repoOwner}/${repoName}/actions/runs/${github.context.runId}`;
     // Build note message
     const messageKey = prMessage.messageKey + "-" + githubWorkflowName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
@@ -47,7 +47,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Check for existing note from a previous run
-    uxLog(this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
+    uxLog(this, c.grey("[GitHub integration] Listing comments of Pull Request..."));
     const existingComments = await this.octokit.rest.issues.listComments({
       owner: repoOwner,
       repo: repoName,
@@ -63,7 +63,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
     // Create or update MR note
     if (existingCommentId) {
       // Update existing note
-      uxLog(this, c.grey("[GitHub integration] Updating Merge Request Note on Gitlab..."));
+      uxLog(this, c.grey("[GitHub integration] Updating Pull Request Comment on GitHub..."));
       const githubCommentEditResult = await this.octokit.rest.issues.updateComment({
         owner: repoOwner,
         repo: repoName,
@@ -78,7 +78,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
       return prResult;
     } else {
       // Create new note if no existing not was found
-      uxLog(this, c.grey("[GitHub integration] Adding Merge Request Note on Gitlab..."));
+      uxLog(this, c.grey("[GitHub integration] Adding Pull Request Comment on GitHub..."));
       const githubCommentCreateResult = await this.octokit.rest.issues.createComment({
         owner: repoOwner,
         repo: repoName,
