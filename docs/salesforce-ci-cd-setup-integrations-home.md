@@ -12,6 +12,10 @@ In order to enhance the user experience, integrations with external tools must b
 
 Depending of your git provider, configure one of the following integrations.
 
+- [GitHub](salesforce-ci-cd-setup-integration-github.md)
+  - Deployment status in Merge Request notes
+  - Quick Deploy to enhance performances
+
 - [Gitlab](salesforce-ci-cd-setup-integration-gitlab.md)
   - Deployment status in Merge Request notes
   - Quick Deploy to enhance performances
@@ -19,9 +23,6 @@ Depending of your git provider, configure one of the following integrations.
 - [Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md)
   - Deployment status in Pull Request threads
   - Quick Deploy to enhance performances
-
-- Github
-  - Coming soon !
 
 - BitBucket
   - Coming soon !
