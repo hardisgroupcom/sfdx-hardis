@@ -23,6 +23,7 @@ export class GithubProvider extends GitProviderRoot {
     let deploymentCheckId = null;
     const repoOwner = github?.context?.repo?.owner || null;
     const repoName = github?.context?.repo?.repo || null;
+    uxLog(this, c.grey("[GitHub integration] Listing previously closed Pull Requests"));
     const latestPullRequestsOnBranch = await this.octokit.rest.pulls.list({
       owner: repoOwner,
       repo: repoName,
@@ -34,6 +35,7 @@ export class GithubProvider extends GitProviderRoot {
     if (latestPullRequestsOnBranch.data.length > 0) {
       const latestPullRequest = latestPullRequestsOnBranch.data[0];
       const latestPullRequestId = latestPullRequest.id;
+      uxLog(this, c.grey(`[GitHub integration] Listing comments for PR ${latestPullRequestId}`));
       const existingComments = await this.octokit.rest.issues.listComments({
         owner: repoOwner,
         repo: repoName,
