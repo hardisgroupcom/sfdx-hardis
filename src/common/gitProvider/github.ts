@@ -34,7 +34,7 @@ export class GithubProvider extends GitProviderRoot {
     });
     if (latestPullRequestsOnBranch.data.length > 0) {
       const latestPullRequest = latestPullRequestsOnBranch.data[0];
-      const latestPullRequestId = latestPullRequest.id;
+      const latestPullRequestId = latestPullRequest.number;
       uxLog(this, c.grey(`[GitHub integration] Listing comments for PR ${latestPullRequestId}`));
       const existingComments = await this.octokit.rest.issues.listComments({
         owner: repoOwner,
