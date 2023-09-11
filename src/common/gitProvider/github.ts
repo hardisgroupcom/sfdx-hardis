@@ -1,4 +1,3 @@
-import * as core from "@actions/core";
 import * as github from "@actions/github";
 import * as c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot";
@@ -12,7 +11,7 @@ export class GithubProvider extends GitProviderRoot {
   constructor() {
     super();
     const tokenName = process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? "CI_SFDX_HARDIS_GITHUB_TOKEN" : process.env.PAT ? "PAT" : "GITHUB_TOKEN";
-    const token = core.getInput(tokenName);
+    const token = process.env[tokenName];
     this.octokit = github.getOctokit(token);
   }
 

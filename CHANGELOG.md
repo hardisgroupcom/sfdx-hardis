@@ -4,13 +4,17 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.5.0] 2023-09-10
+
+- GitHub Integration: Implement automated comments & Quick Deploy on Pull Requests
+
 ## [4.4.0] 2023-09-10
 
 - Make sfdx-hardis CI/CD Pipelines **natively compliant with GitHub Actions** , by @legetz
 - Create sfdx project: Change defaut first major branch name to `integration` (it was previously `develop`)
 - Update default API version to 58.0
 - Fix bug when user email is input the first time
-- Add info about uninstalling SFDX that has been installed using Windows Installer
+
 
 ## [4.3.2] 2023-09-08
 
