@@ -1,20 +1,17 @@
-import * as core from '@actions/core';
-import * as github from '@actions/github';
-import * as c from 'chalk';
+import * as core from "@actions/core";
+import * as github from "@actions/github";
+import * as c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot";
 import { uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
-import { GitHub } from '@actions/github/lib/utils';
+import { GitHub } from "@actions/github/lib/utils";
 
 export class GithubProvider extends GitProviderRoot {
   private octokit: InstanceType<typeof GitHub>;
 
   constructor() {
     super();
-    const tokenName =
-      process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? 'CI_SFDX_HARDIS_GITHUB_TOKEN'
-        : process.env.PAT ? 'PAT'
-          : 'GITHUB_TOKEN';
+    const tokenName = process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? "CI_SFDX_HARDIS_GITHUB_TOKEN" : process.env.PAT ? "PAT" : "GITHUB_TOKEN";
     const token = core.getInput(tokenName);
     this.octokit = github.getOctokit(token);
   }
@@ -30,13 +27,13 @@ export class GithubProvider extends GitProviderRoot {
     // Get CI variables
     const repoOwner = github?.context?.repo?.owner || null;
     const repoName = github?.context?.repo?.repo || null;
-    const pullRequestId = (pull_request?.number) || null;
+    const pullRequestId = pull_request?.number || null;
     if (repoName == null || pullRequestId == null) {
       uxLog(this, c.grey("[GitHub integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related pull request" } };
     }
     const githubWorkflowName = github.context.workflow;
-    const githubJobUrl = `${github.context.serverUrl}/${github.context.repo.repo}/actions/runs/${github.context.runId}`
+    const githubJobUrl = `${github.context.serverUrl}/${github.context.repo.repo}/actions/runs/${github.context.runId}`;
     // Build note message
     const messageKey = prMessage.messageKey + "-" + githubWorkflowName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
@@ -55,7 +52,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
     const existingComments = await this.octokit.rest.issues.listComments({
       owner: repoOwner,
       repo: repoName,
-      issue_number: pullRequestId
+      issue_number: pullRequestId,
     });
     let existingCommentId = null;
     for (const existingComment of existingComments.data) {
@@ -73,7 +70,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
         repo: repoName,
         issue_number: pullRequestId,
         comment_id: existingCommentId,
-        body: messageBody
+        body: messageBody,
       });
       const prResult: PullRequestMessageResult = {
         posted: githubCommentEditResult.data.id > 0,
@@ -87,7 +84,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
         owner: repoOwner,
         repo: repoName,
         issue_number: pullRequestId,
-        body: messageBody
+        body: messageBody,
       });
       const prResult: PullRequestMessageResult = {
         posted: githubCommentCreateResult.data.id > 0,

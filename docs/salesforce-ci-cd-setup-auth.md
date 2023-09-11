@@ -17,8 +17,8 @@ For example, run the command for `integration`, `uat`, `preprod` and `production
 
 > If messages ask you to **run twice** the same command, it's **normal**, it's for technical reasons :)
 
-> If you have **errors in your apex tests classes**, you may not be able to configure the app for Production org. 
-> You will need do **create the connected app manually by following the instructions** in yellow in the error message. 
+> If you have **errors in your apex tests classes**, you may not be able to configure the app for Production org.
+> You will need do **create the connected app manually by following the instructions** in yellow in the error message.
 > You can do it later, after having succeeded to merge the first merge request in lower major branch (usually `integration`)
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/OzREUu5utVI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
