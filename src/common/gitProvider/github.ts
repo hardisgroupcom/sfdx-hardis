@@ -19,6 +19,42 @@ export class GithubProvider extends GitProviderRoot {
     return "sfdx-hardis GitHub connector";
   }
 
+  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
+    let deploymentCheckId = null;
+    const repoOwner = github?.context?.repo?.owner || null;
+    const repoName = github?.context?.repo?.repo || null;
+    uxLog(this, c.grey("[GitHub integration] Listing previously closed Pull Requests"));
+    const latestPullRequestsOnBranch = await this.octokit.rest.pulls.list({
+      owner: repoOwner,
+      repo: repoName,
+      state: "closed",
+      direction: "desc",
+      per_page: 10,
+      base: gitBranch,
+    });
+    if (latestPullRequestsOnBranch.data.length > 0) {
+      const latestPullRequest = latestPullRequestsOnBranch.data[0];
+      const latestPullRequestId = latestPullRequest.number;
+      uxLog(this, c.grey(`[GitHub integration] Listing comments for PR ${latestPullRequestId}`));
+      const existingComments = await this.octokit.rest.issues.listComments({
+        owner: repoOwner,
+        repo: repoName,
+        issue_number: latestPullRequestId,
+      });
+      for (const existingComment of existingComments.data) {
+        if (existingComment.body.includes("<!-- sfdx-hardis deployment-id ")) {
+          const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body);
+          if (matches) {
+            deploymentCheckId = matches[1];
+            uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
+          }
+          break;
+        }
+      }
+    }
+    return deploymentCheckId;
+  }
+
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     const { pull_request } = github.context.payload;
