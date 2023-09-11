@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.5.0] 2023-09-10
+## [4.5.0] 2023-09-11
 
 - GitHub Integration: Implement automated comments & Quick Deploy on Pull Requests
 

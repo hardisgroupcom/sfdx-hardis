@@ -18,6 +18,8 @@ jobs:
   check_deployment:
     runs-on: ubuntu-latest
     name: Simulate Deployment to Major Org
+    permissions:
+      pull-requests: write
     steps:
     # Checkout repo
     - name: Checkout code
