@@ -23,7 +23,8 @@ export class SlackProvider extends NotifProviderRoot {
         if (!mainNotifsChannelId) {
             throw new SfdxError("You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN");
         }
-        const blocks = [
+        // Main block
+        const blocks: any = [
             {
                 "type": "section",
                 "text": {
@@ -32,15 +33,21 @@ export class SlackProvider extends NotifProviderRoot {
                 }
             }
         ];
+        // Add buttons if sent
         if (buttons.length > 0) {
             for (const button of buttons) {
-                blocks.push({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": `[${button.text}](${button.url})`
-                    }
-                })
+                // Url button
+                if (button.url) {
+                    blocks.push({
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": button.text
+                        },
+                        "style": button.style || "primary",
+                        "url": button.url
+                    })
+                }
             }
         }
         try {

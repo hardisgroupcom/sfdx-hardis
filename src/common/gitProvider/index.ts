@@ -92,6 +92,14 @@ export abstract class GitProvider {
       return null;
     }
   }
+
+  static async getJobUrl(): Promise<string> {
+    const gitProvider = GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    return gitProvider.getCurrentJobUrl();
+  }
 }
 
 export declare type PullRequestMessageRequest = {

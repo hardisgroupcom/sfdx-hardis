@@ -16,6 +16,11 @@ export abstract class GitProviderRoot {
     return null;
   }
 
+  public async getCurrentJobUrl(): Promise<string> {
+    uxLog(this, `Method getCurrentJobUrl is not implemented yet on ${this.getLabel()}`);
+    return null;    
+  }
+
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     uxLog(this, c.yellow("Method postPullRequestMessage is not yet implemented on " + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };

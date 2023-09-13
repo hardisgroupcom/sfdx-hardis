@@ -55,6 +55,25 @@ export class GithubProvider extends GitProviderRoot {
     return deploymentCheckId;
   }
 
+  // Returns currnt job URL
+  public async getCurrentJobUrl(): Promise<string> {
+    try {
+      const repoOwner = github?.context?.repo?.owner || null;
+      const repoName = github?.context?.repo?.repo || null;
+      const serverUrl = github?.context?.serverUrl || null;
+      const runId = github?.context?.runId;
+      if (repoOwner && repoName && serverUrl && runId) {
+        return `${serverUrl}/${repoOwner}/${repoName}/actions/runs/${runId}`;
+      }
+    } catch (err) {
+      uxLog(this, c.yellow('[GitHub integration]' + err.message))
+    }
+    if (process.env.GITHUB_JOB_URL) {
+      return process.env.GITHUB_JOB_URL;
+    }
+    return null;
+  }
+
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     const { pull_request } = github.context.payload;

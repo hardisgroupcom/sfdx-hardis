@@ -23,6 +23,7 @@ import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
 import { NotifProvider } from "../../../../../common/notifProviderRoot";
+import { GitProvider } from "../../../../../common/gitProvider";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -273,9 +274,16 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
     }
 
-    const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername
-    const notifMessage = `Deployment ${check ? 'check' : ''} has been successfully processed from branch ${(await getCurrentGitBranch())} to org ${targetLabel.replace("https://","")}`;
-    NotifProvider.postNotifications(notifMessage, []);
+    // Send notification of deployment success
+    const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
+    const linkMarkdown = `<*${targetLabel}*|${targetLabel.replace("https://", "").replace('.my.salesforce.com', '')}>`
+    const notifMessage = `Deployment ${check ? 'check' : ''} has been successfully processed from branch *${(await getCurrentGitBranch())}* to org ${linkMarkdown}`;
+    const notifButtons = [];
+    const jobUrl = await GitProvider.getJobUrl();
+    if (jobUrl) {
+      notifButtons.push({ text: 'View Deployment Job', url: jobUrl });
+    }
+    NotifProvider.postNotifications(notifMessage, notifButtons);
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
