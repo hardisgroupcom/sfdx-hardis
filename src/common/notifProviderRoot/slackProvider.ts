@@ -2,7 +2,7 @@ import { SfdxError } from "@salesforce/core";
 import * as c from 'chalk';
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { WebClient } from "@slack/web-api";
-import { uxLog } from "../utils";
+import { getCurrentGitBranch, uxLog } from "../utils";
 
 export class SlackProvider extends NotifProviderRoot {
     private slackClient: InstanceType<typeof WebClient>;
@@ -22,6 +22,12 @@ export class SlackProvider extends NotifProviderRoot {
         const mainNotifsChannelId = process.env.SLACK_CHANNEL_ID || null;
         if (mainNotifsChannelId == null) {
             throw new SfdxError("You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN");
+        }
+        const slackChannelsIds = [mainNotifsChannelId];
+        // Add branch custom slack channel if defined
+        const customSlackChannelVariable = `SLACK_CHANNEL_ID_${(await getCurrentGitBranch())}`;
+        if (process.env[customSlackChannelVariable]) {
+            slackChannelsIds.push(process.env[customSlackChannelVariable])
         }
         // Main block
         const blocks: any = [
@@ -50,16 +56,18 @@ export class SlackProvider extends NotifProviderRoot {
                 }
             }
         }
-        try {
-            const resp = await this.slackClient.chat.postMessage({
-                blocks: blocks,
-                channel: mainNotifsChannelId,
-            });
-            uxLog(this, c.gray(`Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
-        } catch (error) {
-            uxLog(this, c.red(`Error while sending message to channel ${mainNotifsChannelId}\n${error.message}`));
+        for (const slackChannelId of slackChannelsIds) {
+            try {
+                const resp = await this.slackClient.chat.postMessage({
+                    blocks: blocks,
+                    channel: slackChannelId,
+                });
+                uxLog(this, c.gray(`Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
+            } catch (error) {
+                uxLog(this, c.red(`Error while sending message to channel ${mainNotifsChannelId}\n${error.message}`));
+            }
         }
-        return null;
+        return;
     }
 
 }
