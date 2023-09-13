@@ -21,6 +21,11 @@ export abstract class GitProviderRoot {
     return null;    
   }
 
+  public async getCurrentBranchUrl(): Promise<string> {
+    uxLog(this, `Method getCurrentBranchUrl is not implemented yet on ${this.getLabel()}`);
+    return null;    
+  }
+
   public async getPullRequestInfo(): Promise<any> {
     uxLog(this, `Method getPullRequestInfo is not implemented yet on ${this.getLabel()}`);
     return null ;

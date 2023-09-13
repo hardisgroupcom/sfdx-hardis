@@ -74,6 +74,22 @@ export class GithubProvider extends GitProviderRoot {
     return null;
   }
 
+  // Returns currnt job URL
+  public async getCurrentBranchUrl(): Promise<string> {
+    try {
+      const repoOwner = github?.context?.repo?.owner || null;
+      const repoName = github?.context?.repo?.repo || null;
+      const serverUrl = github?.context?.serverUrl || null;
+      const branch = github?.context?.ref || null;
+      if (repoOwner && repoName && serverUrl && branch) {
+        return `${serverUrl}/${repoOwner}/${repoName}/tree/${branch}`;
+      }
+    } catch (err) {
+      uxLog(this, c.yellow('[GitHub integration]' + err.message))
+    }
+    return null;
+  }
+
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
     const repoOwner = github?.context?.repo?.owner || null;

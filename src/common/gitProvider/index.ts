@@ -93,6 +93,14 @@ export abstract class GitProvider {
     }
   }
 
+  static async getCurrentBranchUrl(): Promise<string> {
+    const gitProvider = GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    return gitProvider.getCurrentBranchUrl();
+  }
+
   static async getJobUrl(): Promise<string> {
     const gitProvider = GitProvider.getInstance();
     if (gitProvider == null) {
