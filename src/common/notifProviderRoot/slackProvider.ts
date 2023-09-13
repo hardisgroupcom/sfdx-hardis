@@ -19,8 +19,8 @@ export class SlackProvider extends NotifProviderRoot {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async postNotification(notifMessage: string, buttons: any[] = []): Promise<void> {
-        const mainNotifsChannelId = process.env.SLACK_CHANNEL_ID;
-        if (!mainNotifsChannelId) {
+        const mainNotifsChannelId = process.env.SLACK_CHANNEL_ID || null;
+        if (mainNotifsChannelId == null) {
             throw new SfdxError("You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN");
         }
         // Main block
