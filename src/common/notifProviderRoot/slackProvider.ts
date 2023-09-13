@@ -1,7 +1,7 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from 'chalk';
 import { NotifProviderRoot } from "./notifProviderRoot";
-import { WebClient } from "@slack/web-api";
+import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils";
 
 export class SlackProvider extends NotifProviderRoot {
@@ -30,21 +30,24 @@ export class SlackProvider extends NotifProviderRoot {
             slackChannelsIds.push(process.env[customSlackChannelVariable])
         }
         // Main block
-        const blocks: any = [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": notifMessage
-                }
+        const blocks: Block[] = []
+        const block: SectionBlock =
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": notifMessage
             }
-        ];
-        // Add buttons if sent
+        }
+            ;
+        blocks.push(block);
+        // Add action blocks
         if (buttons.length > 0) {
+            const actionElements = []
             for (const button of buttons) {
                 // Url button
                 if (button.url) {
-                    blocks.push({
+                    const actionsElement: Button = {
                         "type": "button",
                         "text": {
                             "type": "plain_text",
@@ -52,10 +55,17 @@ export class SlackProvider extends NotifProviderRoot {
                         },
                         "style": button.style || "primary",
                         "url": button.url
-                    })
+                    }
+                    actionElements.push(actionsElement);
                 }
             }
+            const actionsBlock: ActionsBlock = {
+                type: "actions",
+                elements: actionElements
+            };
+            blocks.push(actionsBlock);
         }
+        // Post messages
         for (const slackChannelId of slackChannelsIds) {
             try {
                 const resp = await this.slackClient.chat.postMessage({
