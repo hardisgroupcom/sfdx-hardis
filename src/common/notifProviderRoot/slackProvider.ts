@@ -68,6 +68,7 @@ export class SlackProvider extends NotifProviderRoot {
         for (const slackChannelId of slackChannelsIds) {
             try {
                 const resp = await this.slackClient.chat.postMessage({
+                    text: notifMessage,
                     blocks: blocks,
                     channel: slackChannelId,
                 });
