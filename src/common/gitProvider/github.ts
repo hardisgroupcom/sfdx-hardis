@@ -74,6 +74,25 @@ export class GithubProvider extends GitProviderRoot {
     return null;
   }
 
+  // Find pull request info
+  public async getPullRequestInfo(): Promise<any> {
+    const repoOwner = github?.context?.repo?.owner || null;
+    const repoName = github?.context?.repo?.repo || null;
+    const prNumber = github?.context?.payload?.pull_request?.number || null;
+    if (prNumber !== null && repoOwner !== null && prNumber !== null) {
+      const pullRequest = await this.octokit.rest.pulls.get({
+        owner: repoOwner,
+        repo: repoName,
+        pull_number: prNumber,
+      });
+      if (pullRequest) {
+        return pullRequest.data;
+      }
+    }
+    uxLog(this, c.grey(`[GitHub Integration] Unable to find related Pull Request Info`));
+    return null;
+  }
+
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     const { pull_request } = github.context.payload;

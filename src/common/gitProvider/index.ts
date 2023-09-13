@@ -100,6 +100,15 @@ export abstract class GitProvider {
     }
     return gitProvider.getCurrentJobUrl();
   }
+
+static async getPullRequestInfo(): Promise<any> {
+  const gitProvider = GitProvider.getInstance();
+  if (gitProvider == null) {
+    return null;
+  }
+  return gitProvider.getPullRequestInfo()  
+}
+
 }
 
 export declare type PullRequestMessageRequest = {
