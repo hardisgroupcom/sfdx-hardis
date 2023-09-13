@@ -17,11 +17,12 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { isCI, uxLog } from "../../../../../common/utils";
+import { getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
+import { NotifProvider } from "../../../../../common/notifProviderRoot";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -271,6 +272,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     if (this.configInfo.listViewsToSetToMine && check === false) {
       await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
     }
+
+    const notifMessage = `Deployment ${check ? 'check' : ''} has been successfully processed from branch ${(await getCurrentGitBranch())} to org ${this.org?.getConnection()?.getUsername() !== targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername}`;
+    NotifProvider.postNotifications(notifMessage, []);
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
