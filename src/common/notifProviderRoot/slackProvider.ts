@@ -25,7 +25,7 @@ export class SlackProvider extends NotifProviderRoot {
         }
         const slackChannelsIds = [mainNotifsChannelId];
         // Add branch custom slack channel if defined
-        const customSlackChannelVariable = `SLACK_CHANNEL_ID_${(await getCurrentGitBranch())}`;
+        const customSlackChannelVariable = `SLACK_CHANNEL_ID_${((await getCurrentGitBranch()).toUpperCase())}`;
         if (process.env[customSlackChannelVariable]) {
             slackChannelsIds.push(process.env[customSlackChannelVariable])
         }
