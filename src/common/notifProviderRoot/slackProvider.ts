@@ -38,8 +38,7 @@ export class SlackProvider extends NotifProviderRoot {
                 "type": "mrkdwn",
                 "text": notifMessage
             }
-        }
-            ;
+        };
         blocks.push(block);
         // Add action blocks
         if (buttons.length > 0) {

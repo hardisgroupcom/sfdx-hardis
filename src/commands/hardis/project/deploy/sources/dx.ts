@@ -276,7 +276,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
     // Send notification of deployment success
     const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
-    const linkMarkdown = `<*${targetLabel}*|${targetLabel.replace("https://", "").replace('.my.salesforce.com', '')}>`
+    const linkMarkdown = `<${targetLabel}|*${targetLabel.replace("https://", "").replace('.my.salesforce.com', '')}*>`;
     const notifMessage = `Deployment ${check ? 'check' : ''} has been successfully processed from branch *${(await getCurrentGitBranch())}* to org ${linkMarkdown}`;
     const notifButtons = [];
     const jobUrl = await GitProvider.getJobUrl();
