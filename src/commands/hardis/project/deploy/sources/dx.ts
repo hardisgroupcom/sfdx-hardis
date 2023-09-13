@@ -273,7 +273,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
     }
 
-    const notifMessage = `Deployment ${check ? 'check' : ''} has been successfully processed from branch ${(await getCurrentGitBranch())} to org ${this.org?.getConnection()?.getUsername() !== targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername}`;
+    const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername
+    const notifMessage = `Deployment ${check ? 'check' : ''} has been successfully processed from branch ${(await getCurrentGitBranch())} to org ${targetLabel.replace("https://","")}`;
     NotifProvider.postNotifications(notifMessage, []);
 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
