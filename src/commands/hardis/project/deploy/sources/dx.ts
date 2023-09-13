@@ -291,7 +291,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
     const pullRequestInfo = await GitProvider.getPullRequestInfo();
     if (pullRequestInfo) {
-      notifButtons.push({ text: `View Pull Request ${pullRequestInfo.title}`, url: pullRequestInfo.url });
+      notifButtons.push({ text: `View Pull Request: ${pullRequestInfo.title}`, url: pullRequestInfo.url });
     }
     NotifProvider.postNotifications(notifMessage, notifButtons);
 

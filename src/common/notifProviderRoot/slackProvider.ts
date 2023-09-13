@@ -71,6 +71,8 @@ export class SlackProvider extends NotifProviderRoot {
                     text: notifMessage,
                     blocks: blocks,
                     channel: slackChannelId,
+                    unfurl_links: false,
+                    unfurl_media: false
                 });
                 uxLog(this, c.gray(`Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
             } catch (error) {
