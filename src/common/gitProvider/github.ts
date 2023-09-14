@@ -144,13 +144,12 @@ export class GithubProvider extends GitProviderRoot {
     } catch (error) {
       uxLog(this, c.yellow(`[GitHub Integration] Error while calling GraphQL Api to list PR on commit ${sha}`));
     }
-    uxLog(this,JSON.stringify(graphQlRes));
     if (graphQlRes?.repository?.commit?.associatedPullRequests?.edges?.length > 0) {
       const currentGitBranch = await getCurrentGitBranch();
       const candidatePullRequests = graphQlRes.repository.commit.associatedPullRequests.edges.filter(
         (pr: any) => pr.node.merged === true && pr.node.baseRef.name === currentGitBranch
       )
-      if (candidatePullRequests > 0) {
+      if (candidatePullRequests.length > 0) {
         return candidatePullRequests.node[0];
       }
     }
