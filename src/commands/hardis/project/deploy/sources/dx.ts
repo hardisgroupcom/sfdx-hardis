@@ -196,7 +196,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     // Auto-detect all APEX test classes within project in order to do RunSpecifiedTests deployment
     if(givenTestlevel == 'RunRepositoryTests') {
       testClassList = await getTestClasses();
-      this.flags.testlevel = testClassList.length ? 'RunSpecifiedTests' : 'RunLocalTests';
+      this.flags.testlevel = Array.isArray(testClassList) && testClassList.length ? 'RunSpecifiedTests' : 'RunLocalTests';
       uxLog(this, "Detected APEX test classes: " + testClassList);
     }
 
