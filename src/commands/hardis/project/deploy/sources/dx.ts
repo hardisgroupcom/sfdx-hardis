@@ -277,7 +277,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     // Send notification of deployment success
     const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
     const linkMarkdown = `<${targetLabel}|*${targetLabel.replace("https://", "").replace('.my.salesforce.com', '')}*>`;
-    const currentGitBranch = await getCurrentGitBranch() ;
+    const currentGitBranch = await getCurrentGitBranch();
     let branchMd = `*${currentGitBranch}*`
     const branchUrl = await GitProvider.getCurrentBranchUrl();
     if (branchUrl) {
@@ -291,7 +291,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
     const pullRequestInfo = await GitProvider.getPullRequestInfo();
     if (pullRequestInfo) {
-      notifButtons.push({ text: `View Pull Request: ${pullRequestInfo.title}`, url: pullRequestInfo.url });
+      const prButtonText = `View Pull Request: ${pullRequestInfo.title}` +
+        (pullRequestInfo?.user?.login) ? ` by ${pullRequestInfo?.user?.login}` : '';
+      notifButtons.push({ text: prButtonText, url: pullRequestInfo.html_url || pullRequestInfo.url });
     }
     NotifProvider.postNotifications(notifMessage, notifButtons);
 
