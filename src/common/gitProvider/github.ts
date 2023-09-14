@@ -107,7 +107,7 @@ export class GithubProvider extends GitProviderRoot {
       }
     }
     // Case when we find PRs from a commit
-    const sha = await git().revparse(['--short', 'HEAD']);
+    const sha = await git().revparse(['HEAD']);
     let graphQlRes: any = null;
     try {
       graphQlRes = await this.octokit.graphql(`
