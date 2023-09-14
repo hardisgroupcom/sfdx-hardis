@@ -14,9 +14,9 @@ export abstract class NotifProvider {
     }
 
     static postNotifications(notifMessage: string, buttons: any[] = []) {
-        const notifProfiders = this.getInstances();
-        for (const notifProfider of notifProfiders) {
-            notifProfider.postNotification(notifMessage, buttons);
+        const notifProviders = this.getInstances();
+        for (const notifProvider of notifProviders) {
+            notifProvider.postNotification(notifMessage, buttons);
         }
     }
 

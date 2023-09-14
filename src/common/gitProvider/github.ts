@@ -55,7 +55,7 @@ export class GithubProvider extends GitProviderRoot {
     return deploymentCheckId;
   }
 
-  // Returns currnt job URL
+  // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     try {
       const repoOwner = github?.context?.repo?.owner || null;
@@ -74,7 +74,7 @@ export class GithubProvider extends GitProviderRoot {
     return null;
   }
 
-  // Returns currnt job URL
+  // Returns current job URL
   public async getCurrentBranchUrl(): Promise<string> {
     try {
       const repoOwner = github?.context?.repo?.owner || null;

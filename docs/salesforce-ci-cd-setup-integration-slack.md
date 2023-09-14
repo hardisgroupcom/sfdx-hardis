@@ -23,7 +23,7 @@ Create a slack app here -> https://api.slack.com/apps
 - Create a secret value named **SLACK_TOKEN** with auth token value in your Git provider configuration
 - Create a slack channel that will receive all notifications (ex: _#notifs-sfdx-hardis_)
 - Open the channel info, copy its ID and create a secret value named **SLACK_CHANNEL_ID** in your git provider configuration
-- Additionnally, you can create branch-scoped channels by creating new channels and create appropriate variables
+- Additionally, you can create branch-scoped channels by creating new channels and create appropriate variables
   - Example: Channel _#notifs-sfdx-hardis-integration_ and variable **SLACK_CHANNEL_ID_iNTEGRATION**
 - Make sure all those variables are visible to your CI/CD pipelines
 
