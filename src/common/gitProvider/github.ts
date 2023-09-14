@@ -127,6 +127,9 @@ export class GithubProvider extends GitProviderRoot {
                       id
                       name
                     }
+                    author {
+                      login
+                    }
                   }
                 }
               }
