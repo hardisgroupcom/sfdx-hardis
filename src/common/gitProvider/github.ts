@@ -150,7 +150,7 @@ export class GithubProvider extends GitProviderRoot {
         (pr: any) => pr.node.merged === true && pr.node.baseRef.name === currentGitBranch
       )
       if (candidatePullRequests.length > 0) {
-        return candidatePullRequests.node[0];
+        return candidatePullRequests[0].node;
       }
     }
     uxLog(this, c.grey(`[GitHub Integration] Unable to find related Pull Request Info`));
