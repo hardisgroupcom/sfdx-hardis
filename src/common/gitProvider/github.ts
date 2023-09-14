@@ -1,7 +1,7 @@
 import * as github from "@actions/github";
 import * as c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot";
-import { uxLog } from "../utils";
+import { getCurrentGitBranch, git, uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
 import { GitHub } from "@actions/github/lib/utils";
 
@@ -94,6 +94,7 @@ export class GithubProvider extends GitProviderRoot {
   public async getPullRequestInfo(): Promise<any> {
     const repoOwner = github?.context?.repo?.owner || null;
     const repoName = github?.context?.repo?.repo || null;
+    // Case when PR is found in the context
     const prNumber = github?.context?.payload?.pull_request?.number || null;
     if (prNumber !== null && repoOwner !== null && prNumber !== null) {
       const pullRequest = await this.octokit.rest.pulls.get({
@@ -103,6 +104,53 @@ export class GithubProvider extends GitProviderRoot {
       });
       if (pullRequest) {
         return pullRequest.data;
+      }
+    }
+    // Case when we find PRs from a commit
+    const sha = await git().revparse(['--short', 'HEAD']);
+    let graphQlRes: any = null;
+    try {
+      graphQlRes = await this.octokit.graphql(`
+      query associatedPRs($sha: String, $repo: String!, $owner: String!){
+        repository(name: $repo, owner: $owner) {
+          commit: object(expression: $sha) {
+            ... on Commit {
+              associatedPullRequests(first:10){
+                edges{
+                  node{
+                    title
+                    number
+                    body
+                    url
+                    merged,
+                    baseRef {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `,
+        {
+          "sha": sha,
+          "repo": repoName,
+          "owner": repoOwner
+        }
+      )
+    } catch (error) {
+      uxLog(this, c.yellow(`[GitHub Integration] Error while calling GraphQL Api to list PR on commit ${sha}`));
+    }
+    if (graphQlRes?.data?.repository?.commit?.associatedPullRequests?.edges?.length > 0) {
+      const currentGitBranch = await getCurrentGitBranch();
+      const candidatePullRequests = graphQlRes.data.repository.commit.associatedPullRequests.edges.filter(
+        (pr: any) => pr.node.merged === true && pr.node.baseRef.name === currentGitBranch
+      )
+      if (candidatePullRequests > 0) {
+        return candidatePullRequests.node[0];
       }
     }
     uxLog(this, c.grey(`[GitHub Integration] Unable to find related Pull Request Info`));
