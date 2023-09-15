@@ -238,7 +238,7 @@ export async function forceSourceDeploy(
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
         " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
         ` --testlevel ${testlevel}` +
-        (options.testClassList && options.testClassList.length > 0 ? ` --runtests ${options.testClassList.join()}` : "") +
+        (options.testClasses ? ` --runtests ${options.testClasses}` : "") +
         (options.preDestructiveChanges ? ` --predestructivechanges ${options.postDestructiveChanges}` : "") +
         (options.postDestructiveChanges ? ` --postdestructivechanges ${options.postDestructiveChanges}` : "") +
         (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +

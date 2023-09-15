@@ -21,7 +21,7 @@ import { isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
-import { getTestClasses } from "../../../../../common/utils/classUtils";
+import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
 
 // Initialize Messages with the current plugin directory
@@ -156,7 +156,11 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       char: "l",
       default: "RunLocalTests",
       options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunLocalTests", "RunAllTestsInOrg"],
-      description: messages.getMessage("testLevel"),
+      description: messages.getMessage("testLevelExtended"),
+    }),
+    runtests: flags.string({
+      char: "r",
+      description: messages.getMessage("runtests"),
     }),
     packagexml: flags.string({
       char: "p",
@@ -191,16 +195,28 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     const check = this.flags.check || false;
 
     const givenTestlevel = this.flags.testlevel || this.configInfo.testLevel || "";
-    let testClassList = [];
+    let testClasses = this.flags.runtests || this.configInfo.runtests || "";
 
-    // Auto-detect all APEX test classes within project in order to do RunSpecifiedTests deployment
-    if(givenTestlevel == 'RunRepositoryTests') {
-      testClassList = await getTestClasses();
-      this.flags.testlevel = Array.isArray(testClassList) && testClassList.length ? 'RunSpecifiedTests' : 'RunLocalTests';
-      uxLog(this, "Detected APEX test classes: " + testClassList);
+    // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
+    if(givenTestlevel === 'RunRepositoryTests') {
+      const testClassList = await getApexTestClasses();
+      if(Array.isArray(testClassList) && testClassList.length) {
+        this.flags.testlevel = 'RunSpecifiedTests';
+        testClasses = testClassList.join();
+      } else {
+        // Default back to RunLocalTests in case if repository has zero tests
+        this.flags.testlevel = 'RunLocalTests'; 
+        testClasses = '';
+      }
     }
 
     const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
+    
+    // Test classes are only valid for RunSpecifiedTests
+    if(testlevel != 'RunSpecifiedTests') {
+      testClasses = '';
+    }
+
     const packageXml = this.flags.packagexml || null;
     this.debugMode = this.flags.debug || false;
 
@@ -241,7 +257,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     const forceSourceDeployOptions: any = {
       targetUsername: targetUsername,
       conn: this.org?.getConnection(),
-      testClassList: testClassList
+      testClasses: testClasses
     };
     // Get destructiveChanges.xml and add it in options if existing
     const packageDeletedXmlFile =
