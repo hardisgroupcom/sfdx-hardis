@@ -7,12 +7,17 @@ import { GitHub } from "@actions/github/lib/utils";
 
 export class GithubProvider extends GitProviderRoot {
   private octokit: InstanceType<typeof GitHub>;
+  private repoOwner: string;
+  private repoName: string;
 
   constructor() {
     super();
     const tokenName = process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? "CI_SFDX_HARDIS_GITHUB_TOKEN" : process.env.PAT ? "PAT" : "GITHUB_TOKEN";
     const token = process.env[tokenName];
     this.octokit = github.getOctokit(token);
+    this.repoOwner = github?.context?.repo?.owner || null;
+    this.repoName = github?.context?.repo?.repo || null;
+    this.serverUrl = github?.context?.serverUrl || null;
   }
 
   public getLabel(): string {
@@ -58,12 +63,9 @@ export class GithubProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     try {
-      const repoOwner = github?.context?.repo?.owner || null;
-      const repoName = github?.context?.repo?.repo || null;
-      const serverUrl = github?.context?.serverUrl || null;
       const runId = github?.context?.runId;
-      if (repoOwner && repoName && serverUrl && runId) {
-        return `${serverUrl}/${repoOwner}/${repoName}/actions/runs/${runId}`;
+      if (this.repoOwner && this.repoName && this.serverUrl && runId) {
+        return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${runId}`;
       }
     } catch (err) {
       uxLog(this, c.yellow('[GitHub integration]' + err.message))
@@ -77,12 +79,9 @@ export class GithubProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentBranchUrl(): Promise<string> {
     try {
-      const repoOwner = github?.context?.repo?.owner || null;
-      const repoName = github?.context?.repo?.repo || null;
-      const serverUrl = github?.context?.serverUrl || null;
       const branch = github?.context?.ref || null;
-      if (repoOwner && repoName && serverUrl && branch) {
-        return `${serverUrl}/${repoOwner}/${repoName}/tree/${branch}`;
+      if (this.repoOwner && this.repoName && this.serverUrl && branch) {
+        return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/tree/${branch}`;
       }
     } catch (err) {
       uxLog(this, c.yellow('[GitHub integration]' + err.message))
@@ -92,14 +91,12 @@ export class GithubProvider extends GitProviderRoot {
 
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
-    const repoOwner = github?.context?.repo?.owner || null;
-    const repoName = github?.context?.repo?.repo || null;
     // Case when PR is found in the context
     const prNumber = github?.context?.payload?.pull_request?.number || null;
-    if (prNumber !== null && repoOwner !== null && prNumber !== null) {
+    if (prNumber !== null && this.repoOwner !== null && prNumber !== null) {
       const pullRequest = await this.octokit.rest.pulls.get({
-        owner: repoOwner,
-        repo: repoName,
+        owner: this.repoOwner,
+        repo: this.repoName,
         pull_number: prNumber,
       });
       if (pullRequest) {
@@ -140,8 +137,8 @@ export class GithubProvider extends GitProviderRoot {
     `,
         {
           "sha": sha,
-          "repo": repoName,
-          "owner": repoOwner
+          "repo": this.repoName,
+          "owner": this.repoOwner
         }
       )
     } catch (error) {
@@ -165,15 +162,13 @@ export class GithubProvider extends GitProviderRoot {
     const { pull_request } = github.context.payload;
 
     // Get CI variables
-    const repoOwner = github?.context?.repo?.owner || null;
-    const repoName = github?.context?.repo?.repo || null;
     const pullRequestId = pull_request?.number || null;
-    if (repoName == null || pullRequestId == null) {
+    if (this.repoName == null || pullRequestId == null) {
       uxLog(this, c.grey("[GitHub integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related pull request" } };
     }
     const githubWorkflowName = github.context.workflow;
-    const githubJobUrl = `${github.context.serverUrl}/${repoOwner}/${repoName}/actions/runs/${github.context.runId}`;
+    const githubJobUrl = `${github.context.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${github.context.runId}`;
     // Build note message
     const messageKey = prMessage.messageKey + "-" + githubWorkflowName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
@@ -190,8 +185,8 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
     // Check for existing note from a previous run
     uxLog(this, c.grey("[GitHub integration] Listing comments of Pull Request..."));
     const existingComments = await this.octokit.rest.issues.listComments({
-      owner: repoOwner,
-      repo: repoName,
+      owner: this.repoOwner,
+      repo: this.repoName,
       issue_number: pullRequestId,
     });
     let existingCommentId = null;
@@ -206,8 +201,8 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
       // Update existing note
       uxLog(this, c.grey("[GitHub integration] Updating Pull Request Comment on GitHub..."));
       const githubCommentEditResult = await this.octokit.rest.issues.updateComment({
-        owner: repoOwner,
-        repo: repoName,
+        owner: this.repoOwner,
+        repo: this.repoName,
         issue_number: pullRequestId,
         comment_id: existingCommentId,
         body: messageBody,
@@ -221,8 +216,8 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
       // Create new note if no existing not was found
       uxLog(this, c.grey("[GitHub integration] Adding Pull Request Comment on GitHub..."));
       const githubCommentCreateResult = await this.octokit.rest.issues.createComment({
-        owner: repoOwner,
-        repo: repoName,
+        owner: this.repoOwner,
+        repo: this.repoName,
         issue_number: pullRequestId,
         body: messageBody,
       });
