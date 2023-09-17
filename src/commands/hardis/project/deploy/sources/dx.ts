@@ -23,7 +23,7 @@ import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
-import { NotifProvider } from "../../../../../common/notifProviderRoot";
+import { NotifProvider } from "../../../../../common/notifProvider";
 import { GitProvider } from "../../../../../common/gitProvider";
 
 // Initialize Messages with the current plugin directory
@@ -312,7 +312,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     if (branchUrl) {
       branchMd = `<${branchUrl}|*${currentGitBranch}*>`
     }
-    const notifMessage = `Deployment ${check ? ' check ' : ''}has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
+    let notifMessage = `Deployment ${check ? ' check ' : ''}has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
     const notifButtons = [];
     const jobUrl = await GitProvider.getJobUrl();
     if (jobUrl) {
@@ -320,12 +320,12 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
     const pullRequestInfo = await GitProvider.getPullRequestInfo();
     if (pullRequestInfo) {
-      const prButtonText = `${pullRequestInfo.title || 'Pull Request'}` +
-        ((pullRequestInfo?.author?.login) ? ` by ${pullRequestInfo?.author?.login}` : '');
-      notifButtons.push({ text: prButtonText, url: pullRequestInfo.html_url || pullRequestInfo.url });
+      const prUrl = pullRequestInfo.html_url || pullRequestInfo.url;
+      notifMessage += `Related: <${prUrl}|${pullRequestInfo.title}>` + ((pullRequestInfo?.author?.login) ? ` by ${pullRequestInfo?.author?.login}` : '')
+      const prButtonText = 'View Pull Request';
+      notifButtons.push({ text: prButtonText, url: prUrl });
     }
     NotifProvider.postNotifications(notifMessage, notifButtons);
-
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
 }
