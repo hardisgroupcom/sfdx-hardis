@@ -13,6 +13,7 @@
     "**/README.md",
     "**/*.json",
     "**/*.svg",
-    "**/*.xml"
+    "**/*.xml",
+    "**/bitbucket-pipelines.yml"
   ]
 }
