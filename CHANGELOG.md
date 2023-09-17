@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Added new option --testlevel RunRepositoryTests which will dynamically detect all GIT repository test classes and runs the deployment with found tests. This will speed up the validation/deployment on cases where GIT repository module contains subset of all tests found in the org
+- Added --runtests support in order to pass certain APEX test classes when --testlevel RunSpecifiedTests is used
+
 ## [4.5.1] 2023-09-11
 
 - GitHub Integration: Fix Quick Deploy on Pull Requests

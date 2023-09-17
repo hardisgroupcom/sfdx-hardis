@@ -101,18 +101,19 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                          |    Default    | Required |                                Options                                 |
-|:----------------------|:-------:|:---------------------------------------------------------------------|:-------------:|:--------:|:----------------------------------------------------------------------:|
-| apiversion            | option  | override the api version used for api requests made by this command  |               |          |                                                                        |
-| check<br/>-c          | boolean | Only checks the deployment, there is no impact on target org         |               |          |                                                                        |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                      |               |          |                                                                        |
-| json                  | boolean | format output as json                                                |               |          |                                                                        |
-| loglevel              | option  | logging level for this command invocation                            |     warn      |          |         trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal          |
-| packagexml<br/>-p     | option  | Path to package.xml containing what you want to deploy in target org |               |          |                                                                        |
-| skipauth              | boolean | Skip authentication check when a default username is required        |               |          |                                                                        |
-| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org   |               |          |                                                                        |
-| testlevel<br/>-l      | option  | Level of tests to apply to validate deployment                       | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration            |               |          |                                                                        |
+| Name                  |  Type   | Description                                                          |    Default    | Required |                                Options                                                        |
+|:----------------------|:-------:|:---------------------------------------------------------------------|:-------------:|:--------:|:---------------------------------------------------------------------------------------------:|
+| apiversion            | option  | override the api version used for api requests made by this command  |               |          |                                                                                               |
+| check<br/>-c          | boolean | Only checks the deployment, there is no impact on target org         |               |          |                                                                                               |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                      |               |          |                                                                                               |
+| json                  | boolean | format output as json                                                |               |          |                                                                                               |
+| loglevel              | option  | logging level for this command invocation                            |     warn      |          |         trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal                                 |
+| packagexml<br/>-p     | option  | Path to package.xml containing what you want to deploy in target org |               |          |                                                                                               |
+| skipauth              | boolean | Skip authentication check when a default username is required        |               |          |                                                                                               |
+| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org   |               |          |                                                                                               |
+| testlevel<br/>-l      | option  | Level of tests to apply to validate deployment                       | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| runtests<br/>-r       | option  | Apex test classes to run if --testlevel is RunSpecifiedTests         |               |          |                                                                                               |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration            |               |          |                                                                                               |
 
 ## Examples
 
@@ -122,6 +123,11 @@ sfdx hardis:project:deploy:sources:dx
 
 ```shell
 sfdx hardis:project:deploy:sources:dx --check
+```
+
+Validate deployment by running all APEX test classes found within your GIT repository
+```shell
+sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests
 ```
 
 
