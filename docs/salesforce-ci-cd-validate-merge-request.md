@@ -45,36 +45,13 @@ ___
 
 ### Check deploy job
 
-This CI job **simulates a deployment to the target org** (corresponding to the target branch of the merge request)
-
-- Simulate deployment of all metadatas
-- Run **all local Apex test classes**: all **must be in success**, and with at least **75% of code coverage**
-
-If there are errors, you need to either:
-
-- Push a **new commit with updates solving the error**
-- Perform **manual operations in the target org**, that can be:
-  - Manual **activation of features** (ex: Account teams, State and country picklists...)
-  - Manual **updates in setup** in case of renaming of API Names (which is a bad practice to avoid as much as possible :) )
-
-Under each error, you may see [instructions to solve the error](https://sfdx-hardis.cloudity.com/deployTips/) in yellow.
-
-- If there is no instruction, try to copy-paste the error in google
-- If you are lost or are not sure of what you do, call your [release manager](salesforce-ci-cd-release-home.md)
-- If your release manager is lost or is not sure of what he does, [post an issue](https://github.com/hardisgroupcom/sfdx-hardis/issues) or [call Cloudity](https://cloudity.com/) to ask for support
+See [Handle Deployment errors](salesforce-ci-cd-solve-deployment-errors.md)
 
 ___
 
 ### Code Quality job
 
-[MegaLinter](https://megalinter.io/latest/) is used to perform code quality and security checks in Salesforce CI/CD repositories.
-
-It embeds [SAST tools](https://megalinter.io/latest/flavors/salesforce/) that check Apex, Aura, LWC, copy-pastes and security issues.
-
-If you consider Apex issues to be false-positives, you may [disable some rules using annotations and comments](https://pmd.github.io/latest/pmd_userdocs_suppressing_warnings.html)
-
-- Never use `@SuppressWarnings('PMD')`, always name the rule that you want to disable, because you do not want to disable all rules
-- `//NOPMD` at the end of a line will make the issue ignored, but again use it only in case of false positive, never to "Publish more quickly", else you'll create [technical debt](https://en.wikipedia.org/wiki/Technical_debt).
+See [Handle MegaLinter errors](salesforce-ci-cd-solve-megalinter-errors.md)
 
 ___
 

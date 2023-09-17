@@ -173,17 +173,19 @@ nav:
       - CI/CD Home: salesforce-ci-cd-home.md
       - Contributor Guide:
           - Contributor Guide Home: salesforce-ci-cd-use-home.md
-          - Pre-requisites:
-              - Prepare your computer: salesforce-ci-cd-use-install.md
-              - Clone the repository: salesforce-ci-cd-clone-repository.md
-          - Work on a CD/CD project:
-              - Create new task: salesforce-ci-cd-create-new-task.md
-              - Work on a task: salesforce-ci-cd-work-on-task.md
-              - Publish a task: salesforce-ci-cd-publish-task.md
-              - Create Merge Request:
-                  - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
-                  - On Azure: salesforce-ci-cd-pull-request-azure.md
-                  - On Github: salesforce-ci-cd-pull-request-github.md
+          - Prepare your computer: salesforce-ci-cd-use-install.md
+          - Clone the repository: salesforce-ci-cd-clone-repository.md
+          - Create new task: salesforce-ci-cd-create-new-task.md
+          - Work on a task: salesforce-ci-cd-work-on-task.md
+          - Publish a task: salesforce-ci-cd-publish-task.md
+          - Create Merge Request:
+              - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
+              - On Azure: salesforce-ci-cd-pull-request-azure.md
+              - On Github: salesforce-ci-cd-pull-request-github.md
+          - Check merge request results:
+              - Merge Request results Home: salesforce-ci-cd-handle-merge-request-results.md
+              - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
+              - Solve MegaLinter errors: salesforce-ci-cd-solve-megalinter-errors.md
       - Release Manager Guide:
           - Release Manager Home: salesforce-ci-cd-release-home.md
           - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
@@ -202,12 +204,13 @@ nav:
           - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
           - CI Server Authentication: salesforce-ci-cd-setup-auth.md
           - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
-          - First merge request: salesforce-ci-cd-setup-merge-request.md
           - Integrations:
               - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
-              - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+              - GitHub: salesforce-ci-cd-setup-integration-github.md      
               - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
               - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
+              - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+          - First merge request: salesforce-ci-cd-setup-merge-request.md
   - Configuration reference: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles

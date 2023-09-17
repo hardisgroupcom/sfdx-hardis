@@ -17,7 +17,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class AuditDuplicateFiles extends SfdxCommand {
   public static title = "Find duplicate sfdx files";
 
-  public static description = "Find duplicate files in sfdx folder (often from past sfdx-cli bugs)";
+  public static description = "Find duplicate files in sfdx folder (often from past @salesforce/cli bugs)";
 
   public static examples = ["$ sfdx hardis:project:audit:duplicatefiles"];
 
@@ -64,7 +64,7 @@ export default class AuditDuplicateFiles extends SfdxCommand {
     const duplicates = {};
     for (const file of allFiles) {
       const doublingFiles = allFiles.filter(
-        (f) => f.fileName === file.fileName && f.fullPath !== file.fullPath && !this.checkDoublingAllowed(file, f)
+        (f) => f.fileName === file.fileName && f.fullPath !== file.fullPath && !this.checkDoublingAllowed(file, f),
       );
       if (doublingFiles.length > 0) {
         const doublingFullPaths = duplicates[file.fileName] || [];

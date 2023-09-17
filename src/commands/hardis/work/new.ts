@@ -33,6 +33,8 @@ export default class NewTask extends SfdxCommand {
 
   public static description = `Assisted menu to start working on a Salesforce task.
 
+Advanced instructions in [Create New Task documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
+
 At the end of the command, it will allow you to work on either a scratch org or a sandbox, depending on your choices.
 
 Under the hood, it can:
@@ -151,7 +153,7 @@ Under the hood, it can:
         type: "text",
         name: "taskName",
         message: c.cyanBright(
-          "What is the name of your new task ? (examples: JIRA123-webservice-get-account, T1000-flow-process-opportunity...). Please avoid accents or special characters"
+          "What is the name of your new task ? (examples: JIRA123-webservice-get-account, T1000-flow-process-opportunity...). Please avoid accents or special characters",
         ),
       },
     ]);
@@ -293,7 +295,7 @@ Under the hood, it can:
       });
       uxLog(
         this,
-        c.cyan(`Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(scratchResponse.value.username)}`)
+        c.cyan(`Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(scratchResponse.value.username)}`),
       );
       // Open selected org
       await execSfdxJson("sfdx force:org:open", this, {
@@ -315,8 +317,8 @@ Under the hood, it can:
       name: "value",
       message: c.cyanBright(
         `Please select a sandbox org to use for your branch ${c.green(
-          branchName
-        )} (if you want to avoid conflicts, you should often refresh your sandbox)`
+          branchName,
+        )} (if you want to avoid conflicts, you should often refresh your sandbox)`,
       ),
       initial: 0,
       choices: [
@@ -374,7 +376,7 @@ Under the hood, it can:
       type: "select",
       name: "value",
       message: c.cyanBright(
-        `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
+        `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`,
       ),
       choices: [
         {
@@ -422,7 +424,7 @@ Under the hood, it can:
   - ${c.bold("Fix the errors")} (probably by manually updating the target sandbox in setup), then run new task again and select again the same sandbox
   - ${c.bold("Refresh your sandbox")} (ask your release manager if you don't know how)
   Else, you can start working now (but beware of conflicts ^^):)
-        `)
+        `),
         );
       }
     }

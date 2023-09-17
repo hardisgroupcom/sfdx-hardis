@@ -17,7 +17,7 @@ jobs:
           node-version: "16.x"
       - run: yarn
       - run: yarn prepack
-      - run: npm i sfdx-cli -g
+      - run: npm i @salesforce/cli -g
       - run: echo y|sfdx plugins:install sfdx-hardis
       - run: sfdx hardis:doc:plugin:generate
       # Deploy docs with mkdocs-material

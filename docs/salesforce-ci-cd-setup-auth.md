@@ -11,19 +11,24 @@ To automate [deployments from major branches to their related org](salesforce-ci
 Note: _You need [openssl](https://www.openssl.org/) installed on your computer (available in `Git bash`)_
 
 - Remain in your initialization branch `cicd`, or a sub branch of your lowest level major branch (usually `integration`)
-- For each major branch to link to an org, run the sfdx-hardis command **Configuration -> Configure Org Ci Authentication**
-
-Or the command line version:
-
-```shell
-sfdx hardis:project:configure:auth
-```
+- For each major branch to link to an org, run the sfdx-hardis command **Configuration ->** ![Configure Org CI Authentication](assets/images/btn-configure-ci-auth.jpg) (`sfdx hardis:project:configure:auth`)
 
 For example, run the command for `integration`, `uat`, `preprod` and `production` major branches.
 
-_Note: If you have errors in your apex tests classes, you may not be able to configure the app for Production org. You will need do create the connected app manually by following the instructions in yellow in the error message. You can do it later, after having succeeded to merge the first merge request in lower major branch (usually `integration`)_
+> If messages ask you to **run twice** the same command, it's **normal**, it's for technical reasons :)
+
+> If you have **errors in your apex tests classes**, you may not be able to configure the app for Production org.
+> You will need do **create the connected app manually by following the instructions** in yellow in the error message.
+> You can do it later, after having succeeded to merge the first merge request in lower major branch (usually `integration`)
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/OzREUu5utVI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
+How to set CI variables on different Git providers:
+
+- [Gitlab](https://docs.gitlab.com/ee/ci/variables/#for-a-project): Protect variables = false, Mask variables = true
+- [Azure](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=classic%2Cbatch): Set Variables in Pipeline -> Tab **Classic**
+- [GitHub](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository)
+- [BitBucket](https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/#Secured-variables)
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >

@@ -97,7 +97,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
             name: "value",
             message: c.cyanBright(
               "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
-                c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage")
+                c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage"),
             ),
           },
           {
@@ -153,7 +153,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
           }
         }
         return pckg;
-      })
+      }),
     );
     // Install packages
     await MetadataUtils.installPackagesOnOrg(packagesToInstallCompleted, null, this, "install");

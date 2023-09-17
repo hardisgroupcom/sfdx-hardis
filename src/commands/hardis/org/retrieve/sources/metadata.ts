@@ -179,13 +179,21 @@ export default class DxSources extends SfdxCommand {
       process.chdir(prevCwd);
     }
 
-    // Run test classes
-    uxLog(this, c.cyan("Running Apex tests..."));
-    const orgTestRes: any = await new OrgTestApex([], this.config)._run();
+    let orgTestRes: any = null;
+    let legacyApiRes: any = null;
+    const prevExitCode = process.exitCode || 0;
+    try {
+      // Run test classes
+      uxLog(this, c.cyan("Running Apex tests..."));
+      orgTestRes = await new OrgTestApex([], this.config)._run();
 
-    // Check usage of Legacy API versions
-    uxLog(this, c.cyan("Running Legacy API Use checks..."));
-    const legacyApiRes: any = await new LegacyApi([], this.config)._run();
+      // Check usage of Legacy API versions
+      uxLog(this, c.cyan("Running Legacy API Use checks..."));
+      legacyApiRes = await new LegacyApi([], this.config)._run();
+    } catch (e) {
+      uxLog(this, c.yellow("Issues found when running Apex tests or Legacy API, please check messages"));
+    }
+    process.exitCode = prevExitCode;
 
     // Delete report files
     //const reportFiles = await glob("**/hardis-report/**", { cwd: process.cwd() });

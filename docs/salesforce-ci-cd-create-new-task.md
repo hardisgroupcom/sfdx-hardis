@@ -9,6 +9,9 @@ description: Learn how to create a new task using a tracked sandbox or a scratch
 - [Source-tracked sandbox mode](#source-tracked-sandbox-mode)
   - [Pre-requisites (sandbox)](#pre-requisites-sandbox)
   - [Start new task on sandbox](#start-new-task-on-sandbox)
+    - [Select sandbox](#select-sandbox)
+    - [Update your sandbox ?](#update-your-sandbox-)
+    - [Work !](#work-)
 - [Scratch Org mode](#scratch-org-mode)
   - [Pre-requisites (scratch org)](#pre-requisites-scratch-org)
   - [Start new task on scratch org](#start-new-task-on-scratch-org)
@@ -49,6 +52,8 @@ It is recommended to create sandbox from the org that is related to the target g
 
 ### Start new task on sandbox
 
+#### Select sandbox
+
 - Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](assets/images/hardis-button.jpg) in VsCode left bar _(loading can task several seconds)_
 
 - Click on ![Start a new task](assets/images/btn-start-new-task.jpg)
@@ -56,7 +61,23 @@ It is recommended to create sandbox from the org that is related to the target g
 - Answer the questions then **select Sandbox** when prompted
   - If the sandbox is not proposed in the list, select the option to authenticate to your desired sandbox
 
-- Click on ![Open org in browser](assets/images/btn-open-org.jpg) and you can start working in it :)
+#### Update your sandbox ?
+
+- When prompted if you want to update your sandbox:
+  - Select `yes` **only if you have NO pending work in your sandbox that you'll want to publish later**
+    - If the update script fails, you can manually deploy single metadatas using `Right click -> Deploy to org` (see screenshot below)
+  - Otherwise, select `no`
+
+_Example of manual deploy of a metadata that you think could have been updated in parent branch, after an Update sandbox failure_
+
+![](assets/images/screenshot-deploy-to-org.png)
+
+#### Work
+
+- At the end of the script execution:
+
+  - If you want to reset the sandbox tracking (**meaning you don't care about the previous updates in your sandbox**), you can click on command ![](assets/images/btn-reset-tracking.jpg)
+  - Click on ![Open org in browser](assets/images/btn-open-org.jpg) and you can start working in it :)
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/WOqssZwjPhw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 

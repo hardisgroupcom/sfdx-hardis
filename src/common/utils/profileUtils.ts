@@ -73,8 +73,8 @@ export async function minimizeProfile(profileFile: string) {
       c.grey(
         `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${
           updatedDefaults === true ? " and removing not default values" : ""
-        }`
-      )
+        }`,
+      ),
     );
   }
 

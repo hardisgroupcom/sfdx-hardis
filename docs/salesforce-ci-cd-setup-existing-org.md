@@ -4,7 +4,11 @@ description: Learn how to initialize sfdx sources from a Salesforce org
 ---
 <!-- markdownlint-disable MD013 -->
 
-_If this is a new Salesforce project, skip this step_
+If this is a new Salesforce project, or if you want to setup CI/CD in **incremental mode**, you can skip this step and directly go to [Create first merge request](#create-first-merge-request).
+
+Thanks to tracked sandboxes, you can also decide to opt for an **half-incremental init**, with only some metadata types like Apex, LWC & Permission sets. In that case retrieve manually the metadatas you need, for example with Org Browser.
+
+If you want to go for a **full init setup**, follow the steps below !
 
 - [Retrieve Metadatas](#retrieve-metadatas)
 - [Automated Metadatas Cleaning](#automated-metadatas-cleaning)
@@ -21,6 +25,28 @@ _If this is a new Salesforce project, skip this step_
 - Run the following command that will retrieve locally all the metadatas of production org
 
 `sfdx hardis:org:retrieve:sources:dx --shape -u YOURSOURCEORGUSERNAME`
+
+- In case you get an error:
+  - Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
+  - Clean up the generated package created by removing the unnecessary metadatas
+  - Run retrieve metadata command : [hardis:source:retrieve](https://sfdx-hardis.cloudity.com/hardis/source/retrieve/)
+
+Example :
+  
+- `sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com --outputfile ./packagexmlfull.xml`
+- Remove Document part on packagexmlfull.xml
+  ```xml
+      <types>
+          <members>Doc1</members>
+          <members>Doc2</members>
+          <members>Doc3</members>
+          <name>Document</name>
+      </types>
+  ```
+- `sfdx hardis:source:retrieve -x ./packagexmlfull.xml`
+
+
+
 
 ## Automated Metadatas Cleaning
 
@@ -118,6 +144,8 @@ installedPackages:
 ```
 
 ## Create first merge request
+
+> Don't forget to run ![](assets/images/btn-save-publish-task.jpg) and to follow other instructions before creating your initial merge request !
 
 Time to [create the first merge request](salesforce-ci-cd-setup-merge-request.md) !
 

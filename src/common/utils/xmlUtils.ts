@@ -62,7 +62,7 @@ export async function writePackageXmlFile(packageXmlFile: string, packageXmlObje
 // Check if a package.xml is empty
 export async function isPackageXmlEmpty(
   packageXmlFile: string,
-  options: { ignoreStandaloneParentItems: boolean } = { ignoreStandaloneParentItems: false }
+  options: { ignoreStandaloneParentItems: boolean } = { ignoreStandaloneParentItems: false },
 ) {
   const packageXmlContent = await parseXmlFile(packageXmlFile);
   if (packageXmlContent && packageXmlContent.Package && packageXmlContent.Package.types && packageXmlContent.Package.types.length > 0) {
@@ -86,7 +86,7 @@ export async function isPackageXmlEmpty(
 export async function removePackageXmlFilesContent(
   packageXmlFile: string,
   removePackageXmlFile: string,
-  { outputXmlFile = null, logFlag = false, removedOnly = false, keepEmptyTypes = false }
+  { outputXmlFile = null, logFlag = false, removedOnly = false, keepEmptyTypes = false },
 ) {
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
@@ -149,9 +149,9 @@ export async function removePackageXmlFilesContent(
           c.italic(
             `Found type ${c.bold(type.name)}, following elements has been ${removedOnly ? "removed" : "kept"}: ${
               typeMembers.length > 0 ? typeMembers.join(",") : "none"
-            }`
-          )
-        )
+            }`,
+          ),
+        ),
       );
     }
     if (typeMembers.length > 0 || keepEmptyTypes === true) {

@@ -26,8 +26,6 @@ ___
 - [Initialize sfdx project](salesforce-ci-cd-setup-init-project.md)
 - [Configure authentication](salesforce-ci-cd-setup-auth.md)
 - [Retrieve sources from an existing org](salesforce-ci-cd-setup-existing-org.md) _(optional)_
-- [Configure Salesforce DX project](salesforce-ci-cd-config-home.md)
-- [Integrations](salesforce-ci-cd-setup-integrations-home.md) _(optional)_
-  - [Configure Microsoft Teams notifications](salesforce-ci-cd-setup-integration-ms-teams.md) _(optional)_
-  - [Configure Gitlab to receive deployment results on on Merge Requests](salesforce-ci-cd-setup-integration-gitlab.md) _(optional)_
-  - [Configure Azure Pipelines to receive deployment results on on Pull Requests](salesforce-ci-cd-setup-integration-azure.md) _(optional)_
+- [Configure integrations](salesforce-ci-cd-setup-integrations-home.md)
+- [Configure Salesforce DX project](salesforce-ci-cd-config-home.md) (follow all steps !)
+- [Make the first merge request !](salesforce-ci-cd-setup-merge-request.md)
