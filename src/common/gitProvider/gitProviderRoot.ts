@@ -18,17 +18,17 @@ export abstract class GitProviderRoot {
 
   public async getCurrentJobUrl(): Promise<string> {
     uxLog(this, `Method getCurrentJobUrl is not implemented yet on ${this.getLabel()}`);
-    return null;    
+    return null;
   }
 
   public async getCurrentBranchUrl(): Promise<string> {
     uxLog(this, `Method getCurrentBranchUrl is not implemented yet on ${this.getLabel()}`);
-    return null;    
+    return null;
   }
 
   public async getPullRequestInfo(): Promise<any> {
     uxLog(this, `Method getPullRequestInfo is not implemented yet on ${this.getLabel()}`);
-    return null ;
+    return null;
   }
 
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {

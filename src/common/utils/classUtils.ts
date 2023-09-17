@@ -2,11 +2,11 @@ import { uxLog } from ".";
 import * as c from "chalk";
 import * as readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
-import * as fs from 'fs';
+import * as fs from "fs";
 
 function findSubstringInFile(filePath: string, substring: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
-    fs.readFile(filePath, 'utf8', (err, data) => {
+    fs.readFile(filePath, "utf8", (err, data) => {
       if (err) {
         reject(err);
         return;
@@ -19,7 +19,6 @@ function findSubstringInFile(filePath: string, substring: string): Promise<boole
     });
   });
 }
-
 
 // Detect all test classes under the repository
 export async function getApexTestClasses() {
@@ -36,9 +35,9 @@ export async function getApexTestClasses() {
 
   // Detect test classes
   for (const entry of allFiles) {
-    const isTestClass = await findSubstringInFile(entry.fullPath, '@IsTest');
-    if(isTestClass) {
-      const className = entry.fileName.substring(0,entry.fileName.length - 4);
+    const isTestClass = await findSubstringInFile(entry.fullPath, "@IsTest");
+    if (isTestClass) {
+      const className = entry.fileName.substring(0, entry.fileName.length - 4);
       testClasses.push(className);
     }
   }

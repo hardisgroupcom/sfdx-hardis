@@ -12,7 +12,7 @@ You can receive notifications on slack channels when CI/CD events are happening:
 
 ## Configure Slack Application
 
-Create a slack app here -> https://api.slack.com/apps
+Create a slack app here -> <https://api.slack.com/apps>
 
 - Name it `sfdx-hardis bot`` or _any nickname you like_, like your guinea pig name !
 - Go to permissions and add the following scopes

@@ -68,7 +68,7 @@ export class GithubProvider extends GitProviderRoot {
         return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${runId}`;
       }
     } catch (err) {
-      uxLog(this, c.yellow('[GitHub integration]' + err.message))
+      uxLog(this, c.yellow("[GitHub integration]" + err.message));
     }
     if (process.env.GITHUB_JOB_URL) {
       return process.env.GITHUB_JOB_URL;
@@ -84,7 +84,7 @@ export class GithubProvider extends GitProviderRoot {
         return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/tree/${branch}`;
       }
     } catch (err) {
-      uxLog(this, c.yellow('[GitHub integration]' + err.message))
+      uxLog(this, c.yellow("[GitHub integration]" + err.message));
     }
     return null;
   }
@@ -104,10 +104,11 @@ export class GithubProvider extends GitProviderRoot {
       }
     }
     // Case when we find PRs from a commit
-    const sha = await git().revparse(['HEAD']);
+    const sha = await git().revparse(["HEAD"]);
     let graphQlRes: any = null;
     try {
-      graphQlRes = await this.octokit.graphql(`
+      graphQlRes = await this.octokit.graphql(
+        `
       query associatedPRs($sha: String, $repo: String!, $owner: String!){
         repository(name: $repo, owner: $owner) {
           commit: object(expression: $sha) {
@@ -136,19 +137,19 @@ export class GithubProvider extends GitProviderRoot {
       }
     `,
         {
-          "sha": sha,
-          "repo": this.repoName,
-          "owner": this.repoOwner
-        }
-      )
+          sha: sha,
+          repo: this.repoName,
+          owner: this.repoOwner,
+        },
+      );
     } catch (error) {
       uxLog(this, c.yellow(`[GitHub Integration] Error while calling GraphQL Api to list PR on commit ${sha}`));
     }
     if (graphQlRes?.repository?.commit?.associatedPullRequests?.edges?.length > 0) {
       const currentGitBranch = await getCurrentGitBranch();
       const candidatePullRequests = graphQlRes.repository.commit.associatedPullRequests.edges.filter(
-        (pr: any) => pr.node.merged === true && pr.node.baseRef.name === currentGitBranch
-      )
+        (pr: any) => pr.node.merged === true && pr.node.baseRef.name === currentGitBranch,
+      );
       if (candidatePullRequests.length > 0) {
         return candidatePullRequests[0].node;
       }
