@@ -385,6 +385,7 @@
     "ignoreerrors",
     "ignorerights",
     "ignorewarnings",
+    "iids",
     "includemanaged",
     "includepackages",
     "includeprofiles",
