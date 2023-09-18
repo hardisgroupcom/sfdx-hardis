@@ -30,8 +30,7 @@ export class GitlabProvider extends GitProviderRoot {
 
   // Returns current job URL
   public async getCurrentBranchUrl(): Promise<string> {
-    if (process.env.CI_PROJECT_URL && process.env.CI_COMMIT_REF_NAME)
-      return `${process.env.CI_PROJECT_URL}/-/tree/${process.env.CI_COMMIT_REF_NAME}`
+    if (process.env.CI_PROJECT_URL && process.env.CI_COMMIT_REF_NAME) return `${process.env.CI_PROJECT_URL}/-/tree/${process.env.CI_COMMIT_REF_NAME}`;
     return null;
   }
 
@@ -43,8 +42,8 @@ export class GitlabProvider extends GitProviderRoot {
     if (mrNumber !== null) {
       const mergeRequests = await this.gitlabApi.MergeRequests.all({
         projectId: projectId,
-        iids: [parseInt(mrNumber)]
-      })
+        iids: [parseInt(mrNumber)],
+      });
       if (mergeRequests.length > 0) {
         return mergeRequests[0];
       }
@@ -55,13 +54,11 @@ export class GitlabProvider extends GitProviderRoot {
       projectId: projectId,
       state: "merged",
       sort: "desc",
-      sha: sha
+      sha: sha,
     });
     if (latestMergeRequestsOnBranch.length > 0) {
       const currentGitBranch = await getCurrentGitBranch();
-      const candidateMergeRequests = latestMergeRequestsOnBranch.filter(
-        (pr) => pr.target_branch === currentGitBranch,
-      );
+      const candidateMergeRequests = latestMergeRequestsOnBranch.filter((pr) => pr.target_branch === currentGitBranch);
       if (candidateMergeRequests.length > 0) {
         return candidateMergeRequests[0];
       }
