@@ -101,13 +101,13 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                          |    Default    | Required |                                Options                                                        |
+| Name                  |  Type   | Description                                                          |    Default    | Required |                                            Options                                            |
 |:----------------------|:-------:|:---------------------------------------------------------------------|:-------------:|:--------:|:---------------------------------------------------------------------------------------------:|
 | apiversion            | option  | override the api version used for api requests made by this command  |               |          |                                                                                               |
 | check<br/>-c          | boolean | Only checks the deployment, there is no impact on target org         |               |          |                                                                                               |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                      |               |          |                                                                                               |
 | json                  | boolean | format output as json                                                |               |          |                                                                                               |
-| loglevel              | option  | logging level for this command invocation                            |     warn      |          |         trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal                                 |
+| loglevel              | option  | logging level for this command invocation                            |     warn      |          |                     trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal                     |
 | packagexml<br/>-p     | option  | Path to package.xml containing what you want to deploy in target org |               |          |                                                                                               |
 | skipauth              | boolean | Skip authentication check when a default username is required        |               |          |                                                                                               |
 | targetusername<br/>-u | option  | username or alias for the target org; overrides default target org   |               |          |                                                                                               |

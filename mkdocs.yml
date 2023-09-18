@@ -206,9 +206,10 @@ nav:
           - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
           - Integrations:
               - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
-              - GitHub: salesforce-ci-cd-setup-integration-github.md      
+              - GitHub: salesforce-ci-cd-setup-integration-github.md
               - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
               - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
+              - Slack: salesforce-ci-cd-setup-integration-slack.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
           - First merge request: salesforce-ci-cd-setup-merge-request.md
   - Configuration reference: sfdx-hardis-config-file.md

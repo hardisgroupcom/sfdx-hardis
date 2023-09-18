@@ -17,12 +17,14 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { isCI, uxLog } from "../../../../../common/utils";
+import { getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
+import { NotifProvider } from "../../../../../common/notifProvider";
+import { GitProvider } from "../../../../../common/gitProvider";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -198,23 +200,23 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     let testClasses = this.flags.runtests || this.configInfo.runtests || "";
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
-    if(givenTestlevel === 'RunRepositoryTests') {
+    if (givenTestlevel === "RunRepositoryTests") {
       const testClassList = await getApexTestClasses();
-      if(Array.isArray(testClassList) && testClassList.length) {
-        this.flags.testlevel = 'RunSpecifiedTests';
+      if (Array.isArray(testClassList) && testClassList.length) {
+        this.flags.testlevel = "RunSpecifiedTests";
         testClasses = testClassList.join();
       } else {
         // Default back to RunLocalTests in case if repository has zero tests
-        this.flags.testlevel = 'RunLocalTests'; 
-        testClasses = '';
+        this.flags.testlevel = "RunLocalTests";
+        testClasses = "";
       }
     }
 
     const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
-    
+
     // Test classes are only valid for RunSpecifiedTests
-    if(testlevel != 'RunSpecifiedTests') {
-      testClasses = '';
+    if (testlevel != "RunSpecifiedTests") {
+      testClasses = "";
     }
 
     const packageXml = this.flags.packagexml || null;
@@ -257,7 +259,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     const forceSourceDeployOptions: any = {
       targetUsername: targetUsername,
       conn: this.org?.getConnection(),
-      testClasses: testClasses
+      testClasses: testClasses,
     };
     // Get destructiveChanges.xml and add it in options if existing
     const packageDeletedXmlFile =
@@ -301,6 +303,32 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
     }
 
+    // Send notification of deployment success
+    if (!check) {
+      const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
+      const linkMarkdown = `<${targetLabel}|*${targetLabel.replace("https://", "").replace(".my.salesforce.com", "")}*>`;
+      const currentGitBranch = await getCurrentGitBranch();
+      let branchMd = `*${currentGitBranch}*`;
+      const branchUrl = await GitProvider.getCurrentBranchUrl();
+      if (branchUrl) {
+        branchMd = `<${branchUrl}|*${currentGitBranch}*>`;
+      }
+      let notifMessage = `Deployment has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
+      const notifButtons = [];
+      const jobUrl = await GitProvider.getJobUrl();
+      if (jobUrl) {
+        notifButtons.push({ text: "View Deployment Job", url: jobUrl });
+      }
+      const pullRequestInfo = await GitProvider.getPullRequestInfo();
+      if (pullRequestInfo) {
+        const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+        const prAuthor = pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+        notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : "");
+        const prButtonText = "View Pull Request";
+        notifButtons.push({ text: prButtonText, url: prUrl });
+      }
+      NotifProvider.postNotifications(notifMessage, notifButtons);
+    }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
 }

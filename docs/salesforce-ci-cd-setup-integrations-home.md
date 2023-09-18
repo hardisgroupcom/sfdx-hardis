@@ -29,9 +29,11 @@ Depending of your git provider, configure one of the following integrations.
 
 ## Message notifications
 
+- [Slack](salesforce-ci-cd-setup-integration-slack.md)
+  - Notifications
+
 - [Microsoft Teams](salesforce-ci-cd-setup-integration-ms-teams.md)
   - Notifications
   - Alerts
 
-- Slack
-  - Coming soon !
+
