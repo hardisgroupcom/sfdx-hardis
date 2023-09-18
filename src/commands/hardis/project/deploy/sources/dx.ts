@@ -304,30 +304,32 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
 
     // Send notification of deployment success
-    const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
-    const linkMarkdown = `<${targetLabel}|*${targetLabel.replace("https://", "").replace(".my.salesforce.com", "")}*>`;
-    const currentGitBranch = await getCurrentGitBranch();
-    let branchMd = `*${currentGitBranch}*`;
-    const branchUrl = await GitProvider.getCurrentBranchUrl();
-    if (branchUrl) {
-      branchMd = `<${branchUrl}|*${currentGitBranch}*>`;
+    if (!check) {
+      const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
+      const linkMarkdown = `<${targetLabel}|*${targetLabel.replace("https://", "").replace(".my.salesforce.com", "")}*>`;
+      const currentGitBranch = await getCurrentGitBranch();
+      let branchMd = `*${currentGitBranch}*`;
+      const branchUrl = await GitProvider.getCurrentBranchUrl();
+      if (branchUrl) {
+        branchMd = `<${branchUrl}|*${currentGitBranch}*>`;
+      }
+      let notifMessage = `Deployment has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
+      const notifButtons = [];
+      const jobUrl = await GitProvider.getJobUrl();
+      if (jobUrl) {
+        notifButtons.push({ text: "View Deployment Job", url: jobUrl });
+      }
+      const pullRequestInfo = await GitProvider.getPullRequestInfo();
+      if (pullRequestInfo) {
+        const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+        const prAuthor = pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+        notifMessage +=
+          `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : "");
+        const prButtonText = "View Pull Request";
+        notifButtons.push({ text: prButtonText, url: prUrl });
+      }
+      NotifProvider.postNotifications(notifMessage, notifButtons);
     }
-    let notifMessage = `Deployment ${check ? " check " : ""}has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
-    const notifButtons = [];
-    const jobUrl = await GitProvider.getJobUrl();
-    if (jobUrl) {
-      notifButtons.push({ text: "View Deployment Job", url: jobUrl });
-    }
-    const pullRequestInfo = await GitProvider.getPullRequestInfo();
-    if (pullRequestInfo) {
-      const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-      const prAuthor = pullRequestInfo?.author?.login || pullRequestInfo?.author || null ;
-      notifMessage +=
-        `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : "");
-      const prButtonText = "View Pull Request";
-      notifButtons.push({ text: prButtonText, url: prUrl });
-    }
-    NotifProvider.postNotifications(notifMessage, notifButtons);
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
 }
