@@ -279,7 +279,7 @@ export async function forceSourceDeploy(
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || "");
       if (orgCoveragePercent) {
         try {
-          await checkDeploymentOrgCoverage(orgCoveragePercent, { check: check });
+          await checkDeploymentOrgCoverage(orgCoveragePercent, { check: check, testlevel: testlevel });
         } catch (errCoverage) {
           await GitProvider.managePostPullRequestComment();
           throw errCoverage;
@@ -869,24 +869,34 @@ export async function extractOrgCoverageFromLog(stdout) {
 
 // Check if min org coverage is reached
 export async function checkDeploymentOrgCoverage(orgCoverage: number, options: any) {
+  // RunSpecifiedTests will not return org wide coverage, using dynamic text
+  const codeCoverageText = !options.testlevel || options.testlevel !== "RunSpecifiedTests" ? "code coverage (org wide)" : "code coverage";
+
   const config = await getConfig("branch");
-  const minCoverageOrgWide = (
+
+  // Parse and validate minimum coverage setting, defaults to 75%
+  const minCoverageConf =
     process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
     process.env.APEX_TESTS_MIN_COVERAGE ||
     config.apexTestsMinCoverageOrgWide ||
     config.apexTestsMinCoverage ||
-    75.0
-  ).toFixed(2);
-  if (minCoverageOrgWide < 75.0) {
-    throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
+    "75.00";
+  const minCoverage = parseFloat(minCoverageConf);
+  if (isNaN(minCoverage)) {
+    throw new SfdxError(`[sfdx-hardis] Invalid minimum coverage configuration: ${minCoverageConf}`);
   }
-  if (orgCoverage < minCoverageOrgWide) {
-    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverageOrgWide, options);
-    throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${orgCoverage}% should be > to ${minCoverageOrgWide}%`);
-  } else {
-    await updatePullRequestResultCoverage("valid", orgCoverage, minCoverageOrgWide, options);
-    uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(orgCoverage))}% is > to ${c.bold(minCoverageOrgWide)}%`));
+
+  if (minCoverage < 75.0) {
+    throw new SfdxError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% :)`);
   }
+
+  if (orgCoverage < minCoverage) {
+    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverageConf, options);
+    throw new SfdxError(`[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverageConf}%`);
+  } 
+  
+  await updatePullRequestResultCoverage("valid", orgCoverage, minCoverageConf, options);
+  uxLog(this, c.cyan(`[apextest] Test run ${codeCoverageText} ${c.bold(c.green(orgCoverage))}% is greater than ${c.bold(minCoverageConf)}%`));
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
