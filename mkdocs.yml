@@ -215,6 +215,7 @@ nav:
   - Configuration reference: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles
+  - Special Thanks: special-thanks.md
   - Contributing: https://sfdx-hardis.cloudity.com/#contributing
   - License: license.md
   - Changelog: CHANGELOG.md

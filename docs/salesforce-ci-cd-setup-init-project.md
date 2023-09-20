@@ -31,7 +31,7 @@ description: Learn how to initialize a Salesforce DX Project for CI/CD
   - GitHub:
     - Folder `.github/workflows`
   - Bitbucket
-    - Coming soon !
+    - `bitbucket-pipelines.yml`
 
 > Some workflow files contain additional configuration instructions, please read the comments at the beginning of the files !
 

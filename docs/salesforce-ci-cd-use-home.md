@@ -27,3 +27,5 @@ Now your computer is ready, let's see how you can use sandboxes or scratch orgs 
 - [Publish your task](salesforce-ci-cd-publish-task.md) (by creating a Merge Request)
 - [Handle merge requests errors](salesforce-ci-cd-handle-merge-request-results.md)
 - [Validate a merge request](salesforce-ci-cd-validate-merge-request.md) _(Release manager and advanced user only, depending on the project organization)_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/zEYqTd2txU4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
