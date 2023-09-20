@@ -31,7 +31,7 @@ If you speak fluently **git**, **sfdx** & **DevOps**, you can be fully autonomou
 
 As everything is **open-source**, there is **no license costs** !
 
-_See Slides of [Dreamforce 23 session](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl)_
+_See Slides of [Dreamforce 23 session](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl){target=_blank}_
 
 <iframe src="https://www.slideshare.net/slideshow/embed_code/key/qroQjoKmRUUjqx?hostedIn=slideshare&page=upload" width="476" height="400" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"></iframe>
 
@@ -42,7 +42,7 @@ _You can define much simpler branch/orgs models, to manage only RUN operations._
 
 _See detailed article on SalesforceDevOps.net_
 
-[![](assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/)
+[![](assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/){target=_blank}
 
 _See quick demo video for a Contributor_
 
