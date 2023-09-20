@@ -36,9 +36,13 @@ _You can define much simpler branch/orgs models, to manage only RUN operations._
 
 ![](assets/images/ci-cd-schema-main.jpg){ align=center }
 
-See detailed article on SalesforceDevOps.net
+_See detailed article on SalesforceDevOps.net_
 
 [![](assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/)
+
+_See quick demo video for a Contributor_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/zEYqTd2txU4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
 ___
 
