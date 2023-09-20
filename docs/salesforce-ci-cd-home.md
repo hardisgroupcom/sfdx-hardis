@@ -23,8 +23,9 @@ We provide following CI/CD example pipelines:
 - [Gitlab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml)
 - [Azure](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml)
 - [Github](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/deploy.yml)
+- [Github](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/bitbucket-pipelines.yml)
 
-Pipelines can easily be adapted to other platforms like [Bitbucket](https://bitbucket.org/), [Jenkins](https://www.jenkins.io/)
+Pipelines can easily be adapted to other platforms like [Jenkins](https://www.jenkins.io/) or [TeamCity](https://www.jetbrains.com/teamcity/)
 
 If you speak fluently **git**, **sfdx** & **DevOps**, you can be fully autonomous to setup and use Salesforce CI/CD, otherwise you can contact us at [**Cloudity**](https://cloudity.com/) (or your favorite Salesforce integrator) and we'll be glad to assist you :)
 

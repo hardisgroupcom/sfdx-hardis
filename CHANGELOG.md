@@ -4,14 +4,19 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- sfdx-hardis & Slack Integration
+## [4.6.0] 2023-09-20
+
+- [sfdx-hardis & Slack Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
   - Easy configuration
   - Deployment notifications to a common channel, and also to git branch dedicated channel
+
+- Native [BitBucket](https://bitbucket.com/) CI/CD Pipeline for PR deployment checks and deployments to major orgs after merge
+  - _PR comments are not implemented yet but BitBucket can already be used for production_
 
 - **hardis:project:deploy:dx** enhancements:
   - Added new option --testlevel RunRepositoryTests which will dynamically detect all GIT repository test classes and runs the deployment with found tests. This will speed up the validation/deployment on cases where GIT repository module contains subset of all tests found in the org
   - Added --runtests support in order to pass certain APEX test classes when --testlevel RunSpecifiedTests is used
-- Native BitBucket compliance for PR deployment checks and deployments to major orgs after merge
+
 
 ## [4.5.1] 2023-09-11
 
