@@ -4,11 +4,16 @@ description: Send notifications on slack channels during CI/CD operations
 ---
 <!-- markdownlint-disable MD013 -->
 
+![sfdx-hardis-slack-logo](assets/images/sfdx-hardis-slack.png)
+
 ## Slack Integration
 
 You can receive notifications on slack channels when CI/CD events are happening:
+
 - Deployment from a major branch to a major Salesforce org (ex: integration git branch to Integration Org)
 - More soon (ask for them !)
+
+![slack-notifs](assets/images/screenshot-slack.png)
 
 ## Configure Slack Application
 
