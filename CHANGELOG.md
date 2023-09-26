@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.6.2] 2023-09-26
 
 - Fix return code for wrapper commands force:source:deploy, force:source:push and force:mdapi:deploy
+- Fix --skipauth not taken in account with @salesforce/cli
 
 ## [4.6.1] 2023-09-26
 
