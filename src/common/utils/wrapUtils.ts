@@ -55,8 +55,7 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
     deployRes = errLog;
     if (e.code) {
       process.exitCode = e.code;
-    }
-    else {
+    } else {
       process.exitCode = 1;
     }
   }
