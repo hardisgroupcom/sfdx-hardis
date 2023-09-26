@@ -891,12 +891,12 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
   }
 
   if (orgCoverage < minCoverage) {
-    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverageConf, options);
-    throw new SfdxError(`[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverageConf}%`);
-  }
-
-  await updatePullRequestResultCoverage("valid", orgCoverage, minCoverageConf, options);
-  uxLog(this, c.cyan(`[apextest] Test run ${codeCoverageText} ${c.bold(c.green(orgCoverage))}% is greater than ${c.bold(minCoverageConf)}%`));
+    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverage, options);
+    throw new SfdxError(`[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverage}%`);
+  } 
+  
+  await updatePullRequestResultCoverage("valid", orgCoverage, minCoverage, options);
+  uxLog(this, c.cyan(`[apextest] Test run ${codeCoverageText} ${c.bold(c.green(orgCoverage))}% is greater than ${c.bold(minCoverage)}%`));
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
