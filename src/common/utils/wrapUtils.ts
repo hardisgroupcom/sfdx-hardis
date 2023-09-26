@@ -53,6 +53,9 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
       uxLog(this, c.red("\n" + errLog));
     }
     deployRes = errLog;
+    if (e.code) {
+      process.exitCode = e.code ;
+    }
   }
   return { outputstring: deployRes };
 }
