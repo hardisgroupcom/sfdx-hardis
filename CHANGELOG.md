@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.6.1] 2023-09-26
+
+- Fix auth issue with force:source & force:mdapi wrapper sfdx-hardis commands
+
 ## [4.6.0] 2023-09-20
 
 - [sfdx-hardis & Slack Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)

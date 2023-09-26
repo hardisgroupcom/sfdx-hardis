@@ -28,7 +28,15 @@ export const hook = async (options: any) => {
 
   if (
     !commandId.startsWith("hardis") ||
-    ["hardis:doc:plugin:generate", "hardis:source:push", "hardis:source:pull", "hardis:scratch:pool:view"].includes(commandId)
+    [
+      "hardis:doc:plugin:generate",
+      "hardis:source:push",
+      "hardis:source:pull",
+      "hardis:scratch:pool:view",
+      "hardis:source:deploy",
+      "hardis:source:push",
+      "hardis:mdapi:deploy",
+    ].includes(commandId)
   ) {
     return;
   }
