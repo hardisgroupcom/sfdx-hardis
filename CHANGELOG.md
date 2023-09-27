@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [4.6.3] 2023-09-27
 
-- Add installation video tutorial: https://www.youtube.com/watch?v=LA8m-t7CjHA
+- Add installation video tutorial: <https://www.youtube.com/watch?v=LA8m-t7CjHA>
 
 ## [4.6.2] 2023-09-26
 
