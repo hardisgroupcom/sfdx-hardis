@@ -8,6 +8,10 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 
 > **If you installed Salesforce DX or Salesforce CLI using Windows installer**, please **uninstall it** using Windows -> Programs > Uninstall
 
+_See tutorial_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/LA8m-t7CjHA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
 - Install [Visual Studio code](https://code.visualstudio.com/)
 
 - Install VsCode extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) by searching for **Hardis** is VsCode extensions plugin pane.
@@ -29,7 +33,7 @@ description: Learn how to make your computer ready to work on a Salesforce CI/CD
 >
 > - [Git](https://git-scm.com/)
 > - [Node.js](https://nodejs.org/en/)
-> - [Salesforce DX](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_develop.htm)
+> - [Salesforce CLI](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_develop.htm)
 > - Salesforce DX plugins
 >   - [sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis)
 >   - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
