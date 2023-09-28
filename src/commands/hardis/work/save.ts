@@ -313,9 +313,8 @@ autoRemoveUserPermissions:
       c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`),
     );
     const tmpDir = await createTempDir();
-    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
-      toCommit ? toCommit.hash : masterBranchLatestCommit
-    } --output ${tmpDir}`;
+    const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${toCommit ? toCommit.hash : masterBranchLatestCommit
+      } --output ${tmpDir}`;
     const packageXmlResult = await execSfdxJson(packageXmlCommand, this, {
       output: true,
       fail: false,
@@ -339,7 +338,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr),
+        c.red(destructivePackageXmlDiffStr),
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +
@@ -381,10 +380,15 @@ autoRemoveUserPermissions:
     }
 
     // Commit updates
-    const gitStatusWithConfig = await git().status();
+    let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
       uxLog(this, `Committing files in local git branch ${c.green(this.currentBranch)}...`);
-      await git({ output: true }).commit("[sfdx-hardis] Update package content");
+      try {
+        await git({ output: true }).commit("[sfdx-hardis] Update package content");
+      } catch (e) {
+        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey(e.message)}`));
+        gitStatusWithConfig = await git().status();
+      }
     }
     return gitStatusWithConfig;
   }
@@ -512,9 +516,14 @@ autoRemoveUserPermissions:
       await git({ output: true }).add(["./config"]);
       await git({ output: true }).add(["./manifest"]);
     }
-    const gitStatusAfterDeployPlan = await git().status();
+    let gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
-      await git({ output: true }).commit("[sfdx-hardis] Update deployment plan");
+      try {
+        await git({ output: true }).commit("[sfdx-hardis] Update deployment plan");
+      } catch (e) {
+        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey(e.message)}`));
+        gitStatusAfterDeployPlan = await git().status();
+      }
     }
     return gitStatusAfterDeployPlan;
   }
