@@ -88,6 +88,8 @@ nav:
             export: hardis/org/files/export.md
           fix:
             listviewmine: hardis/org/fix/listviewmine.md
+          generate:
+            packagexmlfull: hardis/org/generate/packagexmlfull.md
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md

@@ -5,6 +5,8 @@
 
 When a work task is completed, guide user to create a merge request
 
+Advanced instructions in [Publish a task](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
+
 - Generate package-xml diff using sfdx-git-delta
 - Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
 - Automatically Clean XML files using `.sfdx-hardis.yml` properties
