@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update documentation
+
 ## [4.6.4] 2023-09-28
 
 - hardis:work:save : Fix issue when there is an empty commit because of pre-commit hooks
