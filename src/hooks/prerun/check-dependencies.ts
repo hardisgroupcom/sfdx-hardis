@@ -52,9 +52,9 @@ export const hook = async (options: any) => {
         // Email
         if (allConfigs["user.email"] == null) {
           const config = await getConfig("user");
-          const email = config.userEmail || "default@hardis-group.com";
+          const email = config.userEmail || "default@cloudity.com";
           await git({ output: true }).addConfig("user.email", email);
-          uxLog(this, `Defined ${email} as git user.email` + (email === "default@hardis-group.com") ? " (temporary)" : "");
+          uxLog(this, `Defined ${email} as git user.email` + (email === "default@cloudity.com") ? " (temporary)" : "");
         }
         // Manage special characters in git file / folder names
         if (allConfigs["core.quotepath"] == null || allConfigs["core.quotepath"] == "true") {

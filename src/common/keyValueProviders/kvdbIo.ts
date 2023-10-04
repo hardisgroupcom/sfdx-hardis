@@ -94,9 +94,9 @@ export class KvdbIoProvider implements KeyValueProviderInterface {
       this,
       c.yellow(
         `In future CI config, set protected variables ${c.bold(c.green("KVDB_IO_SECRET_KEY = " + randomSecretKey))} and ${c.bold(
-          c.green("KVDB_IO_BUCKET_ID = " + kvdbIoBucketId)
-        )}`
-      )
+          c.green("KVDB_IO_BUCKET_ID = " + kvdbIoBucketId),
+        )}`,
+      ),
     );
     return true;
   }

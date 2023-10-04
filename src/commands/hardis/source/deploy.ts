@@ -13,11 +13,16 @@ Additional to the base command wrapper: If using **--checkonly**, add options **
 
 You can also have deployment results as pull request comments, on:
 
+- GitHub (see [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/))
 - Gitlab (see [Gitlab integration configuration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/))
 - Azure DevOps (see [Azure integration configuration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/))
 
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
+
+Notes:
+
+- You can disable coloring of errors in red by defining env variable SFDX_HARDIS_DEPLOY_ERR_COLORS=false
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
 `;
@@ -120,7 +125,7 @@ You can also have deployment results as pull request comments, on:
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
-    const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", process.argv, this, this.flags.debug);
+    const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, this.flags.debug);
     // Check org coverage if requested
     if (this.flags.checkcoverage && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || "");

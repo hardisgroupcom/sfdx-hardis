@@ -4,7 +4,7 @@ import { execCommand, uxLog } from ".";
 import { analyzeDeployErrorLogs } from "./deployTips";
 
 export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfdxCommand, debug = false): Promise<any> {
-  const endArgs = [...argv].splice(3).map((arg) => {
+  const endArgs = [...argv].map((arg) => {
     // Add quotes to avoid problems if arguments contain spaces
     if (!arg.startsWith("-") && !arg.startsWith(`"`) && !arg.startsWith(`'`)) {
       arg = `"${arg}"`;
@@ -47,8 +47,17 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
     // Add deployment tips in error logs
     const { errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, { check: endArgs.includes("--checkonly") });
     uxLog(commandThis, c.red(c.bold("Sadly there has been error(s)")));
-    uxLog(commandThis, c.red("\n" + errLog));
+    if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === "false") {
+      uxLog(this, "\n" + errLog);
+    } else {
+      uxLog(this, c.red("\n" + errLog));
+    }
     deployRes = errLog;
+    if (e.code) {
+      process.exitCode = e.code;
+    } else {
+      process.exitCode = 1;
+    }
   }
   return { outputstring: deployRes };
 }

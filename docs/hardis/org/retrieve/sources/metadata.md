@@ -27,4 +27,8 @@ Retrieve Salesforce DX project from org
 sfdx hardis:org:retrieve:sources:metadata
 ```
 
+```shell
+SFDX_RETRIEVE_WAIT_MINUTES=200 sfdx hardis:org:retrieve:sources:metadata
+```
+
 

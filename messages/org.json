@@ -46,6 +46,8 @@
   "statusFilter": "Filter according to Status criteria",
   "tempFolder": "Temporary folder",
   "testLevel": "Level of tests to apply to validate deployment",
+  "testLevelExtended": "Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes",
   "websocket": "Websocket host:port for VsCode SFDX Hardis UI integration",
-  "withDevHub": "Also connect associated DevHub"
+  "withDevHub": "Also connect associated DevHub",
+  "runtests": "Apex test classes to run if --testlevel is RunSpecifiedTests"
 }

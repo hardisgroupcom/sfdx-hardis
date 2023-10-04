@@ -37,18 +37,18 @@ jobs:
       # Setup Node.js
       - task: UseNode@1
         inputs:
-          version: ">=16.0.0"
+          version: ">=18.0.0"
         displayName: "Setup Node.js"
 
       # Install SFDX & Dependencies
       - script: |
-          npm install sfdx-cli --global
+          npm install @salesforce/cli --global
+          sf plugins install @salesforce/plugin-packaging
           echo 'y' | sfdx plugins:install sfdx-hardis
           echo 'y' | sfdx plugins:install sfdx-essentials
           echo 'y' | sfdx plugins:install sfdmu
-          echo 'y' | sfdx plugins:install sfdx-git-delta@5.13.3
-          sfdx --version
-          sfdx plugins
+          echo 'y' | sfdx plugins:install sfdx-git-delta
+          sf version --verbose --json
         displayName: "Install SFDX & plugins"
 
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
@@ -62,4 +62,8 @@ jobs:
           CONFIG_BRANCH: $(BRANCH_NAME)
           ORG_ALIAS: $(BRANCH_NAME)
           CI: "true"
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
         displayName: "Deploy sources to related SF Org"

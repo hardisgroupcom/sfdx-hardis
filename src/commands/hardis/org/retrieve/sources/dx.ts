@@ -181,8 +181,8 @@ export default class DxSources extends SfdxCommand {
         uxLog(
           this,
           c.yellow(
-            "[sfdx-hardis] See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm"
-          )
+            "[sfdx-hardis] See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm",
+          ),
         );
       }
     }

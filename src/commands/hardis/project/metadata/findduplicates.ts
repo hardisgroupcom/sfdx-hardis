@@ -161,7 +161,7 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
             c.red(`Duplicate values in ${basename(inputFile)}
   - Key    : ${key}
   - Values : ${duplicates.join(", ")}
-`)
+`),
           );
         }
       });

@@ -28,7 +28,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
     // Single record upsert
     const queryRes = await soqlQuery(
       `SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`,
-      this.conn
+      this.conn,
     );
     const valueText = queryRes.records[0] ? (queryRes.records[0] as any).ValueText__c || "" : "";
     if (valueText.length > 5) {
@@ -43,7 +43,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
     // Single record upsert
     const queryRes = await soqlQuery(
       `SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`,
-      this.conn
+      this.conn,
     );
     if (queryRes.records[0]) {
       const recordId = (queryRes.records[0] as any).Id;
@@ -98,7 +98,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
 You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
 - API Name: SfdxHardisKeyValueStore__c
 - Field SfdxHardisKeyValueStore__c.ValueText__c of type TextArea (long) (with maximum size 131072 chars)
-      `)
+      `),
       );
       uxLog(this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
       throw e;

@@ -4,6 +4,163 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update documentation
+
+## [4.6.4] 2023-09-28
+
+- hardis:work:save : Fix issue when there is an empty commit because of pre-commit hooks
+
+## [4.6.3] 2023-09-27
+
+- Add installation video tutorial: <https://www.youtube.com/watch?v=LA8m-t7CjHA>
+
+## [4.6.2] 2023-09-26
+
+- Fix return code for wrapper commands force:source:deploy, force:source:push and force:mdapi:deploy
+- Fix --skipauth not taken in account with @salesforce/cli
+- Fixed PR coverage to use float over string
+
+## [4.6.1] 2023-09-26
+
+- Fix auth issue with force:source & force:mdapi wrapper sfdx-hardis commands
+
+## [4.6.0] 2023-09-20
+
+- [sfdx-hardis & Slack Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
+  - Easy configuration
+  - Deployment notifications to a common channel, and also to git branch dedicated channel
+
+- Native [BitBucket](https://bitbucket.com/) CI/CD Pipeline for PR deployment checks and deployments to major orgs after merge
+  - _PR comments are not implemented yet but BitBucket can already be used for production_
+
+- **hardis:project:deploy:dx** enhancements:
+  - Added new option --testlevel RunRepositoryTests which will dynamically detect all GIT repository test classes and runs the deployment with found tests. This will speed up the validation/deployment on cases where GIT repository module contains subset of all tests found in the org
+  - Added --runtests support in order to pass certain APEX test classes when --testlevel RunSpecifiedTests is used
+
+- Embed [Dreamforce 23 slides](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) in documentation
+
+## [4.5.1] 2023-09-11
+
+- GitHub Integration: Fix Quick Deploy on Pull Requests
+
+## [4.5.0] 2023-09-11
+
+- GitHub Integration: Implement automated comments & Quick Deploy on Pull Requests
+
+## [4.4.0] 2023-09-10
+
+- Make sfdx-hardis CI/CD Pipelines **natively compliant with GitHub Actions** , by @legetz
+- Create sfdx project: Change defaut first major branch name to `integration` (it was previously `develop`)
+- Update default API version to 58.0
+- Fix bug when user email is input the first time
+
+
+## [4.3.2] 2023-09-08
+
+- Updates new task, commit & save task documentation & screenshots
+
+## [4.3.1] 2023-09-07
+
+- Improve message when deploying metadata to org from local sfdx-hardis
+- Improve documentation to handle merge requests and display links at the end of hardis:work:save
+
+## [4.3.0] 2023-09-05
+
+- Back to normal since <https://github.com/forcedotcom/cli/issues/2445> is fixed
+
+## [4.2.5] 2023-09-05
+
+- Downgrade to sfdx-cli until <https://github.com/forcedotcom/cli/issues/2445> is solved.
+
+## [4.2.4] 2023-09-05
+
+- Downgrade @salesforce/plugin-deploy-retrieve to v1.17.6 as workaround for SF cli bug <https://github.com/forcedotcom/cli/issues/2445>
+
+## [4.2.3] 2023-09-04
+
+- Fix issues with Org monitoring when there are issues with Legacy API
+
+## [4.2.2] 2023-09-01
+
+- Fix upgrade warning message that should not appear when there is no upgrade to perform (detected by @mamasse19)
+
+## [4.2.1] 2023-08-30
+
+- Fix issue in sfdx commands wrapping following the use of @salesforce/cli
+- Config auth: phrases in bold when needing to relaunch the same command after org selection
+
+## [4.2.0] 2023-08-30
+
+- Simplify UX of hardis:project:configure:auth
+- Factorize prompting of email
+- Expire sfdx-hardis connected app token after 3h
+- Update documentation to add workaround in case there is a crash when retrieving all sources when initializing a DX project from an existing org
+- Add output to explain how to not use QuickDeploy if not wanted
+- Update Quick Deploy documentation
+
+## [4.1.2] 2023-08-24
+
+- When there is a crash in force:package:installed:list , do not crash but return empty array and display an error message
+
+## [4.1.1] 2023-08-23
+
+- Improve error message when Git Provider not available
+- Update default azure-pipelines-deployment.yml to add mandatory variables for QuickDeploy
+
+```yaml
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+```
+
+## [4.1.0] 2023-08-22
+
+- Manage QuickDeploy when available (disable by defining env var `SFDX_HARDIS_QUICK_DEPLOY=false`)
+
+## [4.0.1] 2023-08-18
+
+**BREAKING CHANGE**: If you are not using sfdx-hardis docker images, you need to **manually update your CI/CD pipelines** scripts using sfdx-hardis (gitlab-ci.yml, azure-pipelines.yml...) to:
+
+- **replace `sfdx-cli` by `@salesforce/cli`**
+- **Add `sf plugins install @salesforce/plugin-packaging` just after `npm install @salesforce/cli --global`**
+
+Other upgrades
+
+- Upgrade CI/CD scripts and sfdx-hardis docker images from **sfdx-cli** to **@salesforce/cli** (sfdx commands remain called in background), and add `@salesforce/plugin-packaging` by default
+- Now also release sfdx-hardis images on GitHub Packages (ghcr.io)
+- Internal CI refactorization
+  - Secure releases with GitHub Actions permissions & environments
+  - Switch to [official docker build & push action](https://github.com/docker/build-push-action)
+  - Upgrade MegaLinter
+  - Upgrade npm dependencies
+
+## [3.19.4] 2023-07-18
+
+- Add confirmation before resetting a git branch from VsCode command "Reset selected list of items to merge" (from an original idea of @derroman)
+
+## [3.19.3] 2023-07-10
+
+- Allow to disable red colors for force:source:deploy output using env variable **SFDX_HARDIS_DEPLOY_ERR_COLORS=false**
+
+## [3.19.2] 2023-07-06
+
+- Add packaging in online doc menu
+
+## [3.19.1] 2023-07-05
+
+- Add Hotfix management (BUILD vs RUN) in CI/CD documentation
+- Add Packaging & package version instructions in documentation
+
+## [3.19.0] 2023-07-03
+
+- Monitoring: Do not exclude custom fields on managed objects
+  -ex: Remove `Ns__Object__c.Ns__Field__c`, but keep `Ns__Object__c.Field__c`
+
+## [3.18.1] 2023-06-13
+
+- QuickFix hardis:work:save when branch has not been created on the computer
+
 ## [3.18.0] 2023-06-07
 
 - Clean entitlement items, by @yamioliva in <https://github.com/hardisgroupcom/sfdx-hardis/pull/381>

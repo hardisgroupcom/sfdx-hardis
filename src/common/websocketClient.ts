@@ -51,7 +51,7 @@ export class WebSocketClient {
         JSON.stringify({
           event: "initClient",
           context: this.wsContext,
-        })
+        }),
       );
       // uxLog(this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
     });
@@ -112,7 +112,7 @@ export class WebSocketClient {
       JSON.stringify({
         event: "closeClient",
         context: this.wsContext,
-      })
+      }),
     );
     this.ws.terminate();
     globalWs = null;

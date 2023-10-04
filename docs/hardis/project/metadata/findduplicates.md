@@ -8,10 +8,7 @@ find duplicate values in XML file(s).
 
 Default config :
 metadataDuplicateFindKeys :
-{
-  layout: ["Layout.layoutSections.layoutColumns.layoutItems.field", "Layout.quickActionListItems.quickActionName"],
-  profile: ["Profile.fieldPermissions.field"],
-};
+[object Object]
 
 
 ## Parameters

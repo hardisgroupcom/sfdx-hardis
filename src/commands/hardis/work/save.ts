@@ -39,6 +39,8 @@ export default class SaveTask extends SfdxCommand {
 
   public static description = `When a work task is completed, guide user to create a merge request
 
+Advanced instructions in [Publish a task](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
+
 - Generate package-xml diff using sfdx-git-delta
 - Automatically update \`manifest/package.xml\` and \`manifest/destructiveChanges.xml\` according to the committed updates
 - Automatically Clean XML files using \`.sfdx-hardis.yml\` properties
@@ -144,7 +146,7 @@ autoRemoveUserPermissions:
     this.currentBranch = await getCurrentGitBranch();
     if (this.targetBranch == null) {
       const userConfig = await getConfig("user");
-      if (userConfig?.localStorageBranchTargets[localBranch]) {
+      if (userConfig?.localStorageBranchTargets && userConfig?.localStorageBranchTargets[localBranch]) {
         this.targetBranch = userConfig?.localStorageBranchTargets[localBranch];
       }
     }
@@ -154,7 +156,7 @@ autoRemoveUserPermissions:
     // User log info
     uxLog(
       this,
-      c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(this.targetBranch)}`)
+      c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(this.targetBranch)}`),
     );
     // Make sure git is clean before starting operations
     await this.cleanGitStatus();
@@ -177,7 +179,7 @@ autoRemoveUserPermissions:
     uxLog(this, c.cyan(`If your work is ${c.bold("completed")}, you can create a ${c.bold("merge request")}:`));
     uxLog(
       this,
-      c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + this.currentBranch + ", visit")}`)
+      c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + this.currentBranch + ", visit")}`),
     );
     uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`));
     // const remote = await git().listRemote();
@@ -189,9 +191,17 @@ autoRemoveUserPermissions:
         c.bold(
           `${c.yellow("When your Merge Request will have been merged:")}
   - ${c.yellow("DO NOT REUSE THE SAME BRANCH")}
-  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`
-        )
-      )
+  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`,
+        ),
+      ),
+    );
+    uxLog(
+      this,
+      c.cyan(
+        `Merge request documentation is available here -> ${c.bold(
+          "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request",
+        )}`,
+      ),
     );
     // Return an object to be displayed with --json
     return { outputString: "Saved the task" };
@@ -300,7 +310,7 @@ autoRemoveUserPermissions:
     const toCommitMessage = toCommit ? toCommit.message : "";
     uxLog(
       this,
-      c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`)
+      c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`),
     );
     const tmpDir = await createTempDir();
     const packageXmlCommand = `sfdx sgd:source:delta --from ${masterBranchLatestCommit} --to ${
@@ -329,7 +339,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr)
+          c.red(destructivePackageXmlDiffStr),
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +
@@ -371,10 +381,15 @@ autoRemoveUserPermissions:
     }
 
     // Commit updates
-    const gitStatusWithConfig = await git().status();
+    let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
       uxLog(this, `Committing files in local git branch ${c.green(this.currentBranch)}...`);
-      await git({ output: true }).commit("[sfdx-hardis] Update package content");
+      try {
+        await git({ output: true }).commit("[sfdx-hardis] Update package content");
+      } catch (e) {
+        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey(e.message)}`));
+        gitStatusWithConfig = await git().status();
+      }
     }
     return gitStatusWithConfig;
   }
@@ -502,9 +517,14 @@ autoRemoveUserPermissions:
       await git({ output: true }).add(["./config"]);
       await git({ output: true }).add(["./manifest"]);
     }
-    const gitStatusAfterDeployPlan = await git().status();
+    let gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
-      await git({ output: true }).commit("[sfdx-hardis] Update deployment plan");
+      try {
+        await git({ output: true }).commit("[sfdx-hardis] Update deployment plan");
+      } catch (e) {
+        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey(e.message)}`));
+        gitStatusAfterDeployPlan = await git().status();
+      }
     }
     return gitStatusAfterDeployPlan;
   }

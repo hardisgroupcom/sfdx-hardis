@@ -76,7 +76,7 @@ See article:
         type: "text",
         name: "sfdxHardisDescription",
         message: c.cyanBright(
-          'Please input the SFDMU config description. Ex: "Active products are used for scratch org initialization and in deployments"'
+          'Please input the SFDMU config description. Ex: "Active products are used for scratch org initialization and in deployments"',
         ),
       },
       {

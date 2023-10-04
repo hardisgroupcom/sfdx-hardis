@@ -1,7 +1,7 @@
 import { Gitlab } from "@gitbeaker/node";
 import * as c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
-import { uxLog } from "../utils";
+import { getCurrentGitBranch, git, uxLog } from "../utils";
 import { GitProviderRoot } from "./gitProviderRoot";
 
 export class GitlabProvider extends GitProviderRoot {
@@ -20,18 +20,78 @@ export class GitlabProvider extends GitProviderRoot {
     return "sfdx-hardis Gitlab connector";
   }
 
-  protected async getParentMergeRequestId(): Promise<number> {
-    // CI_COMMIT_MESSAGE contains "See merge request !<MR_ID>"
-    const commitMsg = process.env.CI_COMMIT_MESSAGE;
-    return parseInt(commitMsg.split("!").pop());
+  // Returns current job URL
+  public async getCurrentJobUrl(): Promise<string> {
+    if (process.env.CI_JOB_URL) {
+      return process.env.CI_JOB_URL;
+    }
+    return null;
   }
 
-  protected async getPipelineId(): Promise<string> {
-    const projectId: string = process.env.CI_PROJECT_ID;
-    const parentMergeRequestId: number = await this.getParentMergeRequestId();
-    const pipelines = await this.gitlabApi.MergeRequests.pipelines(projectId, parentMergeRequestId);
-    console.log(pipelines);
-    return "";
+  // Returns current job URL
+  public async getCurrentBranchUrl(): Promise<string> {
+    if (process.env.CI_PROJECT_URL && process.env.CI_COMMIT_REF_NAME) return `${process.env.CI_PROJECT_URL}/-/tree/${process.env.CI_COMMIT_REF_NAME}`;
+    return null;
+  }
+
+  // Find pull request info
+  public async getPullRequestInfo(): Promise<any> {
+    // Case when MR is found in the context
+    const projectId = process.env.CI_PROJECT_ID || null;
+    const mrNumber = process.env.CI_MERGE_REQUEST_IID || null;
+    if (mrNumber !== null) {
+      const mergeRequests = await this.gitlabApi.MergeRequests.all({
+        projectId: projectId,
+        iids: [parseInt(mrNumber)],
+      });
+      if (mergeRequests.length > 0) {
+        return mergeRequests[0];
+      }
+    }
+    // Case when we find MR from a commit
+    const sha = await git().revparse(["HEAD"]);
+    const latestMergeRequestsOnBranch = await this.gitlabApi.MergeRequests.all({
+      projectId: projectId,
+      state: "merged",
+      sort: "desc",
+      sha: sha,
+    });
+    if (latestMergeRequestsOnBranch.length > 0) {
+      const currentGitBranch = await getCurrentGitBranch();
+      const candidateMergeRequests = latestMergeRequestsOnBranch.filter((pr) => pr.target_branch === currentGitBranch);
+      if (candidateMergeRequests.length > 0) {
+        return candidateMergeRequests[0];
+      }
+    }
+    uxLog(this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
+    return null;
+  }
+
+  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
+    let deploymentCheckId = null;
+    const projectId = process.env.CI_PROJECT_ID || null;
+    const latestMergeRequestsOnBranch = await this.gitlabApi.MergeRequests.all({
+      projectId: projectId,
+      state: "merged",
+      sort: "desc",
+      targetBranch: gitBranch,
+    });
+    if (latestMergeRequestsOnBranch.length > 0) {
+      const latestMergeRequest = latestMergeRequestsOnBranch[0];
+      const latestMergeRequestId = latestMergeRequest.iid;
+      const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
+      for (const existingNote of existingNotes) {
+        if (existingNote.body.includes("<!-- sfdx-hardis deployment-id ")) {
+          const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
+          if (matches) {
+            deploymentCheckId = matches[1];
+            uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
+          }
+          break;
+        }
+      }
+    }
+    return deploymentCheckId;
   }
 
   // Posts a note on the merge request

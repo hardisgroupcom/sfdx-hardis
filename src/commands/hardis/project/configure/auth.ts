@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils";
-import { getOrgAliasUsername } from "../../../../common/utils/orgUtils";
+import { getOrgAliasUsername, promptOrg } from "../../../../common/utils/orgUtils";
 import { prompts } from "../../../../common/utils/prompts";
 import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config";
 
@@ -62,12 +62,17 @@ export default class ConfigureAuth extends SfdxCommand {
 
     // Ask user to login to org
     const prevUserName = devHub ? this.hubOrg?.getUsername() : this.org?.getUsername();
-    uxLog(this, c.cyan("Please login into the org you want to configure the SFDX Authentication"));
-    await this.config.runHook("auth", {
+    /*uxLog(this, c.cyan("Please select org login into the org you want to configure the SFDX Authentication"));
+     await this.config.runHook("auth", {
       checkAuth: true,
       Command: this,
       alias: "CONFIGURE_CI",
       devHub,
+    }); */
+    await promptOrg(this, {
+      setDefault: true,
+      devHub: devHub,
+      promptMessage: "Please select org login into the org you want to configure the SFDX Authentication",
     });
     await checkConfig(this);
 
@@ -81,7 +86,7 @@ export default class ConfigureAuth extends SfdxCommand {
 
     if (prevUserName !== newUsername) {
       const returnMsg = "Default org has changed. This is ok but for technical reasons, please run again the same command :)";
-      uxLog(this, c.yellow(returnMsg));
+      uxLog(this, c.yellow(c.bold(returnMsg)));
       return { outputString: returnMsg };
     }
 
@@ -93,19 +98,22 @@ export default class ConfigureAuth extends SfdxCommand {
       const branchResponse = await prompts({
         type: "text",
         name: "value",
-        message: c.cyanBright("What is the name of the git branch you want to configure ? Exemples: developpement,recette,production"),
+        message: c.cyanBright("What is the name of the git branch you want to configure ? Examples: developpement,recette,production"),
       });
       branchName = branchResponse.value.replace(/\s/g, "-");
-      instanceUrl = await promptInstanceUrl(["login", "test"], `${branchName} related org`);
+      instanceUrl = await promptInstanceUrl(["login", "test"], `${branchName} related org`, {
+        instanceUrl: devHub ? this.hubOrg.getConnection().instanceUrl : this.org.getConnection().instanceUrl,
+      });
     }
     // Request username
     const usernameResponse = await prompts({
       type: "text",
       name: "value",
+      initial: (devHub ? this.hubOrg.getUsername() : this.org.getUsername()) || "",
       message: c.cyanBright(
-        `What is the username you will use for sfdx in the org you want to ${
-          devHub ? "use as Dev Hub" : "deploy to"
-        } ? Example: admin.sfdx@myclient.com`
+        `What is the Salesforce username that will be ${
+          devHub ? "used as Dev Hub" : "used for deployments by CI server"
+        } ? Example: admin.sfdx@myclient.com`,
       ),
     });
     if (devHub) {
@@ -120,7 +128,7 @@ export default class ConfigureAuth extends SfdxCommand {
           targetUsername: usernameResponse.value,
           instanceUrl,
         },
-        `./config/branches/.sfdx-hardis.${branchName}.yml`
+        `./config/branches/.sfdx-hardis.${branchName}.yml`,
       );
     }
 
