@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Update documentation
+- Update comparative table in doc
 
 ## [4.6.4] 2023-09-28
 
