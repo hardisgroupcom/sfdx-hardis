@@ -18,6 +18,7 @@ import { prompts } from "../../../../common/utils/prompts";
 import { setInConfigFile } from "../../../../config";
 import { PACKAGE_ROOT_DIR } from "../../../../settings";
 import { promptOrg } from "../../../../common/utils/orgUtils";
+import { WebSocketClient } from "../../../../common/websocketClient";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -79,6 +80,11 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     if (currentOrgId !== org.orgId) {
       const infoMsg = "Default org changed. Please restart the same command if VsCode does not do that automatically for you :)";
       uxLog(this, c.yellow("Default org changed. Please restart the same command if VsCode does not do that automatically for you :)"));
+      const currentCommand = "sfdx " + this.id + " " + this.argv.join(" ");
+      WebSocketClient.sendMessage({
+        event: "runSfdxHardisCommand",
+        sfdxHardisCommand: currentCommand,
+      });
       return { outputString: infoMsg };
     }
 
