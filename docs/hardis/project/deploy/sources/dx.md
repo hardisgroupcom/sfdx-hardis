@@ -7,12 +7,24 @@ Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
 In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
-### Dynamic deployment items
+### Quick Deploy
+
+In case Pull Request comments are configured on the project, Quick Deploy will try to be used (equivalent to button Quick Deploy)
+
+If you do not want to use QuickDeploy, define variable `SFDX_HARDIS_QUICK_DEPLOY=false`
+
+- [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/)
+- [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
+- [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+
+### Dynamic deployment items / Overwrite management
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
 - `manifest/packageDeployOnce.xml`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
+
+See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
 
 ### Deployment plan
 
@@ -97,23 +109,25 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
 ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
 ```
+
+If you need to increase the deployment waiting time (force:source:deploy --wait arg), you can define env var SFDX_DEPLOY_WAIT_MINUTES
   
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                          |    Default    | Required |                                            Options                                            |
-|:----------------------|:-------:|:---------------------------------------------------------------------|:-------------:|:--------:|:---------------------------------------------------------------------------------------------:|
-| apiversion            | option  | override the api version used for api requests made by this command  |               |          |                                                                                               |
-| check<br/>-c          | boolean | Only checks the deployment, there is no impact on target org         |               |          |                                                                                               |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                      |               |          |                                                                                               |
-| json                  | boolean | format output as json                                                |               |          |                                                                                               |
-| loglevel              | option  | logging level for this command invocation                            |     warn      |          |                     trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal                     |
-| packagexml<br/>-p     | option  | Path to package.xml containing what you want to deploy in target org |               |          |                                                                                               |
-| skipauth              | boolean | Skip authentication check when a default username is required        |               |          |                                                                                               |
-| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org   |               |          |                                                                                               |
-| testlevel<br/>-l      | option  | Level of tests to apply to validate deployment                       | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| runtests<br/>-r       | option  | Apex test classes to run if --testlevel is RunSpecifiedTests         |               |          |                                                                                               |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration            |               |          |                                                                                               |
+| Name                  |  Type   | Description                                                                                               |    Default    | Required |                                            Options                                            |
+|:----------------------|:-------:|:----------------------------------------------------------------------------------------------------------|:-------------:|:--------:|:---------------------------------------------------------------------------------------------:|
+| apiversion            | option  | override the api version used for api requests made by this command                                       |               |          |                                                                                               |
+| check<br/>-c          | boolean | Only checks the deployment, there is no impact on target org                                              |               |          |                                                                                               |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                           |               |          |                                                                                               |
+| json                  | boolean | format output as json                                                                                     |               |          |                                                                                               |
+| loglevel              | option  | logging level for this command invocation                                                                 |     warn      |          |                     trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal                     |
+| packagexml<br/>-p     | option  | Path to package.xml containing what you want to deploy in target org                                      |               |          |                                                                                               |
+| runtests<br/>-r       | option  | Apex test classes to run if --testlevel is RunSpecifiedTests                                              |               |          |                                                                                               |
+| skipauth              | boolean | Skip authentication check when a default username is required                                             |               |          |                                                                                               |
+| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org                                        |               |          |                                                                                               |
+| testlevel<br/>-l      | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                 |               |          |                                                                                               |
 
 ## Examples
 
@@ -123,11 +137,6 @@ sfdx hardis:project:deploy:sources:dx
 
 ```shell
 sfdx hardis:project:deploy:sources:dx --check
-```
-
-Validate deployment by running all APEX test classes found within your GIT repository
-```shell
-sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests
 ```
 
 

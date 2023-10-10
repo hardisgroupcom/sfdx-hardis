@@ -88,6 +88,8 @@ nav:
             export: hardis/org/files/export.md
           fix:
             listviewmine: hardis/org/fix/listviewmine.md
+          generate:
+            packagexmlfull: hardis/org/generate/packagexmlfull.md
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md
@@ -219,4 +221,5 @@ nav:
   - Contributing: https://sfdx-hardis.cloudity.com/#contributing
   - License: license.md
   - Changelog: CHANGELOG.md
+  - Help: sfdx-hardis-help.md
   - Who is Cloudity ?: https://www.cloudity.com/
