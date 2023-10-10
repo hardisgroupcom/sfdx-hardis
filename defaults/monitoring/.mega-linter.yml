@@ -2,4 +2,4 @@
 # See all available variables at https://megalinter.io/latest/config-file/ and in linters documentation
 EXTENDS:
   - https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.mega-linter-config.yml
-SALESFORCE_DIRECTORY: metadatas
+

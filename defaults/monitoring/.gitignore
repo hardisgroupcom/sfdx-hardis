@@ -1,3 +1,15 @@
-cleanDataServices/
+
 
 .cache/
+.vscode/
+
+config/user
+
+hardis-report/
+
+# Sensitive metadatas whose content should never be backupped !
+**/*.crt-meta.xml
+**/*.connectedApp-meta.xml
+
+# Metadata that we'll never care about
+**/cleanDataServices/
