@@ -7,6 +7,7 @@ import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "
 import { getOrgAliasUsername, promptOrg } from "../../../../common/utils/orgUtils";
 import { prompts } from "../../../../common/utils/prompts";
 import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config";
+import { WebSocketClient } from "../../../../common/websocketClient";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -85,9 +86,15 @@ export default class ConfigureAuth extends SfdxCommand {
     newUsername = (await getOrgAliasUsername(newUsername)) || newUsername;
 
     if (prevUserName !== newUsername) {
-      const returnMsg = "Default org has changed. This is ok but for technical reasons, please run again the same command :)";
-      uxLog(this, c.yellow(c.bold(returnMsg)));
-      return { outputString: returnMsg };
+      // Restart command so the org is selected as default org (will help to select profiles)
+      const infoMsg = "Default org changed. Please restart the same command if VsCode does not do that automatically for you :)";
+      uxLog(this, c.yellow(infoMsg));
+      const currentCommand = "sfdx " + this.id + " " + this.argv.join(" ");
+      WebSocketClient.sendMessage({
+        event: "runSfdxHardisCommand",
+        sfdxHardisCommand: currentCommand,
+      });
+      return { outputString: infoMsg };
     }
 
     const config = await getConfig("project");
@@ -113,7 +120,7 @@ export default class ConfigureAuth extends SfdxCommand {
       message: c.cyanBright(
         `What is the Salesforce username that will be ${
           devHub ? "used as Dev Hub" : "used for deployments by CI server"
-        } ? Example: admin.sfdx@myclient.com`,
+        } ? Example: admin.sfdx@myclient.com`
       ),
     });
     if (devHub) {
@@ -128,7 +135,7 @@ export default class ConfigureAuth extends SfdxCommand {
           targetUsername: usernameResponse.value,
           instanceUrl,
         },
-        `./config/branches/.sfdx-hardis.${branchName}.yml`,
+        `./config/branches/.sfdx-hardis.${branchName}.yml`
       );
     }
 

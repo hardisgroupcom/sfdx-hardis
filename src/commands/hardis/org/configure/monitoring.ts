@@ -89,7 +89,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       // Restart command so the org is selected as default org (will help to select profiles)
       if (currentOrgId !== org.orgId) {
         const infoMsg = "Default org changed. Please restart the same command if VsCode does not do that automatically for you :)";
-        uxLog(this, c.yellow("Default org changed. Please restart the same command if VsCode does not do that automatically for you :)"));
+        uxLog(this, c.yellow(infoMsg));
         const currentCommand = "sfdx " + this.id + " " + this.argv.join(" ") + " --orginstanceurl " + org.instanceUrl;
         WebSocketClient.sendMessage({
           event: "runSfdxHardisCommand",

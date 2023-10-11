@@ -4,7 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Refactor Monitoring configuration
+- Refactor Monitoring configuration and execution
+  - **If you already have a monitoring v1 repository, deprecate it and create a new one with the new monitoring setup and pipelines**
+- Simplify `sfdx hardis:project:configure:auth` (Configure Org CI Authentication)
 - Disable auto-update for .gitignore & .forceignore 
 - Update documentation
 - Update comparative table in doc
