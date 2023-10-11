@@ -101,7 +101,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
 
     // Build monitoring branch name
     const branchName =
-      "monitoring-" +
+      "monitoring_" +
       this.org
         ?.getConnection()
         .instanceUrl.replace("https://", "")
@@ -126,15 +126,15 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       uxLog(this, c.cyan("Moving sfdx-project to root..."));
       await fs.copy("sfdx-hardis-monitoring", process.cwd(), { overwrite: true });
       await fs.remove("sfdx-hardis-monitoring");
-    }
 
-    // Copying monitoring folder structure
-    uxLog(this, "Copying default monitoring files...");
-    if (fs.existsSync("README.md") && fs.readFileSync("README.md", "utf8").toString().split("\n").length < 5) {
-      // Remove default README if necessary
-      await fs.remove("README.md");
+      // Copying monitoring folder structure
+      uxLog(this, "Copying default monitoring files...");
+      if (fs.existsSync("README.md") && fs.readFileSync("README.md", "utf8").toString().split("\n").length < 5) {
+        // Remove default README if necessary
+        await fs.remove("README.md");
+      }
+      await fs.copy(path.join(PACKAGE_ROOT_DIR, "defaults/monitoring", "."), process.cwd(), { overwrite: true });
     }
-    await fs.copy(path.join(PACKAGE_ROOT_DIR, "defaults/monitoring", "."), process.cwd(), { overwrite: false });
 
     // Update config file
     await setInConfigFile(

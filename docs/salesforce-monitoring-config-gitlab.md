@@ -17,7 +17,8 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 - Go to **Project -> Settings > Access Token** _(you must have Gitlab authorizations to access this menu)_
 - Create an access token with the following info:
-  - name: **ACCESS_TOKEN**
+  - name: **SFDX HARDIS MONITORING**
+  - role: **Developer**
   - scopes: **read_repository, write_repository**
 - Copy the value of the generated token in your clipboard ! (CTRL+C)
 

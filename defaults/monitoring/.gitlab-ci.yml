@@ -13,11 +13,12 @@ stages:
   - monitor
 
 # Use sfdx-hardis docker image to always be up to date with latest version
-image: hardisgroupcom/sfdx-hardis:latest
+image: hardisgroupcom/sfdx-hardis:latest # test with alpha
 
 # Metadata backup
 backup:
   stage: backup
+  interruptible: true
   #tags:
   #  - ubuntu
   before_script:
@@ -30,17 +31,13 @@ backup:
     # Commit and push new state
     - git status
     - git add --all
-    - git commit -m "$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME org state on $(date -u +'%Y-%m-%d %H:%M') [skip ci]" || echo "No changes to commit"
+    - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $CI_COMMIT_REF_NAME [skip ci]" || echo "No changes to commit"
     - git push -o ci-skip https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_COMMIT_REF_NAME
-  artifacts:
-    when: always
-    paths:
-      - hardis-report
-    expire_in: 6 month
 
 # Apex tests
 apex_tests:
   stage: monitor
+  interruptible: true
   #tags:
   #  - ubuntu
   before_script:
@@ -59,6 +56,7 @@ apex_tests:
 # Apex tests
 monitoring_tools:
   stage: monitor
+  interruptible: true
   #tags:
   #  - ubuntu
   before_script:
@@ -77,6 +75,7 @@ monitoring_tools:
 # Check code quality and good practices using MegaLinter
 megalinter:
   stage: monitor
+  interruptible: true
   #tags:
   #  - ubuntu
   image: oxsecurity/megalinter-salesforce:latest
@@ -91,5 +90,5 @@ megalinter:
   artifacts:
     when: always
     paths:
-      - report
+      - megalinter-reports
     expire_in: 6 month
