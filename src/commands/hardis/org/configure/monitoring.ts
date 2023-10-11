@@ -35,6 +35,9 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
   public static examples = ["$ sfdx hardis:org:configure:monitoring"];
 
   protected static flagsConfig = {
+    orginstanceurl: flags.string({
+      description: "Org instance url (technical param, do not use manually)",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -72,26 +75,44 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
 
     // Get current default org
     const currentOrgId = this.org?.getOrgId() || "";
-
-    // Select the org that must be monitored
-    const org = await promptOrg(this, { devHub: false, setDefault: true, scratch: false });
-
-    // Restart command so the org is selected as default org (will help to select profiles)
-    if (currentOrgId !== org.orgId) {
-      const infoMsg = "Default org changed. Please restart the same command if VsCode does not do that automatically for you :)";
-      uxLog(this, c.yellow("Default org changed. Please restart the same command if VsCode does not do that automatically for you :)"));
-      const currentCommand = "sfdx " + this.id + " " + this.argv.join(" ");
-      WebSocketClient.sendMessage({
-        event: "runSfdxHardisCommand",
-        sfdxHardisCommand: currentCommand,
+    if (this.flags.orginstanceurl && this.org?.getConnection()?.instanceUrl === this.flags.orginstanceurl) {
+      uxLog(this, c.cyan(`Default org ${this.org.getConnection()?.instanceUrl} is selected, let's configure its monitoring !`));
+    } else {
+      // Select the org that must be monitored
+      const org = await promptOrg(this, {
+        devHub: false,
+        setDefault: true,
+        scratch: false,
+        promptMessage: "Please select or connect to the org that you want to monitor",
       });
-      return { outputString: infoMsg };
+
+      // Restart command so the org is selected as default org (will help to select profiles)
+      if (currentOrgId !== org.orgId) {
+        const infoMsg = "Default org changed. Please restart the same command if VsCode does not do that automatically for you :)";
+        uxLog(this, c.yellow("Default org changed. Please restart the same command if VsCode does not do that automatically for you :)"));
+        const currentCommand = "sfdx " + this.id + " " + this.argv.join(" ") + " --orginstanceurl " + org.instanceUrl;
+        WebSocketClient.sendMessage({
+          event: "runSfdxHardisCommand",
+          sfdxHardisCommand: currentCommand,
+        });
+        return { outputString: infoMsg };
+      }
     }
 
     // Build monitoring branch name
-    const branchName = "monitoring-" + org.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "_");
+    const branchName =
+      "monitoring-" +
+      this.org
+        ?.getConnection()
+        .instanceUrl.replace("https://", "")
+        .replace(".my.salesforce.com", "")
+        .replace(/\./gm, "_")
+        .replace(/--/gm, "__")
+        .replace(/-/gm, "_");
 
-    // Checkout branch, or create it if not existing
+    // Checkout branch, or create it if not existing (stash before if necessary)
+    await execCommand("git add --all", this, { output: true, fail: false });
+    await execCommand("git stash", this, { output: true, fail: false });
     await ensureGitBranch(branchName, { parent: "main" });
 
     // Create sfdx project if not existing yet
@@ -103,7 +124,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         fail: true,
       });
       uxLog(this, c.cyan("Moving sfdx-project to root..."));
-      await fs.copy("sfdx-hardis-monitoring", process.cwd(), { overwrite: false });
+      await fs.copy("sfdx-hardis-monitoring", process.cwd(), { overwrite: true });
       await fs.remove("sfdx-hardis-monitoring");
     }
 
@@ -128,14 +149,12 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     // Generate SSL certificate (requires openssl to be installed on computer)
     await generateSSLCertificate(branchName, "./.ssh", this, this.org.getConnection(), {});
 
-    uxLog(this, c.italic("You can customize monitoring by updating .gitlab-ci-config.yml"));
-
     // Confirm & push on server
     const confirmPush = await prompts({
       type: "confirm",
       name: "value",
       initial: true,
-      message: c.cyanBright("Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)"),
+      message: c.cyanBright("(RECOMMENDED) Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)"),
     });
 
     if (confirmPush.value === true) {
