@@ -93,11 +93,16 @@ export default class MonitorBackup extends SfdxCommand {
 
     // Retrieve sfdx sources in local git repo
     uxLog(this, c.cyan(`Run the retrieve command for backuping filtered metadatas ...`));
-    await execCommand(`sfdx force:source:retrieve -x ${packageXmlBackUpItemsFile} -u ${this.org.getUsername()}`, this, {
-      fail: true,
-      output: true,
-      debug: this.debugMode,
-    });
+    try {
+      await execCommand(`sfdx force:source:retrieve -x ${packageXmlBackUpItemsFile} -u ${this.org.getUsername()} --wait 120`, this, {
+        fail: true,
+        output: true,
+        debug: this.debugMode,
+      });
+    } catch (e) {
+      uxLog(this, c.yellow("Crash during backup. You may exclude more items by customizing file manifest/package-skip-items.xml"));
+      throw e;
+    }
 
     return { outputString: "BackUp processed on org " + this.org.getConnection().instanceUrl };
   }
