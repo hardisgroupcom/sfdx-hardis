@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Refactor Monitoring configuration
+- Disable auto-update for .gitignore & .forceignore 
 - Update documentation
 - Update comparative table in doc
 
