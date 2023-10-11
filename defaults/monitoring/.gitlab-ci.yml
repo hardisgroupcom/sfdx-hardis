@@ -26,7 +26,7 @@ backup:
   script:
     # Extract metadata folders (+other checks ^^)
     - sfdx hardis:auth:login
-    - sfdx hardis:org:backup:dx
+    - sfdx hardis:org:monitor:backup
     # Commit and push new state
     - git status
     - git add --all
@@ -50,6 +50,24 @@ apex_tests:
     # Login & run apex tests
     - sfdx hardis:auth:login
     - sfdx hardis:org:test:apex
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 6 month
+
+# Apex tests
+monitoring_tools:
+  stage: monitor
+  #tags:
+  #  - ubuntu
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+  script:
+    # Login & run apex tests
+    - sfdx hardis:auth:login
+    - sfdx hardis:org:monitor:all
   artifacts:
     when: always
     paths:

@@ -16,12 +16,12 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class BackupDx extends SfdxCommand {
+export default class MonitorBackup extends SfdxCommand {
   public static title = "Backup DX sources";
 
   public static description = "Retrieve sfdx sources in the context of a monitoring backup";
 
-  public static examples = ["$ sfdx hardis:org:backup:dx"];
+  public static examples = ["$ sfdx hardis:org:monitor:backup"];
 
   protected static flagsConfig = {
     debug: flags.boolean({
