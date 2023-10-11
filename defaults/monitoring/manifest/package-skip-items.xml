@@ -28,5 +28,11 @@
         <members>*</members>
         <name>SamlSsoConfig</name>
     </types>
+<!--
+    <types>
+        <members>*</members>
+        <name>StaticResource</name>
+    </types>
+-->
     <version>56.0</version>
 </Package>
