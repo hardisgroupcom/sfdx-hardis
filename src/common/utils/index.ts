@@ -1005,7 +1005,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     await prompts({
       type: "confirm",
       message: c.cyanBright(
-        "In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done. If you are not using Gitlab, check link in the console."
+        "Hit ENTER when the CI/CD variables are set (check info in the console below)"
       ),
     });
     // Request info for deployment
