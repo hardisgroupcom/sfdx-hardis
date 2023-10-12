@@ -11,6 +11,7 @@ import {
   ensureGitRepository,
   execCommand,
   generateSSLCertificate,
+  getCurrentGitBranch,
   getGitRepoName,
   gitAddCommitPush,
   uxLog,
@@ -183,7 +184,8 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     } else {
       uxLog(this, c.yellow("Please manually git add, commit and push to the remote repository :)"));
     }
-    uxLog(this, c.greenBright(`Now you must schedule monitoring to run the job automatically every night :)`));
+    const branch = await getCurrentGitBranch();
+    uxLog(this, c.greenBright(`Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`));
     const scheduleMonitoringUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
     const msg = "Please follow the instructions to schedule sfdx-hardis monitoring on your Git server\n" + scheduleMonitoringUrl;
     uxLog(this,c.yellow(msg));
