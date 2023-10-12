@@ -42,5 +42,12 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 ## Schedule the monitoring job
 
-
+- Go to **Project -> Build -> Pipeline schedules**
+- Click on **New schedule**
+- Input custom interval pattern as [CRON expression](https://crontab.cronhub.io/){target=blank}, for example:
+  - `0 1 * * *` will run the monitoring job **every day at 1 AM**
+  - `0 22 * * *` will run the monitoring job **everyday at 10 PM**
+- Select the CRON TimeZone (for example `[UTC+2] Paris`)
+- Select the target branch corresponding to the org you want to monitor
+- Validate by clicking on **Create Pipeline Schedule**
 
