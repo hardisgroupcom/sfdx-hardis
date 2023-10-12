@@ -4,6 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execCommand, uxLog } from "../../../../common/utils";
+import { getConfig } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -15,7 +16,20 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class MonitorAll extends SfdxCommand {
   public static title = "Monitor org";
 
-  public static description = "Monitor org, generate reports and sends notifications";
+  public static description = `Monitor org, generate reports and sends notifications
+
+A default list of monitoring commands is used, if you want to override it you can define property **monitoringCommands** in your .sfdx-hardis.yml file
+
+Example:
+
+\`\`\`yaml
+monitoringCommands:
+  - title: Detect calls to deprecated API versions
+    command: sfdx hardis:org:diagnose:legacyapi
+  - title: My Custom command
+    command: sfdx my:custom:command
+\`\`\`
+`;
 
   public static examples = ["$ sfdx hardis:org:monitor:all"];
 
@@ -58,13 +72,34 @@ export default class MonitorAll extends SfdxCommand {
     // Build target org full manifest
     uxLog(this, c.cyan("Running monitoring scripts for org " + c.bold(this.org.getConnection().instanceUrl)) + " ...");
 
-    const commands = ["sfdx hardis:org:diagnose:legacyapi"];
+    const monitoringCommandsDefault = [{ title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" }];
+    const config = await getConfig("user");
+    const commands = config.monitoringCommands || monitoringCommandsDefault;
 
+    let success = true;
+    const commandsSummary = [];
     for (const command of commands) {
+      uxLog(this, c.cyan(`Running monitoring command ${c.bold(command)}`));
       const execCommandResult = await execCommand(command, this, { fail: false, output: true });
-      uxLog(this, c.gray(JSON.stringify(execCommandResult, null, 2)));
+      if (execCommandResult.status === 0) {
+        uxLog(this, c.green(`Command ${c.bold(command)} has been run successfully`));
+      } else {
+        success = false;
+        uxLog(this, c.yellow(`Command ${c.bold(command)} has encountered error(s)`));
+      }
+      commandsSummary.push({ command: command, status: execCommandResult.status === 0 ? "success" : "failure" });
     }
 
+    uxLog(this, c.cyan("Summary of monitoring scripts"));
+    console.table(commandsSummary);
+    uxLog(this, c.cyan("You can check details in reports in Job Artifacts"));
+
+    uxLog(this, c.yellow("To know more about sfdx-hardis monitoring, please check https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/"));
+    
+    // Exit code is 1 if monitoring detected stuff
+    if (success === false) {
+      process.exitCode = 1;
+    }
     return { outputString: "Monitoring processed on org " + this.org.getConnection().instanceUrl };
   }
 }

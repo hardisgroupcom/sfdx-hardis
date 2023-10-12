@@ -43,11 +43,13 @@ backup:
 apex_tests:
   stage: monitor
   interruptible: true
+  allow_failure: true
   #tags:
   #  - ubuntu
   before_script:
     - git config --global user.name "${GITLAB_USER_NAME}"
     - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
   script:
     # Login & run apex tests
     - sfdx hardis:auth:login
@@ -58,15 +60,17 @@ apex_tests:
       - hardis-report
     expire_in: 6 month
 
-# Apex tests
+# Monitoring tools
 monitoring_tools:
   stage: monitor
   interruptible: true
+  allow_failure: true
   #tags:
   #  - ubuntu
   before_script:
     - git config --global user.name "${GITLAB_USER_NAME}"
     - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
   script:
     # Login & run apex tests
     - sfdx hardis:auth:login
@@ -81,11 +85,15 @@ monitoring_tools:
 megalinter:
   stage: monitor
   interruptible: true
+  allow_failure: true
   #tags:
   #  - ubuntu
   image: oxsecurity/megalinter-salesforce:latest
   script: ["true"]
-  allow_failure: true
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
   variables:
     # All available variables are described in documentation
     # https://megalinter.io/latest/config-file/

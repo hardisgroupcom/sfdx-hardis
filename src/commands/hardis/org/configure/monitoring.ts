@@ -5,6 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
+import open = require("open");
 import {
   ensureGitBranch,
   ensureGitRepository,
@@ -71,6 +72,23 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     const repoName = await getGitRepoName();
     if (!repoName.includes("monitoring")) {
       throw new SfdxError('Your git repository name must contain the expression "monitoring"');
+    }
+
+    const confirmPreRequisites = await prompts({
+      type: "select",
+      name: "value",
+      choices: [
+        { title: "Yes", value: "yes"},
+        { title: "No, help me !", value: "no" }
+      ],
+      message: c.cyanBright("Did you configure the pre-requisites on your Git server ?"),
+    });
+    if (confirmPreRequisites.value === "no") {
+      const preRequisitesUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
+      const msg = "Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n" + preRequisitesUrl;
+      uxLog(this,c.yellow(msg));
+      await open(preRequisitesUrl, { wait: true });
+      return { outputString: msg}
     }
 
     // Get current default org
@@ -165,7 +183,11 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     } else {
       uxLog(this, c.yellow("Please manually git add, commit and push to the remote repository :)"));
     }
-    uxLog(this, c.greenBright(`You should schedule monitoring to run automatically every night`));
+    uxLog(this, c.greenBright(`Now you must schedule monitoring to run the job automatically every night :)`));
+    const scheduleMonitoringUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
+    const msg = "Please follow the instructions to schedule sfdx-hardis monitoring on your Git server\n" + scheduleMonitoringUrl;
+    uxLog(this,c.yellow(msg));
+    await open(scheduleMonitoringUrl, { wait: true });
     // Return an object to be displayed with --json
     return { outputString: "Configured branch for authentication" };
   }
