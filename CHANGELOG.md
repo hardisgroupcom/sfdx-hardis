@@ -2,8 +2,6 @@
 
 ## [beta] (master)
 
-Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
-
 - Refactor Monitoring configuration and execution
   - **If you already have a monitoring v1 repository, deprecate it and create a new one with the new monitoring setup and pipelines**
   - Totally rewritten command **sfdx hardis:org:configure:monitoring**
@@ -11,6 +9,12 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - New command **sfdx hardis:org:monitor:all**
 - Simplify `sfdx hardis:project:configure:auth` (Configure Org CI Authentication)
 - Disable auto-update for .gitignore & .forceignore 
+
+Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
+
+## [4.6.5] 2023-10-17
+
+- Do not use direct call to jsforce dependency to avoid crash ! ( related to <https://github.com/forcedotcom/cli/issues/2508#issuecomment-1760274510> )
 - Update documentation
 - Update comparative table in doc
 
