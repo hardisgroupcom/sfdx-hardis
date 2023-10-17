@@ -1,19 +1,20 @@
 # Pipeline for Salesforce monitoring using sfdx-hardis
 #
-# You need to
-# - manually add environment secret variables in step "sfdx-hardis login" (they are used for authentication)
+# You need to (do a CTRL+F on "MANUAL")
+# - manually add environment secret variables in step "sfdx-hardis login" (they are used for authentication). Ex: SFDX_CLIENT_ID_INTEG / SFDX_CLIENT_KEY_INTEG
 # - configure the bypass in Azure settings -> https://www.programmingwithwolfgang.com/create-git-commits-in-azure-devops-yaml-pipeline/#configure-the-pipeline-to-bypass-pull-request-policies
 # - add branches to monitor in schedules:branches:include
 #
 # You may also:
-# - Define a file remove-items-package.xml at the root of the repo to filter elements to retrieve
+# - Update manifest/package-skip-items.xml to filter elements to retrieve
 #
 # Doc & support: https://sfdx-hardis.cloudity.com/
 
 schedules:
-- cron: "0 4 * * *"
+- cron: "0 4 * * *" # Cron format -> https://crontab.cronhub.io/
   always: "true"
   branches:
+    # MANUAL: Add your monitored branches here
     include:
     - integ
     - qa
@@ -30,8 +31,10 @@ variables:
     value: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
 
 jobs:
-# Metadata backup + apex tests + other checks
-- job: OrgMonitoring
+##############################################
+### Sfdx Sources Backup + Push new commit ###
+##############################################
+- job: BackupSfdxHardis
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -57,14 +60,16 @@ jobs:
 
   - script: |
       git checkout -b "$BRANCH_NAME"
-    displayName: Checkout git branch
+    displayName: Checkout git branch latest commit
     env:
       CI: "true"
 
   - script: |
       sfdx hardis:auth:login
-    displayName: sfdx-hardis login
+      sfdx hardis:org:monitor:backup
+    displayName: sfdx-hardis login & Backup
     env:
+      # MANUAL: Add your branch related variables here
       SFDX_CLIENT_ID_INTEG: $(SFDX_CLIENT_ID_INTEG)
       SFDX_CLIENT_KEY_INTEG: $(SFDX_CLIENT_KEY_INTEG)
       SFDX_CLIENT_ID_PRODUCTION: $(SFDX_CLIENT_ID_PRODUCTION)
@@ -75,19 +80,9 @@ jobs:
       CI: "true"
 
   - script: |
-      sfdx hardis:org:retrieve:sources:metadata --folder metadatas
-    displayName: sfdx-hardis monitoring
-    env:
-      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
-      CONFIG_BRANCH: $(BRANCH_NAME)
-      ORG_ALIAS: $(BRANCH_NAME)
-      SFDX_HARDIS_MONITORING: "true"
-      CI: "true"
-
-  - script: |
       git status
       git add --all
-      git commit -m "$BRANCH_NAME org state on $(date -u +'%Y-%m-%d %H:%M') [skip ci]" || echo "No changes to commit"
+      git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
       git push --set-upstream origin "$BRANCH_NAME"
     displayName: Add new commit to Monitoring Repo
     workingDirectory: $(System.DefaultWorkingDirectory)
@@ -98,11 +93,72 @@ jobs:
     artifact: hardis-report
     displayName: Publish logs as artifacts
 
-# Run MegaLinter to detect linting and security issues
+######################
+### Run Apex Tests ###
+######################
+- job: ApexTestsSfdxHardis
+  dependsOn: BackupSfdxHardis
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    persistCredentials: true
+    displayName: Git checkout
+
+  - script: |
+      npm install @salesforce/cli -g
+      sf plugins install @salesforce/plugin-packaging
+      echo y | sfdx plugins:install sfdx-hardis
+      echo y | sfdx plugins:install sfdx-essentials
+      sf version --verbose --json
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Install @salesforce/cli & sfdx-hardis
+
+  - script: |
+      git pull origin "${BRANCH_NAME}"
+    displayName: Pull git branch latest commit
+    env:
+      CI: "true"
+
+  - script: |
+      sfdx hardis:auth:login
+      sfdx hardis:org:test:apex
+    displayName: sfdx-hardis login & Apex tests
+    env:
+      # MANUAL: Add your branch related variables here
+      SFDX_CLIENT_ID_INTEG: $(SFDX_CLIENT_ID_INTEG)
+      SFDX_CLIENT_KEY_INTEG: $(SFDX_CLIENT_KEY_INTEG)
+      SFDX_CLIENT_ID_PRODUCTION: $(SFDX_CLIENT_ID_PRODUCTION)
+      SFDX_CLIENT_KEY_PRODUCTION: $(SFDX_CLIENT_KEY_PRODUCTION)
+      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+      CONFIG_BRANCH: $(BRANCH_NAME)
+      ORG_ALIAS: $(BRANCH_NAME)
+      CI: "true"
+
+  - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+    artifact: hardis-report
+    displayName: Publish logs as artifacts
+
+############################################################
+### Run MegaLinter to detect linting and security issues ###
+############################################################
 - job: MegaLinter
+  dependsOn: BackupSfdxHardis
   pool:
     vmImage: ubuntu-latest
   steps:
+  - checkout: self
+    persistCredentials: "true"
+    displayName: Git checkout
+
+  - script: |
+      git config --global user.email "contact@cloudity.com"
+      git config --global user.name "sfdx-hardis monitoring"
+      git pull origin "${BRANCH_NAME}"
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Git config & pull latest commit
+
   # Pull MegaLinter docker image
   - script: docker pull oxsecurity/megalinter-salesforce:latest
     displayName: Pull MegaLinter
@@ -115,8 +171,58 @@ jobs:
         -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
         oxsecurity/megalinter-salesforce:latest
     displayName: Run MegaLinter
+
   # Publish Megalinter reports
   - publish: $(System.DefaultWorkingDirectory)/megalinter-reports/
     condition: succeededOrFailed()
     artifact: megalinter-reports
     displayName: Publish reports
+
+###################################
+### Run other monitoring checks ###
+###################################
+- job: MonitoringChecksSfdxHardis
+  dependsOn: BackupSfdxHardis
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    persistCredentials: true
+    displayName: Git checkout
+
+  - script: |
+      npm install @salesforce/cli -g
+      sf plugins install @salesforce/plugin-packaging
+      echo y | sfdx plugins:install sfdx-hardis
+      echo y | sfdx plugins:install sfdx-essentials
+      sf version --verbose --json
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Install @salesforce/cli & sfdx-hardis
+
+  - script: |
+      git config --global user.email "contact@cloudity.com"
+      git config --global user.name "sfdx-hardis monitoring"
+      git pull origin "${BRANCH_NAME}"
+    displayName: Pull git branch latest commit
+    env:
+      CI: "true"
+
+  - script: |
+      sfdx hardis:auth:login
+      sfdx hardis:org:monitor:all
+    displayName: sfdx-hardis login & other checks
+    env:
+      # MANUAL: Add your branch related variables here
+      SFDX_CLIENT_ID_INTEG: $(SFDX_CLIENT_ID_INTEG)
+      SFDX_CLIENT_KEY_INTEG: $(SFDX_CLIENT_KEY_INTEG)
+      SFDX_CLIENT_ID_PRODUCTION: $(SFDX_CLIENT_ID_PRODUCTION)
+      SFDX_CLIENT_KEY_PRODUCTION: $(SFDX_CLIENT_KEY_PRODUCTION)
+      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+      CONFIG_BRANCH: $(BRANCH_NAME)
+      ORG_ALIAS: $(BRANCH_NAME)
+      CI: "true"
+
+  - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+    artifact: hardis-report
+    displayName: Publish logs as artifacts
