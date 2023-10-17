@@ -1,7 +1,6 @@
 import { uxLog } from ".";
 import * as c from "chalk";
-import { Connection } from "jsforce";
-import { SfdxError } from "@salesforce/core";
+import { Connection, SfdxError } from "@salesforce/core";
 import ora = require("ora");
 
 // Perform simple SOQL query (max results: 10000)
