@@ -27,6 +27,11 @@ pipelines:
             - sfdx hardis:auth:login
             # Backup
             - sfdx hardis:org:monitor:backup
+            # Commit & push
+            - git status
+            - git add --all
+            - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
+            - git push --set-upstream origin "$BRANCH_NAME"
       - parallel:
         # Apex tests
         - step:
