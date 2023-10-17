@@ -43,6 +43,7 @@
     "he": "^1.2.0",
     "inquirer": "^8.0.0",
     "js-yaml": "^4.0.0",
+    "jsforce": "^1.11.0",
     "keyv": "^4.0.3",
     "markdown-toc": "^1.2.0",
     "mega-linter-runner": "^4.39.0",

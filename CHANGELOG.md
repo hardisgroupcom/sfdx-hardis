@@ -7,6 +7,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Update documentation
 - Update comparative table in doc
 
+## [4.6.5] 2023-10-17
+
+- Do not use direct call to jsforce dependency to avoid crash ! ( related to <https://github.com/forcedotcom/cli/issues/2508#issuecomment-1760274510> )
+
 ## [4.6.4] 2023-09-28
 
 - hardis:work:save : Fix issue when there is an empty commit because of pre-commit hooks
