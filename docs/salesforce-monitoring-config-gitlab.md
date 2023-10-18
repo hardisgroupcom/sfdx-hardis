@@ -22,6 +22,8 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
   - scopes: **read_repository, write_repository**
 - Copy the value of the generated token in your clipboard ! (CTRL+C)
 
+![](assets/images/screenshot-access-token-gitlab.png)
+
 ### Create CI/CD variable
 
 - Go to **Project -> Settings > CI/CD -> Variables** _(you must have Gitlab authorizations to access this menu)_
@@ -31,6 +33,8 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
   - Select **Mask variable**
   - Unselect **Protected variable**
 
+![](assets/images/screenshot-add-variable-gitlab.png)
+
 ## Run sfdx-hardis configuration command
 
 - Run command **Configuration -> Configure Org Monitoring** in VsCode SFDX Hardis, then follow instructions.
@@ -39,6 +43,8 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 - Go to **Project -> Settings > CI/CD -> Variables** _(you must have Gitlab authorizations to access this menu)_
 - For each variable sfdx-hardis command **Configure org monitoring** tells you to define, create with name and value given in sfdx-hardis command logs
+
+![](assets/images/screenshot-gitlab-variables.png)
 
 ## Schedule the monitoring job
 
@@ -51,3 +57,4 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 - Select the target branch corresponding to the org you want to monitor
 - Validate by clicking on **Create Pipeline Schedule**
 
+![](assets/images/screenshot-monitoring-schedule-gitlab.png)
