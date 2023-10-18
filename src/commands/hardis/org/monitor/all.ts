@@ -89,8 +89,8 @@ monitoringCommands:
       }
       commandsSummary.push({
         title: command.title,
-        command: command.title,
-        status: execCommandResult.status === 0 ? "success" : "failure"
+        status: execCommandResult.status === 0 ? "success" : "failure",
+        command: command.command
       });
     }
 

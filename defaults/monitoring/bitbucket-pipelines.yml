@@ -9,12 +9,12 @@ pipelines:
   default:
       # Backup
       - step:
-          name: BackupSfdxHardis
+          name: Backup sfdx-hardis
           script: 
             # Install SF Cli & dependencies
             - npm install --no-cache @salesforce/cli --global
             - sf plugins install @salesforce/plugin-packaging
-            - echo 'y' | sfdx plugins:install sfdx-hardis
+            - echo 'y' | sfdx plugins:install sfdx-hardis@alpha
             - echo 'y' | sfdx plugins:install sfdx-essentials
             - echo 'y' | sfdx plugins:install sfdx-git-delta
             - sf version --verbose --json
@@ -35,12 +35,12 @@ pipelines:
       - parallel:
         # Apex tests
         - step:
-            name: ApexTestsSfdxHardis
+            name: Apex Tests sfdx-hardis
             script: 
               # Install SF Cli & dependencies
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
-              - echo 'y' | sfdx plugins:install sfdx-hardis
+              - echo 'y' | sfdx plugins:install sfdx-hardis@alpha
               - echo 'y' | sfdx plugins:install sfdx-essentials
               - echo 'y' | sfdx plugins:install sfdx-git-delta
               - sf version --verbose --json
@@ -49,6 +49,8 @@ pipelines:
               - export CONFIG_BRANCH=$BRANCH_NAME
               - export ORG_ALIAS=$BRANCH_NAME
               - export FORCE_COLOR=1
+              # Get latest commit of the branch
+              - git pull origin "${BRANCH_NAME}"
               # Login
               - sfdx hardis:auth:login
               # Apex tests
@@ -57,18 +59,21 @@ pipelines:
         - step:
             name: Run MegaLinter
             image: oxsecurity/megalinter-salesforce:latest
+            
             script:
+              # Get latest commit of the branch
+              - git pull origin "${BRANCH_NAME}"
               - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash /entrypoint.sh
             artifacts:
               - megalinter-reports/**
         # Other monitoring tools
         - step:
-            name: MonitoringChecksSfdxHardis
+            name: Other Monitoring checks sfdx-hardis
             script: 
               # Install SF Cli & dependencies
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
-              - echo 'y' | sfdx plugins:install sfdx-hardis
+              - echo 'y' | sfdx plugins:install sfdx-hardis@alpha
               - echo 'y' | sfdx plugins:install sfdx-essentials
               - echo 'y' | sfdx plugins:install sfdx-git-delta
               - sf version --verbose --json
@@ -77,6 +82,8 @@ pipelines:
               - export CONFIG_BRANCH=$BRANCH_NAME
               - export ORG_ALIAS=$BRANCH_NAME
               - export FORCE_COLOR=1
+              # Get latest commit of the branch
+              - git pull origin "${BRANCH_NAME}"
               # Login
               - sfdx hardis:auth:login
               # Other monitoring tools
