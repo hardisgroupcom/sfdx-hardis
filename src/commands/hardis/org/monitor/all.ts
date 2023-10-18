@@ -79,15 +79,19 @@ monitoringCommands:
     let success = true;
     const commandsSummary = [];
     for (const command of commands) {
-      uxLog(this, c.cyan(`Running monitoring command ${c.bold(command)}`));
-      const execCommandResult = await execCommand(command, this, { fail: false, output: true });
+      uxLog(this, c.cyan(`Running monitoring command ${c.bold(command.title)}`));
+      const execCommandResult = await execCommand(command.command, this, { fail: false, output: true });
       if (execCommandResult.status === 0) {
-        uxLog(this, c.green(`Command ${c.bold(command)} has been run successfully`));
+        uxLog(this, c.green(`Command ${c.bold(command.title)} has been run successfully`));
       } else {
         success = false;
-        uxLog(this, c.yellow(`Command ${c.bold(command)} has encountered error(s)`));
+        uxLog(this, c.yellow(`Command ${c.bold(command.title)} has encountered error(s)`));
       }
-      commandsSummary.push({ command: command, status: execCommandResult.status === 0 ? "success" : "failure" });
+      commandsSummary.push({
+        title: command.title,
+        command: command.title,
+        status: execCommandResult.status === 0 ? "success" : "failure"
+      });
     }
 
     uxLog(this, c.cyan("Summary of monitoring scripts"));
@@ -95,7 +99,7 @@ monitoringCommands:
     uxLog(this, c.cyan("You can check details in reports in Job Artifacts"));
 
     uxLog(this, c.yellow("To know more about sfdx-hardis monitoring, please check https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/"));
-    
+
     // Exit code is 1 if monitoring detected stuff
     if (success === false) {
       process.exitCode = 1;
