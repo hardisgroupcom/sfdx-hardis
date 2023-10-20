@@ -74,7 +74,8 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     if (!repoName.includes("monitoring")) {
       throw new SfdxError('Your git repository name must contain the expression "monitoring"');
     }
-
+    const preRequisitesUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
+    uxLog(this, c.cyan('Monitoring pre-requisites documentation: '+c.bold(preRequisitesUrl)));
     const confirmPreRequisites = await prompts({
       type: "select",
       name: "value",
@@ -82,10 +83,9 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         { title: "Yes", value: "yes"},
         { title: "No, help me !", value: "no" }
       ],
-      message: c.cyanBright("Did you configure the pre-requisites on your Git server ?"),
+      message: c.cyanBright("Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?"),
     });
     if (confirmPreRequisites.value === "no") {
-      const preRequisitesUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
       const msg = "Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n" + preRequisitesUrl;
       uxLog(this,c.yellow(msg));
       await open(preRequisitesUrl, { wait: true });

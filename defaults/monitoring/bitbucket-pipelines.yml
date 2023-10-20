@@ -14,7 +14,7 @@ pipelines:
             # Install SF Cli & dependencies
             - npm install --no-cache @salesforce/cli --global
             - sf plugins install @salesforce/plugin-packaging
-            - echo 'y' | sfdx plugins:install sfdx-hardis@alpha
+            - echo 'y' | sfdx plugins:install sfdx-hardis
             - echo 'y' | sfdx plugins:install sfdx-essentials
             - echo 'y' | sfdx plugins:install sfdx-git-delta
             - sf version --verbose --json
@@ -40,7 +40,7 @@ pipelines:
               # Install SF Cli & dependencies
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
-              - echo 'y' | sfdx plugins:install sfdx-hardis@alpha
+              - echo 'y' | sfdx plugins:install sfdx-hardis
               - echo 'y' | sfdx plugins:install sfdx-essentials
               - echo 'y' | sfdx plugins:install sfdx-git-delta
               - sf version --verbose --json
@@ -73,7 +73,7 @@ pipelines:
               # Install SF Cli & dependencies
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
-              - echo 'y' | sfdx plugins:install sfdx-hardis@alpha
+              - echo 'y' | sfdx plugins:install sfdx-hardis
               - echo 'y' | sfdx plugins:install sfdx-essentials
               - echo 'y' | sfdx plugins:install sfdx-git-delta
               - sf version --verbose --json

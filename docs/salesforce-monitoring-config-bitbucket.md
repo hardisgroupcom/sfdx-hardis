@@ -4,6 +4,10 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 ---
 <!-- markdownlint-disable MD013 -->
 
+## Cloning repo from VsCode
+
+If you have issues to authenticate to Bitbucket from VsCode, [create an App Password in Bitbucket personal settings](https://support.atlassian.com/bitbucket-cloud/docs/create-an-app-password/).
+
 ## Pre-requisites
 
 There are no pre-requisites
