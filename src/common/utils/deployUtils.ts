@@ -740,10 +740,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -757,10 +757,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -864,8 +864,7 @@ export async function extractOrgCoverageFromLog(stdout) {
         if (orgCoverage && orgCoverage.toFixed(2) > 0.0) {
           return orgCoverage.toFixed(2);
         }
-      }
-      catch (e) {
+      } catch (e) {
         uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
         uxLog(this, c.gray(e.message));
       }
