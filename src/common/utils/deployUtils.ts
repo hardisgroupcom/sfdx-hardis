@@ -841,6 +841,7 @@ export async function extractOrgCoverageFromLog(stdout) {
   if (fromTest && fromTest[1]) {
     orgCoverage = parseFloat(fromTest[1].replace("%", ""));
   }
+  /* jscpd:ignore-start */
   try {
     if (orgCoverage && orgCoverage > 0.0) {
       return orgCoverage.toFixed(2);
@@ -849,6 +850,7 @@ export async function extractOrgCoverageFromLog(stdout) {
     uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
     uxLog(this, c.gray(e.message));
   }
+  /* jscpd:ignore-end */
   // Get from output file
   const writtenToPath = /written to (.*coverage)/.exec(stdout);
   if (writtenToPath && writtenToPath[1]) {
