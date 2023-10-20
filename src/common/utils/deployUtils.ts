@@ -740,10 +740,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -757,10 +757,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -841,8 +841,13 @@ export async function extractOrgCoverageFromLog(stdout) {
   if (fromTest && fromTest[1]) {
     orgCoverage = parseFloat(fromTest[1].replace("%", ""));
   }
-  if (orgCoverage && orgCoverage > 0.0) {
-    return orgCoverage.toFixed(2);
+  try {
+    if (orgCoverage && orgCoverage > 0.0) {
+      return orgCoverage.toFixed(2);
+    }
+  } catch (e) {
+    uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
+    uxLog(this, c.gray(e.message));
   }
   // Get from output file
   const writtenToPath = /written to (.*coverage)/.exec(stdout);
@@ -853,8 +858,14 @@ export async function extractOrgCoverageFromLog(stdout) {
     if (fs.existsSync(jsonFile)) {
       const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, "utf-8"));
       orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
-      if (orgCoverage && orgCoverage.toFixed(2) > 0.0) {
-        return orgCoverage.toFixed(2);
+      try {
+        if (orgCoverage && orgCoverage.toFixed(2) > 0.0) {
+          return orgCoverage.toFixed(2);
+        }
+      }
+      catch (e) {
+        uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
+        uxLog(this, c.gray(e.message));
       }
     }
   }
