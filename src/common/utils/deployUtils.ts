@@ -841,9 +841,16 @@ export async function extractOrgCoverageFromLog(stdout) {
   if (fromTest && fromTest[1]) {
     orgCoverage = parseFloat(fromTest[1].replace("%", ""));
   }
-  if (orgCoverage && orgCoverage > 0.0) {
-    return orgCoverage.toFixed(2);
+  /* jscpd:ignore-start */
+  try {
+    if (orgCoverage && orgCoverage > 0.0) {
+      return orgCoverage.toFixed(2);
+    }
+  } catch (e) {
+    uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
+    uxLog(this, c.gray(e.message));
   }
+  /* jscpd:ignore-end */
   // Get from output file
   const writtenToPath = /written to (.*coverage)/.exec(stdout);
   if (writtenToPath && writtenToPath[1]) {
@@ -853,8 +860,13 @@ export async function extractOrgCoverageFromLog(stdout) {
     if (fs.existsSync(jsonFile)) {
       const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, "utf-8"));
       orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
-      if (orgCoverage && orgCoverage.toFixed(2) > 0.0) {
-        return orgCoverage.toFixed(2);
+      try {
+        if (orgCoverage && orgCoverage.toFixed(2) > 0.0) {
+          return orgCoverage.toFixed(2);
+        }
+      } catch (e) {
+        uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
+        uxLog(this, c.gray(e.message));
       }
     }
   }

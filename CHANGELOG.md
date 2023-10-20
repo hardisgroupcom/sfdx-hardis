@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.6.6] 2023-10-20
+
+- Fix crash when converting orgCoverage to string
+
 ## [4.6.5] 2023-10-17
 
 - Do not use direct call to jsforce dependency to avoid crash ! ( related to <https://github.com/forcedotcom/cli/issues/2508#issuecomment-1760274510> )
