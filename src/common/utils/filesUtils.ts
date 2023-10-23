@@ -14,6 +14,7 @@ export const filesFolderRoot = path.join(".", "scripts", "files");
 
 export class FilesExporter {
   private filesPath: string;
+  private fileNameFormat = "title";
   private conn: Connection;
   private pollTimeout: number;
   private recordsChunkSize: number;
@@ -53,6 +54,7 @@ export class FilesExporter {
   ) {
     this.filesPath = filesPath;
     this.conn = conn;
+    this.fileNameFormat = options?.fileNameFormat || "title"
     this.pollTimeout = options?.pollTimeout || 300000;
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
     this.startChunkNumber = options?.startChunkNumber || 0;
@@ -256,6 +258,16 @@ export class FilesExporter {
       filenameReplacements.hasOwnProperty(placeholderWithoutDelimiters) ? filenameReplacements[placeholderWithoutDelimiters] : placeholderWithDelimiters
     );
     let outputFile = path.join(parentRecordFolderForFiles, filename);
+    // Define name of the file
+    let outputFile =
+      // Id
+      this.fileNameFormat === "id" ? path.join(parentRecordFolderForFiles, contentVersion.Id) :
+        // Title + Id
+        this.fileNameFormat === "title_id" ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`) :
+          // Id + Title
+          this.fileNameFormat === "id_title" ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`) :
+            // Title
+            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
