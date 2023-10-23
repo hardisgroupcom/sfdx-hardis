@@ -19,7 +19,6 @@ export class FilesExporter {
   private pollTimeout: number;
   private recordsChunkSize: number;
   private startChunkNumber: number;
-  private filenameFormat: string;
   private commandThis: any;
 
   private fetchOptions: any;
@@ -49,7 +48,7 @@ export class FilesExporter {
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number, filenameFormat?: string },
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number, fileNameFormat?: string },
     commandThis: any,
   ) {
     this.filesPath = filesPath;
@@ -58,8 +57,6 @@ export class FilesExporter {
     this.pollTimeout = options?.pollTimeout || 300000;
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
     this.startChunkNumber = options?.startChunkNumber || 0;
-    this.filenameFormat = options?.filenameFormat || "<title>";
-
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
@@ -248,16 +245,6 @@ export class FilesExporter {
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
     const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(/[/\\?%*:|"<>]/g, "-");
     const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
-    const filenameReplacements = {
-      title: contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"),
-      id: contentVersion.Id,
-    };
-    const filename = this.filenameFormat.replace(
-      /<(title|id)>/g,
-      (placeholderWithDelimiters, placeholderWithoutDelimiters) =>
-      filenameReplacements.hasOwnProperty(placeholderWithoutDelimiters) ? filenameReplacements[placeholderWithoutDelimiters] : placeholderWithDelimiters
-    );
-    let outputFile = path.join(parentRecordFolderForFiles, filename);
     // Define name of the file
     let outputFile =
       // Id

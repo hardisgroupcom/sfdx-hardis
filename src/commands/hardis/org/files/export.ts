@@ -61,12 +61,7 @@ See article below
     }),
     skipauth: flags.boolean({
       description: "Skip authentication check when a default username is required",
-    }),
-    filenameformat: flags.string({
-      char: "f",
-      default: "<title>",
-      description: "Output file name format, e.g. <title>, <title>_<id>, <id>, <id>-<title>",
-    }),
+    })
   };
 
   // Comment this out if your command does not require an org username
