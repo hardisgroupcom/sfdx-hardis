@@ -14,11 +14,11 @@ export const filesFolderRoot = path.join(".", "scripts", "files");
 
 export class FilesExporter {
   private filesPath: string;
+  private fileNameFormat = "title";
   private conn: Connection;
   private pollTimeout: number;
   private recordsChunkSize: number;
   private startChunkNumber: number;
-  private filenameFormat: string;
   private commandThis: any;
 
   private fetchOptions: any;
@@ -48,16 +48,15 @@ export class FilesExporter {
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number, filenameFormat?: string },
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number, fileNameFormat?: string },
     commandThis: any,
   ) {
     this.filesPath = filesPath;
     this.conn = conn;
+    this.fileNameFormat = options?.fileNameFormat || "title"
     this.pollTimeout = options?.pollTimeout || 300000;
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
     this.startChunkNumber = options?.startChunkNumber || 0;
-    this.filenameFormat = options?.filenameFormat || "<title>";
-
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
@@ -246,16 +245,16 @@ export class FilesExporter {
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
     const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(/[/\\?%*:|"<>]/g, "-");
     const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
-    const filenameReplacements = {
-      title: contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"),
-      id: contentVersion.Id,
-    };
-    const filename = this.filenameFormat.replace(
-      /<(title|id)>/g,
-      (placeholderWithDelimiters, placeholderWithoutDelimiters) =>
-      filenameReplacements.hasOwnProperty(placeholderWithoutDelimiters) ? filenameReplacements[placeholderWithoutDelimiters] : placeholderWithDelimiters
-    );
-    let outputFile = path.join(parentRecordFolderForFiles, filename);
+    // Define name of the file
+    let outputFile =
+      // Id
+      this.fileNameFormat === "id" ? path.join(parentRecordFolderForFiles, contentVersion.Id) :
+        // Title + Id
+        this.fileNameFormat === "title_id" ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`) :
+          // Id + Title
+          this.fileNameFormat === "id_title" ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`) :
+            // Title
+            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");

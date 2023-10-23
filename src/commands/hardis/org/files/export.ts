@@ -31,6 +31,11 @@ See article below
       char: "p",
       description: "Path to the file export project",
     }),
+    filenameformat: flags.enum({
+      char: "f",
+      description: "Format of output files names",
+      options: ["title", "id", "title_id", "id_title"]
+    }),
     chunksize: flags.number({
       char: "c",
       description: "Number of records to add in a chunk before it is processed",
@@ -56,12 +61,7 @@ See article below
     }),
     skipauth: flags.boolean({
       description: "Skip authentication check when a default username is required",
-    }),
-    filenameformat: flags.string({
-      char: "f",
-      default: "<title>",
-      description: "Output file name format, e.g. <title>, <title>_<id>, <id>, <id>-<title>",
-    }),
+    })
   };
 
   // Comment this out if your command does not require an org username
