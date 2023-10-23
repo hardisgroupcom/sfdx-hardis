@@ -57,6 +57,11 @@ See article below
     skipauth: flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    filenameformat: flags.string({
+      char: "f",
+      default: "<title>",
+      description: "Output file name format, e.g. <title>, <title>_<id>, <id>, <id>-<title>",
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -75,9 +80,15 @@ See article below
     const recordsChunkSize = this.flags.chunksize;
     const pollTimeout = this.flags.polltimeout;
     const startChunkNumber = this.flags.startchunknumber || 0;
+    const filenameFormat = this.flags.filenameformat
     //const debugMode = this.flags.debug || false;
 
-    const exportOptions: any = { pollTimeout: pollTimeout, recordsChunkSize: recordsChunkSize, startChunkNumber: startChunkNumber };
+    const exportOptions: any = { 
+      pollTimeout: pollTimeout, 
+      recordsChunkSize: recordsChunkSize, 
+      startChunkNumber: startChunkNumber,
+      filenameFormat: filenameFormat,
+    };
 
     // Identify files workspace if not defined
     if (filesPath == null) {
