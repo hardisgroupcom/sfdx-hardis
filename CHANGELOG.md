@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.7.0] 2023-10-24
+
+- **hardis:org:files:export**: New configuration available to export files: **outputFileNameFormat**, with available values:
+  - title (default)
+  - title_id
+  - id_title
+  - id
+
 ## [4.6.6] 2023-10-20
 
 - Fix crash when converting orgCoverage to string
