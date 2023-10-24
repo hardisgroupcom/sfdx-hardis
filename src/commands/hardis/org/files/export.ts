@@ -56,7 +56,7 @@ See article below
     }),
     skipauth: flags.boolean({
       description: "Skip authentication check when a default username is required",
-    })
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -77,9 +77,9 @@ See article below
     const startChunkNumber = this.flags.startchunknumber || 0;
     //const debugMode = this.flags.debug || false;
 
-    const exportOptions: any = { 
-      pollTimeout: pollTimeout, 
-      recordsChunkSize: recordsChunkSize, 
+    const exportOptions: any = {
+      pollTimeout: pollTimeout,
+      recordsChunkSize: recordsChunkSize,
       startChunkNumber: startChunkNumber,
     };
 

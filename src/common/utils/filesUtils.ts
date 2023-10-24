@@ -246,13 +246,16 @@ export class FilesExporter {
     // Define name of the file
     let outputFile =
       // Id
-      this.dtl?.outputFileNameFormat === "id" ? path.join(parentRecordFolderForFiles, contentVersion.Id) :
-        // Title + Id
-        this.dtl?.outputFileNameFormat === "title_id" ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`) :
-          // Id + Title
-          this.dtl?.outputFileNameFormat === "id_title" ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`) :
-            // Title
-            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+      this.dtl?.outputFileNameFormat === "id"
+        ? path.join(parentRecordFolderForFiles, contentVersion.Id)
+        : // Title + Id
+        this.dtl?.outputFileNameFormat === "title_id"
+        ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
+        : // Id + Title
+        this.dtl?.outputFileNameFormat === "id_title"
+        ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
+        : // Title
+          path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -435,10 +438,10 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         type: "select",
         name: "outputFileNameFormat",
         choices: [
-          { value: "title", title: "title"},
-          { value: "title_id", title: "title_id"},
-          { value: "id_title", title: "id_title"},
-          { value: "id", title: "id"}
+          { value: "title", title: "title" },
+          { value: "title_id", title: "title_id" },
+          { value: "id_title", title: "id_title" },
+          { value: "id", title: "id" },
         ],
         message: "Please select the format of output files names",
         initial: filesExportConfig.outputFileNameFormat,
