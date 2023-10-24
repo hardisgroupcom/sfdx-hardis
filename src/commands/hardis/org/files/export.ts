@@ -31,11 +31,6 @@ See article below
       char: "p",
       description: "Path to the file export project",
     }),
-    filenameformat: flags.enum({
-      char: "f",
-      description: "Format of output files names",
-      options: ["title", "id", "title_id", "id_title"]
-    }),
     chunksize: flags.number({
       char: "c",
       description: "Number of records to add in a chunk before it is processed",
@@ -61,7 +56,7 @@ See article below
     }),
     skipauth: flags.boolean({
       description: "Skip authentication check when a default username is required",
-    })
+    }),
   };
 
   // Comment this out if your command does not require an org username
@@ -80,14 +75,12 @@ See article below
     const recordsChunkSize = this.flags.chunksize;
     const pollTimeout = this.flags.polltimeout;
     const startChunkNumber = this.flags.startchunknumber || 0;
-    const filenameFormat = this.flags.filenameformat
     //const debugMode = this.flags.debug || false;
 
-    const exportOptions: any = { 
-      pollTimeout: pollTimeout, 
-      recordsChunkSize: recordsChunkSize, 
+    const exportOptions: any = {
+      pollTimeout: pollTimeout,
+      recordsChunkSize: recordsChunkSize,
       startChunkNumber: startChunkNumber,
-      filenameFormat: filenameFormat,
     };
 
     // Identify files workspace if not defined
