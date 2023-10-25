@@ -243,7 +243,19 @@ export class FilesExporter {
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
     const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(/[/\\?%*:|"<>]/g, "-");
     const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
-    let outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+    // Define name of the file
+    let outputFile =
+      // Id
+      this.dtl?.outputFileNameFormat === "id"
+        ? path.join(parentRecordFolderForFiles, contentVersion.Id)
+        : // Title + Id
+        this.dtl?.outputFileNameFormat === "title_id"
+        ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
+        : // Id + Title
+        this.dtl?.outputFileNameFormat === "id_title"
+        ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
+        : // Title
+          path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -267,7 +279,7 @@ export class FilesExporter {
     try {
       const fetchRes = await fetch(fetchUrl, this.fetchOptions);
       if (fetchRes.ok !== true) {
-        throw new SfdxError(`Fetch error - ${fetchUrl} - + ${fetchRes.body}`);
+        throw new SfdxError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
       }
       // Wait for file to be written
       const stream = fs.createWriteStream(outputFile);
@@ -367,6 +379,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const soqlQuery = exportFileJson.soqlQuery || "";
   const fileTypes = exportFileJson.fileTypes || "all";
   const outputFolderNameField = exportFileJson.outputFolderNameField || "Name";
+  const outputFileNameFormat = exportFileJson.outputFileNameFormat || "title";
   const overwriteParentRecords = exportFileJson.overwriteParentRecords === false ? false : exportFileJson.overwriteParentRecords || true;
   const overwriteFiles = exportFileJson.overwriteFiles || false;
   return {
@@ -376,6 +389,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
     soqlQuery: soqlQuery,
     fileTypes: fileTypes,
     outputFolderNameField: outputFolderNameField,
+    outputFileNameFormat: outputFileNameFormat,
     overwriteParentRecords: overwriteParentRecords,
     overwriteFiles: overwriteFiles,
   };
@@ -421,16 +435,28 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         initial: filesExportConfig.outputFolderNameField,
       },
       {
+        type: "select",
+        name: "outputFileNameFormat",
+        choices: [
+          { value: "title", title: "title" },
+          { value: "title_id", title: "title_id" },
+          { value: "id_title", title: "id_title" },
+          { value: "id", title: "id" },
+        ],
+        message: "Please select the format of output files names",
+        initial: filesExportConfig.outputFileNameFormat,
+      },
+      {
         type: "confirm",
         name: "overwriteParentRecords",
         message: "Do you want to try to download files attached to a parent records whose folder is already existing in local folders ?",
-        initial: filesExportConfig.outputFolderNameField,
+        initial: filesExportConfig.overwriteParentRecords,
       },
       {
         type: "confirm",
         name: "overwriteFiles",
         message: "Do you want to overwrite file that has already been previously downloaded ?",
-        initial: filesExportConfig.outputFolderNameField,
+        initial: filesExportConfig.overwriteFiles,
       },
     ],
   );
@@ -442,6 +468,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
     sfdxHardisDescription: resp.sfdxHardisDescription || filesExportConfig.sfdxHardisDescription,
     soqlQuery: resp.soqlQuery,
     outputFolderNameField: resp.outputFolderNameField,
+    outputFileNameFormat: resp.outputFileNameFormat,
     overwriteParentRecords: resp.overwriteParentRecords,
     overwriteFiles: resp.overwriteFiles,
   });
