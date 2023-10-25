@@ -14,6 +14,7 @@ import { soqlQuery } from "./apiUtils";
 import { isSfdxProject } from "./projectUtils";
 import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "./deployUtils";
 import { PACKAGE_ROOT_DIR } from "../../settings";
+import { clearCache } from "../cache";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -118,6 +119,11 @@ export async function promptOrg(
       otherOrg: true,
       descriptionForUi: "Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org",
     },
+    {
+      username: "I already authenticated my org but I don't see it !",
+      clearCache: true,
+      descriptionForUi: "It might be a sfdx-hardis cache issue, reset it and try again !",
+    },
     { username: "Cancel", cancel: true, descriptionForUi: "Get out of here :)" },
   ];
 
@@ -164,6 +170,12 @@ export async function promptOrg(
       setDefault: options.setDefault !== false,
     });
     return options.setDefault !== false ? await MetadataUtils.getCurrentOrg() : {};
+  }
+
+  // Reset cache and try again
+  if (org.clearCache === true) {
+    await clearCache();
+    return await promptOrg(commandThis, options);
   }
 
   // Token is expired: login again to refresh it

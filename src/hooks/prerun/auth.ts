@@ -1,5 +1,6 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
+import * as crossSpawn from "cross-spawn";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { clearCache } from "../../common/cache";
@@ -17,6 +18,7 @@ import {
 } from "../../common/utils";
 import { WebSocketClient } from "../../common/websocketClient";
 import { checkConfig, getConfig } from "../../config";
+import { prompts } from "../../common/utils/prompts";
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
@@ -244,14 +246,54 @@ async function authOrg(orgAlias: string, options: any) {
       instanceUrl = await promptInstanceUrl(orgTypes, orgAlias);
 
       const configInfoUsr = await getConfig("user");
-      const loginResult = await execCommand(
-        "sfdx auth:web:login" +
+
+      // Prompt user for Web or Device login
+      const loginTypeRes = await prompts({
+        name: "loginType",
+        type: "select",
+        message: "Select a login type (if you don't know, use Web)",
+        choices: [
+          {
+            title: "Web Login (If VsCode is locally installed on your computer)",
+            value: "web",
+          },
+          {
+            title: "Device Login (Useful for CodeBuilder / CodeSpaces)",
+            value: "device",
+            description: "Look at the instructions in the console terminal if you select this option",
+          },
+        ],
+        default: "web",
+        initial: "web",
+      });
+
+      let loginResult: any = null;
+      // Manage device login
+      if (loginTypeRes.loginType === "device") {
+        const loginCommandArgs = ["org:login:device", "--instanceurl", instanceUrl];
+        if (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias) {
+          loginCommandArgs.push(...["--alias", orgAlias]);
+        }
+        if (options.setDefault === true && isDevHub) {
+          loginCommandArgs.push("--setdefaultdevhubusername");
+        }
+        if (options.setDefault === true && !isDevHub) {
+          loginCommandArgs.push("--set-default");
+        }
+        const commandStr = "sfdx " + loginCommandArgs.join(" ");
+        uxLog(this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(commandStr)))}`);
+        loginResult = crossSpawn.sync("sfdx", loginCommandArgs, { stdio: "inherit" });
+      }
+      // Web Login if device login not used
+      if (loginResult == null) {
+        const loginCommand =
+          "sfdx auth:web:login" +
           (options.setDefault === false ? "" : isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
           ` --instanceurl ${instanceUrl}` +
-          (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : ""),
-        this,
-        { output: true, fail: true, spinner: false },
-      );
+          (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : "");
+
+        loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
+      }
       await clearCache("force:org:list");
       uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
