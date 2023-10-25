@@ -70,16 +70,16 @@ export const hook = async (options: any) => {
     const orgAlias = options.alias
       ? options.alias
       : process.env.ORG_ALIAS
-        ? process.env.ORG_ALIAS
-        : isCI && configInfo.scratchOrgAlias
-          ? configInfo.scratchOrgAlias
-          : isCI && options.scratch && configInfo.sfdxAuthUrl
-            ? configInfo.sfdxAuthUrl
-            : isCI
-              ? await getCurrentGitBranch({ formatted: true })
-              : commandId === "hardis:auth:login" && configInfo.orgAlias
-                ? configInfo.orgAlias
-                : configInfo.scratchOrgAlias || "MY_ORG"; // Can be null and it's ok if we're not in scratch org context
+      ? process.env.ORG_ALIAS
+      : isCI && configInfo.scratchOrgAlias
+      ? configInfo.scratchOrgAlias
+      : isCI && options.scratch && configInfo.sfdxAuthUrl
+      ? configInfo.sfdxAuthUrl
+      : isCI
+      ? await getCurrentGitBranch({ formatted: true })
+      : commandId === "hardis:auth:login" && configInfo.orgAlias
+      ? configInfo.orgAlias
+      : configInfo.scratchOrgAlias || "MY_ORG"; // Can be null and it's ok if we're not in scratch org context
     await authOrg(orgAlias, options);
   }
 };
@@ -139,8 +139,9 @@ async function authOrg(orgAlias: string, options: any) {
         );
       }
       if (setDefaultUsername) {
-        const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? "defaultdevhubusername" : "defaultusername"}=${orgInfoResult.result.username
-          }`;
+        const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? "defaultdevhubusername" : "defaultusername"}=${
+          orgInfoResult.result.username
+        }`;
         await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
       }
       doConnect = false;
@@ -176,8 +177,8 @@ async function authOrg(orgAlias: string, options: any) {
       typeof options.Command.flags?.targetusername === "string"
         ? options.Command.flags?.targetusername
         : process.env.TARGET_USERNAME || isDevHub
-          ? config.devHubUsername
-          : config.targetUsername;
+        ? config.devHubUsername
+        : config.targetUsername;
     if (username == null && isCI) {
       const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
       console.error(
@@ -186,8 +187,8 @@ async function authOrg(orgAlias: string, options: any) {
             isDevHub
               ? "devHubUsername in .sfdx-hardis.yml"
               : options.scratch
-                ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
-                : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`,
+              ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
+              : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`,
           )} `,
         ),
       );
@@ -197,10 +198,10 @@ async function authOrg(orgAlias: string, options: any) {
       typeof options.Command?.flags?.instanceurl === "string" && (options.Command?.flags?.instanceurl || "").startsWith("https")
         ? options.Command.flags.instanceurl
         : (process.env.INSTANCE_URL || "").startsWith("https")
-          ? process.env.INSTANCE_URL
-          : config.instanceUrl
-            ? config.instanceUrl
-            : "https://login.salesforce.com";
+        ? process.env.INSTANCE_URL
+        : config.instanceUrl
+        ? config.instanceUrl
+        : "https://login.salesforce.com";
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
@@ -254,16 +255,16 @@ async function authOrg(orgAlias: string, options: any) {
         choices: [
           {
             title: "Web Login (If VsCode is locally installed on your computer)",
-            value: "web"
+            value: "web",
           },
           {
             title: "Device Login (Useful for CodeBuilder / CodeSpaces)",
             value: "device",
-            description: "Look at the instructions in the console terminal if you select this option"
-          }
+            description: "Look at the instructions in the console terminal if you select this option",
+          },
         ],
         default: "web",
-        initial: "web"
+        initial: "web",
       });
 
       let loginResult: any = null;
@@ -271,30 +272,27 @@ async function authOrg(orgAlias: string, options: any) {
       if (loginTypeRes.loginType === "device") {
         const loginCommandArgs = ["org:login:device", "--instanceurl", instanceUrl];
         if (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias) {
-          loginCommandArgs.push(...["--alias", orgAlias])
+          loginCommandArgs.push(...["--alias", orgAlias]);
         }
         if (options.setDefault === true && isDevHub) {
-          loginCommandArgs.push("--setdefaultdevhubusername")
+          loginCommandArgs.push("--setdefaultdevhubusername");
         }
         if (options.setDefault === true && !isDevHub) {
-          loginCommandArgs.push("--set-default")
+          loginCommandArgs.push("--set-default");
         }
-        const commandStr = 'sfdx ' + loginCommandArgs.join(" ");
+        const commandStr = "sfdx " + loginCommandArgs.join(" ");
         uxLog(this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(commandStr)))}`);
-        loginResult = crossSpawn.sync('sfdx', loginCommandArgs, { stdio: 'inherit' });
+        loginResult = crossSpawn.sync("sfdx", loginCommandArgs, { stdio: "inherit" });
       }
       // Web Login if device login not used
       if (loginResult == null) {
-        const loginCommand = "sfdx auth:web:login" +
+        const loginCommand =
+          "sfdx auth:web:login" +
           (options.setDefault === false ? "" : isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
           ` --instanceurl ${instanceUrl}` +
           (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : "");
 
-        loginResult = await execCommand(
-          loginCommand,
-          this,
-          { output: true, fail: true, spinner: false },
-        );
+        loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
       }
       await clearCache("force:org:list");
       uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));

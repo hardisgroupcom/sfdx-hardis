@@ -123,7 +123,7 @@ export async function promptOrg(
       username: "I already authenticated my org but I don't see it !",
       clearCache: true,
       descriptionForUi: "It might be a sfdx-hardis cache issue, reset it and try again !",
-    },    
+    },
     { username: "Cancel", cancel: true, descriptionForUi: "Get out of here :)" },
   ];
 
@@ -175,7 +175,7 @@ export async function promptOrg(
   // Reset cache and try again
   if (org.clearCache === true) {
     await clearCache();
-    return await promptOrg(commandThis,options);
+    return await promptOrg(commandThis, options);
   }
 
   // Token is expired: login again to refresh it
