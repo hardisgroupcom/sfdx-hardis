@@ -16,10 +16,7 @@ schedules:
   branches:
     # MANUAL: Add your monitored branches here
     include:
-    - integ
-    - qa
-    - preprod
-    - production
+    - monitoring_my_client__integ_sandbox
 
 pool:
   vmImage: ubuntu-latest
@@ -70,10 +67,8 @@ jobs:
     displayName: sfdx-hardis login & Backup
     env:
       # MANUAL: Add your branch related variables here
-      SFDX_CLIENT_ID_INTEG: $(SFDX_CLIENT_ID_INTEG)
-      SFDX_CLIENT_KEY_INTEG: $(SFDX_CLIENT_KEY_INTEG)
-      SFDX_CLIENT_ID_PRODUCTION: $(SFDX_CLIENT_ID_PRODUCTION)
-      SFDX_CLIENT_KEY_PRODUCTION: $(SFDX_CLIENT_KEY_PRODUCTION)
+      SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX)
       CI_COMMIT_REF_NAME: $(BRANCH_NAME)
       CONFIG_BRANCH: $(BRANCH_NAME)
       ORG_ALIAS: $(BRANCH_NAME)
@@ -91,6 +86,8 @@ jobs:
 
   - publish: $(System.DefaultWorkingDirectory)/hardis-report/
     artifact: hardis-report
+    condition: succeededOrFailed()
+    continueOnError: "true"
     displayName: Publish logs as artifacts
 
 ######################
@@ -127,16 +124,16 @@ jobs:
     displayName: sfdx-hardis login & Apex tests
     env:
       # MANUAL: Add your branch related variables here
-      SFDX_CLIENT_ID_INTEG: $(SFDX_CLIENT_ID_INTEG)
-      SFDX_CLIENT_KEY_INTEG: $(SFDX_CLIENT_KEY_INTEG)
-      SFDX_CLIENT_ID_PRODUCTION: $(SFDX_CLIENT_ID_PRODUCTION)
-      SFDX_CLIENT_KEY_PRODUCTION: $(SFDX_CLIENT_KEY_PRODUCTION)
+      SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX)
       CI_COMMIT_REF_NAME: $(BRANCH_NAME)
       CONFIG_BRANCH: $(BRANCH_NAME)
       ORG_ALIAS: $(BRANCH_NAME)
       CI: "true"
 
   - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+    condition: succeededOrFailed()
+    continueOnError: "true"
     artifact: hardis-report
     displayName: Publish logs as artifacts
 
@@ -175,6 +172,7 @@ jobs:
   # Publish Megalinter reports
   - publish: $(System.DefaultWorkingDirectory)/megalinter-reports/
     condition: succeededOrFailed()
+    continueOnError: "true"
     artifact: megalinter-reports
     displayName: Publish reports
 
@@ -214,10 +212,8 @@ jobs:
     displayName: sfdx-hardis login & other checks
     env:
       # MANUAL: Add your branch related variables here
-      SFDX_CLIENT_ID_INTEG: $(SFDX_CLIENT_ID_INTEG)
-      SFDX_CLIENT_KEY_INTEG: $(SFDX_CLIENT_KEY_INTEG)
-      SFDX_CLIENT_ID_PRODUCTION: $(SFDX_CLIENT_ID_PRODUCTION)
-      SFDX_CLIENT_KEY_PRODUCTION: $(SFDX_CLIENT_KEY_PRODUCTION)
+      SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX)
       CI_COMMIT_REF_NAME: $(BRANCH_NAME)
       CONFIG_BRANCH: $(BRANCH_NAME)
       ORG_ALIAS: $(BRANCH_NAME)
@@ -225,4 +221,6 @@ jobs:
 
   - publish: $(System.DefaultWorkingDirectory)/hardis-report/
     artifact: hardis-report
+    condition: succeededOrFailed()
+    continueOnError: "true"
     displayName: Publish logs as artifacts
