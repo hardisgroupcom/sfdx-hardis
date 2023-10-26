@@ -12,6 +12,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.8.0] 2023-10-25
+
+- Allow to use Device login for Code Builder compatibility
+- New option to clear cache if an authenticated org does not appear in the choices
+
 ## [4.7.0] 2023-10-24
 
 - **hardis:org:files:export**: New configuration available to export files: **outputFileNameFormat**, with available values:
