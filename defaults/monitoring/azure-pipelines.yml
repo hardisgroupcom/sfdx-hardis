@@ -103,7 +103,7 @@ jobs:
 
   steps:
   - checkout: self
-    persistCredentials: true
+    persistCredentials: "true"
     displayName: Git checkout
 
   - script: |
@@ -188,7 +188,7 @@ jobs:
 
   steps:
   - checkout: self
-    persistCredentials: true
+    persistCredentials: "true"
     displayName: Git checkout
 
   - script: |

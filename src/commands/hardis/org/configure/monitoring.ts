@@ -75,7 +75,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       throw new SfdxError('Your git repository name must contain the expression "monitoring"');
     }
     const preRequisitesUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
-    uxLog(this, c.cyan('Monitoring pre-requisites documentation: '+c.bold(preRequisitesUrl)));
+    uxLog(this, c.yellow('Monitoring pre-requisites documentation: '+c.bold(preRequisitesUrl)));
     const confirmPreRequisites = await prompts({
       type: "select",
       name: "value",
@@ -187,7 +187,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     const branch = await getCurrentGitBranch();
     uxLog(this, c.greenBright(`Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`));
     const scheduleMonitoringUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
-    const msg = "Please follow the instructions to schedule sfdx-hardis monitoring on your Git server\n" + scheduleMonitoringUrl;
+    const msg = "Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: " + c.bold(scheduleMonitoringUrl);
     uxLog(this,c.yellow(msg));
     await open(scheduleMonitoringUrl, { wait: true });
     // Return an object to be displayed with --json
