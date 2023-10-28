@@ -291,8 +291,18 @@ async function authOrg(orgAlias: string, options: any) {
           (options.setDefault === false ? "" : isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
           ` --instanceurl ${instanceUrl}` +
           (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : "");
-
-        loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
+        try {
+          loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
+        } catch (e) {
+          // Give instructions if server is unavailable
+          if ((e?.message || "").includes("Cannot start the OAuth redirect server on port")) {
+            uxLog(
+              this,
+              c.yellow(c.bold("You might have a ghost sfdx command. Open Task Manager, search for Node.js processes, kill them, then try again")),
+            );
+          }
+          throw e;
+        }
       }
       await clearCache("force:org:list");
       uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));
