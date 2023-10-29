@@ -124,6 +124,9 @@ export default class MonitorBackup extends SfdxCommand {
       ]
       NotifProvider.postNotifications(notifMessage, notifButtons, attachments);
     }
+    else {
+      uxLog(this,c.grey("No updated metadata for today's backup :)"));
+    }
 
     return { outputString: "BackUp processed on org " + this.org.getConnection().instanceUrl };
   }
