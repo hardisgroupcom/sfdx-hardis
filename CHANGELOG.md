@@ -12,6 +12,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.8.1] 2023-10-28
+
+- Catch "Cannot start the OAuth redirect server on port 1717" and give instructions to user to kill the process
+
 ## [4.8.0] 2023-10-25
 
 - Allow to use Device login for Code Builder compatibility
