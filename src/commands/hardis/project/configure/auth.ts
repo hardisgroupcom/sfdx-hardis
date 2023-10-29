@@ -120,7 +120,7 @@ export default class ConfigureAuth extends SfdxCommand {
       message: c.cyanBright(
         `What is the Salesforce username that will be ${
           devHub ? "used as Dev Hub" : "used for deployments by CI server"
-        } ? Example: admin.sfdx@myclient.com`
+        } ? Example: admin.sfdx@myclient.com`,
       ),
     });
     if (devHub) {
@@ -135,7 +135,7 @@ export default class ConfigureAuth extends SfdxCommand {
           targetUsername: usernameResponse.value,
           instanceUrl,
         },
-        `./config/branches/.sfdx-hardis.${branchName}.yml`
+        `./config/branches/.sfdx-hardis.${branchName}.yml`,
       );
     }
 

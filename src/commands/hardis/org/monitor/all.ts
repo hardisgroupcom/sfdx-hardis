@@ -90,7 +90,7 @@ monitoringCommands:
       commandsSummary.push({
         title: command.title,
         status: execCommandResult.status === 0 ? "success" : "failure",
-        command: command.command
+        command: command.command,
       });
     }
 

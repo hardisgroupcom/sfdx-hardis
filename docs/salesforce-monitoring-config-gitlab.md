@@ -5,8 +5,8 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 <!-- markdownlint-disable MD013 -->
 
 - [Pre-requisites](#pre-requisites)
-   - [Create access token](#create-access-token)
-   - [Create CI/CD variable](#create-cicd-variable)
+  - [Create access token](#create-access-token)
+  - [Create CI/CD variable](#create-cicd-variable)
 - [Run sfdx-hardis configuration command](#run-sfdx-hardis-configuration-command)
 - [Define sfdx-hardis environment variables](#define-sfdx-hardis-environment-variables)
 - [Schedule the monitoring job](#schedule-the-monitoring-job)

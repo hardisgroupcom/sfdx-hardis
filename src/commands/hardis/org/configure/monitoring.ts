@@ -75,21 +75,21 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       throw new SfdxError('Your git repository name must contain the expression "monitoring"');
     }
     const preRequisitesUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
-    uxLog(this, c.yellow('Monitoring pre-requisites documentation: '+c.bold(preRequisitesUrl)));
+    uxLog(this, c.yellow("Monitoring pre-requisites documentation: " + c.bold(preRequisitesUrl)));
     const confirmPreRequisites = await prompts({
       type: "select",
       name: "value",
       choices: [
-        { title: "Yes", value: "yes"},
-        { title: "No, help me !", value: "no" }
+        { title: "Yes", value: "yes" },
+        { title: "No, help me !", value: "no" },
       ],
       message: c.cyanBright("Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?"),
     });
     if (confirmPreRequisites.value === "no") {
       const msg = "Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n" + preRequisitesUrl;
-      uxLog(this,c.yellow(msg));
+      uxLog(this, c.yellow(msg));
       await open(preRequisitesUrl, { wait: true });
-      return { outputString: msg}
+      return { outputString: msg };
     }
 
     // Get current default org
@@ -162,7 +162,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         targetUsername: this.org.getUsername(),
         instanceUrl: this.org.getConnection().instanceUrl,
       },
-      "./.sfdx-hardis.yml"
+      "./.sfdx-hardis.yml",
     );
 
     // Generate SSL certificate (requires openssl to be installed on computer)
@@ -188,7 +188,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
     uxLog(this, c.greenBright(`Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`));
     const scheduleMonitoringUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/";
     const msg = "Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: " + c.bold(scheduleMonitoringUrl);
-    uxLog(this,c.yellow(msg));
+    uxLog(this, c.yellow(msg));
     await open(scheduleMonitoringUrl, { wait: true });
     // Return an object to be displayed with --json
     return { outputString: "Configured branch for authentication" };

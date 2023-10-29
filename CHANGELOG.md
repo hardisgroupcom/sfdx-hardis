@@ -8,7 +8,7 @@
   - New command **sfdx hardis:org:monitor:backup**
   - New command **sfdx hardis:org:monitor:all**
 - Simplify `sfdx hardis:project:configure:auth` (Configure Org CI Authentication)
-- Disable auto-update for .gitignore & .forceignore 
+- Disable auto-update for .gitignore & .forceignore
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
