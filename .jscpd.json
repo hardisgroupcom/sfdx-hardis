@@ -21,6 +21,7 @@
     "**/*.json",
     "**/*.svg",
     "**/*.xml",
-    "**/bitbucket-pipelines.yml"
+    "**/bitbucket-pipelines.yml",
+    "**/.gitlab-ci.yml"
   ]
 }
