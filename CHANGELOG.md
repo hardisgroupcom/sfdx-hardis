@@ -4,6 +4,11 @@
 
 - Refactor Monitoring configuration and execution
   - **If you already have a monitoring v1 repository, deprecate it and create a new one with the new monitoring setup and pipelines**
+  - Full setup documentation
+    - GitHub Actions
+    - Gitlab CI
+    - Azure Pipelines
+    - Bitbucket Pipelines
   - Totally rewritten command **sfdx hardis:org:configure:monitoring**
   - New command **sfdx hardis:org:monitor:backup**
   - New command **sfdx hardis:org:monitor:all**
