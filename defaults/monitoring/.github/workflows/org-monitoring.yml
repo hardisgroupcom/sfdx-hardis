@@ -133,6 +133,14 @@ jobs:
         sfdx hardis:auth:login
         sfdx hardis:org:test:apex
 
+    - name: Upload artifacts
+      if:  success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Hardis Apex Tests reports
+        path: |
+          hardis-report
+
   megalinter:
     name: Mega-Linter
     runs-on: ubuntu-latest
@@ -216,4 +224,11 @@ jobs:
         git pull origin ${{ env.BRANCH }}
         sfdx hardis:auth:login
         sfdx hardis:org:monitor:all
-  
+
+    - name: Upload artifacts
+      if:  success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Hardis Monitoring reports
+        path: |
+          hardis-report  
