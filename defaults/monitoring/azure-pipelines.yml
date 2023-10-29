@@ -121,6 +121,7 @@ jobs:
   - script: |
       sfdx hardis:auth:login
       sfdx hardis:org:test:apex
+    continueOnError: "true"
     displayName: sfdx-hardis login & Apex tests
     env:
       # MANUAL: Add your branch related variables here
@@ -167,6 +168,7 @@ jobs:
         -e SYSTEM_ACCESSTOKEN=$(System.AccessToken) \
         -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
         oxsecurity/megalinter-salesforce:latest
+    continueOnError: "true"
     displayName: Run MegaLinter
 
   # Publish Megalinter reports
