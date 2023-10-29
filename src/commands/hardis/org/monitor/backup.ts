@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
-import { execCommand, filterPackageXml, uxLog } from "../../../../common/utils";
+import { execCommand, filterPackageXml, getCurrentGitBranch, uxLog } from "../../../../common/utils";
 import { MetadataUtils } from "../../../../common/metadata-utils";
 import { CONSTANTS } from "../../../../config";
 import { GitProvider } from "../../../../common/gitProvider";
@@ -111,7 +111,8 @@ export default class MonitorBackup extends SfdxCommand {
     const diffFiles = await MetadataUtils.listChangedFiles();
     // No notif if no updated file
     if (diffFiles.length > 0) {
-      const notifMessage = `Updates detected in org ${this.org.getConnection().baseUrl()} (Monitoring BackUp)`;
+      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+      const notifMessage = `Updates detected in ${branchName} (Monitoring BackUp)`;
       const notifButtons = [];
       const jobUrl = await GitProvider.getJobUrl();
       if (jobUrl) {
