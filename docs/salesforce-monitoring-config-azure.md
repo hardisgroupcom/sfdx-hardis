@@ -43,7 +43,7 @@ _Skip this step if you already created the pipeline for the monitoring of anothe
 
 - Click on **Continue**
 
-- Click on **Save** (contexual to the **Run** button)
+- Click on **Save** (contextual to the **Run** button)
 
 ![](assets/images/screenshot-monitoring-azure-pipeline.png)
 

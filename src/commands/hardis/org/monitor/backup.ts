@@ -92,7 +92,7 @@ export default class MonitorBackup extends SfdxCommand {
     });
 
     // Retrieve sfdx sources in local git repo
-    uxLog(this, c.cyan(`Run the retrieve command for backuping filtered metadatas ...`));
+    uxLog(this, c.cyan(`Run the retrieve command for retrieving filtered metadatas ...`));
     try {
       await execCommand(`sfdx force:source:retrieve -x ${packageXmlBackUpItemsFile} -u ${this.org.getUsername()} --wait 120`, this, {
         fail: true,
