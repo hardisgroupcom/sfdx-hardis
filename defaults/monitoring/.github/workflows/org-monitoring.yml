@@ -61,6 +61,8 @@ jobs:
         ORG_ALIAS: ${{ env.BRANCH }}
         CONFIG_BRANCH: ${{ env.BRANCH }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         FORCE_COLOR: "1"
       run: |
         echo "Monitoring sfdx-hardis: Metadata Backup for \"$CONFIG_BRANCH\""
@@ -126,6 +128,8 @@ jobs:
         ORG_ALIAS: ${{ env.BRANCH }}
         CONFIG_BRANCH: ${{ env.BRANCH }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         FORCE_COLOR: "1"
       run: |
         echo "Run apex tests against \"$CONFIG_BRANCH\""
@@ -218,6 +222,8 @@ jobs:
         ORG_ALIAS: ${{ env.BRANCH }}
         CONFIG_BRANCH: ${{ env.BRANCH }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         FORCE_COLOR: "1"
       run: |
         echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
