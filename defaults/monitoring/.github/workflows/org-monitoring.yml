@@ -81,7 +81,7 @@ jobs:
             github.head_ref ||
             github.ref
           }}
-        commit_message: "Org state on $(date -u +'%Y-%m-%d %H:%M') for env.BRANCH [skip ci]"
+        commit_message: "Org state on ${{ (date -u +'%Y-%m-%d %H:%M') }} for ${{ env.BRANCH }} [skip ci]"
         commit_user_name: sfdx-hardis-bot
         commit_user_email: contact@cloudity.com
 
@@ -126,7 +126,7 @@ jobs:
         FORCE_COLOR: "1"
       run: |
         echo "Run apex tests against \"$CONFIG_BRANCH\""
-        git pull origin "${env.BRANCH}"
+        git pull origin ${{ env.BRANCH }}
         sfdx hardis:auth:login
         sfdx hardis:org:test:apex
 
@@ -144,7 +144,7 @@ jobs:
           fetch-depth: 0
 
       - name: Git pull
-        run:  git pull origin "${env.BRANCH}"
+        run:  git pull origin ${{ env.BRANCH }}
 
       # Mega-Linter
       - name: Mega-Linter
@@ -210,7 +210,7 @@ jobs:
         FORCE_COLOR: "1"
       run: |
         echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
-        git pull origin "${env.BRANCH}"
+        git pull origin ${{ env.BRANCH }}
         sfdx hardis:auth:login
         sfdx hardis:org:monitor:all
   
