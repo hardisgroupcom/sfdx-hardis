@@ -34,7 +34,9 @@ You don't need to work in CI/CD to use Monitoring, it is compliant with any API 
 
 All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab**, **Azure** or **BitBucket** repository.
 
-- Create an empty repository, then clone it locally
+- Create and clone a git repository
+- Open it with Visual Studio Code, then open [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) extension menu.
+  - If you need installations instructions, please [visit documentation page](salesforce-ci-cd-use-install.md)
 
 - Follow instructions, that can be specific according to your git provider
 

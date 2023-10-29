@@ -134,6 +134,7 @@ jobs:
   megalinter:
     name: Mega-Linter
     runs-on: ubuntu-latest
+    needs: backup
     permissions: read-all
     steps:
       # Git Checkout
