@@ -112,7 +112,9 @@ export default class MonitorBackup extends SfdxCommand {
     // No notif if no updated file
     if (diffFiles.length > 0) {
       const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      const notifMessage = `Updates detected in ${branchName} (Monitoring BackUp)`;
+      const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
+      const linkMarkdown = `<${targetLabel}|*${targetLabel.replace("https://", "").replace(".my.salesforce.com", "")}*>`;
+      const notifMessage = `Updates detected in ${linkMarkdown} (Monitoring BackUp)`;
       const notifButtons = [];
       const jobUrl = await GitProvider.getJobUrl();
       if (jobUrl) {

@@ -86,7 +86,7 @@ jobs:
             github.head_ref ||
             github.ref
           }}
-        commit_message: "Org state on ${{ env.BUILD_DATE }} for ${{ env.BRANCH }} [skip ci]"
+        commit_message: "Org state on ${{ env.BUILD_DATE }} for ${{ github.ref }} [skip ci]"
         commit_user_name: sfdx-hardis-bot
         commit_user_email: contact@cloudity.com
 
