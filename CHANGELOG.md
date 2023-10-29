@@ -4,6 +4,7 @@
 
 - Refactor Monitoring configuration and execution
   - **If you already have a monitoring v1 repository, deprecate it and create a new one with the new monitoring setup and pipelines**
+  - Send slack notifications
   - Full setup documentation
     - GitHub Actions
     - Gitlab CI

@@ -18,7 +18,7 @@ export class SlackProvider extends NotifProviderRoot {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async postNotification(notifMessage: string, buttons: any[] = []): Promise<void> {
+  public async postNotification(notifMessage: string, buttons: any[] = [], attachments: any[] = []): Promise<void> {
     const mainNotifsChannelId = process.env.SLACK_CHANNEL_ID || null;
     if (mainNotifsChannelId == null) {
       throw new SfdxError(
@@ -70,6 +70,7 @@ export class SlackProvider extends NotifProviderRoot {
       try {
         const resp = await this.slackClient.chat.postMessage({
           text: notifMessage,
+          attachments: attachments,
           blocks: blocks,
           channel: slackChannelId,
           unfurl_links: false,

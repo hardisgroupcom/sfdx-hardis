@@ -8,6 +8,9 @@ import { buildOrgManifest } from "../../../../common/utils/deployUtils";
 import { execCommand, filterPackageXml, uxLog } from "../../../../common/utils";
 import { MetadataUtils } from "../../../../common/metadata-utils";
 import { CONSTANTS } from "../../../../config";
+import { GitProvider } from "../../../../common/gitProvider";
+import { NotifProvider } from "../../../../common/notifProvider";
+import { MessageAttachment } from "@slack/web-api";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -102,6 +105,24 @@ export default class MonitorBackup extends SfdxCommand {
     } catch (e) {
       uxLog(this, c.yellow("Crash during backup. You may exclude more items by customizing file manifest/package-skip-items.xml"));
       throw e;
+    }
+
+    // Send notifications
+    const diffFiles = await MetadataUtils.listChangedFiles();
+    // No notif if no updated file
+    if (diffFiles.length > 0) {
+      const notifMessage = `Updates detected in org ${this.org.getConnection().baseUrl()} (Monitoring BackUp)`;
+      const notifButtons = [];
+      const jobUrl = await GitProvider.getJobUrl();
+      if (jobUrl) {
+        notifButtons.push({ text: "View BackUp Job", url: jobUrl });
+      }
+      const attachments: MessageAttachment[] = [
+        {
+          text: diffFiles.join("\n ")
+        }
+      ]
+      NotifProvider.postNotifications(notifMessage, notifButtons, attachments);
     }
 
     return { outputString: "BackUp processed on org " + this.org.getConnection().instanceUrl };

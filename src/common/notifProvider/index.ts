@@ -13,10 +13,10 @@ export abstract class NotifProvider {
     return notifProviders;
   }
 
-  static postNotifications(notifMessage: string, buttons: any[] = []) {
+  static postNotifications(notifMessage: string, buttons: any[] = [], attachments: any[] = []) {
     const notifProviders = this.getInstances();
     for (const notifProvider of notifProviders) {
-      notifProvider.postNotification(notifMessage, buttons);
+      notifProvider.postNotification(notifMessage, buttons, attachments);
     }
   }
 
@@ -25,7 +25,7 @@ export abstract class NotifProvider {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async postNotification(notifMessage: string, buttons: any[] = []): Promise<void> {
+  public async postNotification(notifMessage: string, buttons: any[] = [], attachments: any[] = []): Promise<void> {
     uxLog(this, c.grey("method postNotification is not implemented on " + this.getLabel()));
   }
 }
