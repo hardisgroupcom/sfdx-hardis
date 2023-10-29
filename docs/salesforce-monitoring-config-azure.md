@@ -94,12 +94,13 @@ schedules:
 
 ## Schedule the monitoring job
 
-- Go to **Project -> Build -> Pipeline schedules**
-- Click on **New schedule**
-- Input custom interval pattern as [CRON expression](https://crontab.cronhub.io/){target=blank}, for example:
-  - `0 1 * * *` will run the monitoring job **every day at 1 AM**
-  - `0 22 * * *` will run the monitoring job **everyday at 10 PM**
-- Select the CRON TimeZone (for example `[UTC+2] Paris`)
-- Select the target branch corresponding to the org you want to monitor
-- Validate by clicking on **Create Pipeline Schedule**
+Schedule is already included within **azure-pipelines.yml**.
 
+Default is everyday at 4 AM, but you can update the [CRON expression](https://crontab.cronhub.io/).
+
+```yaml
+schedules:
+- cron: "0 4 * * *" # Cron format -> https://crontab.cronhub.io/
+```
+
+When updated, commit and push.
