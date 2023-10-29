@@ -4,6 +4,32 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
+- [Configuration](#configuration)
+
+_sfdx-hardis monitoring is in beta but can already be safely used_
+
+## Monitor your Salesforce org with sfdx-hardis
+
+> This feature worked yesterday in production, but today it crashes, what happened ?
+
+Salesforce provide **Audit Trail** to trace configuration updates in **production** or **sandbox** orgs. 
+
+You can **know who updated what**, but not with details (before / after).
+
+Sfdx-hardis monitoring provides a **simple way to know the exact state of your orgs metadatas everyday**, or even several times a day.
+
+Installation and usage are admin-friendly.
+
+Extra features are also available, like:
+
+- Run apex tests (and soon flow tests)
+- Analyze the quality and the security of your metadatas with [MegaLinter](https://megalinter.io/latest/)
+- Check if you have [deprecated api versions called](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
+- Custom command lines that you can specify in `.sfdx-hardis.yml`
+
+You don't need to work in CI/CD to use Monitoring, it is compliant with any API enabled org :)
+
 ## Configuration
 
 All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab**, **Azure** or **BitBucket** repository.
