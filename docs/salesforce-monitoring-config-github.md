@@ -26,6 +26,23 @@ None
 
 ![](assets/images/screenshot-github-variables-add.png)
 
+## Update org-monitoring.yml
+
+- Open **.github/workflows/org-monitoring.yml** in VsCode and update all places where `MANUAL` is found
+  - environment variables
+
+Examples:
+
+```yaml
+      env:
+        # MANUAL: Update variables below !
+        SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX}}
+        SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+```
+
+- Commit and push
+
 ## Schedule the monitoring job
 
 Schedule is already included within **org-monitoring.yml**.
