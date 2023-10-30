@@ -3,6 +3,7 @@ import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { SlackProvider } from "./slackProvider";
 import { UtilsNotifs as utilsNotifs } from "./utils";
+import { TeamsProvider } from "./teamsProvider";
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -10,6 +11,10 @@ export abstract class NotifProvider {
     // Slack
     if (UtilsNotifs.isSlackAvailable()) {
       notifProviders.push(new SlackProvider());
+    }
+    // Ms Teams
+    if (UtilsNotifs.isMsTeamsAvailable()) {
+      notifProviders.push(new TeamsProvider())
     }
     return notifProviders;
   }
