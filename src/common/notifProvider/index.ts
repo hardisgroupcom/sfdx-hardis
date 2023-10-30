@@ -14,10 +14,10 @@ export abstract class NotifProvider {
     return notifProviders;
   }
 
-  static postNotifications(notifMessage: string, buttons: any[] = [], attachments: any[] = []) {
+  static postNotifications(notifMessage: NotifMessage) {
     const notifProviders = this.getInstances();
     for (const notifProvider of notifProviders) {
-      notifProvider.postNotification(notifMessage, buttons, attachments);
+      notifProvider.postNotification(notifMessage);
     }
   }
 
@@ -29,6 +29,19 @@ export abstract class NotifProvider {
   public async postNotification(notifMessage: string, buttons: any[] = [], attachments: any[] = []): Promise<void> {
     uxLog(this, c.grey("method postNotification is not implemented on " + this.getLabel()));
   }
+}
+
+export interface NotifMessage {
+  text: string;
+  buttons?: NotifButton[];
+  attachments?: any[];
+  severity?: 'critical' | 'severe' | 'warning' | 'info'; 
+}
+
+export interface NotifButton {
+  text: string;
+  url?: string;
+  style?: 'primary' | 'danger'
 }
 
 export const UtilsNotifs = utilsNotifs;

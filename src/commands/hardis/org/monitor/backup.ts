@@ -125,7 +125,7 @@ export default class MonitorBackup extends SfdxCommand {
           text: diffFiles.join("\n ")
         }
       ]
-      NotifProvider.postNotifications(notifMessage, notifButtons, attachments);
+      NotifProvider.postNotifications({ text: notifMessage, buttons: notifButtons, attachments: attachments });
     }
     else {
       uxLog(this, c.grey("No updated metadata for today's backup :)"));

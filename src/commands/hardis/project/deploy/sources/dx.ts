@@ -327,7 +327,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         const prButtonText = "View Pull Request";
         notifButtons.push({ text: prButtonText, url: prUrl });
       }
-      NotifProvider.postNotifications(notifMessage, notifButtons);
+      NotifProvider.postNotifications({text: notifMessage, buttons: notifButtons});
     }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
