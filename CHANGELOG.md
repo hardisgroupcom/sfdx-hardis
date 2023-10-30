@@ -2,7 +2,11 @@
 
 ## [beta] (master)
 
-- Refactor Monitoring configuration and execution
+Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
+
+## [4.9.0] 2023-10-30
+
+- Refactor Monitoring configuration and execution (beta)
   - **If you already have a monitoring v1 repository, deprecate it and create a new one with the new monitoring setup and pipelines**
   - Send slack notifications
     - Latest updates detected in org
@@ -19,8 +23,6 @@
 - Simplify `sfdx hardis:project:configure:auth` (Configure Org CI Authentication)
 - Disable auto-update for .gitignore & .forceignore
 - Improve [documentation related to pull and commit](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#commit-your-updates)
-
-Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 ## [4.8.1] 2023-10-28
 
