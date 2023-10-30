@@ -41,6 +41,7 @@ export interface NotifMessage {
   buttons?: NotifButton[];
   attachments?: any[];
   severity?: "critical" | "error" | "warning" | "info" | "success";
+  sideImage?: string;
 }
 
 export interface NotifButton {

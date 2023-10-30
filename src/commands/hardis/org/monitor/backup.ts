@@ -114,7 +114,7 @@ export default class MonitorBackup extends SfdxCommand {
       const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
       const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
       const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
-      const notifMessage = `Updates detected in ${linkMarkdown} (Monitoring BackUp)`;
+      const notifMessage = `Updates detected in ${linkMarkdown}`;
       const notifButtons = [];
       const jobUrl = await GitProvider.getJobUrl();
       if (jobUrl) {
@@ -130,6 +130,7 @@ export default class MonitorBackup extends SfdxCommand {
         buttons: notifButtons,
         attachments: attachments,
         severity: "info",
+        sideImage: "backup"
       });
     } else {
       uxLog(this, c.grey("No updated metadata for today's backup :)"));

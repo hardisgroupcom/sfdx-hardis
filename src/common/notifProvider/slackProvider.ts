@@ -41,6 +41,13 @@ export class SlackProvider extends NotifProviderRoot {
         text: UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity),
       },
     };
+    if (notifMessage.sideImage) {
+      block.accessory = {
+        "type": "image",
+        "image_url": notifMessage.sideImage,
+        "alt_text": "sfdx-hardis"
+      }
+    }
     blocks.push(block);
     // Add action blocks
     if (notifMessage.buttons?.length > 0) {
