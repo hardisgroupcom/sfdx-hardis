@@ -130,7 +130,7 @@ export default class MonitorBackup extends SfdxCommand {
         buttons: notifButtons,
         attachments: attachments,
         severity: "info",
-        sideImage: "backup"
+        sideImage: "backup",
       });
     } else {
       uxLog(this, c.grey("No updated metadata for today's backup :)"));
