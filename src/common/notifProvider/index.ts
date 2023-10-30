@@ -2,12 +2,13 @@ import { uxLog } from "../utils";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { SlackProvider } from "./slackProvider";
+import { UtilsNotifs as utilsNotifs } from "./utils";
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
     const notifProviders: NotifProviderRoot[] = [];
     // Slack
-    if (process.env.SLACK_TOKEN) {
+    if (UtilsNotifs.isSlackAvailable()) {
       notifProviders.push(new SlackProvider());
     }
     return notifProviders;
@@ -29,3 +30,5 @@ export abstract class NotifProvider {
     uxLog(this, c.grey("method postNotification is not implemented on " + this.getLabel()));
   }
 }
+
+export const UtilsNotifs = utilsNotifs;

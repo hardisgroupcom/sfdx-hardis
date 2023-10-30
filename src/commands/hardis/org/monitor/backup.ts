@@ -9,7 +9,7 @@ import { execCommand, filterPackageXml, getCurrentGitBranch, uxLog } from "../..
 import { MetadataUtils } from "../../../../common/metadata-utils";
 import { CONSTANTS } from "../../../../config";
 import { GitProvider } from "../../../../common/gitProvider";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
 import { MessageAttachment } from "@slack/web-api";
 
 // Initialize Messages with the current plugin directory
@@ -113,7 +113,7 @@ export default class MonitorBackup extends SfdxCommand {
     if (diffFiles.length > 0) {
       const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
       const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
-      const linkMarkdown = `<${targetLabel}|*${targetLabel.replace("https://", "").replace(".my.salesforce.com", "")}*>`;
+      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
       const notifMessage = `Updates detected in ${linkMarkdown} (Monitoring BackUp)`;
       const notifButtons = [];
       const jobUrl = await GitProvider.getJobUrl();
@@ -128,7 +128,7 @@ export default class MonitorBackup extends SfdxCommand {
       NotifProvider.postNotifications(notifMessage, notifButtons, attachments);
     }
     else {
-      uxLog(this,c.grey("No updated metadata for today's backup :)"));
+      uxLog(this, c.grey("No updated metadata for today's backup :)"));
     }
 
     return { outputString: "BackUp processed on org " + this.org.getConnection().instanceUrl };
