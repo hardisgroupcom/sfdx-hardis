@@ -69,7 +69,7 @@ export class TeamsProvider extends NotifProviderRoot {
         const response = await webhook.send(JSON.stringify(teamsHookData));
         uxLog(this, c.gray(`Sent Ms Teams notification to Web Hook ${hookUrl}: ${response.text}`));
       } catch (error) {
-        uxLog(this, c.red(`Error while sending Teams notification to Web Hook ${hookUrl}\n${error.message}`));
+        uxLog(this, c.red(`Error while sending Teams notification to Web Hook ${hookUrl}\n${JSON.stringify(error)}`));
       }
     }
     return;
