@@ -3,7 +3,7 @@ import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils";
-import { NotifMessage } from ".";
+import { NotifMessage, UtilsNotifs } from ".";
 
 export class SlackProvider extends NotifProviderRoot {
   private slackClient: InstanceType<typeof WebClient>;
@@ -38,7 +38,7 @@ export class SlackProvider extends NotifProviderRoot {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: notifMessage.text,
+        text: UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity),
       },
     };
     blocks.push(block);

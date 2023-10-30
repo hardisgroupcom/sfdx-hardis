@@ -35,7 +35,7 @@ export interface NotifMessage {
   text: string;
   buttons?: NotifButton[];
   attachments?: any[];
-  severity?: 'critical' | 'severe' | 'warning' | 'info'; 
+  severity?: 'critical' | 'error' | 'warning' | 'info' | 'success';
 }
 
 export interface NotifButton {
