@@ -41,13 +41,14 @@ export class SlackProvider extends NotifProviderRoot {
         text: UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity),
       },
     };
+    /* Disable until we don't know how to use it cleanly
     if (notifMessage.sideImage) {
       block.accessory = {
         "type": "image",
         "image_url": notifMessage.sideImage,
         "alt_text": "sfdx-hardis"
       }
-    }
+    } */
     blocks.push(block);
     // Add action blocks
     if (notifMessage.buttons?.length > 0) {
