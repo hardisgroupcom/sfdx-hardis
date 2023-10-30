@@ -68,7 +68,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   }
 
   updatePullRequestResult(errorsAndTips, failedTests, options);
-  return { tips, errorsAndTips, errLog: logResLines.join("\n") };
+  return { tips, errorsAndTips, failedTests, errLog: logResLines.join("\n") };
 }
 
 // Checks if the error string or regex is found in the log

@@ -23,7 +23,7 @@ import { forceSourceDeploy } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
-import { NotifProvider } from "../../../../../common/notifProvider";
+import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider";
 import { GitProvider } from "../../../../../common/gitProvider";
 
 // Initialize Messages with the current plugin directory
@@ -306,12 +306,12 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     // Send notification of deployment success
     if (!check) {
       const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
-      const linkMarkdown = `<${targetLabel}|*${targetLabel.replace("https://", "").replace(".my.salesforce.com", "")}*>`;
+      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
       const currentGitBranch = await getCurrentGitBranch();
       let branchMd = `*${currentGitBranch}*`;
       const branchUrl = await GitProvider.getCurrentBranchUrl();
       if (branchUrl) {
-        branchMd = `<${branchUrl}|*${currentGitBranch}*>`;
+        branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
       }
       let notifMessage = `Deployment has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
       const notifButtons = [];
@@ -327,7 +327,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         const prButtonText = "View Pull Request";
         notifButtons.push({ text: prButtonText, url: prUrl });
       }
-      NotifProvider.postNotifications(notifMessage, notifButtons);
+      NotifProvider.postNotifications({ text: notifMessage, buttons: notifButtons, severity: "success" });
     }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }

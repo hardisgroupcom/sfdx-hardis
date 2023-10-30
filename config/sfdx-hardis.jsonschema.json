@@ -645,6 +645,39 @@
       "title": "Metadata to retrofit",
       "type": "array"
     },
+    "monitoringCommands": {
+      "$id": "#/properties/monitoringCommands",
+      "description": "List of monitoring commands to run with command hardis:org:monitor:all",
+      "examples": [
+        [
+          { "title": "Detect calls to deprecated API versions", "command": "sfdx hardis:org:diagnose:legacyapi" },
+          { "title": "My custom command", "command": "sfdx my:custom:command" }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/monitoringCommands/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Monitoring command",
+        "properties": {
+          "title": {
+            "$id": "#/properties/monitoringCommands/items/properties/title",
+            "description": "Title of the command (will appear in logs)",
+            "title": "Title",
+            "type": "string"
+          },
+          "command": {
+            "$id": "#/properties/monitoringCommands/items/properties/command",
+            "description": "Bash command to run",
+            "title": "Command",
+            "type": "string"
+          }
+        },
+        "required": ["title", "command"]
+      },
+      "title": "Monitoring commands",
+      "type": "array"
+    },
     "msTeamsWebhookUrl": {
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",

@@ -6,6 +6,8 @@ import * as fs from "fs-extra";
 import { execCommand, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { getConfig, getReportDirectory } from "../../../../config";
+import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
+import { GitProvider } from "../../../../common/gitProvider";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -101,6 +103,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     let message = "";
     const testResStr = testRes.stdout + testRes.stderr;
     outcome = outcome || /Outcome *(.*) */.exec(testResStr)[1].trim();
+    const currentGitBranch = await getCurrentGitBranch();
     if (outcome === "Passed") {
       //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = "[sfdx-hardis] Successfully run apex tests on org";
@@ -135,9 +138,20 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
           throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
         }
         if (coverageTestRun < minCoverageTestRun) {
-          // Send notification if possible
+          // Send notification
+          const linkMarkdown = await this.getBranchMarkdownLink();
+          const jobUrl = await GitProvider.getJobUrl();
+          const notifButtons = [];
+          if (jobUrl) {
+            notifButtons.push({ text: "View BackUp Job", url: jobUrl });
+          }
+          NotifProvider.postNotifications({
+            text: `Apex Tests run coverage issue in ${linkMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
+            buttons: notifButtons,
+            severity: "error",
+          });
+          // (LEGACY) Send notification if possible
           if (isCI && (await canSendNotifications())) {
-            const currentGitBranch = await getCurrentGitBranch();
             await sendNotification({
               title: `WARNING: Apex Tests run coverage issue in ${currentGitBranch}`,
               text: `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
@@ -152,15 +166,27 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     } else {
       message = `Org apex tests failure (Outcome: ${outcome} )`;
       uxLog(this, c.red(message));
-      // Send notification if possible
+
+      let testResultStr;
+      const reportDir = await getReportDirectory();
+      if (fs.existsSync(reportDir + "/test-result.txt")) {
+        testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
+      }
+      const linkMarkdown = await this.getBranchMarkdownLink();
+      const notifButtons = [];
+      const jobUrl = await GitProvider.getJobUrl();
+      if (jobUrl) {
+        notifButtons.push({ text: "View Apex test Job", url: jobUrl });
+      }
+      // Send notification
+      NotifProvider.postNotifications({
+        text: `Apex Tests are failing in ${linkMarkdown}`,
+        attachments: [{ text: testResultStr }],
+        buttons: notifButtons,
+        severity: "error",
+      });
+      // (LEGACY) Send notification if possible
       if (await canSendNotifications()) {
-        let testResultStr;
-        const reportDir = await getReportDirectory();
-        if (fs.existsSync(reportDir + "/test-result.txt")) {
-          testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
-          testResultStr = testResultStr.split("=== Test Results")[0];
-        }
-        const currentGitBranch = await getCurrentGitBranch();
         await sendNotification({
           title: `WARNING: Apex Tests are failing in ${currentGitBranch}`,
           text: `Outcome: ${outcome},
@@ -173,5 +199,12 @@ ${testResultStr}`,
     }
 
     return { orgId: this.org.getOrgId(), outputString: message };
+  }
+
+  public async getBranchMarkdownLink() {
+    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+    const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
+    const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
+    return linkMarkdown;
   }
 }

@@ -13,7 +13,7 @@
       "localRoot": "${workspaceFolder}",
       "remoteRoot": "${workspaceFolder}",
       "stopOnEntry": false,
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": ["<node_internals>/**", "**/node_modules/*.js"]
     },
     {
       "name": "Run All Tests",

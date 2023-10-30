@@ -1,78 +1,99 @@
-########################################################
-# Pipeline to run a scheduled backup of org metadatas  #
-########################################################
+#######################################
+### sfdx-hardis monitoring pipeline ###
+#######################################
 
-# PLEASE DO NOT UPDATE THIS FILE
-
-include:
-  - local: ".gitlab-ci-config.yml"
+# PLEASE DO NOT UPDATE THIS FILE EXCEPT TO ADD TAGS TO YOUR STEPS
 
 variables:
   FORCE_COLOR: "1"
 
 # Pipeline stages
 stages:
-  - purge
   - backup
-  - test
+  - monitor
 
 # Use sfdx-hardis docker image to always be up to date with latest version
-image: hardisgroupcom/sfdx-hardis:latest
-
-# Purge obsolete flow versions
-purge_flow_versions:
-  stage: purge
-  # Gitlab CI Runner must have ubuntu tag
-  tags:
-    - ubuntu
-  # Define variables in CI variables or .gitlab-ci-config.yml
-  only:
-    variables:
-      - $PURGE == "true"
-      - $PURGE_FLOW_VERSIONS == "true"
-  except:
-    - master
-  script:
-    # Purge flows using sfdx-hardis
-    - sfdx hardis:auth:login
-    - sfdx hardis:org:purge:flow --no-prompt
+image: hardisgroupcom/sfdx-hardis:latest # test with alpha
 
 # Metadata backup
 backup:
   stage: backup
-  tags:
-    - ubuntu
-  except:
-    - master
+  interruptible: true
+  #tags:
+  #  - ubuntu
   before_script:
     - git config --global user.name "${GITLAB_USER_NAME}"
     - git config --global user.email "${GITLAB_USER_EMAIL}"
   script:
     # Extract metadata folders (+other checks ^^)
     - sfdx hardis:auth:login
-    - sfdx hardis:org:retrieve:sources:metadata --folder metadatas
+    - sfdx hardis:org:monitor:backup
     # Commit and push new state
     - git status
     - git add --all
-    - git commit -m "$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME org state on $(date -u +'%Y-%m-%d %H:%M') [skip ci]" || echo "No changes to commit"
+    - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $CI_COMMIT_REF_NAME [skip ci]" || echo "No changes to commit"
     - git push -o ci-skip https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_COMMIT_REF_NAME
   artifacts:
     when: always
     paths:
       - hardis-report
-    expire_in: 1 week
+    expire_in: 6 month
+
+# Apex tests
+apex_tests:
+  stage: monitor
+  interruptible: true
+  allow_failure: true
+  #tags:
+  #  - ubuntu
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
+  script:
+    # Login & run apex tests
+    - sfdx hardis:auth:login
+    - sfdx hardis:org:test:apex
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 6 month
+
+# Monitoring tools
+monitoring_tools:
+  stage: monitor
+  interruptible: true
+  allow_failure: true
+  #tags:
+  #  - ubuntu
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
+  script:
+    # Login & run apex tests
+    - sfdx hardis:auth:login
+    - sfdx hardis:org:monitor:all
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 6 month
 
 # Check code quality and good practices using MegaLinter
-check_quality:
-  stage: test
-  tags:
-    - ubuntu
-  # Conditions d'execution
-  except:
-    - master
+megalinter:
+  stage: monitor
+  interruptible: true
+  allow_failure: true
+  #tags:
+  #  - ubuntu
   image: oxsecurity/megalinter-salesforce:latest
   script: ["true"]
-  allow_failure: true
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
   variables:
     # All available variables are described in documentation
     # https://megalinter.io/latest/config-file/
@@ -82,5 +103,5 @@ check_quality:
   artifacts:
     when: always
     paths:
-      - report
-    expire_in: 1 week
+      - megalinter-reports
+    expire_in: 6 month

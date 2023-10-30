@@ -1,5 +1,6 @@
 import { SfdxError } from "@salesforce/core";
 import { uxLog } from "../utils";
+import { NotifMessage } from ".";
 
 export abstract class NotifProviderRoot {
   protected token: string;
@@ -9,7 +10,7 @@ export abstract class NotifProviderRoot {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async postNotification(_notifMessage: string, buttons: any[] = []): Promise<void> {
+  public async postNotification(notifMessage: NotifMessage): Promise<void> {
     uxLog(this, `Method postNotification is not implemented yet on ${this.getLabel()}`);
     return;
   }

@@ -2,6 +2,24 @@
 
 ## [beta] (master)
 
+- Refactor Monitoring configuration and execution
+  - **If you already have a monitoring v1 repository, deprecate it and create a new one with the new monitoring setup and pipelines**
+  - Send slack notifications
+    - Latest updates detected in org
+    - Failing apex tests, or insufficient code coverage
+    - Deprecated API calls detected
+  - Full setup documentation
+    - GitHub Actions
+    - Gitlab CI
+    - Azure Pipelines
+    - Bitbucket Pipelines
+  - Totally rewritten command **sfdx hardis:org:configure:monitoring**
+  - New command **sfdx hardis:org:monitor:backup**
+  - New command **sfdx hardis:org:monitor:all**
+- Simplify `sfdx hardis:project:configure:auth` (Configure Org CI Authentication)
+- Disable auto-update for .gitignore & .forceignore
+- Improve [documentation related to pull and commit](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#commit-your-updates)
+
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 ## [4.8.1] 2023-10-28

@@ -59,6 +59,9 @@ jobs:
         ORG_ALIAS: ${{ env.BRANCH }} # Defines the target branch of the PR
         CONFIG_BRANCH: ${{ env.BRANCH }} # Defines the target branch of the PR
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
         FORCE_COLOR: "1"
       run: |
         echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""

@@ -1,3 +1,7 @@
+/*
+This class is deprecated and kept for backward compatibility
+Use NotifProvider class instead :)
+*/
 import { uxLog } from ".";
 import * as c from "chalk";
 import { IncomingWebhook } from "ms-teams-webhook";

@@ -8,10 +8,13 @@ description: Send notifications on slack channels during CI/CD operations
 
 ## Slack Integration
 
-You can receive notifications on slack channels when CI/CD events are happening:
+You can receive notifications on slack channels when sfdx-hardis events are happening:
 
 - Deployment from a major branch to a major Salesforce org (ex: integration git branch to Integration Org)
-- More soon (ask for them !)
+- Salesforce org monitoring
+  - Latest updates
+  - Failing apex tests
+  - Monitoring checks notifications
 
 ![slack-notifs](assets/images/screenshot-slack.png)
 
@@ -36,7 +39,7 @@ Create a slack app here -> <https://api.slack.com/apps>
 - Create a slack channel that will receive all notifications (ex: _#notifs-sfdx-hardis_)
 - Open the channel info, copy its ID and create a secret value named **SLACK_CHANNEL_ID** in your git provider configuration
 - Additionally, you can create branch-scoped channels by creating new channels and create appropriate variables
-  - Example: Channel _#notifs-sfdx-hardis-integration_ and variable **SLACK_CHANNEL_ID_iNTEGRATION**
+  - Example: Channel _#notifs-sfdx-hardis-integration_ and variable **SLACK_CHANNEL_ID_INTEGRATION**
 - Make sure all those variables are visible to your CI/CD pipelines
 
 That's all, you're all set !

@@ -1,0 +1,243 @@
+# Pipeline for Salesforce monitoring using sfdx-hardis
+#
+# You need to (do a CTRL+F on "MANUAL")
+# - manually add environment secret variables in step "sfdx-hardis login" (they are used for authentication). Ex: SFDX_CLIENT_ID_INTEG / SFDX_CLIENT_KEY_INTEG
+
+#
+# You may also:
+# - Update manifest/package-skip-items.xml to filter elements to retrieve
+#
+# Doc & support: https://sfdx-hardis.cloudity.com/
+
+on:
+  push:
+  # Automatically run every day at midnight
+  schedule:
+    - cron: "0 0 * * *" # Cron format -> https://crontab.cronhub.io/
+
+name: Org Monitoring sfdx-hardis
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  # Backup job
+  backup:
+    runs-on: ubuntu-latest
+    name: Backup metadatas
+    permissions: write-all
+    steps:
+    # Checkout repo
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Faster code checkout fetching only latest commit
+    # Setup node
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: "18"
+    # SFDX & plugins
+    - name: Install SFDX and plugins
+      run: |
+        npm install --no-cache @salesforce/cli --global
+        sf plugins install @salesforce/plugin-packaging
+        echo 'y' | sfdx plugins:install sfdx-hardis
+        echo 'y' | sfdx plugins:install sfdx-essentials
+        echo 'y' | sfdx plugins:install sfdx-git-delta
+        sf version --verbose --json
+    # Login & check deploy with test classes & code coverage
+    - name: Login & Retrieve Metadata
+      env:
+        # MANUAL: Update variables below !
+        SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX}}
+        SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+        SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+        CI_COMMIT_REF_NAME: ${{ env.BRANCH }}
+        ORG_ALIAS: ${{ env.BRANCH }}
+        CONFIG_BRANCH: ${{ env.BRANCH }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+        FORCE_COLOR: "1"
+      run: |
+        echo "Monitoring sfdx-hardis: Metadata Backup for \"$CONFIG_BRANCH\""
+        sfdx hardis:auth:login
+        sfdx hardis:org:monitor:backup
+
+    # Push new commit if applicable
+    # (for now works only on PR from same repository, not from forks)
+    - name: Prepare commit
+      run: sudo chown -Rc $UID .git/
+
+    - name: Get current date
+      run: echo "BUILD_DATE=$(date -u +'%Y-%m-%d %H:%M')" >> ${GITHUB_ENV}
+
+    - name: Commit and push
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        branch: >-
+          ${{
+            github.event.pull_request.head.ref ||
+            github.head_ref ||
+            github.ref
+          }}
+        commit_message: "Org state on ${{ env.BUILD_DATE }} for ${{ github.ref }} [skip ci]"
+        commit_user_name: sfdx-hardis-bot
+        commit_user_email: contact@cloudity.com
+
+  # Apex tests job
+  apex_tests:
+    runs-on: ubuntu-latest
+    name: Apex tests
+    needs: backup
+    permissions: write-all
+    steps:
+    # Checkout repo
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Faster code checkout fetching only latest commit
+    # Setup node
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: "18"
+    # SFDX & plugins
+    - name: Install SFDX and plugins
+      run: |
+        npm install --no-cache @salesforce/cli --global
+        sf plugins install @salesforce/plugin-packaging
+        echo 'y' | sfdx plugins:install sfdx-hardis
+        echo 'y' | sfdx plugins:install sfdx-essentials
+        echo 'y' | sfdx plugins:install sfdx-git-delta
+        sf version --verbose --json
+    # Login & check deploy with test classes & code coverage
+    - name: Login & Run apex tests
+      env:
+        # MANUAL: Update variables below !
+        SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX}}
+        SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+        SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+        CI_COMMIT_REF_NAME: ${{ env.BRANCH }}
+        ORG_ALIAS: ${{ env.BRANCH }}
+        CONFIG_BRANCH: ${{ env.BRANCH }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+        FORCE_COLOR: "1"
+      run: |
+        echo "Run apex tests against \"$CONFIG_BRANCH\""
+        git pull origin ${{ env.BRANCH }}
+        sfdx hardis:auth:login
+        sfdx hardis:org:test:apex
+
+    - name: Upload artifacts
+      if:  success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Hardis Apex Tests reports
+        path: |
+          hardis-report
+
+  megalinter:
+    name: Mega-Linter
+    runs-on: ubuntu-latest
+    needs: backup
+    permissions: read-all
+    steps:
+      # Git Checkout
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Git pull
+        run:  git pull origin ${{ env.BRANCH }}
+
+      # Mega-Linter
+      - name: Mega-Linter
+        id: ml
+        # You can override Mega-Linter flavor used to have faster performances
+        # More info at https://megalinter.io/flavors/
+        uses: oxsecurity/megalinter/flavors/salesforce@v7
+        env:
+          # All available variables are described in documentation
+          # https://megalinter.io/latest/config-file/
+          VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/master&#39; }} to validate only diff with master branch
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
+
+      # Upload Mega-Linter artifacts
+      - name: Archive production artifacts
+        if: ${{ success() }} || ${{ failure() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: Mega-Linter reports
+          path: |
+            megalinter-reports
+            mega-linter.log
+
+  # Monitoring additional checks job
+  monitoring:
+    runs-on: ubuntu-latest
+    name: Monitoring
+    needs: backup
+    permissions: read-all
+    steps:
+    # Checkout repo
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Faster code checkout fetching only latest commit
+    # Setup node
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: "18"
+    # SFDX & plugins
+    - name: Install SFDX and plugins
+      run: |
+        npm install --no-cache @salesforce/cli --global
+        sf plugins install @salesforce/plugin-packaging
+        echo 'y' | sfdx plugins:install sfdx-hardis
+        echo 'y' | sfdx plugins:install sfdx-essentials
+        echo 'y' | sfdx plugins:install sfdx-git-delta
+        sf version --verbose --json
+    # Login & check deploy with test classes & code coverage
+    - name: Login & Run monitoring checks
+      env:
+        # MANUAL: Update variables below !
+        SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX}}
+        SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+        SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+        CI_COMMIT_REF_NAME: ${{ env.BRANCH }}
+        ORG_ALIAS: ${{ env.BRANCH }}
+        CONFIG_BRANCH: ${{ env.BRANCH }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+        FORCE_COLOR: "1"
+      run: |
+        echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
+        git pull origin ${{ env.BRANCH }}
+        sfdx hardis:auth:login
+        sfdx hardis:org:monitor:all
+
+    - name: Upload artifacts
+      if:  success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Hardis Monitoring reports
+        path: |
+          hardis-report  

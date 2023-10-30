@@ -3,6 +3,7 @@ import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils";
+import { NotifMessage, UtilsNotifs } from ".";
 
 export class SlackProvider extends NotifProviderRoot {
   private slackClient: InstanceType<typeof WebClient>;
@@ -18,7 +19,7 @@ export class SlackProvider extends NotifProviderRoot {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async postNotification(notifMessage: string, buttons: any[] = []): Promise<void> {
+  public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const mainNotifsChannelId = process.env.SLACK_CHANNEL_ID || null;
     if (mainNotifsChannelId == null) {
       throw new SfdxError(
@@ -37,14 +38,22 @@ export class SlackProvider extends NotifProviderRoot {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: notifMessage,
+        text: UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity),
       },
     };
+    /* Disable until we don't know how to use it cleanly
+    if (notifMessage.sideImage) {
+      block.accessory = {
+        "type": "image",
+        "image_url": notifMessage.sideImage,
+        "alt_text": "sfdx-hardis"
+      }
+    } */
     blocks.push(block);
     // Add action blocks
-    if (buttons.length > 0) {
+    if (notifMessage.buttons?.length > 0) {
       const actionElements = [];
-      for (const button of buttons) {
+      for (const button of notifMessage.buttons) {
         // Url button
         if (button.url) {
           const actionsElement: Button = {
@@ -69,7 +78,8 @@ export class SlackProvider extends NotifProviderRoot {
     for (const slackChannelId of slackChannelsIds) {
       try {
         const resp = await this.slackClient.chat.postMessage({
-          text: notifMessage,
+          text: notifMessage.text,
+          attachments: notifMessage.attachments,
           blocks: blocks,
           channel: slackChannelId,
           unfurl_links: false,
