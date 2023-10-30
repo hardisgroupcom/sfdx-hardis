@@ -7,6 +7,13 @@ export class UtilsNotifs {
         return false;
     }
 
+    public static isMsTeamsAvailable() {
+        if (process.env.MS_TEAMS_WEBHOOK_URL) {
+            return true;
+        }
+        return false;
+    }
+
     public static markdownLink(label: string, url: string) {
         return `<${url}|*${label}*>`
     }
