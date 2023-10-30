@@ -14,7 +14,7 @@ export abstract class NotifProvider {
     }
     // Ms Teams
     if (UtilsNotifs.isMsTeamsAvailable()) {
-      notifProviders.push(new TeamsProvider())
+      notifProviders.push(new TeamsProvider());
     }
     return notifProviders;
   }
