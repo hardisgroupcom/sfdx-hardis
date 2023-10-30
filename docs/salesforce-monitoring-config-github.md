@@ -22,9 +22,9 @@ None
 - Go to **Repository -> Settings > Secret and variables -> Actions** _(you must have Github authorizations to access this menu)_
 - For each variable sfdx-hardis command **Configure org monitoring** tells you to define, click on **New repository secret**,  with name and value given in sfdx-hardis command logs
 
-![](assets/images/screenshot-github-variables.png)
+![](assets/images/screenshot-monitoring-github-variable.png.jpg)
 
-![](assets/images/screenshot-github-variables-add.png)
+![](assets/images/screenshot-monitoring-github-variable-add.png.jpg)
 
 ## Update org-monitoring.yml
 

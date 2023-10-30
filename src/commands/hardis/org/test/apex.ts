@@ -138,9 +138,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         }
         if (coverageTestRun < minCoverageTestRun) {
           // Send notification
-          const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-          const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
-          const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
+          const linkMarkdown = await this.getBranchMarkdownLink();
           NotifProvider.postNotifications({
             text: `Apex Tests run coverage issue in ${linkMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
             severity: "error"
@@ -169,10 +167,8 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
         testResultStr = testResultStr.split("=== Test Results")[0];
       }
+      const linkMarkdown = await this.getBranchMarkdownLink();
       // Send notification
-      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
-      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
       NotifProvider.postNotifications({
         text: `Apex Tests are failing in ${linkMarkdown}`,
         attachments: [
@@ -194,5 +190,12 @@ ${testResultStr}`,
     }
 
     return { orgId: this.org.getOrgId(), outputString: message };
+  }
+
+  public async getBranchMarkdownLink() {
+    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+    const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
+    const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
+    return linkMarkdown;
   }
 }
