@@ -127,9 +127,9 @@ export default class DxSources extends SfdxCommand {
       } catch (e) {
         uxLog(this, c.yellow("Post actions have failed !"));
       }
-      uxLog(this, c.yellow(c.bold('This version of sfdx-hardis monitoring is deprecated and will not be maintained anymore')));
-      uxLog(this, c.yellow(c.bold('Switch to new sfdx-hardis monitoring that is enhanced !')));
-      uxLog(this, c.yellow(c.bold('Info: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/')));
+      uxLog(this, c.yellow(c.bold("This version of sfdx-hardis monitoring is deprecated and will not be maintained anymore")));
+      uxLog(this, c.yellow(c.bold("Switch to new sfdx-hardis monitoring that is enhanced !")));
+      uxLog(this, c.yellow(c.bold("Info: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/")));
     }
 
     return { orgId: this.org.getOrgId(), outputString: message };
