@@ -171,7 +171,6 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       const reportDir = await getReportDirectory();
       if (fs.existsSync(reportDir + "/test-result.txt")) {
         testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
-        testResultStr = testResultStr.split("=== Test Results")[0];
       }
       const linkMarkdown = await this.getBranchMarkdownLink();
       const notifButtons = [];
