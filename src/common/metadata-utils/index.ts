@@ -544,7 +544,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
           uxLog(
             this,
             c.yellow(
-              `${c.bold("This is not a real error")}: A newer version of ${package1.SubscriberPackageName
+              `${c.bold("This is not a real error")}: A newer version of ${
+                package1.SubscriberPackageName
               } has been found. You may update installedPackages property in .sfdx-hardis.yml`,
             ),
           );
@@ -686,13 +687,12 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
     const filesTextLines = files
       .sort((a: any, b: any) => (a.filename > b.filename ? 1 : -1))
       .map((fileInfo: any) => {
-        fileInfo.shortFileName = fileInfo.filename.replace('force-app/main/default/', '');
+        fileInfo.shortFileName = fileInfo.filename.replace("force-app/main/default/", "");
         return fileInfo;
       })
       .map((fileInfo: any) => `${fileInfo.shortFileName} - ${fileInfo.status}`);
     return filesTextLines;
   }
-
 }
 
 export { MetadataUtils };

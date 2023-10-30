@@ -35,13 +35,13 @@ export interface NotifMessage {
   text: string;
   buttons?: NotifButton[];
   attachments?: any[];
-  severity?: 'critical' | 'error' | 'warning' | 'info' | 'success';
+  severity?: "critical" | "error" | "warning" | "info" | "success";
 }
 
 export interface NotifButton {
   text: string;
   url?: string;
-  style?: 'primary' | 'danger'
+  style?: "primary" | "danger";
 }
 
 export const UtilsNotifs = utilsNotifs;

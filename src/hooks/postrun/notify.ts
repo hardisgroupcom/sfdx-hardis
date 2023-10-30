@@ -50,4 +50,3 @@ export const hook = async (options: any) => {
     });
   }
 };
-

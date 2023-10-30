@@ -141,7 +141,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
           const linkMarkdown = await this.getBranchMarkdownLink();
           NotifProvider.postNotifications({
             text: `Apex Tests run coverage issue in ${linkMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
-            severity: "error"
+            severity: "error",
           });
           // (LEGACY) Send notification if possible
           if (isCI && (await canSendNotifications())) {
@@ -160,7 +160,6 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       message = `Org apex tests failure (Outcome: ${outcome} )`;
       uxLog(this, c.red(message));
 
-
       let testResultStr;
       const reportDir = await getReportDirectory();
       if (fs.existsSync(reportDir + "/test-result.txt")) {
@@ -171,10 +170,8 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       // Send notification
       NotifProvider.postNotifications({
         text: `Apex Tests are failing in ${linkMarkdown}`,
-        attachments: [
-          { text: testResultStr }
-        ],
-        severity: "error"
+        attachments: [{ text: testResultStr }],
+        severity: "error",
       });
       // (LEGACY) Send notification if possible
       if (await canSendNotifications()) {

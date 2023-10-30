@@ -227,17 +227,15 @@ See article below
     
     See article to solve issue before it's too late:
     - EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
-    - FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`
+    - FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
     const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
     const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
     const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
     NotifProvider.postNotifications({
       text: `Deprecated Salesforce API versions are used in ${linkMarkdown}`,
-      attachments: [
-        { text: notifDetailText }
-      ],
-      severity: "error"
+      attachments: [{ text: notifDetailText }],
+      severity: "error",
     });
 
     // Send notification if possible

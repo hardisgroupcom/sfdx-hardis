@@ -6,7 +6,6 @@ import { NotifMessage, UtilsNotifs } from ".";
 import { IncomingWebhook } from "ms-teams-webhook";
 
 export class TeamsProvider extends NotifProviderRoot {
-
   public getLabel(): string {
     return "sfdx-hardis MsTeams connector";
   }
@@ -15,9 +14,7 @@ export class TeamsProvider extends NotifProviderRoot {
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const mainTeamsHook = process.env.MS_TEAMS_WEBHOOK_URL || null;
     if (mainTeamsHook == null) {
-      throw new SfdxError(
-        "You need to define a variable MS_TEAMS_WEBHOOK_URL to use sfdx-hardis MsTeams Integration",
-      );
+      throw new SfdxError("You need to define a variable MS_TEAMS_WEBHOOK_URL to use sfdx-hardis MsTeams Integration");
     }
     const teamsHooks = [mainTeamsHook];
     // Add branch custom Teams channel if defined
@@ -31,8 +28,8 @@ export class TeamsProvider extends NotifProviderRoot {
       "@context": "https://schema.org/extensions",
       themeColor: "0078D7",
       title: UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity),
-      potentialAction: []
-    }
+      potentialAction: [],
+    };
     // Add text details
     if (notifMessage?.attachments?.length > 0) {
       let text = "";

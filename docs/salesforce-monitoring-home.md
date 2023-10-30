@@ -13,7 +13,7 @@ _sfdx-hardis monitoring is in beta but can already be safely used_
 
 > This feature worked yesterday in production, but today it crashes, what happened ?
 
-Salesforce provide **Audit Trail** to trace configuration updates in **production** or **sandbox** orgs. 
+Salesforce provide **Audit Trail** to trace configuration updates in **production** or **sandbox** orgs.
 
 You can **know who updated what**, but not with details (before / after).
 
