@@ -15,11 +15,11 @@
     </types>
     <types>
         <members>*</members>
-        <name>Report</name>
+        <name>ModerationRule</name>
     </types>
     <types>
         <members>*</members>
-        <name>ReportType</name>
+        <name>Report</name>
     </types>
     <types>
         <members>*</members>
@@ -29,11 +29,16 @@
         <members>*</members>
         <name>SamlSsoConfig</name>
     </types>
-<!--
+    <types>
+        <members>*</members>
+        <name>SiteDotCom</name>
+    </types>
+    <!-- uncomment if you have too many metadatas and do not want to track static resources -->
+    <!--
     <types>
         <members>*</members>
         <name>StaticResource</name>
     </types>
--->
-    <version>56.0</version>
+    -->
+    <version>59.0</version>
 </Package>
