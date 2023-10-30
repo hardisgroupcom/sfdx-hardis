@@ -18,17 +18,31 @@ ___
 
 ## Commit your updates
 
+_The following video shows how to perform theses operations_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
 ### Retrieve metadatas
 
 If you made updates on your org that you have not pulled yet, Use command ![Pull from org button](assets/images/btn-pull-from-org.jpg) to **pull your latest updates in local files**
 
-- If you updated config elements that you do not see in your local files, you may discuss with your release manager to [automate force retrieve metadatas](salesforce-ci-cd-retrieve.md)
+If you updated config elements that you do not see in your local files, you may discuss with your release manager to [automate force retrieve metadatas](salesforce-ci-cd-retrieve.md)
 
-- If it is not possible to use pull configuration, you may retrieve metadatas using ![Select and retrieve button](assets/images/btn-select-retrieve.jpg) (but it will retrieve locally many files and it will be harder to select the ones you really need, select carefully the items that you stage and commit)
+#### Alternative: Use Org Browser
 
-- You can also use Salesforce extension Org Browser to manually browse and retrieve specific metadatas
+You can also use Salesforce extension Org Browser to manually browse and retrieve specific metadatas
 
 ![](assets/images/screenshot-org-browser.png)
+
+#### Alternative: Use contextual menu
+
+If Org Browser does not see items that you want to retrieve, like list views, you can right click on any **listViews** folder and use command **SFDX: Retrieve source from org**
+
+![](assets/images/screenshot-right-click-retrieve.png)
+
+#### Alternative: Use menu "Select and retrieve"
+
+If it is not possible to use pull configuration, you may retrieve metadatas using ![Select and retrieve button](assets/images/btn-select-retrieve.jpg) (but it will retrieve locally many files and it will be harder to select the ones you really need, select carefully the items that you stage and commit)
 
 ### Stage and commit
 
@@ -47,10 +61,6 @@ In VsCode Git extension, **stage** and **commit** created, updated and deleted f
 ![](assets/images/screenshot-partial-commit-2.png)
 
 ![](assets/images/screenshot-full-commit.png)
-
-_The following video shows how to perform theses operations_
-
-<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
 ___
 
