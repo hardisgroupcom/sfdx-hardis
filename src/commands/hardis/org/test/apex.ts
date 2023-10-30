@@ -7,6 +7,7 @@ import { execCommand, getCurrentGitBranch, isCI, uxLog } from "../../../../commo
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { getConfig, getReportDirectory } from "../../../../config";
 import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
+import { GitProvider } from "../../../../common/gitProvider";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -139,8 +140,14 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         if (coverageTestRun < minCoverageTestRun) {
           // Send notification
           const linkMarkdown = await this.getBranchMarkdownLink();
+          const jobUrl = await GitProvider.getJobUrl();
+          const notifButtons = [];
+          if (jobUrl) {
+            notifButtons.push({ text: "View BackUp Job", url: jobUrl });
+          }
           NotifProvider.postNotifications({
             text: `Apex Tests run coverage issue in ${linkMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
+            buttons: notifButtons,
             severity: "error",
           });
           // (LEGACY) Send notification if possible
@@ -167,10 +174,16 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         testResultStr = testResultStr.split("=== Test Results")[0];
       }
       const linkMarkdown = await this.getBranchMarkdownLink();
+      const notifButtons = [];
+      const jobUrl = await GitProvider.getJobUrl();
+      if (jobUrl) {
+        notifButtons.push({ text: "View Apex test Job", url: jobUrl });
+      }
       // Send notification
       NotifProvider.postNotifications({
         text: `Apex Tests are failing in ${linkMarkdown}`,
         attachments: [{ text: testResultStr }],
+        buttons: notifButtons,
         severity: "error",
       });
       // (LEGACY) Send notification if possible

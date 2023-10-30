@@ -14,6 +14,7 @@ import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { getReportDirectory } from "../../../../config";
 import { WebSocketClient } from "../../../../common/websocketClient";
 import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
+import { GitProvider } from "../../../../common/gitProvider";
 const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
@@ -232,9 +233,15 @@ See article below
     const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
     const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
     const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
+    const notifButtons = [];
+    const jobUrl = await GitProvider.getJobUrl();
+    if (jobUrl) {
+      notifButtons.push({ text: "View Job", url: jobUrl });
+    }
     NotifProvider.postNotifications({
       text: `Deprecated Salesforce API versions are used in ${linkMarkdown}`,
       attachments: [{ text: notifDetailText }],
+      buttons: notifButtons,
       severity: "error",
     });
 
