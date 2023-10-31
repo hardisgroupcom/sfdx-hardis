@@ -19,16 +19,18 @@ You can **know who updated what**, but not with details (before / after).
 
 Sfdx-hardis monitoring provides a **simple way to know the exact state of your orgs metadatas everyday**, or even several times a day.
 
-Installation and usage are admin-friendly.
+Installation and usage are **admin-friendly**, and **notifications** can be sent via **Slack** or **Microsoft Teams**.
+
+![](assets/images/screenshot-slack-monitoring.jpg)
 
 Extra features are also available, like:
 
-- Run apex tests (and soon flow tests)
-- Analyze the quality and the security of your metadatas with [MegaLinter](https://megalinter.io/latest/)
-- Check if you have [deprecated api versions called](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
-- Custom command lines that you can specify in `.sfdx-hardis.yml`
+- Run **apex tests** (and soon flow tests)
+- Analyze the **quality and the security of your metadatas** with [MegaLinter](https://megalinter.io/latest/)
+- Check if you have [**deprecated api versions called**](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
+- **Custom command lines** that you can [define in `.sfdx-hardis.yml`](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/)
 
-You don't need to work in CI/CD to use Monitoring, it is compliant with any API enabled org :)
+You don't need to work in CI/CD to use Monitoring, it is **compliant with any API enabled org** :)
 
 ## Configuration
 
@@ -59,4 +61,6 @@ All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab*
 > You might want to customize which metadatas are backuped.
 > In that case, you must manually update file `manifest/package-skip-items.xml` in each git branch corresponding to an org, then commit and push.
 
-
+- Configure notifications (once by repository)
+  - [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
+  - [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)

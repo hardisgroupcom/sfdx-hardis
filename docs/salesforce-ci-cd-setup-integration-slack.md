@@ -26,7 +26,7 @@ You can receive notifications on slack channels when sfdx-hardis events are happ
 
 Create a slack app here -> <https://api.slack.com/apps>
 
-- Name it `sfdx-hardis bot`` or _any nickname you like_, like your guinea pig name !
+- Name it `sfdx-hardis bot` or _any nickname you like_, like your guinea pig name !
 - Go to permissions and add the following scopes
   - chat-write
   - chat-write.customize
@@ -38,6 +38,7 @@ Create a slack app here -> <https://api.slack.com/apps>
 - Create a secret value named **SLACK_TOKEN** with auth token value in your Git provider configuration
 - Create a slack channel that will receive all notifications (ex: _#notifs-sfdx-hardis_)
 - Open the channel info, copy its ID and create a secret value named **SLACK_CHANNEL_ID** in your git provider configuration
+- Invite the sfdx-hardis bot user to the channel (ex: `/invite @sfdx-hardis-bot`)
 - Additionally, you can create branch-scoped channels by creating new channels and create appropriate variables
   - Example: Channel _#notifs-sfdx-hardis-integration_ and variable **SLACK_CHANNEL_ID_INTEGRATION**
 - Make sure all those variables are visible to your CI/CD pipelines

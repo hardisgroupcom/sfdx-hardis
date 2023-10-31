@@ -4,8 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.9.1] 2023-10-31
+
 - New deployment error tips:
   - Invalid custom summary formula definition
+- Add artifacts config on bitbucket-pipelines.yml
+- Add more comments in Monitoring workflows
 
 ## [4.9.0] 2023-10-30
 

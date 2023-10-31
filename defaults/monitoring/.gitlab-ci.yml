@@ -2,6 +2,8 @@
 ### sfdx-hardis monitoring pipeline ###
 #######################################
 
+# Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
+
 # PLEASE DO NOT UPDATE THIS FILE EXCEPT TO ADD TAGS TO YOUR STEPS
 
 variables:
@@ -15,7 +17,9 @@ stages:
 # Use sfdx-hardis docker image to always be up to date with latest version
 image: hardisgroupcom/sfdx-hardis:latest # test with alpha
 
-# Metadata backup
+##############################################
+### Sfdx Sources Backup + Push new commit ####
+##############################################
 backup:
   stage: backup
   interruptible: true
@@ -39,7 +43,9 @@ backup:
       - hardis-report
     expire_in: 6 month
 
-# Apex tests
+######################
+### Run Apex Tests ###
+######################
 apex_tests:
   stage: monitor
   interruptible: true
@@ -81,7 +87,9 @@ monitoring_tools:
       - hardis-report
     expire_in: 6 month
 
-# Check code quality and good practices using MegaLinter
+############################################################
+### Run MegaLinter to detect quality and security issues ###
+############################################################
 megalinter:
   stage: monitor
   interruptible: true

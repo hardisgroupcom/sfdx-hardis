@@ -8,7 +8,7 @@
 # You may also:
 # - Update manifest/package-skip-items.xml to filter elements to retrieve
 #
-# Doc & support: https://sfdx-hardis.cloudity.com/
+# Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
 
 schedules:
 - cron: "0 4 * * *" # Cron format -> https://crontab.cronhub.io/
@@ -29,7 +29,7 @@ variables:
 
 jobs:
 ##############################################
-### Sfdx Sources Backup + Push new commit ###
+### Sfdx Sources Backup + Push new commit ####
 ##############################################
 - job: BackupSfdxHardis
   pool:
@@ -145,7 +145,7 @@ jobs:
     displayName: Publish logs as artifacts
 
 ############################################################
-### Run MegaLinter to detect linting and security issues ###
+### Run MegaLinter to detect quality and security issues ###
 ############################################################
 - job: MegaLinter
   dependsOn: BackupSfdxHardis
