@@ -29,7 +29,7 @@ variables:
 
 jobs:
 ##############################################
-### Sfdx Sources Backup + Push new commit ###
+### Sfdx Sources Backup + Push new commit ####
 ##############################################
 - job: BackupSfdxHardis
   pool:
@@ -145,7 +145,7 @@ jobs:
     displayName: Publish logs as artifacts
 
 ############################################################
-### Run MegaLinter to detect linting and security issues ###
+### Run MegaLinter to detect quality and security issues ###
 ############################################################
 - job: MegaLinter
   dependsOn: BackupSfdxHardis

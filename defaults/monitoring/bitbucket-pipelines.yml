@@ -11,7 +11,9 @@ definitions:
 
 pipelines:
   default:
-      # Backup
+      ##############################################
+      ### Sfdx Sources Backup + Push new commit ####
+      ##############################################
       - step:
           name: Backup sfdx-hardis
           script: 
@@ -40,7 +42,9 @@ pipelines:
             - hardis-report/**
 
       - parallel:
-        # Apex tests
+        ######################
+        ### Run Apex Tests ###
+        ######################
         - step:
             name: Apex Tests sfdx-hardis
             script: 
@@ -65,7 +69,9 @@ pipelines:
             artifacts:
               - hardis-report/**
 
-        # MegaLinter
+        ############################################################
+        ### Run MegaLinter to detect quality and security issues ###
+        ############################################################
         - step:
             name: Run MegaLinter
             image: oxsecurity/megalinter-salesforce:latest

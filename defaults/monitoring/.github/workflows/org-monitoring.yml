@@ -24,7 +24,9 @@ concurrency:
 permissions: read-all
 
 jobs:
-  # Backup job
+  ##############################################
+  ### Sfdx Sources Backup + Push new commit ####
+  ##############################################
   backup:
     runs-on: ubuntu-latest
     name: Backup metadatas
@@ -91,7 +93,9 @@ jobs:
         commit_user_name: sfdx-hardis-bot
         commit_user_email: contact@cloudity.com
 
-  # Apex tests job
+  ######################
+  ### Run Apex Tests ###
+  ######################
   apex_tests:
     runs-on: ubuntu-latest
     name: Apex tests
@@ -147,6 +151,9 @@ jobs:
         path: |
           hardis-report
 
+  ############################################################
+  ### Run MegaLinter to detect quality and security issues ###
+  ############################################################
   megalinter:
     name: Mega-Linter
     runs-on: ubuntu-latest
