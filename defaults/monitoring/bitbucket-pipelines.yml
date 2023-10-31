@@ -1,9 +1,13 @@
-# You might add new branch names in pipeline "branches"
+# You may:
+# - Update manifest/package-skip-items.xml to filter elements to retrieve
+
+# Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
+
 image: node:18
 definitions:
   services:
     docker:
-      memory: 3072
+      memory: 3072 # If you have crashes, play with this number
 
 pipelines:
   default:
@@ -32,6 +36,9 @@ pipelines:
             - git add --all
             - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
             - git push --set-upstream origin "$BRANCH_NAME"
+          artifacts:
+            - hardis-report/**
+
       - parallel:
         # Apex tests
         - step:
@@ -55,6 +62,9 @@ pipelines:
               - sfdx hardis:auth:login
               # Apex tests
               - sfdx hardis:org:test:apex
+            artifacts:
+              - hardis-report/**
+
         # MegaLinter
         - step:
             name: Run MegaLinter
@@ -66,6 +76,7 @@ pipelines:
               - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash /entrypoint.sh
             artifacts:
               - megalinter-reports/**
+
         # Other monitoring tools
         - step:
             name: Other Monitoring checks sfdx-hardis
@@ -88,4 +99,6 @@ pipelines:
               - sfdx hardis:auth:login
               # Other monitoring tools
               - sfdx hardis:org:monitor:all
+            artifacts:
+              - hardis-report/**
 

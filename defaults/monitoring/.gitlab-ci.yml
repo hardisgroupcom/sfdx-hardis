@@ -2,6 +2,8 @@
 ### sfdx-hardis monitoring pipeline ###
 #######################################
 
+# Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
+
 # PLEASE DO NOT UPDATE THIS FILE EXCEPT TO ADD TAGS TO YOUR STEPS
 
 variables:
