@@ -5,7 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - New deployment error tips:
-     - Invalid custom summary formula definition
+  - Invalid custom summary formula definition
 
 ## [4.9.0] 2023-10-30
 

@@ -214,12 +214,12 @@ nav:
               - Slack: salesforce-ci-cd-setup-integration-slack.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
           - First merge request: salesforce-ci-cd-setup-merge-request.md
-  - Org Monitoring (beta): 
-    - Monitoring home: salesforce-monitoring-home.md
-    - GitHub: salesforce-monitoring-config-github.md
-    - Gitlab: salesforce-monitoring-config-gitlab.md
-    - Azure: salesforce-monitoring-config-azure.md
-    - Bitbucket: salesforce-monitoring-config-bitbucket.md
+  - Org Monitoring (beta):
+      - Monitoring home: salesforce-monitoring-home.md
+      - GitHub: salesforce-monitoring-config-github.md
+      - Gitlab: salesforce-monitoring-config-gitlab.md
+      - Azure: salesforce-monitoring-config-azure.md
+      - Bitbucket: salesforce-monitoring-config-bitbucket.md
   - Configuration reference: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles
