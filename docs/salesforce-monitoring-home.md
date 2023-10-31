@@ -5,6 +5,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 <!-- markdownlint-disable MD013 -->
 
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
+- [How does it work ?](#how-does-it-work)
 - [Configuration](#configuration)
 
 _sfdx-hardis monitoring is in beta but can already be safely used_
@@ -17,7 +18,7 @@ Salesforce provide **Audit Trail** to trace configuration updates in **productio
 
 You can **know who updated what**, but not with details (before / after).
 
-Sfdx-hardis monitoring provides a **simple way to know the exact state of your orgs metadatas everyday**, or even several times a day.
+Sfdx-hardis monitoring provides a **simple way to know the exact state of your orgs metadatas everyday**, or even several times a day, and provides an **exact and detailed comparison with the previous metadata configuration**.
 
 Installation and usage are **admin-friendly**, and **notifications** can be sent via **Slack** or **Microsoft Teams**.
 
@@ -31,6 +32,16 @@ Extra features are also available, like:
 - **Custom command lines** that you can [define in `.sfdx-hardis.yml`](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/)
 
 You don't need to work in CI/CD to use Monitoring, it is **compliant with any API enabled org** :)
+
+## How does it work ?
+
+Every night (or even more frequently, according to your schedule), a CI job will be triggered.
+
+It will **extract all the metadatas of your org**, then push a **new commit in the monitoring repository** in case there are updates since the latest metadata backup.
+
+The **list of updated metadatas** will be sent via notification to a **Slack and/or Microsoft Teams channel**.
+
+After the metadata backup, other jobs will be triggered (Apex tests, Code Quality, Legacy API checks + your own commands), and their results will be stored in job artifacts and sent via notifications.
 
 ## Configuration
 
