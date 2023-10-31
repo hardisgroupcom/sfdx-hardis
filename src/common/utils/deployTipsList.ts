@@ -239,6 +239,12 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       tip: `If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow`,
     },
     {
+      name: "invalid-formula-grouping-context",
+      label: "Invalid formula grouping context",
+      expressionString: ["Invalid custom summary formula definition: You must select a grouping context to use any report summary function"],
+      tip: `You need to update your Report definition. See workaround here -> https://salesforce.stackexchange.com/questions/294850/grouping-error-with-prevgroupval-function`,
+    },
+    {
       name: "invalid-report-type",
       label: "Invalid report type",
       expressionRegex: [/Error (.*) invalid report type/gm],
