@@ -18,7 +18,7 @@ Salesforce provide **Audit Trail** to trace configuration updates in **productio
 
 You can **know who updated what**, but not with details (before / after).
 
-Sfdx-hardis monitoring provides a **simple way to know the exact state of your orgs metadatas everyday**, or even several times a day, and provides an **exact and detailed comparison with the previous metadata configuration**.
+Sfdx-hardis monitoring provides a **simple way to know the exact state of your orgs metadatas everyday**, or even several times a day, and provides an **exact and detailed comparison with the previous metadata configuration** (using git commits comparison)
 
 Installation and usage are **admin-friendly**, and **notifications** can be sent via **Slack** or **Microsoft Teams**.
 
@@ -32,6 +32,8 @@ Extra features are also available, like:
 - **Custom command lines** that you can [define in `.sfdx-hardis.yml`](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/)
 
 You don't need to work in CI/CD to use Monitoring, it is **compliant with any API enabled org** :)
+
+![](assets/images/screenshot-monitoring-backup.jpg)
 
 ## How does it work ?
 
