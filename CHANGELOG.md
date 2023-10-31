@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.9.2] 2023-10-31
+
+- Improve GitHub monitoring Workflow
+- Enhance monitoring documentation
+
 ## [4.9.1] 2023-10-31
 
 - New deployment error tips:
