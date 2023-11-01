@@ -151,7 +151,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabC
   }
 
   private completePullRequestInfo(prData: any) {
-    const prInfo: any = Object.assign({},prData);
+    const prInfo: any = Object.assign({}, prData);
     prInfo.targetBranch = prData.target_branch;
     return prInfo;
   }

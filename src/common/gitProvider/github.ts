@@ -159,8 +159,6 @@ export class GithubProvider extends GitProviderRoot {
     return null;
   }
 
-
-
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     const { pull_request } = github.context.payload;
@@ -234,7 +232,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
   }
 
   private completePullRequestInfo(prData: any) {
-    const prInfo: any = Object.assign({},prData);
+    const prInfo: any = Object.assign({}, prData);
     prInfo.targetBranch = prData.base.ref;
     return prInfo;
   }
