@@ -13,6 +13,8 @@ import { canSendNotifications, sendNotification } from "../../../../common/utils
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { getReportDirectory } from "../../../../config";
 import { WebSocketClient } from "../../../../common/websocketClient";
+import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
+import { GitProvider } from "../../../../common/gitProvider";
 const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
@@ -220,23 +222,42 @@ See article below
       uxLog(this, c.grey(c.bold("End of support API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
     }
 
+    const notifDetailText = `- Dead API version calls found in logs           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
+    - Deprecated API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
+    - End of support API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
+    
+    See article to solve issue before it's too late:
+    - EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
+    - FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
+
+    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+    const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
+    const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
+    const notifButtons = [];
+    const jobUrl = await GitProvider.getJobUrl();
+    if (jobUrl) {
+      notifButtons.push({ text: "View Job", url: jobUrl });
+    }
+    NotifProvider.postNotifications({
+      text: `Deprecated Salesforce API versions are used in ${linkMarkdown}`,
+      attachments: [{ text: notifDetailText }],
+      buttons: notifButtons,
+      severity: "error",
+    });
+
     // Send notification if possible
     if (isCI && allErrors.length > 0 && (await canSendNotifications())) {
       const currentGitBranch = await getCurrentGitBranch();
       await sendNotification({
         title: `WARNING: Deprecated Salesforce API versions are used in ${currentGitBranch}`,
-        text: `- Dead API version calls found in logs           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
-- Deprecated API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
-- End of support API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
-
-See article to solve issue before it's too late:
-- EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
-- FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`,
+        text: notifDetailText,
         severity: "critical",
       });
     }
 
-    process.exitCode = statusCode;
+    if ((this.argv || []).includes("legacyapi")) {
+      process.exitCode = statusCode;
+    }
 
     // Return an object to be displayed with --json
     return {

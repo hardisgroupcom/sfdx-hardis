@@ -5,6 +5,8 @@
 
 Assisted menu to start working on a Salesforce task.
 
+Advanced instructions in [Create New Task documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
+
 At the end of the command, it will allow you to work on either a scratch org or a sandbox, depending on your choices.
 
 Under the hood, it can:

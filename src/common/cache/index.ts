@@ -51,7 +51,7 @@ export const clearCache = async (key: string = null): Promise<void> => {
   if (key) {
     delete MEMORY_CACHE[key];
   } else {
-    MEMORY_CACHE = null;
+    MEMORY_CACHE = {};
   }
   await storeCache();
 };

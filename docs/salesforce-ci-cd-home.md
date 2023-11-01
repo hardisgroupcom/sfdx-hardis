@@ -19,20 +19,38 @@ There are many ways to do DevOps with Salesforce, each of them have their advant
 
 You can setup and use a full CI/CD pipeline for your Salesforce projects using sfdx-hardis.
 
-We provide [Gitlab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml) & [Azure](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml) pipelines, and they can easily be adapted to other platforms like [Github Actions](https://github.com/features/actions), [Jenkins](https://www.jenkins.io/)...
+We provide following CI/CD example pipelines:
+- [Gitlab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml)
+- [Azure](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml)
+- [Github](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/deploy.yml)
+- [BitBucket](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/bitbucket-pipelines.yml)
+
+Pipelines can easily be adapted to other platforms like [Jenkins](https://www.jenkins.io/) or [TeamCity](https://www.jetbrains.com/teamcity/)
 
 If you speak fluently **git**, **sfdx** & **DevOps**, you can be fully autonomous to setup and use Salesforce CI/CD, otherwise you can contact us at [**Cloudity**](https://cloudity.com/) (or your favorite Salesforce integrator) and we'll be glad to assist you :)
 
 As everything is **open-source**, there is **no license costs** !
+
+_See presentation of sfdx-hardis at Dreamforce !_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/o0Mm9F07UFs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
+_See Slides of [Dreamforce 23 session](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl){target=_blank}_
+
+<iframe src="https://www.slideshare.net/slideshow/embed_code/key/qroQjoKmRUUjqx?hostedIn=slideshare&page=upload" width="714" height="600" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"></iframe>
 
 _Here is an advanced example of a Salesforce CI/CD Pipeline that you can easily define using sfdx-hardis._
 _You can define much simpler branch/orgs models, to manage only RUN operations._
 
 ![](assets/images/ci-cd-schema-main.jpg){ align=center }
 
-See detailed article on SalesforceDevOps.net
+_See detailed article on SalesforceDevOps.net_
 
-[![](assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/)
+[![](assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/){target=_blank}
+
+_See quick demo video for a Contributor_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/zEYqTd2txU4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
 ___
 

@@ -18,12 +18,14 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { createTempDir, getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
+import { getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
-import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
-import { callSfdxGitDelta, getParentBranch } from "../../../../../common/utils/gitUtils";
+import { getApexTestClasses } from "../../../../../common/utils/classUtils";
+import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
+import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider";
+import { GitProvider } from "../../../../../common/gitProvider";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -45,8 +47,9 @@ In case Pull Request comments are configured on the project, Quick Deploy will t
 
 If you do not want to use QuickDeploy, define variable \`SFDX_HARDIS_QUICK_DEPLOY=false\`
 
-- [Gitlab merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
-- [Azure PR comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+- [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/)
+- [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
+- [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
 
 ### Dynamic deployment items / Overwrite management
 
@@ -155,8 +158,12 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     testlevel: flags.enum({
       char: "l",
       default: "RunLocalTests",
-      options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
-      description: messages.getMessage("testLevel"),
+      options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunLocalTests", "RunAllTestsInOrg"],
+      description: messages.getMessage("testLevelExtended"),
+    }),
+    runtests: flags.string({
+      char: "r",
+      description: messages.getMessage("runtests"),
     }),
     packagexml: flags.string({
       char: "p",
@@ -195,7 +202,31 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     this.configInfo = await getConfig("branch");
     this.checkOnly = this.flags.check || false;
     const deltaFromArgs = this.flags.delta || false;
+
+    const givenTestlevel = this.flags.testlevel || this.configInfo.testLevel || "";
+    let testClasses = this.flags.runtests || this.configInfo.runtests || "";
+
+    // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
+    if (givenTestlevel === "RunRepositoryTests") {
+      const testClassList = await getApexTestClasses();
+      if (Array.isArray(testClassList) && testClassList.length) {
+        this.flags.testlevel = "RunSpecifiedTests";
+        testClasses = testClassList.join();
+      } else {
+        // Default back to RunLocalTests in case if repository has zero tests
+        this.flags.testlevel = "RunLocalTests";
+        testClasses = "";
+      }
+    }
+
+
     const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
+
+    // Test classes are only valid for RunSpecifiedTests
+    if (testlevel != "RunSpecifiedTests") {
+      testClasses = "";
+    }
+
     const packageXml = this.flags.packagexml || null;
     this.debugMode = this.flags.debug || false;
 
@@ -228,6 +259,25 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
           missingPackages.push(package1);
         }
       }
+    }
+
+    // Get package.xml
+    const packageXmlFile =
+      packageXml || process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
+        ? "./manifest/package.xml"
+        : "./config/package.xml";
+    const forceSourceDeployOptions: any = {
+      targetUsername: targetUsername,
+      conn: this.org?.getConnection(),
+      testClasses: testClasses,
+    };
+    // Get destructiveChanges.xml and add it in options if existing
+    const packageDeletedXmlFile =
+      process.env.PACKAGE_XML_TO_DELETE || this.configInfo.packageXmlToDelete || fs.existsSync("./manifest/destructiveChanges.xml")
+        ? "./manifest/destructiveChanges.xml"
+        : "./config/destructiveChanges.xml";
+    if (fs.existsSync(packageDeletedXmlFile)) {
+      forceSourceDeployOptions.postDestructiveChanges = packageDeletedXmlFile;
     }
 
     // Display missing packages message
@@ -311,6 +361,32 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
     }
 
+    // Send notification of deployment success
+    if (!check) {
+      const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
+      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
+      const currentGitBranch = await getCurrentGitBranch();
+      let branchMd = `*${currentGitBranch}*`;
+      const branchUrl = await GitProvider.getCurrentBranchUrl();
+      if (branchUrl) {
+        branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
+      }
+      let notifMessage = `Deployment has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
+      const notifButtons = [];
+      const jobUrl = await GitProvider.getJobUrl();
+      if (jobUrl) {
+        notifButtons.push({ text: "View Deployment Job", url: jobUrl });
+      }
+      const pullRequestInfo = await GitProvider.getPullRequestInfo();
+      if (pullRequestInfo) {
+        const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+        const prAuthor = pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+        notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : "");
+        const prButtonText = "View Pull Request";
+        notifButtons.push({ text: prButtonText, url: prUrl });
+      }
+      NotifProvider.postNotifications({ text: notifMessage, buttons: notifButtons, severity: "success" });
+    }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
 

@@ -58,6 +58,7 @@
 | [**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)                 | Check for legacy API use                         |
 | [**hardis:org:files:export**](hardis/org/files/export.md)                             | Export files                                     |
 | [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                     | Fix listviews with                               |
+| [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)       | Generate Full Org package.xml                    |
 | [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                           | Purge Apex Logs                                  |
 | [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                 | Purge Flow versions                              |
 | [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         | Retrieve package configuration from an org       |

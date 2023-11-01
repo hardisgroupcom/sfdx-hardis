@@ -1,0 +1,69 @@
+# Add your major branches names here
+# If you do, also add SFDX_CLIENT_ID / KEY variables in job step "Login & Process Deployment" below
+on:
+  push:
+    branches:
+      - main
+      - preprod
+      - uat
+      - integration
+
+name: Process Deployment (sfdx-hardis)
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  process_deployment:
+    name: Process Deployment to Major Org
+    runs-on: ubuntu-latest
+    steps:
+    # Checkout repo
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Faster code checkout fetching only latest commit
+    # Setup node
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: "18"
+    # SFDX & plugins
+    - name: Install SFDX and plugins
+      run: |
+        npm install @salesforce/cli --global
+        sf plugins install @salesforce/plugin-packaging
+        echo 'y' | sfdx plugins:install sfdx-hardis
+        echo 'y' | sfdx plugins:install sfdx-essentials
+        # echo 'y' | sfdx plugins:install sfdmu # Disabled while it does not play well with @salesforce/cli
+        echo 'y' | sfdx plugins:install sfdx-git-delta
+        sf version --verbose --json
+    # Set env branch variable (github.ref_name seems to not work)
+    - name: Set env.BRANCH
+      run: echo "BRANCH=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
+    # Login & check deploy with test classes & code coverage
+    - name: Login & Process Deployment
+      env:
+        SFDX_CLIENT_ID_INTEGRATION: ${{ secrets.SFDX_CLIENT_ID_INTEGRATION}}
+        SFDX_CLIENT_KEY_INTEGRATION: ${{ secrets.SFDX_CLIENT_KEY_INTEGRATION}}
+        SFDX_CLIENT_ID_UAT: ${{ secrets.SFDX_CLIENT_ID_UAT}}
+        SFDX_CLIENT_KEY_UAT: ${{ secrets.SFDX_CLIENT_KEY_UAT}}
+        SFDX_CLIENT_ID_PREPROD: ${{ secrets.SFDX_CLIENT_ID_PREPROD}}
+        SFDX_CLIENT_KEY_PREPROD: ${{ secrets.SFDX_CLIENT_KEY_PREPROD}}
+        SFDX_CLIENT_ID_MAIN: ${{ secrets.SFDX_CLIENT_ID_MAIN}}
+        SFDX_CLIENT_KEY_MAIN: ${{ secrets.SFDX_CLIENT_KEY_MAIN}}
+        SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+        SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+        CI_COMMIT_REF_NAME: ${{ env.BRANCH }} # Defines the target branch of the PR
+        ORG_ALIAS: ${{ env.BRANCH }} # Defines the target branch of the PR
+        CONFIG_BRANCH: ${{ env.BRANCH }} # Defines the target branch of the PR
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+        FORCE_COLOR: "1"
+      run: |
+        echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
+        sfdx hardis:auth:login
+        sfdx hardis:project:deploy:sources:dx

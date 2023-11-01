@@ -8,6 +8,11 @@ export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis:scratch commands
   const commandId = options?.id || "";
 
+  // Disable this hook for now
+  if ((process.env?.AUTO_UPDATE || "false") !== "true") {
+    return;
+  }
+
   if (!process.argv.includes("--json")) {
     await manageGitIgnoreForceIgnore(commandId);
   }

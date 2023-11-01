@@ -77,7 +77,11 @@ See article below
     const startChunkNumber = this.flags.startchunknumber || 0;
     //const debugMode = this.flags.debug || false;
 
-    const exportOptions: any = { pollTimeout: pollTimeout, recordsChunkSize: recordsChunkSize, startChunkNumber: startChunkNumber };
+    const exportOptions: any = {
+      pollTimeout: pollTimeout,
+      recordsChunkSize: recordsChunkSize,
+      startChunkNumber: startChunkNumber,
+    };
 
     // Identify files workspace if not defined
     if (filesPath == null) {

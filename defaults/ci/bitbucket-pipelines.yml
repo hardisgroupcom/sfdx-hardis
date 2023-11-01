@@ -1,0 +1,57 @@
+# You might add new branch names in pipeline "branches"
+image: node:18
+definitions:
+  services:
+    docker:
+      memory: 3072
+
+pipelines:
+  # Check jobs on pull requests
+  pull-requests:
+    "**":
+      - parallel:
+        # Run MegaLinter
+        - step:
+            name: Run MegaLinter
+            image: oxsecurity/megalinter-salesforce:latest
+            script:
+              - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash /entrypoint.sh
+            artifacts:
+              - megalinter-reports/**
+        # Simulate deployment
+        - step:
+            name: Simulate SFDX deployment
+            script:
+              - npm install --no-cache @salesforce/cli --global
+              - sf plugins install @salesforce/plugin-packaging
+              - echo 'y' | sfdx plugins:install sfdx-hardis
+              - echo 'y' | sfdx plugins:install sfdx-essentials
+              - echo 'y' | sfdx plugins:install sfdx-git-delta
+              - sf version --verbose --json
+              - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" | sed 's/refs\/heads\///')
+              - export CI_COMMIT_REF_NAME=$BRANCH_NAME
+              - export ORG_ALIAS=$BRANCH_NAME
+              - export CONFIG_BRANCH=$BRANCH_NAME
+              - export FORCE_COLOR=1
+              - sfdx hardis:auth:login
+              - sfdx hardis:project:deploy:sources:dx --check
+
+  branches:
+    # Add all your major branches here
+    '{integration,uat,preprod,production,main}':
+      - step:
+          name: Deploy to major org
+          script:
+              - npm install --no-cache @salesforce/cli --global
+              - sf plugins install @salesforce/plugin-packaging
+              - echo 'y' | sfdx plugins:install sfdx-hardis
+              - echo 'y' | sfdx plugins:install sfdx-essentials
+              - echo 'y' | sfdx plugins:install sfdx-git-delta
+              - sf version --verbose --json
+              - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
+              - export CI_COMMIT_REF_NAME=$BRANCH_NAME
+              - export CONFIG_BRANCH=$BRANCH_NAME
+              - export ORG_ALIAS=$BRANCH_NAME
+              - export FORCE_COLOR=1
+              - sfdx hardis:auth:login
+              - sfdx hardis:project:deploy:sources:dx

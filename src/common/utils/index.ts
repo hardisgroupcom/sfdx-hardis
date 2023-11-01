@@ -225,7 +225,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
       uxLog(this, `Git repository cloned. ${c.yellow("Please run again the same command :)")}`);
       process.exit(0);
     } else {
-      throw new SfdxError("Developer: please send init or clone as option");
+      throw new SfdxError("You need to be at the root of a git repository to run this command");
     }
   }
   // Check if root
@@ -284,7 +284,7 @@ export async function gitCheckOutRemote(branchName: string) {
 }
 
 // Get local git branch name
-export async function ensureGitBranch(branchName: string, options: any = { init: false }) {
+export async function ensureGitBranch(branchName: string, options: any = { init: false, parent: "current" }) {
   if (git == null) {
     if (options.init) {
       await ensureGitRepository({ init: true });
@@ -292,6 +292,7 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       return false;
     }
   }
+  await git().fetch();
   const branches = await git().branch();
   const localBranches = await git().branchLocal();
   if (localBranches.current !== branchName) {
@@ -300,8 +301,15 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       await git().checkout(branchName);
       // await git().pull()
     } else {
-      // Not existing branch: create it
-      await git().checkoutBranch(branchName, localBranches.current);
+      if (options?.parent === "main") {
+        // Create from main branch
+        const mainBranch = branches.all.includes("main") ? "main" : "master";
+        await git().checkout(mainBranch);
+        await git().checkoutBranch(branchName, mainBranch);
+      } else {
+        // Not existing branch: create it from current branch
+        await git().checkoutBranch(branchName, localBranches.current);
+      }
     }
   }
   return true;
@@ -972,7 +980,6 @@ export async function generateSSLCertificate(branchName: string, folder: string,
   const consumerKey = crypto.randomBytes(256).toString("base64").substr(0, 119);
 
   // Ask user if he/she wants to create connected app
-  let deployError = false;
   const confirmResponse = await prompts({
     type: "confirm",
     name: "value",
@@ -997,9 +1004,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     uxLog(commandThis, c.yellow("Help to configure CI variables are here: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/"));
     await prompts({
       type: "confirm",
-      message: c.cyanBright(
-        "In GitLab it is in Project -> Settings -> CI/CD -> Variables. Hit ENTER when it is done. If you are not using Gitlab, check link in the console.",
-      ),
+      message: c.cyanBright("Hit ENTER when the CI/CD variables are set (check info in the console below)"),
     });
     // Request info for deployment
     const promptResponses = await prompts([
@@ -1059,6 +1064,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
 
     // Deploy metadatas
     try {
+      uxLog(commandThis, c.cyan(`Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ""} ...`));
       const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
         testlevel: branchName.includes("production") ? "RunLocalTests" : "NoTestRun",
@@ -1066,11 +1072,10 @@ export async function generateSSLCertificate(branchName: string, folder: string,
         targetUsername: options.targetUsername ? options.targetUsername : null,
       });
       console.assert(deployRes.status === 0, c.red("[sfdx-hardis] Failed to deploy metadatas"));
-      uxLog(commandThis, `Successfully deployed ${c.green(promptResponses.appName)} Connected App`);
+      uxLog(commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
       await fs.remove(tmpDirMd);
       await fs.remove(crtFile);
     } catch (e) {
-      deployError = true;
       uxLog(
         commandThis,
         c.red("Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name"),
@@ -1084,25 +1089,6 @@ export async function generateSSLCertificate(branchName: string, folder: string,
           c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`),
         )} with ConsumerKey of the newly created connected app`),
       );
-    }
-    // Last manual step
-    if (deployError === false) {
-      await prompts({
-        type: "confirm",
-        message: c.cyanBright(
-          `You need to verify that rights to profile ${c.green(
-            "System Administrator",
-          )} (or related Permission Set) are set on Connected App ${c.green(promptResponses.appName)}
-On the page that will open, ${c.green(`find app ${promptResponses.appName}, then click Manage`)}
-On the app managing page, ${c.green("click Manage profiles, then check profile System Administrator")} (or related Permission set)
-Hit ENTER when you are ready`,
-        ),
-      });
-      await execCommand("sfdx force:org:open -p lightning/setup/NavigationMenus/home", this);
-      await prompts({
-        type: "confirm",
-        message: c.cyanBright(`Hit ENTER when the profile right has been manually granted on connected app ${promptResponses.appName}`),
-      });
     }
   } else {
     // Tell infos to install manually

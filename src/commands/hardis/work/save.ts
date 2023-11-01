@@ -29,6 +29,8 @@ export default class SaveTask extends SfdxCommand {
 
   public static description = `When a work task is completed, guide user to create a merge request
 
+Advanced instructions in [Publish a task](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
+
 - Generate package-xml diff using sfdx-git-delta
 - Automatically update \`manifest/package.xml\` and \`manifest/destructiveChanges.xml\` according to the committed updates
 - Automatically Clean XML files using \`.sfdx-hardis.yml\` properties
@@ -181,6 +183,14 @@ autoRemoveUserPermissions:
   - ${c.yellow("DO NOT REUSE THE SAME BRANCH")}
   - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`,
         ),
+      ),
+    );
+    uxLog(
+      this,
+      c.cyan(
+        `Merge request documentation is available here -> ${c.bold(
+          "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request",
+        )}`,
       ),
     );
     // Return an object to be displayed with --json
@@ -353,10 +363,15 @@ autoRemoveUserPermissions:
     }
 
     // Commit updates
-    const gitStatusWithConfig = await git().status();
+    let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
       uxLog(this, `Committing files in local git branch ${c.green(this.currentBranch)}...`);
-      await git({ output: true }).commit("[sfdx-hardis] Update package content");
+      try {
+        await git({ output: true }).commit("[sfdx-hardis] Update package content");
+      } catch (e) {
+        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey(e.message)}`));
+        gitStatusWithConfig = await git().status();
+      }
     }
     return gitStatusWithConfig;
   }
@@ -484,9 +499,14 @@ autoRemoveUserPermissions:
       await git({ output: true }).add(["./config"]);
       await git({ output: true }).add(["./manifest"]);
     }
-    const gitStatusAfterDeployPlan = await git().status();
+    let gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
-      await git({ output: true }).commit("[sfdx-hardis] Update deployment plan");
+      try {
+        await git({ output: true }).commit("[sfdx-hardis] Update deployment plan");
+      } catch (e) {
+        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey(e.message)}`));
+        gitStatusAfterDeployPlan = await git().status();
+      }
     }
     return gitStatusAfterDeployPlan;
   }

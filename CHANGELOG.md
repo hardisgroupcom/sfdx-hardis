@@ -4,6 +4,143 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.9.2] 2023-10-31
+
+- Improve GitHub monitoring Workflow
+- Enhance monitoring documentation
+
+## [4.9.1] 2023-10-31
+
+- New deployment error tips:
+  - Invalid custom summary formula definition
+- Add artifacts config on bitbucket-pipelines.yml
+- Add more comments in Monitoring workflows
+
+## [4.9.0] 2023-10-30
+
+- Refactor Monitoring configuration and execution (beta)
+  - **If you already have a monitoring v1 repository, deprecate it and create a new one with the new monitoring setup and pipelines**
+  - Send slack notifications
+    - Latest updates detected in org
+    - Failing apex tests, or insufficient code coverage
+    - Deprecated API calls detected
+  - Full setup documentation
+    - GitHub Actions
+    - Gitlab CI
+    - Azure Pipelines
+    - Bitbucket Pipelines
+  - Totally rewritten command **sfdx hardis:org:configure:monitoring**
+  - New command **sfdx hardis:org:monitor:backup**
+  - New command **sfdx hardis:org:monitor:all**
+- Simplify `sfdx hardis:project:configure:auth` (Configure Org CI Authentication)
+- Disable auto-update for .gitignore & .forceignore
+- Improve [documentation related to pull and commit](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#commit-your-updates)
+
+## [4.8.1] 2023-10-28
+
+- Catch "Cannot start the OAuth redirect server on port 1717" and give instructions to user to kill the process
+
+## [4.8.0] 2023-10-25
+
+- Allow to use Device login for Code Builder compatibility
+- New option to clear cache if an authenticated org does not appear in the choices
+
+## [4.7.0] 2023-10-24
+
+- **hardis:org:files:export**: New configuration available to export files: **outputFileNameFormat**, with available values:
+  - title (default)
+  - title_id
+  - id_title
+  - id
+
+## [4.6.6] 2023-10-20
+
+- Fix crash when converting orgCoverage to string
+
+## [4.6.5] 2023-10-17
+
+- Do not use direct call to jsforce dependency to avoid crash ! ( related to <https://github.com/forcedotcom/cli/issues/2508#issuecomment-1760274510> )
+- Update documentation
+- Update comparative table in doc
+
+## [4.6.4] 2023-09-28
+
+- hardis:work:save : Fix issue when there is an empty commit because of pre-commit hooks
+
+## [4.6.3] 2023-09-27
+
+- Add installation video tutorial: <https://www.youtube.com/watch?v=LA8m-t7CjHA>
+
+## [4.6.2] 2023-09-26
+
+- Fix return code for wrapper commands force:source:deploy, force:source:push and force:mdapi:deploy
+- Fix --skipauth not taken in account with @salesforce/cli
+- Fixed PR coverage to use float over string
+
+## [4.6.1] 2023-09-26
+
+- Fix auth issue with force:source & force:mdapi wrapper sfdx-hardis commands
+
+## [4.6.0] 2023-09-20
+
+- [sfdx-hardis & Slack Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
+  - Easy configuration
+  - Deployment notifications to a common channel, and also to git branch dedicated channel
+
+- Native [BitBucket](https://bitbucket.com/) CI/CD Pipeline for PR deployment checks and deployments to major orgs after merge
+  - _PR comments are not implemented yet but BitBucket can already be used for production_
+
+- **hardis:project:deploy:dx** enhancements:
+  - Added new option --testlevel RunRepositoryTests which will dynamically detect all GIT repository test classes and runs the deployment with found tests. This will speed up the validation/deployment on cases where GIT repository module contains subset of all tests found in the org
+  - Added --runtests support in order to pass certain APEX test classes when --testlevel RunSpecifiedTests is used
+
+- Embed [Dreamforce 23 slides](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) in documentation
+
+## [4.5.1] 2023-09-11
+
+- GitHub Integration: Fix Quick Deploy on Pull Requests
+
+## [4.5.0] 2023-09-11
+
+- GitHub Integration: Implement automated comments & Quick Deploy on Pull Requests
+
+## [4.4.0] 2023-09-10
+
+- Make sfdx-hardis CI/CD Pipelines **natively compliant with GitHub Actions** , by @legetz
+- Create sfdx project: Change defaut first major branch name to `integration` (it was previously `develop`)
+- Update default API version to 58.0
+- Fix bug when user email is input the first time
+
+
+## [4.3.2] 2023-09-08
+
+- Updates new task, commit & save task documentation & screenshots
+
+## [4.3.1] 2023-09-07
+
+- Improve message when deploying metadata to org from local sfdx-hardis
+- Improve documentation to handle merge requests and display links at the end of hardis:work:save
+
+## [4.3.0] 2023-09-05
+
+- Back to normal since <https://github.com/forcedotcom/cli/issues/2445> is fixed
+
+## [4.2.5] 2023-09-05
+
+- Downgrade to sfdx-cli until <https://github.com/forcedotcom/cli/issues/2445> is solved.
+
+## [4.2.4] 2023-09-05
+
+- Downgrade @salesforce/plugin-deploy-retrieve to v1.17.6 as workaround for SF cli bug <https://github.com/forcedotcom/cli/issues/2445>
+
+## [4.2.3] 2023-09-04
+
+- Fix issues with Org monitoring when there are issues with Legacy API
+
+## [4.2.2] 2023-09-01
+
+- Fix upgrade warning message that should not appear when there is no upgrade to perform (detected by @mamasse19)
+
 ## [4.2.1] 2023-08-30
 
 - Fix issue in sfdx commands wrapping following the use of @salesforce/cli

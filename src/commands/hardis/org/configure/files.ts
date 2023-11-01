@@ -63,6 +63,7 @@ See article below
       soqlQuery: "SELECT Id,Name FROM Opportunity",
       fileTypes: "all",
       outputFolderNameField: "Name",
+      outputFileNameFormat: "title",
       overwriteParentRecords: true,
       overwriteFiles: false,
     };

@@ -1,7 +1,10 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- markdownlint-disable MD034 -->
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
 # sfdx-hardis
+
+[_Presented at Dreamforce !_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl)
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
@@ -27,6 +30,10 @@ It will allow you to:
 
 [![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
+_See Dreamforce presentation_
+
+[![See Dreamforce presentation](https://img.youtube.com/vi/o0Mm9F07UFs/0.jpg)](https://www.youtube.com/watch?v=o0Mm9F07UFs)
+
 ## Installation
 
 ### SFDX Plugin
@@ -34,7 +41,7 @@ It will allow you to:
 #### Pre-requisites
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
-- Install Salesforce DX by running `npm install sfdx-cli --global` command line
+- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
 
 #### Plugin installation
 
@@ -45,11 +52,14 @@ sfdx plugins:install sfdx-hardis
 For advanced use, please also install dependencies
 
 ```sh-session
+sf plugins install @salesforce/plugin-packaging
 sfdx plugins:install sfdmu
 sfdx plugins:install sfdx-git-delta
 sfdx plugins:install sfdx-essentials
 sfdx plugins:install texei-sfdx-plugin
 ```
+
+If you are using CI/CD scripts, use `echo y | sfdx plugins:install ...` to bypass prompt.
 
 ### With IDE
 
@@ -57,14 +67,19 @@ You can install [Visual Studio Code](https://code.visualstudio.com/) extension [
 
 Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, and follow the additional installation instructions
 
-[![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-icon.png)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+[![Installation tutorial](https://img.youtube.com/vi/LA8m-t7CjHA/0.jpg)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
 ### Docker
 
 You can use sfdx-hardis docker images to run in CI
 
-- [**hardisgroupcom/sfdx-hardis:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with latest sfdx-cli version)
-- [**hardisgroupcom/sfdx-hardis:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with recommended sfdx-cli version, in case the latest version of sfdx-cli is buggy)
+- Docker Hub
+  - [**hardisgroupcom/sfdx-hardis:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with latest @salesforce/cli version)
+  - [**hardisgroupcom/sfdx-hardis:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with recommended @salesforce/cli version, in case the latest version of @salesforce/cli is buggy)
+
+- GitHub Packages (ghcr.io)
+  - [**ghcr.io/hardisgroupcom/sfdx-hardis:latest**](https://github.com/orgs/hardisgroupcom/packages) (with latest @salesforce/cli version)
+  - [**ghcr.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended**](https://github.com/orgs/hardisgroupcom/packages) (with recommended @salesforce/cli version, in case the latest version of @salesforce/cli is buggy)
 
 _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Dockerfile)_
 
@@ -76,10 +91,11 @@ sfdx hardis:<COMMAND> <OPTIONS>
 
 ## Articles
 
-Here are some articles with examples of use of [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
+Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 - English
 
+[![Salesforce Developers Podcast](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-sfdev.jpg)](https://developer.salesforce.com/podcast/2023/06/sfdx)
 [![sfdx-hardis: A release management tool for open-source](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/)
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 [![Handle Salesforce API versions Deprecation like a pro](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deprecated-api.jpg)](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
@@ -101,7 +117,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 - Install Node.js ([recommended version](https://nodejs.org/en/))
 - Install typescript by running `npm install typescript --global`
 - Install yarn by running `npm install yarn --global`
-- Install Salesforce DX by running `npm install sfdx-cli --global` command line
+- Install Salesforce DX by running `npm install @salesforce/cli --global` command line
 - Fork this repo and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies
@@ -186,6 +202,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 | [**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)                 | Check for legacy API use                         |
 | [**hardis:org:files:export**](hardis/org/files/export.md)                             | Export files                                     |
 | [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                     | Fix listviews with                               |
+| [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)       | Generate Full Org package.xml                    |
 | [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                           | Purge Apex Logs                                  |
 | [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                 | Purge Flow versions                              |
 | [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         | Retrieve package configuration from an org       |

@@ -1,7 +1,7 @@
-import * as changedGitFiles from "changed-git-files";
 import * as c from "chalk";
-import { elapseEnd, getCurrentGitBranch, getGitRepoName, isGitRepo, uxLog } from "../../common/utils";
+import { elapseEnd, getCurrentGitBranch, getGitRepoName, uxLog } from "../../common/utils";
 import { canSendNotifications, sendNotification } from "../../common/utils/notifUtils";
+import { MetadataUtils } from "../../common/metadata-utils";
 
 export const hook = async (options: any) => {
   if (globalThis.hardisLogFileStream) {
@@ -31,7 +31,7 @@ export const hook = async (options: any) => {
 
   // Send hook to microsoft ?teams if MS_TEAMS_WEBHOOK_URL env var is set, or msTeamsWebhookUrl in config
   if ((await canSendNotifications()) && options?.Command?.triggerNotification === true) {
-    const diffFiles = await listChangedFiles();
+    const diffFiles = await MetadataUtils.listChangedFiles();
     // No notif if no updated file
     if (diffFiles.length === 0) {
       return;
@@ -50,23 +50,3 @@ export const hook = async (options: any) => {
     });
   }
 };
-
-// List updated files and reformat them as string
-async function listChangedFiles(): Promise<string[]> {
-  if (!isGitRepo()) {
-    return [];
-  }
-  const files = await new Promise<string[]>((resolve) => {
-    changedGitFiles((err: any, result: any[]) => {
-      if (result == null) {
-        console.warn(JSON.stringify(err, null, 2));
-        resolve([]);
-      }
-      resolve(result);
-    });
-  });
-  const filesTextLines = files
-    .sort((a: any, b: any) => (a.filename > b.filename ? 1 : -1))
-    .map((fileInfo: any) => `${fileInfo.status} - ${fileInfo.filename}`);
-  return filesTextLines;
-}

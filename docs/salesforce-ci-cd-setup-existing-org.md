@@ -4,7 +4,11 @@ description: Learn how to initialize sfdx sources from a Salesforce org
 ---
 <!-- markdownlint-disable MD013 -->
 
-_If this is a new Salesforce project, skip this step_
+If this is a new Salesforce project, or if you want to setup CI/CD in **incremental mode**, you can skip this step and directly go to [Create first merge request](#create-first-merge-request).
+
+Thanks to tracked sandboxes, you can also decide to opt for an **half-incremental init**, with only some metadata types like Apex, LWC & Permission sets. In that case retrieve manually the metadatas you need, for example with Org Browser.
+
+If you want to go for a **full init setup**, follow the steps below !
 
 - [Retrieve Metadatas](#retrieve-metadatas)
 - [Automated Metadatas Cleaning](#automated-metadatas-cleaning)
@@ -140,6 +144,8 @@ installedPackages:
 ```
 
 ## Create first merge request
+
+> Don't forget to run ![](assets/images/btn-save-publish-task.jpg) and to follow other instructions before creating your initial merge request !
 
 Time to [create the first merge request](salesforce-ci-cd-setup-merge-request.md) !
 
