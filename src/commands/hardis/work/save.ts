@@ -286,7 +286,7 @@ autoRemoveUserPermissions:
 
   private async upgradePackageXmlFilesWithDelta() {
     // Retrieving info about current branch latest commit and master branch latest commit
-    const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch)
+    const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch);
 
     // Build package.xml delta between most recent commit and developpement
     const localPackageXml = path.join("manifest", "package.xml");
@@ -296,7 +296,11 @@ autoRemoveUserPermissions:
       c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`),
     );
     const tmpDir = await createTempDir();
-    const packageXmlResult = await callSfdxGitDelta(gitDeltaScope.fromCommit, gitDeltaScope.toCommit ? gitDeltaScope.toCommit.hash : gitDeltaScope.fromCommit, tmpDir);
+    const packageXmlResult = await callSfdxGitDelta(
+      gitDeltaScope.fromCommit,
+      gitDeltaScope.toCommit ? gitDeltaScope.toCommit.hash : gitDeltaScope.fromCommit,
+      tmpDir,
+    );
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml
       const localDestructiveChangesXml = path.join("manifest", "destructiveChanges.xml");
@@ -314,7 +318,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-        c.red(destructivePackageXmlDiffStr),
+          c.red(destructivePackageXmlDiffStr),
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +

@@ -307,18 +307,19 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
 
     // Compute and apply delta if required
-    if ((deltaFromArgs === true || process.env.USE_DELTA_DEPLOYMENT === "true" || this.configInfo.useDeltaDeployment === true)
-      && (await this.isDeltaAllowed()) === true) {
-
+    if (
+      (deltaFromArgs === true || process.env.USE_DELTA_DEPLOYMENT === "true" || this.configInfo.useDeltaDeployment === true) &&
+      (await this.isDeltaAllowed()) === true
+    ) {
       // Define delta deployment depending on context
       let fromCommit = "HEAD";
       let toCommit = "HEAD^";
       if (this.checkOnly) {
         // In deployment check context
         const prInfo = await GitProvider.getPullRequestInfo();
-        const deltaScope = await getGitDeltaScope(currentGitBranch,prInfo.targetBranch);
+        const deltaScope = await getGitDeltaScope(currentGitBranch, prInfo.targetBranch);
         fromCommit = deltaScope.fromCommit;
-        toCommit = deltaScope.toCommit.hash
+        toCommit = deltaScope.toCommit.hash;
       }
       // call delta
       uxLog(this, c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."));

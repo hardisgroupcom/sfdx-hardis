@@ -42,7 +42,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
     debug: this.debugMode,
   });
   const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace("\n", "").replace("\r", "");
-  return { fromCommit: masterBranchLatestCommit,toCommit: toCommit}
+  return { fromCommit: masterBranchLatestCommit, toCommit: toCommit };
 }
 
 export async function callSfdxGitDelta(from: string, to: string, outputDir: string, options: any = {}) {

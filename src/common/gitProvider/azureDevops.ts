@@ -37,7 +37,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const currentGitBranch = await getCurrentGitBranch();
     if (pullRequestIdStr !== null) {
       const pullRequestId = Number(pullRequestIdStr);
-      const pullRequest = await azureGitApi.getPullRequestById(pullRequestId)
+      const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
       if (pullRequest) {
         return this.completePullRequestInfo(pullRequest);
       }
@@ -48,10 +48,11 @@ export class AzureDevopsProvider extends GitProviderRoot {
       targetRefName: `refs/heads/${currentGitBranch}`,
       status: PullRequestStatus.Completed,
     });
-    const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter((pr) =>
-      pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha);
+    const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter(
+      (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha,
+    );
     if (latestMergedPullRequestOnBranch.length > 0) {
-        return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
+      return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
     }
     uxLog(this, c.grey(`[Azure Integration] Unable to find related Pull Request Info`));
     return null;
@@ -198,12 +199,12 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     return prMessage.status === "valid"
       ? CommentThreadStatus.Fixed
       : prMessage.status === "invalid"
-        ? CommentThreadStatus.Active
-        : CommentThreadStatus.Unknown;
+      ? CommentThreadStatus.Active
+      : CommentThreadStatus.Unknown;
   }
 
   private completePullRequestInfo(prData: any) {
-    const prInfo: any = Object.assign({},prData);
+    const prInfo: any = Object.assign({}, prData);
     prInfo.targetBranch = prData.targetRefName;
     return prInfo;
   }
