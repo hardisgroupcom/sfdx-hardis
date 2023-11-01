@@ -493,7 +493,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
-  const gitDeltaCommandRes = await callSfdxGitDelta("HEAD", "*", tmpDir, { debug: debugMode });
+  const gitDeltaCommandRes = await callSfdxGitDelta("HEAD~1", "HEAD", tmpDir, { debug: debugMode });
 
   // Now that the diff is computed, we can dump the temporary commit
   await git().reset(ResetMode.HARD, ["HEAD~1"]);
