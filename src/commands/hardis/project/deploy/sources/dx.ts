@@ -333,17 +333,21 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       const diffPackageXml = path.join(tmpDir, "package", "package.xml");
       await removePackageXmlContent(packageXmlFile, diffPackageXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
 
+      const deltaContent = await fs.readFile(packageXmlFile, "utf8");
+      uxLog(this, c.cyan("Final Delta package.xml to deploy:\n" + c.bgCyanBright(c.white(deltaContent))));
+
       // Update destructiveChanges.xml
       if (forceSourceDeployOptions.postDestructiveChanges) {
         const destructiveXmlFileDeploy = path.join(tmpDir, "destructiveChanges", "destructiveChangesDelta.xml");
         await fs.copy(forceSourceDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
-        packageXmlFile = packageXmlFileDeltaDeploy;
         const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
         await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
           debugMode: this.debugMode,
           keepEmptyTypes: false,
         });
         forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
+        const deltaContentDelete = await fs.readFile(destructiveXmlFileDeploy, "utf8");
+        uxLog(this, c.cyan("Final Delta destructiveChanges.xml to delete:\n" + c.bgCyanBright(c.yellow(deltaContentDelete))));
       }
     }
 
