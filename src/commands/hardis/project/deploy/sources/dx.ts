@@ -219,7 +219,6 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       }
     }
 
-
     const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
 
     // Test classes are only valid for RunSpecifiedTests
