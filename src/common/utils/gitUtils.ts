@@ -38,7 +38,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
   const toCommit = logResult.latest;
   const mergeBaseCommand = `git merge-base ${targetBranch} ${currentBranch}`;
   const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {
-    fail: true
+    fail: true,
   });
   const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace("\n", "").replace("\r", "");
   return { fromCommit: masterBranchLatestCommit, toCommit: toCommit };
