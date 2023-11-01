@@ -26,7 +26,7 @@ import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
 import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider";
 import { GitProvider } from "../../../../../common/gitProvider";
-import { callSfdxGitDelta, getParentBranch } from "../../../../../common/utils/gitUtils";
+import { callSfdxGitDelta, getGitDeltaScope } from "../../../../../common/utils/gitUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -229,6 +229,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
     const packageXml = this.flags.packagexml || null;
     this.debugMode = this.flags.debug || false;
+    const currentGitBranch = await getCurrentGitBranch();
 
     // Get target org
     let targetUsername = this.org.getUsername();
@@ -306,32 +307,42 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
 
     // Compute and apply delta if required
-    if (deltaFromArgs === true || process.env.USE_DELTA_DEPLOYMENT === "true" || this.configInfo.useDeltaDeployment === true) {
-      if ((await this.isDeltaAllowed()) === true) {
-        // call delta
-        uxLog(this, c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."));
-        const tmpDir = await createTempDir();
-        await callSfdxGitDelta("HEAD", "HEAD^", tmpDir, { debug: this.debugMode });
+    if ((deltaFromArgs === true || process.env.USE_DELTA_DEPLOYMENT === "true" || this.configInfo.useDeltaDeployment === true)
+      && (await this.isDeltaAllowed()) === true) {
 
-        // Update package.xml
-        const packageXmlFileDeltaDeploy = path.join(tmpDir, "package", "packageDelta.xml");
-        await fs.copy(packageXmlFile, packageXmlFileDeltaDeploy);
+      // Define delta deployment depending on context
+      let fromCommit = "HEAD";
+      let toCommit = "HEAD^";
+      if (this.checkOnly) {
+        // In deployment check context
+        const prInfo = await GitProvider.getPullRequestInfo();
+        const deltaScope = await getGitDeltaScope(currentGitBranch,prInfo.targetBranch);
+        fromCommit = deltaScope.fromCommit;
+        toCommit = deltaScope.toCommit.hash
+      }
+      // call delta
+      uxLog(this, c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."));
+      const tmpDir = await createTempDir();
+      await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
+
+      // Update package.xml
+      const packageXmlFileDeltaDeploy = path.join(tmpDir, "package", "packageDelta.xml");
+      await fs.copy(packageXmlFile, packageXmlFileDeltaDeploy);
+      packageXmlFile = packageXmlFileDeltaDeploy;
+      const diffPackageXml = path.join(tmpDir, "package", "package.xml");
+      await removePackageXmlContent(packageXmlFile, diffPackageXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
+
+      // Update destructiveChanges.xml
+      if (forceSourceDeployOptions.postDestructiveChanges) {
+        const destructiveXmlFileDeploy = path.join(tmpDir, "destructiveChanges", "destructiveChangesDelta.xml");
+        await fs.copy(forceSourceDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
         packageXmlFile = packageXmlFileDeltaDeploy;
-        const diffPackageXml = path.join(tmpDir, "package", "package.xml");
-        await removePackageXmlContent(packageXmlFile, diffPackageXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
-
-        // Update destructiveChanges.xml
-        if (forceSourceDeployOptions.postDestructiveChanges) {
-          const destructiveXmlFileDeploy = path.join(tmpDir, "destructiveChanges", "destructiveChangesDelta.xml");
-          await fs.copy(forceSourceDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
-          packageXmlFile = packageXmlFileDeltaDeploy;
-          const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
-          await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
-            debugMode: this.debugMode,
-            keepEmptyTypes: false,
-          });
-          forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
-        }
+        const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
+        await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
+          debugMode: this.debugMode,
+          keepEmptyTypes: false,
+        });
+        forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
       }
     }
 
@@ -347,7 +358,6 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     if (!this.checkOnly) {
       const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
       const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
-      const currentGitBranch = await getCurrentGitBranch();
       let branchMd = `*${currentGitBranch}*`;
       const branchUrl = await GitProvider.getCurrentBranchUrl();
       if (branchUrl) {
@@ -374,7 +384,11 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
   async isDeltaAllowed() {
     const currentBranch = await getCurrentGitBranch();
-    const parentBranch = await getParentBranch();
+    let parentBranch = process.env.FORCE_TARGET_BRANCH || null;
+    const prInfo = await GitProvider.getPullRequestInfo();
+    if (prInfo) {
+      parentBranch = prInfo.targetBranch;
+    }
     const majorOrgs = await listMajorOrgs();
     const currentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === currentBranch);
     const parentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === parentBranch);

@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Allow to deploy in delta during PR checks between minor and major branches
+  - To activate it, set env variable **USE_DELTA_DEPLOYMENT** with value `true` 
+
 ## [4.9.2] 2023-10-31
 
 - Improve GitHub monitoring Workflow

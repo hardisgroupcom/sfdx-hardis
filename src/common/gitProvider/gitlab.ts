@@ -45,7 +45,7 @@ export class GitlabProvider extends GitProviderRoot {
         iids: [parseInt(mrNumber)],
       });
       if (mergeRequests.length > 0) {
-        return mergeRequests[0];
+        return this.completePullRequestInfo(mergeRequests[0]);
       }
     }
     // Case when we find MR from a commit
@@ -60,7 +60,7 @@ export class GitlabProvider extends GitProviderRoot {
       const currentGitBranch = await getCurrentGitBranch();
       const candidateMergeRequests = latestMergeRequestsOnBranch.filter((pr) => pr.target_branch === currentGitBranch);
       if (candidateMergeRequests.length > 0) {
-        return candidateMergeRequests[0];
+        return this.completePullRequestInfo(candidateMergeRequests[0]);
       }
     }
     uxLog(this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
@@ -148,5 +148,11 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabC
       };
       return prResult;
     }
+  }
+
+  private completePullRequestInfo(prData: any) {
+    const prInfo: any = Object.assign({},prData);
+    prInfo.targetBranch = prData.target_branch;
+    return prInfo;
   }
 }

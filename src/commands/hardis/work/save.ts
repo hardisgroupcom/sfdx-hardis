@@ -9,7 +9,7 @@ import * as path from "path";
 import { createTempDir, execCommand, getCurrentGitBranch, git, gitHasLocalUpdates, normalizeFileStatusPath, uxLog } from "../../../common/utils";
 import { exportData } from "../../../common/utils/dataUtils";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
-import { callSfdxGitDelta, selectTargetBranch } from "../../../common/utils/gitUtils";
+import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from "../../../common/utils/gitUtils";
 import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { WebSocketClient } from "../../../common/websocketClient";
@@ -286,24 +286,17 @@ autoRemoveUserPermissions:
 
   private async upgradePackageXmlFilesWithDelta() {
     // Retrieving info about current branch latest commit and master branch latest commit
-    const logResult = await git().log([`${this.targetBranch}..${this.currentBranch}`]);
-    const toCommit = logResult.latest;
-    const mergeBaseCommand = `git merge-base ${this.targetBranch} ${this.currentBranch}`;
-    const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {
-      fail: true,
-      debug: this.debugMode,
-    });
-    const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace("\n", "").replace("\r", "");
+    const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch)
 
     // Build package.xml delta between most recent commit and developpement
     const localPackageXml = path.join("manifest", "package.xml");
-    const toCommitMessage = toCommit ? toCommit.message : "";
+    const toCommitMessage = gitDeltaScope.toCommit ? gitDeltaScope.toCommit.message : "";
     uxLog(
       this,
       c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`),
     );
     const tmpDir = await createTempDir();
-    const packageXmlResult = await callSfdxGitDelta(masterBranchLatestCommit, toCommit ? toCommit.hash : masterBranchLatestCommit, tmpDir);
+    const packageXmlResult = await callSfdxGitDelta(gitDeltaScope.fromCommit, gitDeltaScope.toCommit ? gitDeltaScope.toCommit.hash : gitDeltaScope.fromCommit, tmpDir);
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml
       const localDestructiveChangesXml = path.join("manifest", "destructiveChanges.xml");
@@ -321,7 +314,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr),
+        c.red(destructivePackageXmlDiffStr),
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +

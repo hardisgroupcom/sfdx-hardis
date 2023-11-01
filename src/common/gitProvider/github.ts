@@ -99,8 +99,9 @@ export class GithubProvider extends GitProviderRoot {
         repo: this.repoName,
         pull_number: prNumber,
       });
+      // Add cross git provider properties used by sfdx-hardis
       if (pullRequest) {
-        return pullRequest.data;
+        return this.completePullRequestInfo(pullRequest.data);
       }
     }
     // Case when we find PRs from a commit
@@ -151,12 +152,14 @@ export class GithubProvider extends GitProviderRoot {
         (pr: any) => pr.node.merged === true && pr.node.baseRef.name === currentGitBranch,
       );
       if (candidatePullRequests.length > 0) {
-        return candidatePullRequests[0].node;
+        return this.completePullRequestInfo(candidatePullRequests[0].node);
       }
     }
     uxLog(this, c.grey(`[GitHub Integration] Unable to find related Pull Request Info`));
     return null;
   }
+
+
 
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
@@ -228,5 +231,11 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
       };
       return prResult;
     }
+  }
+
+  private completePullRequestInfo(prData: any) {
+    const prInfo: any = Object.assign({},prData);
+    prInfo.targetBranch = prData.base.ref;
+    return prInfo;
   }
 }
