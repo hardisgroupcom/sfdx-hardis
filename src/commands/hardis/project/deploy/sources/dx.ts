@@ -18,14 +18,15 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
+import { createTempDir, getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
-import { restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
+import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
 import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider";
 import { GitProvider } from "../../../../../common/gitProvider";
+import { callSfdxGitDelta, getParentBranch } from "../../../../../common/utils/gitUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -260,25 +261,6 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       }
     }
 
-    // Get package.xml
-    const packageXmlFile =
-      packageXml || process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
-        ? "./manifest/package.xml"
-        : "./config/package.xml";
-    const forceSourceDeployOptions: any = {
-      targetUsername: targetUsername,
-      conn: this.org?.getConnection(),
-      testClasses: testClasses,
-    };
-    // Get destructiveChanges.xml and add it in options if existing
-    const packageDeletedXmlFile =
-      process.env.PACKAGE_XML_TO_DELETE || this.configInfo.packageXmlToDelete || fs.existsSync("./manifest/destructiveChanges.xml")
-        ? "./manifest/destructiveChanges.xml"
-        : "./config/destructiveChanges.xml";
-    if (fs.existsSync(packageDeletedXmlFile)) {
-      forceSourceDeployOptions.postDestructiveChanges = packageDeletedXmlFile;
-    }
-
     // Display missing packages message
     if (missingPackages.length > 0) {
       for (const package1 of missingPackages) {
@@ -312,6 +294,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     const forceSourceDeployOptions: any = {
       targetUsername: targetUsername,
       conn: this.org?.getConnection(),
+      testClasses: testClasses,
     };
     // Get destructiveChanges.xml and add it in options if existing
     const packageDeletedXmlFile =
@@ -361,7 +344,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
 
     // Send notification of deployment success
-    if (!check) {
+    if (!this.checkOnly) {
       const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
       const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
       const currentGitBranch = await getCurrentGitBranch();
