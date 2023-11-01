@@ -307,10 +307,12 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
 
     // Compute and apply delta if required
+    let delta = false;
     if (
       (deltaFromArgs === true || process.env.USE_DELTA_DEPLOYMENT === "true" || this.configInfo.useDeltaDeployment === true) &&
       (await this.isDeltaAllowed()) === true
     ) {
+      delta = true;
       // Define delta deployment depending on context
       let fromCommit = "HEAD";
       let toCommit = "HEAD^";
@@ -369,6 +371,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
       }
       let notifMessage = `Deployment has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
+      notifMessage += (delta) ? '(🌙 delta deployment)' : '(🌕 full deployment)';
       const notifButtons = [];
       const jobUrl = await GitProvider.getJobUrl();
       if (jobUrl) {
