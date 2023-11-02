@@ -205,8 +205,8 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
 
   private completePullRequestInfo(prData: any) {
     const prInfo: any = Object.assign({}, prData);
-    prInfo.sourceBranch = prData.sourceRefName;
-    prInfo.targetBranch = prData.targetRefName;
+    prInfo.sourceBranch = prData.sourceRefName.replace("refs/heads/","");
+    prInfo.targetBranch = prData.targetRefName.replace("refs/heads/","");
     return prInfo;
   }
 }
