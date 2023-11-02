@@ -234,7 +234,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubW
   private completePullRequestInfo(prData: any) {
     const prInfo: any = Object.assign({}, prData);
     prInfo.sourceBranch = prData.head.ref;
-    prInfo.targetBranch = prData.base.ref.replace("refs/heads/","");
-    return prInfo.replace("refs/heads/","");
+    prInfo.targetBranch = prData.base.ref.replace("refs/heads/", "");
+    return prInfo.replace("refs/heads/", "");
   }
 }
