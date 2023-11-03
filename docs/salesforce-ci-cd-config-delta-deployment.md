@@ -25,9 +25,9 @@ But in order to improve performances on project with large metadata base, you ca
 
 Examples:
 
-- features/config/mywork to integration will be DELTA DEPLOYMENT
+- features/config/my-work to integration will be DELTA DEPLOYMENT
 - integration to uat will be FULL
-- hotfixes/fixstuff to preprod will be DELTA
+- hotfixes/fix-stuff to preprod will be DELTA
 - preprod to production will be FULL
 
 ## Configuration
