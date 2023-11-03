@@ -25,10 +25,10 @@ But in order to improve performances on project with large metadata base, you ca
 
 Examples:
 
-- features/config/my-work to integration will be DELTA DEPLOYMENT
-- integration to uat will be FULL
-- hotfixes/fix-stuff to preprod will be DELTA
-- preprod to production will be FULL
+- **features/config/my-work to integration** will be **DELTA** DEPLOYMENT
+- **integration to uat** will be **FULL** DEPLOYMENT
+- **hotfixes/fix-stuff to preprod** will be **DELTA** DEPLOYMENT
+- **preprod to production** will be **FULL** DEPLOYMENT
 
 ## Configuration
 
