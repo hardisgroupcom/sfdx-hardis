@@ -1,5 +1,5 @@
 ---
-title: Configure overwrite management of a Salesforce CI/CD Project
+title: Configure overwrite management on a Salesforce CI/CD Project
 description: Learn how to manage packageDeployOnce.xml and packageDeployOnChange.xml
 ---
 <!-- markdownlint-disable MD013 -->

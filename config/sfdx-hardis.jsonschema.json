@@ -836,6 +836,13 @@
       "title": "Target Username",
       "type": "string"
     },
+    "useDeltaDeployment": {
+      "$id": "#/properties/useDeltaDeployment",
+      "default": false,
+      "description": "Defines if sfdx-hardis will deploy in delta from minor to major branches",
+      "title": "Use Delta Deployment",
+      "type": "boolean"
+    },
     "linterIgnoreRightMetadataFile": {
       "$id": "#/properties/linterIgnoreRightMetadataFile",
       "default": "",

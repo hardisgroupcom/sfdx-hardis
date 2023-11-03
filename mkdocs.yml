@@ -196,6 +196,7 @@ nav:
           - CI/CD Configuration:
               - CI/CD Config Home: salesforce-ci-cd-config-home.md
               - Overwrite Management: salesforce-ci-cd-config-overwrite.md
+              - Delta deployments: salesforce-ci-cd-config-delta-deployment.md
               - Automated cleaning: salesforce-ci-cd-config-cleaning.md
               - Source retrieve issues: salesforce-ci-cd-retrieve.md
           - sfdx-hardis for packaging: salesforce-ci-cd-packaging.md

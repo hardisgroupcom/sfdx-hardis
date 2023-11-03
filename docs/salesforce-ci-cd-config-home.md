@@ -26,6 +26,8 @@ A Salesforce CI/CD repository contains a file **manifest/package.xml**.
 
   _See [Overwrite management configuration documentation](salesforce-ci-cd-config-overwrite.md)_
 
+- You can also use [**delta deployments**](salesforce-ci-cd-config-delta-deployment.md) if your project is big and you have performances issues.
+
 ___
 
 ## destructiveChanges.xml

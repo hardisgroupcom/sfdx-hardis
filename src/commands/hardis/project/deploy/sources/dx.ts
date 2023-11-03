@@ -391,6 +391,10 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
   }
 
   async isDeltaAllowed() {
+    if (process.env.DISABLE_DELTA_DEPLOYMENT === "true") {
+      uxLog(this, c.yellow(`Delta deployment has been explicitely disabled with variable DISABLE_DELTA_DEPLOYMENT=true`));
+      return false;
+    }
     let currentBranch = await getCurrentGitBranch();
     let parentBranch = process.env.FORCE_TARGET_BRANCH || null;
     const prInfo = await GitProvider.getPullRequestInfo();
