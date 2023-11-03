@@ -34,6 +34,12 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
 }
 
 export async function getGitDeltaScope(currentBranch: string, targetBranch: string) {
+  try {
+    await git().fetch(["origin", `${targetBranch}:${targetBranch}`]);
+    // await git().fetch(["origin", `${currentBranch}:${currentBranch}`]);
+  } catch (e) {
+    uxLog(this, c.gray("[Warning] Unable to fetch branches to prepare call to sfdx-git-delta\n" + JSON.stringify(e)));
+  }
   const logResult = await git().log([`${targetBranch}..${currentBranch}`]);
   const toCommit = logResult.latest;
   const mergeBaseCommand = `git merge-base ${targetBranch} ${currentBranch}`;
