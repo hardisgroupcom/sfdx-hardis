@@ -49,7 +49,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
       status: PullRequestStatus.Completed,
     });
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter(
-      (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha
+      (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha,
     );
     if (latestMergedPullRequestOnBranch.length > 0) {
       return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
@@ -117,7 +117,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
 - SYSTEM_JOB_DISPLAY_NAME
 - SYSTEM_COLLECTIONURI
 - SYSTEM_TEAMPROJECT
-      `)
+      `),
       );
       return { posted: false, providerResult: { info: "No related pull request" } };
     }
