@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Allow to deploy in delta during PR checks between minor and major branches
   - To activate it, define `useDeltaDeployment: true` in `.sfdx-hardis.yml`, or set env variable **USE_DELTA_DEPLOYMENT** with value `true`
-- Rename packageDeployOnce.xml into package-no-overwrite.xml (compatibility with packageDeployOnce.xml file name is kept)
+- Overwrite management: Rename [packageDeployOnce.xml into package-no-overwrite.xml](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/) (compatibility with packageDeployOnce.xml file name is kept)
 
 ## [4.9.2] 2023-10-31
 
