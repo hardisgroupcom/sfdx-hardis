@@ -26,6 +26,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0 # Faster code checkout fetching only latest commit
+        persist-credentials: true
     # Setup node
     - name: Setup Node
       uses: actions/setup-node@v3

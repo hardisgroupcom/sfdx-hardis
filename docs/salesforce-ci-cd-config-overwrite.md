@@ -1,34 +1,34 @@
 ---
 title: Configure overwrite management on a Salesforce CI/CD Project
-description: Learn how to manage packageDeployOnce.xml and packageDeployOnChange.xml
+description: Learn how to manage package-no-overwrite.xml and packageDeployOnChange.xml
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [packageDeployOnce.xml](#packagedeployoncexml)
+- [package-no-overwrite.xml](#packagenooverwritexml)
   - [Definition](#definition)
   - [Example](#example)
 - [packageDeployOnChange.xml](#packagedeployonchangexml)
 
 ___
 
-## packageDeployOnce.xml
+## package-no-overwrite.xml
 
 ### Definition
 
 For different reasons, **many metadatas are maintained manually**, using **production Salesforce org Setup**
 
-To avoid to overwrite manual updates in setup, you must define at least a [manifest/packageDeployOnce.xml](#packagedeployoncexml) file.
+To avoid to overwrite manual updates in setup, you must define at least a [manifest/package-no-overwrite.xml](#package-no-overwritexml) file.
 
 The rule is simple and must be learnt by heart:
 
-Every item which is **existing in package.xml** AND **matching packageDeployOnce.xml** AND **existing in the target deployment org** will **NOT be deployed**.
+Every item which is **existing in package.xml** AND **matching package-no-overwrite.xml** AND **existing in the target deployment org** will **NOT be deployed**.
 
-This means that **an item matching packageDeployOnce.xml** will be **deployed the first time**, but **never overwritten**, so has to be **manually maintained in org using Setup**.
+This means that **an item matching package-no-overwrite.xml** will be **deployed the first time**, but **never overwritten**, so has to be **manually maintained in org using Setup**.
 
-- This file must be located at `manifest/packageDeployOnce.xml`
+- This file must be located at `manifest/package-no-overwrite.xml` (formerly packageDeployOnce.xml)
 - It has the **same format than a package.xml**, but must be **written manually**
 - It can contain named items, or wildcards `*`
-- Theoretically, any metadata can be added in packageDeployOnce.xml, but here are the most commonly present:
+- Theoretically, any metadata can be added in package-no-overwrite.xml, but here are the most commonly present:
   - Connected apps
   - Dashboards
   - Named Credentials
@@ -130,11 +130,11 @@ This means that **an item matching packageDeployOnce.xml** will be **deployed th
 
 ## packageDeployOnChange.xml
 
-packageDeployOnChange.xml is slightly different from packageDeployOnce.xml: it will deploy only if the target metadata XML is different from the source metadata XML that we want to deploy
+packageDeployOnChange.xml is slightly different from package-no-overwrite.xml: it will deploy only if the target metadata XML is different from the source metadata XML that we want to deploy
 
-- This file must be located at `manifest/packageDeployOnce.xml`
+- This file must be located at `manifest/packageDeployOnChange.xml`
 - It can contain named items, or wildcards `*`
-- Is has much **lower performances than packageDeployOnce.xml**, so must be **used wisely**
-- Theoretically, any metadata can be added in packageDeployOnce.xml, but here are the most commonly present:
+- Is has much **lower performances than package-no-overwrite.xml**, so must be **used wisely**
+- Theoretically, any metadata can be added in packageDeployOnChange.xml, but here are the most commonly present:
   - Sharing Rules
   - Sharing Owner Rules

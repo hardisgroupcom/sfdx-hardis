@@ -11,7 +11,7 @@ ___
 
 ## Delta deployments (beta)
 
-_sfdx-hardis monitoring is in beta but can already be safely used_
+_sfdx-hardis delta deployment is in beta but can already be safely used_
 
 By default, all deployments job (check deploy & process deploy) deploy the **full content of the `package.xml` minus what is matching `package-no-overwrite.xml` (formerly `packageDeployOnce.xml`)**
 
@@ -19,9 +19,16 @@ This is the safest way to deploy at each level
 - major to major
 - minor to major
 
-But in order to improve performances on project with large metadata base, you can activate delta deployments for Pull Request/Merge Requests **from a minor branch** (examples: `feature/xxx`, `debug/xxx`) **to a major branch** (ex: `integration`,`uat`,`preprod`,`production`).
+But in order to improve performances on project with large metadata base, you can activate delta deployments for Pull Request/Merge Requests **from a minor branch** (examples: `feature/xxx`, `debug/xxx`) **to a major branch** (ex: `integration`,`uat`,`preprod`,`production`: sfdx-hardis will **deploy only updated metadatas** in the Pull Request / Merge Request.
 
 **Merge Requests / Pull Request between major branches** (ex: uat to preprod) **remains in full deployment mode**, to avoid issues with configuration which would have been done directly in the orgs (whereas it shouldn't be, except for Reports, Dashboards and a few metadata types)
+
+Examples:
+
+- features/config/mywork to integration will be DELTA DEPLOYMENT
+- integration to uat will be FULL
+- hotfixes/fixstuff to preprod will be DELTA
+- preprod to production will be FULL
 
 ## Configuration
 
