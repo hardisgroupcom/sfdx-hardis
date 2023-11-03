@@ -40,5 +40,5 @@ To activate delta deployments,you can:
 In case of temporary disablement of delta deployments, you can set variable `DISABLE_DELTA_DEPLOYMENT=true`, it has priority on other configurations.
 
 > If your sfdx-hardis installation is from before 4.10.0, you might need to update your CI/CD workflows
-> 
+>
 > Check updated versions in [sfdx-hardis sources](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/defaults/ci)
