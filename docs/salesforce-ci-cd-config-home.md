@@ -4,18 +4,23 @@ description: Learn how to configure your Salesforce CI/CD project so it works ea
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Package.xml](#packagexml)
+- [package.xml](#packagexml)
+  * [Overwrite Management](#overwrite-management)
+  * [Delta deployments](#delta-deployments)
 - [destructiveChanges.xml](#destructivechangesxml)
 - [Automated sources cleaning](#automated-sources-cleaning)
+- [Source retrieve issues](#source-retrieve-issues)
 - [All configuration properties](#all-configuration-properties)
 
-## Package.xml
+## package.xml
 
 A Salesforce CI/CD repository contains a file **manifest/package.xml**.
 
 - It contains **all metadatas** that will be **deployed** by the **CI server**.
 
 - It is **automatically updated** when [preparing merge requests](salesforce-ci-cd-publish-task.md#prepare-merge-request) by command [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
+
+### Overwrite Management
 
 - It is highly recommended to [**configure overwrite management**](salesforce-ci-cd-config-overwrite.md), to **avoid to overwrite metadatas that are maintained directly in production on purpose**
   - Dashboards
@@ -25,6 +30,16 @@ A Salesforce CI/CD repository contains a file **manifest/package.xml**.
   - ...
 
   _See [Overwrite management configuration documentation](salesforce-ci-cd-config-overwrite.md)_
+
+### Delta deployments
+
+- You can also use [**delta deployments**](salesforce-ci-cd-config-delta-deployment.md) if your project is big and you have performances issues.
+
+### Source retrieve issues
+
+Handle cases when force:source:pull does not retrieve every updated source.
+
+_[See how to force the retrieve of named sources](salesforce-ci-cd-retrieve.md)_
 
 ___
 

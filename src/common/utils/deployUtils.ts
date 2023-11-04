@@ -4,25 +4,14 @@ import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import {
-  createTempDir,
-  elapseEnd,
-  elapseStart,
-  execCommand,
-  execSfdxJson,
-  getCurrentGitBranch,
-  getGitRepoRoot,
-  git,
-  gitHasLocalUpdates,
-  isCI,
-  uxLog,
-} from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, isCI, uxLog } from ".";
 import { CONSTANTS, getConfig, setConfig } from "../../config";
 import { GitProvider } from "../gitProvider";
 import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
 import { MetadataUtils } from "../metadata-utils";
 import { importData } from "./dataUtils";
 import { analyzeDeployErrorLogs } from "./deployTips";
+import { callSfdxGitDelta } from "./gitUtils";
 import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
@@ -183,7 +172,7 @@ export async function forceSourceDeploy(
         commandThis,
         c.cyan(
           `Skipped ${c.bold(deployment.label)} deployment because package.xml is empty or contains only standalone parent items.\n${c.grey(
-            c.italic("This may be related to filtering using packageDeployOnce.xml or packageDeployOnChange.xml"),
+            c.italic("This may be related to filtering using package-no-overwrite.xml or packageDeployOnChange.xml"),
           )}`,
         ),
       );
@@ -387,7 +376,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     } else {
       for (const deploymentItem of config.deploymentPlan.packages) {
         if (deploymentItem.packageXmlFile) {
-          // Copy deployment in temp packageXml file so it can be updated using packageDeployOnce and packageDeployOnChange
+          // Copy deployment in temp packageXml file so it can be updated using package-no-overwrite and packageDeployOnChange
           deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
           const splitPackageXmlCopyFileName = path.join(tmpDeployDir, path.basename(deploymentItem.packageXmlFile));
           await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
@@ -425,7 +414,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
 
 // Apply packageXml filtering using deployOncePackageXml and deployOnChangePackageXml
 async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deployOnChangePackageXml, debugMode) {
-  // Main packageXml: Remove packageDeployOnce.xml items that are already present in target org
+  // Main packageXml: Remove package-no-overwrite.xml items that are already present in target org
   if (deployOncePackageXml) {
     await removePackageXmlContent(packageXml, deployOncePackageXml, false, { debugMode: debugMode, keepEmptyTypes: true });
   }
@@ -435,31 +424,34 @@ async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deploy
   }
 }
 
-// packageDeployOnce.xml items are deployed only if they are not in the target org
+// package-no-overwrite.xml items are deployed only if they are not in the target org
 async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
   if (process.env.SKIP_PACKAGE_DEPLOY_ONCE === "true") {
-    uxLog(this, c.yellow("Skipped packageDeployOnce.xml management because of env variable SKIP_PACKAGE_DEPLOY_ONCE='true'"));
+    uxLog(this, c.yellow("Skipped package-no-overwrite.xml management because of env variable SKIP_PACKAGE_DEPLOY_ONCE='true'"));
     return null;
   }
-  const packageDeployOnce = path.resolve("./manifest/packageDeployOnce.xml");
-  if (fs.existsSync(packageDeployOnce)) {
-    uxLog(this, "Building packageDeployOnce.xml...");
-    // If packageDeployOnce.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
-    if (!(await isPackageXmlEmpty(packageDeployOnce))) {
+  let packageNoOverwrite = path.resolve("./manifest/package-no-overwrite.xml");
+  if (!fs.existsSync(packageNoOverwrite)) {
+    packageNoOverwrite = path.resolve("./manifest/packageDeployOnce.xml");
+  }
+  if (fs.existsSync(packageNoOverwrite)) {
+    uxLog(this, "Building package-no-overwrite.xml...");
+    // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
+    if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
-      uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching packageDeployOnce.xml ...`));
+      uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching package-no-overwrite.xml ...`));
       const targetOrgPackageXml = path.join(tmpDir, "packageTargetOrg.xml");
       await buildOrgManifest(options.targetUsername, targetOrgPackageXml, options.conn);
 
-      const packageDeployOnceToUse = path.join(tmpDir, "packageDeployOnce.xml");
-      await fs.copy(packageDeployOnce, packageDeployOnceToUse);
+      const packageNoOverwriteToUse = path.join(tmpDir, "package-no-overwrite.xml");
+      await fs.copy(packageNoOverwrite, packageNoOverwriteToUse);
       // Keep in deployOnce.xml only what is necessary to deploy
-      await removePackageXmlContent(packageDeployOnceToUse, targetOrgPackageXml, true, { debugMode: debugMode, keepEmptyTypes: false });
-      uxLog(this, c.grey(`packageDeployOnce.xml with only metadatas that do not exist in target: ${packageDeployOnceToUse}`));
-      // Check if there is still something in updated packageDeployOnce.xml
-      if (!(await isPackageXmlEmpty(packageDeployOnceToUse))) {
-        return packageDeployOnceToUse;
+      await removePackageXmlContent(packageNoOverwriteToUse, targetOrgPackageXml, true, { debugMode: debugMode, keepEmptyTypes: false });
+      uxLog(this, c.grey(`package-no-overwrite.xml with only metadatas that do not exist in target: ${packageNoOverwriteToUse}`));
+      // Check if there is still something in updated package-no-overwrite.xml
+      if (!(await isPackageXmlEmpty(packageNoOverwriteToUse))) {
+        return packageNoOverwriteToUse;
       }
     }
   }
@@ -504,15 +496,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // Generate package.xml git delta
   const tmpDir = await createTempDir();
-  const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: debugMode })).stdout;
-  const packageXmlGitDeltaCommand =
-    `sfdx sgd:source:delta --from "HEAD~1" --to "HEAD" --output ${tmpDir}` + (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
-  const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
-    output: true,
-    fail: false,
-    debug: debugMode,
-    cwd: await getGitRepoRoot(),
-  });
+  const gitDeltaCommandRes = await callSfdxGitDelta("HEAD~1", "HEAD", tmpDir, { debug: debugMode });
 
   // Now that the diff is computed, we can dump the temporary commit
   await git().reset(ResetMode.HARD, ["HEAD~1"]);
@@ -533,7 +517,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 }
 
 // Remove content of a package.xml file from another package.xml file
-async function removePackageXmlContent(
+export async function removePackageXmlContent(
   packageXmlFile: string,
   packageXmlFileToRemove: string,
   removedOnly = false,

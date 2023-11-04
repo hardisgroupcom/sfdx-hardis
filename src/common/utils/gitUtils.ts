@@ -1,7 +1,7 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { uxLog } from ".";
+import { execCommand, execSfdxJson, getGitRepoRoot, git, uxLog } from ".";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -31,4 +31,40 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
   ]);
   const targetBranch = response.targetBranch || "developpement";
   return targetBranch;
+}
+
+export async function getGitDeltaScope(currentBranch: string, targetBranch: string) {
+  try {
+    await git().fetch(["origin", `${targetBranch}:${targetBranch}`]);
+  } catch (e) {
+    uxLog(this, c.gray(`[Warning] Unable to fetch target branch ${targetBranch} to prepare call to sfdx-git-delta\n` + JSON.stringify(e)));
+  }
+  try {
+    await git().fetch(["origin", `${currentBranch}:${currentBranch}`]);
+  } catch (e) {
+    uxLog(this, c.gray(`[Warning] Unable to fetch current branch ${currentBranch} to prepare call to sfdx-git-delta\n` + JSON.stringify(e)));
+  }
+  const logResult = await git().log([`${targetBranch}..${currentBranch}`]);
+  const toCommit = logResult.latest;
+  const mergeBaseCommand = `git merge-base ${targetBranch} ${currentBranch}`;
+  const mergeBaseCommandResult = await execCommand(mergeBaseCommand, this, {
+    fail: true,
+  });
+  const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace("\n", "").replace("\r", "");
+  return { fromCommit: masterBranchLatestCommit, toCommit: toCommit };
+}
+
+export async function callSfdxGitDelta(from: string, to: string, outputDir: string, options: any = {}) {
+  const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: options?.debugMode || false }))
+    .stdout;
+  const packageXmlGitDeltaCommand =
+    `sfdx sgd:source:delta --from "${from}" --to "${to}" --output ${outputDir}` +
+    (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
+  const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
+    output: true,
+    fail: false,
+    debug: options?.debugMode || false,
+    cwd: await getGitRepoRoot(),
+  });
+  return gitDeltaCommandRes;
 }

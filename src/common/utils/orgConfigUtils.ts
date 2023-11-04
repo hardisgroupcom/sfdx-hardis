@@ -113,10 +113,10 @@ export async function listMajorOrgs() {
   const majorOrgs = [];
   const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
   const configFiles = await glob(branchConfigPattern);
-  const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
   for (const configFile of configFiles) {
     const props = yaml.load(fs.readFileSync(configFile, "utf-8"));
     listViewRegex.lastIndex = 0;
+    const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
     const m = branchNameRegex.exec(configFile);
     if (m) {
       props.branchName = m[1];

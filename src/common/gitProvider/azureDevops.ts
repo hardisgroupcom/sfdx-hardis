@@ -1,7 +1,7 @@
 import { GitProviderRoot } from "./gitProviderRoot";
 import * as azdev from "azure-devops-node-api";
 import * as c from "chalk";
-import { uxLog } from "../utils";
+import { getCurrentGitBranch, git, uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
 import {
   CommentThreadStatus,
@@ -25,6 +25,37 @@ export class AzureDevopsProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Azure Devops connector";
+  }
+
+  // Find pull request info
+  public async getPullRequestInfo(): Promise<any> {
+    // Case when PR is found in the context
+    // Get CI variables
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
+    const azureGitApi = await this.azureApi.getGitApi();
+    const currentGitBranch = await getCurrentGitBranch();
+    if (pullRequestIdStr !== null) {
+      const pullRequestId = Number(pullRequestIdStr);
+      const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
+      if (pullRequest) {
+        return this.completePullRequestInfo(pullRequest);
+      }
+    }
+    // Case when we find PR from a commit
+    const sha = await git().revparse(["HEAD"]);
+    const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
+      targetRefName: `refs/heads/${currentGitBranch}`,
+      status: PullRequestStatus.Completed,
+    });
+    const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter(
+      (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha,
+    );
+    if (latestMergedPullRequestOnBranch.length > 0) {
+      return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
+    }
+    uxLog(this, c.grey(`[Azure Integration] Unable to find related Pull Request Info`));
+    return null;
   }
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
@@ -170,5 +201,12 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       : prMessage.status === "invalid"
       ? CommentThreadStatus.Active
       : CommentThreadStatus.Unknown;
+  }
+
+  private completePullRequestInfo(prData: any) {
+    const prInfo: any = Object.assign({}, prData);
+    prInfo.sourceBranch = (prData.sourceRefName || "").replace("refs/heads/", "");
+    prInfo.targetBranch = (prData.targetRefName || "").replace("refs/heads/", "");
+    return prInfo;
   }
 }
