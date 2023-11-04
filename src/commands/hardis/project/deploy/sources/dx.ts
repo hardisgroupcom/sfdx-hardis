@@ -409,6 +409,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       uxLog(this, c.yellow(`This is not safe to use delta between major branches (${currentBranch} to ${parentBranch}): using full deployment mode`));
       return false;
     }
+    uxLog(this, c.cyan(`Delta allowed between minor branch (${currentBranch} and major branch ${parentBranch}): using delta deployment mode`));
     return true;
   }
 }
