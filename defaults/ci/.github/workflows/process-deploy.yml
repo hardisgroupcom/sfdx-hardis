@@ -35,14 +35,14 @@ jobs:
           node-version: "18"
       # SFDX & plugins
       - name: Install SFDX and plugins
-      run: |
-        npm install @salesforce/cli --global
-        sf plugins install @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install sfdx-hardis
-        echo 'y' | sfdx plugins:install sfdx-essentials
-        # echo 'y' | sfdx plugins:install sfdmu # Disabled while it does not play well with @salesforce/cli
-        echo 'y' | sfdx plugins:install sfdx-git-delta
-          sf version --verbose --json
+        run: |
+          npm install @salesforce/cli --global
+          sf plugins install @salesforce/plugin-packaging
+          echo 'y' | sfdx plugins:install sfdx-hardis
+          echo 'y' | sfdx plugins:install sfdx-essentials
+          # echo 'y' | sfdx plugins:install sfdmu # Disabled while it does not play well with @salesforce/cli
+          echo 'y' | sfdx plugins:install sfdx-git-delta
+            sf version --verbose --json
       # Set env branch variable (github.ref_name seems to not work)
       - name: Set env.BRANCH
         run: echo "BRANCH=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
@@ -62,12 +62,12 @@ jobs:
           CI_COMMIT_REF_NAME: ${{ env.BRANCH }} # Defines the target branch of the PR
           ORG_ALIAS: ${{ env.BRANCH }} # Defines the target branch of the PR
           CONFIG_BRANCH: ${{ env.BRANCH }} # Defines the target branch of the PR
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
-        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-        MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
-        FORCE_COLOR: "1"
-      run: |
-        echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+          FORCE_COLOR: "1"
+        run: |
+          echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
           sfdx hardis:auth:login
           sfdx hardis:project:deploy:sources:dx
