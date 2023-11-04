@@ -391,9 +391,14 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
   }
 
   async isDeltaAllowed() {
-    if (process.env.DISABLE_DELTA_DEPLOYMENT === "true") {
+    if (process.env?.DISABLE_DELTA_DEPLOYMENT === "true") {
       uxLog(this, c.yellow(`Delta deployment has been explicitly disabled with variable DISABLE_DELTA_DEPLOYMENT=true`));
       return false;
+    }
+    if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === "true") {
+      uxLog(this, c.yellow(`Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`));
+      uxLog(this, c.yellow(`It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`));
+      return true;
     }
     let currentBranch = await getCurrentGitBranch();
     let parentBranch = process.env.FORCE_TARGET_BRANCH || null;
@@ -403,13 +408,14 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       parentBranch = prInfo.targetBranch;
     }
     const majorOrgs = await listMajorOrgs();
+    uxLog(this, c.grey('Major orgs with auth configured:\n' + JSON.stringify(majorOrgs, null, 2)));
     const currentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === currentBranch);
     const parentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === parentBranch);
     if (currentBranchIsMajor && (parentBranchIsMajor === true || parentBranch == null)) {
-      uxLog(this, c.yellow(`This is not safe to use delta between major branches (${currentBranch} to ${parentBranch}): using full deployment mode`));
+      uxLog(this, c.yellow(`This is not safe to use delta between major branches (${c.bold(currentBranch)} to ${c.bold(parentBranch)}): using full deployment mode`));
       return false;
     }
-    uxLog(this, c.cyan(`Delta allowed between minor branch (${currentBranch} and major branch ${parentBranch}): using delta deployment mode`));
+    uxLog(this, c.cyan(`Delta allowed between minor branch (${currentBranch}) and major branch (${parentBranch}): using delta deployment mode`));
     return true;
   }
 }
