@@ -52,6 +52,14 @@ If you do not want to use QuickDeploy, define variable \`SFDX_HARDIS_QUICK_DEPLO
 - [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
 - [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
 
+### Delta deployments
+
+To acivate delta deployments, define property \`useDeltaDeployment: true\` in \`config/.sfdx-hardis.yml\`.
+
+This will activate delta deployments only between minor and major branches (major to major remains full deployment mode)
+
+If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommanded but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
+
 ### Dynamic deployment items / Overwrite management
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
