@@ -5,8 +5,8 @@ description: Learn how to configure your Salesforce CI/CD project so it works ea
 <!-- markdownlint-disable MD013 -->
 
 - [package.xml](#packagexml)
-   * [Overwrite Management](#overwrite-management)
-   * [Delta deployments](#delta-deployments)
+  * [Overwrite Management](#overwrite-management)
+  * [Delta deployments](#delta-deployments)
 - [destructiveChanges.xml](#destructivechangesxml)
 - [Automated sources cleaning](#automated-sources-cleaning)
 - [Source retrieve issues](#source-retrieve-issues)
