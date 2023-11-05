@@ -27,7 +27,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 ### Create CI/CD variable
 
 - Go to **Project -> Settings > CI/CD -> Variables** _(you must have Gitlab authorizations to access this menu)_
-- Create an access token with the following info:
+- Create the variable with the following info:
   - name: **ACCESS_TOKEN**
   - value: Paste the value that has been generated when creating the access token in the previous step
   - Select **Mask variable**
