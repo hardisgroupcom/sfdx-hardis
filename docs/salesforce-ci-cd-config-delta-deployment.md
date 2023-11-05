@@ -5,6 +5,8 @@ description: Learn how to configure Delta Deployments using sfdx-git-delta on a 
 <!-- markdownlint-disable MD013 -->
 
 - [Delta deployments (beta)](#delta-deployments-beta)
+  - [Full mode](#full-mode)
+  - [Delta mode](#delta-mode)
 - [Configuration](#configuration)
 
 ___
@@ -13,16 +15,26 @@ ___
 
 _sfdx-hardis delta deployment is in beta but can already be safely used_
 
+___
+
+### Full mode
+
 By default, all deployments job (check deploy & process deploy) deploy the **full content of the `package.xml` minus what is matching `package-no-overwrite.xml`** (formerly `packageDeployOnce.xml`)
+
+![](assets/images/ci-cd-schema-delta-off.jpg)
 
 This is the safest way to deploy at each level
 
 - major to major
 - minor to major
 
-![](assets/images/ci-cd-schema-delta.jpg)
+___
 
-But in order to improve performances on project with large metadata base, you can **activate delta deployments** for Pull Request/Merge Requests **from a minor branch** (examples: `feature/xxx`, `debug/xxx`) **to a major branch** (ex: `integration`, `uat`, `preprod`, `production`: sfdx-hardis will **deploy only updated metadatas** in the Pull Request / Merge Request.
+### Delta mode
+
+In order to improve performances on project with large metadata base, you can **activate delta deployments** for Pull Request/Merge Requests **from a minor branch** (examples: `feature/xxx`, `debug/xxx`) **to a major branch** (ex: `integration`, `uat`, `preprod`, `production`: sfdx-hardis will **deploy only updated metadatas** in the Pull Request / Merge Request.
+
+![](assets/images/ci-cd-schema-delta.jpg)
 
 ![](assets/images/screenshot-delta-deployment.jpg)
 
@@ -34,6 +46,8 @@ Examples:
 - **integration to uat** will be **FULL** DEPLOYMENT
 - **hotfixes/fix-stuff to preprod** will be **DELTA** DEPLOYMENT
 - **preprod to production** will be **FULL** DEPLOYMENT
+
+___
 
 ## Configuration
 
