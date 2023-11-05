@@ -22,6 +22,8 @@ Sfdx-hardis monitoring provides a **simple way to know the exact state of your o
 
 Installation and usage are **admin-friendly**, and **notifications** can be sent via **Slack** or **Microsoft Teams**.
 
+_Example notifications with Slack_
+
 ![](assets/images/screenshot-slack-monitoring.jpg)
 
 Extra features are also available, like:
@@ -32,6 +34,12 @@ Extra features are also available, like:
 - **Custom command lines** that you can [define in `.sfdx-hardis.yml`](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/)
 
 You don't need to work in CI/CD to use Monitoring, it is **compliant with any API enabled org** :)
+
+_Example workflow with GitHub actions_
+
+![](assets/images/screenshot-monitoring-jobs.jpg)
+
+_Example diff visualization with GitLens_
 
 ![](assets/images/screenshot-monitoring-backup.jpg)
 
