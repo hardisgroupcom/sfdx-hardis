@@ -17,9 +17,15 @@ There are many ways to do DevOps with Salesforce, each of them have their advant
 
 ![](assets/images/devops-comparison.png){ align=center }
 
-You can setup and use a full CI/CD pipeline for your Salesforce projects using sfdx-hardis.
+You can setup and use a full CI/CD pipeline for your Salesforce projects using sfdx-hardis, with advanced features:
 
-We provide following CI/CD example pipelines:
+- [Overwrite Management](salesforce-ci-cd-config-overwrite.md)
+- [Delta Deployments](salesforce-ci-cd-config-delta-deployment.md)
+- [Automated sources cleaning](salesforce-ci-cd-config-cleaning.md)
+- [Messaging platforms integrations](salesforce-ci-cd-setup-integrations-home.md) (Slack, Microsoft Teams)
+
+We provide ready to use CI/CD pipelines for the following Git platforms:
+
 - [Gitlab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml)
 - [Azure](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml)
 - [Github](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/deploy.yml)
