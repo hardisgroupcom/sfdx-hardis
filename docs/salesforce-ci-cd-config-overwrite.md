@@ -17,7 +17,7 @@ ___
 
 For different reasons, **many metadatas are maintained manually**, using **production Salesforce org Setup**
 
-To avoid to overwrite manual updates in setup, you must define at least a [manifest/package-no-overwrite.xml](#package-no-overwritexml) file.
+To avoid to overwrite manual updates in setup, you must define at least a [manifest/package-no-overwrite.xml](#package-no-overwritexml) file. _(formerly named `packageDeployOnce.xml)`_
 
 The rule is simple and must be learnt by heart:
 

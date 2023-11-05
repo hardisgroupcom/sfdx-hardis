@@ -13,9 +13,10 @@ ___
 
 _sfdx-hardis delta deployment is in beta but can already be safely used_
 
-By default, all deployments job (check deploy & process deploy) deploy the **full content of the `package.xml` minus what is matching `package-no-overwrite.xml` (formerly `packageDeployOnce.xml`)**
+By default, all deployments job (check deploy & process deploy) deploy the **full content of the `package.xml` minus what is matching `package-no-overwrite.xml`** (formerly `packageDeployOnce.xml`)
 
 This is the safest way to deploy at each level
+
 - major to major
 - minor to major
 
