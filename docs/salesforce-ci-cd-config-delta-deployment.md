@@ -19,7 +19,9 @@ This is the safest way to deploy at each level
 - major to major
 - minor to major
 
-But in order to improve performances on project with large metadata base, you can activate delta deployments for Pull Request/Merge Requests **from a minor branch** (examples: `feature/xxx`, `debug/xxx`) **to a major branch** (ex: `integration`, `uat`, `preprod`, `production`: sfdx-hardis will **deploy only updated metadatas** in the Pull Request / Merge Request.
+![](assets/images/ci-cd-schema-delta.jpg)
+
+But in order to improve performances on project with large metadata base, you can **activate delta deployments** for Pull Request/Merge Requests **from a minor branch** (examples: `feature/xxx`, `debug/xxx`) **to a major branch** (ex: `integration`, `uat`, `preprod`, `production`: sfdx-hardis will **deploy only updated metadatas** in the Pull Request / Merge Request.
 
 ![](assets/images/screenshot-delta-deployment.jpg)
 
