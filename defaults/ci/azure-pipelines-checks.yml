@@ -36,9 +36,16 @@ jobs:
 
   # Simulate SFDX deployment
   - job: DeploymentCheck
+    timeoutInMinutes: 150
     pool:
       vmImage: ubuntu-20.04
     steps:
+
+      # Checkout repo
+      - checkout: self
+        fetchDepth: 0
+        persistCredentials: true
+        displayName: Git Checkout
 
       # Setup Node.js
       - task: UseNode@1
@@ -68,6 +75,10 @@ jobs:
           CONFIG_BRANCH: $(BRANCH_NAME)
           ORG_ALIAS: $(BRANCH_NAME)
           CI: "true"
+          SFDX_DEPLOY_WAIT_MINUTES: 150
+          SLACK_TOKEN: $(SLACK_TOKEN)
+          SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+          MS_TEAMS_WEBHOOK_URL: $(MS_TEAMS_WEBHOOK_URL)
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
           SYSTEM_COLLECTIONURI: $(System.CollectionUri)
