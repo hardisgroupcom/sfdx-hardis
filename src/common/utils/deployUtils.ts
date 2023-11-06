@@ -157,6 +157,7 @@ export async function forceSourceDeploy(
   options: any = {},
 ): Promise<any> {
   elapseStart("all deployments");
+  let quickDeploy = false;
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
   const messages = [];
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
@@ -210,7 +211,8 @@ export async function forceSourceDeploy(
           if (quickDeployRes.status === 0) {
             uxLog(commandThis, c.green(`Successfully processed QuickDeploy for deploymentId ${deploymentCheckId}`));
             uxLog(commandThis, c.yellow("If you do not want to use QuickDeploy feature, define env variable SFDX_HARDIS_QUICK_DEPLOY=false"));
-            break;
+            quickDeploy = true;
+            continue;
           } else {
             uxLog(
               commandThis,
@@ -305,7 +307,7 @@ export async function forceSourceDeploy(
     messages.push(message);
   }
   elapseEnd("all deployments");
-  return { messages };
+  return { messages, quickDeploy };
 }
 
 export function truncateProgressLogLines(rawLog: string) {
