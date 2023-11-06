@@ -344,7 +344,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       await removePackageXmlContent(packageXmlFile, diffPackageXml, true, { debugMode: this.debugMode, keepEmptyTypes: false });
 
       const deltaContent = await fs.readFile(packageXmlFile, "utf8");
-      uxLog(this, c.cyan("Final Delta package.xml to deploy:\n" + c.bgGreenBright(c.black(deltaContent))));
+      uxLog(this, c.cyan("Final Delta package.xml to deploy:\n" + c.green(deltaContent)));
 
       // Update destructiveChanges.xml
       if (forceSourceDeployOptions.postDestructiveChanges) {
@@ -357,12 +357,19 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         });
         forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
         const deltaContentDelete = await fs.readFile(destructiveXmlFileDeploy, "utf8");
-        uxLog(this, c.cyan("Final Delta destructiveChanges.xml to delete:\n" + c.bgRedBright(c.black(deltaContentDelete))));
+        uxLog(this, c.cyan("Final Delta destructiveChanges.xml to delete:\n" + c.yellow(deltaContentDelete)));
       }
     }
 
     // Process deployment (or deployment check)
-    const { messages } = await forceSourceDeploy(packageXmlFile, this.checkOnly, testlevel, this.debugMode, this, forceSourceDeployOptions);
+    const { messages, quickDeploy } = await forceSourceDeploy(
+      packageXmlFile,
+      this.checkOnly,
+      testlevel,
+      this.debugMode,
+      this,
+      forceSourceDeployOptions,
+    );
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
     if (this.configInfo.listViewsToSetToMine && this.checkOnly === false) {
@@ -379,7 +386,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
       }
       let notifMessage = `Deployment has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
-      notifMessage += delta ? " (🌙 delta deployment)" : " (🌕 full deployment)";
+      notifMessage += quickDeploy ? " (🚀 quick deployment)" : delta ? " (🌙 delta deployment)" : " (🌕 full deployment)";
       const notifButtons = [];
       const jobUrl = await GitProvider.getJobUrl();
       if (jobUrl) {
