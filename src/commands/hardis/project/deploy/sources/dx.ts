@@ -362,7 +362,14 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
 
     // Process deployment (or deployment check)
-    const { messages, quickDeploy } = await forceSourceDeploy(packageXmlFile, this.checkOnly, testlevel, this.debugMode, this, forceSourceDeployOptions);
+    const { messages, quickDeploy } = await forceSourceDeploy(
+      packageXmlFile,
+      this.checkOnly,
+      testlevel,
+      this.debugMode,
+      this,
+      forceSourceDeployOptions,
+    );
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
     if (this.configInfo.listViewsToSetToMine && this.checkOnly === false) {
