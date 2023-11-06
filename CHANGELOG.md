@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.10.1] 2023-11-06
+
+- Improve delta display in logs
 - Update [slack integration documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
 - Add [tutorials](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/#major-orgs) for authentication configuration on CI/CD servers
 
