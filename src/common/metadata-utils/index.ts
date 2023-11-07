@@ -437,7 +437,7 @@ class MetadataUtils {
           majorOrgs.filter(
             (majorOrg) =>
               majorOrg.targetUsername === org.username ||
-              (majorOrg.instanceUrl === org.instanceUrl && !majorOrg.instanceUrl.includes("test.salesforce.com"))
+              (majorOrg.instanceUrl === org.instanceUrl && !majorOrg.instanceUrl.includes("test.salesforce.com")),
           ).length === 0
         );
       });
@@ -481,7 +481,7 @@ class MetadataUtils {
         commandThis,
         c.yellow(`Skip packages installation because of a @salesforce/cli bug.
 Until it is solved, please install packages manually in target org if necessary.
-Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
+Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
       );
       return;
     }
@@ -493,14 +493,14 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         if (context === "scratch" && package1.installOnScratchOrgs === false) {
           uxLog(
             commandThis,
-            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`)
+            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`),
           );
           continue;
         }
         if (context === "deploy" && package1.installDuringDeployments === false) {
           uxLog(
             commandThis,
-            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`)
+            c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is configured to not be installed on scratch orgs`),
           );
           continue;
         }
@@ -508,13 +508,13 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
           commandThis,
           c.cyan(
             `Installing package ${c.green(
-              `${c.bold(package1.SubscriberPackageName || "")} - ${c.bold(package1.SubscriberPackageVersionName || "")}`
-            )}...`
-          )
+              `${c.bold(package1.SubscriberPackageName || "")} - ${c.bold(package1.SubscriberPackageVersionName || "")}`,
+            )}...`,
+          ),
         );
         if (package1.SubscriberPackageVersionId == null) {
           throw new SfdxError(
-            c.red(`[sfdx-hardis] You must define ${c.bold("SubscriberPackageVersionId")} in .sfdx-hardis.yml (in installedPackages property)`)
+            c.red(`[sfdx-hardis] You must define ${c.bold("SubscriberPackageVersionId")} in .sfdx-hardis.yml (in installedPackages property)`),
           );
         }
         const securityType = package1.SecurityType || "AdminsOnly";
@@ -546,8 +546,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
             c.yellow(
               `${c.bold("This is not a real error")}: A newer version of ${
                 package1.SubscriberPackageName
-              } has been found. You may update installedPackages property in .sfdx-hardis.yml`
-            )
+              } has been found. You may update installedPackages property in .sfdx-hardis.yml`,
+            ),
           );
           uxLog(this, c.yellow(`You can do that using command ${c.bold("sfdx hardis:org:retrieve:packageconfig")} in a minor git branch`));
         }
@@ -566,7 +566,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     filteredMetadatas: string[],
     options: any = {},
     commandThis: any,
-    debug: boolean
+    debug: boolean,
   ) {
     // Create output folder if not existing
     await fs.ensureDir(metadataFolder);
