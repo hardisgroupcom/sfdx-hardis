@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- sfdx hardis:org:retrieve:packageconfig: Do not replace Ids when updating the .sfdx-hardis.yml list of packages using packages listed from an org
+
 ## [4.10.1] 2023-11-06
 
 - Improve delta display in logs
