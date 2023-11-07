@@ -71,7 +71,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     uxLog(this, c.red("\n" + errLog));
     uxLog(
       commandThis,
-      c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`)),
+      c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`))
     );
     elapseEnd("force:source:push");
     throw new SfdxError("Deployment failure. Check messages above");
@@ -154,7 +154,7 @@ export async function forceSourceDeploy(
   testlevel = "RunLocalTests",
   debugMode = false,
   commandThis: any = this,
-  options: any = {},
+  options: any = {}
 ): Promise<any> {
   elapseStart("all deployments");
   let quickDeploy = false;
@@ -173,9 +173,9 @@ export async function forceSourceDeploy(
         commandThis,
         c.cyan(
           `Skipped ${c.bold(deployment.label)} deployment because package.xml is empty or contains only standalone parent items.\n${c.grey(
-            c.italic("This may be related to filtering using package-no-overwrite.xml or packageDeployOnChange.xml"),
-          )}`,
-        ),
+            c.italic("This may be related to filtering using package-no-overwrite.xml or packageDeployOnChange.xml")
+          )}`
+        )
       );
       elapseEnd(`deploy ${deployment.label}`);
       continue;
@@ -190,7 +190,7 @@ export async function forceSourceDeploy(
     if (deployment.packageXmlFile) {
       uxLog(
         commandThis,
-        c.cyan(`${check ? "Simulating deployment of" : "Deploying"} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`),
+        c.cyan(`${check ? "Simulating deployment of" : "Deploying"} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile} ...`)
       );
       // Try QuickDeploy
       if (check === false && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || "") !== "false") {
@@ -217,8 +217,8 @@ export async function forceSourceDeploy(
             uxLog(
               commandThis,
               c.yellow(
-                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}\n Switching back to effective deployment.`,
-              ),
+                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}\n Switching back to effective deployment.`
+              )
             );
           }
         }
@@ -255,7 +255,7 @@ export async function forceSourceDeploy(
         }
         uxLog(
           commandThis,
-          c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`)),
+          c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`))
         );
         await displayDeploymentLink(e.stdout + e.stderr, options);
         elapseEnd(`deploy ${deployment.label}`);
@@ -279,12 +279,19 @@ export async function forceSourceDeploy(
       // Post pull request comment if available
       await GitProvider.managePostPullRequestComment();
 
+      let extraInfo = options?.delta === true ? "DELTA Deployment" : "FULL Deployment";
+      if (quickDeploy === true) {
+        extraInfo += " (using Quick Deploy)";
+      }
+
       // Display deployment status
       if (deployRes.status === 0) {
-        message = `[sfdx-hardis] Successfully ${check ? "checked deployment of" : "deployed"} ${c.bold(deployment.label)} to target Salesforce org`;
+        message =
+          `[sfdx-hardis] Successfully ${check ? "checked deployment of" : "deployed"} ${c.bold(deployment.label)} to target Salesforce org - ` +
+          extraInfo;
         uxLog(commandThis, c.green(message));
       } else {
-        message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org`;
+        message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org - ` + extraInfo;
         uxLog(commandThis, c.red(c.bold(deployRes.errorMessage)));
         await displayDeploymentLink(deployRes.errorMessage, options);
       }
@@ -343,7 +350,7 @@ async function displayDeploymentLink(rawLog: string, options: any) {
     {
       fail: true,
       output: false,
-    },
+    }
   );
   uxLog(this, c.yellowBright(`Open deployment status page in org with url: ${c.bold(c.greenBright(openRes?.result?.url))}`));
 }
@@ -480,7 +487,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
       fail: true,
       output: true,
       debug: debugMode,
-    },
+    }
   );
 
   // Do not call delta if no updated file has been retrieved
@@ -523,7 +530,7 @@ export async function removePackageXmlContent(
   packageXmlFile: string,
   packageXmlFileToRemove: string,
   removedOnly = false,
-  options = { debugMode: false, keepEmptyTypes: false },
+  options = { debugMode: false, keepEmptyTypes: false }
 ) {
   if (removedOnly === false) {
     uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}...`));
@@ -531,8 +538,8 @@ export async function removePackageXmlContent(
     uxLog(
       this,
       c.cyan(
-        `Keeping ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))} (and remove the rest)...`,
-      ),
+        `Keeping ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))} (and remove the rest)...`
+      )
     );
   }
   await removePackageXmlFilesContent(packageXmlFile, packageXmlFileToRemove, {
@@ -556,7 +563,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
     <Package xmlns="http://soap.sforce.com/2006/04/metadata">
         <version>${CONSTANTS.API_VERSION}</version>
     </Package>`,
-    "utf8",
+    "utf8"
   );
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, "destructiveChanges.xml"));
   const deployDelete =
@@ -583,9 +590,9 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
       this,
       c.yellow(
         c.bold(
-          "That could be a false positive, as in real deployment, the package.xml deployment will be committed before the use of destructiveChanges.xml",
-        ),
-      ),
+          "That could be a false positive, as in real deployment, the package.xml deployment will be committed before the use of destructiveChanges.xml"
+        )
+      )
     );
     throw new SfdxError("Error while deploying destructive changes");
   }
@@ -609,7 +616,7 @@ export async function deployMetadatas(
     soap: false,
     targetUsername: null,
     tryOnce: false,
-  },
+  }
 ) {
   // Perform deployment
   const deployCommand =
@@ -682,7 +689,7 @@ async function replaceQuickActionsWithDummy() {
     <optionsCreateFeedItem>false</optionsCreateFeedItem>
     <type>LightningComponent</type>
     <width>100</width>
-</QuickAction>`,
+</QuickAction>`
       );
       uxLog(this, c.grey("Backuped and replaced " + quickActionFile));
     }
@@ -735,7 +742,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
         fail: true,
         debug: process.env.DEBUG,
         output: true,
-      },
+      }
     );
   } else {
     const tmpDirSfdxProject = await createTempDir();
@@ -753,13 +760,13 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
         cwd: path.join(tmpDirSfdxProject, "sfdx-hardis-blank-project"),
         debug: process.env.DEBUG,
         output: true,
-      },
+      }
     );
   }
   const packageXmlFull = packageXmlOutputFile;
   if (!fs.existsSync(packageXmlFull)) {
     throw new SfdxError(
-      c.red("[sfdx-hardis] Unable to generate package.xml. This is probably an auth issue or a Salesforce technical issue, please try again later"),
+      c.red("[sfdx-hardis] Unable to generate package.xml. This is probably an auth issue or a Salesforce technical issue, please try again later")
     );
   }
   // Add Elements that are not returned by sfdx command
@@ -859,8 +866,8 @@ export async function extractOrgCoverageFromLog(stdout) {
   uxLog(
     this,
     c.italic(
-      c.grey("Unable to get org coverage from results. Maybe try to add --coverageformatters json-summary to your call to force:source:deploy ?"),
-    ),
+      c.grey("Unable to get org coverage from results. Maybe try to add --coverageformatters json-summary to your call to force:source:deploy ?")
+    )
   );
   return null;
 }
@@ -903,7 +910,7 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
   uxLog(this, c.red("\n" + errLog));
   uxLog(
     commandThis,
-    c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the metadata deployment issues :)`)),
+    c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the metadata deployment issues :)`))
   );
   await displayDeploymentLink(e.stdout + e.stderr, options);
   // Post pull requests comments if necessary
