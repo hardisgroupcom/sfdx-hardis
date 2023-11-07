@@ -285,7 +285,11 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
     if (matchInstalled.length > 0 && matchLocal.length > 0) {
       projectPackages = projectPackages.map((projectPackage) => {
         if (installedPackage.SubscriberPackageId === projectPackage.SubscriberPackageId) {
+          const projectPackageId = projectPackage.Id || null;
           projectPackage = Object.assign(projectPackage, installedPackage);
+          if (projectPackageId) {
+            projectPackage.Id = projectPackageId;
+          }
         }
         return projectPackage;
       });
