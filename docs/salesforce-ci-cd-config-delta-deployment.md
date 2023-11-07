@@ -47,7 +47,7 @@ Examples:
 - **hotfixes/fix-stuff to preprod** will be **DELTA** DEPLOYMENT
 - **preprod to production** will be **FULL** DEPLOYMENT
 
-> 💡 If you want to force the use full deployment for a PR/MR on a delta project, add **nodelta** in your latest commit title or text.
+> 💡 If you want to **force the use of full deployment for a PR/MR** on a delta project, add "**nodelta**" in your latest commit title or text.
 
 ___
 
