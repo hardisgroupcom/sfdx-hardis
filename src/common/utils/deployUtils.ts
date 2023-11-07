@@ -279,12 +279,19 @@ export async function forceSourceDeploy(
       // Post pull request comment if available
       await GitProvider.managePostPullRequestComment();
 
+      let extraInfo = options?.delta === true ? "DELTA Deployment" : "FULL Deployment";
+      if (quickDeploy === true) {
+        extraInfo += " (using Quick Deploy)";
+      }
+
       // Display deployment status
       if (deployRes.status === 0) {
-        message = `[sfdx-hardis] Successfully ${check ? "checked deployment of" : "deployed"} ${c.bold(deployment.label)} to target Salesforce org`;
+        message =
+          `[sfdx-hardis] Successfully ${check ? "checked deployment of" : "deployed"} ${c.bold(deployment.label)} to target Salesforce org - ` +
+          extraInfo;
         uxLog(commandThis, c.green(message));
       } else {
-        message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org`;
+        message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org - ` + extraInfo;
         uxLog(commandThis, c.red(c.bold(deployRes.errorMessage)));
         await displayDeploymentLink(deployRes.errorMessage, options);
       }

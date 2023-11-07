@@ -321,6 +321,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       (await this.isDeltaAllowed()) === true
     ) {
       delta = true;
+      forceSourceDeployOptions.delta = true;
       // Define delta deployment depending on context
       let fromCommit = "HEAD";
       let toCommit = "HEAD^";
