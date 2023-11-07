@@ -254,6 +254,14 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   return gitBranch;
 }
 
+export async function getLatestGitCommit() {
+  if (git == null) {
+    return null;
+  }
+  const log = await git().log(["-1"]);
+  return log?.latest ?? null;
+}
+
 // Select git branch and checkout & pull if requested
 export async function selectGitBranch(options: { remote: true; checkOutPull: boolean } = { remote: true, checkOutPull: false }) {
   const gitBranchOptions = ["--list"];

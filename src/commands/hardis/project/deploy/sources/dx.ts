@@ -18,7 +18,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { createTempDir, getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
+import { createTempDir, getCurrentGitBranch, getLatestGitCommit, isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
@@ -408,6 +408,11 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
   async isDeltaAllowed() {
     if (process.env?.DISABLE_DELTA_DEPLOYMENT === "true") {
       uxLog(this, c.yellow(`Delta deployment has been explicitly disabled with variable DISABLE_DELTA_DEPLOYMENT=true`));
+      return false;
+    }
+    const latestCommit = await getLatestGitCommit();
+    if (latestCommit && (latestCommit?.body?.includes("nodelta") || latestCommit?.message?.includes("nodelta"))) {
+      uxLog(this, c.yellow(`Latest commit contains string "nodelta" so disable delta for this time :)`));
       return false;
     }
     if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === "true") {

@@ -473,6 +473,7 @@
     "nico",
     "noclean",
     "noconfig",
+    "nodelta",
     "nogit",
     "noinsight",
     "noprompt",
