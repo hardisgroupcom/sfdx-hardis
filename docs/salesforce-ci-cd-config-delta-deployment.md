@@ -47,7 +47,7 @@ Examples:
 - **hotfixes/fix-stuff to preprod** will be **DELTA** DEPLOYMENT
 - **preprod to production** will be **FULL** DEPLOYMENT
 
-> 💡 If you want to force the use full deployment on a delta project, add **nodelta** in your latest commit title or text.
+> 💡 If you want to force the use full deployment for a PR/MR on a delta project, add **nodelta** in your latest commit title or text.
 
 ___
 
@@ -60,6 +60,6 @@ To activate delta deployments,you can:
 
 In case of temporary deactivation of delta deployments, you can set variable `DISABLE_DELTA_DEPLOYMENT=true`, it has priority on other configurations.
 
-> If your sfdx-hardis installation is from before 4.10.0, you might need to update your CI/CD workflows
+> 💡If your sfdx-hardis installation is from before 4.10.0, you might need to update your CI/CD workflows
 >
 > Check updated versions in [sfdx-hardis sources](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/defaults/ci)
