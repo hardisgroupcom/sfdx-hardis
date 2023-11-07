@@ -18,7 +18,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { createTempDir, getCurrentGitBranch, isCI, uxLog } from "../../../../../common/utils";
+import { createTempDir, getCurrentGitBranch, getLatestGitCommit, isCI, uxLog } from "../../../../../common/utils";
 import { getConfig } from "../../../../../config";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
@@ -277,9 +277,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
           this,
           c.yellow(
             `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-              package1.SubscriberPackageVersionId,
-            )} in target org to validate the deployment check`,
-          ),
+              package1.SubscriberPackageVersionId
+            )} in target org to validate the deployment check`
+          )
         );
       }
       uxLog(this, "");
@@ -288,10 +288,10 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         c.yellow(
           c.italic(
             `If you want deployment checks to automatically install packages, please define ${c.bold(
-              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true",
-            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`,
-          ),
-        ),
+              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true"
+            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`
+          )
+        )
       );
     }
 
@@ -368,7 +368,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       testlevel,
       this.debugMode,
       this,
-      forceSourceDeployOptions,
+      forceSourceDeployOptions
     );
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
@@ -410,11 +410,16 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       uxLog(this, c.yellow(`Delta deployment has been explicitly disabled with variable DISABLE_DELTA_DEPLOYMENT=true`));
       return false;
     }
+    const latestCommit = await getLatestGitCommit();
+    if (latestCommit && (latestCommit?.body?.includes("nodelta") || latestCommit?.message?.includes("nodelta"))) {
+      uxLog(this, c.yellow(`Latest commit contains string "nodelta" so disable delta for this time :)`));
+      return false;
+    }
     if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === "true") {
       uxLog(this, c.yellow(`Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`));
       uxLog(
         this,
-        c.yellow(`It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`),
+        c.yellow(`It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`)
       );
       return true;
     }
@@ -433,8 +438,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       uxLog(
         this,
         c.yellow(
-          `This is not safe to use delta between major branches (${c.bold(currentBranch)} to ${c.bold(parentBranch)}): using full deployment mode`,
-        ),
+          `This is not safe to use delta between major branches (${c.bold(currentBranch)} to ${c.bold(parentBranch)}): using full deployment mode`
+        )
       );
       return false;
     }

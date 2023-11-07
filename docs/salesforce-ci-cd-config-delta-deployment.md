@@ -56,7 +56,9 @@ To activate delta deployments,you can:
 - define `useDeltaDeployment: true` in **config/.sfdx-hardis.yml**
 - define env variable `USE_DELTA_DEPLOYMENT=true`
 
-In case of temporary disablement of delta deployments, you can set variable `DISABLE_DELTA_DEPLOYMENT=true`, it has priority on other configurations.
+In case of temporary deactivation of delta deployments, you can set variable `DISABLE_DELTA_DEPLOYMENT=true`, it has priority on other configurations.
+
+If you want to force the use full deployment on a delta project, add **nodelta** in your latest commit title or text.
 
 > If your sfdx-hardis installation is from before 4.10.0, you might need to update your CI/CD workflows
 >
