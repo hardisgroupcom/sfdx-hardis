@@ -22,6 +22,8 @@ ___
 
 ## Clone the repository
 
+> If you don't have a folder for your git repositories, create a **C:\git** folder and use it as destination for your git clones !
+
 ### From the Git server UI
 
 Git providers UIs sometimes have a button **Clone -> Open In VsCode**
