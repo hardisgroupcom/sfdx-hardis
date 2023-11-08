@@ -6,7 +6,8 @@ description: Learn how to clone a Salesforce repository on your computer
 
 - [Pre-requisites](#pre-requisites)
 - [Clone the repository](#clone-the-repository)
-
+  - [From the Git server UI](#from-the-git-server-ui)
+  - [From Visual Studio Code](#from-visual-studio-code)
 ___
 
 ## Pre-requisites
@@ -20,6 +21,30 @@ It looks like the following: `https://github.com/trailheadapps/dreamhouse-lwc.gi
 ___
 
 ## Clone the repository
+
+### From the Git server UI
+
+Git providers UIs sometimes have a button **Clone -> Open In VsCode**
+
+If you can use it, use it :)
+
+#### Gitlab
+
+![](assets/images/open-vs-code-gitlab.jpg)
+
+If later you are prompted for username and password, you might need to create a Personal Access Token ([video tuto here](https://www.youtube.com/watch?v=9y5VmmYHuIg)) and use it as password.
+
+If later, it prompts several times the same password in VsCode, run the following command line
+
+`git config --global credential.helper store`
+
+#### Azure
+
+![](assets/images/open-vs-code-azure.jpg)
+
+
+
+### From Visual Studio Code
 
 - In Visual Studio Code, hit **CTRL+Shirt+P** then look for command **Git clone** then click to select it.
 
