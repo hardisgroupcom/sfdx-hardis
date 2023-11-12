@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Allow to configure monitoring on deployment repositories (Fix [#477](https://github.com/hardisgroupcom/sfdx-hardis/issues/477))
 - Forbid to configure CI authentication on main or master branch
 - Do not send legacy API notifications when there are no issues (Fix [#478](https://github.com/hardisgroupcom/sfdx-hardis/issues/478))
+- Upgrade dependencies
 
 ## [4.10.2] 2023-11-07
 
