@@ -230,20 +230,23 @@ See article below
     - EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
     - FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
-    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-    const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
-    const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
-    const notifButtons = [];
-    const jobUrl = await GitProvider.getJobUrl();
-    if (jobUrl) {
-      notifButtons.push({ text: "View Job", url: jobUrl });
+    // Manage notifications
+    if (allErrors.length > 0) {
+      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+      const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
+      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
+      const notifButtons = [];
+      const jobUrl = await GitProvider.getJobUrl();
+      if (jobUrl) {
+        notifButtons.push({ text: "View Job", url: jobUrl });
+      }
+      NotifProvider.postNotifications({
+        text: `Deprecated Salesforce API versions are used in ${linkMarkdown}`,
+        attachments: [{ text: notifDetailText }],
+        buttons: notifButtons,
+        severity: "error",
+      });
     }
-    NotifProvider.postNotifications({
-      text: `Deprecated Salesforce API versions are used in ${linkMarkdown}`,
-      attachments: [{ text: notifDetailText }],
-      buttons: notifButtons,
-      severity: "error",
-    });
 
     // Send notification if possible
     if (isCI && allErrors.length > 0 && (await canSendNotifications())) {
