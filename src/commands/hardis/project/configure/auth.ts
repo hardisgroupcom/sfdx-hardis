@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
+import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils";
@@ -108,6 +108,9 @@ export default class ConfigureAuth extends SfdxCommand {
         message: c.cyanBright("What is the name of the git branch you want to configure ? Examples: developpement,recette,production"),
       });
       branchName = branchResponse.value.replace(/\s/g, "-");
+      if (["main", "master"].includes(branchName)) {
+        throw new SfdxError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
+      }
       instanceUrl = await promptInstanceUrl(["login", "test"], `${branchName} related org`, {
         instanceUrl: devHub ? this.hubOrg.getConnection().instanceUrl : this.org.getConnection().instanceUrl,
       });
