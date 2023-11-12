@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.10.3] 2023-11-12
+
+- Allow to configure monitoring on deployment repositories (Fix [#477](https://github.com/hardisgroupcom/sfdx-hardis/issues/477))
+- Forbid to configure CI authentication on main or master branch
+
 ## [4.10.2] 2023-11-07
 
 - If you want to force the use full deployment on a delta project Pull Request/ Merge Request, add **nodelta** in your latest commit title or text.
