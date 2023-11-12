@@ -77,7 +77,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         name: "value",
         choices: [
           { title: "Yes, I'm sure because I know what I'm doing, like Roman :)", value: "yes" },
-          { title: "Mmmmm no, let me create another repo with the word \"monitoring\" in its name !", value: "no" },
+          { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: "no" },
         ],
         message: c.cyanBright("It's safer to have monitoring in a separate repo. Are you sure you want to mix monitoring and deployment sources ?"),
       });
