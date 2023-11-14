@@ -76,7 +76,7 @@ monitoringCommands:
 
     const monitoringCommandsDefault = [
       { title: "Detect suspect setup actions in major org", command: "sfdx hardis:org:diagnose:audittrail" },
-      { title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" }
+      { title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" },
     ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;

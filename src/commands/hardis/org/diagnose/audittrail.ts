@@ -29,7 +29,7 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
     "$ sfdx hardis:org:diagnose:audittrail",
     "$ sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com",
     "$ sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com",
-    "$ sfdx hardis:org:diagnose:audittrail --lastndays 5"
+    "$ sfdx hardis:org:diagnose:audittrail --lastndays 5",
   ];
 
   protected static flagsConfig = {
@@ -81,12 +81,8 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
     this.excludeUsers = this.flags.excludeusers ? this.flags.excludeusers.split(",") : [];
     this.lastNdays = this.flags.lastndays || 1;
     this.allowedSectionsActions = {
-      "Certificate and Key Management": [
-        "insertCertificate"
-      ],
-      "Groups": [
-        "groupMembership"
-      ],
+      "Certificate and Key Management": ["insertCertificate"],
+      Groups: ["groupMembership"],
       "Manage Users": [
         "createduser",
         "changedpassword",
@@ -94,13 +90,13 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
         "PermSetAssign",
         "resetpassword",
         "suOrgAdminLogin",
-        "suOrgAdminLogout"
-      ]
+        "suOrgAdminLogout",
+      ],
     };
     this.outputFile = this.flags.outputfile || null;
     const conn = this.org.getConnection();
 
-    uxLog(this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`))
+    uxLog(this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`));
 
     // Manage exclude users list
     if (this.excludeUsers.length === 0) {
@@ -109,9 +105,7 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
         this.excludeUsers.push(config.targetUsername);
       }
     }
-    let whereConstraint =
-      `WHERE CreatedDate = LAST_N_DAYS:${this.lastNdays}` +
-      ` AND CreatedBy.Username != NULL`;
+    let whereConstraint = `WHERE CreatedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND CreatedBy.Username != NULL`;
     if (this.excludeUsers.length > 0) {
       whereConstraint += ` AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
@@ -127,12 +121,11 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
     const suspectRecords = [];
     let suspectUsers = [];
     let suspectActions = [];
-    const auditTrailRecords = queryRes.records.map(record => {
+    const auditTrailRecords = queryRes.records.map((record) => {
       record.Suspect = false;
       // Unallowed actions
       if (
-        (this.allowedSectionsActions[record.Section] && !this.allowedSectionsActions[record.Section].includes(record.Action))
-        ||
+        (this.allowedSectionsActions[record.Section] && !this.allowedSectionsActions[record.Section].includes(record.Action)) ||
         !this.allowedSectionsActions[record.Section]
       ) {
         record.Suspect = true;
@@ -157,19 +150,18 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       suspectUsers.sort();
       suspectActions = [...new Set(suspectActions)];
       suspectActions.sort();
-      uxLog(this,"");
+      uxLog(this, "");
       uxLog(this, c.yellow("Related users:"));
       for (const user of suspectUsers) {
         uxLog(this, c.yellow(`- ${user}`));
       }
-      uxLog(this,"");
+      uxLog(this, "");
       uxLog(this, c.yellow("Related actions:"));
       for (const action of suspectActions) {
         uxLog(this, c.yellow(`- ${action}`));
       }
-      uxLog(this,"");
-    }
-    else {
+      uxLog(this, "");
+    } else {
       uxLog(this, c.green(msg));
     }
 
@@ -196,18 +188,17 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       this.outputFile = null;
     }
 
-
     // Manage notifications
     if (suspectRecords.length > 0) {
-      let notifDetailText = ``
+      let notifDetailText = ``;
       notifDetailText += "Related users:\n";
       for (const user of suspectUsers) {
         notifDetailText += `* ${user}\n`;
       }
-      notifDetailText += "\n"
+      notifDetailText += "\n";
       notifDetailText += "Related actions:\n";
       for (const action of suspectActions) {
-        notifDetailText +=`* ${action}\n`;
+        notifDetailText += `* ${action}\n`;
       }
       notifDetailText += "\n";
       notifDetailText += "_See details in job artifacts_";
@@ -237,8 +228,7 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       message: msg,
       suspectRecords: suspectRecords,
       suspectUsers: suspectUsers,
-      csvLogFile: this.outputFile
+      csvLogFile: this.outputFile,
     };
   }
-
 }
