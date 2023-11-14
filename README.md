@@ -160,6 +160,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 * [`sfdx hardis:org:data:delete [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdatadelete--p-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:data:export [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdataexport--p-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:data:import [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdataimport--p-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
+* [`sfdx hardis:org:diagnose:audittrail [-e <string>] [-t <string>] [-o <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdiagnoseaudittrail--e-string--t-string--o-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:diagnose:legacyapi [-e <string>] [-l <number>] [-o <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgdiagnoselegacyapi--e-string--l-number--o-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-s <number>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgfilesexport--p-string--c-number--t-number--s-number--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
 * [`sfdx hardis:org:fix:listviewmine [-l <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`](#sfdx-hardisorgfixlistviewmine--l-string--d---websocket-string---skipauth--u-string---apiversion-string---json---loglevel-tracedebuginfowarnerrorfataltracedebuginfowarnerrorfatal)
@@ -256,7 +257,7 @@ EXAMPLE
   $ sfdx hardis:auth:login
 ```
 
-_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/auth/login.js)_
+_See code: [lib/commands/hardis/auth/login.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/auth/login.js)_
 
 ## `sfdx hardis:cache:clear [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -284,7 +285,7 @@ EXAMPLE
   $ sfdx hardis:cache:clear
 ```
 
-_See code: [lib/commands/hardis/cache/clear.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/cache/clear.js)_
+_See code: [lib/commands/hardis/cache/clear.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/cache/clear.js)_
 
 ## `sfdx hardis:config:get [-l <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -316,7 +317,7 @@ EXAMPLE
   $ sfdx hardis:project:deploy:sources:metadata
 ```
 
-_See code: [lib/commands/hardis/config/get.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/config/get.js)_
+_See code: [lib/commands/hardis/config/get.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/config/get.js)_
 
 ## `sfdx hardis:doc:extract:permsetgroups [-o <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -348,7 +349,7 @@ EXAMPLE
   $ sfdx hardis:doc:extract:permsetgroups
 ```
 
-_See code: [lib/commands/hardis/doc/extract/permsetgroups.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/doc/extract/permsetgroups.js)_
+_See code: [lib/commands/hardis/doc/extract/permsetgroups.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/doc/extract/permsetgroups.js)_
 
 ## `sfdx hardis:doc:plugin:generate [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -388,7 +389,7 @@ EXAMPLE
   $ sfdx hardis:doc:plugin:generate
 ```
 
-_See code: [lib/commands/hardis/doc/plugin/generate.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/doc/plugin/generate.js)_
+_See code: [lib/commands/hardis/doc/plugin/generate.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/doc/plugin/generate.js)_
 
 ## `sfdx hardis:lint:access [-e <string>] [-i <string>] [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -426,7 +427,7 @@ EXAMPLES
   $ sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"
 ```
 
-_See code: [lib/commands/hardis/lint/access.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/lint/access.js)_
+_See code: [lib/commands/hardis/lint/access.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/lint/access.js)_
 
 ## `sfdx hardis:lint:unused [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -456,7 +457,7 @@ EXAMPLES
   $ sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"
 ```
 
-_See code: [lib/commands/hardis/lint/unused.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/lint/unused.js)_
+_See code: [lib/commands/hardis/lint/unused.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/lint/unused.js)_
 
 ## `sfdx hardis:mdapi:deploy [-d <directory>] [-w <minutes>] [-q <id> | -l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g | -c] [-f <filepath>] [-s] [--soapdeploy] [--purgeondelete] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>] [--verbose] [--concise] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -514,7 +515,7 @@ DESCRIPTION
   dx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_deploy)
 ```
 
-_See code: [lib/commands/hardis/mdapi/deploy.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/mdapi/deploy.js)_
+_See code: [lib/commands/hardis/mdapi/deploy.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/mdapi/deploy.js)_
 
 ## `sfdx hardis:misc:toml2csv -f <string> [-t <string>] [-l <array>] [-s] [-o <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -567,7 +568,7 @@ EXAMPLES
   --outputdir './output' --filtersections 'COMPTES,SOUS'
 ```
 
-_See code: [lib/commands/hardis/misc/toml2csv.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/misc/toml2csv.js)_
+_See code: [lib/commands/hardis/misc/toml2csv.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/misc/toml2csv.js)_
 
 ## `sfdx hardis:org:configure:data [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -602,7 +603,7 @@ EXAMPLE
   $ sfdx hardis:org:configure:data
 ```
 
-_See code: [lib/commands/hardis/org/configure/data.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/configure/data.js)_
+_See code: [lib/commands/hardis/org/configure/data.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/configure/data.js)_
 
 ## `sfdx hardis:org:configure:files [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -637,7 +638,7 @@ EXAMPLE
   $ sfdx hardis:org:configure:files
 ```
 
-_See code: [lib/commands/hardis/org/configure/files.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/configure/files.js)_
+_See code: [lib/commands/hardis/org/configure/files.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/configure/files.js)_
 
 ## `sfdx hardis:org:configure:monitoring [--orginstanceurl <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -676,7 +677,7 @@ EXAMPLE
   $ sfdx hardis:org:configure:monitoring
 ```
 
-_See code: [lib/commands/hardis/org/configure/monitoring.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/configure/monitoring.js)_
+_See code: [lib/commands/hardis/org/configure/monitoring.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/configure/monitoring.js)_
 
 ## `sfdx hardis:org:connect [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -707,7 +708,7 @@ EXAMPLE
   $ sfdx hardis:org:connect
 ```
 
-_See code: [lib/commands/hardis/org/connect.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/connect.js)_
+_See code: [lib/commands/hardis/org/connect.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/connect.js)_
 
 ## `sfdx hardis:org:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -742,7 +743,7 @@ EXAMPLE
   $ sfdx hardis:org:create
 ```
 
-_See code: [lib/commands/hardis/org/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/create.js)_
+_See code: [lib/commands/hardis/org/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/create.js)_
 
 ## `sfdx hardis:org:data:delete [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -778,7 +779,7 @@ EXAMPLE
   $ sfdx hardis:org:data:delete
 ```
 
-_See code: [lib/commands/hardis/org/data/delete.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/data/delete.js)_
+_See code: [lib/commands/hardis/org/data/delete.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/data/delete.js)_
 
 ## `sfdx hardis:org:data:export [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -821,7 +822,7 @@ EXAMPLE
   $ sfdx hardis:org:data:export
 ```
 
-_See code: [lib/commands/hardis/org/data/export.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/data/export.js)_
+_See code: [lib/commands/hardis/org/data/export.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/data/export.js)_
 
 ## `sfdx hardis:org:data:import [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -864,7 +865,55 @@ EXAMPLE
   $ sfdx hardis:org:data:import
 ```
 
-_See code: [lib/commands/hardis/org/data/import.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/data/import.js)_
+_See code: [lib/commands/hardis/org/data/import.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/data/import.js)_
+
+## `sfdx hardis:org:diagnose:audittrail [-e <string>] [-t <string>] [-o <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
+
+Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
+
+```
+USAGE
+  $ sfdx hardis:org:diagnose:audittrail [-e <string>] [-t <string>] [-o <string>] [-d] [--websocket <string>] 
+  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
+  trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
+
+OPTIONS
+  -d, --debug                                                                       Activate debug mode (more logs)
+
+  -e, --excludeusers=excludeusers                                                   Comma-separated list of usernames to
+                                                                                    exclude
+
+  -o, --outputfile=outputfile                                                       Force the path and name of output
+                                                                                    report file. Must end with .csv
+
+  -t, --lastndays=lastndays                                                         Number of days to extract from today
+                                                                                    (included)
+
+  -u, --targetusername=targetusername                                               username or alias for the target
+                                                                                    org; overrides default target org
+
+  --apiversion=apiversion                                                           override the api version used for
+                                                                                    api requests made by this command
+
+  --json                                                                            format output as json
+
+  --loglevel=(trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL)  [default: warn] logging level for
+                                                                                    this command invocation
+
+  --skipauth                                                                        Skip authentication check when a
+                                                                                    default username is required
+
+  --websocket=websocket                                                             Websocket host:port for VsCode SFDX
+                                                                                    Hardis UI integration
+
+EXAMPLES
+  $ sfdx hardis:org:diagnose:audittrail
+  $ sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com
+  $ sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com
+  $ sfdx hardis:org:diagnose:audittrail --lastndays 5
+```
+
+_See code: [lib/commands/hardis/org/diagnose/audittrail.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/diagnose/audittrail.js)_
 
 ## `sfdx hardis:org:diagnose:legacyapi [-e <string>] [-l <number>] [-o <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -919,7 +968,7 @@ EXAMPLES
   $ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv
 ```
 
-_See code: [lib/commands/hardis/org/diagnose/legacyapi.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/diagnose/legacyapi.js)_
+_See code: [lib/commands/hardis/org/diagnose/legacyapi.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/diagnose/legacyapi.js)_
 
 ## `sfdx hardis:org:files:export [-p <string>] [-c <number>] [-t <number>] [-s <number>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -974,7 +1023,7 @@ EXAMPLE
   $ sfdx hardis:org:files:export
 ```
 
-_See code: [lib/commands/hardis/org/files/export.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/files/export.js)_
+_See code: [lib/commands/hardis/org/files/export.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/files/export.js)_
 
 ## `sfdx hardis:org:fix:listviewmine [-l <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1029,7 +1078,7 @@ DESCRIPTION
     - listViewsMine
   ```
 
-- Example of sfdx-hardis.yml property `listViewsToSetToMine`:
+  - Example of sfdx-hardis.yml property `listViewsToSetToMine`:
 
   ```yaml
   listViewsToSetToMine:
@@ -1041,7 +1090,7 @@ DESCRIPTION
     - "force-app/main/default/objects/Account/listViews/MyActivePartners.listView-meta.xml"
   ```
 
-- If manually written, this could also be:
+  - If manually written, this could also be:
 
   ```yaml
   listViewsToSetToMine:
@@ -1053,7 +1102,7 @@ DESCRIPTION
     - "Account:MyActivePartners"
   ```
 
-  Troubleshooting: if you need to run this command from an alpine-linux based docker image, use this workaround in your
+  Troubleshooting: if you need to run this command from an alpine-linux based docker image, use this workaround in your 
   dockerfile:
 
   ```dockerfile
@@ -1069,7 +1118,7 @@ EXAMPLES
   $ sfdx hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
 ```
 
-_See code: [lib/commands/hardis/org/fix/listviewmine.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/fix/listviewmine.js)_
+_See code: [lib/commands/hardis/org/fix/listviewmine.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/fix/listviewmine.js)_
 
 ## `sfdx hardis:org:generate:packagexmlfull [--outputfile <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1077,8 +1126,8 @@ Generates full org package.xml, including managed items
 
 ```
 USAGE
-  $ sfdx hardis:org:generate:packagexmlfull [--outputfile <string>] [-d] [--websocket <string>] [--skipauth] [-u
-  <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:generate:packagexmlfull [--outputfile <string>] [-d] [--websocket <string>] [--skipauth] [-u 
+  <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1109,7 +1158,7 @@ EXAMPLES
   $ sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com
 ```
 
-_See code: [lib/commands/hardis/org/generate/packagexmlfull.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/generate/packagexmlfull.js)_
+_See code: [lib/commands/hardis/org/generate/packagexmlfull.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/generate/packagexmlfull.js)_
 
 ## `sfdx hardis:org:monitor:all [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1117,7 +1166,7 @@ Monitor org, generate reports and sends notifications
 
 ```
 USAGE
-  $ sfdx hardis:org:monitor:all [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json]
+  $ sfdx hardis:org:monitor:all [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1141,7 +1190,7 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  A default list of monitoring commands is used, if you want to override it you can define property
+  A default list of monitoring commands is used, if you want to override it you can define property 
   **monitoringCommands** in your .sfdx-hardis.yml file
 
   Example:
@@ -1150,6 +1199,8 @@ DESCRIPTION
   monitoringCommands:
     - title: Detect calls to deprecated API versions
       command: sfdx hardis:org:diagnose:legacyapi
+    - title: Detect suspect setup actions in major orgs
+      command: sfdx hardis:org:diagnose:audittrail
     - title: My Custom command
       command: sfdx my:custom:command
   ```
@@ -1158,7 +1209,7 @@ EXAMPLE
   $ sfdx hardis:org:monitor:all
 ```
 
-_See code: [lib/commands/hardis/org/monitor/all.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/monitor/all.js)_
+_See code: [lib/commands/hardis/org/monitor/all.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/monitor/all.js)_
 
 ## `sfdx hardis:org:monitor:backup [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1166,7 +1217,7 @@ Retrieve sfdx sources in the context of a monitoring backup
 
 ```
 USAGE
-  $ sfdx hardis:org:monitor:backup [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
+  $ sfdx hardis:org:monitor:backup [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1193,7 +1244,7 @@ EXAMPLE
   $ sfdx hardis:org:monitor:backup
 ```
 
-_See code: [lib/commands/hardis/org/monitor/backup.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/monitor/backup.js)_
+_See code: [lib/commands/hardis/org/monitor/backup.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/monitor/backup.js)_
 
 ## `sfdx hardis:org:purge:apexlog [-z] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1201,7 +1252,7 @@ Purge apex logs in selected org
 
 ```
 USAGE
-  $ sfdx hardis:org:purge:apexlog [-z] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
+  $ sfdx hardis:org:purge:apexlog [-z] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1232,7 +1283,7 @@ EXAMPLES
   $ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com
 ```
 
-_See code: [lib/commands/hardis/org/purge/apexlog.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/purge/apexlog.js)_
+_See code: [lib/commands/hardis/org/purge/apexlog.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/purge/apexlog.js)_
 
 ## `sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1240,8 +1291,8 @@ Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Stat
 
 ```
 USAGE
-  $ sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>]
-  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:purge:flow [-z] [-n <string>] [-s <string>] [-f] [-r <string>] [-d] [--websocket <string>] 
+  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1290,7 +1341,7 @@ EXAMPLES
     ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
     30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   
-  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name
+  $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name 
   TestFlow"
     Found 4 records:
     ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
@@ -1302,7 +1353,7 @@ EXAMPLES
     No record deleted
 ```
 
-_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/purge/flow.js)_
+_See code: [lib/commands/hardis/org/purge/flow.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/purge/flow.js)_
 
 ## `sfdx hardis:org:retrieve:packageconfig [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1310,7 +1361,7 @@ Retrieve package configuration from an org
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:packageconfig [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion
+  $ sfdx hardis:org:retrieve:packageconfig [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion 
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1338,7 +1389,7 @@ EXAMPLES
   sfdx hardis:org:retrieve:packageconfig -u myOrg
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/packageconfig.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/retrieve/packageconfig.js)_
+_See code: [lib/commands/hardis/org/retrieve/packageconfig.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/retrieve/packageconfig.js)_
 
 ## `sfdx hardis:org:retrieve:sources:analytics [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1346,7 +1397,7 @@ Retrieve all CRM Analytics sources from an org, with workarounds for SFDX bugs
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:analytics [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion
+  $ sfdx hardis:org:retrieve:sources:analytics [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion 
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1373,7 +1424,7 @@ EXAMPLE
   $ sfdx hardis:org:retrieve:sources:analytics
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/analytics.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/retrieve/sources/analytics.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/analytics.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/retrieve/sources/analytics.js)_
 
 ## `sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-k <string>] [-m <string>] [-o] [-r <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1381,8 +1432,8 @@ Retrieve Salesforce DX project from org
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-k <string>] [-m <string>] [-o] [-r <string>] [-d]
-  [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:retrieve:sources:dx [-f <string>] [-t <string>] [-k <string>] [-m <string>] [-o] [-r <string>] [-d] 
+  [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1424,7 +1475,7 @@ EXAMPLE
   $ sfdx hardis:org:retrieve:sources:dx
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/retrieve/sources/dx.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/retrieve/sources/dx.js)_
 
 ## `sfdx hardis:org:retrieve:sources:dx2 [-x <string>] [-t <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1432,8 +1483,8 @@ Retrieve Salesforce DX project from org
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:dx2 [-x <string>] [-t <string>] [-d] [--websocket <string>] [--skipauth] [-u
-  <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:retrieve:sources:dx2 [-x <string>] [-t <string>] [-d] [--websocket <string>] [--skipauth] [-u 
+  <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1465,7 +1516,7 @@ EXAMPLE
   $ sfdx hardis:org:retrieve:sources:dx2
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/dx2.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/retrieve/sources/dx2.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/dx2.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/retrieve/sources/dx2.js)_
 
 ## `sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [--includemanaged] [-r <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1473,8 +1524,8 @@ Retrieve Salesforce DX project from org
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [--includemanaged] [-r <string>] [-d]
-  [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:retrieve:sources:metadata [-f <string>] [-p <string>] [--includemanaged] [-r <string>] [-d] 
+  [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1507,7 +1558,7 @@ EXAMPLES
   $ SFDX_RETRIEVE_WAIT_MINUTES=200 sfdx hardis:org:retrieve:sources:metadata
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/retrieve/sources/metadata.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/retrieve/sources/metadata.js)_
 
 ## `sfdx hardis:org:retrieve:sources:retrofit [--commit] [--commitmode updated|all] [--push] [--pushmode default|mergerequest] [--productionbranch <string>] [--retrofittargetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1515,9 +1566,9 @@ Retrieve changes from org link to a ref branch not present in sources
 
 ```
 USAGE
-  $ sfdx hardis:org:retrieve:sources:retrofit [--commit] [--commitmode updated|all] [--push] [--pushmode
-  default|mergerequest] [--productionbranch <string>] [--retrofittargetbranch <string>] [-d] [--websocket <string>]
-  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:retrieve:sources:retrofit [--commit] [--commitmode updated|all] [--push] [--pushmode 
+  default|mergerequest] [--productionbranch <string>] [--retrofittargetbranch <string>] [-d] [--websocket <string>] 
+  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1566,8 +1617,8 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  This command need to be triggered from a branch that is connected to a SF org. It will then retrieve all changes not
-  present in that branch sources, commit them and create a merge request against the default branch. If a merge request
+  This command need to be triggered from a branch that is connected to a SF org. It will then retrieve all changes not 
+  present in that branch sources, commit them and create a merge request against the default branch. If a merge request 
   already exists, it will simply add a new commit.
 
     Define the following properties in **.sfdx-hardis.yml**
@@ -1620,11 +1671,11 @@ DESCRIPTION
 EXAMPLES
   $ sfdx hardis:org:retrieve:sources:retrofit
   sfdx hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated
-  sfdx hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode
+  sfdx hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode 
   updated --push --pushmode mergerequest
 ```
 
-_See code: [lib/commands/hardis/org/retrieve/sources/retrofit.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/retrieve/sources/retrofit.js)_
+_See code: [lib/commands/hardis/org/retrieve/sources/retrofit.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/retrieve/sources/retrofit.js)_
 
 ## `sfdx hardis:org:select [-h] [-s] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1632,7 +1683,7 @@ Interactive org selection for user
 
 ```
 USAGE
-  $ sfdx hardis:org:select [-h] [-s] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:org:select [-h] [-s] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1657,7 +1708,7 @@ EXAMPLE
   $ sfdx hardis:org:select
 ```
 
-_See code: [lib/commands/hardis/org/select.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/select.js)_
+_See code: [lib/commands/hardis/org/select.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/select.js)_
 
 ## `sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1665,8 +1716,8 @@ Run apex tests in Salesforce org
 
 ```
 USAGE
-  $ sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket
-  <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:test:apex [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket 
+  <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1696,8 +1747,8 @@ OPTIONS
 DESCRIPTION
   If following configuration is defined, it will fail if apex coverage target is not reached:
 
-- Env `APEX_TESTS_MIN_COVERAGE_ORG_WIDE` or `.sfdx-hardis` property `apexTestsMinCoverageOrgWide`
-- Env `APEX_TESTS_MIN_COVERAGE_ORG_WIDE` or `.sfdx-hardis` property `apexTestsMinCoverageOrgWide`
+  - Env `APEX_TESTS_MIN_COVERAGE_ORG_WIDE` or `.sfdx-hardis` property `apexTestsMinCoverageOrgWide`
+  - Env `APEX_TESTS_MIN_COVERAGE_ORG_WIDE` or `.sfdx-hardis` property `apexTestsMinCoverageOrgWide`
 
   You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
 
@@ -1705,7 +1756,7 @@ EXAMPLE
   $ sfdx hardis:org:test:apex
 ```
 
-_See code: [lib/commands/hardis/org/test/apex.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/test/apex.js)_
+_See code: [lib/commands/hardis/org/test/apex.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/test/apex.js)_
 
 ## `sfdx hardis:org:user:activateinvalid [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1713,7 +1764,7 @@ Update sandbox users so their email is valid
 
 ```
 USAGE
-  $ sfdx hardis:org:user:activateinvalid [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>]
+  $ sfdx hardis:org:user:activateinvalid [-p <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] 
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1746,18 +1797,18 @@ DESCRIPTION
 
   See article below
 
-  [![Reactivate all the sandbox users with .invalid emails in 3
+  [![Reactivate all the sandbox users with .invalid emails in 3 
   clicks](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-email.jpg)](https://
   nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
 
 EXAMPLES
   $ sfdx hardis:org:user:activateinvalid
   $ sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com
-  $ sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername
+  $ sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername 
   myuser@myorg.com
 ```
 
-_See code: [lib/commands/hardis/org/user/activateinvalid.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/user/activateinvalid.js)_
+_See code: [lib/commands/hardis/org/user/activateinvalid.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/user/activateinvalid.js)_
 
 ## `sfdx hardis:org:user:freeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1765,8 +1816,8 @@ Mass freeze users in org before a maintenance or go live
 
 ```
 USAGE
-  $ sfdx hardis:org:user:freeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>]
-  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:user:freeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] 
+  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1805,7 +1856,7 @@ DESCRIPTION
 
   <https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3>
 
-  [![How to freeze / unfreeze users during a Salesforce
+  [![How to freeze / unfreeze users during a Salesforce 
   deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://med
   ium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
 
@@ -1816,7 +1867,7 @@ EXAMPLES
   $ sfdx hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other Profile'
 ```
 
-_See code: [lib/commands/hardis/org/user/freeze.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/user/freeze.js)_
+_See code: [lib/commands/hardis/org/user/freeze.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/user/freeze.js)_
 
 ## `sfdx hardis:org:user:unfreeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1824,8 +1875,8 @@ Mass unfreeze users in org after a maintenance or go live
 
 ```
 USAGE
-  $ sfdx hardis:org:user:unfreeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>]
-  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:org:user:unfreeze [-n <string>] [-p <string>] [-e <string>] [-m <number>] [-d] [--websocket <string>] 
+  [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1864,7 +1915,7 @@ DESCRIPTION
 
   <https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3>
 
-  [![How to freeze / unfreeze users during a Salesforce
+  [![How to freeze / unfreeze users during a Salesforce 
   deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://med
   ium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
 
@@ -1875,7 +1926,7 @@ EXAMPLES
   $ sfdx hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'
 ```
 
-_See code: [lib/commands/hardis/org/user/unfreeze.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/org/user/unfreeze.js)_
+_See code: [lib/commands/hardis/org/user/unfreeze.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/org/user/unfreeze.js)_
 
 ## `sfdx hardis:package:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1883,7 +1934,7 @@ Create a new package
 
 ```
 USAGE
-  $ sfdx hardis:package:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json]
+  $ sfdx hardis:package:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1910,7 +1961,7 @@ EXAMPLE
   $ sfdx hardis:package:create
 ```
 
-_See code: [lib/commands/hardis/package/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/package/create.js)_
+_See code: [lib/commands/hardis/package/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/package/create.js)_
 
 ## `sfdx hardis:package:install [-p <string>] [-d] [--websocket <string>] [-k <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1918,7 +1969,7 @@ Install a package in an org using its id (starting with **04t**)
 
 ```
 USAGE
-  $ sfdx hardis:package:install [-p <string>] [-d] [--websocket <string>] [-k <string>] [--skipauth] [-u <string>]
+  $ sfdx hardis:package:install [-p <string>] [-d] [--websocket <string>] [-k <string>] [--skipauth] [-u <string>] 
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1954,7 +2005,7 @@ EXAMPLE
   $ sfdx hardis:package:install
 ```
 
-_See code: [lib/commands/hardis/package/install.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/package/install.js)_
+_See code: [lib/commands/hardis/package/install.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/package/install.js)_
 
 ## `sfdx hardis:package:mergexml [-f <string>] [-p <string>] [-x <string>] [-r <string>] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -1962,7 +2013,7 @@ Select and merge package.xml files
 
 ```
 USAGE
-  $ sfdx hardis:package:mergexml [-f <string>] [-p <string>] [-x <string>] [-r <string>] [--websocket <string>]
+  $ sfdx hardis:package:mergexml [-f <string>] [-p <string>] [-x <string>] [-r <string>] [--websocket <string>] 
   [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -1974,7 +2025,7 @@ OPTIONS
 
   -r, --result=result                                                               Result package.xml file name
 
-  -x, --pattern=pattern                                                             [default: /**/_package_.xml] Name
+  -x, --pattern=pattern                                                             [default: /**/*package*.xml] Name
                                                                                     criteria to list package.xml files
 
   --json                                                                            format output as json
@@ -1991,11 +2042,11 @@ OPTIONS
 EXAMPLES
   $ sfdx hardis:package:mergexml
   $ sfdx hardis:package:mergexml --folder packages --pattern /**/*.xml --result myMergedPackage.xml
-  $ sfdx hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml"
+  $ sfdx hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml" 
   --result myMergedPackage.xml
 ```
 
-_See code: [lib/commands/hardis/package/mergexml.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/package/mergexml.js)_
+_See code: [lib/commands/hardis/package/mergexml.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/package/mergexml.js)_
 
 ## `sfdx hardis:package:version:create [-d] [-p <string>] [-k <string>] [--deleteafter] [-i] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2003,8 +2054,8 @@ Create a new version of an unlocked package
 
 ```
 USAGE
-  $ sfdx hardis:package:version:create [-d] [-p <string>] [-k <string>] [--deleteafter] [-i] [--websocket <string>]
-  [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:package:version:create [-d] [-p <string>] [-k <string>] [--deleteafter] [-i] [--websocket <string>] 
+  [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2043,7 +2094,7 @@ EXAMPLE
   $ sfdx hardis:package:version:create
 ```
 
-_See code: [lib/commands/hardis/package/version/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/package/version/create.js)_
+_See code: [lib/commands/hardis/package/version/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/package/version/create.js)_
 
 ## `sfdx hardis:package:version:list [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2051,7 +2102,7 @@ List versions of unlocked package
 
 ```
 USAGE
-  $ sfdx hardis:package:version:list [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
+  $ sfdx hardis:package:version:list [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2078,7 +2129,7 @@ EXAMPLE
   $ sfdx hardis:package:version:list
 ```
 
-_See code: [lib/commands/hardis/package/version/list.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/package/version/list.js)_
+_See code: [lib/commands/hardis/package/version/list.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/package/version/list.js)_
 
 ## `sfdx hardis:package:version:promote [-d] [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2086,7 +2137,7 @@ Promote package(s) version(s): convert it from beta to released
 
 ```
 USAGE
-  $ sfdx hardis:package:version:promote [-d] [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion
+  $ sfdx hardis:package:version:promote [-d] [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion 
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2117,7 +2168,7 @@ EXAMPLES
   $ sfdx hardis:package:version:promote --auto
 ```
 
-_See code: [lib/commands/hardis/package/version/promote.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/package/version/promote.js)_
+_See code: [lib/commands/hardis/package/version/promote.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/package/version/promote.js)_
 
 ## `sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2125,7 +2176,7 @@ Audit API version
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--websocket <string>] [--skipauth] [--json]
+  $ sfdx hardis:project:audit:apiversion [-m <number>] [-f] [-d] [--websocket <string>] [--skipauth] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2152,7 +2203,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:apiversion
 ```
 
-_See code: [lib/commands/hardis/project/audit/apiversion.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/audit/apiversion.js)_
+_See code: [lib/commands/hardis/project/audit/apiversion.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/audit/apiversion.js)_
 
 ## `sfdx hardis:project:audit:callincallout [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2160,7 +2211,7 @@ Generate list of callIn and callouts from sfdx project
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:callincallout [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:audit:callincallout [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2180,7 +2231,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:callouts
 ```
 
-_See code: [lib/commands/hardis/project/audit/callincallout.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/audit/callincallout.js)_
+_See code: [lib/commands/hardis/project/audit/callincallout.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/audit/callincallout.js)_
 
 ## `sfdx hardis:project:audit:duplicatefiles [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2212,7 +2263,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:duplicatefiles
 ```
 
-_See code: [lib/commands/hardis/project/audit/duplicatefiles.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/audit/duplicatefiles.js)_
+_See code: [lib/commands/hardis/project/audit/duplicatefiles.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/audit/duplicatefiles.js)_
 
 ## `sfdx hardis:project:audit:remotesites [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2220,7 +2271,7 @@ Generate list of remote sites
 
 ```
 USAGE
-  $ sfdx hardis:project:audit:remotesites [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:audit:remotesites [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2240,7 +2291,7 @@ EXAMPLE
   $ sfdx hardis:project:audit:remotesites
 ```
 
-_See code: [lib/commands/hardis/project/audit/remotesites.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/audit/remotesites.js)_
+_See code: [lib/commands/hardis/project/audit/remotesites.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/audit/remotesites.js)_
 
 ## `sfdx hardis:project:clean:emptyitems [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2248,7 +2299,7 @@ Remove unwanted empty items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:emptyitems [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:clean:emptyitems [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2269,7 +2320,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:emptyitems
 ```
 
-_See code: [lib/commands/hardis/project/clean/emptyitems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/emptyitems.js)_
+_See code: [lib/commands/hardis/project/clean/emptyitems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/emptyitems.js)_
 
 ## `sfdx hardis:project:clean:hiddenitems [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2277,7 +2328,7 @@ Remove unwanted hidden items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:hiddenitems [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:clean:hiddenitems [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2298,7 +2349,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:hiddenitems
 ```
 
-_See code: [lib/commands/hardis/project/clean/hiddenitems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/hiddenitems.js)_
+_See code: [lib/commands/hardis/project/clean/hiddenitems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/hiddenitems.js)_
 
 ## `sfdx hardis:project:clean:listviews [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2306,7 +2357,7 @@ Replace Mine by Everything in ListView, and log the replacements in sfdx-hardis.
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:listviews [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:clean:listviews [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2327,7 +2378,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:listviews
 ```
 
-_See code: [lib/commands/hardis/project/clean/listviews.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/listviews.js)_
+_See code: [lib/commands/hardis/project/clean/listviews.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/listviews.js)_
 
 ## `sfdx hardis:project:clean:manageditems [-n <string>] [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2357,7 +2408,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:manageditems --namespace crta
 ```
 
-_See code: [lib/commands/hardis/project/clean/manageditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/manageditems.js)_
+_See code: [lib/commands/hardis/project/clean/manageditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/manageditems.js)_
 
 ## `sfdx hardis:project:clean:minimizeprofiles [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2365,7 +2416,7 @@ Remove all profile attributes that exist on Permission Sets
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:minimizeprofiles [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json]
+  $ sfdx hardis:project:clean:minimizeprofiles [-f <string>] [-d] [--websocket <string>] [--skipauth] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2387,18 +2438,18 @@ DESCRIPTION
 
   Salesforce will deprecate such capability in Spring 26.
 
-  Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that
+  Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that 
   exists on a Permission Set !
 
   The following XML tags are removed automatically:
 
-- classAccesses
-- customMetadataTypeAccesses
-- externalDataSourceAccesses
-- fieldPermissions
-- objectPermissions
-- pageAccesses
-- userPermissions (except on Admin Profile)
+  - classAccesses
+  - customMetadataTypeAccesses
+  - externalDataSourceAccesses
+  - fieldPermissions
+  - objectPermissions
+  - pageAccesses
+  - userPermissions (except on Admin Profile)
 
   You can override this list by defining a property minimizeProfilesNodesToRemove in your .sfdx-hardis.yml config file.
 
@@ -2406,7 +2457,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:minimizeprofiles
 ```
 
-_See code: [lib/commands/hardis/project/clean/minimizeprofiles.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/minimizeprofiles.js)_
+_See code: [lib/commands/hardis/project/clean/minimizeprofiles.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/minimizeprofiles.js)_
 
 ## `sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2414,7 +2465,7 @@ Clean SFDX sources from items present neither in target org nor local package.xm
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>]
+  $ sfdx hardis:project:clean:orgmissingitems [-f <string>] [-p <string>] [-t <string>] [-d] [--websocket <string>] 
   [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2449,7 +2500,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:orgmissingitems
 ```
 
-_See code: [lib/commands/hardis/project/clean/orgmissingitems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/orgmissingitems.js)_
+_See code: [lib/commands/hardis/project/clean/orgmissingitems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/orgmissingitems.js)_
 
 ## `sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2457,7 +2508,7 @@ Remove unwanted references within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--skipauth] [--json]
+  $ sfdx hardis:project:clean:references [-t <string>] [-c <string>] [-d] [--websocket <string>] [--skipauth] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2489,7 +2540,7 @@ EXAMPLES
   $ sfdx hardis:project:clean:references --config ./somefolder/myDestructivePackage.xml
 ```
 
-_See code: [lib/commands/hardis/project/clean/references.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/references.js)_
+_See code: [lib/commands/hardis/project/clean/references.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/references.js)_
 
 ## `sfdx hardis:project:clean:retrievefolders [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2497,7 +2548,7 @@ Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:retrievefolders [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion
+  $ sfdx hardis:project:clean:retrievefolders [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion 
   <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2524,7 +2575,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:retrievefolders
 ```
 
-_See code: [lib/commands/hardis/project/clean/retrievefolders.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/retrievefolders.js)_
+_See code: [lib/commands/hardis/project/clean/retrievefolders.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/retrievefolders.js)_
 
 ## `sfdx hardis:project:clean:standarditems [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2532,7 +2583,7 @@ Remove unwanted standard items within sfdx project sources
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:standarditems [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:clean:standarditems [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2552,7 +2603,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:standarditems
 ```
 
-_See code: [lib/commands/hardis/project/clean/standarditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/standarditems.js)_
+_See code: [lib/commands/hardis/project/clean/standarditems.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/standarditems.js)_
 
 ## `sfdx hardis:project:clean:systemdebug [-f <string>] [--websocket <string>] [--skipauth] [-d] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2560,7 +2611,7 @@ Clean System.debug() lines in APEX Code (classes and triggers)
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:systemdebug [-f <string>] [--websocket <string>] [--skipauth] [-d] [--json] [--loglevel
+  $ sfdx hardis:project:clean:systemdebug [-f <string>] [--websocket <string>] [--skipauth] [-d] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2581,7 +2632,7 @@ EXAMPLE
   $ sfdx hardis:project:clean:systemdebug
 ```
 
-_See code: [lib/commands/hardis/project/clean/systemdebug.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/systemdebug.js)_
+_See code: [lib/commands/hardis/project/clean/systemdebug.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/systemdebug.js)_
 
 ## `sfdx hardis:project:clean:xml [-f <string>] [-p <string> -x <string>] [-n <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2589,7 +2640,7 @@ Remove XML elements using Glob patterns and XPath expressions
 
 ```
 USAGE
-  $ sfdx hardis:project:clean:xml [-f <string>] [-p <string> -x <string>] [-n <string>] [-d] [--websocket <string>]
+  $ sfdx hardis:project:clean:xml [-f <string>] [-p <string> -x <string>] [-n <string>] [-d] [--websocket <string>] 
   [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2621,13 +2672,13 @@ OPTIONS
 DESCRIPTION
   This can be very useful to avoid to always remove manually the same elements in the same XML file.
 
-- **globpattern** can be any glob pattern allowing to identify the XML files to update, for example
+  - **globpattern** can be any glob pattern allowing to identify the XML files to update, for example 
   `/**/*.flexipage-meta.xml`
 
-- **xpath** can be any xpath following the format `//ns:PARENT-TAG-NAME//ns:TAG-NAME[contains(text(),'TAG-VALUE')]`.
+  - **xpath** can be any xpath following the format `//ns:PARENT-TAG-NAME//ns:TAG-NAME[contains(text(),'TAG-VALUE')]`. 
   If an element is found, the whole **PARENT-TAG-NAME** (with its subtree) will be removed.
 
-  ![How to build cleaning
+  ![How to build cleaning 
   XPath](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-clean-xml.jpg)
 
   Note: If globpattern and xpath are not sent, elements defined in property **cleanXmlPatterns** in **.sfdx-hardis.yml**
@@ -2635,11 +2686,11 @@ DESCRIPTION
 
 EXAMPLES
   $ sfdx hardis:project:clean:xml
-  $ sfdx hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath
+  $ sfdx hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath 
   "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
 ```
 
-_See code: [lib/commands/hardis/project/clean/xml.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/clean/xml.js)_
+_See code: [lib/commands/hardis/project/clean/xml.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/clean/xml.js)_
 
 ## `sfdx hardis:project:configure:auth [-b] [-d] [--websocket <string>] [--skipauth] [-v <string>] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2647,7 +2698,7 @@ Configure authentication from git branch to target org
 
 ```
 USAGE
-  $ sfdx hardis:project:configure:auth [-b] [-d] [--websocket <string>] [--skipauth] [-v <string>] [-u <string>]
+  $ sfdx hardis:project:configure:auth [-b] [-d] [--websocket <string>] [--skipauth] [-v <string>] [-u <string>] 
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2678,7 +2729,7 @@ EXAMPLE
   $ sfdx hardis:project:configure:auth
 ```
 
-_See code: [lib/commands/hardis/project/configure/auth.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/configure/auth.js)_
+_See code: [lib/commands/hardis/project/configure/auth.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/configure/auth.js)_
 
 ## `sfdx hardis:project:convert:profilestopermsets [-e <array>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2686,7 +2737,7 @@ Creates permission sets from existing profiles, with id PS_PROFILENAME
 
 ```
 USAGE
-  $ sfdx hardis:project:convert:profilestopermsets [-e <array>] [-d] [--websocket <string>] [--skipauth] [--json]
+  $ sfdx hardis:project:convert:profilestopermsets [-e <array>] [-d] [--websocket <string>] [--skipauth] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2707,7 +2758,7 @@ EXAMPLE
   $ sfdx hardis:project:convert:profilestopermsets
 ```
 
-_See code: [lib/commands/hardis/project/convert/profilestopermsets.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/convert/profilestopermsets.js)_
+_See code: [lib/commands/hardis/project/convert/profilestopermsets.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/convert/profilestopermsets.js)_
 
 ## `sfdx hardis:project:create [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2715,7 +2766,7 @@ Create a new SFDX Project
 
 ```
 USAGE
-  $ sfdx hardis:project:create [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:create [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2735,7 +2786,7 @@ EXAMPLE
   $ sfdx hardis:project:create
 ```
 
-_See code: [lib/commands/hardis/project/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/create.js)_
+_See code: [lib/commands/hardis/project/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/create.js)_
 
 ## `sfdx hardis:project:deploy:sources:dx [-c] [-l NoTestRun|RunSpecifiedTests|RunRepositoryTests|RunLocalTests|RunAllTestsInOrg] [-r <string>] [-p <string>] [--delta] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2743,9 +2794,9 @@ Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
 
 ```
 USAGE
-  $ sfdx hardis:project:deploy:sources:dx [-c] [-l
-  NoTestRun|RunSpecifiedTests|RunRepositoryTests|RunLocalTests|RunAllTestsInOrg] [-r <string>] [-p <string>] [--delta]
-  [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel
+  $ sfdx hardis:project:deploy:sources:dx [-c] [-l 
+  NoTestRun|RunSpecifiedTests|RunRepositoryTests|RunLocalTests|RunAllTestsInOrg] [-r <string>] [-p <string>] [--delta] 
+  [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2787,51 +2838,51 @@ OPTIONS
       Websocket host:port for VsCode SFDX Hardis UI integration
 
 DESCRIPTION
-  In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error
+  In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error 
   messages.
 
-### Quick Deploy
+  ### Quick Deploy
 
-  In case Pull Request comments are configured on the project, Quick Deploy will try to be used (equivalent to button
+  In case Pull Request comments are configured on the project, Quick Deploy will try to be used (equivalent to button 
   Quick Deploy)
 
   If you do not want to use QuickDeploy, define variable `SFDX_HARDIS_QUICK_DEPLOY=false`
 
-- [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/)
-- [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
-- [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+  - [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/)
+  - [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
+  - [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
 
-### Delta deployments
+  ### Delta deployments
 
   To activate delta deployments, define property `useDeltaDeployment: true` in `config/.sfdx-hardis.yml`.
 
-  This will activate delta deployments only between minor and major branches (major to major remains full deployment
+  This will activate delta deployments only between minor and major branches (major to major remains full deployment 
   mode)
 
-  If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can
+  If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can 
   use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
 
-### Dynamic deployment items / Overwrite management
+  ### Dynamic deployment items / Overwrite management
 
   If necessary,you can define the following files (that supports wildcards <members>*</members>):
 
-- `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing
-  yet in the target org (can be useful with ListView for example, if the client wants to update them directly in
+  - `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing 
+  yet in the target org (can be useful with ListView for example, if the client wants to update them directly in 
   production org)
-- `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a
+  - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a 
   similar definition in target org (can be useful for SharingRules for example)
 
   See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
 
-### Deployment plan
+  ### Deployment plan
 
   If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
 
-- If a file `manifest/package.xml` is found, it will be placed with order 0 in the deployment plan
+  - If a file `manifest/package.xml` is found, it will be placed with order 0 in the deployment plan
 
-- If a file `manifest/destructiveChanges.xml` is found, it will be executed as --postdestructivechanges
+  - If a file `manifest/destructiveChanges.xml` is found, it will be executed as --postdestructivechanges
 
-- If env var `SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES` is defined as `false` , split of package.xml will be applied
+  - If env var `SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES` is defined as `false` , split of package.xml will be applied
 
   Example:
 
@@ -2847,13 +2898,13 @@ DESCRIPTION
         waitAfter: 30
   ```
 
-### Packages installation
+  ### Packages installation
 
   You can define a list of package to install during deployments using property `installedPackages`
 
-- If `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` is defined as `true` (or `installPackagesDuringCheckDeploy: true` in
+  - If `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` is defined as `true` (or `installPackagesDuringCheckDeploy: true` in 
   `.sfdx-hardis.yml`), packages will be installed even if the command is called with `--check` mode
-- You can automatically update this property by listing all packages installed on an org using command `sfdx
+  - You can automatically update this property by listing all packages installed on an org using command `sfdx 
   hardis:org:retrieve:packageconfig`
 
   Example:
@@ -2883,11 +2934,11 @@ DESCRIPTION
       installDuringDeployments: true
   ```
 
-### Automated fixes post deployments
+  ### Automated fixes post deployments
 
-#### List view with scope Mine
+  #### List view with scope Mine
 
-  If you defined a property **listViewsToSetToMine** in your .sfdx-hardis.yml, related ListViews will be set to Mine (
+  If you defined a property **listViewsToSetToMine** in your .sfdx-hardis.yml, related ListViews will be set to Mine ( 
   see command <https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/> )
 
   Example:
@@ -2902,7 +2953,7 @@ DESCRIPTION
     - "Account:MyActivePartners"
   ```
 
-  Troubleshooting: if you need to fix ListViews with mine from an alpine-linux based docker image, use this workaround
+  Troubleshooting: if you need to fix ListViews with mine from an alpine-linux based docker image, use this workaround 
   in your dockerfile:
 
   ```dockerfile
@@ -2913,7 +2964,7 @@ DESCRIPTION
   ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
   ```
 
-  If you need to increase the deployment waiting time (force:source:deploy --wait arg), you can define env var
+  If you need to increase the deployment waiting time (force:source:deploy --wait arg), you can define env var 
   SFDX_DEPLOY_WAIT_MINUTES
 
 EXAMPLES
@@ -2921,7 +2972,7 @@ EXAMPLES
   $ sfdx hardis:project:deploy:sources:dx --check
 ```
 
-_See code: [lib/commands/hardis/project/deploy/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/deploy/sources/dx.js)_
+_See code: [lib/commands/hardis/project/deploy/sources/dx.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/deploy/sources/dx.js)_
 
 ## `sfdx hardis:project:deploy:sources:metadata [-c] [-x <string>] [-p <string>] [-f] [-k <string>] [-l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2929,8 +2980,8 @@ Deploy metadatas to source org
 
 ```
 USAGE
-  $ sfdx hardis:project:deploy:sources:metadata [-c] [-x <string>] [-p <string>] [-f] [-k <string>] [-l
-  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [--skipauth] [-u <string>]
+  $ sfdx hardis:project:deploy:sources:metadata [-c] [-x <string>] [-p <string>] [-f] [-k <string>] [-l 
+  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg] [-d] [--websocket <string>] [--skipauth] [-u <string>] 
   [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -2973,7 +3024,7 @@ EXAMPLE
   $ sfdx hardis:project:deploy:sources:metadata
 ```
 
-_See code: [lib/commands/hardis/project/deploy/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/deploy/sources/metadata.js)_
+_See code: [lib/commands/hardis/project/deploy/sources/metadata.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/deploy/sources/metadata.js)_
 
 ## `sfdx hardis:project:fix:v53flexipages [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -2981,7 +3032,7 @@ Fix flexipages for apiVersion v53 (Winter22).
 
 ```
 USAGE
-  $ sfdx hardis:project:fix:v53flexipages [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:fix:v53flexipages [-p <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3008,7 +3059,7 @@ EXAMPLE
   $ sfdx hardis:project:fix:v53flexipages
 ```
 
-_See code: [lib/commands/hardis/project/fix/v53flexipages.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/fix/v53flexipages.js)_
+_See code: [lib/commands/hardis/project/fix/v53flexipages.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/fix/v53flexipages.js)_
 
 ## `sfdx hardis:project:generate:gitdelta [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3016,8 +3067,8 @@ Generate package.xml git delta between 2 commits
 
 ```
 USAGE
-  $ sfdx hardis:project:generate:gitdelta [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d]
-  [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:generate:gitdelta [--branch <string>] [--fromcommit <string>] [--tocommit <string>] [-d] 
+  [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3041,7 +3092,7 @@ EXAMPLE
   $ sfdx hardis:project:generate:gitdelta
 ```
 
-_See code: [lib/commands/hardis/project/generate/gitdelta.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/generate/gitdelta.js)_
+_See code: [lib/commands/hardis/project/generate/gitdelta.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/generate/gitdelta.js)_
 
 ## `sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3049,7 +3100,7 @@ Apply syntactic analysis (linters) on the repository sources, using Mega-Linter
 
 ```
 USAGE
-  $ sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
+  $ sfdx hardis:project:lint [-f] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3078,7 +3129,7 @@ EXAMPLES
   $ sfdx hardis:project:lint --fix
 ```
 
-_See code: [lib/commands/hardis/project/lint.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/lint.js)_
+_See code: [lib/commands/hardis/project/lint.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/lint.js)_
 
 ## `sfdx hardis:project:metadata:findduplicates [-f <array>] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3086,7 +3137,7 @@ find duplicate values in XML file(s).
 
 ```
 USAGE
-  $ sfdx hardis:project:metadata:findduplicates [-f <array>] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:project:metadata:findduplicates [-f <array>] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3103,7 +3154,7 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  Find duplicate values in XML file(s). Keys to be checked can be configured in `config/sfdx-hardis.yml` using property
+  Find duplicate values in XML file(s). Keys to be checked can be configured in `config/sfdx-hardis.yml` using property 
   metadataDuplicateFindKeys.
 
   Default config :
@@ -3147,7 +3198,7 @@ EXAMPLES
     - Values : LastModifiedById, Name
 ```
 
-_See code: [lib/commands/hardis/project/metadata/findduplicates.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/project/metadata/findduplicates.js)_
+_See code: [lib/commands/hardis/project/metadata/findduplicates.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/project/metadata/findduplicates.js)_
 
 ## `sfdx hardis:scratch:create [-n] [-d] [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3155,7 +3206,7 @@ Create and initialize a scratch org or a source-tracked sandbox (config can be d
 
 ```
 USAGE
-  $ sfdx hardis:scratch:create [-n] [-d] [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
+  $ sfdx hardis:scratch:create [-n] [-d] [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3185,21 +3236,21 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-- **Install packages**
-  - Use property `installedPackages`
-- **Push sources**
-- **Assign permission sets**
-  - Use property `initPermissionSets`
-- **Run apex initialization scripts**
-  - Use property `scratchOrgInitApexScripts`
-- **Load data**
-  - Use property `dataPackages`
+  - **Install packages**
+    - Use property `installedPackages`
+  - **Push sources**
+  - **Assign permission sets**
+    - Use property `initPermissionSets`
+  - **Run apex initialization scripts**
+    - Use property `scratchOrgInitApexScripts`
+  - **Load data**
+    - Use property `dataPackages`
 
 EXAMPLE
   $ sfdx hardis:scratch:create
 ```
 
-_See code: [lib/commands/hardis/scratch/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/create.js)_
+_See code: [lib/commands/hardis/scratch/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/create.js)_
 
 ## `sfdx hardis:scratch:delete [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3207,7 +3258,7 @@ Assisted menu to delete scratch orgs associated to a DevHub
 
 ```
 USAGE
-  $ sfdx hardis:scratch:delete [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json]
+  $ sfdx hardis:scratch:delete [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3234,7 +3285,7 @@ EXAMPLE
   $ sfdx hardis:scratch:delete
 ```
 
-_See code: [lib/commands/hardis/scratch/delete.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/delete.js)_
+_See code: [lib/commands/hardis/scratch/delete.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/delete.js)_
 
 ## `sfdx hardis:scratch:pool:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3242,7 +3293,7 @@ Select a data storage service and configure information to build a scratch org p
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
+  $ sfdx hardis:scratch:pool:create [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3281,7 +3332,7 @@ EXAMPLE
   $ sfdx hardis:scratch:pool:configure
 ```
 
-_See code: [lib/commands/hardis/scratch/pool/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/pool/create.js)_
+_See code: [lib/commands/hardis/scratch/pool/create.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/pool/create.js)_
 
 ## `sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3289,7 +3340,7 @@ Calls the related storage service to request api keys and secrets that allows a 
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
+  $ sfdx hardis:scratch:pool:localauth [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3316,7 +3367,7 @@ EXAMPLE
   $ sfdx hardis:scratch:pool:localauth
 ```
 
-_See code: [lib/commands/hardis/scratch/pool/localauth.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/pool/localauth.js)_
+_See code: [lib/commands/hardis/scratch/pool/localauth.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/pool/localauth.js)_
 
 ## `sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3324,7 +3375,7 @@ Create enough scratch orgs to fill the pool
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
+  $ sfdx hardis:scratch:pool:refresh [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3351,7 +3402,7 @@ EXAMPLE
   $ sfdx hardis:scratch:pool:refresh
 ```
 
-_See code: [lib/commands/hardis/scratch/pool/refresh.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/pool/refresh.js)_
+_See code: [lib/commands/hardis/scratch/pool/refresh.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/pool/refresh.js)_
 
 ## `sfdx hardis:scratch:pool:reset [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3359,7 +3410,7 @@ Reset scratch org pool (delete all scratches in the pool)
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:reset [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
+  $ sfdx hardis:scratch:pool:reset [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3386,7 +3437,7 @@ EXAMPLE
   $ sfdx hardis:scratch:pool:refresh
 ```
 
-_See code: [lib/commands/hardis/scratch/pool/reset.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/pool/reset.js)_
+_See code: [lib/commands/hardis/scratch/pool/reset.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/pool/reset.js)_
 
 ## `sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3394,7 +3445,7 @@ Displays all stored content of project scratch org pool if defined
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>]
+  $ sfdx hardis:scratch:pool:view [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3421,7 +3472,7 @@ EXAMPLE
   $ sfdx hardis:scratch:pool:view
 ```
 
-_See code: [lib/commands/hardis/scratch/pool/view.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/pool/view.js)_
+_See code: [lib/commands/hardis/scratch/pool/view.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/pool/view.js)_
 
 ## `sfdx hardis:scratch:pull [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3429,7 +3480,7 @@ This commands pulls the updates you performed in your scratch or sandbox org, in
 
 ```
 USAGE
-  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json]
+  $ sfdx hardis:scratch:pull [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3453,16 +3504,16 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  Then, you probably want to stage and commit the files containing the updates you want to keep, as explained in this
+  Then, you probably want to stage and commit the files containing the updates you want to keep, as explained in this 
   video.
 
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player"
-  frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" 
+  frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
   allowfullscreen></iframe>
 
-- Calls sfdx force:source:pull under the hood
-- If there are errors, proposes to automatically add erroneous item in `.forceignore`, then pull again
-- If you want to always retrieve sources like CustomApplication that are not always detected as updates by
+  - Calls sfdx force:source:pull under the hood
+  - If there are errors, proposes to automatically add erroneous item in `.forceignore`, then pull again
+  - If you want to always retrieve sources like CustomApplication that are not always detected as updates by 
   force:source:pull , you can define property **autoRetrieveWhenPull** in .sfdx-hardis.yml
 
   Example:
@@ -3477,7 +3528,7 @@ EXAMPLE
   $ sfdx hardis:scratch:pull
 ```
 
-_See code: [lib/commands/hardis/scratch/pull.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/pull.js)_
+_See code: [lib/commands/hardis/scratch/pull.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/pull.js)_
 
 ## `sfdx hardis:scratch:push [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3485,7 +3536,7 @@ Push local files to scratch org
 
 ```
 USAGE
-  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json]
+  $ sfdx hardis:scratch:push [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3515,7 +3566,7 @@ EXAMPLE
   $ sfdx hardis:scratch:push
 ```
 
-_See code: [lib/commands/hardis/scratch/push.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/scratch/push.js)_
+_See code: [lib/commands/hardis/scratch/push.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/scratch/push.js)_
 
 ## `sfdx hardis:source:deploy [--soapdeploy] [-w <minutes>] [--predestructivechanges <filepath> ] [--postdestructivechanges <filepath> ] [-f [-t |  | [-q <id> | -x <filepath> | -m <array> | -p <array> | -c | -l NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g]]] [--resultsdir <directory>] [--coverageformatters <array>] [--junit] [--checkcoverage] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>] [--verbose] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3523,11 +3574,11 @@ sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve dep
 
 ```
 USAGE
-  $ sfdx hardis:source:deploy [--soapdeploy] [-w <minutes>] [--predestructivechanges <filepath> ]
-  [--postdestructivechanges <filepath> ] [-f [-t |  | [-q <id> | -x <filepath> | -m <array> | -p <array> | -c | -l
-  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g]]] [--resultsdir <directory>]
-  [--coverageformatters <array>] [--junit] [--checkcoverage] [--debug] [--websocket <string>] [-u <string>]
-  [--apiversion <string>] [--verbose] [--json] [--loglevel
+  $ sfdx hardis:source:deploy [--soapdeploy] [-w <minutes>] [--predestructivechanges <filepath> ] 
+  [--postdestructivechanges <filepath> ] [-f [-t |  | [-q <id> | -x <filepath> | -m <array> | -p <array> | -c | -l 
+  NoTestRun|RunSpecifiedTests|RunLocalTests|RunAllTestsInOrg | -r <array> | -o | -g]]] [--resultsdir <directory>] 
+  [--coverageformatters <array>] [--junit] [--checkcoverage] [--debug] [--websocket <string>] [-u <string>] 
+  [--apiversion <string>] [--verbose] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3578,38 +3629,38 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  Additional to the base command wrapper: If using **--checkonly**, add options **--checkcoverage** and
-  **--coverageformatters json-summary** to check that org coverage is > 75% (or value defined in .sfdx-hardis.yml
+  Additional to the base command wrapper: If using **--checkonly**, add options **--checkcoverage** and 
+  **--coverageformatters json-summary** to check that org coverage is > 75% (or value defined in .sfdx-hardis.yml 
   property **apexTestsMinCoverageOrgWide**)
 
   You can also have deployment results as pull request comments, on:
 
-- GitHub (see [GitHub Pull Requests comments
+  - GitHub (see [GitHub Pull Requests comments 
   config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/))
-- Gitlab (see [Gitlab integration
+  - Gitlab (see [Gitlab integration 
   configuration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/))
-- Azure DevOps (see [Azure integration
+  - Azure DevOps (see [Azure integration 
   configuration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/))
 
 
-  [![Assisted solving of Salesforce deployments
+  [![Assisted solving of Salesforce deployments 
   errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
   s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
   Notes:
 
-- You can disable coloring of errors in red by defining env variable SFDX_HARDIS_DEPLOY_ERR_COLORS=false
+  - You can disable coloring of errors in red by defining env variable SFDX_HARDIS_DEPLOY_ERR_COLORS=false
 
   [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
   dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
 
 EXAMPLE
-  $ sfdx hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests
-  --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername nicolas.vuillamy@cloudity.com.sfdxhardis
+  $ sfdx hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests 
+  --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername nicolas.vuillamy@cloudity.com.sfdxhardis 
   --checkonly --checkcoverage --verbose --coverageformatters json-summary
 ```
 
-_See code: [lib/commands/hardis/source/deploy.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/source/deploy.js)_
+_See code: [lib/commands/hardis/source/deploy.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/source/deploy.js)_
 
 ## `sfdx hardis:source:push [-f] [-w <minutes>] [-g] [--debug] [--websocket <string>] [-u <string>] [--apiversion <string>] [--quiet] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3617,7 +3668,7 @@ sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deplo
 
 ```
 USAGE
-  $ sfdx hardis:source:push [-f] [-w <minutes>] [-g] [--debug] [--websocket <string>] [-u <string>] [--apiversion
+  $ sfdx hardis:source:push [-f] [-w <minutes>] [-g] [--debug] [--websocket <string>] [-u <string>] [--apiversion 
   <string>] [--quiet] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3644,7 +3695,7 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-  [![Assisted solving of Salesforce deployments
+  [![Assisted solving of Salesforce deployments 
   errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](http
   s://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
@@ -3652,7 +3703,7 @@ DESCRIPTION
   dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)
 ```
 
-_See code: [lib/commands/hardis/source/push.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/source/push.js)_
+_See code: [lib/commands/hardis/source/push.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/source/push.js)_
 
 ## `sfdx hardis:source:retrieve [-p <array> | -x <filepath> | -m <array>] [-w <minutes>] [-n <array>] [-f -t] [-d] [--websocket <string>] [--skipauth] [-u <string>] [-a <string>] [--verbose] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3660,8 +3711,8 @@ sfdx-hardis wrapper for sfdx force:source:retrieve
 
 ```
 USAGE
-  $ sfdx hardis:source:retrieve [-p <array> | -x <filepath> | -m <array>] [-w <minutes>] [-n <array>] [-f -t] [-d]
-  [--websocket <string>] [--skipauth] [-u <string>] [-a <string>] [--verbose] [--json] [--loglevel
+  $ sfdx hardis:source:retrieve [-p <array> | -x <filepath> | -m <array>] [-w <minutes>] [-n <array>] [-f -t] [-d] 
+  [--websocket <string>] [--skipauth] [-u <string>] [-a <string>] [--verbose] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3700,14 +3751,14 @@ OPTIONS
   --websocket=websocket                                                             websocket
 
 DESCRIPTION
-- If no retrieve constraint is sent, as assisted menu will request the list of metadatas to retrieve
-- If no org is selected , an assisted menu will request the user to choose one
+  - If no retrieve constraint is sent, as assisted menu will request the list of metadatas to retrieve
+  - If no org is selected , an assisted menu will request the user to choose one
 
   [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sf
   dx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_retrieve)
 ```
 
-_See code: [lib/commands/hardis/source/retrieve.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/source/retrieve.js)_
+_See code: [lib/commands/hardis/source/retrieve.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/source/retrieve.js)_
 
 ## `sfdx hardis:work:new [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3715,7 +3766,7 @@ Assisted menu to start working on a Salesforce task.
 
 ```
 USAGE
-  $ sfdx hardis:work:new [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json]
+  $ sfdx hardis:work:new [-d] [--websocket <string>] [--skipauth] [-v <string>] [--apiversion <string>] [--json] 
   [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3739,34 +3790,34 @@ OPTIONS
                                                                                     Hardis UI integration
 
 DESCRIPTION
-  Advanced instructions in [Create New Task
+  Advanced instructions in [Create New Task 
   documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
 
   At the end of the command, it will allow you to work on either a scratch org or a sandbox, depending on your choices.
 
   Under the hood, it can:
 
-- Make **git pull** to be up to date with target branch
-- Create **new git branch** with formatted name (you can override the choices using .sfdx-hardis.yml property
+  - Make **git pull** to be up to date with target branch
+  - Create **new git branch** with formatted name (you can override the choices using .sfdx-hardis.yml property 
   **branchPrefixChoices**)
-- Create and initialize a scratch org or a source-tracked sandbox (config can be defined using
+  - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using 
   `config/.sfdx-hardis.yml`):
-- (and for scratch org only for now):
-  - **Install packages**
-    - Use property `installedPackages`
-    - **Push sources**
-    - **Assign permission sets**
-      - Use property `initPermissionSets`
-    - **Run apex initialization scripts**
-      - Use property `scratchOrgInitApexScripts`
-    - **Load data**
-      - Use property `dataPackages`
+  - (and for scratch org only for now):
+    - **Install packages**
+        - Use property `installedPackages`
+      - **Push sources**
+      - **Assign permission sets**
+        - Use property `initPermissionSets`
+      - **Run apex initialization scripts**
+        - Use property `scratchOrgInitApexScripts`
+      - **Load data**
+        - Use property `dataPackages`
 
 EXAMPLE
   $ sfdx hardis:work:task:new
 ```
 
-_See code: [lib/commands/hardis/work/new.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/work/new.js)_
+_See code: [lib/commands/hardis/work/new.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/work/new.js)_
 
 ## `sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3774,7 +3825,7 @@ Make my local branch and my scratch org up to date with the most recent sources
 
 ```
 USAGE
-  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
+  $ sfdx hardis:work:refresh [-n] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3804,7 +3855,7 @@ EXAMPLE
   $ sfdx hardis:work:refresh
 ```
 
-_See code: [lib/commands/hardis/work/refresh.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/work/refresh.js)_
+_See code: [lib/commands/hardis/work/refresh.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/work/refresh.js)_
 
 ## `sfdx hardis:work:resetselection [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3812,7 +3863,7 @@ Resets the selection that we want to add in the merge request
 
 ```
 USAGE
-  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>]
+  $ sfdx hardis:work:resetselection [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] 
   [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3842,7 +3893,7 @@ EXAMPLE
   $ sfdx hardis:work:resetsave
 ```
 
-_See code: [lib/commands/hardis/work/resetselection.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/work/resetselection.js)_
+_See code: [lib/commands/hardis/work/resetselection.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/work/resetselection.js)_
 
 ## `sfdx hardis:work:save [-n] [-g] [-c] [--auto] [--targetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u <string>] [--apiversion <string>] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3851,7 +3902,7 @@ When a work task is completed, guide user to create a merge request
 ```
 USAGE
   $ sfdx hardis:work:save [-n] [-g] [-c] [--auto] [--targetbranch <string>] [-d] [--websocket <string>] [--skipauth] [-u
-   <string>] [--apiversion <string>] [--json] [--loglevel
+   <string>] [--apiversion <string>] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3887,12 +3938,12 @@ OPTIONS
 DESCRIPTION
   Advanced instructions in [Publish a task](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
 
-- Generate package-xml diff using sfdx-git-delta
-- Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
-- Automatically Clean XML files using `.sfdx-hardis.yml` properties
-  - `autocleantypes`: List of auto-performed sources cleanings, available on command
+  - Generate package-xml diff using sfdx-git-delta
+  - Automatically update `manifest/package.xml` and `manifest/destructiveChanges.xml` according to the committed updates
+  - Automatically Clean XML files using `.sfdx-hardis.yml` properties
+    - `autocleantypes`: List of auto-performed sources cleanings, available on command 
   [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/)
-  - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
+    - `autoRemoveUserPermissions`: List of userPermission to automatically remove from profile metadatas
 
   Example:
 
@@ -3914,14 +3965,14 @@ DESCRIPTION
     - WorkCalibrationUser
   ```
 
-- Push commit to server
+  - Push commit to server
 
 EXAMPLES
   $ sfdx hardis:work:task:save
   $ sfdx hardis:work:task:save --nopull --nogit --noclean
 ```
 
-_See code: [lib/commands/hardis/work/save.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/work/save.js)_
+_See code: [lib/commands/hardis/work/save.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/work/save.js)_
 
 ## `sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]`
 
@@ -3929,7 +3980,7 @@ Technical calls to WebSocket functions
 
 ```
 USAGE
-  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel
+  $ sfdx hardis:work:ws [-e <string>] [-d] [--websocket <string>] [--skipauth] [--json] [--loglevel 
   trace|debug|info|warn|error|fatal|TRACE|DEBUG|INFO|WARN|ERROR|FATAL]
 
 OPTIONS
@@ -3950,5 +4001,5 @@ EXAMPLE
   $ sfdx hardis:work:ws --event refreshStatus
 ```
 
-_See code: [lib/commands/hardis/work/ws.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.11.0/lib/commands/hardis/work/ws.js)_
+_See code: [lib/commands/hardis/work/ws.js](https://github.com/hardisgroupcom/sfdx-hardis/blob/v4.12.0/lib/commands/hardis/work/ws.js)_
 <!-- commandsstop -->
