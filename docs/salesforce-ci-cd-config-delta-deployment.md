@@ -8,6 +8,8 @@ description: Learn how to configure Delta Deployments using sfdx-git-delta on a 
   - [Full mode](#full-mode)
   - [Delta mode](#delta-mode)
 - [Configuration](#configuration)
+  - [Base](#base)
+  - [Advanced](#advanced)
 
 ___
 
@@ -53,6 +55,8 @@ ___
 
 ## Configuration
 
+### Base
+
 To activate delta deployments,you can:
 
 - define `useDeltaDeployment: true` in **config/.sfdx-hardis.yml**
@@ -63,3 +67,13 @@ In case of temporary deactivation of delta deployments, you can set variable `DI
 > 💡If your sfdx-hardis installation is from before 4.10.0, you might need to update your CI/CD workflows
 >
 > Check updated versions in [sfdx-hardis sources](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/defaults/ci)
+
+It is recommended to use opinionated default sfdx-hardis delta deployment configuration, but if you want to tweak the config you can use the following variables:
+
+### Advanced
+
+- USE_DELTA_DEPLOYMENT_AFTER_MERGE
+  - By default, after a merge sfdx-hardis will try to use [QuickDeploy](salesforce-ci-cd-setup-integrations-home.md#git-providers). If not available, it will perform a full deployment. If you want to use a delta deployment anyway, define `USE_DELTA_DEPLOYMENT_AFTER_MERGE=true`
+
+- ALWAYS_ENABLE_DELTA_DEPLOYMENT
+  - By default, delta deployment is allowed only from minor to major branches. You can force it for PR/MRs between major branches by defining variable `ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`
