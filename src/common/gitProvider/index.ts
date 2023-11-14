@@ -25,7 +25,7 @@ export abstract class GitProvider {
     }
     // Gitlab
     else if (process.env.CI_JOB_TOKEN) {
-      const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || null;
+      const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || null;
       if (token == null) {
         uxLog(
           this,

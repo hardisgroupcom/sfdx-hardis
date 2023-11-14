@@ -12,7 +12,7 @@ export class GitlabProvider extends GitProviderRoot {
     // Gitlab URL is always provided by default CI variables
     this.serverUrl = process.env.CI_SERVER_URL;
     // It's better to have a project token defined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
-    this.token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN;
+    this.token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN;
     this.gitlabApi = new Gitlab({ host: this.serverUrl, token: this.token });
   }
 

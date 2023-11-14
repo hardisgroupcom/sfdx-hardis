@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.12.0] 2023-11-14
+
+- New command **sfdx hardis:org:diagnose:audittrail** to detect suspect actions in major orgs
+  - Run by default in org monitoring
+- Fix notifications bulletpoints
+- Fix Gitlab provider token collections when in monitoring mode
+
 ## [4.11.0] 2023-11-14
 
 - If QuickDeploy failed, by default do not use delta for a deployment after a merge between a minor and a major branch
