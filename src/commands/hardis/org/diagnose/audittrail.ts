@@ -84,12 +84,17 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       "Certificate and Key Management": [
         "insertCertificate"
       ],
+      "Groups": [
+        "groupMembership"
+      ],
       "Manage Users": [
         "createduser",
         "changedpassword",
         "changedUserEmailVerifiedStatusVerified",
         "PermSetAssign",
-        "resetpassword"
+        "resetpassword",
+        "suOrgAdminLogin",
+        "suOrgAdminLogout"
       ]
     };
     this.outputFile = this.flags.outputfile || null;
@@ -149,7 +154,9 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       msg = `${suspectRecords.length} suspect Setup Audit Trail records has been found`;
       uxLog(this, c.yellow(msg));
       suspectUsers = [...new Set(suspectUsers)];
+      suspectUsers.sort();
       suspectActions = [...new Set(suspectActions)];
+      suspectActions.sort();
       uxLog(this,"");
       uxLog(this, c.yellow("Related users:"));
       for (const user of suspectUsers) {
