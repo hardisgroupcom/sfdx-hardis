@@ -26,6 +26,8 @@ Example:
 monitoringCommands:
   - title: Detect calls to deprecated API versions
     command: sfdx hardis:org:diagnose:legacyapi
+  - title: Detect suspect setup actions in major orgs
+    command: sfdx hardis:org:diagnose:audittrail
   - title: My Custom command
     command: sfdx my:custom:command
 \`\`\`
@@ -72,7 +74,10 @@ monitoringCommands:
     // Build target org full manifest
     uxLog(this, c.cyan("Running monitoring scripts for org " + c.bold(this.org.getConnection().instanceUrl)) + " ...");
 
-    const monitoringCommandsDefault = [{ title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" }];
+    const monitoringCommandsDefault = [
+      { title: "Detect suspect setup actions in major org", command: "sfdx hardis:org:diagnose:audittrail" },
+      { title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" }
+    ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;
 

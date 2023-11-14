@@ -26,7 +26,10 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
   public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions`;
 
   public static examples = [
-    "$ sfdx hardis:org:diagnose:audittrail"
+    "$ sfdx hardis:org:diagnose:audittrail",
+    "$ sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com",
+    "$ sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com",
+    "$ sfdx hardis:org:diagnose:audittrail --lastndays 5"
   ];
 
   protected static flagsConfig = {
