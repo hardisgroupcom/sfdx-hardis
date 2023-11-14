@@ -195,12 +195,12 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       let notifDetailText = ``
       notifDetailText += "Related users:\n";
       for (const user of suspectUsers) {
-        notifDetailText += `- ${user}\n`;
+        notifDetailText += `* ${user}\n`;
       }
       notifDetailText += "\n"
       notifDetailText += "Related actions:\n";
       for (const action of suspectActions) {
-        notifDetailText +=`- ${action}`;
+        notifDetailText +=`* ${action}\n`;
       }
       notifDetailText += "\n"
       notifDetailText += "_See details in job artifacts_"

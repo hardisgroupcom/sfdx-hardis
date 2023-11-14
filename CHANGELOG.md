@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New command **sfdx hardis:org:diagnose:audittrail** to detect suspect actions in major orgs
   - Run by default in org monitoring
+- Fix notifications bulletpoints
 
 ## [4.11.0] 2023-11-14
 
