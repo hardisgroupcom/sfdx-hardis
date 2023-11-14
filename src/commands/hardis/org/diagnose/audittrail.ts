@@ -204,7 +204,6 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       for (const user of suspectUsers) {
         notifDetailText += `* ${user}\n`;
       }
-      /* jscpd:ignore-start */
       notifDetailText += "\n"
       notifDetailText += "Related actions:\n";
       for (const action of suspectActions) {
@@ -212,7 +211,6 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       }
       notifDetailText += "\n";
       notifDetailText += "_See details in job artifacts_";
-      /* jscpd:ignore-stop */
       const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
       const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
       const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
