@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.11.0] 2023-11-14
+
+- If QuickDeploy failed, by default do not use delta for a deployment after a merge between a minor and a major branch
+- Allow to tweak delta deployments configuration (but it's really better to use default opinionated default config !)
+
 ## [4.10.3] 2023-11-12
 
 - Allow to configure monitoring on deployment repositories (Fix [#477](https://github.com/hardisgroupcom/sfdx-hardis/issues/477))
