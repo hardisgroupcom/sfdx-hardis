@@ -21,7 +21,7 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class DiagnoseAuditTrail extends SfdxCommand {
-  public static title = "Filtered extract content of Setup Audit Trail";
+  public static title = "Diagnose content of Setup Audit Trail";
 
   public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions`;
 
@@ -75,7 +75,7 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
-    this.excludeUsers = (this.flags.excludeusers || "").split(",");
+    this.excludeUsers = this.flags.excludeusers ? this.flags.excludeusers.split(",") : [];
     this.lastNdays = this.flags.lastndays || 1;
     this.allowedSectionsActions = {
       "Certificate and Key Management": [
@@ -117,6 +117,8 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
     uxLog(this, c.grey("Query: " + c.italic(auditTrailQuery)));
     const queryRes = await bulkQuery(auditTrailQuery, conn);
     const suspectRecords = [];
+    let suspectUsers = [];
+    let suspectActions = [];
     const auditTrailRecords = queryRes.records.map(record => {
       record.Suspect = false;
       // Unallowed actions
@@ -128,6 +130,8 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
         record.Suspect = true;
         record.SuspectReason = `Manual config in unallowed section ${record.Section} with action ${record.Action}`;
         suspectRecords.push(record);
+        suspectUsers.push(record["CreatedBy.Username"]);
+        suspectActions.push(`${record.Section} - ${record.Action}`);
         return record;
       }
       return record;
@@ -137,8 +141,23 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
     let msg = "No suspect Setup Audit Trail records has been found";
     if (suspectRecords.length > 0) {
       statusCode = 1;
+      uxLog(this, c.yellow("Suspect records list"));
+      uxLog(this, JSON.stringify(suspectRecords, null, 2));
       msg = `${suspectRecords.length} suspect Setup Audit Trail records has been found`;
-      uxLog(this, c.red(msg));
+      uxLog(this, c.yellow(msg));
+      suspectUsers = [...new Set(suspectUsers)];
+      suspectActions = [...new Set(suspectActions)];
+      uxLog(this,"");
+      uxLog(this, c.yellow("Related users:"));
+      for (const user of suspectUsers) {
+        uxLog(this, c.yellow(`- ${user}`));
+      }
+      uxLog(this,"");
+      uxLog(this, c.yellow("Related actions:"));
+      for (const action of suspectActions) {
+        uxLog(this, c.yellow(`- ${action}`));
+      }
+      uxLog(this,"");
     }
     else {
       uxLog(this, c.green(msg));
@@ -159,6 +178,7 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       const csvText = Papa.unparse(auditTrailRecords);
       await fs.writeFile(this.outputFile, csvText, "utf8");
       uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(this.outputFile)}`)));
+      uxLog(this, c.italic(c.cyan(`Filter by column "Suspect"`)));
       // Trigger command to open CSV file in VsCode extension
       WebSocketClient.requestOpenFile(this.outputFile);
     } catch (e) {
@@ -166,9 +186,21 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       this.outputFile = null;
     }
 
-    const notifDetailText = ``
+
     // Manage notifications
     if (suspectRecords.length > 0) {
+      let notifDetailText = ``
+      notifDetailText += "Related users:\n";
+      for (const user of suspectUsers) {
+        notifDetailText += `- ${user}\n`;
+      }
+      notifDetailText += "\n"
+      notifDetailText += "Related actions:\n";
+      for (const action of suspectActions) {
+        notifDetailText +=`- ${action}`;
+      }
+      notifDetailText += "\n"
+      notifDetailText += "_See details in job artifacts_"
       const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
       const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
       const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
@@ -178,10 +210,10 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
         notifButtons.push({ text: "View Job", url: jobUrl });
       }
       NotifProvider.postNotifications({
-        text: `Deprecated Salesforce API versions are used in ${linkMarkdown}`,
+        text: `${suspectRecords.length} suspect Setup Audit Trail records has been found in ${linkMarkdown}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
-        severity: "error",
+        severity: "warning",
       });
     }
 
@@ -193,6 +225,8 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
     return {
       status: statusCode,
       message: msg,
+      suspectRecords: suspectRecords,
+      suspectUsers: suspectUsers,
       csvLogFile: this.outputFile
     };
   }
