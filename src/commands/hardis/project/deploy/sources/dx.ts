@@ -417,8 +417,11 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       return false;
     }
     if (this.checkOnly === false && !(process.env?.USE_DELTA_DEPLOYMENT_AFTER_MERGE === "true")) {
-      uxLog(this,c.yellow("We'll try to deploy using Quick Deployment feature. If not available, it's safer to use full deployment for a merge job."));
-      uxLog(this,c.yellow("If you want to use delta deployment anyway, define env variable USE_DELTA_DEPLOYMENT_AFTER_MERGE=true"));
+      uxLog(
+        this,
+        c.yellow("We'll try to deploy using Quick Deployment feature. If not available, it's safer to use full deployment for a merge job."),
+      );
+      uxLog(this, c.yellow("If you want to use delta deployment anyway, define env variable USE_DELTA_DEPLOYMENT_AFTER_MERGE=true"));
       return false;
     }
     if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === "true") {
