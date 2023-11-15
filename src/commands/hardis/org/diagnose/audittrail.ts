@@ -169,8 +169,8 @@ monitoringExcludeUsernames:
       whereConstraint += ` AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
 
-    uxLog(this,c.cyan(`Excluded users are ${this.excludeUsers.join(",") || "None"}`));
-    uxLog(this,c.cyan(`Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`));
+    uxLog(this, c.cyan(`Excluded users are ${this.excludeUsers.join(",") || "None"}`));
+    uxLog(this, c.cyan(`Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`));
 
     // Fetch SetupAuditTrail records
     const auditTrailQuery =
