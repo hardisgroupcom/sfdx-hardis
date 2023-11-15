@@ -6,12 +6,13 @@ import * as fs from "fs-extra";
 import * as c from "chalk";
 import * as Papa from "papaparse";
 import path = require("path");
-import { getCurrentGitBranch, uxLog } from "../../../../common/utils";
+import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import { bulkQuery } from "../../../../common/utils/apiUtils";
 import { getConfig, getReportDirectory } from "../../../../config";
 import { WebSocketClient } from "../../../../common/websocketClient";
 import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
 import { GitProvider } from "../../../../common/gitProvider";
+import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -24,6 +25,20 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
   public static title = "Diagnose content of Setup Audit Trail";
 
   public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
+
+Regular setup actions performed in major orgs are filtered.
+
+- Certificate and Key Management
+- Groups
+  - groupMembership
+- Manage Users
+  - createduser
+  - changedpassword
+  - changedUserEmailVerifiedStatusVerified
+  - PermSetAssign
+  - resetpassword
+  - suOrgAdminLogin
+  - suOrgAdminLogout
 
 By default, deployment user defined in .sfdx-hardis.yml targetUsername property will be excluded.
 
@@ -51,7 +66,7 @@ monitoringExcludeUsernames:
       char: "e",
       description: "Comma-separated list of usernames to exclude",
     }),
-    lastndays: flags.string({
+    lastndays: flags.number({
       char: "t",
       description: "Number of days to extract from today (included)",
     }),
@@ -82,7 +97,7 @@ monitoringExcludeUsernames:
   protected static requiresProject = false;
 
   protected excludeUsers = [];
-  protected lastNdays = 1;
+  protected lastNdays: number;
   protected allowedSectionsActions = {};
   protected debugMode = false;
 
@@ -93,7 +108,7 @@ monitoringExcludeUsernames:
   public async run(): Promise<AnyJson> {
     this.debugMode = this.flags.debug || false;
     this.excludeUsers = this.flags.excludeusers ? this.flags.excludeusers.split(",") : [];
-    this.lastNdays = this.flags.lastndays || 1;
+    this.lastNdays = this.flags.lastndays;
     this.allowedSectionsActions = {
       "Certificate and Key Management": ["insertCertificate"],
       Groups: ["groupMembership"],
@@ -108,6 +123,33 @@ monitoringExcludeUsernames:
       ],
     };
     this.outputFile = this.flags.outputfile || null;
+
+    // If manual mode and lastndays not sent as parameter, prompt user
+    if (!isCI && !this.lastNdays) {
+      const lastNdaysResponse = await prompts({
+        type: "select",
+        name: "lastndays",
+        message: "Please select the number of days in the past from today you want to detect suspiscious setup activities",
+        choices: [
+          { title: `1`, value: 1 },
+          { title: `2`, value: 2 },
+          { title: `3`, value: 3 },
+          { title: `4`, value: 4 },
+          { title: `5`, value: 5 },
+          { title: `6`, value: 6 },
+          { title: `7`, value: 7 },
+          { title: `14`, value: 14 },
+          { title: `30`, value: 30 },
+          { title: `60`, value: 60 },
+          { title: `90`, value: 90 },
+          { title: `180`, value: 180 },
+        ],
+      });
+      this.lastNdays = lastNdaysResponse.lastndays;
+    } else {
+      this.lastNdays = 1;
+    }
+
     const conn = this.org.getConnection();
 
     uxLog(this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`));
@@ -126,6 +168,9 @@ monitoringExcludeUsernames:
     if (this.excludeUsers.length > 0) {
       whereConstraint += ` AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
+
+    uxLog(this,c.cyan(`Excluded users are ${this.excludeUsers.join(",") || "None"}`));
+    uxLog(this,c.cyan(`Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`));
 
     // Fetch SetupAuditTrail records
     const auditTrailQuery =
