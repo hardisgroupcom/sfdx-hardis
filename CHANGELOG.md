@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.12.2] 2023-11-15
+
+- Add user prompts for setup audit trail monitoring in interactive mode
+
 ## [4.12.1] 2023-11-15
 
 - Allow to exclude more usernames from monitoring using .sfdx-hardis.yml property **monitoringExcludeUsernames**
