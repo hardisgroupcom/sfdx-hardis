@@ -678,6 +678,16 @@
       "title": "Monitoring commands",
       "type": "array"
     },
+    "monitoringExcludeUsernames": {
+      "$id": "#/properties/monitoringExcludeUsernames",
+      "description": "List of usernames to exclude while running monitoring commands",
+      "examples": [["deploymentuser@cloudity.com", "mc-cloud-user@cloudity.com"]],
+      "items": {
+        "type": "string"
+      },
+      "title": "Monitoring usernames to exclude",
+      "type": "array"
+    },
     "msTeamsWebhookUrl": {
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",
