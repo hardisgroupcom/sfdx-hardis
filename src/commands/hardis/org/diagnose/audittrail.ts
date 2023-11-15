@@ -23,7 +23,21 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class DiagnoseAuditTrail extends SfdxCommand {
   public static title = "Diagnose content of Setup Audit Trail";
 
-  public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions`;
+  public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
+
+By default, deployment user defined in .sfdx-hardis.yml targetUsername property will be excluded.
+
+You can define additional users to exclude in .sfdx-hardis.yml monitoringExcludeUsernames property.
+
+Example:
+
+\`\`\`yaml
+monitoringExcludeUsernames:
+  - deploymentuser@cloudity.com
+  - marketingcloud@cloudity.com
+  - integration-user@cloudity.com
+\`\`\`
+  `;
 
   public static examples = [
     "$ sfdx hardis:org:diagnose:audittrail",
@@ -103,6 +117,9 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
       const config = await getConfig("branch");
       if (config.targetUsername) {
         this.excludeUsers.push(config.targetUsername);
+      }
+      if (config.monitoringExcludeUsernames) {
+        this.excludeUsers.push(...config.monitoringExcludeUsernames);
       }
     }
     let whereConstraint = `WHERE CreatedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND CreatedBy.Username != NULL`;
