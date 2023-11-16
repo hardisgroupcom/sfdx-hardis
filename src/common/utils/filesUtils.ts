@@ -221,10 +221,13 @@ export class FilesExporter {
     this.totalSoqlRequests++;
     const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
 
-    // ContentDocument object can be linked to multiple other objects 
-    // and ContentVersion soql can return less results than there is ContentDocumentLink objects to link
+    // ContentDocument object can be linked to multiple other objects even with same type
+    // for example: same document can be linked to multiple EmailMessage objects
+    // because of this when we fetch ContentVersion for COntent document it can return 
+    // less results than there is ContentDocumentLink objects to link
     // to fix this we create a list of ContentVersion and ContentDocumentLink pairs
     // this way even when when we have two links to same ContentDocumnet object we will have two pairs
+    // and we will download content versions for both linked objects
     const versionsAndLinks = []
     contentVersions.records.forEach(contentVersion => {
       contentDocumentLinks.records.forEach(contentDocumentLink => {
@@ -240,9 +243,9 @@ export class FilesExporter {
     // Download files
     await PromisePool.withConcurrency(5)
       .for(versionsAndLinks)
-      .process(async (versionToLink: any) => {
+      .process(async (versionAndLink: any) => {
         try {
-          await this.downloadContentVersionFile(versionToLink.contentVersion, records, versionToLink.contentDocumentLink);
+          await this.downloadContentVersionFile(versionAndLink.contentVersion, records, versionAndLink.contentDocumentLink);
         } catch (e) {
           this.filesErrors++;
           uxLog(this, c.red("Download file error: " + contentVersion.Title + "\n" + e));
