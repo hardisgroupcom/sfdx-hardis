@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.12.3] 2023-11-16
+
+- Monitoring: Update default package-skip-items.xml
+
 ## [4.12.2] 2023-11-15
 
 - Add user prompts for setup audit trail monitoring in interactive mode
