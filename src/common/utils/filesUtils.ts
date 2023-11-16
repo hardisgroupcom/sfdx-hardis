@@ -245,7 +245,7 @@ export class FilesExporter {
           await this.downloadContentVersionFile(versionAndLink.contentVersion, records, versionAndLink.contentDocumentLink);
         } catch (e) {
           this.filesErrors++;
-          uxLog(this, c.red("Download file error: " + contentVersion.Title + "\n" + e));
+          uxLog(this, c.red("Download file error: " + versionAndLink.contentVersion.Title + "\n" + e));
         }
       });
   }
