@@ -221,13 +221,10 @@ export class FilesExporter {
     this.totalSoqlRequests++;
     const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
 
-    // ContentDocument object can be linked to multiple other objects even with same type
-    // for example: same document can be linked to multiple EmailMessage objects
-    // because of this when we fetch ContentVersion for COntent document it can return 
-    // less results than there is ContentDocumentLink objects to link
-    // to fix this we create a list of ContentVersion and ContentDocumentLink pairs
-    // this way even when when we have two links to same ContentDocumnet object we will have two pairs
-    // and we will download content versions for both linked objects
+    // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
+    // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
+    // To fix this we create a list of ContentVersion and ContentDocumentLink pairs. 
+    // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
     const versionsAndLinks = []
     contentVersions.records.forEach(contentVersion => {
       contentDocumentLinks.records.forEach(contentDocumentLink => {
