@@ -221,12 +221,28 @@ export class FilesExporter {
     this.totalSoqlRequests++;
     const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
 
+    // ContentDocument object can be linked to multiple other objects 
+    // and ContentVersion soql can return less results than there is ContentDocumentLink objects to link
+    // to fix this we create a list of ContentVersion and ContentDocumentLink pairs
+    // this way even when when we have two links to same ContentDocumnet object we will have two pairs
+    const versionsAndLinks = []
+    contentVersions.records.forEach(contentVersion => {
+      contentDocumentLinks.records.forEach(contentDocumentLink => {
+        if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
+          versionsAndLinks.push({
+            contentVersion: contentVersion,
+            contentDocumentLink: contentDocumentLink,
+          });
+        }
+      });
+    });
+
     // Download files
     await PromisePool.withConcurrency(5)
-      .for(contentVersions.records)
-      .process(async (contentVersion: any) => {
+      .for(versionsAndLinks)
+      .process(async (versionToLink: any) => {
         try {
-          await this.downloadContentVersionFile(contentVersion, records, contentDocumentLinks.records);
+          await this.downloadContentVersionFile(versionToLink.contentVersion, records, versionToLink.contentDocumentLink);
         } catch (e) {
           this.filesErrors++;
           uxLog(this, c.red("Download file error: " + contentVersion.Title + "\n" + e));
@@ -234,11 +250,8 @@ export class FilesExporter {
       });
   }
 
-  private async downloadContentVersionFile(contentVersion, records, contentDocumentLinks) {
+  private async downloadContentVersionFile(contentVersion, records, contentDocumentLink) {
     // Retrieve initial record to build output files folder name
-    const contentDocumentLink = contentDocumentLinks.filter(
-      (contentDocumentLink) => contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId,
-    )[0];
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
     const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(/[/\\?%*:|"<>]/g, "-");
