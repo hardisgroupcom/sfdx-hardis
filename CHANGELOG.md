@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- **hardis:files:export** : Make the command compliant with Email attachments
+
 ## [4.12.2] 2023-11-15
 
 - Add user prompts for setup audit trail monitoring in interactive mode
