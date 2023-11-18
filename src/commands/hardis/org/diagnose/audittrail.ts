@@ -117,6 +117,7 @@ monitoringExcludeUsernames:
         "changedpassword",
         "changedUserEmailVerifiedStatusVerified",
         "PermSetAssign",
+        "PermSetUnassign",
         "resetpassword",
         "suOrgAdminLogin",
         "suOrgAdminLogout",

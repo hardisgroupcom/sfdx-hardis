@@ -4,9 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.12.3] 2023-11-16
+## [4.12.3] 2023-11-18
 
-- Monitoring: Update default package-skip-items.xml
+- Monitoring: Update default **package-skip-items.xml**
+- **hardis:diagnose:audittrail**: Add PerSetUnassign in not suspect monitored actions in Setup Audit Trail
 
 ## [4.12.2] 2023-11-15
 
