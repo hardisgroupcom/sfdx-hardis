@@ -34,7 +34,7 @@ variables:
 #    - cd sfdx-hardis
 #    - yarn
 #    - tsc
-#    - sfdx plugins:link
+#    - sf plugins link
 #    - cd ..
 
 # Code quality and security controls using MegaLinter Salesforce flavor

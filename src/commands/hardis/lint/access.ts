@@ -1,14 +1,21 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
+import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
+import * as fs from 'fs-extra';
 import * as glob from "glob-promise";
 import * as path from "path";
-import { uxLog } from "../../../common/utils";
+import * as Papa from "papaparse";
+import * as sortArray from "sort-array";
+import { getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
 //import * as fs from "fs-extra";
-import { parseXmlFile } from "../../../common/utils/xmlUtils";
-import { getConfig } from "../../../config";
+import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
+import { getConfig, getReportDirectory } from "../../../config";
+import { NotifProvider } from "../../../common/notifProvider";
+import { GitProvider } from "../../../common/gitProvider";
+import { WebSocketClient } from "../../../common/websocketClient";
+import { prompts } from "../../../common/utils/prompts";
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
@@ -43,6 +50,10 @@ export default class Access extends SfdxCommand {
       default: "force-app",
       description: "Root folder",
     }),
+    outputfile: flags.string({
+      char: "o",
+      description: "Force the path and name of output report file. Must end with .csv",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -66,6 +77,9 @@ export default class Access extends SfdxCommand {
   protected static requiresProject = true;
 
   protected folder: string;
+  protected missingElements: any[];
+  protected missingElementsMap: any[];
+  protected outputFile;
 
   protected static sourceElements = [
     {
@@ -157,8 +171,18 @@ export default class Access extends SfdxCommand {
     }
 
     const remainingElements = await this.listElementIfNotInProfileOrPermission(rootFolder, elementsToCheckByType);
-    process.exitCode = this.hasElementsWithNoRights ? 1 : 0;
-    return { outputString: remainingElements };
+    // Write report
+    await this.writeOutputFile();
+    // Send notification
+    await this.manageNotification();
+    // Prompt user if he/she wants to update a Permission set with missing elements
+    await this.handleFixIssues();
+    // Handle output status & exitCode
+    const statusCode = this.hasElementsWithNoRights ? 1 : 0;
+    if ((this.argv || []).includes("audittrail")) {
+      process.exitCode = statusCode;
+    }
+    return { statusCode: statusCode, outputString: remainingElements };
   }
 
   private ignoreSourceElementsIfDefined() {
@@ -270,6 +294,13 @@ export default class Access extends SfdxCommand {
       return Access.messages.allElementsHaveRights;
     } else {
       //list remaining elements after checking on profiles and permissions sets
+      this.missingElementsMap = Object.assign({}, remainingElements);
+      this.missingElements = [];
+      for (const missingType of Object.keys(this.missingElementsMap)) {
+        for (const missingItem of this.missingElementsMap[missingType]) {
+          this.missingElements.push({ type: missingType, element: missingItem });
+        }
+      }
       remainingElements = this.constructLogAndDisplayTable(remainingElements);
     }
 
@@ -355,4 +386,165 @@ export default class Access extends SfdxCommand {
 
     return remainingElements;
   }
+
+  private async writeOutputFile() {
+    // Build output CSV file name
+    if (this.outputFile == null) {
+      // Default file in system temp directory if --outputfile not provided
+      const reportDir = await getReportDirectory();
+      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+      this.outputFile = path.join(reportDir, "lint-access-" + branchName + ".csv");
+    } else {
+      // Ensure directories to provided --outputfile are existing
+      await fs.ensureDir(path.dirname(this.outputFile));
+    }
+
+    // Generate output CSV file
+    try {
+      const csvText = Papa.unparse(this.missingElements);
+      await fs.writeFile(this.outputFile, csvText, "utf8");
+      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(this.outputFile)}`)));
+      // Trigger command to open CSV file in VsCode extension
+      WebSocketClient.requestOpenFile(this.outputFile);
+    } catch (e) {
+      uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
+      this.outputFile = null;
+    }
+  }
+
+  private async manageNotification() {
+    // Manage notifications
+    if (this.missingElementsMap.length > 0) {
+      let notifDetailText = ``;
+      for (const missingType of Object.keys(this.missingElementsMap)) {
+        notifDetailText += `* ${missingType}\n`
+        for (const missingItem of this.missingElementsMap[missingType]) {
+          notifDetailText += `  * ${missingItem}\n`
+        }
+      }
+      notifDetailText += "_See details in job artifacts_";
+      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+      const notifButtons = [];
+      const jobUrl = await GitProvider.getJobUrl();
+      if (jobUrl) {
+        notifButtons.push({ text: "View Job", url: jobUrl });
+      }
+      NotifProvider.postNotifications({
+        text: `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchName}`,
+        attachments: [{ text: notifDetailText }],
+        buttons: notifButtons,
+        severity: "warning",
+      });
+    }
+  }
+
+  private async handleFixIssues() {
+    if (!isCI && this.missingElements.length > 0 && this.argv.includes("--websocket")) {
+      const promptUpdate = await prompts({
+        type: "confirm",
+        message: c.cyanBright("Do you want to add the missing accesses in permission sets ?"),
+      });
+      if (promptUpdate.value === true) {
+        const availablePermissionSets = await this.listLocalPermissionSets();
+        const promptsElementsPs = await prompts([
+          {
+            type: "multiselect",
+            name: "elements",
+            message: "Please select the elements you want to add in Permission Set(s)",
+            choices: this.missingElements.map(elt => { return { title: `${elt.type}: ${elt.element}`, value: elt } })
+          },
+          {
+            type: "multiselect",
+            name: "permissionSets",
+            message: "Please select the permission sets you want to update with selected elements",
+            choices: availablePermissionSets.map(elt => { return { title: elt.name, value: elt.filePath } })
+          },
+          {
+            type: "select",
+            name: "access",
+            message: "Please select the accesses to set for the custom fields",
+            choices: [
+              { title: "Readable", value: "readable" },
+              { title: "Readable & Editable", value: "editable" }
+            ]
+          },
+        ]);
+        // Update Permission sets
+        if (promptsElementsPs.elements.length > 0 && promptsElementsPs.permissionSets.length > 0) {
+          await this.updatePermissionSets(
+            promptsElementsPs.permissionSets,
+            promptsElementsPs.elements,
+            promptsElementsPs.access === "editable" ? { readable: true, editable: true } : { readable: true, editable: false });
+        }
+      }
+    }
+  }
+
+  private async listLocalPermissionSets() {
+    const globPatternPS = process.cwd() + `/**/*.permissionset-meta.xml`;
+    const psFiles = await glob(globPatternPS);
+    const psList = [];
+    for (const ps of psFiles) {
+      psList.push({ name: path.basename(ps).replace('.permissionset-meta.xml', ''), filePath: ps });
+    }
+    return psList;
+  }
+
+  private async updatePermissionSets(permissionSetFiles, elements, fieldProperties) {
+    for (const permissionSetFile of permissionSetFiles) {
+      const psFileXml = await parseXmlFile(permissionSetFile);
+      for (const element of elements) {
+        // Apex class access
+        if (element.type === 'apexClass') {
+          const className = element.element.split("/").pop();
+          let classAccesses = psFileXml.PermissionSet?.classAccesses || [];
+          let updated = false;
+          classAccesses = classAccesses.map(item => {
+            if (item.apexClass[0] === className) {
+              item.enabled = [true];
+              updated = true;
+            }
+            return item;
+          });
+          if (updated === false) {
+            classAccesses.push({
+              apexClass: [className],
+              enabled: [true],
+            })
+          }
+          psFileXml.PermissionSet.classAccesses = sortArray(classAccesses, {
+            by: ["apexClass"],
+            order: ["asc"],
+          });
+        }
+        // Custom field permission
+        else if (element.type === 'field') {
+          let fieldPermissions = psFileXml.PermissionSet?.fieldPermissions || [];
+          let updated = false;
+          fieldPermissions = fieldPermissions.map(item => {
+            if (item.field[0] === element.element) {
+              item.readable = [fieldProperties.readable];
+              item.editable = [fieldProperties.editable];
+              updated = true;
+            }
+            return item;
+          });
+          if (updated === false) {
+            fieldPermissions.push({
+              field: [element.element],
+              readable: [fieldProperties.readable],
+              editable: [fieldProperties.editable]
+            })
+          }
+          psFileXml.PermissionSet.fieldPermissions = sortArray(fieldPermissions, {
+            by: ["field"],
+            order: ["asc"],
+          });
+        }
+      }
+      await writeXmlFile(permissionSetFile, psFileXml);
+    }
+    throw new SfdxError(c.red("Your permission sets has been updated: please CHECK THE UPDATES then commit and push !"));
+  }
 }
+
