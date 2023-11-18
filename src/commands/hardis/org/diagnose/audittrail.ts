@@ -42,7 +42,9 @@ Regular setup actions performed in major orgs are filtered.
 
 By default, deployment user defined in .sfdx-hardis.yml targetUsername property will be excluded.
 
-You can define additional users to exclude in .sfdx-hardis.yml monitoringExcludeUsernames property.
+You can define additional users to exclude in .sfdx-hardis.yml **monitoringExcludeUsernames** property.
+
+You can also add more sections / actions considered as not suspect using property **monitoringAllowedSectionsActions**
 
 Example:
 
@@ -51,6 +53,10 @@ monitoringExcludeUsernames:
   - deploymentuser@cloudity.com
   - marketingcloud@cloudity.com
   - integration-user@cloudity.com
+
+monitoringAllowedSectionsActions:
+  "Some section": [] // Will ignore all actions from such section
+  "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 \`\`\`
   `;
 
@@ -109,21 +115,8 @@ monitoringExcludeUsernames:
     this.debugMode = this.flags.debug || false;
     this.excludeUsers = this.flags.excludeusers ? this.flags.excludeusers.split(",") : [];
     this.lastNdays = this.flags.lastndays;
-    this.allowedSectionsActions = {
-      "Certificate and Key Management": ["insertCertificate"],
-      Groups: ["groupMembership"],
-      "Manage Users": [
-        "createduser",
-        "changedpassword",
-        "changedUserEmailVerifiedStatusVerified",
-        "PermSetAssign",
-        "PermSetUnassign",
-        "resetpassword",
-        "suOrgAdminLogin",
-        "suOrgAdminLogout",
-      ],
-    };
     this.outputFile = this.flags.outputfile || null;
+    const config = await getConfig("branch");
 
     // If manual mode and lastndays not sent as parameter, prompt user
     if (!isCI && !this.lastNdays) {
@@ -151,13 +144,33 @@ monitoringExcludeUsernames:
       this.lastNdays = 1;
     }
 
-    const conn = this.org.getConnection();
+    this.allowedSectionsActions = {
+      "Certificate and Key Management": ["insertCertificate"],
+      Groups: ["groupMembership"],
+      "Manage Users": [
+        "createduser",
+        "changedpassword",
+        "changedUserEmailVerifiedStatusVerified",
+        "PermSetAssign",
+        "PermSetUnassign",
+        "resetpassword",
+        "suOrgAdminLogin",
+        "suOrgAdminLogout",
+      ],
+    };
 
+    // Append custom sections & actions considered as not suspect
+    if (config.monitoringAllowedSectionsActions) {
+      this.allowedSectionsActions = Object.assign(this.allowedSectionsActions, config.monitoringAllowedSectionsActions);
+    }
+
+    const conn = this.org.getConnection();
     uxLog(this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`));
+
 
     // Manage exclude users list
     if (this.excludeUsers.length === 0) {
-      const config = await getConfig("branch");
+
       if (config.targetUsername) {
         this.excludeUsers.push(config.targetUsername);
       }
