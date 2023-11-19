@@ -167,10 +167,8 @@ monitoringAllowedSectionsActions:
     const conn = this.org.getConnection();
     uxLog(this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`));
 
-
     // Manage exclude users list
     if (this.excludeUsers.length === 0) {
-
       if (config.targetUsername) {
         this.excludeUsers.push(config.targetUsername);
       }

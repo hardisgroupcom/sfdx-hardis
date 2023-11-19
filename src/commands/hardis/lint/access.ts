@@ -3,7 +3,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import * as fs from 'fs-extra';
+import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as Papa from "papaparse";
@@ -432,9 +432,9 @@ export default class Access extends SfdxCommand {
     if (this.missingElements.length > 0) {
       let notifDetailText = ``;
       for (const missingType of Object.keys(this.missingElementsMap)) {
-        notifDetailText += `* ${missingType}\n`
+        notifDetailText += `* ${missingType}\n`;
         for (const missingItem of this.missingElementsMap[missingType]) {
-          notifDetailText += `  * ${missingItem}\n`
+          notifDetailText += `  * ${missingItem}\n`;
         }
       }
       notifDetailText += "_See details in job artifacts_";
@@ -466,13 +466,17 @@ export default class Access extends SfdxCommand {
             type: "multiselect",
             name: "elements",
             message: "Please select the elements you want to add in Permission Set(s)",
-            choices: this.missingElements.map(elt => { return { title: `${elt.type}: ${elt.element}`, value: elt } })
+            choices: this.missingElements.map((elt) => {
+              return { title: `${elt.type}: ${elt.element}`, value: elt };
+            }),
           },
           {
             type: "multiselect",
             name: "permissionSets",
             message: "Please select the permission sets you want to update with selected elements",
-            choices: availablePermissionSets.map(elt => { return { title: elt.name, value: elt.filePath } })
+            choices: availablePermissionSets.map((elt) => {
+              return { title: elt.name, value: elt.filePath };
+            }),
           },
           {
             type: "select",
@@ -480,8 +484,8 @@ export default class Access extends SfdxCommand {
             message: "Please select the accesses to set for the custom fields",
             choices: [
               { title: "Readable", value: "readable" },
-              { title: "Readable & Editable", value: "editable" }
-            ]
+              { title: "Readable & Editable", value: "editable" },
+            ],
           },
         ]);
         // Update Permission sets
@@ -489,11 +493,11 @@ export default class Access extends SfdxCommand {
           await this.updatePermissionSets(
             promptsElementsPs.permissionSets,
             promptsElementsPs.elements,
-            promptsElementsPs.access === "editable" ? { readable: true, editable: true } : { readable: true, editable: false });
+            promptsElementsPs.access === "editable" ? { readable: true, editable: true } : { readable: true, editable: false },
+          );
         }
       }
-    }
-    else if (this.missingElements.length > 0) {
+    } else if (this.missingElements.length > 0) {
       uxLog(this, c.yellow("Please add missing access on permission set(s)"));
       uxLog(this, c.yellow("You can do it by running VsCode SFDX Hardis command Audit -> Detect missing permissions"));
     }
@@ -504,7 +508,7 @@ export default class Access extends SfdxCommand {
     const psFiles = await glob(globPatternPS);
     const psList = [];
     for (const ps of psFiles) {
-      psList.push({ name: path.basename(ps).replace('.permissionset-meta.xml', ''), filePath: ps });
+      psList.push({ name: path.basename(ps).replace(".permissionset-meta.xml", ""), filePath: ps });
     }
     return psList;
   }
@@ -514,11 +518,11 @@ export default class Access extends SfdxCommand {
       const psFileXml = await parseXmlFile(permissionSetFile);
       for (const element of elements) {
         // Apex class access
-        if (element.type === 'apexClass') {
+        if (element.type === "apexClass") {
           const className = element.element.split("/").pop();
           let classAccesses = psFileXml.PermissionSet?.classAccesses || [];
           let updated = false;
-          classAccesses = classAccesses.map(item => {
+          classAccesses = classAccesses.map((item) => {
             if (item.apexClass[0] === className) {
               item.enabled = [true];
               updated = true;
@@ -529,7 +533,7 @@ export default class Access extends SfdxCommand {
             classAccesses.push({
               apexClass: [className],
               enabled: [true],
-            })
+            });
           }
           psFileXml.PermissionSet.classAccesses = sortArray(classAccesses, {
             by: ["apexClass"],
@@ -537,10 +541,10 @@ export default class Access extends SfdxCommand {
           });
         }
         // Custom field permission
-        else if (element.type === 'field') {
+        else if (element.type === "field") {
           let fieldPermissions = psFileXml.PermissionSet?.fieldPermissions || [];
           let updated = false;
-          fieldPermissions = fieldPermissions.map(item => {
+          fieldPermissions = fieldPermissions.map((item) => {
             if (item.field[0] === element.element) {
               item.readable = [fieldProperties.readable];
               item.editable = [fieldProperties.editable];
@@ -552,8 +556,8 @@ export default class Access extends SfdxCommand {
             fieldPermissions.push({
               field: [element.element],
               readable: [fieldProperties.readable],
-              editable: [fieldProperties.editable]
-            })
+              editable: [fieldProperties.editable],
+            });
           }
           psFileXml.PermissionSet.fieldPermissions = sortArray(fieldPermissions, {
             by: ["field"],
@@ -566,4 +570,3 @@ export default class Access extends SfdxCommand {
     throw new SfdxError(c.red("Your permission sets has been updated: please CHECK THE UPDATES then commit and push !"));
   }
 }
-
