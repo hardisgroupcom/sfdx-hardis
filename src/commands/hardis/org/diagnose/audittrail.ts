@@ -36,11 +36,18 @@ Regular setup actions performed in major orgs are filtered.
 - Groups
   - groupMembership
 - Manage Users
+  - activateduser
   - createduser
+  - changedcommunitynickname
   - changedpassword
   - changedinteractionuseroffon
   - changedinteractionuseronoff
+  - changedmarketinguseroffon
+  - changedmarketinguseronoff
+  - changedprofileforuser
+  - changedprofileforusercusttostd
   - changedprofileforuserstdtocust
+  - changedroleforusertonone
   - changedroleforuser
   - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusVerified
@@ -172,10 +179,17 @@ monitoringAllowedSectionsActions:
       "Certificate and Key Management": ["insertCertificate"],
       Groups: ["groupMembership"],
       "Manage Users": [
+        "activateduser",
         "createduser",
+        "changedcommunitynickname",
         "changedinteractionuseroffon",
         "changedinteractionuseronoff",
-        "changedprofileforuserstdtocust",
+        "changedmarketinguseroffon",
+        "changedmarketinguseronoff",
+        'changedprofileforuser',
+        'changedprofileforusercusttostd',
+        'changedprofileforuserstdtocust',
+        "changedroleforusertonone",
         "changedroleforuser",
         "changedroleforuserfromnone",
         "changedpassword",
