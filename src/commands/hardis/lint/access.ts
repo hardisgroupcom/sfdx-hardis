@@ -77,8 +77,8 @@ export default class Access extends SfdxCommand {
   protected static requiresProject = true;
 
   protected folder: string;
-  protected missingElements: any[];
-  protected missingElementsMap: any[];
+  protected missingElements: any[] = [];
+  protected missingElementsMap: any = {};
   protected outputFile;
 
   protected static sourceElements = [
@@ -237,7 +237,7 @@ export default class Access extends SfdxCommand {
         .replace(".field-meta.xml", "");
       return objectField;
     } else if (type === "apexClass") {
-      return path.substring(path.indexOf("classes/")).replace("classes/", "").replace(".cls", "");
+      return path.substring(path.indexOf("classes/")).replace("classes/", "").replace(".cls", "").split("/").pop();
     }
 
     return "";
@@ -247,8 +247,20 @@ export default class Access extends SfdxCommand {
     let fieldsToSearch = [];
 
     for (const element of elements) {
-      const el = this.formatElementNameFromPath(element, xmlField);
+      // Exclude mandatory fields
+      if (element.endsWith(".field-meta.xml")) {
+        const fieldXml = await parseXmlFile(element);
+        // Mater detail
+        if (fieldXml?.CustomField?.type && fieldXml?.CustomField?.type[0] === "MasterDetail") {
+          continue;
+        }
+        // Required
+        if (fieldXml?.CustomField?.required && fieldXml?.CustomField?.required[0] === "true") {
+          continue;
+        }
+      }
 
+      const el = this.formatElementNameFromPath(element, xmlField);
       //only check elements not ignored
       if (!excludedElements.includes(el)) {
         fieldsToSearch.push(el);
@@ -388,12 +400,15 @@ export default class Access extends SfdxCommand {
   }
 
   private async writeOutputFile() {
+    if (this.missingElements.length === 0) {
+      return;
+    }
     // Build output CSV file name
     if (this.outputFile == null) {
       // Default file in system temp directory if --outputfile not provided
       const reportDir = await getReportDirectory();
       const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      this.outputFile = path.join(reportDir, "lint-access-" + branchName + ".csv");
+      this.outputFile = path.join(reportDir, "lint-access-" + branchName.split("/").pop() + ".csv");
     } else {
       // Ensure directories to provided --outputfile are existing
       await fs.ensureDir(path.dirname(this.outputFile));
@@ -414,7 +429,7 @@ export default class Access extends SfdxCommand {
 
   private async manageNotification() {
     // Manage notifications
-    if (this.missingElementsMap.length > 0) {
+    if (this.missingElements.length > 0) {
       let notifDetailText = ``;
       for (const missingType of Object.keys(this.missingElementsMap)) {
         notifDetailText += `* ${missingType}\n`
@@ -477,6 +492,10 @@ export default class Access extends SfdxCommand {
             promptsElementsPs.access === "editable" ? { readable: true, editable: true } : { readable: true, editable: false });
         }
       }
+    }
+    else if (this.missingElements.length > 0) {
+      uxLog(this, c.yellow("Please add missing access on permission set(s)"));
+      uxLog(this, c.yellow("You can do it by running VsCode SFDX Hardis command Audit -> Detect missing permissions"));
     }
   }
 

@@ -11,6 +11,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Add PerSetUnassign in not suspect monitored actions in Setup Audit Trail
   - Allow to append more allowed Setup Audit Trail sections & actions using `.sfdx-hardis.yml` property **monitoringAllowedSectionsActions**
 - **hardis:lint:access** enhancements:
+  - Exclude required fields and MasterDetails, that can not be defined on Permission Sets
   - Output report file
   - Send slack notification
   - Add it by default in the monitoring commands
