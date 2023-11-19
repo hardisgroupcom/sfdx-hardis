@@ -172,10 +172,7 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
-      "": [
-        "createScratchOrg",
-        "deleteScratchOrg"
-      ],
+      "": ["createScratchOrg", "deleteScratchOrg"],
       "Certificate and Key Management": ["insertCertificate"],
       Groups: ["groupMembership"],
       "Manage Users": [
@@ -186,9 +183,9 @@ monitoringAllowedSectionsActions:
         "changedinteractionuseronoff",
         "changedmarketinguseroffon",
         "changedmarketinguseronoff",
-        'changedprofileforuser',
-        'changedprofileforusercusttostd',
-        'changedprofileforuserstdtocust',
+        "changedprofileforuser",
+        "changedprofileforusercusttostd",
+        "changedprofileforuserstdtocust",
         "changedroleforusertonone",
         "changedroleforuser",
         "changedroleforuserfromnone",

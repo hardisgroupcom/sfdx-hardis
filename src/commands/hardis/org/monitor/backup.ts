@@ -105,7 +105,10 @@ export default class MonitorBackup extends SfdxCommand {
     } catch (e) {
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, "utf8");
       uxLog(this, c.yellow("BackUp package.xml that failed to be retrieved:\n" + c.grey(failedPackageXmlContent)));
-      uxLog(this, c.red("Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it"));
+      uxLog(
+        this,
+        c.red("Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it"),
+      );
       throw e;
     }
 
