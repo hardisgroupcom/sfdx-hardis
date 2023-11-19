@@ -4,8 +4,6 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.12.3] 2023-11-18
-
 - Monitoring: Update default **package-skip-items.xml**
 - **hardis:org:diagnose:audittrail** enhancements:
   - Add PerSetUnassign in not suspect monitored actions in Setup Audit Trail
@@ -17,6 +15,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Add it by default in the monitoring commands
 - Doc
   - Update contributing infos (use `sf plugins link`)
+- **hardis:files:export** : Make the command compliant with Email attachments
 
 ## [4.12.2] 2023-11-15
 
