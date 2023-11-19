@@ -35,10 +35,17 @@ Regular setup actions performed in major orgs are filtered.
 - Manage Users
   - createduser
   - changedpassword
+  - changedinteractionuseroffon
+  - changedinteractionuseronoff
+  - changedprofileforuserstdtocust
+  - changedroleforuser
+  - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusVerified
   - deactivateduser
   - PermSetAssign
+  - PermSetLicenseAssign
   - PermSetUnassign
+  - PermSetLicenseUnassign
   - resetpassword
   - suOrgAdminLogin
   - suOrgAdminLogout
@@ -152,11 +159,18 @@ monitoringAllowedSectionsActions:
       Groups: ["groupMembership"],
       "Manage Users": [
         "createduser",
+        "changedinteractionuseroffon",
+        "changedinteractionuseronoff",
+        "changedprofileforuserstdtocust",
+        "changedroleforuser",
+        "changedroleforuserfromnone",
         "changedpassword",
         "changedUserEmailVerifiedStatusVerified",
         "deactivateduser",
         "PermSetAssign",
+        "PermSetLicenseAssign",
         "PermSetUnassign",
+        "PermSetLicenseUnassign",
         "resetpassword",
         "suOrgAdminLogin",
         "suOrgAdminLogout",

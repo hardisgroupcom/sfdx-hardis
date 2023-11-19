@@ -103,7 +103,7 @@ export default class MonitorBackup extends SfdxCommand {
         debug: this.debugMode,
       });
     } catch (e) {
-      uxLog(this, c.yellow("Crash during backup. You may exclude more items by customizing file manifest/package-skip-items.xml"));
+      uxLog(this, c.yellow("Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml"));
       throw e;
     }
 

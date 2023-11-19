@@ -73,10 +73,12 @@
     </types>
     -->
 
+    <!-- Uncomment if you have too many metadatas
     <types>
         <members>*</members>
         <name>ReportType</name>
     </types>
+    -->
 
     <!-- Uncomment if you have too many metadatas
     <types>
