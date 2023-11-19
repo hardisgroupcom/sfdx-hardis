@@ -17,6 +17,7 @@ Example:
 
 ```yaml
 autoCleanTypes:
+  - checkPermissions
   - destructivechanges
   - datadotcom
   - minimizeProfiles

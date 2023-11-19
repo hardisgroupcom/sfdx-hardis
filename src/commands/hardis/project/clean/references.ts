@@ -77,6 +77,11 @@ export default class CleanReferences extends SfdxCommand {
       title: "References to Entitlement Management items",
     },
     {
+      value: "checkPermissions",
+      title: "Check custom items are existing it at least one Permission Set",
+      command: "sfdx hardis:lint:access",
+    },
+    {
       value: "dashboards",
       title: "Reference to users in Dashboards",
     },
@@ -169,9 +174,13 @@ export default class CleanReferences extends SfdxCommand {
     for (const cleaningType of this.cleaningTypes) {
       const cleaningTypeObj = this.allCleaningTypes.filter((cleaningTypeObj) => cleaningTypeObj.value === cleaningType)[0];
       if (cleaningTypeObj?.command) {
+        let command = cleaningTypeObj?.command;
+        if (this.argv.indexOf("--websocket") > -1) {
+          command += ` --websocket ${this.argv[this.argv.indexOf("--websocket") + 1]}`;
+        }
         uxLog(this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
         // Command based cleaning
-        await execCommand(cleaningTypeObj.command, this, {
+        await execCommand(command, this, {
           fail: true,
           output: false,
           debug: this.debugMode,

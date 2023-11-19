@@ -28,6 +28,8 @@ monitoringCommands:
     command: sfdx hardis:org:diagnose:legacyapi
   - title: Detect suspect setup actions in major orgs
     command: sfdx hardis:org:diagnose:audittrail
+  - title: Detect custom elements with no access rights defined in permission sets
+    command: sfdx hardis:lint:access
   - title: My Custom command
     command: sfdx my:custom:command
 \`\`\`
@@ -77,6 +79,7 @@ monitoringCommands:
     const monitoringCommandsDefault = [
       { title: "Detect suspect setup actions in major org", command: "sfdx hardis:org:diagnose:audittrail" },
       { title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" },
+      { title: "Detect custom elements with no access rights defined in permission sets", command: "sfdx hardis:lint:access" },
     ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;

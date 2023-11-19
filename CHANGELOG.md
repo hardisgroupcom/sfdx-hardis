@@ -4,6 +4,19 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Monitoring
+  - Update default **package-skip-items.xml**
+  - Call **hardis:lint:access** by default
+- **hardis:org:diagnose:audittrail** enhancements:
+  - Add PerSetUnassign in not suspect monitored actions in Setup Audit Trail
+  - Allow to append more allowed Setup Audit Trail sections & actions using `.sfdx-hardis.yml` property **monitoringAllowedSectionsActions**
+- **hardis:lint:access** enhancements:
+  - Exclude required fields and MasterDetails, that can not be defined on Permission Sets
+  - Output report file
+  - Send slack notification
+  - Add it by default in the monitoring commands
+- Doc
+  - Update contributing infos (use `sf plugins link`)
 - **hardis:files:export** : Make the command compliant with Email attachments
 
 ## [4.12.2] 2023-11-15

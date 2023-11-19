@@ -223,11 +223,11 @@ export class FilesExporter {
 
     // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
     // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
-    // To fix this we create a list of ContentVersion and ContentDocumentLink pairs. 
+    // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
     // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
-    const versionsAndLinks = []
-    contentVersions.records.forEach(contentVersion => {
-      contentDocumentLinks.records.forEach(contentDocumentLink => {
+    const versionsAndLinks = [];
+    contentVersions.records.forEach((contentVersion) => {
+      contentDocumentLinks.records.forEach((contentDocumentLink) => {
         if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
           versionsAndLinks.push({
             contentVersion: contentVersion,

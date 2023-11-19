@@ -122,7 +122,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 - Fork this repo and clone it (or just clone if you are an internal contributor)
 - At the root of the repository:
   - Run `yarn` to install dependencies
-  - Run `sfdx plugins:link` to link the local sfdx-hardis to SFDX CLI
+  - Run `sf  plugins link` to link the local sfdx-hardis to SFDX CLI
   - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
 - Debug commands using `NODE_OPTIONS=--inspect-brk sfdx hardis:somecommand -someparameter somevalue`
 

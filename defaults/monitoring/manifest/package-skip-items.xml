@@ -5,40 +5,111 @@
         <members>*</members>
         <name>Certificate</name>
     </types>
+
     <types>
-        <members>*</members>
+        <members>*</members>    
         <name>ConnectedApp</name>
     </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>    
+        <name>ContentAsset</name>
+    </types>
+    -->
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>CustomMetadata</name>
+    </types>
+    -->
+
+    <types>
+        <members>*</members>
+        <name>CustomObjectTranslation</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>Dashboard</name>
+    </types>
+    -->
+
     <types>
         <members>*</members>
         <name>Document</name>
     </types>
+
+    <!-- Uncomment if you have too many metadatas
     <types>
         <members>*</members>
-        <name>ModerationRule</name>
+        <name>EmailTemplate</name>
     </types>
+    -->
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>GlobalValueSetTranslation</name>
+    </types>
+    -->
+
+    <types>
+        <members>*</members>
+        <name>ListView</name>
+    </types>
+
+    <types>
+        <members>*</members>
+        <name>LightningMessageChannel</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
     <types>
         <members>*</members>
         <name>Report</name>
     </types>
+    -->
+
     <types>
         <members>*</members>
         <name>ReportType</name>
     </types>
+
+    <!-- Uncomment if you have too many metadatas
     <types>
         <members>*</members>
-        <name>SamlSsoConfig</name>
+        <name>StandardValueSetTranslation</name>
     </types>
-    <types>
-        <members>*</members>
-        <name>SiteDotCom</name>
-    </types>
-    <!-- uncomment if you have too many metadatas and do not want to track static resources -->
-    <!--
+    -->
+
+    <!-- Uncomment if you have too many metadatas
     <types>
         <members>*</members>
         <name>StaticResource</name>
     </types>
     -->
+
+    <types>
+        <members>*</members>
+        <name>UiViewDefinition</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>Translation</name>
+    </types>
+    -->
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>WorkflowFieldUpdate</name>
+    </types>
+    -->
+    
     <version>59.0</version>
 </Package>
