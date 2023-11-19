@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Monitoring
+  - Display package.xml content in logs when backup failed
   - Update default **package-skip-items.xml**
   - Call **hardis:lint:access** by default
 - **hardis:org:diagnose:audittrail** enhancements:
