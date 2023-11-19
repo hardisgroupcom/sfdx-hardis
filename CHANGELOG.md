@@ -4,7 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Monitoring: Update default **package-skip-items.xml**
+- Monitoring
+  - Update default **package-skip-items.xml**
+  - Call **hardis:lint:access** by default
 - **hardis:org:diagnose:audittrail** enhancements:
   - Add PerSetUnassign in not suspect monitored actions in Setup Audit Trail
   - Allow to append more allowed Setup Audit Trail sections & actions using `.sfdx-hardis.yml` property **monitoringAllowedSectionsActions**
