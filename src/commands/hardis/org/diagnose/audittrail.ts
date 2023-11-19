@@ -28,17 +28,41 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
 
 Regular setup actions performed in major orgs are filtered.
 
+- ""
+  - createScratchOrg
+  - deleteScratchOrg
 - Certificate and Key Management
   - insertCertificate
 - Groups
   - groupMembership
 - Manage Users
+  - activateduser
   - createduser
+  - changedcommunitynickname
   - changedpassword
+  - changedinteractionuseroffon
+  - changedinteractionuseronoff
+  - changedmarketinguseroffon
+  - changedmarketinguseronoff
+  - changedprofileforuser
+  - changedprofileforusercusttostd
+  - changedprofileforuserstdtocust
+  - changedroleforusertonone
+  - changedroleforuser
+  - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusVerified
   - deactivateduser
+  - deleteAuthenticatorPairing
+  - deleteTwoFactorInfo2
+  - deleteTwoFactorTempCode
+  - insertAuthenticatorPairing
+  - insertTwoFactorInfo2
+  - insertTwoFactorTempCode
+  - lightningloginenroll
   - PermSetAssign
+  - PermSetLicenseAssign
   - PermSetUnassign
+  - PermSetLicenseUnassign
   - resetpassword
   - suOrgAdminLogin
   - suOrgAdminLogout
@@ -148,15 +172,37 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
+      "": ["createScratchOrg", "deleteScratchOrg"],
       "Certificate and Key Management": ["insertCertificate"],
       Groups: ["groupMembership"],
       "Manage Users": [
+        "activateduser",
         "createduser",
+        "changedcommunitynickname",
+        "changedinteractionuseroffon",
+        "changedinteractionuseronoff",
+        "changedmarketinguseroffon",
+        "changedmarketinguseronoff",
+        "changedprofileforuser",
+        "changedprofileforusercusttostd",
+        "changedprofileforuserstdtocust",
+        "changedroleforusertonone",
+        "changedroleforuser",
+        "changedroleforuserfromnone",
         "changedpassword",
         "changedUserEmailVerifiedStatusVerified",
         "deactivateduser",
+        "deleteAuthenticatorPairing",
+        "deleteTwoFactorInfo2",
+        "deleteTwoFactorTempCode",
+        "insertAuthenticatorPairing",
+        "insertTwoFactorInfo2",
+        "insertTwoFactorTempCode",
+        "lightningloginenroll",
         "PermSetAssign",
+        "PermSetLicenseAssign",
         "PermSetUnassign",
+        "PermSetLicenseUnassign",
         "resetpassword",
         "suOrgAdminLogin",
         "suOrgAdminLogout",
@@ -200,17 +246,18 @@ monitoringAllowedSectionsActions:
     let suspectUsers = [];
     let suspectActions = [];
     const auditTrailRecords = queryRes.records.map((record) => {
+      const section = record?.Section || "";
       record.Suspect = false;
       // Unallowed actions
       if (
-        (this.allowedSectionsActions[record.Section] && !this.allowedSectionsActions[record.Section].includes(record.Action)) ||
-        !this.allowedSectionsActions[record.Section]
+        (this.allowedSectionsActions[section] && !this.allowedSectionsActions[section].includes(record.Action)) ||
+        !this.allowedSectionsActions[section]
       ) {
         record.Suspect = true;
-        record.SuspectReason = `Manual config in unallowed section ${record.Section} with action ${record.Action}`;
+        record.SuspectReason = `Manual config in unallowed section ${section} with action ${record.Action}`;
         suspectRecords.push(record);
         suspectUsers.push(record["CreatedBy.Username"]);
-        suspectActions.push(`${record.Section} - ${record.Action}`);
+        suspectActions.push(`${section} - ${record.Action}`);
         return record;
       }
       return record;
