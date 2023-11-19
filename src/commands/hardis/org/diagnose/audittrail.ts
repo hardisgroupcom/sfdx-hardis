@@ -45,6 +45,13 @@ Regular setup actions performed in major orgs are filtered.
   - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusVerified
   - deactivateduser
+  - deleteAuthenticatorPairing
+  - deleteTwoFactorInfo2
+  - deleteTwoFactorTempCode
+  - insertAuthenticatorPairing
+  - insertTwoFactorInfo2
+  - insertTwoFactorTempCode
+  - lightningloginenroll
   - PermSetAssign
   - PermSetLicenseAssign
   - PermSetUnassign
@@ -174,6 +181,13 @@ monitoringAllowedSectionsActions:
         "changedpassword",
         "changedUserEmailVerifiedStatusVerified",
         "deactivateduser",
+        "deleteAuthenticatorPairing",
+        "deleteTwoFactorInfo2",
+        "deleteTwoFactorTempCode",
+        "insertAuthenticatorPairing",
+        "insertTwoFactorInfo2",
+        "insertTwoFactorTempCode",
+        "lightningloginenroll",
         "PermSetAssign",
         "PermSetLicenseAssign",
         "PermSetUnassign",
