@@ -679,6 +679,13 @@
       "title": "Monitoring commands",
       "type": "array"
     },
+    "monitoringAllowedSectionsActions": {
+      "$id": "#/properties/monitoringAllowedSectionsActions",
+      "description": "Override list of Setup Audit Trail elements that won't be considered as suspect by monitoring tools",
+      "additionalProperties": true,
+      "title": "Monitoring Allowed Sections Actions",
+      "type": "object"
+    },
     "monitoringExcludeUsernames": {
       "$id": "#/properties/monitoringExcludeUsernames",
       "description": "List of usernames to exclude while running monitoring commands",

@@ -29,13 +29,16 @@ export default class DiagnoseAuditTrail extends SfdxCommand {
 Regular setup actions performed in major orgs are filtered.
 
 - Certificate and Key Management
+  - insertCertificate
 - Groups
   - groupMembership
 - Manage Users
   - createduser
   - changedpassword
   - changedUserEmailVerifiedStatusVerified
+  - deactivateduser
   - PermSetAssign
+  - PermSetUnassign
   - resetpassword
   - suOrgAdminLogin
   - suOrgAdminLogout
@@ -151,6 +154,7 @@ monitoringAllowedSectionsActions:
         "createduser",
         "changedpassword",
         "changedUserEmailVerifiedStatusVerified",
+        "deactivateduser",
         "PermSetAssign",
         "PermSetUnassign",
         "resetpassword",
@@ -176,9 +180,9 @@ monitoringAllowedSectionsActions:
         this.excludeUsers.push(...config.monitoringExcludeUsernames);
       }
     }
-    let whereConstraint = `WHERE CreatedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND CreatedBy.Username != NULL`;
+    let whereConstraint = `WHERE CreatedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND CreatedBy.Username != NULL `;
     if (this.excludeUsers.length > 0) {
-      whereConstraint += ` AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
+      whereConstraint += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
 
     uxLog(this, c.cyan(`Excluded users are ${this.excludeUsers.join(",") || "None"}`));
