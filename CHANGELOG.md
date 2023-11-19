@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.13.0] 2023-11-19
+
 - Monitoring
   - Display package.xml content in logs when backup failed
   - Update default **package-skip-items.xml**
