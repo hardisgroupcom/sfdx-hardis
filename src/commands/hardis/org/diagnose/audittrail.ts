@@ -50,6 +50,7 @@ Regular setup actions performed in major orgs are filtered.
   - changedroleforusertonone
   - changedroleforuser
   - changedroleforuserfromnone
+  - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
   - deactivateduser
   - deleteAuthenticatorPairing
@@ -66,6 +67,7 @@ Regular setup actions performed in major orgs are filtered.
   - resetpassword
   - suOrgAdminLogin
   - suOrgAdminLogout
+  - useremailchangesent
 
 By default, deployment user defined in .sfdx-hardis.yml targetUsername property will be excluded.
 
@@ -190,6 +192,7 @@ monitoringAllowedSectionsActions:
         "changedroleforuser",
         "changedroleforuserfromnone",
         "changedpassword",
+        "changedUserEmailVerifiedStatusUnverified",
         "changedUserEmailVerifiedStatusVerified",
         "deactivateduser",
         "deleteAuthenticatorPairing",
@@ -206,6 +209,7 @@ monitoringAllowedSectionsActions:
         "resetpassword",
         "suOrgAdminLogin",
         "suOrgAdminLogout",
+        "useremailchangesent"
       ],
     };
 
