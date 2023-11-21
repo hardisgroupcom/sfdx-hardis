@@ -263,7 +263,7 @@ export default class Access extends SfdxCommand {
           continue;
         }
         // Check Parent is not eligible to fields access
-        const parentObject = element.substring(element.indexOf("objects/")).split("/")[0];
+        const parentObject = element.substring(element.indexOf("objects/")).split("/")[1];
         // Custom Metadata or DataCloud
         if (parentObject.endsWith("__mdt") || parentObject.endsWith("__dll") || parentObject.endsWith("__dlm")) {
           continue;
