@@ -382,7 +382,7 @@ Under the hood, it can:
         {
           title: "No, continue working on my current sandbox state",
           value: "no",
-          description: "(especially if you have uncommitted changes in your sandbox)",
+          description: "Use if you are multiple users in the same SB, or have have uncommitted changes in your sandbox)",
         },
         {
           title: "Yes, please try to update my sandbox !",
