@@ -106,10 +106,10 @@ export default class DxSources extends SfdxCommand {
       packageXml || process.env.PACKAGE_XML_TO_DEPLOY || this.configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")
         ? "./manifest/package.xml"
         : fs.existsSync("./package.xml")
-        ? "./package.xml"
-        : fs.existsSync(path.join(this.deployDir, "package.xml"))
-        ? path.join(this.deployDir, "package.xml")
-        : "./config/package.xml";
+          ? "./package.xml"
+          : fs.existsSync(path.join(this.deployDir, "package.xml"))
+            ? path.join(this.deployDir, "package.xml")
+            : "./config/package.xml";
     if (fs.existsSync(packageXmlFile)) {
       // Filter if necessary
       if (filter) {
@@ -152,10 +152,10 @@ export default class DxSources extends SfdxCommand {
       fs.existsSync("./manifest/destructiveChanges.xml")
         ? "./manifest/destructiveChanges.xml"
         : fs.existsSync("./destructiveChanges.xml")
-        ? "./destructiveChanges.xml"
-        : fs.existsSync(path.join(this.deployDir, "destructiveChanges.xml"))
-        ? path.join(this.deployDir, "destructiveChanges.xml")
-        : "./config/destructiveChanges.xml";
+          ? "./destructiveChanges.xml"
+          : fs.existsSync(path.join(this.deployDir, "destructiveChanges.xml"))
+            ? path.join(this.deployDir, "destructiveChanges.xml")
+            : "./config/destructiveChanges.xml";
     if (fs.existsSync(packageDeletedXmlFile)) {
       await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {

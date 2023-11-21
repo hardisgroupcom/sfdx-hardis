@@ -209,7 +209,7 @@ monitoringAllowedSectionsActions:
         "resetpassword",
         "suOrgAdminLogin",
         "suOrgAdminLogout",
-        "useremailchangesent"
+        "useremailchangesent",
       ],
     };
 

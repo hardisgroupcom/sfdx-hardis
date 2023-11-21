@@ -141,7 +141,7 @@ export default class Access extends SfdxCommand {
     this.ignoreSourceElementsIfDefined();
     this.ignoreRightElementsIfDefined(config);
 
-    this.customSettingsNames = (await this.listLocalCustomSettings()).map(cs => cs.name);
+    this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
     uxLog(this, c.green(Access.messages.header));
     /* jscpd:ignore-end */
@@ -250,7 +250,6 @@ export default class Access extends SfdxCommand {
     let fieldsToSearch = [];
 
     for (const element of elements) {
-
       // Exclude mandatory fields
       if (element.endsWith(".field-meta.xml")) {
         const fieldXml = await parseXmlFile(element);
