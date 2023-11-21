@@ -445,9 +445,11 @@ export default class Access extends SfdxCommand {
     if (this.missingElements.length > 0) {
       let notifDetailText = ``;
       for (const missingType of Object.keys(this.missingElementsMap)) {
-        notifDetailText += `* ${missingType}\n`;
-        for (const missingItem of this.missingElementsMap[missingType]) {
-          notifDetailText += `  * ${missingItem}\n`;
+        if (this.missingElementsMap[missingType]?.length > 0) {
+          notifDetailText += `* ${missingType}\n`;
+          for (const missingItem of this.missingElementsMap[missingType]) {
+            notifDetailText += `  * ${missingItem}\n`;
+          }
         }
       }
       notifDetailText += "_See details in job artifacts_";
