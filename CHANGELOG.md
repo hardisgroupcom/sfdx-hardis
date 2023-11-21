@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.13.2] 2023-11-21
+
 - **hardis:lint:access**: Do not display empty metadata types in notification.
 - **hardis:work:new**: Improve prompt messages when asked if you want to refresh your sandbox
 
