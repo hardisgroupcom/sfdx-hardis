@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- **hardis:lint:access**
+  - Exclude custom settings & custom metadata from fields access check
+- Output info in case Ms Teams notification failed to be sent
+
 ## [4.13.0] 2023-11-19
 
 - Monitoring

@@ -94,7 +94,6 @@ async function sendMsTeamsNotification(title, text, summary, buttons, severity) 
 }
 
 async function sendMsTeamsHook(msTeamsWebhookUrl, title, text, summary, buttons) {
-  const webhook = new IncomingWebhook(msTeamsWebhookUrl);
   const teamsHookData = {
     "@type": "MessageCard",
     "@context": "https://schema.org/extensions",
@@ -130,6 +129,7 @@ async function sendMsTeamsHook(msTeamsWebhookUrl, title, text, summary, buttons)
       ],
     });
   }
+  const webhook = new IncomingWebhook(msTeamsWebhookUrl);
   await webhook.send(JSON.stringify(teamsHookData));
   uxLog(this, c.grey("Sent Ms Teams notification to " + msTeamsWebhookUrl + " : " + teamsHookData.title));
 }
