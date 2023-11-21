@@ -9,7 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - **hardis:lint:access**
   - Exclude custom settings, custom metadata and data cloud from fields access check
 - **hardis:org:diagnose:audittrail**
-  - Add `changedUserEmailVerifiedStatusUnverified` & `useremailchangesent` to not suspect setup actions
+  - Add changedUserEmailVerifiedStatusUnverified and useremailchangesent to not suspect setup actions
 - Output info in case Ms Teams notification failed to be sent
 
 ## [4.13.0] 2023-11-19
