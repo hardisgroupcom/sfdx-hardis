@@ -77,6 +77,7 @@ export default class Access extends SfdxCommand {
   protected static requiresProject = true;
 
   protected folder: string;
+  protected customSettingsNames: string[] = [];
   protected missingElements: any[] = [];
   protected missingElementsMap: any = {};
   protected outputFile;
@@ -139,6 +140,8 @@ export default class Access extends SfdxCommand {
 
     this.ignoreSourceElementsIfDefined();
     this.ignoreRightElementsIfDefined(config);
+
+    this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
     uxLog(this, c.green(Access.messages.header));
     /* jscpd:ignore-end */
@@ -256,6 +259,16 @@ export default class Access extends SfdxCommand {
         }
         // Required
         if (fieldXml?.CustomField?.required && fieldXml?.CustomField?.required[0] === "true") {
+          continue;
+        }
+        // Check Parent is not eligible to fields access
+        const parentObject = element.substring(element.indexOf("objects/")).split("/")[1];
+        // Custom Metadata or DataCloud
+        if (parentObject.endsWith("__mdt") || parentObject.endsWith("__dll") || parentObject.endsWith("__dlm")) {
+          continue;
+        }
+        // Custom Setting
+        if (this.customSettingsNames.includes(parentObject)) {
           continue;
         }
       }
@@ -501,6 +514,19 @@ export default class Access extends SfdxCommand {
       uxLog(this, c.yellow("Please add missing access on permission set(s)"));
       uxLog(this, c.yellow("You can do it by running VsCode SFDX Hardis command Audit -> Detect missing permissions"));
     }
+  }
+
+  private async listLocalCustomSettings() {
+    const globPatternObjects = process.cwd() + `/**/*.object-meta.xml`;
+    const objectFiles = await glob(globPatternObjects);
+    const csList = [];
+    for (const objectFile of objectFiles) {
+      const objectXml = await parseXmlFile(objectFile);
+      if (objectXml?.CustomObject?.customSettingsType?.length > 0) {
+        csList.push({ name: path.basename(objectFile).replace(".object-meta.xml", ""), filePath: objectFile });
+      }
+    }
+    return csList;
   }
 
   private async listLocalPermissionSets() {

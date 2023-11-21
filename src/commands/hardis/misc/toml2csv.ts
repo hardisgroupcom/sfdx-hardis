@@ -568,10 +568,10 @@ export default class Toml2Csv extends SfdxCommand {
         filter.type === "date"
           ? this.checkFilterDate(filter, lineSplit)
           : filter.type === "parentId"
-          ? this.checkFilterParentId(filter, lineSplit)
-          : filter.type === "colValue"
-          ? this.checkFilterColValue(filter, lineSplit)
-          : null;
+            ? this.checkFilterParentId(filter, lineSplit)
+            : filter.type === "colValue"
+              ? this.checkFilterColValue(filter, lineSplit)
+              : null;
       if (checkRes === null) {
         throw Error("Unknown filter type " + JSON.stringify(filter));
       }
@@ -589,8 +589,8 @@ export default class Toml2Csv extends SfdxCommand {
       filter.typeDtl === "higherThan"
         ? colValue.isAfter(dateStart, "day")
         : filter.typeDtl === "lowerThan"
-        ? colValue.isBefore(dateStart, "day")
-        : colValue.isSame(dateStart, "day");
+          ? colValue.isBefore(dateStart, "day")
+          : colValue.isSame(dateStart, "day");
     return res;
   }
 
