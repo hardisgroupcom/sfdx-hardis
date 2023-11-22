@@ -63,7 +63,7 @@ export default class Metadatastatus extends SfdxCommand {
         text: notifMessage,
         attachments: attachments,
         severity: "warning",
-        sideImage: "flow", // ou toute autre image que vous souhaitez associer
+        sideImage: "flow",
       });
     } else {
       uxLog(this, "No draft flow files detected.");
