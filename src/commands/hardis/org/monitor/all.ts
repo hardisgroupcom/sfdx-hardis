@@ -80,6 +80,7 @@ monitoringCommands:
       { title: "Detect suspect setup actions in major org", command: "sfdx hardis:org:diagnose:audittrail" },
       { title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" },
       { title: "Detect custom elements with no access rights defined in permission sets", command: "sfdx hardis:lint:access" },
+      { title: "Detect custom labels that are not in use", command: "sfdx hardis:lint:customLabels" },
     ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;
