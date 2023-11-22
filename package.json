@@ -48,7 +48,7 @@
     "markdown-toc": "^1.2.0",
     "mega-linter-runner": "^4.39.0",
     "moment": "^2.29.1",
-    "ms-teams-webhook": "^1.0.4",
+    "ms-teams-webhook": "^2.0.2",
     "node-fetch": "^3.2.10",
     "open": "^8.0.2",
     "ora": "^5.3.0",

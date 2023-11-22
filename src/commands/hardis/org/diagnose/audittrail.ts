@@ -185,6 +185,7 @@ monitoringAllowedSectionsActions:
         "changedinteractionuseronoff",
         "changedmarketinguseroffon",
         "changedmarketinguseronoff",
+        "changedManager",
         "changedprofileforuser",
         "changedprofileforusercusttostd",
         "changedprofileforuserstdtocust",
