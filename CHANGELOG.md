@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.13.4] 2023-11-22
+
+- Upgrade ms-teams-webhook library so it works again !
+- **hardis:org:diagnose:audittrail**: Add changedmanager  to not suspect setup actions
+
 ## [4.13.2] 2023-11-21
 
 - **hardis:lint:access**: Do not display empty metadata types in notification.
