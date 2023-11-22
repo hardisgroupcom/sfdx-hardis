@@ -130,6 +130,6 @@ async function sendMsTeamsHook(msTeamsWebhookUrl, title, text, summary, buttons)
     });
   }
   const webhook = new IncomingWebhook(msTeamsWebhookUrl);
-  await webhook.send(JSON.stringify(teamsHookData));
+  await webhook.send(teamsHookData);
   uxLog(this, c.grey("Sent Ms Teams notification to " + msTeamsWebhookUrl + " : " + teamsHookData.title));
 }
