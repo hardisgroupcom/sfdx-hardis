@@ -1,9 +1,7 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
-import { GitProvider } from "../gitProvider";
-import { UtilsNotifs } from "../notifProvider";
+import { execCommand, execSfdxJson, getGitRepoRoot, git, uxLog } from ".";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =

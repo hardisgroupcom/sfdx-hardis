@@ -2,11 +2,12 @@
 This class is deprecated and kept for backward compatibility
 Use NotifProvider class instead :)
 */
-import { uxLog } from ".";
+import { getCurrentGitBranch, uxLog } from ".";
 import * as c from "chalk";
 import { IncomingWebhook } from "ms-teams-webhook";
 import { getConfig } from "../../config";
 import { GitProvider } from "../gitProvider";
+import { UtilsNotifs } from "../notifProvider";
 
 // Check if current process can send notifications
 export async function canSendNotifications(): Promise<boolean> {

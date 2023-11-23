@@ -16,11 +16,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class UnusedMetadatas extends SfdxCommand {
   public static title = "check unused labels and custom permissions";
   public static description = "Check if elements (custom labels and custom permissions) are used in the project";
-  public static examples = [
-    "$ sfdx hardis:lint:access",
-    '$ sfdx hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"',
-    '$ sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
-  ];
+  public static examples = ["$ sfdx hardis:lint:unusedMetadatas"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {
     debug: flags.boolean({
@@ -43,51 +39,46 @@ export default class UnusedMetadatas extends SfdxCommand {
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
-  private directories: string[] = [
-    "force-app/main/default/aura",
-    "force-app/main/default/assignmentRules",
-    "force-app/main/default/classes",
-    "force-app/main/default/email",
-    "force-app/main/default/flexipages",
-    "force-app/main/default/flows",
-    "force-app/main/default/lwc",
-    "force-app/main/default/objects",
-    "force-app/main/default/pages",
-    "force-app/main/default/permissionsets",
-    "force-app/main/default/quickActions",
-    "force-app/main/default/staticresources",
-    "force-app/main/default/triggers",
+  private ignorePatterns: string[] = [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/cache/**",
+    "**/.npm/**",
+    "**/logs/**",
+    "**/.sfdx/**",
+    "**/.sf/**",
+    "**/.vscode/**",
+    "**/node_modules/**",
   ];
 
-  private filePath = "force-app/main/default/labels/CustomLabels.labels-meta.xml";
-  private directoryPath = "force-app/main/default/customPermissions/*.xml";
+  private projectFiles: string[];
+  private labelFilePattern = "**/CustomLabels.labels-meta.xml";
+  private customPermissionFilePattern = "**/customPermissions/*.xml";
 
   public async run(): Promise<AnyJson> {
+    await this.setProjectFiles();
     const unusedLabels = await this.verifyLabels();
     const unusedCustomPermissions = await this.verifyCustomPermissions();
     const attachments: MessageAttachment[] = [];
-    let notifMessage = "";
 
     if (unusedLabels.length > 0) {
-      notifMessage += `Unused labels detected in your branch. `;
       attachments.push({
-        text: `*Unused Labels:*\n${unusedLabels.map((label) => `• ${label}`).join("\n")}`,
+        text: `*Unused Labels*\n${unusedLabels.map((label) => `• ${label}`).join("\n")}`,
       });
     }
 
     if (unusedCustomPermissions.length > 0) {
-      notifMessage += `Unused custom permissions detected. `;
       attachments.push({
-        text: `*Unused Custom Permissions:*\n${unusedCustomPermissions.map((permission) => `• ${permission}`).join("\n")}`,
+        text: `*Unused Custom Permissions*\n${unusedCustomPermissions.map((permission) => `• ${permission}`).join("\n")}`,
       });
     }
 
-    if (notifMessage) {
+    if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
 
       NotifProvider.postNotifications({
-        text: `Branch ${branchMd}:\n ${notifMessage}`,
+        text: `Unused metadatas detected in ${branchMd}\n`,
         attachments: attachments,
         buttons: notifButtons,
         severity: "warning",
@@ -105,9 +96,16 @@ export default class UnusedMetadatas extends SfdxCommand {
    * @returns
    */
   private async verifyLabels(): Promise<string[]> {
+    const labelFiles = await glob(this.labelFilePattern, { ignore: this.ignorePatterns });
+    const labelFilePath = labelFiles[0];
+
+    if (!labelFilePath) {
+      console.warn("No label file found.");
+      return [];
+    }
+
     return new Promise((resolve, reject) => {
-      const unusedLabels: string[] = [];
-      fs.readFile(this.filePath, "utf-8", (errorReadingFile, data) => {
+      fs.readFile(labelFilePath, "utf-8", (errorReadingFile, data) => {
         if (errorReadingFile) {
           reject(errorReadingFile);
           return;
@@ -120,23 +118,16 @@ export default class UnusedMetadatas extends SfdxCommand {
           }
 
           const labelsArray: string[] = result.CustomLabels.labels.map((label: any) => label.fullName[0]);
-          const files: string[] = [];
-          this.directories.forEach((directory) => {
-            const directoryFiles: string[] = glob.sync(`${directory}/**/*.*`);
-            directoryFiles.forEach((file) => {
-              const content: string = fs.readFileSync(file, "utf-8").toLowerCase();
-              files.push(content);
+          const unusedLabels: string[] = labelsArray.filter((label) => {
+            const labelLower = `label.${label.toLowerCase()}`;
+            const cLower = `c.${label.toLowerCase()}`;
+            const auraPattern = `{!$Label.c.${label.toLowerCase()}}`;
+            return !this.projectFiles.some((filePath) => {
+              const fileContent = fs.readFileSync(filePath, "utf-8").toLowerCase();
+              return fileContent.includes(labelLower) || fileContent.includes(cLower) || fileContent.includes(auraPattern);
             });
           });
 
-          labelsArray.forEach((label) => {
-            const labelLower = `label.${label.toLowerCase()}`;
-            const cLower = `c.${label.toLowerCase()}`;
-            const found: boolean = files.some((content) => content.includes(labelLower) || content.includes(cLower));
-            if (!found) {
-              unusedLabels.push(label);
-            }
-          });
           resolve(unusedLabels);
         });
       });
@@ -148,22 +139,40 @@ export default class UnusedMetadatas extends SfdxCommand {
    * @returns
    */
   private async verifyCustomPermissions(): Promise<string[]> {
-    const foundLabels = new Set<string>();
-    const files: string[] = glob.sync(this.directoryPath);
-    const customPermissionNames = new Set(files.map((filePath) => path.basename(filePath, ".customPermission-meta.xml")));
+    const foundLabels = new Map<string, number>();
+    const customPermissionFiles: string[] = await glob(this.customPermissionFilePattern, { ignore: this.ignorePatterns });
 
-    for (const dir of this.directories) {
-      const dirFiles: string[] = glob.sync(`${dir}/**/*.*`);
-      for (const filePath of dirFiles) {
-        const fileData: string = fs.readFileSync(filePath, "utf-8");
-        for (const label of customPermissionNames) {
-          if (fileData.includes(label)) {
-            foundLabels.add(label);
-          }
+    if (!customPermissionFiles) {
+      console.warn("No custom permission file found.");
+      return [];
+    }
+
+    for (const file of customPermissionFiles) {
+      const fileData = await fs.readFile(file, "utf-8");
+      const fileName = path.basename(file, ".customPermission-meta.xml");
+      let label = "";
+
+      xml2js.parseString(fileData, (error, result) => {
+        if (error) {
+          console.error(`Error parsing XML: ${error}`);
+          return;
+        }
+        label = result.CustomPermission.label[0];
+      });
+
+      for (const filePath of this.projectFiles) {
+        const fileContent: string = fs.readFileSync(filePath, "utf-8");
+        if (fileContent.includes(fileName) || fileContent.includes(label)) {
+          const currentCount = foundLabels.get(fileName) || 0;
+          foundLabels.set(fileName, currentCount + 1);
         }
       }
     }
 
-    return [...customPermissionNames].filter((label) => !foundLabels.has(label));
+    return [...foundLabels.keys()].filter((key) => (foundLabels.get(key) || 0) < 2);
+  }
+
+  private async setProjectFiles(): Promise<void> {
+    this.projectFiles = await glob("**/*.{cls,trigger,js,html,xml,cmp,email,page}", { ignore: this.ignorePatterns });
   }
 }
