@@ -9,6 +9,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Add new feature to identify custom metadata (Labels and custom permissions) not used in source code
 - **hardis:lint:unusedmetadata** : New command to identify custom metadata (Labels and custom permissions) not used in source code
 - **Add two function getNotificationButtons and getBranchMarkdown in notifUtils.ts class to factorize code**
+- Video explaining how to setup sfdx-hardis monitoring
+- Improve notifications display of lists
 
 ## [4.13.4] 2023-11-22
 
