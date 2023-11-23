@@ -89,7 +89,7 @@ export default class UnusedMetadatas extends SfdxCommand {
       const notifButtons = await getNotificationButtons();
 
       NotifProvider.postNotifications({
-        text: `Branch ${branchMd}: ${notifMessage}`,
+        text: `Branch ${branchMd}:\n ${notifMessage}`,
         attachments: attachments,
         buttons: notifButtons,
         severity: "warning",
