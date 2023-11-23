@@ -73,14 +73,14 @@ export default class UnusedMetadatas extends SfdxCommand {
     if (unusedLabels.length > 0) {
       notifMessage += `Unused labels detected in your branch. `;
       attachments.push({
-        text: `*Unused Labels:*\n${unusedLabels.map((label) => `• ${label}`).join("\n")}`, // Slack uses • for list items
+        text: `*Unused Labels:*\n${unusedLabels.map((label) => `• ${label}`).join("\n")}`,
       });
     }
 
     if (unusedCustomPermissions.length > 0) {
       notifMessage += `Unused custom permissions detected. `;
       attachments.push({
-        text: `*Unused Custom Permissions:*\n${unusedCustomPermissions.map((permission) => `• ${permission}`).join("\n")}`, // Slack uses • for list items
+        text: `*Unused Custom Permissions:*\n${unusedCustomPermissions.map((permission) => `• ${permission}`).join("\n")}`,
       });
     }
 
@@ -93,10 +93,10 @@ export default class UnusedMetadatas extends SfdxCommand {
         attachments: attachments,
         buttons: notifButtons,
         severity: "warning",
-        sideImage: "flow", // Make sure this is compatible with Slack's formatting
+        sideImage: "flow",
       });
     } else {
-      uxLog(this, "No unused labels detected.");
+      uxLog(this, "No unused labels detected or custom permissions detected.");
     }
 
     return {};
