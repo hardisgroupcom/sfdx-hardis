@@ -1,7 +1,9 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { execCommand, execSfdxJson, getGitRepoRoot, git, uxLog } from ".";
+import { execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
+import { GitProvider } from "../gitProvider";
+import { UtilsNotifs } from "../notifProvider";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -67,4 +69,14 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     cwd: await getGitRepoRoot(),
   });
   return gitDeltaCommandRes;
+}
+
+export async function getBranchMarkdown(): Promise<string> {
+  const currentGitBranch = await getCurrentGitBranch();
+  let branchMd = `*${currentGitBranch}*`;
+  const branchUrl = await GitProvider.getCurrentBranchUrl();
+  if (branchUrl) {
+    branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
+  }
+  return branchMd;
 }

@@ -6,6 +6,7 @@ import { uxLog } from ".";
 import * as c from "chalk";
 import { IncomingWebhook } from "ms-teams-webhook";
 import { getConfig } from "../../config";
+import { GitProvider } from "../gitProvider";
 
 // Check if current process can send notifications
 export async function canSendNotifications(): Promise<boolean> {
@@ -132,4 +133,13 @@ async function sendMsTeamsHook(msTeamsWebhookUrl, title, text, summary, buttons)
   }
   await webhook.send(JSON.stringify(teamsHookData));
   uxLog(this, c.grey("Sent Ms Teams notification to " + msTeamsWebhookUrl + " : " + teamsHookData.title));
+}
+
+export async function getNotificationButtons(): Promise<{ text: string; url: string }[]> {
+  const notifButtons = [];
+  const jobUrl = await GitProvider.getJobUrl();
+  if (jobUrl) {
+    notifButtons.push({ text: "View Job", url: jobUrl });
+  }
+  return notifButtons;
 }
