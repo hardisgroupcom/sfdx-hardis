@@ -4,6 +4,24 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.13.4] 2023-11-22
+
+- Upgrade ms-teams-webhook library so it works again !
+- **hardis:org:diagnose:audittrail**: Add changedmanager  to not suspect setup actions
+
+## [4.13.2] 2023-11-21
+
+- **hardis:lint:access**: Do not display empty metadata types in notification.
+- **hardis:work:new**: Improve prompt messages when asked if you want to refresh your sandbox
+
+## [4.13.1] 2023-11-21
+
+- **hardis:lint:access**
+  - Exclude custom settings, custom metadata and data cloud from fields access check
+- **hardis:org:diagnose:audittrail**
+  - Add changedUserEmailVerifiedStatusUnverified and useremailchangesent to not suspect setup actions
+- Output info in case Ms Teams notification failed to be sent
+
 ## [4.13.0] 2023-11-19
 
 - Monitoring

@@ -199,8 +199,8 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     return prMessage.status === "valid"
       ? CommentThreadStatus.Fixed
       : prMessage.status === "invalid"
-      ? CommentThreadStatus.Active
-      : CommentThreadStatus.Unknown;
+        ? CommentThreadStatus.Active
+        : CommentThreadStatus.Unknown;
   }
 
   private completePullRequestInfo(prData: any) {
