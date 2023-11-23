@@ -446,9 +446,9 @@ export default class Access extends SfdxCommand {
       let notifDetailText = ``;
       for (const missingType of Object.keys(this.missingElementsMap)) {
         if (this.missingElementsMap[missingType]?.length > 0) {
-          notifDetailText += `* ${missingType}\n`;
+          notifDetailText += `• ${missingType}\n`;
           for (const missingItem of this.missingElementsMap[missingType]) {
-            notifDetailText += `  * ${missingItem}\n`;
+            notifDetailText += `  • ${missingItem}\n`;
           }
         }
       }

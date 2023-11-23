@@ -127,7 +127,7 @@ export default class MonitorBackup extends SfdxCommand {
       }
       const attachments: MessageAttachment[] = [
         {
-          text: diffFiles.map((diffLine) => `* ${diffLine}`).join("\n"),
+          text: diffFiles.map((diffLine) => `• ${diffLine}`).join("\n"),
         },
       ];
       NotifProvider.postNotifications({
