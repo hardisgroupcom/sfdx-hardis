@@ -5,11 +5,15 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as glob from "glob-promise";
 import * as fs from "fs-extra";
 import * as xml2js from "xml2js";
+import * as c from "chalk";
 import { NotifProvider } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
 import { getNotificationButtons, getBranchMarkdown } from "../../../common/utils/notifUtils";
-import { uxLog } from "../../../common/utils";
+import { getCurrentGitBranch, uxLog } from "../../../common/utils";
 import path = require("path");
+import * as Papa from "papaparse";
+import { getReportDirectory } from "../../../config";
+import { WebSocketClient } from "../../../common/websocketClient";
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
@@ -24,6 +28,10 @@ export default class unusedmetadatas extends SfdxCommand {
       default: false,
       description: messages.getMessage("debugMode"),
     }),
+    outputfile: flags.string({
+      char: "o",
+      description: "Force the path and name of output report file. Must end with .csv",
+    }),
     websocket: flags.string({
       description: messages.getMessage("websocket"),
     }),
@@ -32,7 +40,7 @@ export default class unusedmetadatas extends SfdxCommand {
     }),
   };
   /* jscpd:ignore-end */
-
+  protected outputFile;
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
   // Comment this out if your command does not support a hub org username
@@ -84,6 +92,7 @@ export default class unusedmetadatas extends SfdxCommand {
         severity: "warning",
         sideImage: "flow",
       });
+      this.generateCsvFile(unusedLabels, unusedCustomPermissions);
     } else {
       uxLog(this, "No unused labels detected or custom permissions detected.");
     }
@@ -174,5 +183,29 @@ export default class unusedmetadatas extends SfdxCommand {
 
   private async setProjectFiles(): Promise<void> {
     this.projectFiles = await glob("**/*.{cls,trigger,js,html,xml,cmp,email,page}", { ignore: this.ignorePatterns });
+  }
+
+  private async generateCsvFile(unusedLabels: string[], unusedCustomPermissions: string[]): Promise<void> {
+    if (this.outputFile == null) {
+      const reportDir = await getReportDirectory();
+      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+      this.outputFile = path.join(reportDir, "lint-unusedmetadatas-" + branchName.split("/").pop() + ".csv");
+    } else {
+      await fs.ensureDir(path.dirname(this.outputFile));
+    }
+
+    try {
+      const csvData = [
+        ...unusedLabels.map((label) => ({ type: "Label", name: label })),
+        ...unusedCustomPermissions.map((permission) => ({ type: "Custom Permission", name: permission })),
+      ];
+      const csvContent = Papa.unparse(csvData);
+      await fs.writeFile(this.outputFile, csvContent, "utf8");
+      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(this.outputFile)}`)));
+      WebSocketClient.requestOpenFile(this.outputFile);
+    } catch (e) {
+      uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
+      this.outputFile = null;
+    }
   }
 }
