@@ -4,10 +4,16 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.13.5] 2023-11-23
+
+- Add new feature to identify custom metadata (Labels and custom permissions) not used in source code
+- **hardis:lint:unusedmetadata** : New command to identify custom metadata (Labels and custom permissions) not used in source code
+- **Add two function getNotificationButtons and getBranchMarkdown in notifUtils.ts class to factorize code**
+
 ## [4.13.4] 2023-11-22
 
 - Upgrade ms-teams-webhook library so it works again !
-- **hardis:org:diagnose:audittrail**: Add changedmanager  to not suspect setup actions
+- **hardis:org:diagnose:audittrail**: Add changedmanager to not suspect setup actions
 
 ## [4.13.2] 2023-11-21
 
@@ -169,13 +175,16 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.6.0] 2023-09-20
 
 - [sfdx-hardis & Slack Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
+
   - Easy configuration
   - Deployment notifications to a common channel, and also to git branch dedicated channel
 
 - Native [BitBucket](https://bitbucket.com/) CI/CD Pipeline for PR deployment checks and deployments to major orgs after merge
+
   - _PR comments are not implemented yet but BitBucket can already be used for production_
 
 - **hardis:project:deploy:dx** enhancements:
+
   - Added new option --testlevel RunRepositoryTests which will dynamically detect all GIT repository test classes and runs the deployment with found tests. This will speed up the validation/deployment on cases where GIT repository module contains subset of all tests found in the org
   - Added --runtests support in order to pass certain APEX test classes when --testlevel RunSpecifiedTests is used
 
@@ -195,7 +204,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Create sfdx project: Change defaut first major branch name to `integration` (it was previously `develop`)
 - Update default API version to 58.0
 - Fix bug when user email is input the first time
-
 
 ## [4.3.2] 2023-09-08
 
@@ -250,10 +258,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Update default azure-pipelines-deployment.yml to add mandatory variables for QuickDeploy
 
 ```yaml
-          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
-          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
-          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+BUILD_REPOSITORY_ID: $(Build.Repository.ID)
 ```
 
 ## [4.1.0] 2023-08-22
