@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.13.5] 2023-11-23
+## [4.14.0] 2023-11-23
 
 - Add new feature to identify custom metadata (Labels and custom permissions) not used in source code
 - **hardis:lint:unusedmetadata** : New command to identify custom metadata (Labels and custom permissions) not used in source code
