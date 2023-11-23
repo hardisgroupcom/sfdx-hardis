@@ -143,3 +143,13 @@ export async function getNotificationButtons(): Promise<{ text: string; url: str
   }
   return notifButtons;
 }
+
+export async function getBranchMarkdown(): Promise<string> {
+  const currentGitBranch = await getCurrentGitBranch();
+  let branchMd = `*${currentGitBranch}*`;
+  const branchUrl = await GitProvider.getCurrentBranchUrl();
+  if (branchUrl) {
+    branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
+  }
+  return branchMd;
+}

@@ -70,13 +70,3 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
   });
   return gitDeltaCommandRes;
 }
-
-export async function getBranchMarkdown(): Promise<string> {
-  const currentGitBranch = await getCurrentGitBranch();
-  let branchMd = `*${currentGitBranch}*`;
-  const branchUrl = await GitProvider.getCurrentBranchUrl();
-  if (branchUrl) {
-    branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
-  }
-  return branchMd;
-}

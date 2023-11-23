@@ -7,8 +7,7 @@ import * as fs from "fs-extra";
 import * as xml2js from "xml2js";
 import { NotifProvider } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
-import { getNotificationButtons } from "../../../common/utils/notifUtils";
-import { getBranchMarkdown } from "../../../common/utils/gitUtils";
+import { getNotificationButtons, getBranchMarkdown } from "../../../common/utils/notifUtils";
 import { uxLog } from "../../../common/utils";
 import path = require("path");
 Messages.importMessagesDirectory(__dirname);
@@ -66,9 +65,8 @@ export default class UnusedMetadatas extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     const unusedLabels = await this.verifyLabels();
     const unusedCustomPermissions = await this.verifyCustomPermissions();
-
-    let notifMessage = "";
     const attachments: MessageAttachment[] = [];
+    let notifMessage = "";
 
     if (unusedLabels.length > 0) {
       notifMessage += `Unused labels detected in your branch. `;
