@@ -11,13 +11,10 @@ import { getNotificationButtons } from "../../../common/utils/notifUtils";
 import { getBranchMarkdown } from "../../../common/utils/gitUtils";
 import { uxLog } from "../../../common/utils";
 import path = require("path");
-// Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CustomLabels extends SfdxCommand {
+export default class UnusedMetadatas extends SfdxCommand {
   public static title = "check unused labels and custom permissions";
   public static description = "Check if elements (custom labels and custom permissions) are used in the project";
   public static examples = [
@@ -64,6 +61,7 @@ export default class CustomLabels extends SfdxCommand {
   ];
 
   private filePath = "force-app/main/default/labels/CustomLabels.labels-meta.xml";
+  private directoryPath = "force-app/main/default/customPermissions/*.xml";
 
   public async run(): Promise<AnyJson> {
     const unusedLabels = await this.verifyLabels();
@@ -152,9 +150,8 @@ export default class CustomLabels extends SfdxCommand {
    * @returns
    */
   private async verifyCustomPermissions(): Promise<string[]> {
-    const directoryPath = "force-app/main/default/customPermissions/*.xml";
     const foundLabels = new Set<string>();
-    const files: string[] = glob.sync(directoryPath);
+    const files: string[] = glob.sync(this.directoryPath);
     const customPermissionNames = new Set(files.map((filePath) => path.basename(filePath, ".customPermission-meta.xml")));
 
     for (const dir of this.directories) {
