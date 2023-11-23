@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Video explaining how to setup sfdx-hardis monitoring
+- Improve notifications display of lists
+
 ## [4.13.4] 2023-11-22
 
 - Upgrade ms-teams-webhook library so it works again !
