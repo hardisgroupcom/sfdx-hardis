@@ -2,10 +2,12 @@
 This class is deprecated and kept for backward compatibility
 Use NotifProvider class instead :)
 */
-import { uxLog } from ".";
+import { getCurrentGitBranch, uxLog } from ".";
 import * as c from "chalk";
 import { IncomingWebhook } from "ms-teams-webhook";
 import { getConfig } from "../../config";
+import { GitProvider } from "../gitProvider";
+import { UtilsNotifs } from "../notifProvider";
 
 // Check if current process can send notifications
 export async function canSendNotifications(): Promise<boolean> {
@@ -132,4 +134,23 @@ async function sendMsTeamsHook(msTeamsWebhookUrl, title, text, summary, buttons)
   const webhook = new IncomingWebhook(msTeamsWebhookUrl);
   await webhook.send(teamsHookData);
   uxLog(this, c.grey("Sent Ms Teams notification to " + msTeamsWebhookUrl + " : " + teamsHookData.title));
+}
+
+export async function getNotificationButtons(): Promise<{ text: string; url: string }[]> {
+  const notifButtons = [];
+  const jobUrl = await GitProvider.getJobUrl();
+  if (jobUrl) {
+    notifButtons.push({ text: "View Job", url: jobUrl });
+  }
+  return notifButtons;
+}
+
+export async function getBranchMarkdown(): Promise<string> {
+  const currentGitBranch = await getCurrentGitBranch();
+  let branchMd = `*${currentGitBranch}*`;
+  const branchUrl = await GitProvider.getCurrentBranchUrl();
+  if (branchUrl) {
+    branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
+  }
+  return branchMd;
 }
