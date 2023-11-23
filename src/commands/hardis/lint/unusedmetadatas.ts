@@ -17,7 +17,7 @@ import { WebSocketClient } from "../../../common/websocketClient";
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class unusedmetadatas extends SfdxCommand {
+export default class UnusedMetadatas extends SfdxCommand {
   public static title = "check unused labels and custom permissions";
   public static description = "Check if elements (custom labels and custom permissions) are used in the project";
   public static examples = ["$ sfdx hardis:lint:unusedmetadatas"];
