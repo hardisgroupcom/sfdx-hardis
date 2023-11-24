@@ -1,14 +1,21 @@
-import { Connection, SfdxError } from "@salesforce/core";
-import PromisePool = require("@supercharge/promise-pool/dist");
-import * as c from "chalk";
+// External Libraries and Node.js Modules
 import * as fs from "fs-extra";
+import path = require("path");
+import * as c from "chalk";
 import * as fetch from "@adobe/node-fetch-retry";
-import * as path from "path";
 import * as split from "split";
-import { isCI, uxLog } from ".";
-import { CONSTANTS } from "../../config";
-import { prompts } from "./prompts";
+import PromisePool = require("@supercharge/promise-pool/dist");
+
+// Salesforce Specific and Other Specific Libraries
+import { Connection, SfdxError } from "@salesforce/core";
+import * as Papa from "papaparse";
+
+// Project Specific Utilities
+import { getCurrentGitBranch, isCI, uxLog } from ".";
 import { bulkQuery, soqlQuery } from "./apiUtils";
+import { prompts } from "./prompts";
+import { CONSTANTS, getReportDirectory } from "../../config";
+import { WebSocketClient } from "../websocketClient";
 
 export const filesFolderRoot = path.join(".", "scripts", "files");
 
@@ -508,4 +515,44 @@ export async function countLinesInFile(file: string) {
         resolve(error);
       });
   });
+}
+
+/**
+ * @description This function generates a report path for a given file name prefix.
+ * It retrieves the report directory and the current branch name.
+ * If the branch name is not available in the environment variable CI_COMMIT_REF_NAME, it tries to get the current git branch.
+ * If both are not available, it uses the string "Missing CI_COMMIT_REF_NAME variable".
+ * It then joins the report directory, file name prefix, and branch name to form the full path of the report.
+ *
+ * @param {string} fileNamePrefix - The prefix for the file name.
+ * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
+ */
+export async function generateReportPath(fileNamePrefix: string, outputFile: string): Promise<string> {
+  if (outputFile == null) {
+    const reportDir = await getReportDirectory();
+    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+    return path.join(reportDir, `${fileNamePrefix}${branchName.split("/").pop()}.csv`);
+  } else {
+    await fs.ensureDir(path.dirname(outputFile));
+  }
+}
+
+/**
+ * @description This function generates a CSV file from the provided data and writes it to the specified output path.
+ * If the operation is successful, it logs a message and requests to open the file.
+ * If an error occurs during the operation, it logs the error message and stack trace.
+ *
+ * @param {any[]} data - The data to be written to the CSV file.
+ * @param {string} outputPath - The path where the CSV file will be written.
+ * @returns {Promise<void>} - A Promise that resolves when the operation is complete.
+ */
+export async function generateCsvFile(data: any[], outputPath: string): Promise<void> {
+  try {
+    const csvContent = Papa.unparse(data);
+    await fs.writeFile(outputPath, csvContent, "utf8");
+    uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(outputPath)}`)));
+    WebSocketClient.requestOpenFile(outputPath);
+  } catch (e) {
+    uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
+  }
 }
