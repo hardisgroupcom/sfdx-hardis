@@ -4,11 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.15.0] 2023-11-24
-
 - Add new feature to identify custom metadata (flows) inactive in project
-- **hardis:lint:metadatastatus** : New command to identify custom metadata (Labels and custom permissions) not used in source code
+  - **hardis:lint:metadatastatus** : New command to identify custom metadata (Labels and custom permissions) not used in source code
 - **Rework generate csv file** : generateReportPath and generateCsvFile
+- Update monitoring and slack documentation
 
 ## [4.14.0] 2023-11-23
 
