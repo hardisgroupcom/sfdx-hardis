@@ -82,6 +82,7 @@ monitoringCommands:
       { title: "Detect custom elements with no access rights defined in permission sets", command: "sfdx hardis:lint:access" },
       { title: "Detect custom labels and custom permissions that are not in use", command: "sfdx hardis:lint:unusedmetadatas" },
       { title: "Detect inactive metadata", command: "sfdx hardis:lint:metadatastatus" },
+      { title: "Detect missing description on custom field", command: "sfdx hardis:lint:missingattributes" },
     ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;

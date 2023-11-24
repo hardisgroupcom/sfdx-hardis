@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.16.0] 2023-11-25
+
+- Add new feature to identify custom fields without description
+- **hardis:lint:missingattributes** : New command to identify custom field without description
+
 ## [4.15.0] 2023-11-24
 
 - Add new feature to identify custom metadata (flows) inactive in project
