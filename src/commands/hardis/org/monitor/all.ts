@@ -81,6 +81,7 @@ monitoringCommands:
       { title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" },
       { title: "Detect custom elements with no access rights defined in permission sets", command: "sfdx hardis:lint:access" },
       { title: "Detect custom labels and custom permissions that are not in use", command: "sfdx hardis:lint:unusedmetadatas" },
+      { title: "Detect inactive metadata", command: "sfdx hardis:lint:metadatastatus" },
     ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;

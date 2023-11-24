@@ -136,6 +136,13 @@ async function sendMsTeamsHook(msTeamsWebhookUrl, title, text, summary, buttons)
   uxLog(this, c.grey("Sent Ms Teams notification to " + msTeamsWebhookUrl + " : " + teamsHookData.title));
 }
 
+/**
+ * @description This function retrieves the job URL from the GitProvider and creates a notification button if the job URL exists.
+ * The notification button is an object with a 'text' property set to "View Job" and a 'url' property set to the job URL.
+ * It returns an array of such notification buttons.
+ *
+ * @returns {Promise<{ text: string; url: string }[]>} - A Promise that resolves to an array of notification buttons.
+ */
 export async function getNotificationButtons(): Promise<{ text: string; url: string }[]> {
   const notifButtons = [];
   const jobUrl = await GitProvider.getJobUrl();
@@ -145,6 +152,14 @@ export async function getNotificationButtons(): Promise<{ text: string; url: str
   return notifButtons;
 }
 
+/**
+ * @descriptionThis function retrieves the current Git branch and its URL from the GitProvider.
+ * It then generates a markdown string for the branch.
+ * If the branch URL exists, it creates a markdown link with the branch name as the link text.
+ * Otherwise, it simply formats the branch name in markdown.
+ *
+ * @returns {Promise<string>} - A Promise that resolves to a markdown string for the current Git branch.
+ */
 export async function getBranchMarkdown(): Promise<string> {
   const currentGitBranch = await getCurrentGitBranch();
   let branchMd = `*${currentGitBranch}*`;
