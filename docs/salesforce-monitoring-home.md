@@ -62,7 +62,7 @@ Are you ready ? [Configure the monitoring on your orgs](salesforce-monitoring-co
 
 Latest step of monitoring runs the following checks.
 
-You can disable some of them by defining either a **monitoringDisable** property in `.sfdx-ahrdis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
+You can disable some of them by defining either a **monitoringDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
 
 Example in .sfdx-hardis.yml:
 
@@ -82,18 +82,28 @@ MONITORING_DISABLE=METADATA_STATUS,UNUSED_METADATAS
 
 Sfdx-hardis command: [sfdx hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/)
 
+Key: **AUDIT_TRAIL**
+
 ### Detect calls to deprecated API versions
 
 Sfdx-hardis command: [sfdx hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/)
+
+Key: **LEGACY_API**
 
 ### Detect custom elements with no access rights defined in permission sets
 
 Sfdx-hardis command: [sfdx hardis:lint:access](https://sfdx-hardis.cloudity.com/hardis/lint/access/)
 
+Key: **LINT_ACCESS**
+
 ### Detect custom labels and custom permissions that are not in use
 
 Sfdx-hardis command: [sfdx hardis:lint:unusedmetadatas](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/)
 
+Key: **UNUSED_METADATAS**
+
 ### Detect inactive metadata
 
 Sfdx-hardis command: [sfdx hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
+
+Key: **METADATA_STATUS**
