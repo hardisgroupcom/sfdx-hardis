@@ -527,10 +527,14 @@ export async function countLinesInFile(file: string) {
  * @param {string} fileNamePrefix - The prefix for the file name.
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
-export async function generateReportPath(fileNamePrefix: string): Promise<string> {
-  const reportDir = await getReportDirectory();
-  const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-  return path.join(reportDir, `${fileNamePrefix}${branchName.split("/").pop()}.csv`);
+export async function generateReportPath(fileNamePrefix: string, outputFile: string): Promise<string> {
+  if (outputFile == null) {
+    const reportDir = await getReportDirectory();
+    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+    return path.join(reportDir, `${fileNamePrefix}${branchName.split("/").pop()}.csv`);
+  } else {
+    await fs.ensureDir(path.dirname(outputFile));
+  }
 }
 
 /**

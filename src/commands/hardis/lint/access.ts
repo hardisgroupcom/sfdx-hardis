@@ -1,7 +1,6 @@
 /* jscpd:ignore-start */
 // External Libraries
 import * as c from "chalk";
-import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
 import * as sortArray from "sort-array";
@@ -422,13 +421,7 @@ export default class Access extends SfdxCommand {
     if (this.missingElements.length === 0) {
       return;
     }
-
-    if (this.outputFile == null) {
-      this.outputFile = await generateReportPath("lint-access-");
-    } else {
-      await fs.ensureDir(path.dirname(this.outputFile));
-    }
-
+    this.outputFile = await generateReportPath("lint-access-", this.outputFile);
     await generateCsvFile(this.missingElements, this.outputFile);
   }
 
