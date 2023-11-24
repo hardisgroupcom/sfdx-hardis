@@ -1,20 +1,25 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
+// External Libraries
 import * as glob from "glob-promise";
 import * as fs from "fs-extra";
 import * as xml2js from "xml2js";
-import * as c from "chalk";
+import path = require("path");
+
+// Salesforce Specific
+import { flags, SfdxCommand } from "@salesforce/command";
+import { Messages } from "@salesforce/core";
+import { AnyJson } from "@salesforce/ts-types";
+
+// Project Specific Utilities
 import { NotifProvider } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
 import { getNotificationButtons, getBranchMarkdown } from "../../../common/utils/notifUtils";
-import { getCurrentGitBranch, uxLog } from "../../../common/utils";
-import path = require("path");
-import * as Papa from "papaparse";
-import { getReportDirectory } from "../../../config";
-import { WebSocketClient } from "../../../common/websocketClient";
+import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
+import { uxLog } from "../../../common/utils";
+
+// Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
+// Load Messages
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class UnusedMetadatas extends SfdxCommand {
@@ -40,7 +45,7 @@ export default class UnusedMetadatas extends SfdxCommand {
     }),
   };
   /* jscpd:ignore-end */
-  protected outputFile;
+  protected outputFile: string;
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
   // Comment this out if your command does not support a hub org username
@@ -92,7 +97,7 @@ export default class UnusedMetadatas extends SfdxCommand {
         severity: "warning",
         sideImage: "flow",
       });
-      this.generateCsvFile(unusedLabels, unusedCustomPermissions);
+      this.buildCsvFile(unusedLabels, unusedCustomPermissions);
     } else {
       uxLog(this, "No unused labels detected or custom permissions detected.");
     }
@@ -185,27 +190,18 @@ export default class UnusedMetadatas extends SfdxCommand {
     this.projectFiles = await glob("**/*.{cls,trigger,js,html,xml,cmp,email,page}", { ignore: this.ignorePatterns });
   }
 
-  private async generateCsvFile(unusedLabels: string[], unusedCustomPermissions: string[]): Promise<void> {
+  private async buildCsvFile(unusedLabels: string[], unusedCustomPermissions: string[]): Promise<void> {
     if (this.outputFile == null) {
-      const reportDir = await getReportDirectory();
-      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      this.outputFile = path.join(reportDir, "lint-unusedmetadatas-" + branchName.split("/").pop() + ".csv");
+      this.outputFile = await generateReportPath("lint-unusedmetadatas-");
     } else {
       await fs.ensureDir(path.dirname(this.outputFile));
     }
 
-    try {
-      const csvData = [
-        ...unusedLabels.map((label) => ({ type: "Label", name: label })),
-        ...unusedCustomPermissions.map((permission) => ({ type: "Custom Permission", name: permission })),
-      ];
-      const csvContent = Papa.unparse(csvData);
-      await fs.writeFile(this.outputFile, csvContent, "utf8");
-      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(this.outputFile)}`)));
-      WebSocketClient.requestOpenFile(this.outputFile);
-    } catch (e) {
-      uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
-      this.outputFile = null;
-    }
+    const csvData = [
+      ...unusedLabels.map((label) => ({ type: "Label", name: label })),
+      ...unusedCustomPermissions.map((permission) => ({ type: "Custom Permission", name: permission })),
+    ];
+
+    await generateCsvFile(csvData, this.outputFile);
   }
 }

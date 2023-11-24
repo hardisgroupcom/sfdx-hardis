@@ -7,28 +7,26 @@ import { uxLog } from "../../../common/utils";
 import * as fs from "fs-extra";
 import { MessageAttachment } from "@slack/types";
 import { NotifProvider } from "../../../common/notifProvider";
-//TODO getConfig Unused how to use this ?
-// import { getConfig } from "../../../config";
-// Initialize Messages with the current plugin directory
+import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
+import path = require("path");
+import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
 Messages.importMessagesDirectory(__dirname);
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class Metadatastatus extends SfdxCommand {
-  public static title = "check permission access";
-  public static description = "Check if elements(apex class and field) are at least in one permission set";
-  public static examples = [
-    "$ sfdx hardis:lint:access",
-    '$ sfdx hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"',
-    '$ sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
-  ];
+  public static title = "check inactive metadatas";
+  public static description = "Check if elements(flows) are inactive in the projec";
+  public static examples = ["$ sfdx hardis:lint:metadatastatus"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {
     debug: flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
+    }),
+    outputfile: flags.string({
+      char: "o",
+      description: "Force the path and name of output report file. Must end with .csv",
     }),
     websocket: flags.string({
       description: messages.getMessage("websocket"),
@@ -45,26 +43,40 @@ export default class Metadatastatus extends SfdxCommand {
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
-
-  private flowDirectory = ["force-app/main/default/flows"];
+  private flowFilePattern = "**/flows/**/*.flow-meta.xml";
+  private ignorePatterns: string[] = [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/cache/**",
+    "**/.npm/**",
+    "**/logs/**",
+    "**/.sfdx/**",
+    "**/.sf/**",
+    "**/.vscode/**",
+    "**/node_modules/**",
+  ];
+  protected outputFile: string;
 
   public async run(): Promise<AnyJson> {
-    // const config = await getConfig("user");
     const draftFiles = await this.verifyFlows();
     if (draftFiles.length > 0) {
-      const notifMessage = `Draft flow files detected in your org`;
       const attachments: MessageAttachment[] = [
         {
-          text: draftFiles.map((file) => `* ${file}`).join("\n"),
+          text: `*Inactive Flows*\n${draftFiles.map((file) => `• ${file}`).join("\n")}`,
         },
       ];
+      const branchMd = await getBranchMarkdown();
+      const notifButtons = await getNotificationButtons();
 
       NotifProvider.postNotifications({
-        text: notifMessage,
+        text: `Inactive metadatas detected in ${branchMd}\n`,
         attachments: attachments,
+        buttons: notifButtons,
         severity: "warning",
         sideImage: "flow",
       });
+
+      this.buildCsvFile(draftFiles);
     } else {
       uxLog(this, "No draft flow files detected.");
     }
@@ -73,19 +85,26 @@ export default class Metadatastatus extends SfdxCommand {
 
   private async verifyFlows(): Promise<string[]> {
     const draftFiles: string[] = [];
-
-    for (const directory of this.flowDirectory) {
-      const directoryFiles: string[] = glob.sync(`${directory}/**/*.*`);
-
-      for (const file of directoryFiles) {
-        const flowContent: string = await fs.readFile(file, "utf-8");
-
-        if (flowContent.includes("<status>Draft</status>")) {
-          draftFiles.push(file);
-        }
+    const flowFiles: string[] = await glob(this.flowFilePattern, { ignore: this.ignorePatterns });
+    for (const file of flowFiles) {
+      const flowContent: string = await fs.readFile(file, "utf-8");
+      if (flowContent.includes("<status>Draft</status>")) {
+        const fileName = path.basename(file, ".flow-meta.xml");
+        draftFiles.push(fileName);
       }
     }
 
     return draftFiles;
+  }
+
+  private async buildCsvFile(draftFiles: string[]): Promise<void> {
+    if (this.outputFile == null) {
+      this.outputFile = await generateReportPath("lint-unusedmetadatas-");
+    } else {
+      await fs.ensureDir(path.dirname(this.outputFile));
+    }
+
+    const csvData = draftFiles.map((file) => ({ type: "Draft Flow", name: file }));
+    await generateCsvFile(csvData, this.outputFile);
   }
 }

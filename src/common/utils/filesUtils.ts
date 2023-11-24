@@ -5,10 +5,12 @@ import * as fs from "fs-extra";
 import * as fetch from "@adobe/node-fetch-retry";
 import * as path from "path";
 import * as split from "split";
-import { isCI, uxLog } from ".";
-import { CONSTANTS } from "../../config";
+import { getCurrentGitBranch, isCI, uxLog } from ".";
+import { CONSTANTS, getReportDirectory } from "../../config";
 import { prompts } from "./prompts";
 import { bulkQuery, soqlQuery } from "./apiUtils";
+import { WebSocketClient } from "../websocketClient";
+import * as Papa from "papaparse";
 
 export const filesFolderRoot = path.join(".", "scripts", "files");
 
@@ -48,7 +50,7 @@ export class FilesExporter {
     filesPath: string,
     conn: Connection,
     options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number },
-    commandThis: any,
+    commandThis: any
   ) {
     this.filesPath = filesPath;
     this.conn = conn;
@@ -100,18 +102,18 @@ export class FilesExporter {
     if (this.apiLimit - this.apiUsedBefore < estimatedApiCalls + 1000) {
       throw new SfdxError(
         `You don't have enough API calls available (${c.bold(this.apiLimit - this.apiUsedBefore)}) to perform this export that could consume ${c.bold(
-          estimatedApiCalls,
-        )} API calls`,
+          estimatedApiCalls
+        )} API calls`
       );
     }
     // Request user confirmation
     if (!isCI) {
       const warningMessage = c.cyanBright(
         `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
-          c.yellow(this.chunksNumber),
+          c.yellow(this.chunksNumber)
         )} chunks, and consume up to ${c.bold(c.yellow(estimatedApiCalls))} API calls on the ${c.bold(
-          c.yellow(this.apiLimit - this.apiUsedBefore),
-        )} remaining API calls. Do you want to proceed ?`,
+          c.yellow(this.apiLimit - this.apiUsedBefore)
+        )} remaining API calls. Do you want to proceed ?`
       );
       const promptRes = await prompts({ type: "confirm", message: warningMessage });
       if (promptRes.value !== true) {
@@ -262,13 +264,13 @@ export class FilesExporter {
       this.dtl?.outputFileNameFormat === "id"
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
-          this.dtl?.outputFileNameFormat === "title_id"
-          ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
-          : // Id + Title
-            this.dtl?.outputFileNameFormat === "id_title"
-            ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
-            : // Title
-              path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+        this.dtl?.outputFileNameFormat === "title_id"
+        ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
+        : // Id + Title
+        this.dtl?.outputFileNameFormat === "id_title"
+        ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
+        : // Title
+          path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -430,7 +432,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
           message: c.cyanBright("Please input a description of the files export configuration"),
           initial: filesExportConfig.sfdxHardisDescription,
         },
-      ],
+      ]
     );
   }
   questions.push(
@@ -471,7 +473,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         message: "Do you want to overwrite file that has already been previously downloaded ?",
         initial: filesExportConfig.overwriteFiles,
       },
-    ],
+    ]
   );
 
   const resp = await prompts(questions);
@@ -508,4 +510,40 @@ export async function countLinesInFile(file: string) {
         resolve(error);
       });
   });
+}
+
+/**
+ * @description This function generates a report path for a given file name prefix.
+ * It retrieves the report directory and the current branch name.
+ * If the branch name is not available in the environment variable CI_COMMIT_REF_NAME, it tries to get the current git branch.
+ * If both are not available, it uses the string "Missing CI_COMMIT_REF_NAME variable".
+ * It then joins the report directory, file name prefix, and branch name to form the full path of the report.
+ *
+ * @param {string} fileNamePrefix - The prefix for the file name.
+ * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
+ */
+export async function generateReportPath(fileNamePrefix: string): Promise<string> {
+  const reportDir = await getReportDirectory();
+  const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
+  return path.join(reportDir, `${fileNamePrefix}${branchName.split("/").pop()}.csv`);
+}
+
+/**
+ * @description This function generates a CSV file from the provided data and writes it to the specified output path.
+ * If the operation is successful, it logs a message and requests to open the file.
+ * If an error occurs during the operation, it logs the error message and stack trace.
+ *
+ * @param {any[]} data - The data to be written to the CSV file.
+ * @param {string} outputPath - The path where the CSV file will be written.
+ * @returns {Promise<void>} - A Promise that resolves when the operation is complete.
+ */
+export async function generateCsvFile(data: any[], outputPath: string): Promise<void> {
+  try {
+    const csvContent = Papa.unparse(data);
+    await fs.writeFile(outputPath, csvContent, "utf8");
+    uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(outputPath)}`)));
+    WebSocketClient.requestOpenFile(outputPath);
+  } catch (e) {
+    uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
+  }
 }

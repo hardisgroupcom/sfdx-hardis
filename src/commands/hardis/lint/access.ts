@@ -1,21 +1,27 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
+// External Libraries
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as glob from "glob-promise";
 import * as path from "path";
-import * as Papa from "papaparse";
 import * as sortArray from "sort-array";
+
+// Salesforce Specific
+import { flags, SfdxCommand } from "@salesforce/command";
+import { Messages, SfdxError } from "@salesforce/core";
+import { AnyJson } from "@salesforce/ts-types";
+
+// Common Utilities
 import { getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
-//import * as fs from "fs-extra";
+import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
-import { getConfig, getReportDirectory } from "../../../config";
+import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { NotifProvider } from "../../../common/notifProvider";
 import { GitProvider } from "../../../common/gitProvider";
-import { WebSocketClient } from "../../../common/websocketClient";
-import { prompts } from "../../../common/utils/prompts";
+
+// Config
+import { getConfig } from "../../../config";
+
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
@@ -368,7 +374,7 @@ export default class Access extends SfdxCommand {
             elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField][0])
           ) {
             remainingElements[currentType.xmlField] = remainingElements[currentType.xmlField].filter(
-              (e) => e !== permission[currentType.xmlField][0],
+              (e) => e !== permission[currentType.xmlField][0]
             );
           }
         }
@@ -416,28 +422,14 @@ export default class Access extends SfdxCommand {
     if (this.missingElements.length === 0) {
       return;
     }
-    // Build output CSV file name
+
     if (this.outputFile == null) {
-      // Default file in system temp directory if --outputfile not provided
-      const reportDir = await getReportDirectory();
-      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      this.outputFile = path.join(reportDir, "lint-access-" + branchName.split("/").pop() + ".csv");
+      this.outputFile = await generateReportPath("lint-access-");
     } else {
-      // Ensure directories to provided --outputfile are existing
       await fs.ensureDir(path.dirname(this.outputFile));
     }
 
-    // Generate output CSV file
-    try {
-      const csvText = Papa.unparse(this.missingElements);
-      await fs.writeFile(this.outputFile, csvText, "utf8");
-      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(this.outputFile)}`)));
-      // Trigger command to open CSV file in VsCode extension
-      WebSocketClient.requestOpenFile(this.outputFile);
-    } catch (e) {
-      uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
-      this.outputFile = null;
-    }
+    await generateCsvFile(this.missingElements, this.outputFile);
   }
 
   private async manageNotification() {
@@ -508,7 +500,7 @@ export default class Access extends SfdxCommand {
           await this.updatePermissionSets(
             promptsElementsPs.permissionSets,
             promptsElementsPs.elements,
-            promptsElementsPs.access === "editable" ? { readable: true, editable: true } : { readable: true, editable: false },
+            promptsElementsPs.access === "editable" ? { readable: true, editable: true } : { readable: true, editable: false }
           );
         }
       }
