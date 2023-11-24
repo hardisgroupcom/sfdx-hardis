@@ -20,6 +20,10 @@ You can receive notifications on slack channels when sfdx-hardis events are happ
 
 ## Configure Slack Application
 
+All the following steps are summarized in this video tutorial
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/se292ABGUmI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
 ### Create slack app
 
 > Process only if a sfdx-hardis bot has not yet been configured on your slack. Otherwise, just request the slack token value to your slack administrator

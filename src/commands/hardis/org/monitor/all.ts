@@ -18,7 +18,23 @@ export default class MonitorAll extends SfdxCommand {
 
   public static description = `Monitor org, generate reports and sends notifications
 
-A default list of monitoring commands is used, if you want to override it you can define property **monitoringCommands** in your .sfdx-hardis.yml file
+You can disable some commands defining either a **monitoringDisable** property in \`.sfdx-hardis.yml\`, or a comma separated list in env variable **MONITORING_DISABLE**
+
+Example in .sfdx-hardis.yml:
+  
+\`\`\`yaml
+monitoringDisable:
+  - METADATA_STATUS
+  - UNUSED_METADATAS
+\`\`\`
+  
+Example in env var:
+
+\`\`\`sh
+MONITORING_DISABLE=METADATA_STATUS,UNUSED_METADATAS
+\`\`\`
+
+A [default list of monitoring commands](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/#monitoring-commands) is used, if you want to override it you can define property **monitoringCommands** in your .sfdx-hardis.yml file
 
 Example:
 
@@ -33,6 +49,7 @@ monitoringCommands:
   - title: My Custom command
     command: sfdx my:custom:command
 \`\`\`
+
 `;
 
   public static examples = ["$ sfdx hardis:org:monitor:all"];
@@ -77,19 +94,44 @@ monitoringCommands:
     uxLog(this, c.cyan("Running monitoring scripts for org " + c.bold(this.org.getConnection().instanceUrl)) + " ...");
 
     const monitoringCommandsDefault = [
-      { title: "Detect suspect setup actions in major org", command: "sfdx hardis:org:diagnose:audittrail" },
-      { title: "Detect calls to deprecated API versions", command: "sfdx hardis:org:diagnose:legacyapi" },
-      { title: "Detect custom elements with no access rights defined in permission sets", command: "sfdx hardis:lint:access" },
-      { title: "Detect custom labels and custom permissions that are not in use", command: "sfdx hardis:lint:unusedmetadatas" },
-      { title: "Detect inactive metadata", command: "sfdx hardis:lint:metadatastatus" },
+      {
+        key: "AUDIT_TRAIL",
+        title: "Detect suspect setup actions in major org",
+        command: "sfdx hardis:org:diagnose:audittrail",
+      },
+      {
+        key: "LEGACY_API",
+        title: "Detect calls to deprecated API versions",
+        command: "sfdx hardis:org:diagnose:legacyapi",
+      },
+      {
+        key: "LINT_ACCESS",
+        title: "Detect custom elements with no access rights defined in permission sets",
+        command: "sfdx hardis:lint:access",
+      },
+      {
+        key: "UNUSED_METADATAS",
+        title: "Detect custom labels and custom permissions that are not in use",
+        command: "sfdx hardis:lint:unusedmetadatas",
+      },
+      {
+        key: "METADATA_STATUS",
+        title: "Detect inactive metadata",
+        command: "sfdx hardis:lint:metadatastatus",
+      },
     ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;
+    const monitoringDisable = config.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(",") : []);
 
     let success = true;
     const commandsSummary = [];
     for (const command of commands) {
-      uxLog(this, c.cyan(`Running monitoring command ${c.bold(command.title)}`));
+      if (monitoringDisable.includes(command.key)) {
+        uxLog(this, c.grey(`Skipped command ${c.bold(command.key)} according to custom configuration`));
+        continue;
+      }
+      uxLog(this, c.cyan(`Running monitoring command ${c.bold(command.title)} (key: ${c.bold(command.key)})`));
       const execCommandResult = await execCommand(command.command, this, { fail: false, output: true });
       if (execCommandResult.status === 0) {
         uxLog(this, c.green(`Command ${c.bold(command.title)} has been run successfully`));
