@@ -27,6 +27,33 @@ export class AzureDevopsProvider extends GitProviderRoot {
     return "sfdx-hardis Azure Devops connector";
   }
 
+  // Returns current job URL
+  public async getCurrentJobUrl(): Promise<string> {
+    if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${process.env.SYSTEM_TEAMPROJECT}/_build/results?buildId=${process.env.BUILD_BUILDID}`
+      return jobUrl;
+    }
+    uxLog(this, c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
+  - SYSTEM_COLLECTIONURI
+  - SYSTEM_TEAMPROJECT
+  - BUILD_BUILDID`));
+    return null;
+  }
+
+  // Returns current job URL
+  public async getCurrentBranchUrl(): Promise<string> {
+    if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_REPOSITORYNAME && process.env.BUILD_SOURCEBRANCHNAME) {
+      const currentBranchUrl = `${process.env.SYSTEM_COLLECTIONURI}${process.env.SYSTEM_TEAMPROJECT}/_git/${process.env.BUILD_REPOSITORYNAME}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`
+      return currentBranchUrl;
+    }
+    uxLog(this, c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
+  - SYSTEM_COLLECTIONURI
+  - SYSTEM_TEAMPROJECT
+  - BUILD_REPOSITORYNAME
+  - BUILD_SOURCEBRANCHNAME`));
+    return null;
+  }
+
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
     // Case when PR is found in the context

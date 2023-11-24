@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - **hardis:lint:metadatastatus** : New command to identify custom metadata (Labels and custom permissions) not used in source code
 - **Rework generate csv file** : generateReportPath and generateCsvFile
 - Update monitoring and slack documentation
+- Fix slack, teams & Azure notifications
 
 ## [4.14.0] 2023-11-23
 
