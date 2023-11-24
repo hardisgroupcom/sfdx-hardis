@@ -128,7 +128,7 @@ export default class metadatastatus extends SfdxCommand {
       this.nonCustomSettingsFieldDirectories.map(async (fieldFile) => {
         const fieldContent = await this.readFileAsync(fieldFile);
         return await this.parseXmlStringAsync(fieldContent);
-      })
+      }),
     );
 
     for (let i = 0; i < fieldResults.length; i++) {
