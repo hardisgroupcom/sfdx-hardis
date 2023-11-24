@@ -5,7 +5,13 @@ description: Monitor your Salesforce orgs with daily metadata backup and more, w
 <!-- markdownlint-disable MD013 -->
 
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
-- [How does it work ?](#how-does-it-work)
+- [How does it work ?](#how-does-it-work--)
+- [Monitoring Commands](#monitoring-commands)
+  - [Detect suspect setup actions in major org](#detect-suspect-setup-actions-in-major-org)
+  - [Detect calls to deprecated API versions](#detect-calls-to-deprecated-api-versions)
+  - [Detect custom elements with no access rights defined in permission sets](#detect-custom-elements-with-no-access-rights-defined-in-permission-sets)
+  - [Detect custom labels and custom permissions that are not in use](#detect-custom-labels-and-custom-permissions-that-are-not-in-use)
+  - [Detect inactive metadata](#detect-inactive-metadata)
 
 ## Monitor your Salesforce org with sfdx-hardis
 
@@ -51,3 +57,43 @@ The **list of updated metadatas** will be sent via notification to a **Slack and
 After the metadata backup, other jobs will be triggered (Apex tests, Code Quality, Legacy API checks + your own commands), and their results will be stored in job artifacts and sent via notifications.
 
 Are you ready ? [Configure the monitoring on your orgs](salesforce-monitoring-config-home.md) !
+
+## Monitoring Commands
+
+Latest step of monitoring runs the following checks.
+
+You can disable some of them by defining either a **monitoringDisable** property in `.sfdx-ahrdis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
+
+Example in .sfdx-hardis.yml:
+
+```yaml
+monitoringDisable:
+  - METADATA_STATUS
+  - UNUSED_METADATAS
+```
+
+Example in env var:
+
+```sh
+MONITORING_DISABLE=METADATA_STATUS,UNUSED_METADATAS
+```
+
+### Detect suspect setup actions in major org
+
+Sfdx-hardis command: [sfdx hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/)
+
+### Detect calls to deprecated API versions
+
+Sfdx-hardis command: [sfdx hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/)
+
+### Detect custom elements with no access rights defined in permission sets
+
+Sfdx-hardis command: [sfdx hardis:lint:access](https://sfdx-hardis.cloudity.com/hardis/lint/access/)
+
+### Detect custom labels and custom permissions that are not in use
+
+Sfdx-hardis command: [sfdx hardis:lint:unusedmetadatas](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/)
+
+### Detect inactive metadata
+
+Sfdx-hardis command: [sfdx hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
