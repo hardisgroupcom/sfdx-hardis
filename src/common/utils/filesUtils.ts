@@ -1,16 +1,21 @@
-import { Connection, SfdxError } from "@salesforce/core";
-import PromisePool = require("@supercharge/promise-pool/dist");
-import * as c from "chalk";
+// External Libraries and Node.js Modules
 import * as fs from "fs-extra";
+import path = require("path");
+import * as c from "chalk";
 import * as fetch from "@adobe/node-fetch-retry";
-import * as path from "path";
 import * as split from "split";
-import { getCurrentGitBranch, isCI, uxLog } from ".";
-import { CONSTANTS, getReportDirectory } from "../../config";
-import { prompts } from "./prompts";
-import { bulkQuery, soqlQuery } from "./apiUtils";
-import { WebSocketClient } from "../websocketClient";
+import PromisePool = require("@supercharge/promise-pool/dist");
+
+// Salesforce Specific and Other Specific Libraries
+import { Connection, SfdxError } from "@salesforce/core";
 import * as Papa from "papaparse";
+
+// Project Specific Utilities
+import { getCurrentGitBranch, isCI, uxLog } from ".";
+import { bulkQuery, soqlQuery } from "./apiUtils";
+import { prompts } from "./prompts";
+import { CONSTANTS, getReportDirectory } from "../../config";
+import { WebSocketClient } from "../websocketClient";
 
 export const filesFolderRoot = path.join(".", "scripts", "files");
 

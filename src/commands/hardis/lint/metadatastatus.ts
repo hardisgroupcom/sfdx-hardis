@@ -1,15 +1,22 @@
 /* jscpd:ignore-start */
+// External Libraries and Node.js Modules
+import * as glob from "glob-promise";
+import * as fs from "fs-extra";
+import path = require("path");
+
+// Salesforce Specific
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as glob from "glob-promise";
+
+// Project Specific Utilities
 import { uxLog } from "../../../common/utils";
-import * as fs from "fs-extra";
-import { MessageAttachment } from "@slack/types";
 import { NotifProvider } from "../../../common/notifProvider";
-import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
-import path = require("path");
+import { MessageAttachment } from "@slack/types";
 import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
+import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
+
+// Initialize and Load Messages
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
