@@ -15,6 +15,7 @@ import { NotifProvider } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
 import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
+import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 
 // Initialize and Load Messages
 Messages.importMessagesDirectory(__dirname);
@@ -51,17 +52,7 @@ export default class metadatastatus extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
   private flowFilePattern = "**/flows/**/*.flow-meta.xml";
-  private ignorePatterns: string[] = [
-    "**/node_modules/**",
-    "**/.git/**",
-    "**/cache/**",
-    "**/.npm/**",
-    "**/logs/**",
-    "**/.sfdx/**",
-    "**/.sf/**",
-    "**/.vscode/**",
-    "**/node_modules/**",
-  ];
+  private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
   protected outputFile: string;
 
   public async run(): Promise<AnyJson> {

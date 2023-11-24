@@ -16,6 +16,7 @@ import { MessageAttachment } from "@slack/types";
 import { getNotificationButtons, getBranchMarkdown } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { uxLog } from "../../../common/utils";
+import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -52,17 +53,7 @@ export default class UnusedMetadatas extends SfdxCommand {
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
-  private ignorePatterns: string[] = [
-    "**/node_modules/**",
-    "**/.git/**",
-    "**/cache/**",
-    "**/.npm/**",
-    "**/logs/**",
-    "**/.sfdx/**",
-    "**/.sf/**",
-    "**/.vscode/**",
-    "**/node_modules/**",
-  ];
+  private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
 
   private projectFiles: string[];
   private labelFilePattern = "**/CustomLabels.labels-meta.xml";

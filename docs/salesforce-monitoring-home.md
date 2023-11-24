@@ -12,6 +12,7 @@ description: Monitor your Salesforce orgs with daily metadata backup and more, w
   - [Detect custom elements with no access rights defined in permission sets](#detect-custom-elements-with-no-access-rights-defined-in-permission-sets)
   - [Detect custom labels and custom permissions that are not in use](#detect-custom-labels-and-custom-permissions-that-are-not-in-use)
   - [Detect inactive metadata](#detect-inactive-metadata)
+  - [Detect missing attributes](#detect-missing-attributes)
 
 ## Monitor your Salesforce org with sfdx-hardis
 
@@ -107,3 +108,9 @@ Key: **UNUSED_METADATAS**
 Sfdx-hardis command: [sfdx hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
 
 Key: **METADATA_STATUS**
+
+### Detect missing attributes
+
+Sfdx-hardis command: [sfdx hardis:lint:missingattributes](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
+
+Key: **MISSING_ATTRIBUTES**

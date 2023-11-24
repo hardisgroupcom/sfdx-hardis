@@ -3,6 +3,17 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { execCommand, uxLog } from ".";
 
+export const GLOB_IGNORE_PATTERNS = [
+  "**/node_modules/**",
+  "**/.git/**",
+  "**/cache/**",
+  "**/.npm/**",
+  "**/logs/**",
+  "**/.sfdx/**",
+  "**/.sf/**",
+  "**/.vscode/**"
+];
+
 export function isSfdxProject(cwd = process.cwd()) {
   return fs.existsSync(path.join(cwd, "sfdx-project.json"));
 }
@@ -17,3 +28,4 @@ export async function createBlankSfdxProject(cwd = process.cwd(), debug = false)
     output: true,
   });
 }
+

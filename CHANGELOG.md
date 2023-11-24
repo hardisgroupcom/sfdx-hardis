@@ -5,6 +5,8 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Allow to disable not monitoring checks using **monitoringDisable** config file property, or **MONITORING_DISABLE** env var
+- Add new feature to identify custom fields without description
+  - **hardis:lint:missingattributes** : New command to identify custom field without description
 - Add new feature to identify custom metadata (flows) inactive in project
   - **hardis:lint:metadatastatus** : New command to identify custom metadata (Labels and custom permissions) not used in source code
 - **Rework generate csv file** : generateReportPath and generateCsvFile

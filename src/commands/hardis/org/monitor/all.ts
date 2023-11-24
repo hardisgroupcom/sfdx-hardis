@@ -25,13 +25,14 @@ Example in .sfdx-hardis.yml:
 \`\`\`yaml
 monitoringDisable:
   - METADATA_STATUS
+  - MISSING_ATTRIBUTES
   - UNUSED_METADATAS
 \`\`\`
   
 Example in env var:
 
 \`\`\`sh
-MONITORING_DISABLE=METADATA_STATUS,UNUSED_METADATAS
+MONITORING_DISABLE=METADATA_STATUS,MISSING_ATTRIBUTES,UNUSED_METADATAS
 \`\`\`
 
 A [default list of monitoring commands](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/#monitoring-commands) is used, if you want to override it you can define property **monitoringCommands** in your .sfdx-hardis.yml file
@@ -118,6 +119,11 @@ monitoringCommands:
         key: "METADATA_STATUS",
         title: "Detect inactive metadata",
         command: "sfdx hardis:lint:metadatastatus",
+      },
+      {
+        key: "MISSING_ATTRIBUTES",
+        title: "Detect missing description on custom field",
+        command: "sfdx hardis:lint:missingattributes"
       },
     ];
     const config = await getConfig("user");
