@@ -55,7 +55,7 @@ export class FilesExporter {
     filesPath: string,
     conn: Connection,
     options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number },
-    commandThis: any
+    commandThis: any,
   ) {
     this.filesPath = filesPath;
     this.conn = conn;
@@ -107,18 +107,18 @@ export class FilesExporter {
     if (this.apiLimit - this.apiUsedBefore < estimatedApiCalls + 1000) {
       throw new SfdxError(
         `You don't have enough API calls available (${c.bold(this.apiLimit - this.apiUsedBefore)}) to perform this export that could consume ${c.bold(
-          estimatedApiCalls
-        )} API calls`
+          estimatedApiCalls,
+        )} API calls`,
       );
     }
     // Request user confirmation
     if (!isCI) {
       const warningMessage = c.cyanBright(
         `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
-          c.yellow(this.chunksNumber)
+          c.yellow(this.chunksNumber),
         )} chunks, and consume up to ${c.bold(c.yellow(estimatedApiCalls))} API calls on the ${c.bold(
-          c.yellow(this.apiLimit - this.apiUsedBefore)
-        )} remaining API calls. Do you want to proceed ?`
+          c.yellow(this.apiLimit - this.apiUsedBefore),
+        )} remaining API calls. Do you want to proceed ?`,
       );
       const promptRes = await prompts({ type: "confirm", message: warningMessage });
       if (promptRes.value !== true) {
@@ -269,13 +269,13 @@ export class FilesExporter {
       this.dtl?.outputFileNameFormat === "id"
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
-        this.dtl?.outputFileNameFormat === "title_id"
-        ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
-        : // Id + Title
-        this.dtl?.outputFileNameFormat === "id_title"
-        ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
-        : // Title
-          path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+          this.dtl?.outputFileNameFormat === "title_id"
+          ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
+          : // Id + Title
+            this.dtl?.outputFileNameFormat === "id_title"
+            ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
+            : // Title
+              path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -437,7 +437,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
           message: c.cyanBright("Please input a description of the files export configuration"),
           initial: filesExportConfig.sfdxHardisDescription,
         },
-      ]
+      ],
     );
   }
   questions.push(
@@ -478,7 +478,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         message: "Do you want to overwrite file that has already been previously downloaded ?",
         initial: filesExportConfig.overwriteFiles,
       },
-    ]
+    ],
   );
 
   const resp = await prompts(questions);
