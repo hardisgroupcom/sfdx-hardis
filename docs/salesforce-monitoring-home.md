@@ -7,6 +7,8 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
 - [How does it work ?](#how-does-it-work)
 - [Configuration](#configuration)
+  - [Video Tutorial](#video-tutorial)
+  - [Instructions](#instructions)
 
 _sfdx-hardis monitoring is in beta but can already be safely used_
 
@@ -54,6 +56,12 @@ The **list of updated metadatas** will be sent via notification to a **Slack and
 After the metadata backup, other jobs will be triggered (Apex tests, Code Quality, Legacy API checks + your own commands), and their results will be stored in job artifacts and sent via notifications.
 
 ## Configuration
+
+### Video tutorial
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/bcVdN0XItSc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
+### Instructions
 
 All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab**, **Azure** or **BitBucket** repository.
 

@@ -222,13 +222,13 @@ See article below
       uxLog(this, c.grey(c.bold("End of support API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
     }
 
-    const notifDetailText = `* Dead API version calls found in logs           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
-* Deprecated API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
-* End of support API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
+    const notifDetailText = `• Dead API version calls found in logs           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
+• Deprecated API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
+• End of support API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
     
 See article to solve issue before it's too late:
-* EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
-* FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
+• EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
+• FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
     // Manage notifications
     if (allErrors.length > 0) {
