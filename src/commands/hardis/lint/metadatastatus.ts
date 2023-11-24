@@ -19,7 +19,7 @@ import { generateCsvFile, generateReportPath } from "../../../common/utils/files
 // Initialize and Load Messages
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
-
+/* jscpd:ignore-end */
 export default class metadatastatus extends SfdxCommand {
   public static title = "check inactive metadatas";
   public static description = "Check if elements(flows) are inactive in the project";

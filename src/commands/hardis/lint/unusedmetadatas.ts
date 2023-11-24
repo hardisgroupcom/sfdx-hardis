@@ -21,7 +21,7 @@ import { uxLog } from "../../../common/utils";
 Messages.importMessagesDirectory(__dirname);
 // Load Messages
 const messages = Messages.loadMessages("sfdx-hardis", "org");
-
+/* jscpd:ignore-end */
 export default class UnusedMetadatas extends SfdxCommand {
   public static title = "check unused labels and custom permissions";
   public static description = "Check if elements (custom labels and custom permissions) are used in the project";
