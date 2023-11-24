@@ -16,6 +16,7 @@ import { NotifProvider } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
 import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
+import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 
 // Initialize and Load Messages
 Messages.importMessagesDirectory(__dirname);
@@ -54,17 +55,7 @@ export default class metadatastatus extends SfdxCommand {
   private objectFileDirectory = "**/objects/**/fields/*.*";
   protected outputFile: string;
   private nonCustomSettingsFieldDirectories: string[] = [];
-  private ignorePatterns: string[] = [
-    "**/node_modules/**",
-    "**/.git/**",
-    "**/cache/**",
-    "**/.npm/**",
-    "**/logs/**",
-    "**/.sfdx/**",
-    "**/.sf/**",
-    "**/.vscode/**",
-    "**/node_modules/**",
-  ];
+  private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
 
   public async run(): Promise<AnyJson> {
     await this.filterOutCustomSettings();
