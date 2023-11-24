@@ -218,6 +218,7 @@ nav:
   - Org Monitoring (beta):
       - Monitoring home: salesforce-monitoring-home.md
       - Configuration:
+          - Configuration guide: salesforce-monitoring-config-home.md
           - GitHub: salesforce-monitoring-config-github.md
           - Gitlab: salesforce-monitoring-config-gitlab.md
           - Azure: salesforce-monitoring-config-azure.md

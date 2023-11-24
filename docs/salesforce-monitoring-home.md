@@ -1,16 +1,18 @@
 ---
 title: How to monitor your Salesforce Org
-description: Learn how to configure a monitoring repository for a Salesforce Org, using sfdx-hardis, then how to read reports
+description: Monitor your Salesforce orgs with daily metadata backup and more, with open source only
 ---
 <!-- markdownlint-disable MD013 -->
 
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
-- [How does it work ?](#how-does-it-work)
-- [Configuration](#configuration)
-  - [Video Tutorial](#video-tutorial)
-  - [Instructions](#instructions)
-
-_sfdx-hardis monitoring is in beta but can already be safely used_
+- [How does it work ?](#how-does-it-work--)
+- [Monitoring Commands](#monitoring-commands)
+  - [Detect suspect setup actions in major org](#detect-suspect-setup-actions-in-major-org)
+  - [Detect calls to deprecated API versions](#detect-calls-to-deprecated-api-versions)
+  - [Detect custom elements with no access rights defined in permission sets](#detect-custom-elements-with-no-access-rights-defined-in-permission-sets)
+  - [Detect custom labels and custom permissions that are not in use](#detect-custom-labels-and-custom-permissions-that-are-not-in-use)
+  - [Detect inactive metadata](#detect-inactive-metadata)
+  - [Detect missing attributes](#detect-missing-attributes)
 
 ## Monitor your Salesforce org with sfdx-hardis
 
@@ -55,41 +57,60 @@ The **list of updated metadatas** will be sent via notification to a **Slack and
 
 After the metadata backup, other jobs will be triggered (Apex tests, Code Quality, Legacy API checks + your own commands), and their results will be stored in job artifacts and sent via notifications.
 
-## Configuration
+Are you ready ? [Configure the monitoring on your orgs](salesforce-monitoring-config-home.md) !
 
-### Video tutorial
+## Monitoring Commands
 
-<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/bcVdN0XItSc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+Latest step of monitoring runs the following checks.
 
-### Instructions
+You can disable some of them by defining either a **monitoringDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
 
-All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab**, **Azure** or **BitBucket** repository.
+Example in .sfdx-hardis.yml:
 
-- Create and clone a git repository
-- Open it with Visual Studio Code, then open [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) extension menu.
-  - If you need installations instructions, please [visit documentation page](salesforce-ci-cd-use-install.md)
+```yaml
+monitoringDisable:
+  - METADATA_STATUS
+  - UNUSED_METADATAS
+```
 
-- Follow instructions, that can be specific according to your git provider
+Example in env var:
 
-  - [GitHub](salesforce-monitoring-config-github.md)
-    - [Pre-requisites](salesforce-monitoring-config-github.md#pre-requisites)
-    - [Schedule monitoring job](salesforce-monitoring-config-github.md#schedule-the-monitoring-job)
+```sh
+MONITORING_DISABLE=METADATA_STATUS,UNUSED_METADATAS
+```
 
-  - [Gitlab](salesforce-monitoring-config-gitlab.md)
-    - [Pre-requisites](salesforce-monitoring-config-gitlab.md#pre-requisites)
-    - [Schedule monitoring job](salesforce-monitoring-config-gitlab.md#schedule-the-monitoring-job)
+### Detect suspect setup actions in major org
 
-  - [Azure](salesforce-monitoring-config-azure.md)
-    - [Pre-requisites](salesforce-monitoring-config-azure.md#pre-requisites)
-    - [Schedule monitoring job](salesforce-monitoring-config-azure.md#schedule-the-monitoring-job)
+Sfdx-hardis command: [sfdx hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/)
 
-  - [Bitbucket](salesforce-monitoring-config-bitbucket.md)
-    - [Pre-requisites](salesforce-monitoring-config-bitbucket.md#pre-requisites)
-    - [Schedule monitoring job](salesforce-monitoring-config-bitbucket.md#schedule-the-monitoring-job)
+Key: **AUDIT_TRAIL**
 
-> You might want to customize which metadatas are backuped.
-> In that case, you must manually update file `manifest/package-skip-items.xml` in each git branch corresponding to an org, then commit and push.
+### Detect calls to deprecated API versions
 
-- Configure notifications (once by repository)
-  - [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
-  - [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)
+Sfdx-hardis command: [sfdx hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/)
+
+Key: **LEGACY_API**
+
+### Detect custom elements with no access rights defined in permission sets
+
+Sfdx-hardis command: [sfdx hardis:lint:access](https://sfdx-hardis.cloudity.com/hardis/lint/access/)
+
+Key: **LINT_ACCESS**
+
+### Detect custom labels and custom permissions that are not in use
+
+Sfdx-hardis command: [sfdx hardis:lint:unusedmetadatas](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/)
+
+Key: **UNUSED_METADATAS**
+
+### Detect inactive metadata
+
+Sfdx-hardis command: [sfdx hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
+
+Key: **METADATA_STATUS**
+
+### Detect missing attributes
+
+Sfdx-hardis command: [sfdx hardis:lint:missingattributes](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
+
+Key: **MISSING_ATTRIBUTES**
