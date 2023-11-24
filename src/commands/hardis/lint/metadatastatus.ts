@@ -22,7 +22,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class metadatastatus extends SfdxCommand {
   public static title = "check inactive metadatas";
-  public static description = "Check if elements(flows) are inactive in the projec";
+  public static description = "Check if elements(flows) are inactive in the project";
   public static examples = ["$ sfdx hardis:lint:metadatastatus"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {
