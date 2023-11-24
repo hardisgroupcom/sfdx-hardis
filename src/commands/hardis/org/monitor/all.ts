@@ -122,7 +122,8 @@ monitoringCommands:
     ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;
-    const monitoringDisable = config.monitoringDisable ?? (process.env?.MONITORING_DISABLE.split(',') || []);
+    const monitoringDisable = config.monitoringDisable ??
+      (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(',') : []);
 
     let success = true;
     const commandsSummary = [];

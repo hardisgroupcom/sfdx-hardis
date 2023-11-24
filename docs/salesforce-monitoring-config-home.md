@@ -30,6 +30,8 @@ All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab*
 
 - Follow instructions, that can be specific according to your git provider
 
+> Tip: Schedule monitoring jobs at different hours so the notifications are more readable, for example production at 1AM and preprod at 2AM
+
 ### Github
 
 - [GitHub configuration](salesforce-monitoring-config-github.md)
