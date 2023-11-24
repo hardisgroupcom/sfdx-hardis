@@ -225,8 +225,8 @@ nav:
           - Bitbucket: salesforce-monitoring-config-bitbucket.md
           - Slack: salesforce-ci-cd-setup-integration-slack.md
           - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-  - Configuration reference: sfdx-hardis-config-file.md
   - Deployment errors tips: deployTips.md
+  - Configuration reference: sfdx-hardis-config-file.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles
   - Special Thanks: special-thanks.md
   - Contributing: https://sfdx-hardis.cloudity.com/#contributing

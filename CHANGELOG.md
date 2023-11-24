@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.15.0] 2023-11-24
+
 - Allow to disable not monitoring checks using **monitoringDisable** config file property, or **MONITORING_DISABLE** env var
 - Add new feature to identify custom fields without description
   - **hardis:lint:missingattributes** : New command to identify custom field without description
