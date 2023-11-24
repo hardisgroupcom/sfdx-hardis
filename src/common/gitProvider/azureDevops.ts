@@ -30,27 +30,38 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
-      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${process.env.SYSTEM_TEAMPROJECT}/_build/results?buildId=${process.env.BUILD_BUILDID}`
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${process.env.SYSTEM_TEAMPROJECT}/_build/results?buildId=${process.env.BUILD_BUILDID}`;
       return jobUrl;
     }
-    uxLog(this, c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
+    uxLog(
+      this,
+      c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
   - SYSTEM_COLLECTIONURI
   - SYSTEM_TEAMPROJECT
-  - BUILD_BUILDID`));
+  - BUILD_BUILDID`),
+    );
     return null;
   }
 
   // Returns current job URL
   public async getCurrentBranchUrl(): Promise<string> {
-    if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_REPOSITORYNAME && process.env.BUILD_SOURCEBRANCHNAME) {
-      const currentBranchUrl = `${process.env.SYSTEM_COLLECTIONURI}${process.env.SYSTEM_TEAMPROJECT}/_git/${process.env.BUILD_REPOSITORYNAME}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`
+    if (
+      process.env.SYSTEM_COLLECTIONURI &&
+      process.env.SYSTEM_TEAMPROJECT &&
+      process.env.BUILD_REPOSITORYNAME &&
+      process.env.BUILD_SOURCEBRANCHNAME
+    ) {
+      const currentBranchUrl = `${process.env.SYSTEM_COLLECTIONURI}${process.env.SYSTEM_TEAMPROJECT}/_git/${process.env.BUILD_REPOSITORYNAME}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`;
       return currentBranchUrl;
     }
-    uxLog(this, c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
+    uxLog(
+      this,
+      c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
   - SYSTEM_COLLECTIONURI
   - SYSTEM_TEAMPROJECT
   - BUILD_REPOSITORYNAME
-  - BUILD_SOURCEBRANCHNAME`));
+  - BUILD_SOURCEBRANCHNAME`),
+    );
     return null;
   }
 

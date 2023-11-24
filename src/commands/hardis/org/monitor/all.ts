@@ -97,33 +97,32 @@ monitoringCommands:
       {
         key: "AUDIT_TRAIL",
         title: "Detect suspect setup actions in major org",
-        command: "sfdx hardis:org:diagnose:audittrail"
+        command: "sfdx hardis:org:diagnose:audittrail",
       },
       {
         key: "LEGACY_API",
         title: "Detect calls to deprecated API versions",
-        command: "sfdx hardis:org:diagnose:legacyapi"
+        command: "sfdx hardis:org:diagnose:legacyapi",
       },
       {
         key: "LINT_ACCESS",
         title: "Detect custom elements with no access rights defined in permission sets",
-        command: "sfdx hardis:lint:access"
+        command: "sfdx hardis:lint:access",
       },
       {
         key: "UNUSED_METADATAS",
         title: "Detect custom labels and custom permissions that are not in use",
-        command: "sfdx hardis:lint:unusedmetadatas"
+        command: "sfdx hardis:lint:unusedmetadatas",
       },
       {
         key: "METADATA_STATUS",
         title: "Detect inactive metadata",
-        command: "sfdx hardis:lint:metadatastatus"
+        command: "sfdx hardis:lint:metadatastatus",
       },
     ];
     const config = await getConfig("user");
     const commands = config.monitoringCommands || monitoringCommandsDefault;
-    const monitoringDisable = config.monitoringDisable ??
-      (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(',') : []);
+    const monitoringDisable = config.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(",") : []);
 
     let success = true;
     const commandsSummary = [];

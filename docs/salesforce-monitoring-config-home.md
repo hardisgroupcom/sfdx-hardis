@@ -60,8 +60,8 @@ All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab*
 
 For a better user experience, it is highly recommended to configure notifications !
 
-  - [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
-  - [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)
+- [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
+- [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)
 
 ## Troubleshooting
 
