@@ -1,16 +1,11 @@
 ---
 title: How to monitor your Salesforce Org
-description: Learn how to configure a monitoring repository for a Salesforce Org, using sfdx-hardis, then how to read reports
+description: Monitor your Salesforce orgs with daily metadata backup and more, with open source only
 ---
 <!-- markdownlint-disable MD013 -->
 
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
 - [How does it work ?](#how-does-it-work)
-- [Configuration](#configuration)
-  - [Video Tutorial](#video-tutorial)
-  - [Instructions](#instructions)
-
-_sfdx-hardis monitoring is in beta but can already be safely used_
 
 ## Monitor your Salesforce org with sfdx-hardis
 
@@ -55,41 +50,4 @@ The **list of updated metadatas** will be sent via notification to a **Slack and
 
 After the metadata backup, other jobs will be triggered (Apex tests, Code Quality, Legacy API checks + your own commands), and their results will be stored in job artifacts and sent via notifications.
 
-## Configuration
-
-### Video tutorial
-
-<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/bcVdN0XItSc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
-
-### Instructions
-
-All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab**, **Azure** or **BitBucket** repository.
-
-- Create and clone a git repository
-- Open it with Visual Studio Code, then open [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) extension menu.
-  - If you need installations instructions, please [visit documentation page](salesforce-ci-cd-use-install.md)
-
-- Follow instructions, that can be specific according to your git provider
-
-  - [GitHub](salesforce-monitoring-config-github.md)
-    - [Pre-requisites](salesforce-monitoring-config-github.md#pre-requisites)
-    - [Schedule monitoring job](salesforce-monitoring-config-github.md#schedule-the-monitoring-job)
-
-  - [Gitlab](salesforce-monitoring-config-gitlab.md)
-    - [Pre-requisites](salesforce-monitoring-config-gitlab.md#pre-requisites)
-    - [Schedule monitoring job](salesforce-monitoring-config-gitlab.md#schedule-the-monitoring-job)
-
-  - [Azure](salesforce-monitoring-config-azure.md)
-    - [Pre-requisites](salesforce-monitoring-config-azure.md#pre-requisites)
-    - [Schedule monitoring job](salesforce-monitoring-config-azure.md#schedule-the-monitoring-job)
-
-  - [Bitbucket](salesforce-monitoring-config-bitbucket.md)
-    - [Pre-requisites](salesforce-monitoring-config-bitbucket.md#pre-requisites)
-    - [Schedule monitoring job](salesforce-monitoring-config-bitbucket.md#schedule-the-monitoring-job)
-
-> You might want to customize which metadatas are backuped.
-> In that case, you must manually update file `manifest/package-skip-items.xml` in each git branch corresponding to an org, then commit and push.
-
-- Configure notifications (once by repository)
-  - [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
-  - [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)
+Are you ready ? [Configure the monitoring on your orgs](salesforce-monitoring-config-home.md) !
