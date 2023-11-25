@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Improve notifs display with hardis:lint:access
+
 ## [4.15.0] 2023-11-24
 
 - Allow to disable not monitoring checks using **monitoringDisable** config file property, or **MONITORING_DISABLE** env var

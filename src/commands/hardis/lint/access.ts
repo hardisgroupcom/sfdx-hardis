@@ -11,15 +11,15 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 
 // Common Utilities
-import { getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
+import {  isCI, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { NotifProvider } from "../../../common/notifProvider";
-import { GitProvider } from "../../../common/gitProvider";
 
 // Config
 import { getConfig } from "../../../config";
+import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -431,21 +431,17 @@ export default class Access extends SfdxCommand {
       let notifDetailText = ``;
       for (const missingType of Object.keys(this.missingElementsMap)) {
         if (this.missingElementsMap[missingType]?.length > 0) {
-          notifDetailText += `• ${missingType}\n`;
+          notifDetailText += `*${missingType}*\n`;
           for (const missingItem of this.missingElementsMap[missingType]) {
-            notifDetailText += `  • ${missingItem}\n`;
+            notifDetailText += `• ${missingItem}\n`;
           }
         }
       }
       notifDetailText += "_See details in job artifacts_";
-      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      const notifButtons = [];
-      const jobUrl = await GitProvider.getJobUrl();
-      if (jobUrl) {
-        notifButtons.push({ text: "View Job", url: jobUrl });
-      }
+      const branchMd = await getBranchMarkdown();
+      const notifButtons = await getNotificationButtons();
       NotifProvider.postNotifications({
-        text: `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchName}`,
+        text: `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchMd}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
