@@ -11,7 +11,7 @@ export const GLOB_IGNORE_PATTERNS = [
   "**/logs/**",
   "**/.sfdx/**",
   "**/.sf/**",
-  "**/.vscode/**"
+  "**/.vscode/**",
 ];
 
 export function isSfdxProject(cwd = process.cwd()) {
@@ -28,4 +28,3 @@ export async function createBlankSfdxProject(cwd = process.cwd(), debug = false)
     output: true,
   });
 }
-

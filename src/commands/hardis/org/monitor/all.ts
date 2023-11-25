@@ -123,7 +123,7 @@ monitoringCommands:
       {
         key: "MISSING_ATTRIBUTES",
         title: "Detect missing description on custom field",
-        command: "sfdx hardis:lint:missingattributes"
+        command: "sfdx hardis:lint:missingattributes",
       },
     ];
     const config = await getConfig("user");
