@@ -11,7 +11,7 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 
 // Common Utilities
-import {  isCI, uxLog } from "../../../common/utils";
+import { isCI, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
