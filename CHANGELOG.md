@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.15.1] 2023-11-26
+
 - Improve notifs display with hardis:lint:access
 
 ## [4.15.0] 2023-11-24
