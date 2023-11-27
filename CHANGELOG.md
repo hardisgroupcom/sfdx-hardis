@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Allow run commands but disable notifications, using DISABLE_NOTIFICATIONS env var or disableNotifications .sfdx-hardis.yml property.
+## [4.16.0] 2023-11-26
+
+- Allow to run commands but disable notifications, using **NOTIFICATIONS_DISABLE** env var or **notificationsDisable** .sfdx-hardis.yml property.
+- Update JSON schema to add `notificationsDisable` and `monitoringDisable` properties
 
 ## [4.15.1] 2023-11-26
 
