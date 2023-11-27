@@ -2,6 +2,26 @@
   "$id": "http://github.com/hardisgroupcom/sfdx-hardis.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "additionalProperties": false,
+  "definitions": {
+    "enum_notification_types": {
+      "enum": [
+        "AUDIT_TRAIL",
+        "APEX_TESTS",
+        "BACKUP",
+        "DEPLOYMENT",
+        "LEGACY_API",
+        "LINT_ACCESS",
+        "UNUSED_METADATAS",
+        "METADATA_STATUS",
+        "MISSING_ATTRIBUTES"
+      ],
+      "type": "string"
+    },
+    "enum_monitoring_commands": {
+      "enum": ["AUDIT_TRAIL", "LEGACY_API", "LINT_ACCESS", "UNUSED_METADATAS", "METADATA_STATUS", "MISSING_ATTRIBUTES"],
+      "type": "string"
+    }
+  },
   "description": "Configuration file definition for sfdx-hardis Salesforce DX plugin",
   "properties": {
     "allowedOrgTypes": {
@@ -94,7 +114,11 @@
           "value": "feat",
           "description": "New feature, evolution of an existing feature... If you don't know, just select Feature"
         },
-        { "title": "Debug", "value": "fix", "description": "A bug has been identified and you are the right person to solve it !" }
+        {
+          "title": "Debug",
+          "value": "fix",
+          "description": "A bug has been identified and you are the right person to solve it !"
+        }
       ],
       "examples": [
         [
@@ -103,7 +127,11 @@
             "value": "feat",
             "description": "New feature, evolution of an existing feature... If you don't know, just select Feature"
           },
-          { "title": "Debug", "value": "fix", "description": "A bug has been identified and you are the right person to solve it !" }
+          {
+            "title": "Debug",
+            "value": "fix",
+            "description": "A bug has been identified and you are the right person to solve it !"
+          }
         ]
       ],
       "title": "New branches prefixes choices",
@@ -651,8 +679,16 @@
       "description": "List of monitoring commands to run with command hardis:org:monitor:all",
       "examples": [
         [
-          { "title": "Detect calls to deprecated API versions", "command": "sfdx hardis:org:diagnose:legacyapi" },
-          { "title": "My custom command", "command": "sfdx my:custom:command" }
+          {
+            "title": "Detect calls to deprecated API versions",
+            "key": "LEGACYAPI",
+            "command": "sfdx hardis:org:diagnose:legacyapi"
+          },
+          {
+            "title": "My custom command",
+            "key": "MY_CUSTOM_KEY",
+            "command": "sfdx my:custom:command"
+          }
         ]
       ],
       "items": {
@@ -661,6 +697,12 @@
         "additionalProperties": false,
         "description": "Monitoring command",
         "properties": {
+          "key": {
+            "$id": "#/properties/monitoringCommands/items/properties/key",
+            "description": "Unique identifier of the monitoring command. Can be used with monitoringDisable",
+            "title": "Key",
+            "type": "string"
+          },
           "title": {
             "$id": "#/properties/monitoringCommands/items/properties/title",
             "description": "Title of the command (will appear in logs)",
@@ -685,6 +727,16 @@
       "additionalProperties": true,
       "title": "Monitoring Allowed Sections Actions",
       "type": "object"
+    },
+    "monitoringDisable": {
+      "$id": "#/properties/monitoringDisable",
+      "description": "List of commands to skip during monitoring jobs",
+      "examples": [["METADATA_STATUS", "UNUSED_METADATAS"]],
+      "items": {
+        "$ref": "#/definitions/enum_monitoring_commands"
+      },
+      "title": "Disabled monitoring commands",
+      "type": "array"
     },
     "monitoringExcludeUsernames": {
       "$id": "#/properties/monitoringExcludeUsernames",
@@ -735,6 +787,16 @@
       "examples": ["https://my.msteams.webhook.url"],
       "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
+    },
+    "notificationsDisable": {
+      "$id": "#/properties/notificationsDisable",
+      "description": "List of notifications types to skip sending",
+      "examples": [["METADATA_STATUS", "UNUSED_METADATAS"]],
+      "items": {
+        "$ref": "#/definitions/enum_notification_types"
+      },
+      "title": "Disabled notification types",
+      "type": "array"
     },
     "poolConfig": {
       "$id": "#/properties/poolConfig",
