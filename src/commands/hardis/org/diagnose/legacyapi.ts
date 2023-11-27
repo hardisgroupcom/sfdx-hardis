@@ -2,19 +2,16 @@
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as fs from "fs-extra";
 import * as c from "chalk";
-import * as Papa from "papaparse";
-import path = require("path");
 import * as sortArray from "sort-array";
 import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import * as dns from "dns";
 import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
-import { getReportDirectory } from "../../../../config";
 import { WebSocketClient } from "../../../../common/websocketClient";
 import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
 import { GitProvider } from "../../../../common/gitProvider";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
@@ -182,25 +179,9 @@ See article below
       uxLog(this, c.green(msg));
     }
 
-    // Build output CSV file
-    if (this.outputFile == null) {
-      // Default file in system temp directory if --outputfile not provided
-      const reportDir = await getReportDirectory();
-      this.outputFile = path.join(reportDir, "legacy-api-for-" + this.org.getUsername() + ".csv");
-    } else {
-      // Ensure directories to provided --outputfile are existing
-      await fs.ensureDir(path.dirname(this.outputFile));
-    }
-    try {
-      const csvText = Papa.unparse(allErrors);
-      await fs.writeFile(this.outputFile, csvText, "utf8");
-      uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(this.outputFile)}`)));
-      // Trigger command to open CSV file in VsCode extension
-      WebSocketClient.requestOpenFile(this.outputFile);
-    } catch (e) {
-      uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
-      this.outputFile = null;
-    }
+    // Generate main CSV file
+    this.outputFile = await generateReportPath("legacy-api-calls", this.outputFile);
+    await generateCsvFile(allErrors, this.outputFile);
 
     // Generate one summary file by severity
     const outputFileIps = [];
@@ -337,17 +318,11 @@ See article to solve issue before it's too late:
       order: ["desc"],
     });
     // Write output CSV with client api info
-    let outputFileIps = this.outputFile.endsWith(".csv")
+    const outputFileIps = this.outputFile.endsWith(".csv")
       ? this.outputFile.replace(".csv", ".api-clients-" + severity + ".csv")
       : this.outputFile + "api-clients-" + severity + ".csv";
-    try {
-      const csvTextIps = Papa.unparse(ipResultsSorted);
-      await fs.writeFile(outputFileIps, csvTextIps, "utf8");
-      uxLog(this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
-    } catch (e) {
-      uxLog(this, c.yellow("Error while generating " + severity + " API callers log file:\n" + e.message + "\n" + e.stack));
-      outputFileIps = null;
-    }
+    await generateCsvFile(ipResultsSorted, outputFileIps);
+    uxLog(this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
     return outputFileIps;
   }
 }

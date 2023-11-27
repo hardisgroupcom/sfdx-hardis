@@ -421,7 +421,7 @@ export default class Access extends SfdxCommand {
     if (this.missingElements.length === 0) {
       return;
     }
-    this.outputFile = await generateReportPath("lint-access-", this.outputFile);
+    this.outputFile = await generateReportPath("lint-access", this.outputFile);
     await generateCsvFile(this.missingElements, this.outputFile);
   }
 
