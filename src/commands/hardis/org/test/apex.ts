@@ -146,6 +146,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
             notifButtons.push({ text: "View BackUp Job", url: jobUrl });
           }
           NotifProvider.postNotifications({
+            type: "APEX_TESTS",
             text: `Apex Tests run coverage issue in ${linkMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
             buttons: notifButtons,
             severity: "error",
@@ -180,6 +181,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       }
       // Send notification
       NotifProvider.postNotifications({
+        type: "APEX_TESTS",
         text: `Apex Tests are failing in ${linkMarkdown}`,
         attachments: [{ text: testResultStr }],
         buttons: notifButtons,

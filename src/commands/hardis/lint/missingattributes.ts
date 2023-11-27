@@ -70,6 +70,7 @@ export default class metadatastatus extends SfdxCommand {
       const notifButtons = await getNotificationButtons();
 
       NotifProvider.postNotifications({
+        type: "MISSING_ATTRIBUTES",
         text: `Missing description on fields ${branchMd}\n`,
         attachments: attachments,
         buttons: notifButtons,

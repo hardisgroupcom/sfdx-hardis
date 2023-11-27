@@ -131,6 +131,7 @@ export default class MonitorBackup extends SfdxCommand {
         },
       ];
       NotifProvider.postNotifications({
+        type: "BACKUP",
         text: notifMessage,
         buttons: notifButtons,
         attachments: attachments,
