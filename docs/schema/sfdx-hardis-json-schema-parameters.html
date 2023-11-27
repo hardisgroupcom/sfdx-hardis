@@ -3550,6 +3550,54 @@
         
 
         
+<div class="accordion" id="accordionmonitoringCommands_items_key">
+    <div class="card">
+        <div class="card-header" id="headingmonitoringCommands_items_key">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_key"
+                        aria-expanded="" aria-controls="monitoringCommands_items_key" onclick="setAnchor('#monitoringCommands_items_key')"><span class="property-name">key</span></button>
+            </h2>
+        </div>
+
+        <div id="monitoringCommands_items_key"
+             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_key"
+             data-parent="#accordionmonitoringCommands_items_key">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands_items_key" onclick="anchorLink('monitoringCommands_items_key')">key</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Unique identifier of the monitoring command. Can be used with monitoringDisable</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionmonitoringCommands_items_title">
     <div class="card">
         <div class="card-header" id="headingmonitoringCommands_items_title">
@@ -3652,10 +3700,12 @@
 <br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#monitoringCommands_ex1" aria-controls="monitoringCommands_ex1"></button><div id="monitoringCommands_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="s2">&quot;title&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Detect calls to deprecated API versions&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;LEGACYAPI&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sfdx hardis:org:diagnose:legacyapi&quot;</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="s2">&quot;title&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;My custom command&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;MY_CUSTOM_KEY&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sfdx my:custom:command&quot;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]</span>
@@ -3734,6 +3784,80 @@
             </div>
         </div>
     </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionmonitoringDisable">
+    <div class="card">
+        <div class="card-header" id="headingmonitoringDisable">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringDisable"
+                        aria-expanded="" aria-controls="monitoringDisable" onclick="setAnchor('#monitoringDisable')"><span class="property-name">monitoringDisable</span></button>
+            </h2>
+        </div>
+
+        <div id="monitoringDisable"
+             class="collapse property-definition-div" aria-labelledby="headingmonitoringDisable"
+             data-parent="#accordionmonitoringDisable">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringDisable" onclick="anchorLink('monitoringDisable')">monitoringDisable</a></div><span class="badge badge-dark value-type">Type: array</span><br/>
+<span class="description"><p>List of commands to skip during monitoring jobs</p>
+</span>
+        
+
+        
+        
+
+        <h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="monitoringDisable_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringDisable" onclick="anchorLink('monitoringDisable')">monitoringDisable</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringDisable_items" onclick="anchorLink('monitoringDisable_items')">enum_monitoring_commands</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+
+
+    <div class="enum-value" id="monitoringDisable_items_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"AUDIT_TRAIL"</li><li class="list-group-item enum-item">"LEGACY_API"</li><li class="list-group-item enum-item">"LINT_ACCESS"</li><li class="list-group-item enum-item">"UNUSED_METADATAS"</li><li class="list-group-item enum-item">"METADATA_STATUS"</li><li class="list-group-item enum-item">"MISSING_ATTRIBUTES"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="monitoringDisable_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;METADATA_STATUS&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;UNUSED_METADATAS&quot;</span>
+<span class="p">]</span>
+</pre></div>
 </div>
             </div>
         </div>
@@ -3992,6 +4116,80 @@
         <br/>
 <div class="badge badge-secondary">Example:</div>
 <br/><div id="msTeamsWebhookUrlInfo_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://my.msteams.webhook.url&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionnotificationsDisable">
+    <div class="card">
+        <div class="card-header" id="headingnotificationsDisable">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#notificationsDisable"
+                        aria-expanded="" aria-controls="notificationsDisable" onclick="setAnchor('#notificationsDisable')"><span class="property-name">notificationsDisable</span></button>
+            </h2>
+        </div>
+
+        <div id="notificationsDisable"
+             class="collapse property-definition-div" aria-labelledby="headingnotificationsDisable"
+             data-parent="#accordionnotificationsDisable">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationsDisable" onclick="anchorLink('notificationsDisable')">notificationsDisable</a></div><span class="badge badge-dark value-type">Type: array</span><br/>
+<span class="description"><p>List of notifications types to skip sending</p>
+</span>
+        
+
+        
+        
+
+        <h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="notificationsDisable_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationsDisable" onclick="anchorLink('notificationsDisable')">notificationsDisable</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#notificationsDisable_items" onclick="anchorLink('notificationsDisable_items')">enum_notification_types</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+
+
+    <div class="enum-value" id="notificationsDisable_items_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"AUDIT_TRAIL"</li><li class="list-group-item enum-item">"APEX_TESTS"</li><li class="list-group-item enum-item">"BACKUP"</li><li class="list-group-item enum-item">"DEPLOYMENT"</li><li class="list-group-item enum-item">"LEGACY_API"</li><li class="list-group-item enum-item">"LINT_ACCESS"</li><li class="list-group-item enum-item">"UNUSED_METADATAS"</li><li class="list-group-item enum-item">"METADATA_STATUS"</li><li class="list-group-item enum-item">"MISSING_ATTRIBUTES"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="notificationsDisable_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;METADATA_STATUS&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;UNUSED_METADATAS&quot;</span>
+<span class="p">]</span>
 </pre></div>
 </div>
             </div>
@@ -4695,6 +4893,6 @@
 </div>
 
     <footer>
-        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2023-11-26 at 22:05:50 +0100</p>
+        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2023-11-27 at 19:47:18 +0100</p>
     </footer></body>
 </html>
