@@ -183,7 +183,7 @@ export default class UnusedMetadatas extends SfdxCommand {
   }
 
   private async buildCsvFile(unusedLabels: string[], unusedCustomPermissions: string[]): Promise<void> {
-    this.outputFile = await generateReportPath("lint-unusedmetadatas-", this.outputFile);
+    this.outputFile = await generateReportPath("lint-unusedmetadatas", this.outputFile);
     const csvData = [
       ...unusedLabels.map((label) => ({ type: "Label", name: label })),
       ...unusedCustomPermissions.map((permission) => ({ type: "Custom Permission", name: permission })),

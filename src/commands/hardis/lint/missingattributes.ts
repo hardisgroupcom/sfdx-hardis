@@ -163,7 +163,7 @@ export default class metadatastatus extends SfdxCommand {
   }
 
   private async buildCsvFile(fieldsWithoutDescription: string[]): Promise<void> {
-    this.outputFile = await generateReportPath("lint-missingattributes-", this.outputFile);
+    this.outputFile = await generateReportPath("lint-missingattributes", this.outputFile);
     const csvData = fieldsWithoutDescription.map((field) => ({ type: "Field", name: field }));
     await generateCsvFile(csvData, this.outputFile);
   }

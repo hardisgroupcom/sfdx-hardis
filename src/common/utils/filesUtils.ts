@@ -531,9 +531,10 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
   if (outputFile == null) {
     const reportDir = await getReportDirectory();
     const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-    return path.join(reportDir, `${fileNamePrefix}${branchName.split("/").pop()}.csv`);
+    return path.join(reportDir, `${fileNamePrefix}-${branchName.split("/").pop()}.csv`);
   } else {
     await fs.ensureDir(path.dirname(outputFile));
+    return outputFile;
   }
 }
 

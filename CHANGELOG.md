@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.16.0] 2023-11-26
+## [4.16.1] 2023-11-27
+
+- Core: Factorize CSV generation
+
+## [4.16.0] 2023-11-27
 
 - Allow to run commands but disable notifications, using **NOTIFICATIONS_DISABLE** env var or **notificationsDisable** .sfdx-hardis.yml property.
 - Update JSON schema to add `notificationsDisable` and `monitoringDisable` properties
