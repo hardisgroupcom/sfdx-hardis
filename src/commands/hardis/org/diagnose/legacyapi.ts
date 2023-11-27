@@ -241,6 +241,7 @@ See article to solve issue before it's too late:
         notifButtons.push({ text: "View Job", url: jobUrl });
       }
       NotifProvider.postNotifications({
+        type: "LEGACY_API",
         text: `Deprecated Salesforce API versions are used in ${linkMarkdown}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,

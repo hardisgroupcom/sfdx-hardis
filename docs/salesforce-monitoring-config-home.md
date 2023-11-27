@@ -63,6 +63,40 @@ For a better user experience, it is highly recommended to configure notification
 - [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
 - [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)
 
+You can decide to run  commands but not send some notifications by defining either a **notificationsDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **NOTIFICATIONS_DISABLE**
+
+Example in .sfdx-hardis.yml:
+
+```yaml
+notificationsDisable:
+  - METADATA_STATUS
+  - UNUSED_METADATAS
+```
+
+Example in env var:
+
+```sh
+NOTIFICATIONS_DISABLE=METADATA_STATUS,UNUSED_METADATAS
+```
+
+## Monitoring commands
+
+You can decide to disable commands by defining either a **monitoringDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
+
+Example in .sfdx-hardis.yml:
+
+```yaml
+monitoringDisable:
+  - METADATA_STATUS
+  - UNUSED_METADATAS
+```
+
+Example in env var:
+
+```sh
+MONITORING_DISABLE=METADATA_STATUS,UNUSED_METADATAS
+```
+
 ## Troubleshooting
 
 You might want to customize which metadatas types are backuped, because you can't monitor more than 10000 items.

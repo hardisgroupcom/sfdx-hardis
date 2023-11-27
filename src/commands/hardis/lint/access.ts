@@ -441,6 +441,7 @@ export default class Access extends SfdxCommand {
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
       NotifProvider.postNotifications({
+        type: "LINT_ACCESS",
         text: `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchMd}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,

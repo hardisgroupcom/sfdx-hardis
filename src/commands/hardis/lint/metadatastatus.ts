@@ -67,6 +67,7 @@ export default class metadatastatus extends SfdxCommand {
       const notifButtons = await getNotificationButtons();
 
       NotifProvider.postNotifications({
+        type: "METADATA_STATUS",
         text: `Inactive metadatas detected in ${branchMd}\n`,
         attachments: attachments,
         buttons: notifButtons,

@@ -341,6 +341,7 @@ monitoringAllowedSectionsActions:
         notifButtons.push({ text: "View Job", url: jobUrl });
       }
       NotifProvider.postNotifications({
+        type: "AUDIT_TRAIL",
         text: `${suspectRecords.length} suspect Setup Audit Trail records has been found in ${linkMarkdown}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,

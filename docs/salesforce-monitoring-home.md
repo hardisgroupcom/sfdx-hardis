@@ -63,22 +63,6 @@ Are you ready ? [Configure the monitoring on your orgs](salesforce-monitoring-co
 
 Latest step of monitoring runs the following checks.
 
-You can disable some of them by defining either a **monitoringDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
-
-Example in .sfdx-hardis.yml:
-
-```yaml
-monitoringDisable:
-  - METADATA_STATUS
-  - UNUSED_METADATAS
-```
-
-Example in env var:
-
-```sh
-MONITORING_DISABLE=METADATA_STATUS,UNUSED_METADATAS
-```
-
 ### Detect suspect setup actions in major org
 
 Sfdx-hardis command: [sfdx hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/)
