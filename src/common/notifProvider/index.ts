@@ -23,12 +23,17 @@ export abstract class NotifProvider {
   // Post notifications to all configured channels
   // This method is sync to allow the command to continue and not negatively impact performances
   static postNotifications(notifMessage: NotifMessage) {
-    getConfig("user").then(config => {
-      const notificationsDisable = config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
+    getConfig("user").then((config) => {
+      const notificationsDisable =
+        config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
       if (notificationsDisable.includes(notifMessage.type)) {
-        uxLog(this, c.yellow(`Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`));
-      }
-      else {
+        uxLog(
+          this,
+          c.yellow(
+            `Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
+          ),
+        );
+      } else {
         uxLog(this, c.gray(`Handling notification of type ${notifMessage.type}...`));
         const notifProviders = this.getInstances();
         for (const notifProvider of notifProviders) {
@@ -51,15 +56,15 @@ export abstract class NotifProvider {
 export interface NotifMessage {
   text: string;
   type:
-  "AUDIT_TRAIL" |
-  "APEX_TESTS" |
-  "BACKUP" |
-  "DEPLOYMENT" |
-  "LEGACY_API" |
-  "LINT_ACCESS" |
-  "UNUSED_METADATAS" |
-  "METADATA_STATUS" |
-  "MISSING_ATTRIBUTES"
+    | "AUDIT_TRAIL"
+    | "APEX_TESTS"
+    | "BACKUP"
+    | "DEPLOYMENT"
+    | "LEGACY_API"
+    | "LINT_ACCESS"
+    | "UNUSED_METADATAS"
+    | "METADATA_STATUS"
+    | "MISSING_ATTRIBUTES";
   buttons?: NotifButton[];
   attachments?: any[];
   severity?: "critical" | "error" | "warning" | "info" | "success";

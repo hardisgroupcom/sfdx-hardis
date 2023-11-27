@@ -405,7 +405,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         type: "DEPLOYMENT",
         text: notifMessage,
         buttons: notifButtons,
-        severity: "success"
+        severity: "success",
       });
     }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
