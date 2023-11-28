@@ -12,6 +12,7 @@ import { CONSTANTS } from "../../../../config";
 import { NotifProvider } from "../../../../common/notifProvider";
 import { MessageAttachment } from "@slack/web-api";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -28,6 +29,10 @@ export default class MonitorBackup extends SfdxCommand {
   public static examples = ["$ sfdx hardis:org:monitor:backup"];
 
   protected static flagsConfig = {
+    outputfile: flags.string({
+      char: "o",
+      description: "Force the path and name of output report file. Must end with .csv",
+    }),
     debug: flags.boolean({
       char: "d",
       default: false,
@@ -56,11 +61,13 @@ export default class MonitorBackup extends SfdxCommand {
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
 
+  protected outputFile;
   protected debugMode = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    this.outputFile = this.flags.outputfile || null;
     this.debugMode = this.flags.debug || false;
 
     // Build target org full manifest
@@ -123,15 +130,30 @@ export default class MonitorBackup extends SfdxCommand {
       await fs.writeFile(path.join(packageFolder, fileName), JSON.stringify(installedPackage, null, 2));
     }
 
-    // Send notifications
     const diffFiles = await MetadataUtils.listChangedFiles();
-    // No notif if no updated file
+
+    // Write output file
+    this.outputFile = await generateReportPath("backup-updated-files", this.outputFile);
+    const diffFilesSimplified = diffFiles.map((diffFile) => {
+      return {
+        File: diffFile.path.replace("force-app/main/default/", ""),
+        ChangeType: diffFile.index === "?" ? "A" : diffFile.index,
+        WorkingDir: diffFile.working_dir === "?" ? "" : diffFile.working_dir,
+        PrevName: diffFile?.from || ""
+      };
+    });
+    await generateCsvFile(diffFilesSimplified, this.outputFile);
+
+    // Send notifications
     if (diffFiles.length > 0) {
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const attachments: MessageAttachment[] = [
         {
-          text: diffFiles.map((diffLine) => `• ${diffLine}`).join("\n"),
+          text: diffFiles.map((diffFile) => {
+            const line = `• ${diffFile.path.replace("force-app/main/default/", "")} (${diffFile.index === "?" ? "A" : diffFile.index})`;
+            return line;
+          }).join("\n"),
         },
       ];
       NotifProvider.postNotifications({

@@ -1,11 +1,10 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
-import * as changedGitFiles from "changed-git-files";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, isGitRepo, uxLog } from "../../common/utils";
+import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, git, isGitRepo, uxLog } from "../../common/utils";
 import { CONSTANTS } from "../../config";
 import { PACKAGE_ROOT_DIR } from "../../settings";
 import { getCache, setCache } from "../cache";
@@ -15,6 +14,7 @@ import { isSfdxProject } from "../utils/projectUtils";
 import { prompts } from "../utils/prompts";
 import { parsePackageXmlFile } from "../utils/xmlUtils";
 import { listMetadataTypes } from "./metadataList";
+import { FileStatusResult } from "simple-git";
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -544,8 +544,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
           uxLog(
             this,
             c.yellow(
-              `${c.bold("This is not a real error")}: A newer version of ${
-                package1.SubscriberPackageName
+              `${c.bold("This is not a real error")}: A newer version of ${package1.SubscriberPackageName
               } has been found. You may update installedPackages property in .sfdx-hardis.yml`,
             ),
           );
@@ -672,27 +671,14 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
   }
 
   // List updated files and reformat them as string
-  public static async listChangedFiles(): Promise<string[]> {
+  public static async listChangedFiles(): Promise<FileStatusResult[]> {
     if (!isGitRepo()) {
       return [];
     }
-    const files = await new Promise<string[]>((resolve) => {
-      changedGitFiles((err: any, result: any[]) => {
-        if (result == null) {
-          console.warn(JSON.stringify(err, null, 2));
-          resolve([]);
-        }
-        resolve(result);
-      });
-    });
-    const filesTextLines = files
-      .sort((a: any, b: any) => (a.filename > b.filename ? 1 : -1))
-      .map((fileInfo: any) => {
-        fileInfo.shortFileName = fileInfo.filename.replace("force-app/main/default/", "");
-        return fileInfo;
-      })
-      .map((fileInfo: any) => `${fileInfo.shortFileName} - ${fileInfo.status}`);
-    return filesTextLines;
+    const files = (await git().status(["--porcelain"])).files;
+    const filesSorted = files
+      .sort((a, b) => (a.path > b.path ? 1 : -1))
+    return filesSorted;
   }
 }
 
