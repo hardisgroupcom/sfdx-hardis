@@ -12,6 +12,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Manage Users: PermSetGroupAssign
   - Manage Users: PermSetGroupUnassign
 - Complete factorization of notification related methods
+- Do not remove applicationVisibilities and recordTypeVisibilities from Profiles if they are defined to false (allow to hide applications)
 
 ## [4.16.1] 2023-11-27
 
