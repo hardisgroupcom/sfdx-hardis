@@ -3,13 +3,13 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
+import { isCI, uxLog } from "../../../../common/utils";
 import { bulkQuery } from "../../../../common/utils/apiUtils";
 import { getConfig } from "../../../../config";
-import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
-import { GitProvider } from "../../../../common/gitProvider";
+import { NotifProvider } from "../../../../common/notifProvider";
 import { prompts } from "../../../../common/utils/prompts";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -30,6 +30,8 @@ Regular setup actions performed in major orgs are filtered.
   - deleteScratchOrg
 - Certificate and Key Management
   - insertCertificate
+- Email Administration
+  - dkimRotationSuccessful
 - Groups
   - groupMembership
 - Manage Users
@@ -58,6 +60,8 @@ Regular setup actions performed in major orgs are filtered.
   - insertTwoFactorTempCode
   - lightningloginenroll
   - PermSetAssign
+  - PermSetGroupAssign
+  - PermSetGroupUnassign
   - PermSetLicenseAssign
   - PermSetUnassign
   - PermSetLicenseUnassign
@@ -171,9 +175,19 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
-      "": ["createScratchOrg", "deleteScratchOrg"],
-      "Certificate and Key Management": ["insertCertificate"],
-      Groups: ["groupMembership"],
+      "": [
+        "createScratchOrg",
+        "deleteScratchOrg"
+      ],
+      "Certificate and Key Management": [
+        "insertCertificate"
+      ],
+      "Email Administration": [
+        "dkimRotationSuccessful"
+      ],
+      "Groups": [
+        "groupMembership"
+      ],
       "Manage Users": [
         "activateduser",
         "createduser",
@@ -201,6 +215,8 @@ monitoringAllowedSectionsActions:
         "insertTwoFactorTempCode",
         "lightningloginenroll",
         "PermSetAssign",
+        "PermSetGroupAssign",
+        "PermSetGroupUnassign",
         "PermSetLicenseAssign",
         "PermSetUnassign",
         "PermSetLicenseUnassign",
@@ -310,17 +326,12 @@ monitoringAllowedSectionsActions:
       }
       notifDetailText += "\n";
       notifDetailText += "_See details in job artifacts_";
-      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
-      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
-      const notifButtons = [];
-      const jobUrl = await GitProvider.getJobUrl();
-      if (jobUrl) {
-        notifButtons.push({ text: "View Job", url: jobUrl });
-      }
+
+      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+      const notifButtons = await getNotificationButtons();
       NotifProvider.postNotifications({
         type: "AUDIT_TRAIL",
-        text: `${suspectRecords.length} suspect Setup Audit Trail records has been found in ${linkMarkdown}`,
+        text: `${suspectRecords.length} suspect Setup Audit Trail records has been found in ${orgMarkdown}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",

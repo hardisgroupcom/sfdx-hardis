@@ -437,7 +437,6 @@ export default class Access extends SfdxCommand {
           }
         }
       }
-      notifDetailText += "_See details in job artifacts_";
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
       NotifProvider.postNotifications({

@@ -169,3 +169,19 @@ export async function getBranchMarkdown(): Promise<string> {
   }
   return branchMd;
 }
+
+/**
+ * @descriptionThis function retrieves the current Git branch and its URL from the GitProvider.
+ * It then generates a markdown string for the branch.
+ * If the branch URL exists, it creates a markdown link with the branch name as the link text.
+ * Otherwise, it simply formats the branch name in markdown.
+ *
+ * @returns {Promise<string>} - A Promise that resolves to a markdown string for the current Git branch.
+ */
+export async function getOrgMarkdown(instanceUrl: string): Promise<string> {
+  if (!instanceUrl) {
+    return await getBranchMarkdown();
+  }
+  const linkMarkdown = UtilsNotifs.markdownLink(instanceUrl, instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""));
+  return linkMarkdown;
+}

@@ -6,12 +6,12 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
-import { execCommand, filterPackageXml, getCurrentGitBranch, uxLog } from "../../../../common/utils";
+import { execCommand, filterPackageXml, uxLog } from "../../../../common/utils";
 import { MetadataUtils } from "../../../../common/metadata-utils";
 import { CONSTANTS } from "../../../../config";
-import { GitProvider } from "../../../../common/gitProvider";
-import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
+import { NotifProvider } from "../../../../common/notifProvider";
 import { MessageAttachment } from "@slack/web-api";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -118,7 +118,8 @@ export default class MonitorBackup extends SfdxCommand {
     const packageFolder = path.join(process.cwd(), "installedPackages");
     await fs.ensureDir(packageFolder);
     for (const installedPackage of installedPackages) {
-      const fileName = (installedPackage.SubscriberPackageName || installedPackage.Id) + ".json";
+      const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + ".json";
+      delete installedPackage.Id; // Not needed for diffs
       await fs.writeFile(path.join(packageFolder, fileName), JSON.stringify(installedPackage, null, 2));
     }
 
@@ -126,15 +127,8 @@ export default class MonitorBackup extends SfdxCommand {
     const diffFiles = await MetadataUtils.listChangedFiles();
     // No notif if no updated file
     if (diffFiles.length > 0) {
-      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
-      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
-      const notifMessage = `Updates detected in ${linkMarkdown}`;
-      const notifButtons = [];
-      const jobUrl = await GitProvider.getJobUrl();
-      if (jobUrl) {
-        notifButtons.push({ text: "View BackUp Job", url: jobUrl });
-      }
+      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+      const notifButtons = await getNotificationButtons();
       const attachments: MessageAttachment[] = [
         {
           text: diffFiles.map((diffLine) => `• ${diffLine}`).join("\n"),
@@ -142,7 +136,7 @@ export default class MonitorBackup extends SfdxCommand {
       ];
       NotifProvider.postNotifications({
         type: "BACKUP",
-        text: notifMessage,
+        text: `Updates detected in ${orgMarkdown}`,
         buttons: notifButtons,
         attachments: attachments,
         severity: "info",

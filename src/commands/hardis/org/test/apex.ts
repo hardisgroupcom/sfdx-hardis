@@ -4,10 +4,10 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import { execCommand, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
-import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
+import { canSendNotifications, getNotificationButtons, getOrgMarkdown, sendNotification } from "../../../../common/utils/notifUtils";
 import { getConfig, getReportDirectory } from "../../../../config";
-import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
-import { GitProvider } from "../../../../common/gitProvider";
+import { NotifProvider } from "../../../../common/notifProvider";
+
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -139,15 +139,11 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         }
         if (coverageTestRun < minCoverageTestRun) {
           // Send notification
-          const linkMarkdown = await this.getBranchMarkdownLink();
-          const jobUrl = await GitProvider.getJobUrl();
-          const notifButtons = [];
-          if (jobUrl) {
-            notifButtons.push({ text: "View BackUp Job", url: jobUrl });
-          }
+          const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+          const notifButtons = await getNotificationButtons();
           NotifProvider.postNotifications({
             type: "APEX_TESTS",
-            text: `Apex Tests run coverage issue in ${linkMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
+            text: `Apex Tests run coverage issue in ${orgMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
             buttons: notifButtons,
             severity: "error",
           });
@@ -173,16 +169,12 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       if (fs.existsSync(reportDir + "/test-result.txt")) {
         testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
       }
-      const linkMarkdown = await this.getBranchMarkdownLink();
-      const notifButtons = [];
-      const jobUrl = await GitProvider.getJobUrl();
-      if (jobUrl) {
-        notifButtons.push({ text: "View Apex test Job", url: jobUrl });
-      }
       // Send notification
+      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+      const notifButtons = await getNotificationButtons();
       NotifProvider.postNotifications({
         type: "APEX_TESTS",
-        text: `Apex Tests are failing in ${linkMarkdown}`,
+        text: `Apex Tests are failing in ${orgMarkdown}`,
         attachments: [{ text: testResultStr }],
         buttons: notifButtons,
         severity: "error",
@@ -203,10 +195,4 @@ ${testResultStr}`,
     return { orgId: this.org.getOrgId(), outputString: message };
   }
 
-  public async getBranchMarkdownLink() {
-    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-    const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
-    const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
-    return linkMarkdown;
-  }
 }
