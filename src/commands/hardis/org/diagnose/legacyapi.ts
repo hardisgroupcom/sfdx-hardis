@@ -6,11 +6,10 @@ import * as c from "chalk";
 import * as sortArray from "sort-array";
 import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
 import * as dns from "dns";
-import { canSendNotifications, sendNotification } from "../../../../common/utils/notifUtils";
+import { canSendNotifications, getNotificationButtons, getOrgMarkdown, sendNotification } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { WebSocketClient } from "../../../../common/websocketClient";
-import { NotifProvider, UtilsNotifs } from "../../../../common/notifProvider";
-import { GitProvider } from "../../../../common/gitProvider";
+import { NotifProvider } from "../../../../common/notifProvider";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 const dnsPromises = dns.promises;
 
@@ -92,15 +91,15 @@ See article below
       apiFamily: ["SOAP", "REST", "BULK_API"],
       minApiVersion: 7.0,
       maxApiVersion: 20.0,
-      severity: "WARNING",
+      severity: "ERROR",
       deprecationRelease: "Summer 22 - retirement of 7 to 20 ",
     },
     {
       apiFamily: ["SOAP", "REST", "BULK_API"],
       minApiVersion: 21.0,
       maxApiVersion: 30.0,
-      severity: "INFO",
-      deprecationRelease: "Summer 23 - retirement of 21 to 30",
+      severity: "WARNING",
+      deprecationRelease: "Summer 25 - retirement of 21 to 30",
     },
   ];
 
@@ -172,7 +171,7 @@ See article below
       statusCode = 1;
       uxLog(this, c.red(c.bold(msg)));
     } else if (allEndOfSupportApiCalls.length > 0) {
-      msg = "Found API versions calls in logs that will not be supported anymore in the future";
+      msg = "Found deprecated API versions calls in logs that will not be supported anymore in the future";
       statusCode = 0;
       uxLog(this, c.yellow(c.bold(msg)));
     } else {
@@ -199,31 +198,33 @@ See article below
     // Debug or manage CSV file generation error
     if (this.debugMode || this.outputFile == null) {
       uxLog(this, c.grey(c.bold("Dead API version calls:") + JSON.stringify(allDeadApiCalls, null, 2)));
-      uxLog(this, c.grey(c.bold("Deprecated API version calls:") + JSON.stringify(allSoonDeprecatedApiCalls, null, 2)));
-      uxLog(this, c.grey(c.bold("End of support API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
+      uxLog(this, c.grey(c.bold("Dead API version calls:") + JSON.stringify(allSoonDeprecatedApiCalls, null, 2)));
+      uxLog(this, c.grey(c.bold("Deprecated API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
     }
 
-    const notifDetailText = `• Dead API version calls found in logs           : ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})
-• Deprecated API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})
-• End of support API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})
-    
+    let notifDetailText = "";
+    if (allDeadApiCalls.length > 0) {
+      notifDetailText += `• Dead API version calls found in logs: ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})\n`;
+    }
+    if (allSoonDeprecatedApiCalls.length > 0) {
+      notifDetailText += `• Dead API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})\n`;
+    }
+    if (allEndOfSupportApiCalls.length > 0) {
+      notifDetailText += `• Deprecated API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})\n`;
+    }
+
+    notifDetailText += `
 See article to solve issue before it's too late:
 • EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
 • FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
     // Manage notifications
     if (allErrors.length > 0) {
-      const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-      const targetLabel = this.org?.getConnection()?.instanceUrl || branchName;
-      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
-      const notifButtons = [];
-      const jobUrl = await GitProvider.getJobUrl();
-      if (jobUrl) {
-        notifButtons.push({ text: "View Job", url: jobUrl });
-      }
+      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+      const notifButtons = await getNotificationButtons();
       NotifProvider.postNotifications({
         type: "LEGACY_API",
-        text: `Deprecated Salesforce API versions are used in ${linkMarkdown}`,
+        text: `Deprecated Salesforce API versions are used in ${orgMarkdown}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "error",

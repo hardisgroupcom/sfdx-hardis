@@ -24,9 +24,10 @@ import { forceSourceDeploy, removePackageXmlContent } from "../../../../../commo
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
-import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider";
+import { NotifProvider } from "../../../../../common/notifProvider";
 import { GitProvider } from "../../../../../common/gitProvider";
 import { callSfdxGitDelta, getGitDeltaScope } from "../../../../../common/utils/gitUtils";
+import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from "../../../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -379,20 +380,12 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
     // Send notification of deployment success
     if (!this.checkOnly) {
-      const targetLabel = this.org?.getConnection()?.getUsername() === targetUsername ? this.org?.getConnection()?.instanceUrl : targetUsername;
-      const linkMarkdown = UtilsNotifs.markdownLink(targetLabel, targetLabel.replace("https://", "").replace(".my.salesforce.com", ""));
-      let branchMd = `*${currentGitBranch}*`;
-      const branchUrl = await GitProvider.getCurrentBranchUrl();
-      if (branchUrl) {
-        branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
-      }
-      let notifMessage = `Deployment has been successfully processed from branch ${branchMd} to org ${linkMarkdown}`;
+      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl || targetUsername);
+      const branchMarkdown = await getBranchMarkdown();
+      let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
       notifMessage += quickDeploy ? " (🚀 quick deployment)" : delta ? " (🌙 delta deployment)" : " (🌕 full deployment)";
-      const notifButtons = [];
-      const jobUrl = await GitProvider.getJobUrl();
-      if (jobUrl) {
-        notifButtons.push({ text: "View Deployment Job", url: jobUrl });
-      }
+
+      const notifButtons = await getNotificationButtons();
       const pullRequestInfo = await GitProvider.getPullRequestInfo();
       if (pullRequestInfo) {
         const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;

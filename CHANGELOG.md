@@ -4,6 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.17.0] 2023-11-28
+
+- hardis:org:backup: Monitor installed packages
+- hardis:org:diagnose:audittrail: Add more ignored events
+  - Email Administration: dkimRotationSuccessful
+  - Manage Users: PermSetGroupAssign
+  - Manage Users: PermSetGroupUnassign
+- Complete factorization of notification related methods
+
 ## [4.16.1] 2023-11-27
 
 - Core: Factorize CSV generation
