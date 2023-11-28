@@ -40,7 +40,8 @@ export async function minimizeProfile(profileFile: string) {
     if (profileXml.Profile[node]) {
       const prevLen = profileXml.Profile[node].length;
       profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => {
-        if ((nodeVal?.default && nodeVal?.default[0] === "true") ||
+        if (
+          (nodeVal?.default && nodeVal?.default[0] === "true") ||
           (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") ||
           (nodeVal?.visible && nodeVal?.visible[0] === "false")
         ) {
@@ -74,7 +75,8 @@ export async function minimizeProfile(profileFile: string) {
     uxLog(
       this,
       c.grey(
-        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${updatedDefaults === true ? " and removing not default values" : ""
+        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${
+          updatedDefaults === true ? " and removing not default values" : ""
         }`,
       ),
     );
