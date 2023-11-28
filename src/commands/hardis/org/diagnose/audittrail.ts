@@ -175,19 +175,10 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
-      "": [
-        "createScratchOrg",
-        "deleteScratchOrg"
-      ],
-      "Certificate and Key Management": [
-        "insertCertificate"
-      ],
-      "Email Administration": [
-        "dkimRotationSuccessful"
-      ],
-      "Groups": [
-        "groupMembership"
-      ],
+      "": ["createScratchOrg", "deleteScratchOrg"],
+      "Certificate and Key Management": ["insertCertificate"],
+      "Email Administration": ["dkimRotationSuccessful"],
+      Groups: ["groupMembership"],
       "Manage Users": [
         "activateduser",
         "createduser",

@@ -8,7 +8,6 @@ import { canSendNotifications, getNotificationButtons, getOrgMarkdown, sendNotif
 import { getConfig, getReportDirectory } from "../../../../config";
 import { NotifProvider } from "../../../../common/notifProvider";
 
-
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
@@ -194,5 +193,4 @@ ${testResultStr}`,
 
     return { orgId: this.org.getOrgId(), outputString: message };
   }
-
 }

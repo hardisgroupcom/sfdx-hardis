@@ -202,7 +202,7 @@ See article below
       uxLog(this, c.grey(c.bold("Deprecated API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
     }
 
-    let notifDetailText = '';
+    let notifDetailText = "";
     if (allDeadApiCalls.length > 0) {
       notifDetailText += `• Dead API version calls found in logs: ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})\n`;
     }
@@ -210,7 +210,7 @@ See article below
       notifDetailText += `• Dead API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})\n`;
     }
     if (allEndOfSupportApiCalls.length > 0) {
-      notifDetailText += `• Deprecated API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})\n`
+      notifDetailText += `• Deprecated API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})\n`;
     }
 
     notifDetailText += `
