@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Monitor installed packages
+
 ## [4.16.1] 2023-11-27
 
 - Core: Factorize CSV generation

@@ -4,6 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
+import * as path from "path";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
 import { execCommand, filterPackageXml, getCurrentGitBranch, uxLog } from "../../../../common/utils";
 import { MetadataUtils } from "../../../../common/metadata-utils";
@@ -110,6 +111,15 @@ export default class MonitorBackup extends SfdxCommand {
         c.red("Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it"),
       );
       throw e;
+    }
+
+    // Write installed packages
+    uxLog(this, c.cyan(`Write installed packages ...`));
+    const packageFolder = path.join(process.cwd(), "installedPackages");
+    await fs.ensureDir(packageFolder);
+    for (const installedPackage of installedPackages) {
+      const fileName = (installedPackage.SubscriberPackageName || installedPackage.Id) + ".json";
+      await fs.writeFile(path.join(packageFolder, fileName), JSON.stringify(installedPackage, null, 2));
     }
 
     // Send notifications
