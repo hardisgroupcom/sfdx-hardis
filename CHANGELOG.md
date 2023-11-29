@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.18.3] 2023-11-29
 
 - Improve test cases notification
+- Enhance monitoring documentation with more descriptions and screenshots
 
 ## [4.18.2] 2023-11-29
 
