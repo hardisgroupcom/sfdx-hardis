@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.18.3] 2023-11-29
+
+- Improve test cases notification
+
 ## [4.18.2] 2023-11-29
 
 - **hardis:work:save** enhancements
