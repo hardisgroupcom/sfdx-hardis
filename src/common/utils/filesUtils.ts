@@ -18,8 +18,6 @@ import { prompts } from "./prompts";
 import { CONSTANTS, getReportDirectory } from "../../config";
 import { WebSocketClient } from "../websocketClient";
 
-
-
 export const filesFolderRoot = path.join(".", "scripts", "files");
 
 export class FilesExporter {
@@ -272,13 +270,13 @@ export class FilesExporter {
       this.dtl?.outputFileNameFormat === "id"
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
-        this.dtl?.outputFileNameFormat === "title_id"
+          this.dtl?.outputFileNameFormat === "title_id"
           ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
           : // Id + Title
-          this.dtl?.outputFileNameFormat === "id_title"
+            this.dtl?.outputFileNameFormat === "id_title"
             ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
             : // Title
-            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+              path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -576,9 +574,9 @@ async function csvToXls(csvFile: string, xslxFile: string) {
   worksheet.autoFilter = "A1:Z1";
   // Adjust column size (only if the file is not too big, to avoid performances issues)
   if (worksheet.rowCount < 5000) {
-    worksheet.columns.forEach(column => {
-      const lengths = column.values.map(v => v.toString().length);
-      const maxLength = Math.max(...lengths.filter(v => typeof v === 'number'));
+    worksheet.columns.forEach((column) => {
+      const lengths = column.values.map((v) => v.toString().length);
+      const maxLength = Math.max(...lengths.filter((v) => typeof v === "number"));
       column.width = maxLength;
     });
   }
