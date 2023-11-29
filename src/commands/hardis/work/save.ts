@@ -319,7 +319,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr),
+        c.red(destructivePackageXmlDiffStr),
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +
@@ -384,6 +384,10 @@ autoRemoveUserPermissions:
       uxLog(this, c.cyan("Cleaning sfdx project from obsolete references..."));
       // User defined cleaning
       await CleanReferences.run(["--type", "all"]);
+      if (globalThis?.displayProfilesWarning === true) {
+        uxLog(this, c.yellow(c.bold("Please make sure the attributes removed from Profiles are defined on Permission Sets :)")));
+      }
+
       uxLog(this, c.cyan("Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns..."));
       await CleanXml.run([]);
       // Manage git after cleaning

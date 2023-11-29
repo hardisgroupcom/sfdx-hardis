@@ -29,6 +29,7 @@ export async function minimizeProfile(profileFile: string) {
     }
   }
   // Keep only default values or false values
+  const isAdmin = path.basename(profileFile) === "Admin.profile-meta.xml";
   let updatedDefaults = false;
   const partiallyRemoved = [];
   const nodesHavingDefaultOrFalse = ["applicationVisibilities", "recordTypeVisibilities", "userPermissions"];
@@ -37,10 +38,11 @@ export async function minimizeProfile(profileFile: string) {
       const prevLen = profileXml.Profile[node].length;
       profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => {
         if (
-          (nodeVal?.default && nodeVal?.default[0] === "true") || // recordTypeVisibilities
-          (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") || // recordTypeVisibilities
-          (nodeVal?.visible && nodeVal?.visible[0] === "false") || // applicationVisibilities
-          (nodeVal?.enabled && nodeVal?.enabled[0] === "false") // userPermissions
+          (isAdmin && node === "userPermissions") || // Admin profile keeps all permissions)
+          (nodeVal?.default && nodeVal?.default[0] === "true") || // keep only refault recordTypeVisibilities
+          (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") || // keep only default PersonAccount recordTypeVisibilities
+          (nodeVal?.visible && nodeVal?.visible[0] === "false") || // keep only false applicationVisibilities
+          (nodeVal?.enabled && nodeVal?.enabled[0] === "false") // keep only false userPermissions 
         ) {
           return true;
         }
