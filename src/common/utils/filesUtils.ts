@@ -9,6 +9,7 @@ import PromisePool = require("@supercharge/promise-pool/dist");
 // Salesforce Specific and Other Specific Libraries
 import { Connection, SfdxError } from "@salesforce/core";
 import * as Papa from "papaparse";
+import * as ExcelJS from "exceljs";
 
 // Project Specific Utilities
 import { getCurrentGitBranch, isCI, uxLog } from ".";
@@ -551,9 +552,33 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
   try {
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, "utf8");
-    uxLog(this, c.italic(c.cyan(`Please see detailed log in ${c.bold(outputPath)}`)));
+    uxLog(this, c.italic(c.cyan(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
     WebSocketClient.requestOpenFile(outputPath);
+    try {
+      // Generate mirror XSLX file
+      const xslxFile = outputPath.replace(".csv", ".xlsx");
+      await csvToXls(outputPath, xslxFile);
+      uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
+    } catch (e2) {
+      uxLog(this, c.yellow("Error while generating XSLX log file:\n" + e2.message + "\n" + e2.stack));
+    }
   } catch (e) {
     uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
   }
+}
+
+async function csvToXls(csvFile: string, xslxFile: string) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = await workbook.csv.readFile(csvFile);
+  // Set filters
+  worksheet.autoFilter = "A1:Z1";
+  // Adjust column size (only if the file is not too big, to avoid performances issues)
+  if (worksheet.rowCount < 5000) {
+    worksheet.columns.forEach((column) => {
+      const lengths = column.values.map((v) => v.toString().length);
+      const maxLength = Math.max(...lengths.filter((v) => typeof v === "number"));
+      column.width = maxLength;
+    });
+  }
+  await workbook.xlsx.writeFile(xslxFile);
 }

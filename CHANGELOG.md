@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.18.0] 2023-11-29
+
+- **Delta deployments** is no more beta but **Generally available**
+- **Org Monitoring** is no more beta but **Generally available**
+- Generate CSV reports also in XSLX format for easier opening
+
 ## [4.17.1] 2023-11-28
 
 - Generate CSV output for hardis:org:monitor:backup

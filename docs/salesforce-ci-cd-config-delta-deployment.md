@@ -4,7 +4,7 @@ description: Learn how to configure Delta Deployments using sfdx-git-delta on a 
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Delta deployments (beta)](#delta-deployments-beta)
+- [Delta deployments](#delta-deployments)
   - [Full mode](#full-mode)
   - [Delta mode](#delta-mode)
 - [Configuration](#configuration)
@@ -13,11 +13,7 @@ description: Learn how to configure Delta Deployments using sfdx-git-delta on a 
 
 ___
 
-## Delta deployments (beta)
-
-_sfdx-hardis delta deployment is in beta but can already be safely used_
-
-___
+## Delta deployments
 
 ### Full mode
 

@@ -139,7 +139,7 @@ export default class MonitorBackup extends SfdxCommand {
         File: diffFile.path.replace("force-app/main/default/", ""),
         ChangeType: diffFile.index === "?" ? "A" : diffFile.index,
         WorkingDir: diffFile.working_dir === "?" ? "" : diffFile.working_dir,
-        PrevName: diffFile?.from || ""
+        PrevName: diffFile?.from || "",
       };
     });
     await generateCsvFile(diffFilesSimplified, this.outputFile);
@@ -150,10 +150,12 @@ export default class MonitorBackup extends SfdxCommand {
       const notifButtons = await getNotificationButtons();
       const attachments: MessageAttachment[] = [
         {
-          text: diffFiles.map((diffFile) => {
-            const line = `• ${diffFile.path.replace("force-app/main/default/", "")} (${diffFile.index === "?" ? "A" : diffFile.index})`;
-            return line;
-          }).join("\n"),
+          text: diffFiles
+            .map((diffFile) => {
+              const line = `• ${diffFile.path.replace("force-app/main/default/", "")} (${diffFile.index === "?" ? "A" : diffFile.index})`;
+              return line;
+            })
+            .join("\n"),
         },
       ];
       NotifProvider.postNotifications({

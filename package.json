@@ -33,6 +33,7 @@
     "csv-stringify": "^5.6.1",
     "email-validator": "^2.0.4",
     "eslint": "^7.21.0",
+    "exceljs": "^4.4.0",
     "extract-zip": "^2.0.1",
     "find-package-json": "^1.2.0",
     "fs-extra": "^9.1.0",

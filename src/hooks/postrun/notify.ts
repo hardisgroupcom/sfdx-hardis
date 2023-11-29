@@ -41,7 +41,7 @@ export const hook = async (options: any) => {
     const projectName = process.env.CI_PROJECT_NAME || (await getGitRepoName()) || "Missing CI_PROJECT_NAME variable";
     const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
     const envName = projectName + "/" + branchName;
-    const diffFilesTxt = diffFiles.map((diffFile) => `• ${diffFile.path.replace("force-app/main/default/", "")} (${diffFile.index})`).join("\n")
+    const diffFilesTxt = diffFiles.map((diffFile) => `• ${diffFile.path.replace("force-app/main/default/", "")} (${diffFile.index})`).join("\n");
     await sendNotification({
       title: `Updates detected in org ${envName}`,
       text: `<pre>${diffFilesTxt}</pre>`,
