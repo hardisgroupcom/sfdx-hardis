@@ -38,6 +38,7 @@ Regular setup actions performed in major orgs are filtered.
   - activateduser
   - createduser
   - changedcommunitynickname
+  - changedfederationid
   - changedpassword
   - changedinteractionuseroffon
   - changedinteractionuseronoff
@@ -55,6 +56,7 @@ Regular setup actions performed in major orgs are filtered.
   - deleteAuthenticatorPairing
   - deleteTwoFactorInfo2
   - deleteTwoFactorTempCode
+  - frozeuser
   - insertAuthenticatorPairing
   - insertTwoFactorInfo2
   - insertTwoFactorTempCode
@@ -183,6 +185,7 @@ monitoringAllowedSectionsActions:
         "activateduser",
         "createduser",
         "changedcommunitynickname",
+        "changedfederationid",
         "changedinteractionuseroffon",
         "changedinteractionuseronoff",
         "changedmarketinguseroffon",
@@ -201,6 +204,7 @@ monitoringAllowedSectionsActions:
         "deleteAuthenticatorPairing",
         "deleteTwoFactorInfo2",
         "deleteTwoFactorTempCode",
+        "frozeuser",
         "insertAuthenticatorPairing",
         "insertTwoFactorInfo2",
         "insertTwoFactorTempCode",
