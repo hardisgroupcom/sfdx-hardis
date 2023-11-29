@@ -182,7 +182,7 @@ export default class CleanReferences extends SfdxCommand {
         // Command based cleaning
         await execCommand(command, this, {
           fail: true,
-          output: false,
+          output: true,
           debug: this.debugMode,
         });
       } else {
