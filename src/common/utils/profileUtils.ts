@@ -39,7 +39,7 @@ export async function minimizeProfile(profileFile: string) {
       profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => {
         if (
           (isAdmin && node === "userPermissions") || // Admin profile keeps all permissions)
-          (nodeVal?.default && nodeVal?.default[0] === "true") || // keep only refault recordTypeVisibilities
+          (nodeVal?.default && nodeVal?.default[0] === "true") || // keep only default recordTypeVisibilities
           (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") || // keep only default PersonAccount recordTypeVisibilities
           (nodeVal?.visible && nodeVal?.visible[0] === "false") || // keep only false applicationVisibilities
           (nodeVal?.enabled && nodeVal?.enabled[0] === "false") // keep only false userPermissions 
