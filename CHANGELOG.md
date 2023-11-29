@@ -6,7 +6,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [4.18.2] 2023-11-29
 
-- Keep **userPermissions** in Profiles when they are defined to `false`
+- **hardis:work:save** enhancements
+  - Display more output during cleaning jobs 
+  - Keep **userPermissions** in Profiles when they are defined to `false`
 
 ## [4.18.1] 2023-11-29
 
