@@ -15,7 +15,7 @@ export async function minimizeProfile(profileFile: string) {
     "externalDataSourceAccesses",
     "fieldPermissions",
     "objectPermissions",
-    "pageAccesses"
+    "pageAccesses",
   ];
   // Allow to override the list of node to remove at repo level
   const config = await getConfig("branch");
@@ -42,7 +42,7 @@ export async function minimizeProfile(profileFile: string) {
           (nodeVal?.default && nodeVal?.default[0] === "true") || // keep only default recordTypeVisibilities
           (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") || // keep only default PersonAccount recordTypeVisibilities
           (nodeVal?.visible && nodeVal?.visible[0] === "false") || // keep only false applicationVisibilities
-          (nodeVal?.enabled && nodeVal?.enabled[0] === "false") // keep only false userPermissions 
+          (nodeVal?.enabled && nodeVal?.enabled[0] === "false") // keep only false userPermissions
         ) {
           return true;
         }
@@ -54,7 +54,6 @@ export async function minimizeProfile(profileFile: string) {
       }
     }
   }
-
 
   // Additional user permissions to remove (defined in .sfdx-hardis autoRemoveUserPermissions property)
   let updatedUserPerms = false;
@@ -77,12 +76,9 @@ export async function minimizeProfile(profileFile: string) {
     await writeXmlFile(profileFile, profileXml);
     let log = `Updated profile ${c.bold(path.basename(profileFile))} by completely removing sections ${c.bold(removed.join(", "))}`;
     if (partiallyRemovedUnique.length > 0) {
-      log+= ` and partially removing sections ${c.bold(partiallyRemovedUnique.join(", "))}`;
+      log += ` and partially removing sections ${c.bold(partiallyRemovedUnique.join(", "))}`;
     }
-    uxLog(
-      this,
-      c.yellow(log),
-    );
+    uxLog(this, c.yellow(log));
   }
 
   return { removed: removed, updatedDefaults: updatedDefaults, updated: updated };

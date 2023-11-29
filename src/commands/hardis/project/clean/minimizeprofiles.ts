@@ -93,7 +93,7 @@ You can override this list by defining a property minimizeProfilesNodesToRemove 
     // Summary
     if (counter > 0) {
       uxLog(this, c.yellow("Please make sure the attributes removed from Profiles are defined on Permission Sets"));
-      globalThis.displayProfilesWarning = true ;
+      globalThis.displayProfilesWarning = true;
     }
     const msg = `Cleaned ${c.green(c.bold(counter))} profiles from attributes existing on Permission Sets`;
     uxLog(this, c.cyan(msg));
