@@ -16,7 +16,7 @@ export async function minimizeProfile(profileFile: string) {
     "fieldPermissions",
     "objectPermissions",
     "pageAccesses",
-    "userPermissions"
+    "userPermissions",
   ];
   // Allow to override the list of node to remove at repo level
   const config = await getConfig("branch");
@@ -31,11 +31,7 @@ export async function minimizeProfile(profileFile: string) {
   }
   // Keep only default values or false values
   let updatedDefaults = false;
-  const nodesHavingDefaultOrFalse = [
-    "applicationVisibilities",
-    "recordTypeVisibilities",
-    "userPermissions"
-  ];
+  const nodesHavingDefaultOrFalse = ["applicationVisibilities", "recordTypeVisibilities", "userPermissions"];
   for (const node of nodesHavingDefaultOrFalse) {
     if (profileXml.Profile[node]) {
       const prevLen = profileXml.Profile[node].length;
@@ -76,7 +72,8 @@ export async function minimizeProfile(profileFile: string) {
     uxLog(
       this,
       c.grey(
-        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${updatedDefaults === true ? " and removing not default values" : ""
+        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${
+          updatedDefaults === true ? " and removing not default values" : ""
         }`,
       ),
     );
