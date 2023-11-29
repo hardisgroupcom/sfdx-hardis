@@ -17,11 +17,6 @@ export async function minimizeProfile(profileFile: string) {
     "objectPermissions",
     "pageAccesses",
   ];
-  // Remove more attributes if not admin profile
-  const isAdmin = path.basename(profileFile) === "Admin.profile-meta.xml";
-  if (!isAdmin) {
-    nodesToRemoveDefault.push(...["userPermissions"]);
-  }
   // Allow to override the list of node to remove at repo level
   const config = await getConfig("branch");
   const nodesToRemove = config.minimizeProfilesNodesToRemove || nodesToRemoveDefault;
@@ -34,19 +29,24 @@ export async function minimizeProfile(profileFile: string) {
     }
   }
   // Keep only default values or false values
+  const isAdmin = path.basename(profileFile) === "Admin.profile-meta.xml";
   let updatedDefaults = false;
-  const nodesHavingDefault = ["applicationVisibilities", "recordTypeVisibilities"];
-  for (const node of nodesHavingDefault) {
+  const partiallyRemoved = [];
+  const nodesHavingDefaultOrFalse = ["applicationVisibilities", "recordTypeVisibilities", "userPermissions"];
+  for (const node of nodesHavingDefaultOrFalse) {
     if (profileXml.Profile[node]) {
       const prevLen = profileXml.Profile[node].length;
       profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => {
         if (
-          (nodeVal?.default && nodeVal?.default[0] === "true") ||
-          (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") ||
-          (nodeVal?.visible && nodeVal?.visible[0] === "false")
+          (isAdmin && node === "userPermissions") || // Admin profile keeps all permissions)
+          (nodeVal?.default && nodeVal?.default[0] === "true") || // keep only default recordTypeVisibilities
+          (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") || // keep only default PersonAccount recordTypeVisibilities
+          (nodeVal?.visible && nodeVal?.visible[0] === "false") || // keep only false applicationVisibilities
+          (nodeVal?.enabled && nodeVal?.enabled[0] === "false") // keep only false userPermissions
         ) {
           return true;
         }
+        partiallyRemoved.push(node);
         return false;
       });
       if (profileXml.Profile[node].length !== prevLen) {
@@ -63,23 +63,22 @@ export async function minimizeProfile(profileFile: string) {
       return !(config.autoRemoveUserPermissions || []).includes(userPermission.name[0]);
     });
     if (profileXml.Profile["userPermissions"].length !== prevLen1) {
+      partiallyRemoved.push("userPermissions");
       updatedUserPerms = true;
     }
   }
 
   // Update profile file
+  const partiallyRemovedUnique = [...new Set(partiallyRemoved)];
   let updated = false;
   if (removed.length > 1 || updatedDefaults === true || updatedUserPerms === true) {
     updated = true;
     await writeXmlFile(profileFile, profileXml);
-    uxLog(
-      this,
-      c.grey(
-        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${
-          updatedDefaults === true ? " and removing not default values" : ""
-        }`,
-      ),
-    );
+    let log = `Updated profile ${c.bold(path.basename(profileFile))} by completely removing sections ${c.bold(removed.join(", "))}`;
+    if (partiallyRemovedUnique.length > 0) {
+      log += ` and partially removing sections ${c.bold(partiallyRemovedUnique.join(", "))}`;
+    }
+    uxLog(this, c.yellow(log));
   }
 
   return { removed: removed, updatedDefaults: updatedDefaults, updated: updated };
