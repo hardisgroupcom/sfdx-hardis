@@ -15,8 +15,7 @@ export async function minimizeProfile(profileFile: string) {
     "externalDataSourceAccesses",
     "fieldPermissions",
     "objectPermissions",
-    "pageAccesses",
-    "userPermissions",
+    "pageAccesses"
   ];
   // Allow to override the list of node to remove at repo level
   const config = await getConfig("branch");
@@ -31,6 +30,7 @@ export async function minimizeProfile(profileFile: string) {
   }
   // Keep only default values or false values
   let updatedDefaults = false;
+  const partiallyRemoved = [];
   const nodesHavingDefaultOrFalse = ["applicationVisibilities", "recordTypeVisibilities", "userPermissions"];
   for (const node of nodesHavingDefaultOrFalse) {
     if (profileXml.Profile[node]) {
@@ -44,6 +44,7 @@ export async function minimizeProfile(profileFile: string) {
         ) {
           return true;
         }
+        partiallyRemoved.push(node);
         return false;
       });
       if (profileXml.Profile[node].length !== prevLen) {
@@ -51,6 +52,7 @@ export async function minimizeProfile(profileFile: string) {
       }
     }
   }
+
 
   // Additional user permissions to remove (defined in .sfdx-hardis autoRemoveUserPermissions property)
   let updatedUserPerms = false;
@@ -60,22 +62,24 @@ export async function minimizeProfile(profileFile: string) {
       return !(config.autoRemoveUserPermissions || []).includes(userPermission.name[0]);
     });
     if (profileXml.Profile["userPermissions"].length !== prevLen1) {
+      partiallyRemoved.push("userPermissions");
       updatedUserPerms = true;
     }
   }
 
   // Update profile file
+  const partiallyRemovedUnique = [...new Set(partiallyRemoved)];
   let updated = false;
   if (removed.length > 1 || updatedDefaults === true || updatedUserPerms === true) {
     updated = true;
     await writeXmlFile(profileFile, profileXml);
+    let log = `Updated profile ${c.bold(path.basename(profileFile))} by completely removing sections ${c.bold(removed.join(", "))}`;
+    if (partiallyRemovedUnique.length > 0) {
+      log+= ` and partially removing sections ${c.bold(partiallyRemovedUnique.join(", "))}`;
+    }
     uxLog(
       this,
-      c.grey(
-        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${
-          updatedDefaults === true ? " and removing not default values" : ""
-        }`,
-      ),
+      c.yellow(log),
     );
   }
 
