@@ -154,7 +154,7 @@ export default class MonitorBackup extends SfdxCommand {
             .map((diffFile) => {
               let flag = "";
               if (diffFile.index && diffFile.index !== " ") {
-                flag = ` (${diffFile.index === "?" ? "A" : diffFile.index})`
+                flag = ` (${diffFile.index === "?" ? "A" : diffFile.index})`;
               }
               const line = `• ${diffFile.path.replace("force-app/main/default/", "")}` + flag;
               return line;
