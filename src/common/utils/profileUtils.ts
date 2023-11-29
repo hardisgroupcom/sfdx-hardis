@@ -16,12 +16,8 @@ export async function minimizeProfile(profileFile: string) {
     "fieldPermissions",
     "objectPermissions",
     "pageAccesses",
+    "userPermissions"
   ];
-  // Remove more attributes if not admin profile
-  const isAdmin = path.basename(profileFile) === "Admin.profile-meta.xml";
-  if (!isAdmin) {
-    nodesToRemoveDefault.push(...["userPermissions"]);
-  }
   // Allow to override the list of node to remove at repo level
   const config = await getConfig("branch");
   const nodesToRemove = config.minimizeProfilesNodesToRemove || nodesToRemoveDefault;
@@ -35,15 +31,20 @@ export async function minimizeProfile(profileFile: string) {
   }
   // Keep only default values or false values
   let updatedDefaults = false;
-  const nodesHavingDefault = ["applicationVisibilities", "recordTypeVisibilities"];
-  for (const node of nodesHavingDefault) {
+  const nodesHavingDefaultOrFalse = [
+    "applicationVisibilities",
+    "recordTypeVisibilities",
+    "userPermissions"
+  ];
+  for (const node of nodesHavingDefaultOrFalse) {
     if (profileXml.Profile[node]) {
       const prevLen = profileXml.Profile[node].length;
       profileXml.Profile[node] = profileXml.Profile[node].filter((nodeVal) => {
         if (
-          (nodeVal?.default && nodeVal?.default[0] === "true") ||
-          (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") ||
-          (nodeVal?.visible && nodeVal?.visible[0] === "false")
+          (nodeVal?.default && nodeVal?.default[0] === "true") || // recordTypeVisibilities
+          (nodeVal?.personAccountDefault && nodeVal?.personAccountDefault[0] === "true") || // recordTypeVisibilities
+          (nodeVal?.visible && nodeVal?.visible[0] === "false") || // applicationVisibilities
+          (nodeVal?.enabled && nodeVal?.enabled[0] === "false") // userPermissions
         ) {
           return true;
         }
@@ -75,8 +76,7 @@ export async function minimizeProfile(profileFile: string) {
     uxLog(
       this,
       c.grey(
-        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${
-          updatedDefaults === true ? " and removing not default values" : ""
+        `Updated profile ${c.bold(path.basename(profileFile))} by removing sections ${c.bold(removed.join(","))}${updatedDefaults === true ? " and removing not default values" : ""
         }`,
       ),
     );
