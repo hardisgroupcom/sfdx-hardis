@@ -3,11 +3,12 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import { uxLog } from "../../../../common/utils";
-import { bulkQuery } from "../../../../common/utils/apiUtils";
+import { isCI, uxLog } from "../../../../common/utils";
+import { bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 import { NotifProvider } from "../../../../common/notifProvider";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { prompts } from "../../../../common/utils/prompts";
 
 
 // Initialize Messages with the current plugin directory
@@ -225,9 +226,10 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     }
 
     // Create results
-    const statusCode = 0;
+    let statusCode = 0;
     let msg = `No unused permission set license assignment has been found`;
     if (unusedPermissionSetLicenseAssignments.length > 0) {
+      statusCode = 1;
       msg = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found (including ${numberPslaRelatedToInactiveUser} related to inactive users)`
       uxLog(this, c.red(msg));
       for (const pslName of Object.keys(summary).sort()) {
@@ -261,6 +263,34 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         buttons: notifButtons,
         severity: "warning",
       });
+    }
+
+    // Propose to delete
+    if (!isCI && unusedPermissionSetLicenseAssignments.length) {
+      const confirmRes = await prompts({
+        type: "select",
+        message: "Do you want to delete unused Permission Set License Assignments ?",
+        choices: [
+          { title: `Yes, delete the ${unusedPermissionSetLicenseAssignments.length} useless Permission Set Licence Assignments !`, value: "all" },
+          { title: "No" }
+        ]
+      });
+      if (confirmRes.value === "all") {
+        const pslaToDelete = unusedPermissionSetLicenseAssignments.map(psla => {
+          return { Id: psla.Id }
+        });
+        const deleteRes = await bulkUpdate("PermissionSetLicenseAssignment", "DELETE", pslaToDelete, conn);
+        const deleteSuccessNb = deleteRes.successRecordsNb;
+        const deleteErrorNb = deleteRes.errorRecordsNb;
+        if (deleteErrorNb > 0) {
+          uxLog(this, c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`));
+        }
+        else {
+          statusCode = 0;
+        }
+        // Build results summary
+        uxLog(this, c.green(`${c.bold(deleteSuccessNb)} assignments has been deleted.`));
+      }
     }
 
     if ((this.argv || []).includes("unusedlicenses")) {
