@@ -43,7 +43,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0
         }
       })
       .on("end", () => {
-        spinnerQ.succeed(`Bulk query completed.`);
+        spinnerQ.succeed(`Bulk query completed with ${records.length} results.`);
         resolve({ records: records, totalSize: records.length });
       });
   });

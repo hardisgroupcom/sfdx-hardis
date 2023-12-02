@@ -64,7 +64,8 @@ export interface NotifMessage {
     | "LINT_ACCESS"
     | "UNUSED_METADATAS"
     | "METADATA_STATUS"
-    | "MISSING_ATTRIBUTES";
+    | "MISSING_ATTRIBUTES"
+    | "UNUSED_LICENSES";
   buttons?: NotifButton[];
   attachments?: any[];
   severity?: "critical" | "error" | "warning" | "info" | "success";
