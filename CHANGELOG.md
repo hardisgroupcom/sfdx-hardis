@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.19.0] 2023-12-02
+
+- New command **sfdx hardis:org:diagnose:unusedlicenses** to detect unused Permission Set Licenses (that you pay for anyway !)
+
 ## [4.18.3] 2023-11-29
 
 - Improve test cases notification
