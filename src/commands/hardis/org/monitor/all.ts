@@ -112,7 +112,7 @@ monitoringCommands:
       },
       {
         key: "UNUSED_LICENSES",
-        title: "Detect permission set licences that are assigned to users that do not need them",
+        title: "Detect permission set licenses that are assigned to users that do not need them",
         command: "sfdx hardis:org:diagnose:unusedlicenses",
       },
       {

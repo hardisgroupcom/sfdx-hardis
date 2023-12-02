@@ -88,7 +88,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
       , conn);
     permissionSetLicenseAssignmentsActive.push(...pslaQueryRes.records);
 
-    // List related Permission Set Licences
+    // List related Permission Set Licenses
     const relatedPermissionSetLicenses = permissionSetLicenseAssignmentsActive.map(psla => {
       return {
         Id: psla.PermissionSetLicenseId,
@@ -100,20 +100,20 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         index === self.findIndex((t) => (t.Id === value.Id)
         )
     );
-    const psLicencesIdsStr = "'" + relatedPermissionSetLicenses.map(psl => psl.Id).join("','") + "'";
+    const psLicensesIdsStr = "'" + relatedPermissionSetLicenses.map(psl => psl.Id).join("','") + "'";
     const permissionSetLicenses = [];
     if (relatedPermissionSetLicenses.length > 0) {
       uxLog(this, c.cyan(`Extracting related Permission Sets Licenses...`));
       const pslQueryRes = await bulkQuery(
         `SELECT Id,DeveloperName,MasterLabel 
        FROM PermissionSetLicense
-       WHERE Id in (${psLicencesIdsStr})`,
+       WHERE Id in (${psLicensesIdsStr})`,
         conn);
       permissionSetLicenses.push(...pslQueryRes.records);
     }
 
     // List related Permission sets
-    const psLicencesIdsStr2 = "'" + permissionSetLicenses.map(psl => psl.Id).join("','") + "'";
+    const psLicensesIdsStr2 = "'" + permissionSetLicenses.map(psl => psl.Id).join("','") + "'";
     const permissionSets = [];
     const permissionSetAssignments = [];
     const permissionSetGroupAssignments = [];
@@ -122,7 +122,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
       const psQueryRes = await bulkQuery(
         `SELECT Id,Label,Name,LicenseId
        FROM PermissionSet
-       WHERE LicenseId in (${psLicencesIdsStr2})`,
+       WHERE LicenseId in (${psLicensesIdsStr2})`,
         conn);
       permissionSets.push(...psQueryRes.records);
 
@@ -187,7 +187,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     // Browse Permission Sets License assignments
     for (const psla of permissionSetLicenseAssignmentsActive) {
       const pslaUsername = psla["Assignee.Username"];
-      // Find related Permission Set assignements
+      // Find related Permission Set assignments
       const foundMatchingPsAssignments = allPermissionSetAssignments.filter(psa => {
         if (psa["Assignee.Username"] === pslaUsername && psa.licenseIds.includes(psla.PermissionSetLicenseId)) {
           return true;
@@ -261,7 +261,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         type: "select",
         message: "Do you want to delete unused Permission Set License Assignments ?",
         choices: [
-          { title: `Yes, delete the ${unusedPermissionSetLicenseAssignments.length} useless Permission Set Licence Assignments !`, value: "all" },
+          { title: `Yes, delete the ${unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`, value: "all" },
           { title: "No" }
         ]
       });
