@@ -13,12 +13,13 @@
         "LINT_ACCESS",
         "UNUSED_METADATAS",
         "METADATA_STATUS",
-        "MISSING_ATTRIBUTES"
+        "MISSING_ATTRIBUTES",
+        "UNUSED_LICENSES"
       ],
       "type": "string"
     },
     "enum_monitoring_commands": {
-      "enum": ["AUDIT_TRAIL", "LEGACY_API", "LINT_ACCESS", "UNUSED_METADATAS", "METADATA_STATUS", "MISSING_ATTRIBUTES"],
+      "enum": ["AUDIT_TRAIL", "LEGACY_API", "LINT_ACCESS", "UNUSED_METADATAS", "METADATA_STATUS", "MISSING_ATTRIBUTES", "UNUSED_LICENSES"],
       "type": "string"
     }
   },
