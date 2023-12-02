@@ -231,8 +231,10 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     }
 
     // Generate output CSV file
-    this.outputFile = await generateReportPath("unused-ps-license-assignments", this.outputFile);
-    await generateCsvFile(unusedPermissionSetLicenseAssignments, this.outputFile);
+    if (unusedPermissionSetLicenseAssignments.length > 0) {
+      this.outputFile = await generateReportPath("unused-ps-license-assignments", this.outputFile);
+      await generateCsvFile(unusedPermissionSetLicenseAssignments, this.outputFile);
+    }
 
     // Manage notifications
     if (unusedPermissionSetLicenseAssignments.length > 0) {
