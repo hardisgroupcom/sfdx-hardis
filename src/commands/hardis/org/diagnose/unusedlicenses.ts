@@ -78,32 +78,18 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     const unusedPermissionSetLicenseAssignments = [];
 
     // List Permission Set Licenses Assignments
-    uxLog(this, c.cyan(`Extracting all Permission Sets Licenses Assignments...`));
-    const permissionSetLicenseAssignments = [];
+    uxLog(this, c.cyan(`Extracting all active Permission Sets Licenses Assignments...`));
+    const permissionSetLicenseAssignmentsActive = [];
     const pslaQueryRes = await bulkQuery(`
-    SELECT Id,PermissionSetLicenseId, PermissionSetLicense.DeveloperName, PermissionSetLicense.MasterLabel, AssigneeId, Assignee.Username, Assignee.IsActive
+    SELECT Id,PermissionSetLicenseId, PermissionSetLicense.DeveloperName, PermissionSetLicense.MasterLabel, AssigneeId, Assignee.Username, Assignee.IsActive, Assignee.Profile.Name
     FROM PermissionSetLicenseAssign
+    WHERE Assignee.IsActive=true
     ORDER BY PermissionSetLicense.MasterLabel, Assignee.Username`
       , conn);
-    permissionSetLicenseAssignments.push(...pslaQueryRes.records);
-
-    // Extract assignments to deactivated users
-    const permissionSetLicenseAssignmentsActiveUsers = permissionSetLicenseAssignments.filter(psla => {
-      if (psla["Assignee.IsActive"] === 'false') {
-        unusedPermissionSetLicenseAssignments.push({
-          Id: psla.Id,
-          PermissionsSetLicense: psla["PermissionSetLicense.MasterLabel"],
-          User: psla["Assignee.Username"],
-          Reason: "Inactive user"
-        });
-        return false;
-      }
-      return true;
-    });
-    const numberPslaRelatedToInactiveUser = unusedPermissionSetLicenseAssignments.length;
+    permissionSetLicenseAssignmentsActive.push(...pslaQueryRes.records);
 
     // List related Permission Set Licences
-    const relatedPermissionSetLicenses = permissionSetLicenseAssignmentsActiveUsers.map(psla => {
+    const relatedPermissionSetLicenses = permissionSetLicenseAssignmentsActive.map(psla => {
       return {
         Id: psla.PermissionSetLicenseId,
         DeveloperName: psla["PermissionSetLicense.DeveloperName"],
@@ -199,7 +185,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     const allPermissionSetAssignments = permissionSetGroupAssignments.concat(permissionSetAssignments);
 
     // Browse Permission Sets License assignments
-    for (const psla of permissionSetLicenseAssignmentsActiveUsers) {
+    for (const psla of permissionSetLicenseAssignmentsActive) {
       const pslaUsername = psla["Assignee.Username"];
       // Find related Permission Set assignements
       const foundMatchingPsAssignments = allPermissionSetAssignments.filter(psa => {
@@ -208,7 +194,10 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         }
         return false;
       });
-      if (foundMatchingPsAssignments.length === 0) {
+      const isProfileRelatedPSL =
+        psla["Assignee.Profile.Name"] === "Salesforce API Only System Integrations" &&
+        psla["PermissionSetLicense.DeveloperName"] === "Salesforce API Integration";
+      if (foundMatchingPsAssignments.length === 0 && !isProfileRelatedPSL) {
         unusedPermissionSetLicenseAssignments.push({
           Id: psla.Id,
           PermissionsSetLicense: psla["PermissionSetLicense.MasterLabel"],
@@ -230,7 +219,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     let msg = `No unused permission set license assignment has been found`;
     if (unusedPermissionSetLicenseAssignments.length > 0) {
       statusCode = 1;
-      msg = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found (including ${numberPslaRelatedToInactiveUser} related to inactive users)`
+      msg = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found`
       uxLog(this, c.red(msg));
       for (const pslName of Object.keys(summary).sort()) {
         uxLog(this, c.red(`- ${pslName}: ${summary[pslName]}`));
@@ -279,7 +268,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         const pslaToDelete = unusedPermissionSetLicenseAssignments.map(psla => {
           return { Id: psla.Id }
         });
-        const deleteRes = await bulkUpdate("PermissionSetLicenseAssignment", "DELETE", pslaToDelete, conn);
+        const deleteRes = await bulkUpdate("PermissionSetLicenseAssign", "delete", pslaToDelete, conn);
         const deleteSuccessNb = deleteRes.successRecordsNb;
         const deleteErrorNb = deleteRes.errorRecordsNb;
         if (deleteErrorNb > 0) {
