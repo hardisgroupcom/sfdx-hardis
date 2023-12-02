@@ -194,10 +194,11 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         }
         return false;
       });
-      const isProfileRelatedPSL =
-        psla["Assignee.Profile.Name"] === "Salesforce API Only System Integrations" &&
-        psla["PermissionSetLicense.DeveloperName"] === "Salesforce API Integration";
-      if (foundMatchingPsAssignments.length === 0 && !isProfileRelatedPSL) {
+      // Handle special cases of Profiles that assigns Permission set licenses when selected on a user
+      const isProfileRelatedPSLA =
+        psla["Assignee.Profile.Name"].includes("Salesforce API Only") &&
+        psla["PermissionSetLicense.DeveloperName"] === "SalesforceAPIIntegrationPsl";
+      if (foundMatchingPsAssignments.length === 0 && !isProfileRelatedPSLA) {
         unusedPermissionSetLicenseAssignments.push({
           Id: psla.Id,
           PermissionsSetLicense: psla["PermissionSetLicense.MasterLabel"],
