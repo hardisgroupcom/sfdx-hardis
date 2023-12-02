@@ -111,6 +111,11 @@ monitoringCommands:
         command: "sfdx hardis:lint:access",
       },
       {
+        key: "UNUSED_LICENSES",
+        title: "Detect permission set licences that are assigned to users that do not need them",
+        command: "sfdx hardis:org:diagnose:unusedlicenses",
+      },
+      {
         key: "UNUSED_METADATAS",
         title: "Detect custom labels and custom permissions that are not in use",
         command: "sfdx hardis:lint:unusedmetadatas",

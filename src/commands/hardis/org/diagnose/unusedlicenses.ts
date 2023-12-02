@@ -6,6 +6,8 @@ import * as c from "chalk";
 import { uxLog } from "../../../../common/utils";
 import { bulkQuery } from "../../../../common/utils/apiUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
+import { NotifProvider } from "../../../../common/notifProvider";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 
 
 // Initialize Messages with the current plugin directory
@@ -215,12 +217,22 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
       }
     }
 
+    // Build summary
+    const summary = {};
+    for (const unusedPsla of unusedPermissionSetLicenseAssignments) {
+      summary[unusedPsla.PermissionsSetLicense] = summary[unusedPsla.PermissionsSetLicense] || 0;
+      summary[unusedPsla.PermissionsSetLicense]++;
+    }
+
     // Create results
     const statusCode = 0;
     let msg = `No unused permission set license assignment has been found`;
     if (unusedPermissionSetLicenseAssignments.length > 0) {
       msg = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found (including ${numberPslaRelatedToInactiveUser} related to inactive users)`
       uxLog(this, c.red(msg));
+      for (const pslName of Object.keys(summary).sort()) {
+        uxLog(this, c.red(`- ${pslName}: ${summary[pslName]}`));
+      }
     }
     else {
       uxLog(this, c.green(msg));
@@ -230,33 +242,27 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     this.outputFile = await generateReportPath("unused-ps-license-assignments", this.outputFile);
     await generateCsvFile(unusedPermissionSetLicenseAssignments, this.outputFile);
 
-    /*
     // Manage notifications
-    if (suspectRecords.length > 0) {
+    if (unusedPermissionSetLicenseAssignments.length > 0) {
       let notifDetailText = ``;
-      notifDetailText += "Related users:\n";
-      for (const user of suspectUsers) {
-        notifDetailText += `• ${user}\n`;
-      }
-      notifDetailText += "\n";
-      notifDetailText += "Related actions:\n";
-      for (const action of suspectActions) {
-        notifDetailText += `• ${action}\n`;
+      notifDetailText += "Permission set licenses that you can spare:\n";
+      for (const pslName of Object.keys(summary).sort()) {
+        notifDetailText += `• ${pslName}: ${summary[pslName]}\n`;
       }
       notifDetailText += "\n";
       notifDetailText += "_See details in job artifacts_";
- 
+
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       NotifProvider.postNotifications({
         type: "UNUSED_LICENSES",
-        text: `${suspectRecords.length} suspect Setup Audit Trail records has been found in ${orgMarkdown}`,
+        text: `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
       });
     }
-*/
+
     if ((this.argv || []).includes("unusedlicenses")) {
       process.exitCode = statusCode;
     }
@@ -265,6 +271,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     return {
       status: statusCode,
       message: msg,
+      summary: summary,
       unusedPermissionSetLicenseAssignments: unusedPermissionSetLicenseAssignments,
       csvLogFile: this.outputFile,
     };
