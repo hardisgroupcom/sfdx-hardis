@@ -319,8 +319,6 @@ monitoringAllowedSectionsActions:
       for (const action of suspectActions) {
         notifDetailText += `• ${action}\n`;
       }
-      notifDetailText += "\n";
-      notifDetailText += "_See details in job artifacts_";
 
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();

@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Output CSV mirror XLS files reports in a xls folder for easier browsing
+- **hardis:org:diagnose:unusedlicenses**: Add more Profile & Permission Set Licenses relationships
+
 ## [4.19.0] 2023-12-02
 
 - New command **sfdx hardis:org:diagnose:unusedlicenses** to detect unused Permission Set Licenses (that you pay for anyway !)
