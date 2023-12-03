@@ -10,7 +10,6 @@ import { NotifProvider } from "../../../../common/notifProvider";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
-
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
@@ -32,10 +31,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
   Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command :)
   `;
 
-  public static examples = [
-    "$ sfdx hardis:org:diagnose:unusedlicenses",
-    "$ sfdx hardis:org:diagnose:unusedlicenses --fix"
-  ];
+  public static examples = ["$ sfdx hardis:org:diagnose:unusedlicenses", "$ sfdx hardis:org:diagnose:unusedlicenses --fix"];
 
   protected static flagsConfig = {
     outputfile: flags.string({
@@ -64,29 +60,21 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-  protected static additionalPermissionSetsToAlwaysGet = [
-    "Sales_User"
-  ];
+  protected static additionalPermissionSetsToAlwaysGet = ["Sales_User"];
 
-  protected static permSetsPermSetLicenses = [
-    { permSet: "Sales_User", permSetLicense: "SalesUserPsl" }
-  ]
+  protected static permSetsPermSetLicenses = [{ permSet: "Sales_User", permSetLicense: "SalesUserPsl" }];
 
-  protected static profilesPermissionSetLicenses = [
-    { profile: "Salesforce API Only", permSetLicense: "SalesforceAPIIntegrationPsl" }
-  ]
+  protected static profilesPermissionSetLicenses = [{ profile: "Salesforce API Only", permSetLicense: "SalesforceAPIIntegrationPsl" }];
 
-  protected static alwaysExcludeForActiveUsersPermissionSetLicenses = [
-    "IdentityConnect"
-  ]
+  protected static alwaysExcludeForActiveUsersPermissionSetLicenses = ["IdentityConnect"];
 
   protected debugMode = false;
   protected outputFile;
   protected permissionSetLicenseAssignmentsActive = [];
   protected permissionSetLicenses = [];
-  protected unusedPermissionSetLicenseAssignments = []
+  protected unusedPermissionSetLicenseAssignments = [];
   protected permissionSets = [];
-  protected permissionSetsGroupMembers = []
+  protected permissionSetsGroupMembers = [];
   protected permissionSetAssignments = [];
   protected permissionSetGroupAssignments = [];
   protected allPermissionSetAssignments = [];
@@ -108,11 +96,11 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
 
     if (this.permissionSetLicenses.length > 0) {
       // List related Permission sets
-      const psLicensesIds = this.permissionSetLicenses.map(psl => psl.Id);
+      const psLicensesIds = this.permissionSetLicenses.map((psl) => psl.Id);
       this.permissionSets = await this.listRelatedPermissionSets(psLicensesIds, conn);
 
       // List Permission Set Groups Components linked to related PermissionSets
-      const permissionSetsIds = this.permissionSets.map(psl => psl.Id);
+      const permissionSetsIds = this.permissionSets.map((psl) => psl.Id);
       this.permissionSetsGroupMembers = await this.listRelatedPermissionSetGroupsComponents(permissionSetsIds, conn);
 
       // List related Permission Set Group Members (Permission sets)
@@ -129,27 +117,29 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     for (const psla of this.permissionSetLicenseAssignmentsActive) {
       const pslaUsername = psla["Assignee.Username"];
       // Find related Permission Set assignments
-      const foundMatchingPsAssignments = this.allPermissionSetAssignments.filter(psa => {
+      const foundMatchingPsAssignments = this.allPermissionSetAssignments.filter((psa) => {
         if (psa["Assignee.Username"] === pslaUsername) {
           if (psa.licenseIds.includes(psla.PermissionSetLicenseId)) {
             return true;
-          }
-          else if (DiagnoseUnusedLicenses.permSetsPermSetLicenses.some(psPsl => {
-            if (psa["PermissionSet.Name"] === psPsl.permSet && psla["PermissionSetLicense.DeveloperName"] === psPsl.permSetLicense) {
-              return true;
-            }
-            return false;
-          })) {
-            return true
+          } else if (
+            DiagnoseUnusedLicenses.permSetsPermSetLicenses.some((psPsl) => {
+              if (psa["PermissionSet.Name"] === psPsl.permSet && psla["PermissionSetLicense.DeveloperName"] === psPsl.permSetLicense) {
+                return true;
+              }
+              return false;
+            })
+          ) {
+            return true;
           }
         }
         return false;
-      })
+      });
 
       // Handle special cases of Profiles that assigns Permission set licenses when selected on a user
-      const isProfileRelatedPSLA = DiagnoseUnusedLicenses.profilesPermissionSetLicenses.some(profilePsl => {
-        return psla["Assignee.Profile.Name"].startsWith(profilePsl.profile) &&
-          psla["PermissionSetLicense.DeveloperName"] === profilePsl.permSetLicense
+      const isProfileRelatedPSLA = DiagnoseUnusedLicenses.profilesPermissionSetLicenses.some((profilePsl) => {
+        return (
+          psla["Assignee.Profile.Name"].startsWith(profilePsl.profile) && psla["PermissionSetLicense.DeveloperName"] === profilePsl.permSetLicense
+        );
       });
       const isExcluded = DiagnoseUnusedLicenses.alwaysExcludeForActiveUsersPermissionSetLicenses.includes(psla["PermissionSetLicense.DeveloperName"]);
       if (foundMatchingPsAssignments.length === 0 && !isProfileRelatedPSLA && !isExcluded) {
@@ -157,7 +147,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
           Id: psla.Id,
           PermissionsSetLicense: psla["PermissionSetLicense.MasterLabel"],
           User: psla["Assignee.Username"],
-          Reason: "Related PS assignment not found"
+          Reason: "Related PS assignment not found",
         });
       }
     }
@@ -173,14 +163,13 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     let msg = `No unused permission set license assignment has been found`;
     if (this.unusedPermissionSetLicenseAssignments.length > 0) {
       this.statusCode = 1;
-      msg = `${this.unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found`
+      msg = `${this.unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found`;
       uxLog(this, c.red(msg));
       for (const pslMasterLabel of Object.keys(summary).sort()) {
         const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
         uxLog(this, c.red(`- ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)`));
       }
-    }
-    else {
+    } else {
       uxLog(this, c.green(msg));
     }
 
@@ -212,28 +201,28 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
 
   private async listAllPermissionSetLicenseAssignments(conn: any) {
     uxLog(this, c.cyan(`Extracting all active Permission Sets Licenses Assignments...`));
-    const pslaQueryRes = await bulkQuery(`
+    const pslaQueryRes = await bulkQuery(
+      `
     SELECT Id,PermissionSetLicenseId, PermissionSetLicense.DeveloperName, PermissionSetLicense.MasterLabel, AssigneeId, Assignee.Username, Assignee.IsActive, Assignee.Profile.Name
     FROM PermissionSetLicenseAssign
     WHERE Assignee.IsActive=true
-    ORDER BY PermissionSetLicense.MasterLabel, Assignee.Username`
-      , conn);
+    ORDER BY PermissionSetLicense.MasterLabel, Assignee.Username`,
+      conn,
+    );
     return pslaQueryRes.records;
   }
 
   private async listRelatedPermissionSetLicenses(conn: any) {
-    const relatedPermissionSetLicenses = this.permissionSetLicenseAssignmentsActive.map(psla => {
-      return {
-        Id: psla.PermissionSetLicenseId,
-        DeveloperName: psla["PermissionSetLicense.DeveloperName"],
-        MasterLabel: psla["PermissionSetLicense.MasterLabel"]
-      }
-    }).filter(
-      (value, index, self) =>
-        index === self.findIndex((t) => (t.Id === value.Id && t.MasterLabel === value.MasterLabel)
-        )
-    );
-    const psLicensesIds = relatedPermissionSetLicenses.map(psl => psl.Id);
+    const relatedPermissionSetLicenses = this.permissionSetLicenseAssignmentsActive
+      .map((psla) => {
+        return {
+          Id: psla.PermissionSetLicenseId,
+          DeveloperName: psla["PermissionSetLicense.DeveloperName"],
+          MasterLabel: psla["PermissionSetLicense.MasterLabel"],
+        };
+      })
+      .filter((value, index, self) => index === self.findIndex((t) => t.Id === value.Id && t.MasterLabel === value.MasterLabel));
+    const psLicensesIds = relatedPermissionSetLicenses.map((psl) => psl.Id);
     if (relatedPermissionSetLicenses.length > 0) {
       uxLog(this, c.cyan(`Extracting related Permission Sets Licenses...`));
       const pslQueryRes = await bulkQueryChunksIn(
@@ -241,7 +230,8 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
          FROM PermissionSetLicense
          WHERE Id in ({{IN}})`,
         conn,
-        psLicensesIds);
+        psLicensesIds,
+      );
       return pslQueryRes.records;
     }
     return [];
@@ -254,13 +244,15 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
        FROM PermissionSet
        WHERE LicenseId in ({{IN}})`,
       conn,
-      psLicensesIds);
+      psLicensesIds,
+    );
     const psQueryAdditionalRes = await bulkQueryChunksIn(
       `SELECT Id,Label,Name,LicenseId
        FROM PermissionSet
        WHERE Name in ({{IN}})`,
       conn,
-      DiagnoseUnusedLicenses.additionalPermissionSetsToAlwaysGet);
+      DiagnoseUnusedLicenses.additionalPermissionSetsToAlwaysGet,
+    );
     return psQueryRes.records.concat(psQueryAdditionalRes.records);
   }
 
@@ -271,12 +263,13 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
          FROM PermissionSetGroupComponent
          WHERE PermissionSetId in ({{IN}})`,
       conn,
-      permissionSetsIds);
+      permissionSetsIds,
+    );
     return psgcQueryRes.records;
   }
 
   private async listRelatedPermissionSetAssignmentsToGroups(conn) {
-    const permissionSetsGroupIds = [...new Set(this.permissionSetsGroupMembers.map(psgc => psgc.PermissionSetGroupId))];
+    const permissionSetsGroupIds = [...new Set(this.permissionSetsGroupMembers.map((psgc) => psgc.PermissionSetGroupId))];
     if (permissionSetsGroupIds.length > 0) {
       uxLog(this, c.cyan(`Extracting related Permission Set Group Assignments...`));
       const psgaQueryRes = await bulkQueryChunksIn(
@@ -284,10 +277,10 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
            FROM PermissionSetAssignment
            WHERE PermissionSetGroupId in ({{IN}})`,
         conn,
-        permissionSetsGroupIds
+        permissionSetsGroupIds,
       );
       // Add related licenses in licenseIds for each PS Assignment
-      psgaQueryRes.records = psgaQueryRes.records.map(psga => {
+      psgaQueryRes.records = psgaQueryRes.records.map((psga) => {
         psga.licenseIds = [];
         for (const psgm of this.permissionSetsGroupMembers) {
           if (psgm.PermissionSetGroupId === psga.PermissionSetGroupId) {
@@ -302,16 +295,17 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     }
   }
 
-
   private async listRelatedPermissionSetAssignmentsToPs(permissionSetsIds: string[], conn) {
     uxLog(this, c.cyan(`Extracting related Permission Sets Assignments...`));
     const psaQueryRes = await bulkQueryChunksIn(
       `SELECT Id,Assignee.Username,PermissionSetId,PermissionSet.LicenseId,PermissionSet.Name
        FROM PermissionSetAssignment
        WHERE PermissionSetId in ({{IN}})`,
-      conn, permissionSetsIds);
+      conn,
+      permissionSetsIds,
+    );
     // Add related license in licenseIds for each PS Assignment
-    psaQueryRes.records = psaQueryRes.records.map(psa => {
+    psaQueryRes.records = psaQueryRes.records.map((psa) => {
       psa.licenseIds = [];
       if (psa["PermissionSet.LicenseId"]) {
         psa.licenseIds.push(psa["PermissionSet.LicenseId"]);
@@ -347,12 +341,15 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         type: "select",
         message: "Do you want to delete unused Permission Set License Assignments ?",
         choices: [
-          { title: `Yes, delete the ${this.unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`, value: "all" },
-          { title: "No" }
-        ]
+          {
+            title: `Yes, delete the ${this.unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`,
+            value: "all",
+          },
+          { title: "No" },
+        ],
       });
       if (confirmRes.value === "all") {
-        const pslaToDelete = this.unusedPermissionSetLicenseAssignments.map(psla => {
+        const pslaToDelete = this.unusedPermissionSetLicenseAssignments.map((psla) => {
           return { Id: psla.Id };
         });
         const deleteRes = await bulkUpdate("PermissionSetLicenseAssign", "delete", pslaToDelete, conn);
@@ -361,8 +358,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         if (deleteErrorNb > 0) {
           uxLog(this, c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`));
           this.statusCode = 1;
-        }
-        else {
+        } else {
           this.statusCode = 0;
         }
         // Build results summary
@@ -373,7 +369,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
   }
 
   private getPermissionSetLicenseByMasterLabel(masterLabel: string) {
-    const pslList = this.permissionSetLicenses.filter(psl => psl.MasterLabel === masterLabel);
+    const pslList = this.permissionSetLicenses.filter((psl) => psl.MasterLabel === masterLabel);
     if (pslList.length === 1) {
       return pslList[0];
     }
