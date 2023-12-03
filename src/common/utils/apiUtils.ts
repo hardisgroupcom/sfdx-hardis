@@ -49,6 +49,20 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0
   });
 }
 
+// When you might have more than 1000 elements in a IN condition, you need to split the request into several requests
+// Think to use {{IN}} in soqlQuery
+export async function bulkQueryChunksIn(soqlQuery: string, conn: Connection, inElements: string[], batchSize = 1000, retries = 0): Promise<any> {
+  const results = { records: [] };
+  for (let i = 0; i < inElements.length; i += batchSize) {
+    const inElementsChunk = inElements.slice(i, i + batchSize);
+    const replacementString = "'" + inElementsChunk.join("','") + "'";
+    const soqlQueryWithInConstraint = soqlQuery.replace("{{IN}}", replacementString);
+    const chunkResults = await bulkQuery(soqlQueryWithInConstraint, conn, retries);
+    results.records.push(...chunkResults.records);
+  }
+  return results;
+}
+
 let spinner;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkUpdate(objectName: string, action: string, records: Array<any>, conn: Connection): Promise<any> {

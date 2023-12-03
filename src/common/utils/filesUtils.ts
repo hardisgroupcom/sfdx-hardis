@@ -556,7 +556,10 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
     WebSocketClient.requestOpenFile(outputPath);
     try {
       // Generate mirror XSLX file
-      const xslxFile = outputPath.replace(".csv", ".xlsx");
+      const xlsDirName = path.join(path.dirname(outputPath), "xls");
+      const xslFileName = path.basename(outputPath).replace(".csv", ".xlsx");
+      const xslxFile = path.join(xlsDirName, xslFileName);
+      await fs.ensureDir(xlsDirName);
       await csvToXls(outputPath, xslxFile);
       uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
     } catch (e2) {
