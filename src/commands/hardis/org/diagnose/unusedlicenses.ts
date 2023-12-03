@@ -76,6 +76,13 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
   protected outputFile;
   protected permissionSetLicenseAssignmentsActive = [];
   protected permissionSetLicenses = [];
+  protected unusedPermissionSetLicenseAssignments = []
+  protected permissionSets = [];
+  protected permissionSetsGroupMembers = []
+  protected permissionSetAssignments = [];
+  protected permissionSetGroupAssignments = [];
+  protected allPermissionSetAssignments = [];
+  protected statusCode = 0;
 
   /* jscpd:ignore-end */
 
@@ -84,7 +91,6 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     this.outputFile = this.flags.outputfile || null;
 
     const conn = this.org.getConnection();
-    const unusedPermissionSetLicenseAssignments = [];
 
     // List Permission Set Licenses Assignments
     await this.listAllPermissionSetLicenseAssignments(conn);
@@ -94,81 +100,30 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
 
     // List related Permission sets
     const psLicensesIdsStr2 = "'" + this.permissionSetLicenses.map(psl => psl.Id).join("','") + "'";
-    const permissionSets = [];
-    const permissionSetAssignments = [];
-    const permissionSetGroupAssignments = [];
-    if (this.permissionSetLicenses.length > 0) {
-      uxLog(this, c.cyan(`Extracting related Permission Sets...`));
-      const psQueryRes = await bulkQuery(
-        `SELECT Id,Label,Name,DeveloperName,LicenseId,UsedLicenses,TotalLicenses
-       FROM PermissionSet
-       WHERE LicenseId in (${psLicensesIdsStr2})`,
-        conn);
-      permissionSets.push(...psQueryRes.records);
 
-      const permissionSetsIdsStr = "'" + permissionSets.map(psl => psl.Id).join("','") + "'";
+    if (this.permissionSetLicenses.length > 0) {
+      await this.listRelatedPermissionSets(psLicensesIdsStr2, conn);
+
+      const permissionSetsIdsStr = "'" + this.permissionSets.map(psl => psl.Id).join("','") + "'";
 
       // List Permission Set Groups Components linked to related PermissionSets
-      const permissionSetsGroupMembers = [];
-      uxLog(this, c.cyan(`Extracting related Permission Sets Group Components...`));
-      const psgcQueryRes = await bulkQuery(
-        `SELECT Id,PermissionSetId,PermissionSetGroupId,PermissionSet.LicenseId
-         FROM PermissionSetGroupComponent
-         WHERE PermissionSetId in (${permissionSetsIdsStr})`,
-        conn);
-      permissionSetsGroupMembers.push(...psgcQueryRes.records);
+      await this.listRelatedPermissionSetGroupsComponents(permissionSetsIdsStr, conn);
 
       // List related Permission Set Group Members (Permission sets)
-      const permissionSetsGroupIds = [...new Set(permissionSetsGroupMembers.map(psgc => psgc.PermissionSetGroupId))];
-      const permissionSetGroupIdsStr = "'" + permissionSetsGroupIds.join("','") + "'";
-      if (permissionSetsGroupIds.length > 0) {
-        uxLog(this, c.cyan(`Extracting related Permission Set Group Assignments...`));
-        const psgaQueryRes = await bulkQuery(
-          `SELECT Id,Assignee.Username,PermissionSetGroupId
-           FROM PermissionSetAssignment
-           WHERE PermissionSetGroupId in (${permissionSetGroupIdsStr})`,
-          conn);
-        // Add related licenses in licenseIds for each PS Assignment
-        psgaQueryRes.records = psgaQueryRes.records.map(psga => {
-          psga.licenseIds = [];
-          for (const psgm of permissionSetsGroupMembers) {
-            if (psgm.PermissionSetGroupId === psga.PermissionSetGroupId) {
-              if (psgm["PermissionSet.LicenseId"]) {
-                psga.licenseIds.push(psgm["PermissionSet.LicenseId"])
-              }
-            }
-          }
-          return psga;
-        })
-        permissionSetGroupAssignments.push(...psgaQueryRes.records);
-      }
+      await this.listRelatedPermissionSetAssignmentsToGroups(conn);
 
       // List related Permission Set Assignments
-      uxLog(this, c.cyan(`Extracting related Permission Sets Assignments...`));
-      const psaQueryRes = await bulkQuery(
-        `SELECT Id,Assignee.Username,PermissionSetId,PermissionSet.LicenseId
-       FROM PermissionSetAssignment
-       WHERE PermissionSetId in (${permissionSetsIdsStr})`,
-        conn);
-      // Add related license in licenseIds for each PS Assignment
-      psaQueryRes.records = psaQueryRes.records.map(psa => {
-        psa.licenseIds = [];
-        if (psa["PermissionSet.LicenseId"]) {
-          psa.licenseIds.push(psa["PermissionSet.LicenseId"]);
-        }
-        return psa;
-      })
-      permissionSetAssignments.push(...psaQueryRes.records);
+      await this.listRelatedPermissionSetAssignmentsToPs(permissionSetsIdsStr, conn);
     }
 
     // Append assignments to Permission Sets & Permission Set Groups
-    const allPermissionSetAssignments = permissionSetGroupAssignments.concat(permissionSetAssignments);
+    this.allPermissionSetAssignments = this.permissionSetGroupAssignments.concat(this.permissionSetAssignments);
 
     // Browse Permission Sets License assignments
     for (const psla of this.permissionSetLicenseAssignmentsActive) {
       const pslaUsername = psla["Assignee.Username"];
       // Find related Permission Set assignments
-      const foundMatchingPsAssignments = allPermissionSetAssignments.filter(psa => {
+      const foundMatchingPsAssignments = this.allPermissionSetAssignments.filter(psa => {
         if (psa["Assignee.Username"] === pslaUsername && psa.licenseIds.includes(psla.PermissionSetLicenseId)) {
           return true;
         }
@@ -181,7 +136,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
       });
       const isExcluded = DiagnoseUnusedLicenses.alwaysExcludeForActiveUsersPermissionSetLicenses.includes(psla["PermissionSetLicense.DeveloperName"]);
       if (foundMatchingPsAssignments.length === 0 && !isProfileRelatedPSLA && !isExcluded) {
-        unusedPermissionSetLicenseAssignments.push({
+        this.unusedPermissionSetLicenseAssignments.push({
           Id: psla.Id,
           PermissionsSetLicense: psla["PermissionSetLicense.MasterLabel"],
           User: psla["Assignee.Username"],
@@ -192,17 +147,16 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
 
     // Build summary
     const summary = {};
-    for (const unusedPsla of unusedPermissionSetLicenseAssignments) {
+    for (const unusedPsla of this.unusedPermissionSetLicenseAssignments) {
       summary[unusedPsla.PermissionsSetLicense] = summary[unusedPsla.PermissionsSetLicense] || 0;
       summary[unusedPsla.PermissionsSetLicense]++;
     }
 
     // Create results
-    let statusCode = 0;
     let msg = `No unused permission set license assignment has been found`;
-    if (unusedPermissionSetLicenseAssignments.length > 0) {
-      statusCode = 1;
-      msg = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found`
+    if (this.unusedPermissionSetLicenseAssignments.length > 0) {
+      this.statusCode = 1;
+      msg = `${this.unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found`
       uxLog(this, c.red(msg));
       for (const pslMasterLabel of Object.keys(summary).sort()) {
         const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
@@ -214,12 +168,127 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     }
 
     // Generate output CSV file
-    if (unusedPermissionSetLicenseAssignments.length > 0) {
+    if (this.unusedPermissionSetLicenseAssignments.length > 0) {
       this.outputFile = await generateReportPath("unused-ps-license-assignments", this.outputFile);
-      await generateCsvFile(unusedPermissionSetLicenseAssignments, this.outputFile);
+      await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile);
     }
 
     // Manage notifications
+    await this.manageNotifications(this.unusedPermissionSetLicenseAssignments, summary);
+
+    // Propose to delete
+    await this.managePermissionSetLicenseAssignmentsDeletion(conn);
+
+    if ((this.argv || []).includes("unusedlicenses")) {
+      process.exitCode = this.statusCode;
+    }
+
+    // Return an object to be displayed with --json
+    return {
+      status: this.statusCode,
+      message: msg,
+      summary: summary,
+      unusedPermissionSetLicenseAssignments: this.unusedPermissionSetLicenseAssignments,
+      csvLogFile: this.outputFile,
+    };
+  }
+
+  private async managePermissionSetLicenseAssignmentsDeletion(conn) {
+    if (!isCI && this.unusedPermissionSetLicenseAssignments.length) {
+      const confirmRes = await prompts({
+        type: "select",
+        message: "Do you want to delete unused Permission Set License Assignments ?",
+        choices: [
+          { title: `Yes, delete the ${this.unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`, value: "all" },
+          { title: "No" }
+        ]
+      });
+      if (confirmRes.value === "all") {
+        const pslaToDelete = this.unusedPermissionSetLicenseAssignments.map(psla => {
+          return { Id: psla.Id };
+        });
+        const deleteRes = await bulkUpdate("PermissionSetLicenseAssign", "delete", pslaToDelete, conn);
+        const deleteSuccessNb = deleteRes.successRecordsNb;
+        const deleteErrorNb = deleteRes.errorRecordsNb;
+        if (deleteErrorNb > 0) {
+          uxLog(this, c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`));
+          this.statusCode = 1;
+        }
+        else {
+          this.statusCode = 0;
+        }
+        // Build results summary
+        uxLog(this, c.green(`${c.bold(deleteSuccessNb)} assignments has been deleted.`));
+      }
+    }
+    return this.statusCode;
+  }
+
+  private async listRelatedPermissionSetAssignmentsToPs(permissionSetsIdsStr: string, conn) {
+    uxLog(this, c.cyan(`Extracting related Permission Sets Assignments...`));
+    const psaQueryRes = await bulkQuery(
+      `SELECT Id,Assignee.Username,PermissionSetId,PermissionSet.LicenseId
+       FROM PermissionSetAssignment
+       WHERE PermissionSetId in (${permissionSetsIdsStr})`,
+      conn);
+    // Add related license in licenseIds for each PS Assignment
+    psaQueryRes.records = psaQueryRes.records.map(psa => {
+      psa.licenseIds = [];
+      if (psa["PermissionSet.LicenseId"]) {
+        psa.licenseIds.push(psa["PermissionSet.LicenseId"]);
+      }
+      return psa;
+    });
+    this.permissionSetAssignments.push(...psaQueryRes.records);
+  }
+
+  private async listRelatedPermissionSetAssignmentsToGroups(conn) {
+    const permissionSetsGroupIds = [...new Set(this.permissionSetsGroupMembers.map(psgc => psgc.PermissionSetGroupId))];
+    const permissionSetGroupIdsStr = "'" + permissionSetsGroupIds.join("','") + "'";
+    if (permissionSetsGroupIds.length > 0) {
+      uxLog(this, c.cyan(`Extracting related Permission Set Group Assignments...`));
+      const psgaQueryRes = await bulkQuery(
+        `SELECT Id,Assignee.Username,PermissionSetGroupId
+           FROM PermissionSetAssignment
+           WHERE PermissionSetGroupId in (${permissionSetGroupIdsStr})`,
+        conn);
+      // Add related licenses in licenseIds for each PS Assignment
+      psgaQueryRes.records = psgaQueryRes.records.map(psga => {
+        psga.licenseIds = [];
+        for (const psgm of this.permissionSetsGroupMembers) {
+          if (psgm.PermissionSetGroupId === psga.PermissionSetGroupId) {
+            if (psgm["PermissionSet.LicenseId"]) {
+              psga.licenseIds.push(psgm["PermissionSet.LicenseId"]);
+            }
+          }
+        }
+        return psga;
+      });
+      this.permissionSetGroupAssignments.push(...psgaQueryRes.records);
+    }
+  }
+
+  private async listRelatedPermissionSetGroupsComponents(permissionSetsIdsStr: string, conn) {
+    uxLog(this, c.cyan(`Extracting related Permission Sets Group Components...`));
+    const psgcQueryRes = await bulkQuery(
+      `SELECT Id,PermissionSetId,PermissionSetGroupId,PermissionSet.LicenseId
+         FROM PermissionSetGroupComponent
+         WHERE PermissionSetId in (${permissionSetsIdsStr})`,
+      conn);
+    this.permissionSetsGroupMembers.push(...psgcQueryRes.records);
+  }
+
+  private async listRelatedPermissionSets(psLicensesIdsStr2: string, conn) {
+    uxLog(this, c.cyan(`Extracting related Permission Sets...`));
+    const psQueryRes = await bulkQuery(
+      `SELECT Id,Label,Name,LicenseId
+       FROM PermissionSet
+       WHERE LicenseId in (${psLicensesIdsStr2})`,
+      conn);
+    this.permissionSets.push(...psQueryRes.records);
+  }
+
+  private async manageNotifications(unusedPermissionSetLicenseAssignments: any[], summary: any) {
     if (unusedPermissionSetLicenseAssignments.length > 0) {
       let notifDetailText = ``;
       for (const pslMasterLabel of Object.keys(summary).sort()) {
@@ -237,47 +306,6 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         severity: "warning",
       });
     }
-
-    // Propose to delete
-    if (!isCI && unusedPermissionSetLicenseAssignments.length) {
-      const confirmRes = await prompts({
-        type: "select",
-        message: "Do you want to delete unused Permission Set License Assignments ?",
-        choices: [
-          { title: `Yes, delete the ${unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`, value: "all" },
-          { title: "No" }
-        ]
-      });
-      if (confirmRes.value === "all") {
-        const pslaToDelete = unusedPermissionSetLicenseAssignments.map(psla => {
-          return { Id: psla.Id }
-        });
-        const deleteRes = await bulkUpdate("PermissionSetLicenseAssign", "delete", pslaToDelete, conn);
-        const deleteSuccessNb = deleteRes.successRecordsNb;
-        const deleteErrorNb = deleteRes.errorRecordsNb;
-        if (deleteErrorNb > 0) {
-          uxLog(this, c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`));
-        }
-        else {
-          statusCode = 0;
-        }
-        // Build results summary
-        uxLog(this, c.green(`${c.bold(deleteSuccessNb)} assignments has been deleted.`));
-      }
-    }
-
-    if ((this.argv || []).includes("unusedlicenses")) {
-      process.exitCode = statusCode;
-    }
-
-    // Return an object to be displayed with --json
-    return {
-      status: statusCode,
-      message: msg,
-      summary: summary,
-      unusedPermissionSetLicenseAssignments: unusedPermissionSetLicenseAssignments,
-      csvLogFile: this.outputFile,
-    };
   }
 
   async listAllPermissionSetLicenseAssignments(conn: any) {
@@ -307,7 +335,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     if (relatedPermissionSetLicenses.length > 0) {
       uxLog(this, c.cyan(`Extracting related Permission Sets Licenses...`));
       const pslQueryRes = await bulkQuery(
-        `SELECT Id,DeveloperName,MasterLabel 
+        `SELECT Id,DeveloperName,MasterLabel,UsedLicenses,TotalLicenses
          FROM PermissionSetLicense
          WHERE Id in (${psLicensesIdsStr})`,
         conn);
