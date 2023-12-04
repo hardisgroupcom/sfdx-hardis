@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - **hardis:lint:metadatastatus**
   - Check inactive validation rules
   - Add js documentation
+- Monitoring: Fix crash when a package name contains a slash
 
 ## [4.19.1] 2023-12-03
 
