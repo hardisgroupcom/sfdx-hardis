@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Handle errors while calling monitoring commands
+- Increase jsforce Bulk API Timeout (60 seconds)
+
 ## [4.20.0] 2023-12-04
 
 - Add feature in metadatastatus command to verify if a validation rule is inactive in the source
