@@ -126,8 +126,9 @@ export default class MonitorBackup extends SfdxCommand {
     await fs.ensureDir(packageFolder);
     for (const installedPackage of installedPackages) {
       const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + ".json";
+      const fileNameNoSep = fileName.replace(/\//g, "_"); // Handle case when package name contains slashes
       delete installedPackage.Id; // Not needed for diffs
-      await fs.writeFile(path.join(packageFolder, fileName), JSON.stringify(installedPackage, null, 2));
+      await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
     }
 
     const diffFiles = await MetadataUtils.listChangedFiles();
