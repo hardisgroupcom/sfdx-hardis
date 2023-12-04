@@ -155,10 +155,11 @@ monitoringCommands:
         });
       } catch (e) {
         // Handle unexpected failure
+        success = false;
         uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed !\n${e.message}`));
         commandsSummary.push({
           title: command.title,
-          status: "crash",
+          status: "error",
           command: command.command,
         });
       }

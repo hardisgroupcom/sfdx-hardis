@@ -4,8 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.20.1] 2023-12-04
+
 - Handle errors while calling monitoring commands
 - Increase jsforce Bulk API Timeout (60 seconds)
+- Set default Bulk Query retries to 3 attempts
 
 ## [4.20.0] 2023-12-04
 
