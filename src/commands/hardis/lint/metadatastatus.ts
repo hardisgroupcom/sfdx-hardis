@@ -52,36 +52,54 @@ export default class metadatastatus extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
   private flowFilePattern = "**/flows/**/*.flow-meta.xml";
+  private validationRuleFilePattern = "**/objects/**/validationRules/*.validationRule-meta.xml";
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
   protected outputFile: string;
 
   public async run(): Promise<AnyJson> {
-    const draftFiles = await this.verifyFlows();
-    if (draftFiles.length > 0) {
-      const attachments: MessageAttachment[] = [
-        {
-          text: `*Inactive Flows*\n${draftFiles.map((file) => `• ${file}`).join("\n")}`,
-        },
-      ];
+    const draftFlows = await this.verifyFlows();
+    const inactiveValidationRules = await this.verifyValidationRules();
+
+    if (draftFlows.length > 0 || inactiveValidationRules.length > 0) {
+      const attachments: MessageAttachment[] = [];
+      if (draftFlows.length > 0) {
+        attachments.push({
+          text: `*Inactive Flows*\n${draftFlows.map((file) => `• ${file}`).join("\n")}`,
+        });
+      }
+
+      if (inactiveValidationRules.length > 0) {
+        attachments.push({
+          text: `*Inactive Validation Rules*\n${inactiveValidationRules.map((file) => `• ${file}`).join("\n")}`,
+        });
+      }
+
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
 
       NotifProvider.postNotifications({
         type: "METADATA_STATUS",
-        text: `Inactive metadatas detected in ${branchMd}\n`,
+        text: `Inactive configuration elements in ${branchMd}`,
         attachments: attachments,
         buttons: notifButtons,
         severity: "warning",
         sideImage: "flow",
       });
 
-      this.buildCsvFile(draftFiles);
+      this.buildCsvFile([...draftFlows, ...inactiveValidationRules]);
     } else {
-      uxLog(this, "No draft flow files detected.");
+      uxLog(this, "No draft flow or validation rule files detected.");
     }
     return {};
   }
 
+  /**
+   * This function verifies the status of flows by checking each flow file.
+   * It reads each flow file and checks if the flow is in 'Draft' status.
+   * If the flow is in 'Draft' status, it extracts the file name and adds it to the list of draft files.
+   *
+   * @returns {Promise<string[]>} - A Promise that resolves to an array of draft files. Each entry in the array is the name of a draft file.
+   */
   private async verifyFlows(): Promise<string[]> {
     const draftFiles: string[] = [];
     const flowFiles: string[] = await glob(this.flowFilePattern, { ignore: this.ignorePatterns });
@@ -96,6 +114,38 @@ export default class metadatastatus extends SfdxCommand {
     return draftFiles;
   }
 
+  /**
+   * This function verifies the validation rules by checking each rule file for inactive rules.
+   * It reads each validation rule file and checks if the rule is active or not.
+   * If the rule is inactive, it extracts the rule name and the object name and adds them to the list of inactive rules.
+   *
+   * @returns {Promise<string[]>} - A Promise that resolves to an array of inactive rules. Each entry in the array is a string in the format 'ObjectName - RuleName'.
+   */
+  private async verifyValidationRules(): Promise<string[]> {
+    const inactiveRules: string[] = [];
+    const validationRuleFiles: string[] = await glob(this.validationRuleFilePattern, { ignore: this.ignorePatterns });
+
+    for (const file of validationRuleFiles) {
+      const ruleContent: string = await fs.readFile(file, "utf-8");
+      if (ruleContent.includes("<active>false</active>")) {
+        const ruleName = path.basename(file, ".validationRule-meta.xml");
+        const objectName = path.basename(path.dirname(path.dirname(file)));
+        inactiveRules.push(`${objectName} - ${ruleName}`);
+      }
+    }
+
+    return inactiveRules;
+  }
+
+  /**
+   * This function builds a CSV file from an array of draft files.
+   * It first ensures that the output file path is generated and the directory exists.
+   * It then maps the draft files into an array of objects, each with a 'type' property set to "Draft Flow" and a 'name' property set to the file name.
+   * Finally, it generates a CSV file from this array and writes it to the output file.
+   *
+   * @param {string[]} draftFiles - An array of draft file names.
+   * @returns {Promise<void>} - A Promise that resolves when the CSV file has been successfully generated.
+   */
   private async buildCsvFile(draftFiles: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-unusedmetadatas", this.outputFile);
     const csvData = draftFiles.map((file) => ({ type: "Draft Flow", name: file }));
