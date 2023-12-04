@@ -14,6 +14,8 @@ const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 0): Promise<any> {
   uxLog(this, c.grey("SOQL BULK: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
+  conn.bulk.pollInterval = 5000; // 5 sec
+  conn.bulk.pollTimeout = 60000; // 60 sec
   const records = [];
   return new Promise((resolve, reject) => {
     spinnerQ = ora({ text: `Bulk query...`, spinner: "moon" }).start();
@@ -67,6 +69,8 @@ let spinner;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkUpdate(objectName: string, action: string, records: Array<any>, conn: Connection): Promise<any> {
   uxLog(this, c.grey(`SOQL BULK on object ${c.bold(objectName)} with action ${c.bold(action)} (${c.bold(records.length)} records)`));
+  conn.bulk.pollInterval = 5000; // 5 sec
+  conn.bulk.pollTimeout = 60000; // 60 sec
   return new Promise((resolve, reject) => {
     const job = conn.bulk.createJob(objectName, action);
     const batch = job.createBatch();
