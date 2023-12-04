@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.20] 2023-12-04
+
+- Add feature in metadatastatus command to verify if a validation rule is inactive in the source
+- **hardis:lint:metadatastatus**
+  - Check inactive validation rules
+  - Add js documentation
+
 ## [4.19.1] 2023-12-03
 
 - Output CSV mirror XLS files reports in a xls folder for easier browsing
