@@ -41,14 +41,10 @@ Example:
 
 \`\`\`yaml
 monitoringCommands:
-  - title: Detect calls to deprecated API versions
-    command: sfdx hardis:org:diagnose:legacyapi
-  - title: Detect suspect setup actions in major orgs
-    command: sfdx hardis:org:diagnose:audittrail
-  - title: Detect custom elements with no access rights defined in permission sets
-    command: sfdx hardis:lint:access
   - title: My Custom command
     command: sfdx my:custom:command
+  - title: My Custom command 2
+    command: sfdx my:other:custom:command
 \`\`\`
 
 `;
@@ -132,7 +128,7 @@ monitoringCommands:
       },
     ];
     const config = await getConfig("user");
-    const commands = config.monitoringCommands || monitoringCommandsDefault;
+    const commands = monitoringCommandsDefault.concat(config.monitoringCommands || []);
     const monitoringDisable = config.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(",") : []);
 
     let success = true;
@@ -142,19 +138,31 @@ monitoringCommands:
         uxLog(this, c.grey(`Skipped command ${c.bold(command.key)} according to custom configuration`));
         continue;
       }
+      // Run command
       uxLog(this, c.cyan(`Running monitoring command ${c.bold(command.title)} (key: ${c.bold(command.key)})`));
-      const execCommandResult = await execCommand(command.command, this, { fail: false, output: true });
-      if (execCommandResult.status === 0) {
-        uxLog(this, c.green(`Command ${c.bold(command.title)} has been run successfully`));
-      } else {
+      try {
+        const execCommandResult = await execCommand(command.command, this, { fail: false, output: true });
+        if (execCommandResult.status === 0) {
+          uxLog(this, c.green(`Command ${c.bold(command.title)} has been run successfully`));
+        } else {
+          success = false;
+          uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed`));
+        }
+        commandsSummary.push({
+          title: command.title,
+          status: execCommandResult.status === 0 ? "success" : "failure",
+          command: command.command,
+        });
+      } catch (e) {
+        // Handle unexpected failure
         success = false;
-        uxLog(this, c.yellow(`Command ${c.bold(command.title)} has encountered error(s)`));
+        uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed !\n${e.message}`));
+        commandsSummary.push({
+          title: command.title,
+          status: "error",
+          command: command.command,
+        });
       }
-      commandsSummary.push({
-        title: command.title,
-        status: execCommandResult.status === 0 ? "success" : "failure",
-        command: command.command,
-      });
     }
 
     uxLog(this, c.cyan("Summary of monitoring scripts"));

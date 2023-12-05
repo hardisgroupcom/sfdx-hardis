@@ -10,12 +10,19 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - **hardis:lint:access**
   - Check multiple object permission
 
-## [4.20] 2023-12-04
+## [4.20.1] 2023-12-04
+
+- Handle errors while calling monitoring commands
+- Increase jsforce Bulk API Timeout (60 seconds)
+- Set default Bulk Query retries to 3 attempts
+
+## [4.20.0] 2023-12-04
 
 - Add feature in metadatastatus command to verify if a validation rule is inactive in the source
 - **hardis:lint:metadatastatus**
   - Check inactive validation rules
   - Add js documentation
+- Monitoring: Fix crash when a package name contains a slash
 
 ## [4.19.1] 2023-12-03
 
