@@ -377,7 +377,7 @@ export default class Access extends SfdxCommand {
             elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField][0])
           ) {
             remainingElements[currentType.xmlField] = remainingElements[currentType.xmlField].filter(
-              (e) => e !== permission[currentType.xmlField][0],
+              (e) => e !== permission[currentType.xmlField][0]
             );
           }
         }
@@ -493,7 +493,7 @@ export default class Access extends SfdxCommand {
           await this.updatePermissionSets(
             promptsElementsPs.permissionSets,
             promptsElementsPs.elements,
-            promptsElementsPs.access === "editable" ? { readable: true, editable: true } : { readable: true, editable: false },
+            promptsElementsPs.access === "editable" ? { readable: true, editable: true } : { readable: true, editable: false }
           );
         }
       }
@@ -603,24 +603,24 @@ export default class Access extends SfdxCommand {
         const objectPermissions = parsedContent.PermissionSet.objectPermissions;
         const objectCount: { [key: string]: number } = {};
 
-        objectPermissions.forEach((op) => {
+        for (const op of objectPermissions) {
           if (op.object && op.object[0]) {
             const objectName = op.object[0];
             objectCount[objectName] = (objectCount[objectName] || 0) + 1;
           }
-        });
+        }
 
         const multipleOccurrences = Object.keys(objectCount).filter((objectName) => objectCount[objectName] > 1);
         if (multipleOccurrences.length > 0) {
           this.hasElementsWithNoRights = true;
           const permissionSetName = path.basename(permissionFile);
-          multipleOccurrences.forEach((obj) => {
+          for (const obj of multipleOccurrences) {
             this.missingElements.push({ type: "MultipleObjectPermissions", element: `${obj} in ${permissionSetName}` });
             if (!this.missingElementsMap["MultipleObjectPermissions"]) {
               this.missingElementsMap["MultipleObjectPermissions"] = [];
             }
             this.missingElementsMap["MultipleObjectPermissions"].push(`${obj} in ${permissionSetName}`);
-          });
+          }
         }
       }
     }
