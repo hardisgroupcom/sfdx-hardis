@@ -142,6 +142,11 @@ export async function checkAppDependency(appName) {
 export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org", defaultOrgChoice: any = null) {
   const allChoices = [
     {
+      title: "Custom login URL",
+      description: "The best choice :) Example: https://myclient--preprod.sandbox.lightning.force.com/",
+      value: "custom",
+    },
+    {
       title: "Sandbox or Scratch org (test.salesforce.com)",
       description: "The org I want to connect is a sandbox",
       value: "https://test.salesforce.com",
@@ -150,11 +155,6 @@ export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "d
       title: "Other: Dev, Enterprise or DevHub org (login.salesforce.com)",
       description: "The org I want to connect is NOT a sandbox",
       value: "https://login.salesforce.com",
-    },
-    {
-      title: "Custom login URL",
-      description: "When it's not possible to login via login.salesforce.com or test.salesforce.com",
-      value: "custom",
     },
   ];
   const choices = allChoices.filter((choice) => {
