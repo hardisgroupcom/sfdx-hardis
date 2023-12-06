@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.21] 2023-12-04
+
+- Add feature in access command to verify if an object permission exist twice or more in the same permission set
+- **hardis:lint:access**
+  - Check multiple object permission
+
 ## [4.20.1] 2023-12-04
 
 - Handle errors while calling monitoring commands

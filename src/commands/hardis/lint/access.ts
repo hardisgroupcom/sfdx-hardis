@@ -8,6 +8,7 @@ import * as sortArray from "sort-array";
 // Salesforce Specific
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages, SfdxError } from "@salesforce/core";
+import * as fs from "fs-extra";
 import { AnyJson } from "@salesforce/ts-types";
 
 // Common Utilities
@@ -16,6 +17,7 @@ import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { NotifProvider } from "../../../common/notifProvider";
+import { Parser } from "xml2js";
 
 // Config
 import { getConfig } from "../../../config";
@@ -179,6 +181,8 @@ export default class Access extends SfdxCommand {
     }
 
     const remainingElements = await this.listElementIfNotInProfileOrPermission(rootFolder, elementsToCheckByType);
+    await this.verifyMultipleObjectsInPermissionSets(path.join(process.cwd(), this.folder, "**/permissionsets/*.permissionset-meta.xml"));
+
     // Write report
     await this.writeOutputFile();
     // Send notification
@@ -577,5 +581,48 @@ export default class Access extends SfdxCommand {
       await writeXmlFile(permissionSetFile, psFileXml);
     }
     throw new SfdxError(c.red("Your permission sets has been updated: please CHECK THE UPDATES then commit and push !"));
+  }
+
+  private async readFile(filePath: string): Promise<string> {
+    return fs.readFile(filePath, "utf8");
+  }
+
+  private async parseString(xml: string): Promise<any> {
+    const parser = new Parser();
+    return parser.parseStringPromise(xml);
+  }
+
+  private async verifyMultipleObjectsInPermissionSets(permissionsetsDirectory: string): Promise<void> {
+    const permissionFiles = await glob(permissionsetsDirectory, { cwd: process.cwd() });
+
+    for (const permissionFile of permissionFiles) {
+      const content = await this.readFile(permissionFile);
+      const parsedContent = await this.parseString(content);
+
+      if (parsedContent && parsedContent.PermissionSet && parsedContent.PermissionSet.objectPermissions) {
+        const objectPermissions = parsedContent.PermissionSet.objectPermissions;
+        const objectCount: { [key: string]: number } = {};
+
+        for (const op of objectPermissions) {
+          if (op.object && op.object[0]) {
+            const objectName = op.object[0];
+            objectCount[objectName] = (objectCount[objectName] || 0) + 1;
+          }
+        }
+
+        const multipleOccurrences = Object.keys(objectCount).filter((objectName) => objectCount[objectName] > 1);
+        if (multipleOccurrences.length > 0) {
+          this.hasElementsWithNoRights = true;
+          const permissionSetName = path.basename(permissionFile);
+          for (const obj of multipleOccurrences) {
+            this.missingElements.push({ type: "MultipleObjectPermissions", element: `${obj} in ${permissionSetName}` });
+            if (!this.missingElementsMap["MultipleObjectPermissions"]) {
+              this.missingElementsMap["MultipleObjectPermissions"] = [];
+            }
+            this.missingElementsMap["MultipleObjectPermissions"].push(`${obj} in ${permissionSetName}`);
+          }
+        }
+      }
+    }
   }
 }
