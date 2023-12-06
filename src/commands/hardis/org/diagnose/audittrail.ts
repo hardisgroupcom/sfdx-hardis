@@ -67,6 +67,7 @@ Regular setup actions performed in major orgs are filtered.
   - PermSetLicenseAssign
   - PermSetUnassign
   - PermSetLicenseUnassign
+  - registeredUserPhoneNumber
   - resetpassword
   - suOrgAdminLogin
   - suOrgAdminLogout
@@ -215,6 +216,7 @@ monitoringAllowedSectionsActions:
         "PermSetLicenseAssign",
         "PermSetUnassign",
         "PermSetLicenseUnassign",
+        "registeredUserPhoneNumber",
         "resetpassword",
         "suOrgAdminLogin",
         "suOrgAdminLogout",

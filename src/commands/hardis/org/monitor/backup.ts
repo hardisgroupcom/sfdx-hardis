@@ -13,6 +13,7 @@ import { NotifProvider } from "../../../../common/notifProvider";
 import { MessageAttachment } from "@slack/web-api";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
+import { parsePackageXmlFile, writePackageXmlFile } from "../../../../common/utils/xmlUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -24,7 +25,14 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class MonitorBackup extends SfdxCommand {
   public static title = "Backup DX sources";
 
-  public static description = "Retrieve sfdx sources in the context of a monitoring backup";
+  public static description = `Retrieve sfdx sources in the context of a monitoring backup
+  
+You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
+
+- Manual update of \`manifest/package-skip-items.xml\` config file (then commit & push in the same branch)
+
+- Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
+`;
 
   public static examples = ["$ sfdx hardis:org:monitor:backup"];
 
@@ -82,6 +90,21 @@ export default class MonitorBackup extends SfdxCommand {
     if (fs.existsSync(packageXmlSkipItemsFile)) {
       uxLog(this, c.grey(`${packageXmlSkipItemsFile} has been found and will be use to reduce the content of ${packageXmlFullFile} ...`));
       packageXmlToRemove = packageXmlSkipItemsFile;
+    }
+
+    // Add more metadata types to ignore using global variable MONITORING_BACKUP_SKIP_METADATA_TYPES
+    const additionalskipMetadataTypes = process.env?.MONITORING_BACKUP_SKIP_METADATA_TYPES;
+    if (additionalskipMetadataTypes) {
+      uxLog(this, c.grey(`En var MONITORING_BACKUP_SKIP_METADATA_TYPES has been found and will also be used to reduce the content of ${packageXmlFullFile} ...`));
+      let packageSkipItems = {};
+      if (fs.existsSync(packageXmlToRemove)) {
+        packageSkipItems = await parsePackageXmlFile(packageXmlToRemove);
+      }
+      for (const metadataType of additionalskipMetadataTypes.split(',')) {
+        packageSkipItems[metadataType] = ["*"];
+      }
+      packageXmlToRemove = "manifest/package-skip-items-dynamic-do-not-update-manually.xml";
+      await writePackageXmlFile(packageXmlToRemove, packageSkipItems);
     }
 
     // List namespaces used in the org
