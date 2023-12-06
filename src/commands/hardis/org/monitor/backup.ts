@@ -93,14 +93,14 @@ You can remove more metadata types from backup, especially in case you have too 
     }
 
     // Add more metadata types to ignore using global variable MONITORING_BACKUP_SKIP_METADATA_TYPES
-    const additionalskipMetadataTypes = process.env?.MONITORING_BACKUP_SKIP_METADATA_TYPES;
-    if (additionalskipMetadataTypes) {
+    const additionalSkipMetadataTypes = process.env?.MONITORING_BACKUP_SKIP_METADATA_TYPES;
+    if (additionalSkipMetadataTypes) {
       uxLog(this, c.grey(`En var MONITORING_BACKUP_SKIP_METADATA_TYPES has been found and will also be used to reduce the content of ${packageXmlFullFile} ...`));
       let packageSkipItems = {};
       if (fs.existsSync(packageXmlToRemove)) {
         packageSkipItems = await parsePackageXmlFile(packageXmlToRemove);
       }
-      for (const metadataType of additionalskipMetadataTypes.split(',')) {
+      for (const metadataType of additionalSkipMetadataTypes.split(',')) {
         packageSkipItems[metadataType] = ["*"];
       }
       packageXmlToRemove = "manifest/package-skip-items-dynamic-do-not-update-manually.xml";
