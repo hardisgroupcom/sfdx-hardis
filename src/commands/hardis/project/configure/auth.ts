@@ -108,9 +108,9 @@ export default class ConfigureAuth extends SfdxCommand {
         message: c.cyanBright("What is the name of the git branch you want to configure ? Examples: developpement,recette,production"),
       });
       branchName = branchResponse.value.replace(/\s/g, "-");
-      if (["main", "master"].includes(branchName)) {
+      /* if (["main", "master"].includes(branchName)) {
         throw new SfdxError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
-      }
+      } */
       instanceUrl = await promptInstanceUrl(["login", "test"], `${branchName} related org`, {
         instanceUrl: devHub ? this.hubOrg.getConnection().instanceUrl : this.org.getConnection().instanceUrl,
       });
