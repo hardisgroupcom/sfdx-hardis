@@ -103,4 +103,8 @@ You might want to customize which metadatas types are backuped, because you can'
 
 If there are more than 10000 items, your monitoring job will crash.
 
-In that case, you must manually update file `manifest/package-skip-items.xml` in each git branch corresponding to an org, then commit and push.
+In that case, you can:
+
+- Single Branch scope: Manually update file `manifest/package-skip-items.xml` in the branch corresponding to an org, then commit and push
+- All branches scope: Define CI/CD env var **MONITORING_BACKUP_SKIP_METADATA_TYPES** with the list of additional metadata types you want to skip
+  - example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`
