@@ -4,11 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.21] 2023-12-04
+## [4.21.0] 2023-12-06
 
-- Add feature in access command to verify if an object permission exist twice or more in the same permission set
-- **hardis:lint:access**
-  - Check multiple object permission
+- **hardis:lint:access**: Add feature in access command to verify if an object permission exist twice or more in the same permission set
+- **hardis:org:monitor:backup**: Allow to exclude more metadata types using env variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`)
+- When prompt for login, Suggest custom login URL as first choice by default
+- CICD: Update default gitlab-ci-config.yml
+- Configure Org CI Auth: Do not prevent to use main or master as production branch
 
 ## [4.20.1] 2023-12-04
 
