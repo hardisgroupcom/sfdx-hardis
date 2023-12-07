@@ -281,8 +281,8 @@ export async function forceSourceDeploy(
         const existingPrData = globalThis.pullRequestData || {};
         const prDataCodeCoverage: any = {
           messageKey: existingPrData.messageKey ?? "deployment",
-          title: existingPrData.title ?? options.check ? "✅ Deployment check success" : "✅ Deployment success",
-          codeCoverageMarkdownBody: "It seems there is not Apex in this project",
+          title: existingPrData.title ?? check ? "✅ Deployment check success" : "✅ Deployment success",
+          codeCoverageMarkdownBody: "No code coverage: It seems there is not Apex in this project",
           deployStatus: "valid",
         };
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
