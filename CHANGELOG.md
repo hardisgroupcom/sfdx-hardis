@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Fix notifs from Azure when spaces in url
 - Fix monitoring job on Azure
 - Add link to troubleshooting page if backup fails
+- Handle notification message when there is no apex in the project
 
 ## [4.21.0] 2023-12-06
 

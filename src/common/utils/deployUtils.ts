@@ -276,6 +276,17 @@ export async function forceSourceDeploy(
           throw errCoverage;
         }
       }
+      else {
+        // Handle notif message when there is no apex
+        const existingPrData = globalThis.pullRequestData || {};
+        const prDataCodeCoverage: any = {
+          messageKey: existingPrData.messageKey ?? "deployment",
+          title: existingPrData.title ?? options.check ? "✅ Deployment check success" : "✅ Deployment success",
+          codeCoverageMarkdownBody: "It seems there is not Apex in this project",
+          deployStatus: "valid",
+        };
+        globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
+      }
       // Post pull request comment if available
       await GitProvider.managePostPullRequestComment();
 
