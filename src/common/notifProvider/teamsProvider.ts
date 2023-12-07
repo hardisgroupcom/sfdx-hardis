@@ -13,7 +13,7 @@ export class TeamsProvider extends NotifProviderRoot {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const mainTeamsHook = process.env.MS_TEAMS_WEBHOOK_URL || null;
-    if (mainTeamsHook == null) {
+    if (mainTeamsHook == null || (mainTeamsHook || "").includes("MS_TEAMS_WEBHOOK_URL")) {
       throw new SfdxError("You need to define a variable MS_TEAMS_WEBHOOK_URL to use sfdx-hardis MsTeams Integration");
     }
     const teamsHooks = [mainTeamsHook];

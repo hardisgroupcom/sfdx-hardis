@@ -1,6 +1,6 @@
 export class UtilsNotifs {
   public static isSlackAvailable() {
-    if (process.env.SLACK_TOKEN && process.env.SLACK_TOKEN.length > 5 && !process.env.slack.includes("SLACK_TOKEN")) {
+    if (process.env.SLACK_TOKEN && process.env.SLACK_TOKEN.length > 5 && !process.env.SLACK_TOKEN.includes("SLACK_TOKEN")) {
       return true;
     }
     return false;
