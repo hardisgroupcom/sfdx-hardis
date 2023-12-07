@@ -56,11 +56,19 @@ export class AzureDevopsProvider extends GitProviderRoot {
     }
     uxLog(
       this,
-      c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
-  - SYSTEM_COLLECTIONURI
-  - SYSTEM_TEAMPROJECT
-  - BUILD_REPOSITORYNAME
-  - BUILD_SOURCEBRANCHNAME`),
+      c.yellow(`[Azure DevOps] You need the following variables to be defined in azure devops pipeline:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      SYSTEM_TEAMPROJECT: $(System.TeamProject)
+      SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+      SYSTEM_JOB_ID: $(System.JobId)
+      SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+      BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+      BUILD_BUILD_ID: $(Build.BuildId)
+`),
     );
     return null;
   }

@@ -143,7 +143,11 @@ You can remove more metadata types from backup, especially in case you have too 
       uxLog(this, c.yellow("BackUp package.xml that failed to be retrieved:\n" + c.grey(failedPackageXmlContent)));
       uxLog(
         this,
-        c.red("Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it"),
+        c.red(c.bold("Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable NOTIFICATIONS_DISABLE")),
+      );
+      uxLog(
+        this,
+        c.yellow(c.bold("See troubleshooting doc at https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#troubleshooting")),
       );
       throw e;
     }

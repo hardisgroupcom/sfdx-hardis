@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update Azure Pipelines workflows to add more variables (+ error message giving this list of variables)
+- Add link to troubleshooting page if backup fails
+
 ## [4.21.0] 2023-12-06
 
 - **hardis:lint:access**: Add feature in access command to verify if an object permission exist twice or more in the same permission set
