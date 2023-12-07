@@ -1,13 +1,13 @@
 export class UtilsNotifs {
   public static isSlackAvailable() {
-    if (process.env.SLACK_TOKEN && process.env.SLACK_TOKEN.length > 5) {
+    if (process.env.SLACK_TOKEN && process.env.SLACK_TOKEN.length > 5 && !process.env.slack.includes("SLACK_TOKEN")) {
       return true;
     }
     return false;
   }
 
   public static isMsTeamsAvailable() {
-    if (process.env.MS_TEAMS_WEBHOOK_URL && process.env.MS_TEAMS_WEBHOOK_URL.length > 5) {
+    if (process.env.MS_TEAMS_WEBHOOK_URL && process.env.MS_TEAMS_WEBHOOK_URL.length > 5 && !process.env.MS_TEAMS_WEBHOOK_URL.includes("MS_TEAMS_WEBHOOK_URL")) {
       return true;
     }
     return false;

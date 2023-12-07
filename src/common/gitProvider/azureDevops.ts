@@ -30,7 +30,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
-      const jobUrl = `${encodeURIComponent(process.env.SYSTEM_COLLECTIONURI)}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID}`;
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID}`;
       return jobUrl;
     }
     uxLog(
@@ -51,7 +51,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
       process.env.BUILD_REPOSITORYNAME &&
       process.env.BUILD_SOURCEBRANCHNAME
     ) {
-      const currentBranchUrl = `${encodeURIComponent(process.env.SYSTEM_COLLECTIONURI)}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(process.env.BUILD_REPOSITORYNAME)}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`;
+      const currentBranchUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(process.env.BUILD_REPOSITORYNAME)}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`;
       return currentBranchUrl;
     }
     uxLog(
@@ -171,7 +171,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const azureJobName = process.env.SYSTEM_JOB_DISPLAY_NAME;
     const SYSTEM_COLLECTIONURI = process.env.SYSTEM_COLLECTIONURI.replace(/ /g, "%20");
     const SYSTEM_TEAMPROJECT = process.env.SYSTEM_TEAMPROJECT.replace(/ /g, "%20");
-    const azureBuildUri = `${encodeURIComponent(SYSTEM_COLLECTIONURI)}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
+    const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**

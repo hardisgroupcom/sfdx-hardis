@@ -23,7 +23,7 @@ export class SlackProvider extends NotifProviderRoot {
     const mainNotifsChannelId = process.env.SLACK_CHANNEL_ID || null;
     if (mainNotifsChannelId == null) {
       throw new SfdxError(
-        "You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN",
+        "You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN"
       );
     }
     const slackChannelsIds = [mainNotifsChannelId];
@@ -76,17 +76,19 @@ export class SlackProvider extends NotifProviderRoot {
     }
     // Post messages
     for (const slackChannelId of slackChannelsIds) {
+      const slackMessage = {
+        text: notifMessage.text,
+        attachments: notifMessage.attachments,
+        blocks: blocks,
+        channel: slackChannelId,
+        unfurl_links: false,
+        unfurl_media: false,
+      };
       try {
-        const resp = await this.slackClient.chat.postMessage({
-          text: notifMessage.text,
-          attachments: notifMessage.attachments,
-          blocks: blocks,
-          channel: slackChannelId,
-          unfurl_links: false,
-          unfurl_media: false,
-        });
+        const resp = await this.slackClient.chat.postMessage(slackMessage);
         uxLog(this, c.gray(`Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
       } catch (error) {
+        uxLog(this, c.gray("Failed slack message content: \n" + JSON.stringify(slackMessage, null, 2)));
         uxLog(this, c.red(`Error while sending message to channel ${mainNotifsChannelId}\n${error.message}`));
       }
     }

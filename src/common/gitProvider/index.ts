@@ -54,6 +54,8 @@ export abstract class GitProvider {
   static async managePostPullRequestComment(): Promise<void> {
     const gitProvider = GitProvider.getInstance();
     if (gitProvider == null) {
+      uxLog(this,c.yellow("WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
+      uxLog(this,c.yellow("See documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#git-providers"));
       return;
     }
     const prData = globalThis.pullRequestData;
