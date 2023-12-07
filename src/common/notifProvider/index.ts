@@ -30,13 +30,17 @@ export abstract class NotifProvider {
         uxLog(
           this,
           c.yellow(
-            `Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
-          ),
+            `Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`
+          )
         );
       } else {
         uxLog(this, c.gray(`Handling notification of type ${notifMessage.type}...`));
         const notifProviders = this.getInstances();
+        if (notifProviders.length === 0) {
+          uxLog(this, c.gray(`No notif has been configured: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#message-notifications`));
+        }
         for (const notifProvider of notifProviders) {
+          uxLog(this, c.gray(`- Notif target found: ${notifProvider.getLabel()}`));
           notifProvider.postNotification(notifMessage);
         }
       }
