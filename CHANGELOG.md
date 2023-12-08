@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.21.3] 2023-12-08
+
+- Add more variables in default azure-pipelines.yml monitoring
+
 ## [4.21.2] 2023-12-08
 
 - Downgrade base docker image to alpine:3.18
