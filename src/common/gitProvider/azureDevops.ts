@@ -30,8 +30,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
-      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID
-        }`;
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${
+        process.env.BUILD_BUILDID
+      }`;
       return jobUrl;
     }
     uxLog(
@@ -244,8 +245,10 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     const prInfo: any = Object.assign({}, prData);
     prInfo.sourceBranch = (prData.sourceRefName || "").replace("refs/heads/", "");
     prInfo.targetBranch = (prData.targetRefName || "").replace("refs/heads/", "");
-    prInfo.web_url = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(process.env.BUILD_REPOSITORYNAME)}/pullrequest/${prData.pullRequestId}`;
-    prInfo.authorName = prData?.createdBy?.displayName || ""
+    prInfo.web_url = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(
+      process.env.BUILD_REPOSITORYNAME,
+    )}/pullrequest/${prData.pullRequestId}`;
+    prInfo.authorName = prData?.createdBy?.displayName || "";
     return prInfo;
   }
 
@@ -269,6 +272,6 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     BUILD_REPOSITORY_ID: $(Build.Repository.ID)
     BUILD_REPOSITORYNAME: $(Build.Repository.Name)
     BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
-    BUILD_BUILD_ID: $(Build.BuildId)`
+    BUILD_BUILD_ID: $(Build.BuildId)`;
   }
 }
