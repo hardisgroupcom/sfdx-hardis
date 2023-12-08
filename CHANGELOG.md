@@ -4,6 +4,19 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.21.1] 2023-12-08
+
+- Update Azure Pipelines workflows to add more variables (+ error message giving this list of variables)
+- Fix notifs from Azure when spaces in url
+- Fix monitoring job on Azure
+- Add link to troubleshooting page if backup fails
+- Handle notification message when there is no apex in the project
+- Do not write report log when there are no differences during monitoring backup step
+- Do not try to post PR comments if not in check deploy job
+- Check unused licenses: fix crash when no permission set group assignments
+- Fix URL to Azure Pull Requests
+- Fix display name of PR author on Azure
+
 ## [4.21.0] 2023-12-06
 
 - **hardis:lint:access**: Add feature in access command to verify if an object permission exist twice or more in the same permission set

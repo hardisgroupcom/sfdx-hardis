@@ -189,7 +189,7 @@ export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "d
   const customUrlResponse = await prompts({
     type: "text",
     name: "value",
-    message: c.cyanBright("Please input the base URL of the salesforce org (ex: https://myclient.my.salesforce.com"),
+    message: c.cyanBright("Please input the base URL of the salesforce org (ex: https://myclient.my.salesforce.com)"),
   });
   const urlCustom = (customUrlResponse.value || []).replace(".lightning.force.com", ".my.salesforce.com");
   return urlCustom;

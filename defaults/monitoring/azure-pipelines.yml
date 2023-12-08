@@ -76,6 +76,17 @@ jobs:
       SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
       MS_TEAMS_WEBHOOK_URL: $(MS_TEAMS_WEBHOOK_URL)
       CI: "true"
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      SYSTEM_TEAMPROJECT: $(System.TeamProject)
+      SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+      SYSTEM_JOB_ID: $(System.JobId)
+      SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+      BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+      BUILD_BUILD_ID: $(Build.BuildId)
 
   - script: |
       git status
@@ -88,7 +99,7 @@ jobs:
       CI: "true"
 
   - publish: $(System.DefaultWorkingDirectory)/hardis-report/
-    artifact: hardis-report
+    artifact: hardis-report-backup
     condition: succeededOrFailed()
     continueOnError: "true"
     displayName: Publish logs as artifacts
@@ -137,11 +148,22 @@ jobs:
       SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
       MS_TEAMS_WEBHOOK_URL: $(MS_TEAMS_WEBHOOK_URL)
       CI: "true"
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      SYSTEM_TEAMPROJECT: $(System.TeamProject)
+      SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+      SYSTEM_JOB_ID: $(System.JobId)
+      SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+      BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+      BUILD_BUILD_ID: $(Build.BuildId)
 
   - publish: $(System.DefaultWorkingDirectory)/hardis-report/
     condition: succeededOrFailed()
     continueOnError: "true"
-    artifact: hardis-report
+    artifact: hardis-report-apex-tests
     displayName: Publish logs as artifacts
 
 ############################################################
@@ -229,9 +251,20 @@ jobs:
       SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
       MS_TEAMS_WEBHOOK_URL: $(MS_TEAMS_WEBHOOK_URL)
       CI: "true"
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      SYSTEM_TEAMPROJECT: $(System.TeamProject)
+      SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+      SYSTEM_JOB_ID: $(System.JobId)
+      SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+      BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+      BUILD_BUILD_ID: $(Build.BuildId)
 
   - publish: $(System.DefaultWorkingDirectory)/hardis-report/
-    artifact: hardis-report
+    artifact: hardis-report-monitoring
     condition: succeededOrFailed()
     continueOnError: "true"
     displayName: Publish logs as artifacts

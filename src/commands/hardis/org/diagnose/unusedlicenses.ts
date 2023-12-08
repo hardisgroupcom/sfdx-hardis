@@ -293,6 +293,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
       });
       return psgaQueryRes.records;
     }
+    return [];
   }
 
   private async listRelatedPermissionSetAssignmentsToPs(permissionSetsIds: string[], conn) {
@@ -333,6 +334,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         severity: "warning",
       });
     }
+    return [];
   }
 
   private async managePermissionSetLicenseAssignmentsDeletion(conn) {

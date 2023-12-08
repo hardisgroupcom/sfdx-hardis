@@ -24,8 +24,7 @@
     "**/redis.ts",
     "**/*.json",
     "**/*.svg",
-    "**/*.xml",
-    "**/bitbucket-pipelines.yml",
-    "**/.gitlab-ci.yml"
+    "**/*.yml",
+    "**/*.xml"
   ]
 }

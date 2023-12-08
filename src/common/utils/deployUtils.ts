@@ -259,7 +259,9 @@ export async function forceSourceDeploy(
         );
         await displayDeploymentLink(e.stdout + e.stderr, options);
         elapseEnd(`deploy ${deployment.label}`);
-        await GitProvider.managePostPullRequestComment();
+        if (check) {
+          await GitProvider.managePostPullRequestComment();
+        }
         throw new SfdxError("Deployment failure. Check messages above");
       }
 
@@ -272,12 +274,26 @@ export async function forceSourceDeploy(
         try {
           await checkDeploymentOrgCoverage(orgCoveragePercent, { check: check, testlevel: testlevel });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment();
+          if (check) {
+            await GitProvider.managePostPullRequestComment();
+          }
           throw errCoverage;
         }
+      } else {
+        // Handle notif message when there is no apex
+        const existingPrData = globalThis.pullRequestData || {};
+        const prDataCodeCoverage: any = {
+          messageKey: existingPrData.messageKey ?? "deployment",
+          title: existingPrData.title ?? check ? "✅ Deployment check success" : "✅ Deployment success",
+          codeCoverageMarkdownBody: "No code coverage: It seems there is not Apex in this project",
+          deployStatus: "valid",
+        };
+        globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
       }
       // Post pull request comment if available
-      await GitProvider.managePostPullRequestComment();
+      if (check) {
+        await GitProvider.managePostPullRequestComment();
+      }
 
       let extraInfo = options?.delta === true ? "DELTA Deployment" : "FULL Deployment";
       if (quickDeploy === true) {
@@ -914,7 +930,9 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
   );
   await displayDeploymentLink(e.stdout + e.stderr, options);
   // Post pull requests comments if necessary
-  await GitProvider.managePostPullRequestComment();
+  if (options.check) {
+    await GitProvider.managePostPullRequestComment();
+  }
   throw new SfdxError("Metadata deployment failure. Check messages above");
 }
 

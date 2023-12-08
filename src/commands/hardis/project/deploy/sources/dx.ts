@@ -388,12 +388,18 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       const notifButtons = await getNotificationButtons();
       const pullRequestInfo = await GitProvider.getPullRequestInfo();
       if (pullRequestInfo) {
+        if (this.debugMode) {
+          uxLog(this, c.gray("PR info:\n" + JSON.stringify(pullRequestInfo)));
+        }
         const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-        const prAuthor = pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+        const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
         notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : "");
         const prButtonText = "View Pull Request";
         notifButtons.push({ text: prButtonText, url: prUrl });
+      } else {
+        uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
       }
+
       NotifProvider.postNotifications({
         type: "DEPLOYMENT",
         text: notifMessage,

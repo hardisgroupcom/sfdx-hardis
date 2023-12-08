@@ -143,8 +143,13 @@ You can remove more metadata types from backup, especially in case you have too 
       uxLog(this, c.yellow("BackUp package.xml that failed to be retrieved:\n" + c.grey(failedPackageXmlContent)));
       uxLog(
         this,
-        c.red("Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it"),
+        c.red(
+          c.bold(
+            "Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable NOTIFICATIONS_DISABLE",
+          ),
+        ),
       );
+      uxLog(this, c.yellow(c.bold("See troubleshooting doc at https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#troubleshooting")));
       throw e;
     }
 
@@ -162,16 +167,18 @@ You can remove more metadata types from backup, especially in case you have too 
     const diffFiles = await MetadataUtils.listChangedFiles();
 
     // Write output file
-    this.outputFile = await generateReportPath("backup-updated-files", this.outputFile);
-    const diffFilesSimplified = diffFiles.map((diffFile) => {
-      return {
-        File: diffFile.path.replace("force-app/main/default/", ""),
-        ChangeType: diffFile.index === "?" ? "A" : diffFile.index,
-        WorkingDir: diffFile.working_dir === "?" ? "" : diffFile.working_dir,
-        PrevName: diffFile?.from || "",
-      };
-    });
-    await generateCsvFile(diffFilesSimplified, this.outputFile);
+    if (diffFiles.length > 0) {
+      this.outputFile = await generateReportPath("backup-updated-files", this.outputFile);
+      const diffFilesSimplified = diffFiles.map((diffFile) => {
+        return {
+          File: diffFile.path.replace("force-app/main/default/", ""),
+          ChangeType: diffFile.index === "?" ? "A" : diffFile.index,
+          WorkingDir: diffFile.working_dir === "?" ? "" : diffFile.working_dir,
+          PrevName: diffFile?.from || "",
+        };
+      });
+      await generateCsvFile(diffFilesSimplified, this.outputFile);
+    }
 
     // Send notifications
     if (diffFiles.length > 0) {

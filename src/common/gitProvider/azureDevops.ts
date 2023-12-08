@@ -30,7 +30,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
-      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${process.env.SYSTEM_TEAMPROJECT}/_build/results?buildId=${process.env.BUILD_BUILDID}`;
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${
+        process.env.BUILD_BUILDID
+      }`;
       return jobUrl;
     }
     uxLog(
@@ -51,16 +53,16 @@ export class AzureDevopsProvider extends GitProviderRoot {
       process.env.BUILD_REPOSITORYNAME &&
       process.env.BUILD_SOURCEBRANCHNAME
     ) {
-      const currentBranchUrl = `${process.env.SYSTEM_COLLECTIONURI}${process.env.SYSTEM_TEAMPROJECT}/_git/${process.env.BUILD_REPOSITORYNAME}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`;
+      const currentBranchUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(
+        process.env.BUILD_REPOSITORYNAME,
+      )}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`;
       return currentBranchUrl;
     }
     uxLog(
       this,
-      c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
-  - SYSTEM_COLLECTIONURI
-  - SYSTEM_TEAMPROJECT
-  - BUILD_REPOSITORYNAME
-  - BUILD_SOURCEBRANCHNAME`),
+      c.yellow(`[Azure DevOps] You need the following variables to be defined in azure devops pipeline step:
+${this.getPipelineVariablesConfig()}
+`),
     );
     return null;
   }
@@ -73,11 +75,14 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     const azureGitApi = await this.azureApi.getGitApi();
     const currentGitBranch = await getCurrentGitBranch();
-    if (pullRequestIdStr !== null) {
+    if (pullRequestIdStr !== null && !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID")) {
       const pullRequestId = Number(pullRequestIdStr);
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
-      if (pullRequest) {
+      if (pullRequest && pullRequest.targetRefName) {
         return this.completePullRequestInfo(pullRequest);
+      } else {
+        uxLog(this, c.yellow("[Azure Integration] Warning: incomplete PR found"));
+        uxLog(this, c.yellow(JSON.stringify(pullRequest || {})));
       }
     }
     // Case when we find PR from a commit
@@ -147,14 +152,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
       uxLog(this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
       uxLog(
         this,
-        c.yellow(`Following variables must be defined when available:
-- BUILD_REPOSITORY_ID
-- BUILD_BUILD_ID
-- SYSTEM_JOB_ID
-- SYSTEM_PULLREQUEST_PULLREQUESTID
-- SYSTEM_JOB_DISPLAY_NAME
-- SYSTEM_COLLECTIONURI
-- SYSTEM_TEAMPROJECT
+        c.yellow(`Following variables should be defined when available:
+${this.getPipelineVariablesConfig()}
       `),
       );
       return { posted: false, providerResult: { info: "No related pull request" } };
@@ -163,7 +162,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const azureJobName = process.env.SYSTEM_JOB_DISPLAY_NAME;
     const SYSTEM_COLLECTIONURI = process.env.SYSTEM_COLLECTIONURI.replace(/ /g, "%20");
     const SYSTEM_TEAMPROJECT = process.env.SYSTEM_TEAMPROJECT.replace(/ /g, "%20");
-    const azureBuildUri = `${SYSTEM_COLLECTIONURI}${SYSTEM_TEAMPROJECT}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
+    const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
@@ -229,6 +228,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       posted: azureEditThreadResult.id > 0,
       providerResult: azureEditThreadResult,
     };
+    uxLog(this, c.grey(`[Azure integration] Posted Pull Request Thread ${azureEditThreadResult.id}`));
     return prResult;
   }
 
@@ -245,6 +245,33 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     const prInfo: any = Object.assign({}, prData);
     prInfo.sourceBranch = (prData.sourceRefName || "").replace("refs/heads/", "");
     prInfo.targetBranch = (prData.targetRefName || "").replace("refs/heads/", "");
+    prInfo.web_url = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(
+      process.env.BUILD_REPOSITORYNAME,
+    )}/pullrequest/${prData.pullRequestId}`;
+    prInfo.authorName = prData?.createdBy?.displayName || "";
     return prInfo;
+  }
+
+  private getPipelineVariablesConfig() {
+    return `
+    SFDX_DEPLOY_WAIT_MINUTES: 150
+    CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+    CONFIG_BRANCH: $(BRANCH_NAME)
+    ORG_ALIAS: $(BRANCH_NAME)
+    SLACK_TOKEN: $(SLACK_TOKEN)
+    SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+    MS_TEAMS_WEBHOOK_URL: $(MS_TEAMS_WEBHOOK_URL)
+    CI: "true"
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+    CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+    SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+    SYSTEM_TEAMPROJECT: $(System.TeamProject)
+    SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+    SYSTEM_JOB_ID: $(System.JobId)
+    SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+    BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+    BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+    BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+    BUILD_BUILD_ID: $(Build.BuildId)`;
   }
 }

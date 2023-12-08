@@ -54,11 +54,17 @@ export abstract class GitProvider {
   static async managePostPullRequestComment(): Promise<void> {
     const gitProvider = GitProvider.getInstance();
     if (gitProvider == null) {
+      uxLog(this, c.yellow("[Git Provider] WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
+      uxLog(
+        this,
+        c.yellow("[Git Provider] See documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#git-providers"),
+      );
       return;
     }
     const prData = globalThis.pullRequestData;
     const prCommentSent = globalThis.pullRequestCommentSent || false;
     if (prData && gitProvider && prCommentSent === false) {
+      uxLog(this, c.yellow("[Git Provider] Try to post a pull request comment/note..."));
       let markdownBody = "";
       if (prData.deployErrorsMarkdownBody) {
         markdownBody += prData.deployErrorsMarkdownBody;
@@ -76,6 +82,9 @@ export abstract class GitProvider {
       if (postResult && postResult.posted === true) {
         globalThis.pullRequestCommentSent = true;
       }
+    } else {
+      uxLog(this, c.gray(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
+      uxLog(this, c.yellow("[Git Provider] Skip post pull request comment"));
     }
   }
 
