@@ -245,6 +245,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
     prInfo.sourceBranch = (prData.sourceRefName || "").replace("refs/heads/", "");
     prInfo.targetBranch = (prData.targetRefName || "").replace("refs/heads/", "");
     prInfo.web_url = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(process.env.BUILD_REPOSITORYNAME)}/pullrequest/${prData.pullRequestId}`;
+    prInfo.authorName = prData?.createdBy?.displayName || ""
     return prInfo;
   }
 

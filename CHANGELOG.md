@@ -15,6 +15,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Do not try to post PR comments if not in check deploy job
 - Check unused licenses: fix crash when no permission set group assignments
 - Fix URL to Azure Pull Requests
+- Fix display name of PR author on Azure
 
 ## [4.21.0] 2023-12-06
 
