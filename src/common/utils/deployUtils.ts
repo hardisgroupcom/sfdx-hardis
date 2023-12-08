@@ -259,7 +259,9 @@ export async function forceSourceDeploy(
         );
         await displayDeploymentLink(e.stdout + e.stderr, options);
         elapseEnd(`deploy ${deployment.label}`);
-        await GitProvider.managePostPullRequestComment();
+        if (check) {
+          await GitProvider.managePostPullRequestComment();
+        }
         throw new SfdxError("Deployment failure. Check messages above");
       }
 
@@ -272,7 +274,9 @@ export async function forceSourceDeploy(
         try {
           await checkDeploymentOrgCoverage(orgCoveragePercent, { check: check, testlevel: testlevel });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment();
+          if (check) {
+            await GitProvider.managePostPullRequestComment();
+          }
           throw errCoverage;
         }
       }
@@ -288,7 +292,9 @@ export async function forceSourceDeploy(
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
       }
       // Post pull request comment if available
-      await GitProvider.managePostPullRequestComment();
+      if (check) {
+        await GitProvider.managePostPullRequestComment();
+      }
 
       let extraInfo = options?.delta === true ? "DELTA Deployment" : "FULL Deployment";
       if (quickDeploy === true) {
@@ -744,10 +750,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -761,10 +767,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -925,7 +931,9 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
   );
   await displayDeploymentLink(e.stdout + e.stderr, options);
   // Post pull requests comments if necessary
-  await GitProvider.managePostPullRequestComment();
+  if (options.check) {
+    await GitProvider.managePostPullRequestComment();
+  }
   throw new SfdxError("Metadata deployment failure. Check messages above");
 }
 

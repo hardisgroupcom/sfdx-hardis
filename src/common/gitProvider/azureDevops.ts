@@ -237,6 +237,7 @@ _Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJo
       posted: azureEditThreadResult.id > 0,
       providerResult: azureEditThreadResult,
     };
+    uxLog(this, c.grey(`[Azure integration] Posted Pull Request Thread ${azureEditThreadResult.id}`));
     return prResult;
   }
 

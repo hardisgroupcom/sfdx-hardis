@@ -10,6 +10,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Add link to troubleshooting page if backup fails
 - Handle notification message when there is no apex in the project
 - Do not write report log when there are no differences during monitoring backup step
+- Do not try to post PR comments if not in check deploy job
+- Check unused licenses: fix crash when no permission set group assignments
 
 ## [4.21.0] 2023-12-06
 
