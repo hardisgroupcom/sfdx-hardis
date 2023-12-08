@@ -81,11 +81,15 @@ export class AzureDevopsProvider extends GitProviderRoot {
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     const azureGitApi = await this.azureApi.getGitApi();
     const currentGitBranch = await getCurrentGitBranch();
-    if (pullRequestIdStr !== null) {
+    if (pullRequestIdStr !== null && !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID")) {
       const pullRequestId = Number(pullRequestIdStr);
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
-      if (pullRequest) {
+      if (pullRequest && pullRequest.targetRefName) {
         return this.completePullRequestInfo(pullRequest);
+      }
+      else {
+        uxLog(this, c.yellow("[Azure Integration] Warning: incomplete PR found"));
+        uxLog(this, c.yellow(JSON.stringify(pullRequest || {})));
       }
     }
     // Case when we find PR from a commit
