@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.21.1] 2023-12-08
+
 - Update Azure Pipelines workflows to add more variables (+ error message giving this list of variables)
 - Fix notifs from Azure when spaces in url
 - Fix monitoring job on Azure
