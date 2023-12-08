@@ -147,7 +147,7 @@ export default class metadatastatus extends SfdxCommand {
    * @returns {Promise<void>} - A Promise that resolves when the CSV file has been successfully generated.
    */
   private async buildCsvFile(draftFiles: string[]): Promise<void> {
-    this.outputFile = await generateReportPath("lint-unusedmetadatas", this.outputFile);
+    this.outputFile = await generateReportPath("lint-metadatastatus", this.outputFile);
     const csvData = draftFiles.map((file) => ({ type: "Draft Flow", name: file }));
     await generateCsvFile(csvData, this.outputFile);
   }
