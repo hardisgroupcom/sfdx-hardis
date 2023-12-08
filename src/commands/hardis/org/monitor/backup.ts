@@ -166,16 +166,18 @@ You can remove more metadata types from backup, especially in case you have too 
     const diffFiles = await MetadataUtils.listChangedFiles();
 
     // Write output file
-    this.outputFile = await generateReportPath("backup-updated-files", this.outputFile);
-    const diffFilesSimplified = diffFiles.map((diffFile) => {
-      return {
-        File: diffFile.path.replace("force-app/main/default/", ""),
-        ChangeType: diffFile.index === "?" ? "A" : diffFile.index,
-        WorkingDir: diffFile.working_dir === "?" ? "" : diffFile.working_dir,
-        PrevName: diffFile?.from || "",
-      };
-    });
-    await generateCsvFile(diffFilesSimplified, this.outputFile);
+    if (diffFiles.length > 0) {
+      this.outputFile = await generateReportPath("backup-updated-files", this.outputFile);
+      const diffFilesSimplified = diffFiles.map((diffFile) => {
+        return {
+          File: diffFile.path.replace("force-app/main/default/", ""),
+          ChangeType: diffFile.index === "?" ? "A" : diffFile.index,
+          WorkingDir: diffFile.working_dir === "?" ? "" : diffFile.working_dir,
+          PrevName: diffFile?.from || "",
+        };
+      });
+      await generateCsvFile(diffFilesSimplified, this.outputFile);
+    }
 
     // Send notifications
     if (diffFiles.length > 0) {

@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Fix monitoring job on Azure
 - Add link to troubleshooting page if backup fails
 - Handle notification message when there is no apex in the project
+- Do not write report log when there are no differences during monitoring backup step
 
 ## [4.21.0] 2023-12-06
 
