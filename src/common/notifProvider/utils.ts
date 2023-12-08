@@ -7,7 +7,11 @@ export class UtilsNotifs {
   }
 
   public static isMsTeamsAvailable() {
-    if (process.env.MS_TEAMS_WEBHOOK_URL && process.env.MS_TEAMS_WEBHOOK_URL.length > 5 && !process.env.MS_TEAMS_WEBHOOK_URL.includes("MS_TEAMS_WEBHOOK_URL")) {
+    if (
+      process.env.MS_TEAMS_WEBHOOK_URL &&
+      process.env.MS_TEAMS_WEBHOOK_URL.length > 5 &&
+      !process.env.MS_TEAMS_WEBHOOK_URL.includes("MS_TEAMS_WEBHOOK_URL")
+    ) {
       return true;
     }
     return false;

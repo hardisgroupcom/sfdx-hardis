@@ -23,7 +23,7 @@ export class SlackProvider extends NotifProviderRoot {
     const mainNotifsChannelId = process.env.SLACK_CHANNEL_ID || null;
     if (mainNotifsChannelId == null) {
       throw new SfdxError(
-        "You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN"
+        "You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN",
       );
     }
     const slackChannelsIds = [mainNotifsChannelId];

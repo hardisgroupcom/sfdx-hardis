@@ -279,8 +279,7 @@ export async function forceSourceDeploy(
           }
           throw errCoverage;
         }
-      }
-      else {
+      } else {
         // Handle notif message when there is no apex
         const existingPrData = globalThis.pullRequestData || {};
         const prDataCodeCoverage: any = {
@@ -750,10 +749,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -767,10 +766,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,

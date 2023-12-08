@@ -278,9 +278,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
           this,
           c.yellow(
             `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-              package1.SubscriberPackageVersionId
-            )} in target org to validate the deployment check`
-          )
+              package1.SubscriberPackageVersionId,
+            )} in target org to validate the deployment check`,
+          ),
         );
       }
       uxLog(this, "");
@@ -289,10 +289,10 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         c.yellow(
           c.italic(
             `If you want deployment checks to automatically install packages, please define ${c.bold(
-              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true"
-            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`
-          )
-        )
+              "INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true",
+            )} in ENV vars, or property ${c.bold("installPackagesDuringCheckDeploy: true")} in .sfdx-hardis.yml`,
+          ),
+        ),
       );
     }
 
@@ -370,7 +370,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       testlevel,
       this.debugMode,
       this,
-      forceSourceDeployOptions
+      forceSourceDeployOptions,
     );
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
@@ -423,7 +423,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     if (this.checkOnly === false && !(process.env?.USE_DELTA_DEPLOYMENT_AFTER_MERGE === "true")) {
       uxLog(
         this,
-        c.yellow("We'll try to deploy using Quick Deployment feature. If not available, it's safer to use full deployment for a merge job.")
+        c.yellow("We'll try to deploy using Quick Deployment feature. If not available, it's safer to use full deployment for a merge job."),
       );
       uxLog(this, c.yellow("If you want to use delta deployment anyway, define env variable USE_DELTA_DEPLOYMENT_AFTER_MERGE=true"));
       return false;
@@ -432,7 +432,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       uxLog(this, c.yellow(`Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`));
       uxLog(
         this,
-        c.yellow(`It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`)
+        c.yellow(`It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`),
       );
       return true;
     }
@@ -451,8 +451,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       uxLog(
         this,
         c.yellow(
-          `This is not safe to use delta between major branches (${c.bold(currentBranch)} to ${c.bold(parentBranch)}): using full deployment mode`
-        )
+          `This is not safe to use delta between major branches (${c.bold(currentBranch)} to ${c.bold(parentBranch)}): using full deployment mode`,
+        ),
       );
       return false;
     }

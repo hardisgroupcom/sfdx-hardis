@@ -30,7 +30,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
-      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID}`;
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${
+        process.env.BUILD_BUILDID
+      }`;
       return jobUrl;
     }
     uxLog(
@@ -51,7 +53,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
       process.env.BUILD_REPOSITORYNAME &&
       process.env.BUILD_SOURCEBRANCHNAME
     ) {
-      const currentBranchUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(process.env.BUILD_REPOSITORYNAME)}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`;
+      const currentBranchUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(
+        process.env.BUILD_REPOSITORYNAME,
+      )}?version=GB${process.env.BUILD_SOURCEBRANCHNAME}`;
       return currentBranchUrl;
     }
     uxLog(
@@ -94,8 +98,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
       if (pullRequest && pullRequest.targetRefName) {
         return this.completePullRequestInfo(pullRequest);
-      }
-      else {
+      } else {
         uxLog(this, c.yellow("[Azure Integration] Warning: incomplete PR found"));
         uxLog(this, c.yellow(JSON.stringify(pullRequest || {})));
       }
