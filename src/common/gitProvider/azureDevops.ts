@@ -56,7 +56,15 @@ export class AzureDevopsProvider extends GitProviderRoot {
     }
     uxLog(
       this,
-      c.yellow(`[Azure DevOps] You need the following variables to be defined in azure devops pipeline:
+      c.yellow(`[Azure DevOps] You need the following variables to be defined in azure devops pipeline step:
+      SFDX_DEPLOY_WAIT_MINUTES: 150
+      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+      CONFIG_BRANCH: $(BRANCH_NAME)
+      ORG_ALIAS: $(BRANCH_NAME)
+      SLACK_TOKEN: $(SLACK_TOKEN)
+      SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+      MS_TEAMS_WEBHOOK_URL: $(MS_TEAMS_WEBHOOK_URL)
+      CI: "true"
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
       SYSTEM_COLLECTIONURI: $(System.CollectionUri)
