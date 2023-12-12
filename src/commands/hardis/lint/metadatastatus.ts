@@ -86,7 +86,7 @@ export default class metadatastatus extends SfdxCommand {
         sideImage: "flow",
       });
 
-      this.buildCsvFile([...draftFlows, ...inactiveValidationRules]);
+      this.buildCsvFile(draftFlows, inactiveValidationRules);
     } else {
       uxLog(this, "No draft flow or validation rule files detected.");
     }
@@ -138,17 +138,23 @@ export default class metadatastatus extends SfdxCommand {
   }
 
   /**
-   * This function builds a CSV file from an array of draft files.
-   * It first ensures that the output file path is generated and the directory exists.
-   * It then maps the draft files into an array of objects, each with a 'type' property set to "Draft Flow" and a 'name' property set to the file name.
+   * This function builds a CSV file from arrays of draft flows and inactive validation rules.
+   * It first ensures that the output file path is generated.
+   * It then maps the draft flows and inactive validation rules into an array of objects, each with a 'type' property set to either "Draft Flow" or "Inactive VR" and a 'name' property set to the file or rule name.
    * Finally, it generates a CSV file from this array and writes it to the output file.
    *
-   * @param {string[]} draftFiles - An array of draft file names.
+   * @param {string[]} draftFlows - An array of draft flow names.
+   * @param {string[]} inactiveValidationRules - An array of inactive validation rule names.
    * @returns {Promise<void>} - A Promise that resolves when the CSV file has been successfully generated.
    */
-  private async buildCsvFile(draftFiles: string[]): Promise<void> {
+  private async buildCsvFile(draftFlows: string[], inactiveValidationRules: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-metadatastatus", this.outputFile);
-    const csvData = draftFiles.map((file) => ({ type: "Draft Flow", name: file }));
+
+    const csvData = [
+      ...draftFlows.map((file) => ({ type: "Draft Flow", name: file })),
+      ...inactiveValidationRules.map((rule) => ({ type: "Inactive VR", name: rule })),
+    ];
+
     await generateCsvFile(csvData, this.outputFile);
   }
 }
