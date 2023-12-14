@@ -27,17 +27,23 @@ Regular setup actions performed in major orgs are filtered.
 
 - ""
   - createScratchOrg
+  - changedsenderemail
   - deleteScratchOrg
 - Certificate and Key Management
   - insertCertificate
+- Data Management
+  - queueMembership
 - Email Administration
   - dkimRotationSuccessful
 - Groups
   - groupMembership
+- Inbox mobile and legacy desktop apps
+  - enableSIQUserNonEAC
 - Manage Users
   - activateduser
   - createduser
   - changedcommunitynickname
+  - changedemail
   - changedfederationid
   - changedpassword
   - changedinteractionuseroffon
@@ -178,14 +184,17 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
-      "": ["createScratchOrg", "deleteScratchOrg"],
+      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg"],
       "Certificate and Key Management": ["insertCertificate"],
+      "Data Management": ["queueMembership"],
       "Email Administration": ["dkimRotationSuccessful"],
+      "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
       Groups: ["groupMembership"],
       "Manage Users": [
         "activateduser",
         "createduser",
         "changedcommunitynickname",
+        "changedemail",
         "changedfederationid",
         "changedinteractionuseroffon",
         "changedinteractionuseronoff",
@@ -251,7 +260,7 @@ monitoringAllowedSectionsActions:
 
     // Fetch SetupAuditTrail records
     const auditTrailQuery =
-      `SELECT CreatedDate,CreatedBy.Username,Action,Section,Display,ResponsibleNamespacePrefix,DelegateUser ` +
+      `SELECT CreatedDate,CreatedBy.Username,CreatedBy.Name,Action,Section,Display,ResponsibleNamespacePrefix,DelegateUser ` +
       `FROM SetupAuditTrail ` +
       whereConstraint +
       `ORDER BY CreatedDate DESC`;
@@ -271,7 +280,7 @@ monitoringAllowedSectionsActions:
         record.Suspect = true;
         record.SuspectReason = `Manual config in unallowed section ${section} with action ${record.Action}`;
         suspectRecords.push(record);
-        suspectUsers.push(record["CreatedBy.Username"]);
+        suspectUsers.push(record["CreatedBy.Username"] + " - " + record["CreatedBy.Name"]);
         suspectActions.push(`${section} - ${record.Action}`);
         return record;
       }
