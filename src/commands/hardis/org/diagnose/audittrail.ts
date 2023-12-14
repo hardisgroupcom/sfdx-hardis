@@ -184,7 +184,7 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
-      "": ["createScratchOrg","changedsenderemail", "deleteScratchOrg"],
+      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg"],
       "Certificate and Key Management": ["insertCertificate"],
       "Data Management": ["queueMembership"],
       "Email Administration": ["dkimRotationSuccessful"],
@@ -280,7 +280,7 @@ monitoringAllowedSectionsActions:
         record.Suspect = true;
         record.SuspectReason = `Manual config in unallowed section ${section} with action ${record.Action}`;
         suspectRecords.push(record);
-        suspectUsers.push(record["CreatedBy.Username"] + ' - ' + record["CreatedBy.Name"]); 
+        suspectUsers.push(record["CreatedBy.Username"] + " - " + record["CreatedBy.Name"]);
         suspectActions.push(`${section} - ${record.Action}`);
         return record;
       }
