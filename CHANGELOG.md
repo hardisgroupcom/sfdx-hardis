@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Deployment tips
+  - Visibility is not allowed for type
+
 ## [4.21.5] 2023-12-14
 
 - hardis:org:diagnose:audittrail

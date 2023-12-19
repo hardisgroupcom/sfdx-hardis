@@ -666,6 +666,12 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`
       tip: `Apex error in {1} with unknown variable {2} at position {3}. If {2} is a class name, try to fix it, or maybe it is missing in the files or in package.xml !`,
     },
     {
+      name: "visibility-not-allowed-for-type",
+      label: "Visibility is not allowed for type",
+      expressionRegex: [/Error (.*) set the visibility for a (.*) to Protected unless you are in a developer/gm],
+      tip: `Update the visiblity of {1} to "Public"`,
+    },
+    {
       name: "wave-digest-error",
       label: "Tableau CRM / Wave digest error",
       expressionString: ["Fix the sfdcDigest node errors and then upload the file again"],
