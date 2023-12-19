@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New task: Ask confirmation before updating selected sandbox
 - Deployment tips
   - Visibility is not allowed for type
 
