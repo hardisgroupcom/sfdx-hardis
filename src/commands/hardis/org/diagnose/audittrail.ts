@@ -29,6 +29,7 @@ Regular setup actions performed in major orgs are filtered.
   - createScratchOrg
   - changedsenderemail
   - deleteScratchOrg
+  - loginasgrantedtopartnerbt
 - Certificate and Key Management
   - insertCertificate
 - Data Management
@@ -186,7 +187,7 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
-      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg"],
+      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg","loginasgrantedtopartnerbt"],
       "Certificate and Key Management": ["insertCertificate"],
       "Data Management": ["queueMembership"],
       "Email Administration": ["dkimRotationSuccessful"],
