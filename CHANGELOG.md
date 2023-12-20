@@ -7,6 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New task: Ask confirmation before updating selected sandbox
 - Deployment tips
   - Visibility is not allowed for type
+- Audit trail, ignore more events
+  - Holidays: holiday_insert
 
 ## [4.21.5] 2023-12-14
 

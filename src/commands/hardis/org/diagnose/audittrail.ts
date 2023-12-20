@@ -37,6 +37,8 @@ Regular setup actions performed in major orgs are filtered.
   - dkimRotationSuccessful
 - Groups
   - groupMembership
+- Holidays
+  - holiday_insert
 - Inbox mobile and legacy desktop apps
   - enableSIQUserNonEAC
 - Manage Users
@@ -188,6 +190,7 @@ monitoringAllowedSectionsActions:
       "Certificate and Key Management": ["insertCertificate"],
       "Data Management": ["queueMembership"],
       "Email Administration": ["dkimRotationSuccessful"],
+      "Holidays": ["holiday_insert"],
       "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
       Groups: ["groupMembership"],
       "Manage Users": [
