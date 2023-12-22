@@ -29,6 +29,7 @@ Regular setup actions performed in major orgs are filtered.
   - createScratchOrg
   - changedsenderemail
   - deleteScratchOrg
+  - loginasgrantedtopartnerbt
 - Certificate and Key Management
   - insertCertificate
 - Data Management
@@ -37,6 +38,8 @@ Regular setup actions performed in major orgs are filtered.
   - dkimRotationSuccessful
 - Groups
   - groupMembership
+- Holidays
+  - holiday_insert
 - Inbox mobile and legacy desktop apps
   - enableSIQUserNonEAC
 - Manage Users
@@ -184,10 +187,11 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
-      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg"],
+      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg", "loginasgrantedtopartnerbt"],
       "Certificate and Key Management": ["insertCertificate"],
       "Data Management": ["queueMembership"],
       "Email Administration": ["dkimRotationSuccessful"],
+      Holidays: ["holiday_insert"],
       "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
       Groups: ["groupMembership"],
       "Manage Users": [
