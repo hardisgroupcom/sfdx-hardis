@@ -670,7 +670,7 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5`
       name: "visibility-not-allowed-for-type",
       label: "Visibility is not allowed for type",
       expressionRegex: [/Error (.*) set the visibility for a (.*) to Protected unless you are in a developer/gm],
-      tip: `Update the visiblity of {1} to "Public"`,
+      tip: `Update the visibility of {1} to "Public"`,
     },
     {
       name: "wave-digest-error",
