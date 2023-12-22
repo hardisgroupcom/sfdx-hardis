@@ -402,7 +402,7 @@ Under the hood, it can:
       });
       initSandbox = promptConfirm.value === true;
     }
-    if (initSandboxResponse.value === "init") {
+    if (initSandbox) {
       let initSourcesErr: any = null;
       let initSandboxErr: any = null;
       try {
