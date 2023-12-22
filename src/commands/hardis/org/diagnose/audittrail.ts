@@ -187,11 +187,11 @@ monitoringAllowedSectionsActions:
     }
 
     this.allowedSectionsActions = {
-      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg","loginasgrantedtopartnerbt"],
+      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg", "loginasgrantedtopartnerbt"],
       "Certificate and Key Management": ["insertCertificate"],
       "Data Management": ["queueMembership"],
       "Email Administration": ["dkimRotationSuccessful"],
-      "Holidays": ["holiday_insert"],
+      Holidays: ["holiday_insert"],
       "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
       Groups: ["groupMembership"],
       "Manage Users": [
