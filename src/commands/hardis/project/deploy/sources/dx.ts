@@ -26,7 +26,7 @@ import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
 import { NotifProvider } from "../../../../../common/notifProvider";
 import { GitProvider } from "../../../../../common/gitProvider";
-import { callSfdxGitDelta, getGitDeltaScope } from "../../../../../common/utils/gitUtils";
+import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from "../../../../../common/utils/gitUtils";
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from "../../../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
@@ -294,6 +294,15 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
           ),
         ),
       );
+    }
+
+    // Compute commitsSummary and store it in globalThis.pullRequestData.commitsSummary
+    if (this.checkOnly) {
+      try {
+        await computeCommitsSummary();
+      } catch (e3) {
+        uxLog(this, c.yellow("Unable to compute git summary:\n" + e3));
+      }
     }
 
     // Get package.xml

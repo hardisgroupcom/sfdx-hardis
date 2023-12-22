@@ -1,7 +1,8 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { execCommand, execSfdxJson, getGitRepoRoot, git, uxLog } from ".";
+import { execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
+import { GitProvider } from "../gitProvider";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -23,8 +24,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+          return { title: branch, value: branch };
+        })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -51,7 +52,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
     fail: true,
   });
   const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace("\n", "").replace("\r", "");
-  return { fromCommit: masterBranchLatestCommit, toCommit: toCommit };
+  return { fromCommit: masterBranchLatestCommit, toCommit: toCommit, logResult: logResult };
 }
 
 export async function callSfdxGitDelta(from: string, to: string, outputDir: string, options: any = {}) {
@@ -67,4 +68,62 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     cwd: await getGitRepoRoot(),
   });
   return gitDeltaCommandRes;
+}
+
+export async function computeCommitsSummary() {
+  const currentGitBranch = await getCurrentGitBranch();
+  const prInfo = await GitProvider.getPullRequestInfo();
+  const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
+  let commitsSummary = '## Commits summary\n\n';
+  const manualActions = [];
+  const jiraTickets = [];
+  for (const logResult of deltaScope.logResult.all) {
+    commitsSummary += "### " + logResult.message + ", by" + logResult.author_name + "\n\n"
+    if (logResult.body) {
+      commitsSummary += logResult.body + "\n\n";
+      // Extract JIRAs if defined
+      const httpRegex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)$/
+      let m;
+      while ((m = httpRegex.exec(logResult.body)) !== null) {
+        if (m.index === httpRegex.lastIndex) {
+          httpRegex.lastIndex++;
+        }
+        m.forEach((match: string) => {
+          if (match.includes("jira")) {
+            jiraTickets.push(match.trim());
+          }
+        });
+      }
+      // Extract manual actions if defined
+      const regex = /MANUAL ACTION:(.*)/gm;
+      let m2;
+      while ((m2 = regex.exec(logResult.body)) !== null) {
+        if (m2.index === regex.lastIndex) {
+          regex.lastIndex++;
+        }
+        m2.forEach((match: string) => {
+          manualActions.push(match.trim());
+        });
+      }
+    }
+  }
+  if (manualActions.length > 0) {
+    commitsSummary += '\n\n## JIRA Tickets\n\n';
+    for (const jiraTicket of jiraTickets) {
+      commitsSummary += "- " + jiraTicket+"\n";
+    }
+  }
+  if (manualActions.length > 0) {
+    commitsSummary += '\n\n## Manual actions\n\n';
+    for (const manualAction of manualActions) {
+      commitsSummary += "- " + manualAction+"\n";
+    }
+  }
+
+  const prDataCommitsSummary = { commitsSummary: commitsSummary };
+  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
+  return {
+    markdown: commitsSummary,
+    manualActions: manualActions
+  }
 }
