@@ -79,20 +79,18 @@ export async function computeCommitsSummary() {
   const manualActions = [];
   const jiraTickets = [];
   for (const logResult of deltaScope.logResult.all) {
-    commitsSummary += "### " + logResult.message + ", by" + logResult.author_name + "\n\n";
+    commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name + "\n";
     if (logResult.body) {
       commitsSummary += logResult.body + "\n\n";
       // Extract JIRAs if defined
-      const httpRegex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
+      const jiraRegex = /(https:\/\/.*jira.*)/g;
       let m;
-      while ((m = httpRegex.exec(logResult.body)) !== null) {
-        if (m.index === httpRegex.lastIndex) {
-          httpRegex.lastIndex++;
+      while ((m = jiraRegex.exec(logResult.body)) !== null) {
+        if (m.index === jiraRegex.lastIndex) {
+          jiraRegex.lastIndex++;
         }
         m.forEach((match: string) => {
-          if (match.includes("jira")) {
-            jiraTickets.push(match.trim());
-          }
+          jiraTickets.push(match.trim());
         });
       }
       // Extract manual actions if defined
