@@ -1,6 +1,7 @@
 import { Version3Client } from "jira.js";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import { Ticket } from ".";
+import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof Version3Client>;
@@ -33,6 +34,18 @@ export class JiraProvider extends TicketProviderRoot {
           ticket.status = ticketInfo.fields?.status?.id || "";
           ticket.statusLabel = ticketInfo.fields?.status?.name || "";
         }
+      }
+    }
+    return tickets;
+  }
+
+  public async postDeploymentComments(tickets: Ticket[], org: string) {
+    const orgMarkdown = await getOrgMarkdown(org);
+    const branchMarkdown = await getBranchMarkdown();
+    for (const ticket of tickets) {
+      if (ticket.foundOnServer) {
+        const comment = `Deployed by [sfdx-hardis|https://sfdx-hardis.cloudity.com/] in ${orgMarkdown} from ${branchMarkdown}`;
+        await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: comment });
       }
     }
     return tickets;

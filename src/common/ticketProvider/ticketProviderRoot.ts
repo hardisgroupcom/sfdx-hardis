@@ -14,4 +14,10 @@ export abstract class TicketProviderRoot {
     uxLog(this, c.yellow("collectTicketsInfo is not implemented on " + this.getLabel()));
     return tickets;
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async postDeploymentComments(tickets: Ticket[],_org:string) {
+    uxLog(this, c.yellow("postDeploymentComments is not implemented on " + this.getLabel()));
+    return tickets;
+  }
 }

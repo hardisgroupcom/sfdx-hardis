@@ -24,10 +24,12 @@ import { forceSourceDeploy, removePackageXmlContent } from "../../../../../commo
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
-import { NotifProvider } from "../../../../../common/notifProvider";
+import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider";
 import { GitProvider } from "../../../../../common/gitProvider";
 import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from "../../../../../common/utils/gitUtils";
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from "../../../../../common/utils/notifUtils";
+import { MessageAttachment } from "@slack/web-api";
+import { TicketProvider } from "../../../../../common/ticketProvider";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -391,8 +393,14 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
     // Send notification of deployment success
     if (!this.checkOnly) {
-      const commitsSummary = await computeCommitsSummary(false);
-      uxLog(this, c.grey("Commits summary: " + JSON.stringify(commitsSummary, null, 2)));
+      const attachments: MessageAttachment[] = [];
+      try {
+        // Build notification attachments & handle ticketing systems comments
+        const commitsSummary = await this.collectNotifAttachments(attachments);
+        await TicketProvider.postDeploymentActions(commitsSummary.tickets,this.org?.getConnection()?.instanceUrl || targetUsername );
+      } catch (e4) {
+        uxLog(this, c.yellow("Unable to handle commit info for notifications:\n" + e4.message))
+      }
 
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl || targetUsername);
       const branchMarkdown = await getBranchMarkdown();
@@ -419,9 +427,45 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         text: notifMessage,
         buttons: notifButtons,
         severity: "success",
+        attachments: attachments,
       });
     }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
+  }
+
+  private async collectNotifAttachments(attachments: MessageAttachment[]) {
+    const commitsSummary = await computeCommitsSummary(false);
+    // Tickets attachment
+    if (commitsSummary.tickets.length > 0) {
+      attachments.push({
+        text: `*Tickets*\n${commitsSummary.tickets.map((ticket) => {
+          if (ticket.foundOnServer) {
+            return "• " + UtilsNotifs.markdownLink(ticket.url, ticket.id) + " " + ticket.subject;
+          } else {
+            return "• " + ticket.url;
+          }
+        }).join("\n")}`,
+      });
+    }
+    // Manual actions attachment
+    if (commitsSummary.manualActions.length > 0) {
+      attachments.push({
+        text: `*Manual actions*\n${commitsSummary.manualActions.map((manualAction) => {
+          return "• " + manualAction;
+        }
+        ).join("\n")}`,
+      });
+    }
+    // Commits attachment
+    if (commitsSummary.logResults.length > 0) {
+      attachments.push({
+        text: `*Commits*\n${commitsSummary.logResults.map((logResult) => {
+          return "• " + logResult.message + ", by " + logResult.author_name;
+        }
+        ).join("\n")}`,
+      });
+    }
+    return commitsSummary;
   }
 
   async isDeltaAllowed() {

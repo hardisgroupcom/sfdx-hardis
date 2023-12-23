@@ -160,12 +160,12 @@ export async function getNotificationButtons(): Promise<{ text: string; url: str
  *
  * @returns {Promise<string>} - A Promise that resolves to a markdown string for the current Git branch.
  */
-export async function getBranchMarkdown(): Promise<string> {
+export async function getBranchMarkdown(type = "slack"): Promise<string> {
   const currentGitBranch = await getCurrentGitBranch();
   let branchMd = `*${currentGitBranch}*`;
   const branchUrl = await GitProvider.getCurrentBranchUrl();
   if (branchUrl) {
-    branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch);
+    branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch, type);
   }
   return branchMd;
 }
@@ -178,10 +178,10 @@ export async function getBranchMarkdown(): Promise<string> {
  *
  * @returns {Promise<string>} - A Promise that resolves to a markdown string for the current Git branch.
  */
-export async function getOrgMarkdown(instanceUrl: string): Promise<string> {
+export async function getOrgMarkdown(instanceUrl: string, type = "slack"): Promise<string> {
   if (!instanceUrl) {
-    return await getBranchMarkdown();
+    return await getBranchMarkdown(type);
   }
-  const linkMarkdown = UtilsNotifs.markdownLink(instanceUrl, instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""));
+  const linkMarkdown = UtilsNotifs.markdownLink(instanceUrl, instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""), type);
   return linkMarkdown;
 }

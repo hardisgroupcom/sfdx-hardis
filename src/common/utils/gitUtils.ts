@@ -130,6 +130,7 @@ export async function computeCommitsSummary(checkOnly = true) {
 
   return {
     markdown: commitsSummary,
+    logResults: logResults,
     manualActions: manualActions,
     tickets: tickets,
   };
