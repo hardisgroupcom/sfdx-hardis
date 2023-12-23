@@ -102,13 +102,14 @@ export async function computeCommitsSummary(checkOnly = true) {
       commitsSummary += "\n\n";
     }
   }
+  const manualActionsSorted = [...new Set(manualActions)].reverse();
 
   uxLog(this, c.grey(`[TicketProvider] Found ${tickets.length} tickets in commit bodies`));
 
   // Add manual actions in markdown
-  if (manualActions.length > 0) {
+  if (manualActionsSorted.length > 0) {
     let manualActionsMarkdown = "## Manual actions\n\n";
-    for (const manualAction of manualActions) {
+    for (const manualAction of manualActionsSorted) {
       manualActionsMarkdown += "- " + manualAction + "\n";
     }
     commitsSummary = manualActionsMarkdown + "\n\n" + commitsSummary;
@@ -130,7 +131,7 @@ export async function computeCommitsSummary(checkOnly = true) {
   return {
     markdown: commitsSummary,
     logResults: logResults,
-    manualActions: manualActions,
+    manualActions: manualActionsSorted,
     tickets: tickets,
   };
 }
