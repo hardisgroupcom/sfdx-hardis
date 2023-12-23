@@ -21,14 +21,13 @@ export abstract class TicketProvider {
     return tickets;
   }
 
-  public static async postDeploymentActions(tickets: Ticket[],org: string) {
+  public static async postDeploymentActions(tickets: Ticket[], org: string) {
     const ticketProviders = this.getInstances();
     for (const ticketProvider of ticketProviders) {
-      await ticketProvider.postDeploymentComments(tickets,org);
+      await ticketProvider.postDeploymentComments(tickets, org);
     }
-    return tickets;   
+    return tickets;
   }
-
 }
 
 export interface Ticket {

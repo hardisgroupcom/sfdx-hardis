@@ -26,8 +26,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-          return { title: branch, value: branch };
-        })
+            return { title: branch, value: branch };
+          })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -80,8 +80,7 @@ export async function computeCommitsSummary(checkOnly = true) {
     const prInfo = await GitProvider.getPullRequestInfo();
     const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
     logResults = [...deltaScope.logResult.all];
-  }
-  else {
+  } else {
     const logResult = await git().log([`HEAD^..HEAD`]);
     logResults = [...logResult.all];
   }
