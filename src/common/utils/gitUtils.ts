@@ -1,7 +1,8 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { execCommand, execSfdxJson, extractRegexMatches, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
+import * as sortArray from "sort-array";
+import { arrayUniqueByKey, execCommand, execSfdxJson, extractRegexMatches, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
 import { GitProvider } from "../gitProvider";
 import { Ticket, TicketProvider } from "../ticketProvider";
 import { DefaultLogFields, ListLogLine } from "simple-git";
@@ -26,8 +27,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+          return { title: branch, value: branch };
+        })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -102,6 +103,8 @@ export async function computeCommitsSummary(checkOnly = true) {
       commitsSummary += "\n\n";
     }
   }
+
+  const ticketsSorted = sortArray(arrayUniqueByKey(tickets, "id"), { by: ["id"], order: ["asc"] });
   const manualActionsSorted = [...new Set(manualActions)].reverse();
 
   uxLog(this, c.grey(`[TicketProvider] Found ${tickets.length} tickets in commit bodies`));
@@ -116,9 +119,9 @@ export async function computeCommitsSummary(checkOnly = true) {
   }
 
   // Add tickets in markdown
-  if (tickets.length > 0) {
+  if (ticketsSorted.length > 0) {
     let ticketsMarkdown = "## Tickets\n\n";
-    for (const ticket of tickets) {
+    for (const ticket of ticketsSorted) {
       if (ticket.foundOnServer) {
         ticketsMarkdown += "- [" + ticket.id + "](" + ticket.url + ") " + ticket.subject + "\n";
       } else {
@@ -132,6 +135,6 @@ export async function computeCommitsSummary(checkOnly = true) {
     markdown: commitsSummary,
     logResults: logResults,
     manualActions: manualActionsSorted,
-    tickets: tickets,
+    tickets: ticketsSorted,
   };
 }
