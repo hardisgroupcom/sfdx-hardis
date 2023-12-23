@@ -28,7 +28,7 @@ export class UtilsTickets {
       const pattern = /https:\/\/.*\/([A-Z0-9]+-\d+\b)/;
       const match = jiraTicketUrl.match(pattern);
       if (match) {
-        if (!tickets.some(ticket => ticket.url === jiraTicketUrl)) {
+        if (!tickets.some((ticket) => ticket.url === jiraTicketUrl)) {
           tickets.push({
             provider: "JIRA",
             url: jiraTicketUrl,
