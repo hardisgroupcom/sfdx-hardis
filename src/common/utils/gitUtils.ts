@@ -71,6 +71,7 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
 }
 
 export async function computeCommitsSummary() {
+  uxLog(this,c.cyan("Computing commits summary..."));
   const currentGitBranch = await getCurrentGitBranch();
   const prInfo = await GitProvider.getPullRequestInfo();
   const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
