@@ -20,19 +20,17 @@ export abstract class TicketProvider {
     }
     return tickets;
   }
-
 }
 
 export interface Ticket {
-  provider:
-    | "JIRA"
+  provider: "JIRA";
   id: string;
   url: string;
   subject?: string;
   body?: string;
   status?: string;
   statusLabel?: string;
-  foundOnServer?: boolean
+  foundOnServer?: boolean;
 }
 
 export const UtilsTickets = utilsTickets;

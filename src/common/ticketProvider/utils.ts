@@ -3,9 +3,17 @@ import { extractRegexGroups } from "../utils";
 
 export class UtilsTickets {
   public static isJiraAvailable() {
-    if (process.env.JIRA_TOKEN && process.env.JIRA_TOKEN.length > 5 && !process.env.SLACK_TOKEN.includes("JIRA_TOKEN") &&
-      process.env.JIRA_HOST && process.env.JIRA_HOST.length > 5 && !process.env.JIRA_HOST.includes("JIRA_HOST") &&
-      process.env.JIRA_EMAIL && process.env.JIRA_EMAIL.length > 5 && !process.env.JIRA_EMAIL.includes("JIRA_EMAIL")) {
+    if (
+      process.env.JIRA_TOKEN &&
+      process.env.JIRA_TOKEN.length > 5 &&
+      !process.env.SLACK_TOKEN.includes("JIRA_TOKEN") &&
+      process.env.JIRA_HOST &&
+      process.env.JIRA_HOST.length > 5 &&
+      !process.env.JIRA_HOST.includes("JIRA_HOST") &&
+      process.env.JIRA_EMAIL &&
+      process.env.JIRA_EMAIL.length > 5 &&
+      !process.env.JIRA_EMAIL.includes("JIRA_EMAIL")
+    ) {
       return true;
     }
     return false;
@@ -23,11 +31,10 @@ export class UtilsTickets {
         tickets.push({
           provider: "JIRA",
           url: jiraTicketUrl,
-          id: match[1]
-        })
+          id: match[1],
+        });
       }
     }
     return tickets;
   }
-
 }

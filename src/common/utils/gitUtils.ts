@@ -25,8 +25,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-          return { title: branch, value: branch };
-        })
+            return { title: branch, value: branch };
+          })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -84,14 +84,13 @@ export async function computeCommitsSummary() {
     if (logResult.body) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
       // Extract JIRAs if defined
-      const foundTickets = await TicketProvider.collectTicketsFromString(logResult.body)
+      const foundTickets = await TicketProvider.collectTicketsFromString(logResult.body);
       tickets.push(...foundTickets);
       // Extract manual actions if defined
       const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
       const manualActionsMatches = await extractRegexGroups(manualActionsRegex, logResult.body);
       manualActions.push(...manualActionsMatches);
-    }
-    else {
+    } else {
       commitsSummary += "\n\n";
     }
   }
@@ -113,8 +112,7 @@ export async function computeCommitsSummary() {
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
         ticketsMarkdown += "- [" + ticket.id + " - " + ticket.subject + "](" + ticket.url + ")" + "\n";
-      }
-      else {
+      } else {
         ticketsMarkdown += "- " + ticket.url + "\n";
       }
     }
@@ -126,6 +124,6 @@ export async function computeCommitsSummary() {
   return {
     markdown: commitsSummary,
     manualActions: manualActions,
-    tickets: tickets
+    tickets: tickets,
   };
 }
