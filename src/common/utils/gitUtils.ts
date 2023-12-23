@@ -1,8 +1,9 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
+import { execCommand, execSfdxJson, extractRegexGroups, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
 import { GitProvider } from "../gitProvider";
+import { Ticket, TicketProvider } from "../ticketProvider";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -24,8 +25,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+          return { title: branch, value: branch };
+        })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -71,52 +72,53 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
 }
 
 export async function computeCommitsSummary() {
-  uxLog(this,c.cyan("Computing commits summary..."));
+  uxLog(this, c.cyan("Computing commits summary..."));
   const currentGitBranch = await getCurrentGitBranch();
   const prInfo = await GitProvider.getPullRequestInfo();
   const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
   let commitsSummary = "## Commits summary\n\n";
   const manualActions = [];
-  const jiraTickets = [];
+  const tickets: Ticket[] = [];
   for (const logResult of deltaScope.logResult.all) {
-    commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name + "\n";
+    commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
     if (logResult.body) {
-      commitsSummary += logResult.body + "\n\n";
+      commitsSummary += "<br/>" + logResult.body + "\n\n";
       // Extract JIRAs if defined
-      const jiraRegex = /(https:\/\/.*jira.*)/g;
-      let m;
-      while ((m = jiraRegex.exec(logResult.body)) !== null) {
-        if (m.index === jiraRegex.lastIndex) {
-          jiraRegex.lastIndex++;
-        }
-        m.forEach((match: string) => {
-          jiraTickets.push(match.trim());
-        });
-      }
+      const foundTickets = await TicketProvider.collectTicketsFromString(logResult.body)
+      tickets.push(...foundTickets);
       // Extract manual actions if defined
-      const regex = /MANUAL ACTION:(.*)/gm;
-      let m2;
-      while ((m2 = regex.exec(logResult.body)) !== null) {
-        if (m2.index === regex.lastIndex) {
-          regex.lastIndex++;
-        }
-        m2.forEach((match: string) => {
-          manualActions.push(match.trim());
-        });
+      const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
+      const manualActionsMatches = await extractRegexGroups(manualActionsRegex, logResult.body);
+      manualActions.push(...manualActionsMatches);
+    }
+    else {
+      commitsSummary += "\n\n";
+    }
+  }
+
+  uxLog(this, c.grey(`[TicketProvider] Found ${tickets.length} tickets in commit bodies`));
+
+  // Add manual actions in markdown
+  if (manualActions.length > 0) {
+    let manualActionsMarkdown = "## Manual actions\n\n";
+    for (const manualAction of manualActions) {
+      manualActionsMarkdown += "- " + manualAction + "\n";
+    }
+    commitsSummary = manualActionsMarkdown + "\n\n" + commitsSummary;
+  }
+
+  // Add tickets in markdown
+  if (tickets.length > 0) {
+    let ticketsMarkdown = "## Tickets\n\n";
+    for (const ticket of tickets) {
+      if (ticket.foundOnServer) {
+        ticketsMarkdown += "- [" + ticket.id + " - " + ticket.subject + "](" + ticket.url + ")" + "\n";
+      }
+      else {
+        ticketsMarkdown += "- " + ticket.url + "\n";
       }
     }
-  }
-  if (manualActions.length > 0) {
-    commitsSummary += "\n\n## JIRA Tickets\n\n";
-    for (const jiraTicket of jiraTickets) {
-      commitsSummary += "- " + jiraTicket + "\n";
-    }
-  }
-  if (manualActions.length > 0) {
-    commitsSummary += "\n\n## Manual actions\n\n";
-    for (const manualAction of manualActions) {
-      commitsSummary += "- " + manualAction + "\n";
-    }
+    commitsSummary = ticketsMarkdown + "\n\n" + commitsSummary;
   }
 
   const prDataCommitsSummary = { commitsSummary: commitsSummary };
@@ -124,5 +126,6 @@ export async function computeCommitsSummary() {
   return {
     markdown: commitsSummary,
     manualActions: manualActions,
+    tickets: tickets
   };
 }
