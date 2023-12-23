@@ -82,7 +82,7 @@ export async function computeCommitsSummary(checkOnly = true) {
     logResults = [...deltaScope.logResult.all];
   }
   else {
-    const logResult = await git().log([`HEAD..HEAD^`]);
+    const logResult = await git().log([`HEAD^..HEAD`]);
     logResults = [...logResult.all];
   }
   let commitsSummary = "## Commits summary\n\n";
