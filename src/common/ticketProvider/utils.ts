@@ -1,4 +1,5 @@
 import { Ticket } from ".";
+import * as sortArray from "sort-array";
 import { extractRegexMatches } from "../utils";
 
 export class UtilsTickets {
@@ -37,6 +38,7 @@ export class UtilsTickets {
         }
       }
     }
-    return tickets;
+    const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
+    return ticketsSorted;
   }
 }
