@@ -82,9 +82,10 @@ export async function computeCommitsSummary(checkOnly = true) {
     const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
     logResults = [...deltaScope.logResult.all];
   } else {
-    const logResult = await git().log([`HEAD^..HEAD`]);
-    logResults = [...logResult.all];
+    const logRes = await git().log([`HEAD^..HEAD`]);
+    logResults = [...logRes.all];
   }
+  logResults = arrayUniqueByKey(logResults, "message").reverse();
   let commitsSummary = "## Commits summary\n\n";
   const manualActions = [];
   const tickets: Ticket[] = [];
