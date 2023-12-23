@@ -426,11 +426,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n"),
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n"),
         ),
       );
     }
@@ -867,6 +867,24 @@ export async function extractRegexGroups(regex: RegExp, text: string): Promise<s
   const matches = ((text || "").match(regex) || []).map((e) => e.replace(regex, "$1").trim());
   return matches;
   // return ((text || '').matchAll(regex) || []).map(item => item.trim());
+}
+
+export async function extractRegexMatches(regex: RegExp, text: string): Promise<string[]> {
+  let m;
+  const matchStrings = [];
+  while ((m = regex.exec(text)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    // Iterate thru the regex matches
+    m.forEach((match, group) => {
+      if (group === 1) {
+        matchStrings.push(match);
+      }
+    });
+  }
+  return matchStrings;
 }
 
 // Generate output files

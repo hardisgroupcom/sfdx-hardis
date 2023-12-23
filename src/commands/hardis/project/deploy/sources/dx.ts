@@ -299,7 +299,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     // Compute commitsSummary and store it in globalThis.pullRequestData.commitsSummary
     if (this.checkOnly) {
       try {
-        await computeCommitsSummary();
+        const commitsSummary = await computeCommitsSummary(true);
+        const prDataCommitsSummary = { commitsSummary: commitsSummary.markdown };
+        globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
       } catch (e3) {
         uxLog(this, c.yellow("Unable to compute git summary:\n" + e3));
       }
@@ -389,6 +391,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
     // Send notification of deployment success
     if (!this.checkOnly) {
+      const commitsSummary = await computeCommitsSummary(false);
+      uxLog(this, c.grey("Commits summary: " + JSON.stringify(commitsSummary, null, 2)));
+
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl || targetUsername);
       const branchMarkdown = await getBranchMarkdown();
       let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;

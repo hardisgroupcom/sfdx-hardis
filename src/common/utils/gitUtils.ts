@@ -1,9 +1,10 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { execCommand, execSfdxJson, extractRegexGroups, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
+import { execCommand, execSfdxJson, extractRegexMatches, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
 import { GitProvider } from "../gitProvider";
 import { Ticket, TicketProvider } from "../ticketProvider";
+import { DefaultLogFields, ListLogLine } from "simple-git";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -25,8 +26,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+          return { title: branch, value: branch };
+        })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -71,15 +72,23 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
   return gitDeltaCommandRes;
 }
 
-export async function computeCommitsSummary() {
+export async function computeCommitsSummary(checkOnly = true) {
   uxLog(this, c.cyan("Computing commits summary..."));
   const currentGitBranch = await getCurrentGitBranch();
-  const prInfo = await GitProvider.getPullRequestInfo();
-  const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
+  let logResults: (DefaultLogFields & ListLogLine)[] = [];
+  if (checkOnly) {
+    const prInfo = await GitProvider.getPullRequestInfo();
+    const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
+    logResults = [...deltaScope.logResult.all];
+  }
+  else {
+    const logResult = await git().log([`HEAD..HEAD^`]);
+    logResults = [...logResult.all];
+  }
   let commitsSummary = "## Commits summary\n\n";
   const manualActions = [];
   const tickets: Ticket[] = [];
-  for (const logResult of deltaScope.logResult.all) {
+  for (const logResult of logResults) {
     commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
     if (logResult.body) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
@@ -88,7 +97,7 @@ export async function computeCommitsSummary() {
       tickets.push(...foundTickets);
       // Extract manual actions if defined
       const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
-      const manualActionsMatches = await extractRegexGroups(manualActionsRegex, logResult.body);
+      const manualActionsMatches = await extractRegexMatches(manualActionsRegex, logResult.body);
       manualActions.push(...manualActionsMatches);
     } else {
       commitsSummary += "\n\n";
@@ -119,8 +128,6 @@ export async function computeCommitsSummary() {
     commitsSummary = ticketsMarkdown + "\n\n" + commitsSummary;
   }
 
-  const prDataCommitsSummary = { commitsSummary: commitsSummary };
-  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
   return {
     markdown: commitsSummary,
     manualActions: manualActions,
