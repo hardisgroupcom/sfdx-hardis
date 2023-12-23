@@ -120,7 +120,7 @@ export async function computeCommitsSummary(checkOnly = true) {
     let ticketsMarkdown = "## Tickets\n\n";
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
-        ticketsMarkdown += "- [" + ticket.id + " - " + ticket.subject + "](" + ticket.url + ")" + "\n";
+        ticketsMarkdown += "- [" + ticket.id + "](" + ticket.url + ") " + ticket.subject + "\n";
       } else {
         ticketsMarkdown += "- " + ticket.url + "\n";
       }
