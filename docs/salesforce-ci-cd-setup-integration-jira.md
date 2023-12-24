@@ -16,6 +16,8 @@ description: Enrich pull requests with JIRA info and post comments on tickets wh
 
 ## Jira integration
 
+_This feature is currently in beta but can already be used safely !_
+
 If you use JIRA on your project, sfdx-hardis can use it to enrich its integrations.
 
 The only thing you have to make sure is to **use the full URL of JIRA tickets** in your commits and PR/MR descriptions.
