@@ -48,10 +48,9 @@ export class JiraProvider extends TicketProviderRoot {
           ticket.statusLabel = ticketInfo.fields?.status?.name || "";
           if (ticket.subject === "") {
             uxLog(this, c.yellow("[JiraProvider] Unable to find JIRA ticket info for " + ticket.id));
-            if (JSON.stringify(ticketInfo).includes('<!DOCTYPE html>')) {
+            if (JSON.stringify(ticketInfo).includes("<!DOCTYPE html>")) {
               uxLog(this, c.grey("[JiraProvider] This is probably a JIRA auth config issue, as HTML is returned"));
-            }
-            else {
+            } else {
               uxLog(this, c.grey(JSON.stringify(ticketInfo)));
             }
             ticket.foundOnServer = false;
@@ -92,9 +91,10 @@ export class JiraProvider extends TicketProviderRoot {
         commentedTickets.push(ticket);
       }
     }
-    uxLog(this, c.cyan(
-      `[JiraProvider] Posted comments on ${commentedTickets.length} tickets` +
-      commentedTickets.map(ticket => ticket.id).join(", ")));
+    uxLog(
+      this,
+      c.cyan(`[JiraProvider] Posted comments on ${commentedTickets.length} tickets` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+    );
     return tickets;
   }
 
