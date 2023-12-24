@@ -8,15 +8,27 @@ export class JiraProvider extends TicketProviderRoot {
 
   constructor() {
     super();
-    this.jiraClient = new Version3Client({
-      host: process.env.JIRA_HOST,
-      authentication: {
-        basic: {
-          email: process.env.JIRA_EMAIL,
-          apiToken: process.env.JIRA_TOKEN,
+    if (process.env.JIRA_PAT) {
+      // Personal Access Token Auth
+      this.jiraClient = new Version3Client({
+        host: process.env.JIRA_HOST,
+        authentication: {
+          personalAccessToken: process.env.JIRA_PAT,
         },
-      },
-    });
+      });
+    }
+    else {
+      // Basic auth 
+      this.jiraClient = new Version3Client({
+        host: process.env.JIRA_HOST,
+        authentication: {
+          basic: {
+            email: process.env.JIRA_EMAIL,
+            apiToken: process.env.JIRA_TOKEN,
+          },
+        },
+      });
+    }
   }
 
   public getLabel(): string {
