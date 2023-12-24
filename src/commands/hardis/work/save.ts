@@ -189,6 +189,14 @@ autoRemoveUserPermissions:
     uxLog(
       this,
       c.cyan(
+        `If you are working with a ticketing system like JIRA, make sure to add the FULL URL of the tickets in the MR/PR description
+- Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
+- Bad example: CLOUDITY-4
+`      ),
+    );
+    uxLog(
+      this,
+      c.cyan(
         `Merge request documentation is available here -> ${c.bold(
           "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request",
         )}`,
@@ -319,7 +327,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr),
+        c.red(destructivePackageXmlDiffStr),
       );
       const appendDestructivePackageXmlCommand =
         "sfdx essentials:packagexml:append" +
