@@ -37,8 +37,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+          return { title: branch, value: branch };
+        })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -103,7 +103,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
     if (logResult.body) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
-      await collectTicketsAndManualActions(logResult.body, tickets, manualActions);
+      await collectTicketsAndManualActions(logResult.message + "\n" + logResult.body, tickets, manualActions);
     } else {
       commitsSummary += "\n\n";
     }
@@ -119,7 +119,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   uxLog(this, c.grey(`[TicketProvider] Found ${ticketsSorted.length} tickets in commit bodies`));
   // Try to contact Ticketing servers to gather more info
   TicketProvider.collectTicketsInfo(ticketsSorted);
-  
+
   // Add manual actions in markdown
   const manualActionsSorted = [...new Set(manualActions)].reverse();
   if (manualActionsSorted.length > 0) {
