@@ -100,7 +100,7 @@ export class JiraProvider extends TicketProviderRoot {
     }
     uxLog(
       this,
-      c.cyan(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
     );
     return tickets;
   }

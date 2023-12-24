@@ -14,7 +14,7 @@ export class TeamsProvider extends NotifProviderRoot {
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const mainTeamsHook = process.env.MS_TEAMS_WEBHOOK_URL || null;
     if (mainTeamsHook == null || (mainTeamsHook || "").includes("MS_TEAMS_WEBHOOK_URL")) {
-      throw new SfdxError("You need to define a variable MS_TEAMS_WEBHOOK_URL to use sfdx-hardis MsTeams Integration");
+      throw new SfdxError("[MsTeamsProvider] You need to define a variable MS_TEAMS_WEBHOOK_URL to use sfdx-hardis MsTeams Integration");
     }
     const teamsHooks = [mainTeamsHook];
     // Add branch custom Teams channel if defined
@@ -67,10 +67,10 @@ export class TeamsProvider extends NotifProviderRoot {
       try {
         const webhook = new IncomingWebhook(hookUrl);
         const response = await webhook.send(teamsHookData);
-        uxLog(this, c.gray(`Sent Ms Teams notification to Web Hook ${hookUrl}: ${response.text}`));
+        uxLog(this, c.gray(`[MsTeamsProvider] Sent Ms Teams notification to Web Hook ${hookUrl}: ${response.text}`));
       } catch (error) {
-        uxLog(this, c.gray(JSON.stringify(teamsHookData, null, 2)));
-        uxLog(this, c.red(`Error while sending Teams notification to Web Hook ${hookUrl}\n${JSON.stringify(error)}`));
+        uxLog(this, c.gray("[MsTeamsProvider] " + JSON.stringify(teamsHookData, null, 2)));
+        uxLog(this, c.red(`[MsTeamsProvider] Error while sending Teams notification to Web Hook ${hookUrl}\n${JSON.stringify(error)}`));
       }
     }
     return;
