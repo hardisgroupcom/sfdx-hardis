@@ -8,11 +8,11 @@ description: Learn how to fix issues that can happen during sfdx deployments
 
 This page summarizes all errors that can be detected by sfdx-hardis wrapper commands
 
-| sfdx command                                                                                                                                                                                | sfdx-hardis wrapper command                                                         |
-|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
-| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)   | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) |
-| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)       | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
-| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy) | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)   |
+| sfdx command             | sfdx-hardis wrapper command |
+| :-----------             | :-------------------------- |
+| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy) | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/)   |
+| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)   | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
+| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy)  | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)    |
 
 You can also use this function on a [sfdx-hardis Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
@@ -302,7 +302,7 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
 
 ## Error parsing file
 
-- `Error (.*) Error parsing file: (.*)`
+- `Error (.*) Error parsing file: (.*) `
 
 **Resolution tip**
 
@@ -362,7 +362,8 @@ Flow {1} can not be deleted using deployments, please delete it manually in the 
 **Resolution tip**
 
 ```shell
-If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
+- If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
+- If you changed a custom field from unique to not unique, you need to manually make the change in the target org
 ```
 
 ## Invalid formula grouping context
@@ -912,7 +913,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 
@@ -973,6 +974,16 @@ You can:
 
 ```shell
 Apex error in {1} with unknown variable {2} at position {3}. If {2} is a class name, try to fix it, or maybe it is missing in the files or in package.xml !
+```
+
+## Visibility is not allowed for type
+
+- `Error (.*) set the visibility for a (.*) to Protected unless you are in a developer`
+
+**Resolution tip**
+
+```shell
+Update the visibility of {1} to "Public"
 ```
 
 ## Tableau CRM / Wave digest error
