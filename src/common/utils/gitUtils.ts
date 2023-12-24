@@ -2,7 +2,17 @@ import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
 import * as sortArray from "sort-array";
-import { arrayUniqueByKey, arrayUniqueByKeys, execCommand, execSfdxJson, extractRegexMatches, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
+import {
+  arrayUniqueByKey,
+  arrayUniqueByKeys,
+  execCommand,
+  execSfdxJson,
+  extractRegexMatches,
+  getCurrentGitBranch,
+  getGitRepoRoot,
+  git,
+  uxLog,
+} from ".";
 import { GitProvider } from "../gitProvider";
 import { Ticket, TicketProvider } from "../ticketProvider";
 import { DefaultLogFields, ListLogLine } from "simple-git";
@@ -73,7 +83,7 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
   return gitDeltaCommandRes;
 }
 
-export async function computeCommitsSummary(checkOnly,pullRequestInfo: any) {
+export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   uxLog(this, c.cyan("Computing commits summary..."));
   const currentGitBranch = await getCurrentGitBranch();
   let logResults: (DefaultLogFields & ListLogLine)[] = [];
@@ -85,7 +95,7 @@ export async function computeCommitsSummary(checkOnly,pullRequestInfo: any) {
     const logRes = await git().log([`HEAD^..HEAD`]);
     logResults = [...logRes.all];
   }
-  logResults = arrayUniqueByKeys(logResults, ["message","body"]).reverse();
+  logResults = arrayUniqueByKeys(logResults, ["message", "body"]).reverse();
   let commitsSummary = "## Commits summary\n\n";
   const manualActions = [];
   const tickets: Ticket[] = [];
@@ -93,7 +103,7 @@ export async function computeCommitsSummary(checkOnly,pullRequestInfo: any) {
     commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
     if (logResult.body) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
-      await collectTicketsAndManualActions(logResult.body, tickets, manualActions);  
+      await collectTicketsAndManualActions(logResult.body, tickets, manualActions);
     } else {
       commitsSummary += "\n\n";
     }
@@ -101,7 +111,7 @@ export async function computeCommitsSummary(checkOnly,pullRequestInfo: any) {
 
   // Tickets and references can also be in PR description
   if (pullRequestInfo) {
-      await collectTicketsAndManualActions(pullRequestInfo.description || '', tickets, manualActions);  
+    await collectTicketsAndManualActions(pullRequestInfo.description || "", tickets, manualActions);
   }
 
   const ticketsSorted = sortArray(arrayUniqueByKey(tickets, "id"), { by: ["id"], order: ["asc"] });
@@ -139,7 +149,7 @@ export async function computeCommitsSummary(checkOnly,pullRequestInfo: any) {
   };
 }
 
-async function collectTicketsAndManualActions(str:string, tickets: Ticket[], manualActions: any[]) {
+async function collectTicketsAndManualActions(str: string, tickets: Ticket[], manualActions: any[]) {
   const foundTickets = await TicketProvider.collectTicketsFromString(str);
   tickets.push(...foundTickets);
   // Extract manual actions if defined
@@ -147,4 +157,3 @@ async function collectTicketsAndManualActions(str:string, tickets: Ticket[], man
   const manualActionsMatches = await extractRegexMatches(manualActionsRegex, str);
   manualActions.push(...manualActionsMatches);
 }
-

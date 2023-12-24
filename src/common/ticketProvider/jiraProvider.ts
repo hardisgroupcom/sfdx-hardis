@@ -1,6 +1,6 @@
 import { Version3Client } from "jira.js";
 import { TicketProviderRoot } from "./ticketProviderRoot";
-import * as c from 'chalk';
+import * as c from "chalk";
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { uxLog } from "../utils";

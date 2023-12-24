@@ -895,8 +895,8 @@ export function arrayUniqueByKey(array, key: string) {
 export function arrayUniqueByKeys(array, keysIn: string[]) {
   const keys = new Set();
   const buildKey = (el) => {
-    return keysIn.map(key => el[key]).join(";");
-  }
+    return keysIn.map((key) => el[key]).join(";");
+  };
   return array.filter((el) => !keys.has(buildKey(el)) && keys.add(buildKey(el)));
 }
 
