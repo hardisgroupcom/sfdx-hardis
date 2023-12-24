@@ -72,6 +72,9 @@ export abstract class GitProvider {
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
+      if (prData.commitsSummary) {
+        markdownBody += "\n\n" + prData.commitsSummary;
+      }
       const prMessageRequest: PullRequestMessageRequest = {
         title: prData.title,
         message: markdownBody,

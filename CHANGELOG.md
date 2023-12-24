@@ -4,6 +4,16 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.22.0] 2023-12-24
+
+- Add more info in pull requests comments
+  - Commits summary
+  - Jira tickets
+  - Manual Actions
+- Integration with JIRA
+  - Collect tickets info JIRA server
+  - Post comment on tickets once they are deployed
+
 ## [4.21.6] 2023-12-22
 
 - New task: Ask confirmation before updating selected sandbox
