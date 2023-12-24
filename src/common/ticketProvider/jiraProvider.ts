@@ -2,7 +2,6 @@ import { Version3Client } from "jira.js";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
-import { UtilsNotifs } from "../notifProvider";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof Version3Client>;
@@ -41,21 +40,126 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
-    const orgMarkdown = await getOrgMarkdown(org, "jira");
-    const branchMarkdown = await getBranchMarkdown("jira");
+    const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "jira"));
+    const branchMarkdown = JSON.parse(await getBranchMarkdown("jira"));
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
-        let comment = `Deployed by [sfdx-hardis](https://sfdx-hardis.cloudity.com/) in ${orgMarkdown} from ${branchMarkdown}\n\n`;
+        let prTitle = "";
+        let prUrl = "";
+        let prAuthor = "";
         if (pullRequestInfo) {
-          const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+          prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
           if (prUrl) {
-            const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-            comment += "Related PR:" + UtilsNotifs.markdownLink(prUrl, pullRequestInfo.title, "jira") + (prAuthor ? ` by ${prAuthor}` : "");
+            prTitle = pullRequestInfo.title;
+            prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
           }
         }
-        await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: comment });
+        const jiraComment = this.getJiraDeploymentCommentAdf(
+          orgMarkdown.label,
+          orgMarkdown.url,
+          branchMarkdown.label,
+          branchMarkdown.url,
+          prTitle,
+          prUrl,
+          prAuthor
+        )
+        await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment });
       }
     }
     return tickets;
+  }
+
+  getJiraDeploymentCommentAdf(orgName, orgUrl, branchName, branchUrl, prTitle, prUrl, prAuthor) {
+    const comment = {
+      "version": 1,
+      "type": "doc",
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Deployed by "
+            },
+            {
+              "type": "text",
+              "text": "sfdx-hardis",
+              "marks": [
+                {
+                  "type": "link",
+                  "attrs": {
+                    "href": "https://sfdx-hardis.cloudity.com/"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " in "
+            },
+            {
+              "type": "text",
+              "text": orgName,
+              "marks": [
+                {
+                  "type": "link",
+                  "attrs": {
+                    "href": orgUrl
+                  }
+                },
+                {
+                  "type": "strong"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": " from branch "
+            },
+            {
+              "type": "text",
+              "text": branchName,
+              "marks": [
+                {
+                  "type": "link",
+                  "attrs": {
+                    "href": branchUrl
+                  }
+                },
+                {
+                  "type": "strong"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Related PR: "
+            },
+            {
+              "type": "text",
+              "text": prTitle,
+              "marks": [
+                {
+                  "type": "link",
+                  "attrs": {
+                    "href": prUrl
+                  }
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": `, by ${prAuthor}`
+            }
+          ]
+        }
+      ]
+    }
+    return comment;
   }
 }

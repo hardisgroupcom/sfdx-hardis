@@ -162,7 +162,7 @@ export async function getNotificationButtons(): Promise<{ text: string; url: str
  */
 export async function getBranchMarkdown(type = "slack"): Promise<string> {
   const currentGitBranch = await getCurrentGitBranch();
-  let branchMd = type === 'jira' ? `**${currentGitBranch}**` : `*${currentGitBranch}*`;
+  let branchMd = type === 'jira' ? `{ "label": "${currentGitBranch}"}` : `*${currentGitBranch}*`;
   const branchUrl = await GitProvider.getCurrentBranchUrl();
   if (branchUrl) {
     branchMd = UtilsNotifs.markdownLink(branchUrl, currentGitBranch, type);
