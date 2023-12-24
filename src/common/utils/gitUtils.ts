@@ -2,7 +2,7 @@ import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
 import * as sortArray from "sort-array";
-import { arrayUniqueByKey, execCommand, execSfdxJson, extractRegexMatches, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
+import { arrayUniqueByKey, arrayUniqueByKeys, execCommand, execSfdxJson, extractRegexMatches, getCurrentGitBranch, getGitRepoRoot, git, uxLog } from ".";
 import { GitProvider } from "../gitProvider";
 import { Ticket, TicketProvider } from "../ticketProvider";
 import { DefaultLogFields, ListLogLine } from "simple-git";
@@ -85,7 +85,7 @@ export async function computeCommitsSummary(checkOnly,pullRequestInfo: any) {
     const logRes = await git().log([`HEAD^..HEAD`]);
     logResults = [...logRes.all];
   }
-  logResults = arrayUniqueByKey(logResults, "message").reverse();
+  logResults = arrayUniqueByKeys(logResults, ["message","body"]).reverse();
   let commitsSummary = "## Commits summary\n\n";
   const manualActions = [];
   const tickets: Ticket[] = [];
