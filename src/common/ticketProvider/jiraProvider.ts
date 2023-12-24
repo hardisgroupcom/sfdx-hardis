@@ -40,11 +40,11 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string) {
-    const orgMarkdown = await getOrgMarkdown(org);
-    const branchMarkdown = await getBranchMarkdown();
+    const orgMarkdown = await getOrgMarkdown(org, "jira");
+    const branchMarkdown = await getBranchMarkdown("jira");
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
-        const comment = `Deployed by [sfdx-hardis|https://sfdx-hardis.cloudity.com/] in ${orgMarkdown} from ${branchMarkdown}`;
+        const comment = `Deployed by [sfdx-hardis](https://sfdx-hardis.cloudity.com/) in ${orgMarkdown} from ${branchMarkdown}`;
         await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: comment });
       }
     }
