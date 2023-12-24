@@ -27,8 +27,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-          return { title: branch, value: branch };
-        })
+            return { title: branch, value: branch };
+          })
         : [],
       initial: config.developmentBranch || "developpement",
     },

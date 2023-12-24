@@ -398,9 +398,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       try {
         // Build notification attachments & handle ticketing systems comments
         const commitsSummary = await this.collectNotifAttachments(attachments);
-        await TicketProvider.postDeploymentActions(commitsSummary.tickets, this.org?.getConnection()?.instanceUrl || targetUsername,pullRequestInfo);
+        await TicketProvider.postDeploymentActions(commitsSummary.tickets, this.org?.getConnection()?.instanceUrl || targetUsername, pullRequestInfo);
       } catch (e4) {
-        uxLog(this, c.yellow("Unable to handle commit info for notifications:\n" + e4.message))
+        uxLog(this, c.yellow("Unable to handle commit info for notifications:\n" + e4.message));
       }
 
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl || targetUsername);
@@ -438,31 +438,35 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     // Tickets attachment
     if (commitsSummary.tickets.length > 0) {
       attachments.push({
-        text: `*Tickets*\n${commitsSummary.tickets.map((ticket) => {
-          if (ticket.foundOnServer) {
-            return "• " + UtilsNotifs.markdownLink(ticket.url, ticket.id) + " " + ticket.subject;
-          } else {
-            return "• " + ticket.url;
-          }
-        }).join("\n")}`,
+        text: `*Tickets*\n${commitsSummary.tickets
+          .map((ticket) => {
+            if (ticket.foundOnServer) {
+              return "• " + UtilsNotifs.markdownLink(ticket.url, ticket.id) + " " + ticket.subject;
+            } else {
+              return "• " + ticket.url;
+            }
+          })
+          .join("\n")}`,
       });
     }
     // Manual actions attachment
     if (commitsSummary.manualActions.length > 0) {
       attachments.push({
-        text: `*Manual actions*\n${commitsSummary.manualActions.map((manualAction) => {
-          return "• " + manualAction;
-        }
-        ).join("\n")}`,
+        text: `*Manual actions*\n${commitsSummary.manualActions
+          .map((manualAction) => {
+            return "• " + manualAction;
+          })
+          .join("\n")}`,
       });
     }
     // Commits attachment
     if (commitsSummary.logResults.length > 0) {
       attachments.push({
-        text: `*Commits*\n${commitsSummary.logResults.map((logResult) => {
-          return "• " + logResult.message + ", by " + logResult.author_name;
-        }
-        ).join("\n")}`,
+        text: `*Commits*\n${commitsSummary.logResults
+          .map((logResult) => {
+            return "• " + logResult.message + ", by " + logResult.author_name;
+          })
+          .join("\n")}`,
       });
     }
     return commitsSummary;

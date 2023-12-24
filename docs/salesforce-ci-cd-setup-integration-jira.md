@@ -57,6 +57,6 @@ See merge request %{reference}
 ### Technical notes
 
 This integration use the following variables, that must be available from the pipelines:
-  - JIRA_HOST
-  - JIRA_EMAIL
-  - JIRA_TOKEN
+- JIRA_HOST
+- JIRA_EMAIL
+- JIRA_TOKEN

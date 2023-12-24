@@ -426,11 +426,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n"),
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n"),
         ),
       );
     }
@@ -889,7 +889,7 @@ export async function extractRegexMatches(regex: RegExp, text: string): Promise<
 
 export function arrayUniqueByKey(array, key: string) {
   const keys = new Set();
-  return array.filter(el => !keys.has(el[key]) && keys.add(el[key]));
+  return array.filter((el) => !keys.has(el[key]) && keys.add(el[key]));
 }
 
 // Generate output files

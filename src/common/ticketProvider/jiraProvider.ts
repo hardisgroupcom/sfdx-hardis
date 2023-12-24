@@ -61,8 +61,8 @@ export class JiraProvider extends TicketProviderRoot {
           branchMarkdown.url,
           prTitle,
           prUrl,
-          prAuthor
-        )
+          prAuthor,
+        );
         await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment });
       }
     }
@@ -71,95 +71,95 @@ export class JiraProvider extends TicketProviderRoot {
 
   getJiraDeploymentCommentAdf(orgName, orgUrl, branchName, branchUrl, prTitle, prUrl, prAuthor) {
     const comment = {
-      "version": 1,
-      "type": "doc",
-      "content": [
+      version: 1,
+      type: "doc",
+      content: [
         {
-          "type": "paragraph",
-          "content": [
+          type: "paragraph",
+          content: [
             {
-              "type": "text",
-              "text": "Deployed by "
+              type: "text",
+              text: "Deployed by ",
             },
             {
-              "type": "text",
-              "text": "sfdx-hardis",
-              "marks": [
+              type: "text",
+              text: "sfdx-hardis",
+              marks: [
                 {
-                  "type": "link",
-                  "attrs": {
-                    "href": "https://sfdx-hardis.cloudity.com/"
-                  }
-                }
-              ]
+                  type: "link",
+                  attrs: {
+                    href: "https://sfdx-hardis.cloudity.com/",
+                  },
+                },
+              ],
             },
             {
-              "type": "text",
-              "text": " in "
+              type: "text",
+              text: " in ",
             },
             {
-              "type": "text",
-              "text": orgName,
-              "marks": [
+              type: "text",
+              text: orgName,
+              marks: [
                 {
-                  "type": "link",
-                  "attrs": {
-                    "href": orgUrl
-                  }
+                  type: "link",
+                  attrs: {
+                    href: orgUrl,
+                  },
                 },
                 {
-                  "type": "strong"
-                }
-              ]
+                  type: "strong",
+                },
+              ],
             },
             {
-              "type": "text",
-              "text": " from branch "
+              type: "text",
+              text: " from branch ",
             },
             {
-              "type": "text",
-              "text": branchName,
-              "marks": [
+              type: "text",
+              text: branchName,
+              marks: [
                 {
-                  "type": "link",
-                  "attrs": {
-                    "href": branchUrl
-                  }
+                  type: "link",
+                  attrs: {
+                    href: branchUrl,
+                  },
                 },
                 {
-                  "type": "strong"
-                }
-              ]
-            }
-          ]
+                  type: "strong",
+                },
+              ],
+            },
+          ],
         },
         {
-          "type": "paragraph",
-          "content": [
+          type: "paragraph",
+          content: [
             {
-              "type": "text",
-              "text": "Related PR: "
+              type: "text",
+              text: "Related PR: ",
             },
             {
-              "type": "text",
-              "text": prTitle,
-              "marks": [
+              type: "text",
+              text: prTitle,
+              marks: [
                 {
-                  "type": "link",
-                  "attrs": {
-                    "href": prUrl
-                  }
-                }
-              ]
+                  type: "link",
+                  attrs: {
+                    href: prUrl,
+                  },
+                },
+              ],
             },
             {
-              "type": "text",
-              "text": `, by ${prAuthor}`
-            }
-          ]
-        }
-      ]
-    }
+              type: "text",
+              text: `, by ${prAuthor}`,
+            },
+          ],
+        },
+      ],
+    };
     return comment;
   }
 }
