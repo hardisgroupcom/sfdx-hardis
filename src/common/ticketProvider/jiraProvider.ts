@@ -37,7 +37,7 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {
-    const jiraTicketsNumber = tickets.filter(ticket => ticket.provider === "JIRA").length;
+    const jiraTicketsNumber = tickets.filter((ticket) => ticket.provider === "JIRA").length;
     if (jiraTicketsNumber > 0) {
       uxLog(this, c.cyan(`Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."));
     }
@@ -59,8 +59,7 @@ export class JiraProvider extends TicketProviderRoot {
             }
             ticket.foundOnServer = false;
           }
-        }
-        else {
+        } else {
           uxLog(this, c.yellow("[JiraProvider] Unable to get JIRA issue " + ticket.id));
         }
       }

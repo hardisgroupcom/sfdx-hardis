@@ -1,5 +1,5 @@
 import { UtilsTickets as utilsTickets } from "./utils";
-import * as c from 'chalk';
+import * as c from "chalk";
 import { JiraProvider } from "./jiraProvider";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import { uxLog } from "../utils";
@@ -17,10 +17,7 @@ export abstract class TicketProvider {
   public static async collectTicketsInfo(tickets: Ticket[]): Promise<Ticket[]> {
     const ticketProviders = this.getInstances();
     if (ticketProviders.length === 0) {
-      uxLog(
-        this,
-        c.gray(`[TicketProvider] No ticket provider has been configured`),
-      );
+      uxLog(this, c.gray(`[TicketProvider] No ticket provider has been configured`));
     }
     for (const ticketProvider of ticketProviders) {
       await ticketProvider.collectTicketsInfo(tickets);

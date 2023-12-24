@@ -39,7 +39,9 @@ export abstract class NotifProvider {
         if (notifProviders.length === 0) {
           uxLog(
             this,
-            c.gray(`[NotifProvider] No notif has been configured: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#message-notifications`),
+            c.gray(
+              `[NotifProvider] No notif has been configured: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+            ),
           );
         }
         for (const notifProvider of notifProviders) {
