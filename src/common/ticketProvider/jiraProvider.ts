@@ -16,9 +16,8 @@ export class JiraProvider extends TicketProviderRoot {
           personalAccessToken: process.env.JIRA_PAT,
         },
       });
-    }
-    else {
-      // Basic auth 
+    } else {
+      // Basic auth
       this.jiraClient = new Version3Client({
         host: process.env.JIRA_HOST,
         authentication: {
