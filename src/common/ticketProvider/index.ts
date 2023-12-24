@@ -21,10 +21,10 @@ export abstract class TicketProvider {
     return tickets;
   }
 
-  public static async postDeploymentActions(tickets: Ticket[], org: string) {
+  public static async postDeploymentActions(tickets: Ticket[], org: string,pullRequestInfo: any) {
     const ticketProviders = this.getInstances();
     for (const ticketProvider of ticketProviders) {
-      await ticketProvider.postDeploymentComments(tickets, org);
+      await ticketProvider.postDeploymentComments(tickets, org, pullRequestInfo);
     }
     return tickets;
   }

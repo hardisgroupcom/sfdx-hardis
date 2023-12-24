@@ -16,7 +16,7 @@ export abstract class TicketProviderRoot {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async postDeploymentComments(tickets: Ticket[], _org: string) {
+  public async postDeploymentComments(tickets: Ticket[], _org: string, _pullRequestInfo: any) {
     uxLog(this, c.yellow("postDeploymentComments is not implemented on " + this.getLabel()));
     return tickets;
   }

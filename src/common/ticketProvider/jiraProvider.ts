@@ -2,6 +2,7 @@ import { Version3Client } from "jira.js";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
+import { UtilsNotifs } from "../notifProvider";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof Version3Client>;
@@ -39,12 +40,19 @@ export class JiraProvider extends TicketProviderRoot {
     return tickets;
   }
 
-  public async postDeploymentComments(tickets: Ticket[], org: string) {
+  public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
     const orgMarkdown = await getOrgMarkdown(org, "jira");
     const branchMarkdown = await getBranchMarkdown("jira");
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
-        const comment = `Deployed by [sfdx-hardis](https://sfdx-hardis.cloudity.com/) in ${orgMarkdown} from ${branchMarkdown}`;
+        let comment = `Deployed by [sfdx-hardis](https://sfdx-hardis.cloudity.com/) in ${orgMarkdown} from ${branchMarkdown}\n\n`;
+        if (pullRequestInfo) {
+          const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+          if (prUrl) {
+            const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+            comment += "Related PR:" + UtilsNotifs.markdownLink(prUrl, pullRequestInfo.title, "jira") + (prAuthor ? ` by ${prAuthor}` : "");
+          }
+        }
         await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: comment });
       }
     }

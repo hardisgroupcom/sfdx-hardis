@@ -393,11 +393,12 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
     // Send notification of deployment success
     if (!this.checkOnly) {
+      const pullRequestInfo = await GitProvider.getPullRequestInfo();
       const attachments: MessageAttachment[] = [];
       try {
         // Build notification attachments & handle ticketing systems comments
         const commitsSummary = await this.collectNotifAttachments(attachments);
-        await TicketProvider.postDeploymentActions(commitsSummary.tickets, this.org?.getConnection()?.instanceUrl || targetUsername);
+        await TicketProvider.postDeploymentActions(commitsSummary.tickets, this.org?.getConnection()?.instanceUrl || targetUsername,pullRequestInfo);
       } catch (e4) {
         uxLog(this, c.yellow("Unable to handle commit info for notifications:\n" + e4.message))
       }
@@ -408,7 +409,6 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       notifMessage += quickDeploy ? " (🚀 quick deployment)" : delta ? " (🌙 delta deployment)" : " (🌕 full deployment)";
 
       const notifButtons = await getNotificationButtons();
-      const pullRequestInfo = await GitProvider.getPullRequestInfo();
       if (pullRequestInfo) {
         if (this.debugMode) {
           uxLog(this, c.gray("PR info:\n" + JSON.stringify(pullRequestInfo)));
