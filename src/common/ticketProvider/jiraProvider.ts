@@ -58,8 +58,10 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
+    uxLog(this, c.cyan(`[JiraProvider] Try to post comments on ${tickets.length} tickets...`));
     const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "jira"));
     const branchMarkdown = JSON.parse(await getBranchMarkdown("jira"));
+    const commentedTickets: Ticket[] = [];
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
         let prTitle = "";
@@ -82,8 +84,12 @@ export class JiraProvider extends TicketProviderRoot {
           prAuthor,
         );
         await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment });
+        commentedTickets.push(ticket);
       }
     }
+    uxLog(this, c.cyan(
+      `[JiraProvider] Posted comments on ${commentedTickets.length} tickets` +
+      commentedTickets.map(ticket => ticket.id).join(", ")));
     return tickets;
   }
 
