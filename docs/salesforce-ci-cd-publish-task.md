@@ -91,7 +91,7 @@ It is now time to create your merge request to technically publish your updates 
 
 Depending on the CI platform you use, follow the related guide.
 
->  If you are **publishing to a RUN branch** (ex: `preprod`), **AND** the **project also has a BUILD branch** (ex: `integration`), you need to **notify the release manager**
+> If you are **publishing to a RUN branch** (ex: `preprod`), **AND** the **project also has a BUILD branch** (ex: `integration`), you need to **notify the release manager**
 > He/she will have to retrofit your updates once published
 
 > If you are working with a ticketing system like JIRA, make sure to add the **full url** of the tickets in the MR/PR description, so it will help for the release management.
