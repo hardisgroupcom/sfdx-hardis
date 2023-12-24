@@ -12,8 +12,7 @@ export abstract class TicketProvider {
     return ticketProviders;
   }
 
-  public static async collectTicketsFromString(text: string): Promise<Ticket[]> {
-    const tickets = await utilsTickets.getTicketsFromString(text);
+  public static async collectTicketsInfo(tickets: Ticket[]): Promise<Ticket[]> {
     const ticketProviders = this.getInstances();
     for (const ticketProvider of ticketProviders) {
       await ticketProvider.collectTicketsInfo(tickets);

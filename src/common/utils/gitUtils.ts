@@ -14,7 +14,7 @@ import {
   uxLog,
 } from ".";
 import { GitProvider } from "../gitProvider";
-import { Ticket, TicketProvider } from "../ticketProvider";
+import { Ticket, TicketProvider, UtilsTickets } from "../ticketProvider";
 import { DefaultLogFields, ListLogLine } from "simple-git";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
@@ -114,12 +114,14 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     await collectTicketsAndManualActions(pullRequestInfo.description || "", tickets, manualActions);
   }
 
+  // Unify and sort tickets
   const ticketsSorted = sortArray(arrayUniqueByKey(tickets, "id"), { by: ["id"], order: ["asc"] });
-  const manualActionsSorted = [...new Set(manualActions)].reverse();
-
-  uxLog(this, c.grey(`[TicketProvider] Found ${tickets.length} tickets in commit bodies`));
-
+  uxLog(this, c.grey(`[TicketProvider] Found ${ticketsSorted.length} tickets in commit bodies`));
+  // Try to contact Ticketing servers to gather more info
+  TicketProvider.collectTicketsInfo(ticketsSorted);
+  
   // Add manual actions in markdown
+  const manualActionsSorted = [...new Set(manualActions)].reverse();
   if (manualActionsSorted.length > 0) {
     let manualActionsMarkdown = "## Manual actions\n\n";
     for (const manualAction of manualActionsSorted) {
@@ -150,7 +152,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
 }
 
 async function collectTicketsAndManualActions(str: string, tickets: Ticket[], manualActions: any[]) {
-  const foundTickets = await TicketProvider.collectTicketsFromString(str);
+  const foundTickets = await UtilsTickets.getTicketsFromString(str);
   tickets.push(...foundTickets);
   // Extract manual actions if defined
   const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
