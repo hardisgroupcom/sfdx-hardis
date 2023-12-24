@@ -55,6 +55,7 @@ export class JiraProvider extends TicketProviderRoot {
             }
             ticket.foundOnServer = false;
           }
+          uxLog(this, c.grey("[JiraProvider] Collected data for ticket " + ticket.id));
         } else {
           uxLog(this, c.yellow("[JiraProvider] Unable to get JIRA issue " + ticket.id));
         }
@@ -99,7 +100,7 @@ export class JiraProvider extends TicketProviderRoot {
     }
     uxLog(
       this,
-      c.cyan(`[JiraProvider] Posted comments on ${commentedTickets.length} tickets` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+      c.cyan(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
     );
     return tickets;
   }
