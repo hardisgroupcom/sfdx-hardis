@@ -1,7 +1,9 @@
 import { Version3Client } from "jira.js";
 import { TicketProviderRoot } from "./ticketProviderRoot";
+import * as c from 'chalk';
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
+import { uxLog } from "../utils";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof Version3Client>;
@@ -40,10 +42,15 @@ export class JiraProvider extends TicketProviderRoot {
         const ticketInfo = await this.jiraClient.issues.getIssue({ issueIdOrKey: ticket.id });
         if (ticketInfo) {
           ticket.foundOnServer = true;
-          ticket.subject = ticketInfo.fields.summary;
+          ticket.subject = ticketInfo.fields.summary || "";
           ticket.body = ticketInfo.fields?.description?.content.map((content) => content.text).join("\n") || "";
           ticket.status = ticketInfo.fields?.status?.id || "";
           ticket.statusLabel = ticketInfo.fields?.status?.name || "";
+          if (ticket.subject === "") {
+            uxLog(this, c.yellow("[JiraProvider] Unable to find JIRA ticket info for " + ticket.id));
+            uxLog(this, c.gray(JSON.stringify(ticketInfo, null, 2)));
+            ticket.foundOnServer = false;
+          }
         }
       }
     }
