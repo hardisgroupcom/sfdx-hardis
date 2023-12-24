@@ -73,7 +73,7 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
   return gitDeltaCommandRes;
 }
 
-export async function computeCommitsSummary(checkOnly = true) {
+export async function computeCommitsSummary(checkOnly,pullRequestInfo: any) {
   uxLog(this, c.cyan("Computing commits summary..."));
   const currentGitBranch = await getCurrentGitBranch();
   let logResults: (DefaultLogFields & ListLogLine)[] = [];
@@ -93,16 +93,15 @@ export async function computeCommitsSummary(checkOnly = true) {
     commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
     if (logResult.body) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
-      // Extract JIRAs if defined
-      const foundTickets = await TicketProvider.collectTicketsFromString(logResult.body);
-      tickets.push(...foundTickets);
-      // Extract manual actions if defined
-      const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
-      const manualActionsMatches = await extractRegexMatches(manualActionsRegex, logResult.body);
-      manualActions.push(...manualActionsMatches);
+      await collectTicketsAndManualActions(logResult.body, tickets, manualActions);  
     } else {
       commitsSummary += "\n\n";
     }
+  }
+
+  // Tickets and references can also be in PR description
+  if (pullRequestInfo) {
+      await collectTicketsAndManualActions(pullRequestInfo.description || '', tickets, manualActions);  
   }
 
   const ticketsSorted = sortArray(arrayUniqueByKey(tickets, "id"), { by: ["id"], order: ["asc"] });
@@ -139,3 +138,13 @@ export async function computeCommitsSummary(checkOnly = true) {
     tickets: ticketsSorted,
   };
 }
+
+async function collectTicketsAndManualActions(str:string, tickets: Ticket[], manualActions: any[]) {
+  const foundTickets = await TicketProvider.collectTicketsFromString(str);
+  tickets.push(...foundTickets);
+  // Extract manual actions if defined
+  const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
+  const manualActionsMatches = await extractRegexMatches(manualActionsRegex, str);
+  manualActions.push(...manualActionsMatches);
+}
+

@@ -301,7 +301,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     // Compute commitsSummary and store it in globalThis.pullRequestData.commitsSummary
     if (this.checkOnly) {
       try {
-        const commitsSummary = await computeCommitsSummary(true);
+        const pullRequestInfo = await GitProvider.getPullRequestInfo();
+        const commitsSummary = await computeCommitsSummary(true,pullRequestInfo);
         const prDataCommitsSummary = { commitsSummary: commitsSummary.markdown };
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
       } catch (e3) {
@@ -397,7 +398,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       const attachments: MessageAttachment[] = [];
       try {
         // Build notification attachments & handle ticketing systems comments
-        const commitsSummary = await this.collectNotifAttachments(attachments);
+        const commitsSummary = await this.collectNotifAttachments(attachments,pullRequestInfo);
         await TicketProvider.postDeploymentActions(commitsSummary.tickets, this.org?.getConnection()?.instanceUrl || targetUsername, pullRequestInfo);
       } catch (e4) {
         uxLog(this, c.yellow("Unable to handle commit info for notifications:\n" + e4.message));
@@ -433,8 +434,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
   }
 
-  private async collectNotifAttachments(attachments: MessageAttachment[]) {
-    const commitsSummary = await computeCommitsSummary(false);
+  private async collectNotifAttachments(attachments: MessageAttachment[],pullRequestInfo:any) {
+    const commitsSummary = await computeCommitsSummary(false,pullRequestInfo);
     // Tickets attachment
     if (commitsSummary.tickets.length > 0) {
       attachments.push({

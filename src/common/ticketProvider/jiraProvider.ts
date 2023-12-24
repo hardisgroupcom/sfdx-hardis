@@ -42,7 +42,7 @@ export class JiraProvider extends TicketProviderRoot {
         const ticketInfo = await this.jiraClient.issues.getIssue({ issueIdOrKey: ticket.id });
         if (ticketInfo) {
           ticket.foundOnServer = true;
-          ticket.subject = ticketInfo.fields.summary || "";
+          ticket.subject = ticketInfo?.fields.summary || "";
           ticket.body = ticketInfo.fields?.description?.content.map((content) => content.text).join("\n") || "";
           ticket.status = ticketInfo.fields?.status?.id || "";
           ticket.statusLabel = ticketInfo.fields?.status?.name || "";
