@@ -47,7 +47,7 @@ export class JiraProvider extends TicketProviderRoot {
           ticket.status = ticketInfo.fields?.status?.id || "";
           ticket.statusLabel = ticketInfo.fields?.status?.name || "";
           if (ticket.subject === "") {
-            uxLog(this, c.yellow("[JiraProvider] Unable to find JIRA ticket info for " + ticket.id));
+            uxLog(this, c.yellow("[JiraProvider] Unable to collect JIRA ticket info for " + ticket.id));
             if (JSON.stringify(ticketInfo).includes("<!DOCTYPE html>")) {
               uxLog(this, c.grey("[JiraProvider] This is probably a JIRA auth config issue, as HTML is returned"));
             } else {

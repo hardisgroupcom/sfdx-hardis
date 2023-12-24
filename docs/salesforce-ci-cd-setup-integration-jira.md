@@ -16,9 +16,16 @@ If you use JIRA on your project, sfdx-hardis can use it to enrich its integratio
 
 To use this capability, define CI/CD variables
 
+#### Jira Cloud
+
 - JIRA_HOST (example: `https://sfdx-hardis.atlassian.net/`)
 - JIRA_EMAIL (example: `nicolas.vuillamy@cloudity.com`)
 - JIRA_TOKEN , to create following [Atlassian documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
+
+#### Jira On-Premise
+
+- JIRA_HOST (example: `https://jira.cloudity.com/`)
+- JIRA_PAT, to create following [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) (Creating PATs in the application)
 
 ### Gitlab configuration
 
