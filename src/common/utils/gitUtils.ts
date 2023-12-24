@@ -118,7 +118,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   const ticketsSorted = sortArray(arrayUniqueByKey(tickets, "id"), { by: ["id"], order: ["asc"] });
   uxLog(this, c.grey(`[TicketProvider] Found ${ticketsSorted.length} tickets in commit bodies`));
   // Try to contact Ticketing servers to gather more info
-  TicketProvider.collectTicketsInfo(ticketsSorted);
+  await TicketProvider.collectTicketsInfo(ticketsSorted);
 
   // Add manual actions in markdown
   const manualActionsSorted = [...new Set(manualActions)].reverse();
