@@ -214,6 +214,7 @@ nav:
               - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
               - Slack: salesforce-ci-cd-setup-integration-slack.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+              - Jira: salesforce-ci-cd-setup-integration-jira.md
           - First merge request: salesforce-ci-cd-setup-merge-request.md
   - Org Monitoring:
       - Monitoring home: salesforce-monitoring-home.md
