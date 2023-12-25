@@ -217,9 +217,10 @@ export async function forceSourceDeploy(
             uxLog(
               commandThis,
               c.yellow(
-                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}\n Switching back to effective deployment.`,
+                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}.`,
               ),
             );
+            uxLog(commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok :)"));
           }
         }
       }
@@ -749,10 +750,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -766,10 +767,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      ` --manifestname ${manifestName}` +
+      ` --outputdir ${path.resolve(manifestDir)}` +
+      ` --includepackages managed,unlocked` +
+      ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,

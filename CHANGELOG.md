@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.23.0] 2023-12-25
 
 - Use jira-client package instead of jira.js to be compliant not only with JIRA Cloud, but also with Jira on-premise
+- Improve delta logs
 
 ## [4.22.0] 2023-12-24
 
