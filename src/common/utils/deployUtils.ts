@@ -214,12 +214,7 @@ export async function forceSourceDeploy(
             quickDeploy = true;
             continue;
           } else {
-            uxLog(
-              commandThis,
-              c.yellow(
-                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}.`,
-              ),
-            );
+            uxLog(commandThis, c.yellow(`Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}.`));
             uxLog(commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok :)"));
           }
         }
@@ -383,10 +378,10 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
   const tmpDeployDir = await createTempDir();
-  const mainPackageXmlCopyFileName = path.join(tmpDeployDir, "mainPackage.xml");
+  const mainPackageXmlCopyFileName = path.join(tmpDeployDir, "calculated-package.xml");
   await fs.copy(packageXmlFile, mainPackageXmlCopyFileName);
   const mainPackageXmlItem = {
-    label: "main",
+    label: "calculated-package-xml",
     packageXmlFile: mainPackageXmlCopyFileName,
     order: 0,
   };
@@ -431,7 +426,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     await applyPackageXmlFiltering(mainPackageXmlCopyFileName, deployOncePackageXml, deployOnChangePackageXml, debugMode);
     return [
       {
-        label: "main",
+        label: "calculated-package-xml",
         packageXmlFile: mainPackageXmlCopyFileName,
       },
     ];
@@ -461,23 +456,25 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     packageNoOverwrite = path.resolve("./manifest/packageDeployOnce.xml");
   }
   if (fs.existsSync(packageNoOverwrite)) {
-    uxLog(this, "Building package-no-overwrite.xml...");
+    uxLog(this, c.cyan("Handling package-no-overwrite.xml..."));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
       const tmpDir = await createTempDir();
       // Build target org package.xml
-      uxLog(this, c.cyan(`Generating full package.xml from target org to remove its content matching package-no-overwrite.xml ...`));
+      uxLog(this, c.cyan(`Generating full package.xml from target org to identify its items matching with package-no-overwrite.xml ...`));
       const targetOrgPackageXml = path.join(tmpDir, "packageTargetOrg.xml");
       await buildOrgManifest(options.targetUsername, targetOrgPackageXml, options.conn);
 
-      const packageNoOverwriteToUse = path.join(tmpDir, "package-no-overwrite.xml");
-      await fs.copy(packageNoOverwrite, packageNoOverwriteToUse);
+      let calculatedPackageNoOverwrite = path.join(tmpDir, "package-no-overwrite.xml");
+      await fs.copy(packageNoOverwrite, calculatedPackageNoOverwrite);
       // Keep in deployOnce.xml only what is necessary to deploy
-      await removePackageXmlContent(packageNoOverwriteToUse, targetOrgPackageXml, true, { debugMode: debugMode, keepEmptyTypes: false });
-      uxLog(this, c.grey(`package-no-overwrite.xml with only metadatas that do not exist in target: ${packageNoOverwriteToUse}`));
-      // Check if there is still something in updated package-no-overwrite.xml
-      if (!(await isPackageXmlEmpty(packageNoOverwriteToUse))) {
-        return packageNoOverwriteToUse;
+      await removePackageXmlContent(calculatedPackageNoOverwrite, targetOrgPackageXml, true, { debugMode: debugMode, keepEmptyTypes: false });
+      await fs.copy(calculatedPackageNoOverwrite, path.join(tmpDir, "calculated-package-no-overwrite.xml"));
+      calculatedPackageNoOverwrite = path.join(tmpDir, "calculated-package-no-overwrite.xml");
+      uxLog(this, c.grey(`calculated-package-no-overwrite.xml with only items that already exist in target org: ${calculatedPackageNoOverwrite}`));
+      // Check if there is still something in calculated-package-no-overwrite.xml
+      if (!(await isPackageXmlEmpty(calculatedPackageNoOverwrite))) {
+        return calculatedPackageNoOverwrite;
       }
     }
   }
@@ -550,12 +547,14 @@ export async function removePackageXmlContent(
   options = { debugMode: false, keepEmptyTypes: false },
 ) {
   if (removedOnly === false) {
-    uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))}...`));
+    uxLog(this, c.cyan(`Removing ${c.green(path.basename(packageXmlFileToRemove))} items from ${c.green(path.basename(packageXmlFile))}...`));
   } else {
     uxLog(
       this,
       c.cyan(
-        `Keeping ${c.green(path.basename(packageXmlFileToRemove))} content from ${c.green(path.basename(packageXmlFile))} (and remove the rest)...`,
+        `Keeping ${c.green(path.basename(packageXmlFileToRemove))} items matching with ${c.green(
+          path.basename(packageXmlFile),
+        )} (and remove the rest)...`,
       ),
     );
   }
@@ -750,10 +749,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -767,10 +766,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,

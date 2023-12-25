@@ -1,9 +1,10 @@
-import * as JiraApi from 'jira-client';
+import * as JiraApi from "jira-client";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import * as c from "chalk";
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { uxLog } from "../utils";
+import { SfdxError } from "@salesforce/core";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof JiraApi>;
@@ -11,11 +12,11 @@ export class JiraProvider extends TicketProviderRoot {
   constructor() {
     super();
     const jiraOptions: JiraApi.JiraApiOptions = {
-      protocol: 'https',
+      protocol: "https",
       host: process.env.JIRA_HOST.replace("https://", ""),
-      apiVersion: '3',
-      strictSSL: true
-    }
+      apiVersion: "3",
+      strictSSL: true,
+    };
     // Basic Auth
     if (process.env.JIRA_EMAIL && process.env.JIRA_TOKEN) {
       jiraOptions.username = process.env.JIRA_EMAIL;
@@ -23,7 +24,7 @@ export class JiraProvider extends TicketProviderRoot {
     }
     // Personal access token
     if (process.env.JIRA_PAT) {
-      jiraOptions.bearer = process.env.JIRA_PAT
+      jiraOptions.bearer = process.env.JIRA_PAT;
     }
     this.jiraClient = new JiraApi(jiraOptions);
   }
@@ -35,15 +36,19 @@ export class JiraProvider extends TicketProviderRoot {
   public async collectTicketsInfo(tickets: Ticket[]) {
     const jiraTicketsNumber = tickets.filter((ticket) => ticket.provider === "JIRA").length;
     if (jiraTicketsNumber > 0) {
-      uxLog(this, c.cyan(`Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."));
+      uxLog(
+        this,
+        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."),
+      );
     }
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
         const ticketInfo = await this.jiraClient.getIssue(ticket.id);
         if (ticketInfo) {
-          const body = ticketInfo?.fields?.description?.content?.length > 0 ?
-            ticketInfo.fields?.description?.content?.map((content) => content.text).join("\n") :
-            '';
+          const body =
+            ticketInfo?.fields?.description?.content?.length > 0
+              ? ticketInfo.fields?.description?.content?.map((content) => content.text).join("\n")
+              : "";
           ticket.foundOnServer = true;
           ticket.subject = ticketInfo?.fields?.summary || "";
           ticket.body = body;
@@ -88,16 +93,19 @@ export class JiraProvider extends TicketProviderRoot {
           orgMarkdown.label,
           orgMarkdown.url,
           branchMarkdown.label,
-          branchMarkdown.url || '',
+          branchMarkdown.url || "",
           prTitle,
           prUrl,
           prAuthor,
         );
         try {
-          await this.jiraClient.addCommentAdvanced(ticket.id, { "body": jiraComment });
+          const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
+          if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
+            throw new SfdxError(`This is a probably a config/rights errors as the response contain HTML`);
+          }
           commentedTickets.push(ticket);
         } catch (e6) {
-          uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}\n${e6.message}`))
+          uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}\n${e6.message}`));
         }
       }
     }
@@ -109,8 +117,13 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   getJiraDeploymentCommentAdf(
-    orgName: string, orgUrl: string, branchName: string,
-    branchUrl: string, prTitle: string, prUrl: string, prAuthor: string
+    orgName: string,
+    orgUrl: string,
+    branchName: string,
+    branchUrl: string,
+    prTitle: string,
+    prUrl: string,
+    prAuthor: string,
   ) {
     const comment = {
       version: 1,
