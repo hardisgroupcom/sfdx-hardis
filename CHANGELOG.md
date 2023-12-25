@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- hardis:org:purge:flow: Ignore managed flows - Fixes [#532](https://github.com/hardisgroupcom/sfdx-hardis/issues/532)
+
 ## [4.23.2] 2023-12-25
 
 - Catch errors when a JIRA comment has not been posted
