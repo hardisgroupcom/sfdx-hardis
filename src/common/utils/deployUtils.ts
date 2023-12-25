@@ -383,10 +383,10 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
   const tmpDeployDir = await createTempDir();
-  const mainPackageXmlCopyFileName = path.join(tmpDeployDir, "mainPackage.xml");
+  const mainPackageXmlCopyFileName = path.join(tmpDeployDir, "calculated-package.xml");
   await fs.copy(packageXmlFile, mainPackageXmlCopyFileName);
   const mainPackageXmlItem = {
-    label: "main",
+    label: "calculated-package-xml",
     packageXmlFile: mainPackageXmlCopyFileName,
     order: 0,
   };
@@ -431,7 +431,7 @@ async function buildDeploymentPackageXmls(packageXmlFile: string, check: boolean
     await applyPackageXmlFiltering(mainPackageXmlCopyFileName, deployOncePackageXml, deployOnChangePackageXml, debugMode);
     return [
       {
-        label: "main",
+        label: "calculated-package-xml",
         packageXmlFile: mainPackageXmlCopyFileName,
       },
     ];
