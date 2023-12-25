@@ -105,6 +105,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
       await collectTicketsAndManualActions(logResult.message + "\n" + logResult.body, tickets, manualActions);
     } else {
+      await collectTicketsAndManualActions(logResult.message, tickets, manualActions);
       commitsSummary += "\n\n";
     }
   }

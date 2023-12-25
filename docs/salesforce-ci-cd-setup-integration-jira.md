@@ -18,7 +18,9 @@ description: Enrich pull requests with JIRA info and post comments on tickets wh
 
 _This feature is currently in beta but can already be used safely !_
 
-If you use JIRA on your project, sfdx-hardis can use it to enrich its integrations.
+If you use JIRA on your project, sfdx-hardis can use it to enrich its integrations
+
+Sfdx-hardis will automatically analyze commits and PR/MR descriptions to collect JIRA tickets URLS !
 
 The only thing you have to make sure is to **use the full URL of JIRA tickets** in your commits and PR/MR descriptions.
 
@@ -58,8 +60,8 @@ _Note: Does not seems to work with every on-premise JIRA servers_
 
 Define CI/CD variables
 
-- JIRA_HOST (example: `https://jira.cloudity.com/`)
-- JIRA_PAT, to create following [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) (Creating PATs in the application)
+- JIRA_HOST (examples: `https://jira.cloudity.com/` , or with path like `https://pid.cloudity.com/jira/`)
+- JIRA_PAT, to create following [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) (section **Creating PATs in the application**)
 
 ## Gitlab configuration
 

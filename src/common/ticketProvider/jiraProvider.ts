@@ -1,4 +1,4 @@
-import { Version3Client } from "jira.js";
+import * as JiraApi from 'jira-client';
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import * as c from "chalk";
 import { Ticket } from ".";
@@ -6,30 +6,26 @@ import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { uxLog } from "../utils";
 
 export class JiraProvider extends TicketProviderRoot {
-  private jiraClient: InstanceType<typeof Version3Client>;
+  private jiraClient: InstanceType<typeof JiraApi>;
 
   constructor() {
     super();
-    if (process.env.JIRA_PAT) {
-      // Personal Access Token Auth
-      this.jiraClient = new Version3Client({
-        host: process.env.JIRA_HOST,
-        authentication: {
-          personalAccessToken: process.env.JIRA_PAT,
-        },
-      });
-    } else {
-      // Basic auth
-      this.jiraClient = new Version3Client({
-        host: process.env.JIRA_HOST,
-        authentication: {
-          basic: {
-            email: process.env.JIRA_EMAIL,
-            apiToken: process.env.JIRA_TOKEN,
-          },
-        },
-      });
+    const jiraOptions: JiraApi.JiraApiOptions = {
+      protocol: 'https',
+      host: process.env.JIRA_HOST.replace("https://", ""),
+      apiVersion: '3',
+      strictSSL: true
     }
+    // Basic Auth
+    if (process.env.JIRA_EMAIL && process.env.JIRA_TOKEN) {
+      jiraOptions.username = process.env.JIRA_EMAIL;
+      jiraOptions.password = process.env.JIRA_TOKEN;
+    }
+    // Personal access token
+    if (process.env.JIRA_PAT) {
+      jiraOptions.bearer = process.env.JIRA_PAT
+    }
+    this.jiraClient = new JiraApi(jiraOptions);
   }
 
   public getLabel(): string {
@@ -43,7 +39,7 @@ export class JiraProvider extends TicketProviderRoot {
     }
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
-        const ticketInfo = await this.jiraClient.issues.getIssue({ issueIdOrKey: ticket.id });
+        const ticketInfo = await this.jiraClient.getIssue(ticket.id);
         if (ticketInfo) {
           ticket.foundOnServer = true;
           ticket.subject = ticketInfo?.fields?.summary || "";
@@ -59,6 +55,7 @@ export class JiraProvider extends TicketProviderRoot {
             }
             ticket.foundOnServer = false;
           }
+          uxLog(this, c.grey("[JiraProvider] Collected data for ticket " + ticket.id));
         } else {
           uxLog(this, c.yellow("[JiraProvider] Unable to get JIRA issue " + ticket.id));
         }
@@ -88,23 +85,30 @@ export class JiraProvider extends TicketProviderRoot {
           orgMarkdown.label,
           orgMarkdown.url,
           branchMarkdown.label,
-          branchMarkdown.url,
+          branchMarkdown.url || '',
           prTitle,
           prUrl,
           prAuthor,
         );
-        await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment });
-        commentedTickets.push(ticket);
+        try {
+          await this.jiraClient.addCommentAdvanced(ticket.id, { "body": jiraComment });
+          commentedTickets.push(ticket);
+        } catch (e6) {
+          uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}\n${e6.message}`))
+        }
       }
     }
     uxLog(
       this,
-      c.cyan(`[JiraProvider] Posted comments on ${commentedTickets.length} tickets` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
     );
     return tickets;
   }
 
-  getJiraDeploymentCommentAdf(orgName, orgUrl, branchName, branchUrl, prTitle, prUrl, prAuthor) {
+  getJiraDeploymentCommentAdf(
+    orgName: string, orgUrl: string, branchName: string,
+    branchUrl: string, prTitle: string, prUrl: string, prAuthor: string
+  ) {
     const comment = {
       version: 1,
       type: "doc",
