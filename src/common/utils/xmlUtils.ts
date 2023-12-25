@@ -143,14 +143,7 @@ export async function removePackageXmlFilesContent(
     } else {
       // Filter members
       typeMembers = typeMembers.filter((member: string) => checkRemove(!removeTypeMembers.includes(member), removedOnly));
-      uxLog(
-        this,
-        c.grey(
-          c.italic(
-            `Found type ${c.bold(type.name)}, ${typeMembers.length} items have been ${removedOnly ? "removed" : "kept"}`,
-          ),
-        ),
-      );
+      uxLog(this, c.grey(c.italic(`Found type ${c.bold(type.name)}, ${typeMembers.length} items have been ${removedOnly ? "removed" : "kept"}`)));
     }
     if (typeMembers.length > 0 || keepEmptyTypes === true) {
       // Update members for type
