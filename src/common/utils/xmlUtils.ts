@@ -134,12 +134,12 @@ export async function removePackageXmlFilesContent(
     // Manage * case contained in target
     if (removedOnly === true && typeMembers.includes("*")) {
       typeMembers = removeTypeMembers;
-      uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}, kept values: ${typeMembers.join(",")}`)));
+      uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}, kept items: ${typeMembers.length}`)));
     }
     // Manage * case contained in source
     else if (removeTypeMembers[0] && removeTypeMembers[0] === "*") {
       typeMembers = typeMembers.filter(() => checkRemove(false, removedOnly));
-      uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)} which has been ${removedOnly ? "kept" : "removed"}`)));
+      uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)} which have all been ${removedOnly ? "kept" : "removed"}`)));
     } else {
       // Filter members
       typeMembers = typeMembers.filter((member: string) => checkRemove(!removeTypeMembers.includes(member), removedOnly));
@@ -147,9 +147,7 @@ export async function removePackageXmlFilesContent(
         this,
         c.grey(
           c.italic(
-            `Found type ${c.bold(type.name)}, following elements has been ${removedOnly ? "removed" : "kept"}: ${
-              typeMembers.length > 0 ? typeMembers.join(",") : "none"
-            }`,
+            `Found type ${c.bold(type.name)}, ${typeMembers.length} items have been ${removedOnly ? "removed" : "kept"}`,
           ),
         ),
       );

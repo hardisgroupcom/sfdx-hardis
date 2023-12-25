@@ -4,6 +4,7 @@ import * as c from "chalk";
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { uxLog } from "../utils";
+import { SfdxError } from '@salesforce/core';
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof JiraApi>;
@@ -35,7 +36,7 @@ export class JiraProvider extends TicketProviderRoot {
   public async collectTicketsInfo(tickets: Ticket[]) {
     const jiraTicketsNumber = tickets.filter((ticket) => ticket.provider === "JIRA").length;
     if (jiraTicketsNumber > 0) {
-      uxLog(this, c.cyan(`Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."));
+      uxLog(this, c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."));
     }
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
@@ -94,7 +95,10 @@ export class JiraProvider extends TicketProviderRoot {
           prAuthor,
         );
         try {
-          await this.jiraClient.addCommentAdvanced(ticket.id, { "body": jiraComment });
+          const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { "body": jiraComment });
+          if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
+            throw new SfdxError(`This is a probably a config/rights errors as the response contain HTML`);
+          }
           commentedTickets.push(ticket);
         } catch (e6) {
           uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}\n${e6.message}`))
