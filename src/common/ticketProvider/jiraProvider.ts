@@ -41,9 +41,12 @@ export class JiraProvider extends TicketProviderRoot {
       if (ticket.provider === "JIRA") {
         const ticketInfo = await this.jiraClient.getIssue(ticket.id);
         if (ticketInfo) {
+          const body = ticketInfo?.fields?.description?.content?.length > 0 ?
+            ticketInfo.fields?.description?.content?.map((content) => content.text).join("\n") :
+            '';
           ticket.foundOnServer = true;
           ticket.subject = ticketInfo?.fields?.summary || "";
-          ticket.body = ticketInfo.fields?.description?.content.map((content) => content.text).join("\n") || "";
+          ticket.body = body;
           ticket.status = ticketInfo.fields?.status?.id || "";
           ticket.statusLabel = ticketInfo.fields?.status?.name || "";
           if (ticket.subject === "") {
