@@ -1,16 +1,18 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:org:diagnose:legacyapi
+# hardis:org:diagnose:unusedlicenses
 
 ## Description
 
-Checks if an org uses retired or someday retired API version
+When you assign a Permission Set to a user, and that this Permission Set is related to a Permission Set License, a Permission Set License Assignment is automatically created for the user.
 
+  But when you unassign this Permission Set from the user, **the Permission Set License Assignment is not deleted**.
 
-See article below
+  This leads that you can be **charged for Permission Set Licenses that are not used** !
 
-[![Handle Salesforce API versions Deprecation like a pro](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deprecated-api.jpg)](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
+  This command detects such useless Permission Set Licenses Assignments and suggests to delete them.
 
-
+  Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command :)
+  
 
 ## Parameters
 
@@ -18,9 +20,7 @@ See article below
 |:---|:--:|:----------|:-----:|:------:|:-----:|
 |apiversion|option|override the api version used for api requests made by this command||||
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|eventtype<br/>-e|option|Type of EventLogFile event to analyze|ApiTotalUsage|||
 |json|boolean|format output as json||||
-|limit<br/>-l|option|Number of latest EventLogFile events to analyze|999|||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |outputfile<br/>-o|option|Force the path and name of output report file. Must end with .csv||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
@@ -30,19 +30,11 @@ See article below
 ## Examples
 
 ```shell
-$ sfdx hardis:org:diagnose:legacyapi
+$ sfdx hardis:org:diagnose:unusedlicenses
 ```
 
 ```shell
-$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com
-```
-
-```shell
-$ sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'
-```
-
-```shell
-$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv
+$ sfdx hardis:org:diagnose:unusedlicenses --fix
 ```
 
 

@@ -17,6 +17,14 @@ If you do not want to use QuickDeploy, define variable `SFDX_HARDIS_QUICK_DEPLOY
 - [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
 - [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
 
+### Delta deployments
+
+To activate delta deployments, define property `useDeltaDeployment: true` in `config/.sfdx-hardis.yml`.
+
+This will activate delta deployments only between minor and major branches (major to major remains full deployment mode)
+
+If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
+
 ### Dynamic deployment items / Overwrite management
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
@@ -115,28 +123,29 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                               |    Default    | Required |                                            Options                                            |
-|:----------------------|:-------:|:----------------------------------------------------------------------------------------------------------|:-------------:|:--------:|:---------------------------------------------------------------------------------------------:|
-| apiversion            | option  | override the api version used for api requests made by this command                                       |               |          |                                                                                               |
-| check<br/>-c          | boolean | Only checks the deployment, there is no impact on target org                                              |               |          |                                                                                               |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                           |               |          |                                                                                               |
-| json                  | boolean | format output as json                                                                                     |               |          |                                                                                               |
-| loglevel              | option  | logging level for this command invocation                                                                 |     warn      |          |                     trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal                     |
-| packagexml<br/>-p     | option  | Path to package.xml containing what you want to deploy in target org                                      |               |          |                                                                                               |
-| runtests<br/>-r       | option  | Apex test classes to run if --testlevel is RunSpecifiedTests                                              |               |          |                                                                                               |
-| skipauth              | boolean | Skip authentication check when a default username is required                                             |               |          |                                                                                               |
-| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org                                        |               |          |                                                                                               |
-| testlevel<br/>-l      | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                 |               |          |                                                                                               |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|apiversion|option|override the api version used for api requests made by this command||||
+|check<br/>-c|boolean|Only checks the deployment, there is no impact on target org||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|delta|boolean|Applies sfdx-git-delta to package.xml before other deployment processes||||
+|json|boolean|format output as json||||
+|loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+|packagexml<br/>-p|option|Path to package.xml containing what you want to deploy in target org||||
+|runtests<br/>-r|option|Apex test classes to run if --testlevel is RunSpecifiedTests||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
+|testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|RunLocalTests||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunLocalTests<br/>RunAllTestsInOrg|
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sfdx hardis:project:deploy:sources:dx
+$ sfdx hardis:project:deploy:sources:dx
 ```
 
 ```shell
-sfdx hardis:project:deploy:sources:dx --check
+$ sfdx hardis:project:deploy:sources:dx --check
 ```
 
 

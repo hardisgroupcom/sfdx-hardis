@@ -24,17 +24,17 @@ pipelines:
             script:
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
-              - echo 'y' | sfdx plugins:install sfdx-hardis
-              - echo 'y' | sfdx plugins:install sfdx-essentials
-              - echo 'y' | sfdx plugins:install sfdx-git-delta
+              - echo 'y' | sf plugins:install sfdx-hardis
+              - echo 'y' | sf plugins:install sfdx-essentials
+              - echo 'y' | sf plugins:install sfdx-git-delta
               - sf version --verbose --json
               - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" | sed 's/refs\/heads\///')
               - export CI_COMMIT_REF_NAME=$BRANCH_NAME
               - export ORG_ALIAS=$BRANCH_NAME
               - export CONFIG_BRANCH=$BRANCH_NAME
               - export FORCE_COLOR=1
-              - sfdx hardis:auth:login
-              - sfdx hardis:project:deploy:sources:dx --check
+              - sf hardis:auth:login
+              - sf hardis:project:deploy:sources:dx --check
 
   branches:
     # Add all your major branches here
@@ -44,14 +44,14 @@ pipelines:
           script:
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
-              - echo 'y' | sfdx plugins:install sfdx-hardis
-              - echo 'y' | sfdx plugins:install sfdx-essentials
-              - echo 'y' | sfdx plugins:install sfdx-git-delta
+              - echo 'y' | sf plugins:install sfdx-hardis
+              - echo 'y' | sf plugins:install sfdx-essentials
+              - echo 'y' | sf plugins:install sfdx-git-delta
               - sf version --verbose --json
               - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
               - export CI_COMMIT_REF_NAME=$BRANCH_NAME
               - export CONFIG_BRANCH=$BRANCH_NAME
               - export ORG_ALIAS=$BRANCH_NAME
               - export FORCE_COLOR=1
-              - sfdx hardis:auth:login
-              - sfdx hardis:project:deploy:sources:dx
+              - sf hardis:auth:login
+              - sf hardis:project:deploy:sources:dx
