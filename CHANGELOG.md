@@ -4,6 +4,16 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.21.5] 2023-12-14
+
+- hardis:org:diagnose:audittrail
+  - Display user name in logs & notifications
+  - Add new excluded actions: changedemail, changedsenderemail, queueMembership, enableSIQUserNonEAC
+
+## [4.21.4] 2023-12-12
+
+- Fix the output column in the metadata status report to distinguish between inactive flows and validation rules identified in the source
+
 ## [4.21.3] 2023-12-08
 
 - Add more variables in default azure-pipelines.yml monitoring
