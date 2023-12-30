@@ -91,10 +91,11 @@ It is now time to create your merge request to technically publish your updates 
 
 Depending on the CI platform you use, follow the related guide.
 
-_**Important**: If you are **publishing to a RUN branch** (ex: `preprod`), **AND** the **project also has a BUILD branch** (ex: `integration`), you need to create **2 merge requests**:_
+> If you are **publishing to a RUN branch** (ex: `preprod`), **AND** the **project also has a BUILD branch** (ex: `integration`), you need to **notify the release manager**
+> He/she will have to retrofit your updates once published
 
-- _One from your feature or fix branch with the BUILD branch as target_
-- _One from your feature or fix branch with the RUN branch as target_
+> If you are working with a ticketing system like JIRA, make sure to add the **full url** of the tickets in the MR/PR description, so it will help for the release management.
+> For example, use `https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4` , not `CLOUDITY-4`
 
 ### Using Gitlab
 

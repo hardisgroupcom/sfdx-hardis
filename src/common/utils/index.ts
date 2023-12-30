@@ -869,6 +869,37 @@ export async function extractRegexGroups(regex: RegExp, text: string): Promise<s
   // return ((text || '').matchAll(regex) || []).map(item => item.trim());
 }
 
+export async function extractRegexMatches(regex: RegExp, text: string): Promise<string[]> {
+  let m;
+  const matchStrings = [];
+  while ((m = regex.exec(text)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    // Iterate thru the regex matches
+    m.forEach((match, group) => {
+      if (group === 1) {
+        matchStrings.push(match);
+      }
+    });
+  }
+  return matchStrings;
+}
+
+export function arrayUniqueByKey(array, key: string) {
+  const keys = new Set();
+  return array.filter((el) => !keys.has(el[key]) && keys.add(el[key]));
+}
+
+export function arrayUniqueByKeys(array, keysIn: string[]) {
+  const keys = new Set();
+  const buildKey = (el) => {
+    return keysIn.map((key) => el[key]).join(";");
+  };
+  return array.filter((el) => !keys.has(buildKey(el)) && keys.add(buildKey(el)));
+}
+
 // Generate output files
 export async function generateReports(
   resultSorted: any[],

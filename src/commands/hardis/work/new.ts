@@ -159,7 +159,10 @@ Under the hood, it can:
     ]);
 
     // Checkout development main branch
-    const branchName = `${projectBranchPart}${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(/\s/g, "-")}`;
+    const branchName = `${projectBranchPart}${response.branch || "features"}/${response.sources || "dev"}/${response.taskName.replace(
+      /\s|\(|\)/g,
+      "-",
+    )}`;
     uxLog(this, c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`));
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
@@ -387,11 +390,22 @@ Under the hood, it can:
         {
           title: "Yes, please try to update my sandbox !",
           value: "init",
-          description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task`,
+          description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task. WARNING: Will overwrite uncommitted changes in your org !`,
         },
       ],
     });
-    if (initSandboxResponse.value === "init") {
+    let initSandbox = initSandboxResponse.value === "init";
+    // Ask the user if he's really sure of what he's doing !
+    if (initSandbox) {
+      const promptConfirm = await prompts({
+        type: "confirm",
+        message: c.cyanBright(
+          `Are you really sure you want to update the dev sandbox with the state of git branch ${this.targetBranch} ? This will overwrite setup updates that you or other users have not committed yet`,
+        ),
+      });
+      initSandbox = promptConfirm.value === true;
+    }
+    if (initSandbox) {
       let initSourcesErr: any = null;
       let initSandboxErr: any = null;
       try {
