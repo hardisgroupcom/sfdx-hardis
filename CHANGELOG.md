@@ -4,6 +4,54 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.23.3] 2023-12-28
+
+- hardis:org:purge:flow: Ignore managed flows - Fixes [#532](https://github.com/hardisgroupcom/sfdx-hardis/issues/532)
+- hardis:work:new prevent parenthesis in branch name - Fixes [#481](https://github.com/hardisgroupcom/sfdx-hardis/issues/481)
+
+## [4.23.2] 2023-12-25
+
+- Catch errors when a JIRA comment has not been posted
+- Simplify package-no-overwrite.xml management logs
+
+## [4.23.1] 2023-12-25
+
+- Handle case when tickets have no content
+
+## [4.23.0] 2023-12-25
+
+- Use jira-client package instead of jira.js to be compliant not only with JIRA Cloud, but also with Jira on-premise
+- Improve delta logs
+
+## [4.22.0] 2023-12-24
+
+- Add more info in pull requests comments
+  - Commits summary
+  - Jira tickets
+  - Manual Actions
+- Integration with JIRA
+  - Collect tickets info JIRA server
+  - Post comment on tickets once they are deployed
+
+## [4.21.6] 2023-12-22
+
+- New task: Ask confirmation before updating selected sandbox
+- Deployment tips
+  - Visibility is not allowed for type
+- Audit trail, ignore more events
+  - Holidays: holiday_insert
+  - loginasgrantedtopartnerbt
+
+## [4.21.5] 2023-12-14
+
+- hardis:org:diagnose:audittrail
+  - Display user name in logs & notifications
+  - Add new excluded actions: changedemail, changedsenderemail, queueMembership, enableSIQUserNonEAC
+
+## [4.21.4] 2023-12-12
+
+- Fix the output column in the metadata status report to distinguish between inactive flows and validation rules identified in the source
+
 ## [4.21.3] 2023-12-08
 
 - Add more variables in default azure-pipelines.yml monitoring

@@ -103,6 +103,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const username = this.org.getUsername();
 
     let statusFilter;
+    const manageableConstraint = "ManageableState IN ('deprecatedEditable','installedEditable','unmanaged')";
     if (this.flags.status) {
       // Input parameter used
       statusFilter = this.flags.status.split(",");
@@ -113,7 +114,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
       // Query all flows
       const allFlowQueryCommand =
         "sfdx force:data:soql:query " +
-        ` -q "SELECT Id,MasterLabel,VersionNumber FROM Flow ORDER BY MasterLabel"` +
+        ` -q "SELECT Id,MasterLabel,VersionNumber,ManageableState FROM Flow WHERE ${manageableConstraint} ORDER BY MasterLabel"` +
         ` --targetusername ${username}` +
         " --usetoolingapi";
       const allFlowQueryRes = await execSfdxJson(allFlowQueryCommand, this, {
@@ -157,7 +158,9 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }
 
     // Build query with name filter if sent
-    let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE Status IN ('${statusFilter.join("','")}')`;
+    let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE ${manageableConstraint} AND Status IN ('${statusFilter.join(
+      "','",
+    )}')`;
     if (nameFilter && nameFilter != "all") {
       query += ` AND MasterLabel LIKE '${nameFilter}%'`;
     }

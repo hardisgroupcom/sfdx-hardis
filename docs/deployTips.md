@@ -362,7 +362,8 @@ Flow {1} can not be deleted using deployments, please delete it manually in the 
 **Resolution tip**
 
 ```shell
-If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
+- If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
+- If you changed a custom field from unique to not unique, you need to manually make the change in the target org
 ```
 
 ## Invalid formula grouping context
@@ -973,6 +974,16 @@ You can:
 
 ```shell
 Apex error in {1} with unknown variable {2} at position {3}. If {2} is a class name, try to fix it, or maybe it is missing in the files or in package.xml !
+```
+
+## Visibility is not allowed for type
+
+- `Error (.*) set the visibility for a (.*) to Protected unless you are in a developer`
+
+**Resolution tip**
+
+```shell
+Update the visibility of {1} to "Public"
 ```
 
 ## Tableau CRM / Wave digest error

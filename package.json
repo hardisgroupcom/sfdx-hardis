@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
   "description": "Swiss-army-knife Toolbox for Salesforce\nAllows you to define a complete CD/CD Pipeline\nOrchestrate base commands and assist users with interactive wizards",
-  "version": "4.21.3",
+  "version": "4.23.3",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "dependencies": {
@@ -42,6 +42,7 @@
     "glob-promise": "^4.1.0",
     "he": "^1.2.0",
     "inquirer": "^8.0.0",
+    "jira-client": "^8.2.2",
     "js-yaml": "^4.0.0",
     "jsforce": "^1.11.0",
     "keyv": "^4.0.3",
@@ -76,6 +77,7 @@
     "@oclif/test": "^1",
     "@salesforce/dev-config": "^2.1.0",
     "@types/chai": "^4",
+    "@types/jira-client": "^7.1.9",
     "@types/node": "^14.14.32",
     "chai": "^4",
     "globby": "^11.0.2",

@@ -1,7 +1,21 @@
 import { getConfig } from "../../config";
 import { prompts } from "./prompts";
 import * as c from "chalk";
-import { execCommand, execSfdxJson, getGitRepoRoot, git, uxLog } from ".";
+import * as sortArray from "sort-array";
+import {
+  arrayUniqueByKey,
+  arrayUniqueByKeys,
+  execCommand,
+  execSfdxJson,
+  extractRegexMatches,
+  getCurrentGitBranch,
+  getGitRepoRoot,
+  git,
+  uxLog,
+} from ".";
+import { GitProvider } from "../gitProvider";
+import { Ticket, TicketProvider, UtilsTickets } from "../ticketProvider";
+import { DefaultLogFields, ListLogLine } from "simple-git";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -51,7 +65,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
     fail: true,
   });
   const masterBranchLatestCommit = mergeBaseCommandResult.stdout.replace("\n", "").replace("\r", "");
-  return { fromCommit: masterBranchLatestCommit, toCommit: toCommit };
+  return { fromCommit: masterBranchLatestCommit, toCommit: toCommit, logResult: logResult };
 }
 
 export async function callSfdxGitDelta(from: string, to: string, outputDir: string, options: any = {}) {
@@ -67,4 +81,82 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     cwd: await getGitRepoRoot(),
   });
   return gitDeltaCommandRes;
+}
+
+export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
+  uxLog(this, c.cyan("Computing commits summary..."));
+  const currentGitBranch = await getCurrentGitBranch();
+  let logResults: (DefaultLogFields & ListLogLine)[] = [];
+  if (checkOnly) {
+    const prInfo = await GitProvider.getPullRequestInfo();
+    const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
+    logResults = [...deltaScope.logResult.all];
+  } else {
+    const logRes = await git().log([`HEAD^..HEAD`]);
+    logResults = [...logRes.all];
+  }
+  logResults = arrayUniqueByKeys(logResults, ["message", "body"]).reverse();
+  let commitsSummary = "## Commits summary\n\n";
+  const manualActions = [];
+  const tickets: Ticket[] = [];
+  for (const logResult of logResults) {
+    commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
+    if (logResult.body) {
+      commitsSummary += "<br/>" + logResult.body + "\n\n";
+      await collectTicketsAndManualActions(logResult.message + "\n" + logResult.body, tickets, manualActions);
+    } else {
+      await collectTicketsAndManualActions(logResult.message, tickets, manualActions);
+      commitsSummary += "\n\n";
+    }
+  }
+
+  // Tickets and references can also be in PR description
+  if (pullRequestInfo) {
+    await collectTicketsAndManualActions(pullRequestInfo.description || "", tickets, manualActions);
+  }
+
+  // Unify and sort tickets
+  const ticketsSorted = sortArray(arrayUniqueByKey(tickets, "id"), { by: ["id"], order: ["asc"] });
+  uxLog(this, c.grey(`[TicketProvider] Found ${ticketsSorted.length} tickets in commit bodies`));
+  // Try to contact Ticketing servers to gather more info
+  await TicketProvider.collectTicketsInfo(ticketsSorted);
+
+  // Add manual actions in markdown
+  const manualActionsSorted = [...new Set(manualActions)].reverse();
+  if (manualActionsSorted.length > 0) {
+    let manualActionsMarkdown = "## Manual actions\n\n";
+    for (const manualAction of manualActionsSorted) {
+      manualActionsMarkdown += "- " + manualAction + "\n";
+    }
+    commitsSummary = manualActionsMarkdown + "\n\n" + commitsSummary;
+  }
+
+  // Add tickets in markdown
+  if (ticketsSorted.length > 0) {
+    let ticketsMarkdown = "## Tickets\n\n";
+    for (const ticket of ticketsSorted) {
+      if (ticket.foundOnServer) {
+        ticketsMarkdown += "- [" + ticket.id + "](" + ticket.url + ") " + ticket.subject + "\n";
+      } else {
+        ticketsMarkdown += "- " + ticket.url + "\n";
+      }
+    }
+    commitsSummary = ticketsMarkdown + "\n\n" + commitsSummary;
+  }
+
+  return {
+    markdown: commitsSummary,
+    logResults: logResults,
+    manualActions: manualActionsSorted,
+    tickets: ticketsSorted,
+  };
+}
+
+async function collectTicketsAndManualActions(str: string, tickets: Ticket[], manualActions: any[]) {
+  const foundTickets = await UtilsTickets.getTicketsFromString(str);
+  tickets.push(...foundTickets);
+  // Extract manual actions if defined
+  const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
+  const manualActionsMatches = await extractRegexMatches(manualActionsRegex, str);
+  manualActions.push(...manualActionsMatches);
 }
