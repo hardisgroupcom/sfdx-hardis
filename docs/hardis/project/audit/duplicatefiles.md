@@ -13,7 +13,7 @@ Find duplicate files in sfdx folder (often from past @salesforce/cli bugs)
 |json|boolean|format output as json||||
 |loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
 |path<br/>-p|option|Root path to check||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
+|skipauth|boolean|Skip authentication check when a default username is required||sf-hardis/||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
