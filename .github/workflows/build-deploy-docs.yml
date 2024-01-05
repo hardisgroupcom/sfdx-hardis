@@ -36,7 +36,7 @@ jobs:
         with:
           source_repo: "hardisgroupcom/sfdx-hardis"
           source_branch: "gh-pages"
-          destination_repo: "git@github.com:sfdx-hardis/sfdx-hardis.github.io.git"
+          destination_repo: "git@github.com:sfdx-hardis/sfdx-hardis.github.git"
           destination_branch: "gh-pages"
           # ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }} # optional
           # source_ssh_private_key: ${{ secrets.SOURCE_SSH_PRIVATE_KEY }} # optional, will override `SSH_PRIVATE_KEY`
