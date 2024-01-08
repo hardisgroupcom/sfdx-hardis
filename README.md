@@ -6572,7 +6572,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   Path to the sfdmu workspacefolder
+  -p, --path=path                                                                   Path to the sfdmu workspace folder
 
   --json                                                                            format output as json
 
@@ -7365,7 +7365,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   Path to the sfdmu workspacefolder
+  -p, --path=path                                                                   Path to the sfdmu workspace folder
 
   --json                                                                            format output as json
 
