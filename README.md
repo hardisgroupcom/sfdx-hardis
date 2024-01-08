@@ -2477,9 +2477,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default:
-                                                                                    C:\Users\asrivast6\Desktop\MyGitHub\
-                                                                                    sfdx-hardis] Root path to check
+  -p, --path=path                                                                   Path to the sfdmu workspacefolder
 
   --json                                                                            format output as json
 
@@ -3272,9 +3270,7 @@ USAGE
 OPTIONS
   -d, --debug                                                                       Activate debug mode (more logs)
 
-  -p, --path=path                                                                   [default:
-                                                                                    C:\Users\asrivast6\Desktop\MyGitHub\
-                                                                                    sfdx-hardis] Root folder
+  -p, --path=path                                                                   Path to the sfdmu workspacefolder
 
   --json                                                                            format output as json
 
