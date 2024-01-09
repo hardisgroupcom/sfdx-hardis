@@ -1,5 +1,5 @@
 import * as c from "chalk";
-import * as sortArray from 'sort-array';
+import * as sortArray from "sort-array";
 import { JiraProvider } from "./jiraProvider";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import { uxLog } from "../utils";
@@ -66,4 +66,3 @@ export interface Ticket {
   statusLabel?: string;
   foundOnServer?: boolean;
 }
-

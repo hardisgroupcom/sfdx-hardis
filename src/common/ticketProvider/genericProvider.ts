@@ -22,7 +22,7 @@ export class GenericTicketingProvider extends TicketProviderRoot {
 
   public static async getTicketsFromString(text: string): Promise<Ticket[]> {
     if (!this.isAvailable) {
-        return ;
+      return;
     }
     const tickets: Ticket[] = [];
     // Extract JIRA tickets
