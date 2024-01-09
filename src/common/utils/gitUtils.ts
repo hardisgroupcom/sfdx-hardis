@@ -14,7 +14,7 @@ import {
   uxLog,
 } from ".";
 import { GitProvider } from "../gitProvider";
-import { Ticket, TicketProvider, UtilsTickets } from "../ticketProvider";
+import { Ticket, TicketProvider } from "../ticketProvider";
 import { DefaultLogFields, ListLogLine } from "simple-git";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
@@ -138,7 +138,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
       if (ticket.foundOnServer) {
         ticketsMarkdown += "- [" + ticket.id + "](" + ticket.url + ") " + ticket.subject + "\n";
       } else {
-        ticketsMarkdown += "- " + ticket.url + "\n";
+        ticketsMarkdown += "- [" + ticket.id + "](" + ticket.url + ")\n";
       }
     }
     commitsSummary = ticketsMarkdown + "\n\n" + commitsSummary;
@@ -153,7 +153,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
 }
 
 async function collectTicketsAndManualActions(str: string, tickets: Ticket[], manualActions: any[]) {
-  const foundTickets = await UtilsTickets.getTicketsFromString(str);
+  const foundTickets = await TicketProvider.getProvidersTicketsFromString(str);
   tickets.push(...foundTickets);
   // Extract manual actions if defined
   const manualActionsRegex = /MANUAL ACTION:(.*)/gm;

@@ -4,6 +4,7 @@ import { Ticket } from ".";
 import { uxLog } from "../utils";
 
 export abstract class TicketProviderRoot {
+  public isActive = false;
   protected token: string;
 
   public getLabel(): string {
