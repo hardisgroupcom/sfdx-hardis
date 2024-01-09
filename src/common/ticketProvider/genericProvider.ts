@@ -45,4 +45,15 @@ export class GenericTicketingProvider extends TicketProviderRoot {
   public getLabel(): string {
     return "sfdx-hardis Generic ticketing system connector";
   }
+
+  public async collectTicketsInfo(tickets: Ticket[]) {
+    // No remote server here so do nothing
+    return tickets;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async postDeploymentComments(tickets: Ticket[], _org: string, _pullRequestInfo: any) {
+    // No remote server here so do nothing
+    return tickets;
+  }
 }
