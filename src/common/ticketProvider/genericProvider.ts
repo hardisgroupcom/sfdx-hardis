@@ -10,7 +10,7 @@ export class GenericTicketingProvider extends TicketProviderRoot {
   constructor() {
     super();
     this.ticketRefRegex = process.env.GENERIC_TICKETING_PROVIDER_REGEX || null; // Example: ([R|I][0-9]+-[0-9]+)
-    this.ticketUrlBuilder = process.env.GENERIC_TICKETING_PROVIDER_URL_BUILDER || null; // Example: https://instance.easyvista.com/index.php?
+    this.ticketUrlBuilder = process.env.GENERIC_TICKETING_PROVIDER_URL_BUILDER || null; // Example: https://instance.easyvista.com/index.php?ticket={REF}
     if (this.ticketRefRegex && this.ticketUrlBuilder) {
       this.isActive = true;
     }
