@@ -20,7 +20,7 @@ You need to define 2 environment variables in your CI/CD configuration
 
 Regular expression allowing to detect your ticketing system identifiers in the commits / PR texts.
 
-You can use https://regex101.com/ to check your Regular Expression.
+You can use <https://regex101.com/> to check your Regular Expression.
 
 Example: `([R|I][0-9]+-[0-9]+)` to detect EasyVista references, that can look like `I240103-0133` or
 `R230904-0026`
