@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.24.0] 2024-01-09
+
+- Add generic ticketing provider, that can identify any ticket references using:
+  - GENERIC_TICKETING_PROVIDER_REGEX (Example for EasyVista: `([R|I][0-9]+-[0-9]+)`)
+  - GENERIC_TICKETING_PROVIDER_URL_BUILDER (Example for EasyVista: `https://instance.easyvista.com/index.php?ticket={REF}`)
+
 ## [4.23.3] 2023-12-28
 
 - hardis:org:purge:flow: Ignore managed flows - Fixes [#532](https://github.com/hardisgroupcom/sfdx-hardis/issues/532)

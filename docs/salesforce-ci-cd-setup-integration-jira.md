@@ -16,8 +16,6 @@ description: Enrich pull requests with JIRA info and post comments on tickets wh
 
 ## Jira integration
 
-_This feature is currently in beta but can already be used safely !_
-
 If you use JIRA on your project, sfdx-hardis can use it to enrich its integrations
 
 Sfdx-hardis will automatically analyze commits and PR/MR descriptions to collect JIRA tickets URLS !
@@ -100,6 +98,7 @@ See merge request %{reference}
 ## Technical notes
 
 This integration use the following variables, that must be available from the pipelines:
+
 - JIRA_HOST
 - JIRA_EMAIL
 - JIRA_TOKEN

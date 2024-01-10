@@ -1,9 +1,10 @@
 import * as JiraApi from "jira-client";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import * as c from "chalk";
+import * as sortArray from "sort-array";
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
-import { uxLog } from "../utils";
+import { extractRegexMatches, uxLog } from "../utils";
 import { SfdxError } from "@salesforce/core";
 
 export class JiraProvider extends TicketProviderRoot {
@@ -13,7 +14,7 @@ export class JiraProvider extends TicketProviderRoot {
     super();
     const jiraOptions: JiraApi.JiraApiOptions = {
       protocol: "https",
-      host: process.env.JIRA_HOST.replace("https://", ""),
+      host: (process.env.JIRA_HOST || "").replace("https://", ""),
       apiVersion: "3",
       strictSSL: true,
     };
@@ -21,16 +22,71 @@ export class JiraProvider extends TicketProviderRoot {
     if (process.env.JIRA_EMAIL && process.env.JIRA_TOKEN) {
       jiraOptions.username = process.env.JIRA_EMAIL;
       jiraOptions.password = process.env.JIRA_TOKEN;
+      this.isActive = true;
     }
     // Personal access token
     if (process.env.JIRA_PAT) {
       jiraOptions.bearer = process.env.JIRA_PAT;
+      this.isActive = true;
     }
-    this.jiraClient = new JiraApi(jiraOptions);
+    if (this.isActive) {
+      this.jiraClient = new JiraApi(jiraOptions);
+    }
+  }
+
+  public static isAvailable() {
+    if (
+      // Basic auth
+      process.env.JIRA_TOKEN &&
+      process.env.JIRA_TOKEN.length > 5 &&
+      !process.env.JIRA_TOKEN.includes("JIRA_TOKEN") &&
+      process.env.JIRA_HOST &&
+      process.env.JIRA_HOST.length > 5 &&
+      !process.env.JIRA_HOST.includes("JIRA_HOST") &&
+      process.env.JIRA_EMAIL &&
+      process.env.JIRA_EMAIL.length > 5 &&
+      !process.env.JIRA_EMAIL.includes("JIRA_EMAIL")
+    ) {
+      return true;
+    }
+    if (
+      // Personal Access Token
+      process.env.JIRA_HOST &&
+      process.env.JIRA_HOST.length > 5 &&
+      !process.env.JIRA_HOST.includes("JIRA_HOST") &&
+      process.env.JIRA_PAT &&
+      process.env.JIRA_PAT.length > 5 &&
+      !process.env.JIRA_PAT.includes("JIRA_PAT")
+    ) {
+      return true;
+    }
+    return false;
   }
 
   public getLabel(): string {
     return "sfdx-hardis JIRA connector";
+  }
+
+  public static async getTicketsFromString(text: string): Promise<Ticket[]> {
+    const tickets: Ticket[] = [];
+    // Extract JIRA tickets
+    const jiraUrlRegex = /(https:\/\/.*(jira|atlassian\.net).*\/[A-Z0-9]+-\d+\b)/g;
+    const jiraMatches = await extractRegexMatches(jiraUrlRegex, text);
+    for (const jiraTicketUrl of jiraMatches) {
+      const pattern = /https:\/\/.*\/([A-Z0-9]+-\d+\b)/;
+      const match = jiraTicketUrl.match(pattern);
+      if (match) {
+        if (!tickets.some((ticket) => ticket.url === jiraTicketUrl)) {
+          tickets.push({
+            provider: "JIRA",
+            url: jiraTicketUrl,
+            id: match[1],
+          });
+        }
+      }
+    }
+    const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
+    return ticketsSorted;
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {

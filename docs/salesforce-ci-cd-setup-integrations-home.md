@@ -43,3 +43,6 @@ Depending of your git provider, configure one of the following integrations.
   - Enrich notifications comments by adding tickets references and links
   - Post a comment on JIRA issues when they are deployed in a major org
 
+- [Generic ticketing](salesforce-ci-cd-setup-integration-generic-ticketing.md)
+  - Enrich MR/PR comments by adding tickets references and links
+  - Enrich notifications comments by adding tickets references and links
