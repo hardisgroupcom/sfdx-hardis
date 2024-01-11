@@ -22,12 +22,15 @@ export class TeamsProvider extends NotifProviderRoot {
     if (process.env[customMSTeamsChannelVariable]) {
       teamsHooks.push(process.env[customMSTeamsChannelVariable]);
     }
+
     // Main block
+    const initText =
+      "## " + UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text) + "\n\n", notifMessage.severity) + "\n\n";
     const teamsHookData: any = {
       "@type": "MessageCard",
       "@context": "https://schema.org/extensions",
       themeColor: "0078D7",
-      title: UtilsNotifs.prefixWithSeverityEmoji(notifMessage.text, notifMessage.severity),
+      text: initText,
       potentialAction: [],
     };
     // Add text details
@@ -39,7 +42,7 @@ export class TeamsProvider extends NotifProviderRoot {
         }
       }
       if (text !== "") {
-        teamsHookData.text = text;
+        teamsHookData.text += "\n\n\n\n" + this.slackToTeamsMarkdown(text);
       }
     }
 
@@ -74,5 +77,18 @@ export class TeamsProvider extends NotifProviderRoot {
       }
     }
     return;
+  }
+
+  public slackToTeamsMarkdown(text: string) {
+    // Bold
+    const boldRegex = /(\*(.*)\*)/gm;
+    text = text.replace(boldRegex, "**$2**");
+    // Carriage return
+    const carriageReturnRegex = /\n/gm;
+    text = text.replace(carriageReturnRegex, "\n\n");
+    // Hyperlink
+    const hyperlinkRegex = /<(.*)\|(.*)>/gm;
+    text = text.replace(hyperlinkRegex, "[$2]($1)");
+    return text;
   }
 }
