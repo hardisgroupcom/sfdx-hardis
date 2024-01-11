@@ -4,6 +4,13 @@ description: Enrich pull requests & notifications with ticketing info
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Generic ticketing integration](#generic-ticketing-integration)
+- [Configuration](#configuration)
+  - [GENERIC_TICKETING_PROVIDER_REGEX](#generic_ticketing_provider_regex)
+  - [GENERIC_TICKETING_PROVIDER_URL_BUILDER](#generic_ticketing_provider_url_builder)
+- [Gitlab configuration](#gitlab-configuration)
+- [Technical notes](#technical-notes)
+
 ## Generic ticketing integration
 
 If you use a ticketing system on your project, sfdx-hardis can use it to enrich its integrations
@@ -32,6 +39,40 @@ Template string allowing to build a hyperlink from a ticket identifier.
 Must contain a **{REF}** segment that will be replaced by the ticket identifier.
 
 Example: `https://instance.easyvista.com/index.php?ticket={REF}`
+
+## Gitlab configuration
+
+If you are using Gitlab, you need to update the Merge Request Settings
+
+Go to Project -> Settings -> Merge Requests
+
+Update **Merge Commit Message Template** with the following value
+
+```sh
+%{title} Merge branch '%{source_branch}' into '%{target_branch}'
+
+%{issues}
+
+See merge request %{reference}
+
+%{description}
+
+%{all_commits}
+```
+
+Update **Squash Commit Message Template** with the following value
+
+```sh
+%{title} Merge branch '%{source_branch}' into '%{target_branch}'
+
+%{issues}
+
+See merge request %{reference}
+
+%{description}
+
+%{all_commits}
+```
 
 ## Technical notes
 
