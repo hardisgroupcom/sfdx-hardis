@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.24.1] 2024-01-11
+
+- Improve display of Microsoft Teams notifications
+
 ## [4.24.0] 2024-01-09
 
 - Add generic ticketing provider, that can identify any ticket references using:
