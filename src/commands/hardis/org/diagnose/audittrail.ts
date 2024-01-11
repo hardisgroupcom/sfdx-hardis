@@ -325,12 +325,12 @@ monitoringAllowedSectionsActions:
     // Manage notifications
     if (suspectRecords.length > 0) {
       let notifDetailText = ``;
-      notifDetailText += "Related users:\n";
+      notifDetailText += "*Related users*:\n";
       for (const user of suspectUsers) {
         notifDetailText += `• ${user}\n`;
       }
       notifDetailText += "\n";
-      notifDetailText += "Related actions:\n";
+      notifDetailText += "*Related actions*:\n";
       for (const action of suspectActions) {
         notifDetailText += `• ${action}\n`;
       }
