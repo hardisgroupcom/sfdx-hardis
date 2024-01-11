@@ -67,7 +67,8 @@ export class JiraProvider extends TicketProviderRoot {
     return "sfdx-hardis JIRA connector";
   }
 
-  public static async getTicketsFromString(text: string): Promise<Ticket[]> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static async getTicketsFromString(text: string, options = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     // Extract JIRA tickets
     const jiraUrlRegex = /(https:\/\/.*(jira|atlassian\.net).*\/[A-Z0-9]+-\d+\b)/g;
@@ -94,7 +95,7 @@ export class JiraProvider extends TicketProviderRoot {
     if (jiraTicketsNumber > 0) {
       uxLog(
         this,
-        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."),
+        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ...")
       );
     }
     for (const ticket of tickets) {
@@ -152,7 +153,7 @@ export class JiraProvider extends TicketProviderRoot {
           branchMarkdown.url || "",
           prTitle,
           prUrl,
-          prAuthor,
+          prAuthor
         );
         try {
           const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
@@ -167,7 +168,7 @@ export class JiraProvider extends TicketProviderRoot {
     }
     uxLog(
       this,
-      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", "))
     );
     return tickets;
   }
@@ -179,7 +180,7 @@ export class JiraProvider extends TicketProviderRoot {
     branchUrl: string,
     prTitle: string,
     prUrl: string,
-    prAuthor: string,
+    prAuthor: string
   ) {
     const comment = {
       version: 1,

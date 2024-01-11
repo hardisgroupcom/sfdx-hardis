@@ -18,6 +18,9 @@ export class UtilsNotifs {
   }
 
   public static markdownLink(url: string, label: string, type = "slack") {
+    if (type == "teams") {
+      return `[${label}](${url})`;
+    }
     if (type === "jira") {
       return `{ "label": "${label}", "url": "${url}"}`;
     }

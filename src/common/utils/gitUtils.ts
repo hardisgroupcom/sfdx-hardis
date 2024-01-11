@@ -103,16 +103,16 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
     if (logResult.body) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
-      await collectTicketsAndManualActions(logResult.message + "\n" + logResult.body, tickets, manualActions);
+      await collectTicketsAndManualActions(logResult.message + "\n" + logResult.body, tickets, manualActions, {commits: [logResult]});
     } else {
-      await collectTicketsAndManualActions(logResult.message, tickets, manualActions);
+      await collectTicketsAndManualActions(logResult.message, tickets, manualActions,  {commits: [logResult]});
       commitsSummary += "\n\n";
     }
   }
 
   // Tickets and references can also be in PR description
   if (pullRequestInfo) {
-    await collectTicketsAndManualActions(pullRequestInfo.description || "", tickets, manualActions);
+    await collectTicketsAndManualActions(pullRequestInfo.description || "", tickets, manualActions, {pullRequestInfo: pullRequestInfo});
   }
 
   // Unify and sort tickets
@@ -152,8 +152,8 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   };
 }
 
-async function collectTicketsAndManualActions(str: string, tickets: Ticket[], manualActions: any[]) {
-  const foundTickets = await TicketProvider.getProvidersTicketsFromString(str);
+async function collectTicketsAndManualActions(str: string, tickets: Ticket[], manualActions: any[], options: any) {
+  const foundTickets = await TicketProvider.getProvidersTicketsFromString(str, options);
   tickets.push(...foundTickets);
   // Extract manual actions if defined
   const manualActionsRegex = /MANUAL ACTION:(.*)/gm;

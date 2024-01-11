@@ -4,8 +4,9 @@ import { JiraProvider } from "./jiraProvider";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import { uxLog } from "../utils";
 import { GenericTicketingProvider } from "./genericProvider";
+import { AzureBoardsProvider } from "./azureBoardsProvider";
 
-export const allTicketProviders = [JiraProvider, GenericTicketingProvider];
+export const allTicketProviders = [JiraProvider, GenericTicketingProvider, AzureBoardsProvider];
 
 export abstract class TicketProvider {
   static getInstances(): TicketProviderRoot[] {
@@ -19,10 +20,10 @@ export abstract class TicketProvider {
   }
 
   // Returns all providers ticket references from input string
-  public static async getProvidersTicketsFromString(text: string): Promise<Ticket[]> {
+  public static async getProvidersTicketsFromString(text: string, options: any): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     for (const ticketProvider of allTicketProviders) {
-      const providerTickets = await ticketProvider.getTicketsFromString(text);
+      const providerTickets = await ticketProvider.getTicketsFromString(text, options);
       tickets.push(...providerTickets);
     }
     const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
@@ -57,7 +58,7 @@ export abstract class TicketProvider {
 }
 
 export interface Ticket {
-  provider: "JIRA" | "GENERIC";
+  provider: "JIRA" | "AZURE" | "GENERIC";
   id: string;
   url: string;
   subject?: string;
