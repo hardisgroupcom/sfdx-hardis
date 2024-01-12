@@ -100,6 +100,12 @@ ${this.getPipelineVariablesConfig()}
       (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha,
     );
     if (latestMergedPullRequestOnBranch.length > 0) {
+      const pullRequest = latestMergedPullRequestOnBranch[0];
+      // Add references to work items in PR result
+      const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId,pullRequest.pullRequestId);
+      if (!pullRequest.workItemRefs) {
+        pullRequest.workItemRefs = pullRequestWorkItemRefs;
+      }
       return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
     }
     uxLog(this, c.grey(`[Azure Integration] Unable to find related Pull Request Info`));
