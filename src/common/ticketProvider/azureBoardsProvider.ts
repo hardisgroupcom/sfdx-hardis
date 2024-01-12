@@ -78,8 +78,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       uxLog(this, "DBGNICO commitIds: " + JSON.stringify(commitIds, null, 2));
       const azureCommits: GitCommitRef[] = [];
       for (const commitId of commitIds) {
-        const commitRef = await azureGitApi.getCommit(commitId, repositoryId);
-        azureCommits.push(commitRef);
+        const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
+        azureCommits.push(...commitRefs);
       }
       uxLog(this, "DBGNICO azureCommits: " + JSON.stringify(azureCommits, null, 2));
       for (const commit of azureCommits) {
@@ -167,7 +167,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             commentedTickets.push(ticket);
           }
           else {
-            throw new SfdxError(JSON.stringify(commentPostRes));
+            throw new SfdxError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
           uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${e6.message}`));
