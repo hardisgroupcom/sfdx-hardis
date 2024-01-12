@@ -74,7 +74,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       const azureGitApi = await azureApi.getGitApi();
       const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
       const commitIds = options.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
+      uxLog(this, "DBGNICO commitIds: " + JSON.stringify(commitIds, null, 2));
       const azureCommits = await azureGitApi.getCommits(repositoryId, { ids: commitIds, includeWorkItems: true });
+      uxLog(this, "DBGNICO azureCommits: " + JSON.stringify(azureCommits, null, 2));
       for (const commit of azureCommits) {
         for (const workItem of commit?.workItems || []) {
           if (!tickets.some((ticket) => ticket.url === workItem.url)) {
@@ -89,6 +91,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
 
     // Get tickets from Azure PR
+    uxLog(this, "DBGNICO options?.pullRequestInfo: " + JSON.stringify(options?.pullRequestInfo, null, 2));
     if (options?.pullRequestInfo?.workItemRefs?.length > 0) {
       for (const workItemRef of options?.pullRequestInfo?.workItemRefs) {
         if (!tickets.some((ticket) => ticket.url === workItemRef.url)) {
@@ -104,6 +107,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return ticketsSorted;
   }
 
+  // Call Azure Work Items apis to gather more information from the ticket identifiers
   public async collectTicketsInfo(tickets: Ticket[]) {
     const azureTicketsNumber = tickets.filter((ticket) => ticket.provider === "AZURE").length;
     if (azureTicketsNumber > 0) {
@@ -118,12 +122,14 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     for (const ticket of tickets) {
       if (ticket.provider === "AZURE") {
         const ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
-        uxLog(this, "AZURE WORK ITEM RESULT: " + JSON.stringify(ticketInfo));
         if (ticketInfo && ticketInfo?.fields) {
           ticket.foundOnServer = true;
           ticket.subject = ticketInfo.fields["System.Title"] || "";
           ticket.status = ticketInfo.fields["System.State"] || "";
           ticket.statusLabel = ticketInfo.fields["System.State"] || "";
+          if (ticketInfo?._links && ticketInfo._links["html"]) {
+            ticket.url = ticketInfo?._links["html"]
+          }
           uxLog(this, c.grey("[AzureBoardsProvider] Collected data for Work Item " + ticket.id));
         } else {
           uxLog(this, c.yellow("[AzureBoardsProvider] Unable to get Azure Boards WorkItem " + ticket.id + "\n" + c.grey(JSON.stringify(ticketInfo))));
