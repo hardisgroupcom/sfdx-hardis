@@ -79,6 +79,11 @@ ${this.getPipelineVariablesConfig()}
       const pullRequestId = Number(pullRequestIdStr);
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
       if (pullRequest && pullRequest.targetRefName) {
+        // Add references to work items in PR result
+        const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId,pullRequestId);
+        if (!pullRequest.workItemRefs) {
+          pullRequest.workItemRefs = pullRequestWorkItemRefs;
+        }
         return this.completePullRequestInfo(pullRequest);
       } else {
         uxLog(this, c.yellow("[Azure Integration] Warning: incomplete PR found"));

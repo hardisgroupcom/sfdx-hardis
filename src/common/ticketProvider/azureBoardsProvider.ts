@@ -6,6 +6,7 @@ import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { extractRegexMatches, uxLog } from "../utils";
 import { SfdxError } from "@salesforce/core";
+import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
 
 export class AzureBoardsProvider extends TicketProviderRoot {
   protected serverUrl: string;
@@ -75,7 +76,11 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
       const commitIds = options.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
       uxLog(this, "DBGNICO commitIds: " + JSON.stringify(commitIds, null, 2));
-      const azureCommits = await azureGitApi.getCommits(repositoryId, { ids: commitIds, includeWorkItems: true });
+      const azureCommits: GitCommitRef[] = [];
+      for (const commitId of commitIds) {
+        const commitRef = await azureGitApi.getCommit(commitId, repositoryId);
+        azureCommits.push(commitRef);
+      }
       uxLog(this, "DBGNICO azureCommits: " + JSON.stringify(azureCommits, null, 2));
       for (const commit of azureCommits) {
         for (const workItem of commit?.workItems || []) {
