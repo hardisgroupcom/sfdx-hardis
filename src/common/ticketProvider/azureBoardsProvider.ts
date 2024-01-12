@@ -137,29 +137,26 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "teams"));
     const branchMarkdown = JSON.parse(await getBranchMarkdown("teams"));
     const commentedTickets: Ticket[] = [];
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi();
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
-        let prTitle = "";
-        let prUrl = "";
-        let prAuthor = "";
-        let notifMessage = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
+        let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
         if (pullRequestInfo) {
-          prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-          if (prUrl) {
-            prTitle = pullRequestInfo.title;
-            prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-          }
           const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-          const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-          notifMessage += `\n${pullRequestInfo.title}](${prUrl})` + (prAuthor ? ` by ${prAuthor}` : "");
+          if (prUrl) {
+            const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+            azureBoardsComment += `\n\n${pullRequestInfo.title}](${prUrl})` + (prAuthor ? ` by ${prAuthor}` : "");
+          }
         }
 
         try {
-          const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
-          if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
-            throw new SfdxError(`This is a probably a config/rights errors as the response contain HTML`);
+          const commentPostRes = await azureWorkItemApi.addComment({text: azureBoardsComment},"",Number(ticket.id));
+          if (commentPostRes.id > 0) {
+            commentedTickets.push(ticket);
           }
-          commentedTickets.push(ticket);
+          else {
+            throw new SfdxError(JSON.stringify(commentPostRes));
+          }
         } catch (e6) {
           uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${e6.message}`));
         }
