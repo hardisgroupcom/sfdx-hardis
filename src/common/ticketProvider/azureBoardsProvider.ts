@@ -110,7 +110,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       uxLog(
         this,
         c.cyan(
-          `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` + process.env.JIRA_HOST + " ..."
+          `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` + process.env.SYSTEM_COLLECTIONURI + " ..."
         )
       );
     }
@@ -118,14 +118,15 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     for (const ticket of tickets) {
       if (ticket.provider === "AZURE") {
         const ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
-        if (ticketInfo) {
+        uxLog(this, "AZURE WORK ITEM RESULT: " + JSON.stringify(ticketInfo));
+        if (ticketInfo && ticketInfo?.fields) {
           ticket.foundOnServer = true;
-          ticket.subject = ticketInfo?.fields?.get("System.Title") || "";
-          ticket.status = ticketInfo?.fields?.get("System.State") || "";
-          ticket.statusLabel = ticketInfo?.fields?.get("System.State") || "";
-          uxLog(this, c.grey("[AzureBoardsProvider] Collected data for ticket " + ticket.id));
+          ticket.subject = ticketInfo.fields["System.Title"] || "";
+          ticket.status = ticketInfo.fields["System.State"] || "";
+          ticket.statusLabel = ticketInfo.fields["System.State"] || "";
+          uxLog(this, c.grey("[AzureBoardsProvider] Collected data for Work Item " + ticket.id));
         } else {
-          uxLog(this, c.yellow("[AzureBoardsProvider] Unable to get JIRA issue " + ticket.id));
+          uxLog(this, c.yellow("[AzureBoardsProvider] Unable to get Azure Boards WorkItem " + ticket.id + "\n" + c.grey(JSON.stringify(ticketInfo))));
         }
       }
     }
@@ -150,7 +151,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         }
 
         try {
-          const commentPostRes = await azureWorkItemApi.addComment({text: azureBoardsComment},"",Number(ticket.id));
+          const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, "", Number(ticket.id));
           if (commentPostRes.id > 0) {
             commentedTickets.push(ticket);
           }
