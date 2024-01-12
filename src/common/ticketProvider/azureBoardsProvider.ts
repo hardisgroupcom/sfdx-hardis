@@ -132,8 +132,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           ticket.subject = ticketInfo.fields["System.Title"] || "";
           ticket.status = ticketInfo.fields["System.State"] || "";
           ticket.statusLabel = ticketInfo.fields["System.State"] || "";
-          if (ticketInfo?._links && ticketInfo._links["html"]) {
-            ticket.url = ticketInfo?._links["html"]
+          if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
+            ticket.url = ticketInfo?._links["html"]["href"];
           }
           uxLog(this, c.grey("[AzureBoardsProvider] Collected data for Work Item " + ticket.id));
         } else {
