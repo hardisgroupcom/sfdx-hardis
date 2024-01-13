@@ -30,9 +30,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
-      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${
-        process.env.BUILD_BUILDID
-      }`;
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID
+        }`;
       return jobUrl;
     }
     uxLog(
@@ -75,12 +74,14 @@ ${this.getPipelineVariablesConfig()}
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     const azureGitApi = await this.azureApi.getGitApi();
     const currentGitBranch = await getCurrentGitBranch();
-    if (pullRequestIdStr !== null && !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID")) {
+    if (pullRequestIdStr !== null &&
+      !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID") &&
+      !(pullRequestIdStr || "").includes("$(")) {
       const pullRequestId = Number(pullRequestIdStr);
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
       if (pullRequest && pullRequest.targetRefName) {
         // Add references to work items in PR result
-        const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId,pullRequestId);
+        const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId, pullRequestId);
         if (!pullRequest.workItemRefs) {
           pullRequest.workItemRefs = pullRequestWorkItemRefs;
         }
@@ -102,7 +103,7 @@ ${this.getPipelineVariablesConfig()}
     if (latestMergedPullRequestOnBranch.length > 0) {
       const pullRequest = latestMergedPullRequestOnBranch[0];
       // Add references to work items in PR result
-      const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId,pullRequest.pullRequestId);
+      const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId, pullRequest.pullRequestId);
       if (!pullRequest.workItemRefs) {
         pullRequest.workItemRefs = pullRequestWorkItemRefs;
       }
