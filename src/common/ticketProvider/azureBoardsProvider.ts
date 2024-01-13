@@ -172,7 +172,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfdxError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${e6.message}`));
+          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
         }
       }
     }
