@@ -11,6 +11,7 @@ import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
 export class AzureBoardsProvider extends TicketProviderRoot {
   protected serverUrl: string;
   protected azureApi: InstanceType<typeof azdev.WebApi>;
+  protected teamProject: string;
 
   constructor() {
     super();
@@ -18,7 +19,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     this.serverUrl = process.env.SYSTEM_COLLECTIONURI;
     // a Personal Access Token must be defined
     this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN;
-    if (this.serverUrl && this.token) {
+    this.teamProject = process.env.SYSTEM_TEAMPROJECT;
+    if (this.serverUrl && this.token && this.teamProject) {
       this.isActive = true;
     }
     if (this.isActive) {
@@ -35,7 +37,10 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       !process.env.SYSTEM_COLLECTIONURI.includes("SYSTEM_COLLECTIONURI") &&
       process.env.SYSTEM_ACCESSTOKEN &&
       process.env.SYSTEM_ACCESSTOKEN.length > 5 &&
-      !process.env.SYSTEM_ACCESSTOKEN.includes("SYSTEM_ACCESSTOKEN")
+      !process.env.SYSTEM_ACCESSTOKEN.includes("SYSTEM_ACCESSTOKEN") &&
+      process.env.SYSTEM_TEAMPROJECT &&
+      process.env.SYSTEM_TEAMPROJECT.length > 5 &&
+      !process.env.SYSTEM_TEAMPROJECT.includes("SYSTEM_TEAMPROJECT")
     ) {
       return true;
     }
@@ -120,7 +125,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         )
       );
     }
-    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi();
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
     for (const ticket of tickets) {
       if (ticket.provider === "AZURE") {
         const ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
@@ -146,7 +151,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const orgMarkdown = await getOrgMarkdown(org, "teams");
     const branchMarkdown = await getBranchMarkdown("teams");
     const commentedTickets: Ticket[] = [];
-    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi();
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
         let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
@@ -159,7 +164,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         }
 
         try {
-          const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, "", Number(ticket.id));
+          const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, this.teamProject, Number(ticket.id));
           if (commentPostRes && commentPostRes?.id > 0) {
             commentedTickets.push(ticket);
           }

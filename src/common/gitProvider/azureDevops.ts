@@ -86,8 +86,8 @@ ${this.getPipelineVariablesConfig()}
         }
         return this.completePullRequestInfo(pullRequest);
       } else {
-        uxLog(this, c.yellow("[Azure Integration] Warning: incomplete PR found"));
-        uxLog(this, c.yellow(JSON.stringify(pullRequest || {})));
+        uxLog(this, c.yellow(`[Azure Integration] Warning: incomplete PR found (id: ${pullRequestIdStr})`));
+        uxLog(this, c.grey(JSON.stringify(pullRequest || {})));
       }
     }
     // Case when we find PR from a commit
