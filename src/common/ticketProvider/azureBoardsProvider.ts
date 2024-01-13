@@ -145,11 +145,12 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
-    uxLog(this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} tickets...`));
+    uxLog(this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} work items...`));
     const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "teams"));
     const branchMarkdown = JSON.parse(await getBranchMarkdown("teams"));
     const commentedTickets: Ticket[] = [];
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi();
+    uxLog(this,"DBGNICO azureWorkItemApi: "+JSON.stringify(azureWorkItemApi,null,2));
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
         let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
@@ -162,6 +163,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         }
 
         try {
+          uxLog(this,"DBGNICO try adding comment: "+azureBoardsComment);
           const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, "", Number(ticket.id));
           if (commentPostRes.id > 0) {
             commentedTickets.push(ticket);
