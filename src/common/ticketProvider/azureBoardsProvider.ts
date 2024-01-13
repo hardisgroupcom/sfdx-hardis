@@ -160,7 +160,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
         try {
           const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, "", Number(ticket.id));
-          if (commentPostRes.id > 0) {
+          if (commentPostRes && commentPostRes?.id > 0) {
             commentedTickets.push(ticket);
           }
           else {
