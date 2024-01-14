@@ -37,8 +37,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+          return { title: branch, value: branch };
+        })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -103,16 +103,17 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
     if (logResult.body) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
-      await collectTicketsAndManualActions(logResult.message + "\n" + logResult.body, tickets, manualActions, {commits: [logResult]});
+      await collectTicketsAndManualActions(logResult.message + "\n" + logResult.body, tickets, manualActions, { commits: [logResult] });
     } else {
-      await collectTicketsAndManualActions(logResult.message, tickets, manualActions,  {commits: [logResult]});
+      await collectTicketsAndManualActions(logResult.message, tickets, manualActions, { commits: [logResult] });
       commitsSummary += "\n\n";
     }
   }
 
   // Tickets and references can also be in PR description
   if (pullRequestInfo) {
-    await collectTicketsAndManualActions(pullRequestInfo.description || "", tickets, manualActions, {pullRequestInfo: pullRequestInfo});
+    const prText = (pullRequestInfo.title || "") + (pullRequestInfo.description || "")
+    await collectTicketsAndManualActions(prText, tickets, manualActions, { pullRequestInfo: pullRequestInfo });
   }
 
   // Unify and sort tickets
