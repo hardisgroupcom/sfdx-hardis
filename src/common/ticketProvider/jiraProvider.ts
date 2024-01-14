@@ -172,7 +172,9 @@ export class JiraProvider extends TicketProviderRoot {
         // Add deployment label to JIRA ticket
         try {
           const issueUpdate = {
-            "labels": [{ "add": tag }]
+            "update": {
+              "labels": [{ "add": tag }]
+            }
           };
           await this.jiraClient.updateIssue(ticket.id, issueUpdate);
           taggedTickets.push(ticket);
