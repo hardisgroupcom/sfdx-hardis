@@ -172,20 +172,12 @@ export class JiraProvider extends TicketProviderRoot {
         // Add deployment label to JIRA ticket
         try {
           const issueUpdate = {
-            "update":
-            {
-              "labels": [{ "add": tag }]
-            }
+            "labels": [{ "add": tag }]
           };
-          const updatedTicket = await this.jiraClient.updateIssue(ticket.id, issueUpdate);
-          if (updatedTicket && updatedTicket?.id > 0) {
-            taggedTickets.push(ticket);
-          }
-          else {
-            throw new SfdxError("label updatedTicket: " + updatedTicket);
-          }
+          await this.jiraClient.updateIssue(ticket.id, issueUpdate);
+          taggedTickets.push(ticket);
         } catch (e6) {
-          uxLog(this, c.yellow(`[JiraProvider] Error while adding tag ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+          uxLog(this, c.yellow(`[JiraProvider] Error while adding label ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
         }
 
       }
