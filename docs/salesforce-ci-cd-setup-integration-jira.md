@@ -1,6 +1,6 @@
 ---
 title: Configure Integrations between sfdx-hardis and Jira
-description: Enrich pull requests with JIRA info and post comments on tickets when they are deployed to a Salesforce org
+description: Enrich pull requests with JIRA info and post comments & tags on tickets when they are deployed to a Salesforce org
 ---
 <!-- markdownlint-disable MD013 -->
 
