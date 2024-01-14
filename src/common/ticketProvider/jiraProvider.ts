@@ -133,9 +133,12 @@ export class JiraProvider extends TicketProviderRoot {
     uxLog(this, c.cyan(`[JiraProvider] Try to post comments on ${tickets.length} tickets...`));
     const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "jira"));
     const branchMarkdown = JSON.parse(await getBranchMarkdown("jira"));
+    const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
+    const taggedTickets: Ticket[] = [];
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
+        // Build comment
         let prTitle = "";
         let prUrl = "";
         let prAuthor = "";
@@ -155,6 +158,7 @@ export class JiraProvider extends TicketProviderRoot {
           prUrl,
           prAuthor
         );
+        // Post comment
         try {
           const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
           if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
@@ -164,11 +168,38 @@ export class JiraProvider extends TicketProviderRoot {
         } catch (e6) {
           uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}\n${e6.message}`));
         }
+
+        // Add deployment label to JIRA ticket
+        try {
+          const issueUpdate = {
+            "update":
+            {
+              "labels": [{ "add": tag }]
+            }
+          };
+          const updatedTicket = await this.jiraClient.updateIssue(ticket.id, issueUpdate);
+          if (updatedTicket && updatedTicket?.id > 0) {
+            taggedTickets.push(ticket);
+          }
+          else {
+            throw new SfdxError("label updatedTicket: " + updatedTicket);
+          }
+        } catch (e6) {
+          uxLog(this, c.yellow(`[JiraProvider] Error while adding tag ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+        }
+
       }
     }
+    // Summary
     uxLog(
       this,
       c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", "))
+    );
+    uxLog(
+      this,
+      c.gray(
+        `[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")
+      )
     );
     return tickets;
   }
