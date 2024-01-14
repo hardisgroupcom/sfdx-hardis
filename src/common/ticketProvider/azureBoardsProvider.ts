@@ -7,6 +7,7 @@ import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { extractRegexMatches, uxLog } from "../utils";
 import { SfdxError } from "@salesforce/core";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
+import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces";
 
 export class AzureBoardsProvider extends TicketProviderRoot {
   protected serverUrl: string;
@@ -150,7 +151,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     uxLog(this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} work items...`));
     const orgMarkdown = await getOrgMarkdown(org, "html");
     const branchMarkdown = await getBranchMarkdown("html");
+    const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
+    const taggedTickets: Ticket[] = [];
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
@@ -159,10 +162,11 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
           if (prUrl) {
             const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-            azureBoardsComment += `<br/><br/><a href="${prUrl}">${pullRequestInfo.title}</a>` + (prAuthor ? ` by ${prAuthor}` : "");
+            azureBoardsComment += `<br/><br/>PR: <a href="${prUrl}">${pullRequestInfo.title}</a>` + (prAuthor ? ` by ${prAuthor}` : "");
           }
         }
 
+        // Post comment
         try {
           const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, this.teamProject, Number(ticket.id));
           if (commentPostRes && commentPostRes?.id > 0) {
@@ -174,12 +178,39 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         } catch (e6) {
           uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
         }
+
+        // Add tag
+        try {
+          const patchDocument: JsonPatchDocument = [
+            {
+              "op": "add",
+              "path": "/fields/System.Tags",
+              "value": tag
+            }
+          ];
+          const workItem = await azureWorkItemApi.updateWorkItem({}, patchDocument, Number(ticket.id), this.teamProject);
+          if (workItem && workItem?.id > 0) {
+            taggedTickets.push(ticket);
+          }
+          else {
+            throw new SfdxError("workItem: " + workItem);
+          }
+        } catch (e6) {
+          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting tag on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+        }
+
       }
     }
     uxLog(
       this,
       c.gray(
         `[AzureBoardsProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")
+      )
+    );
+    uxLog(
+      this,
+      c.gray(
+        `[AzureBoardsProvider] Posted tags on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")
       )
     );
     return tickets;

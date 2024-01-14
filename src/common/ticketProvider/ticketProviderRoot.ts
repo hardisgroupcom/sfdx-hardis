@@ -1,7 +1,7 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import { Ticket } from ".";
-import { uxLog } from "../utils";
+import { getCurrentGitBranch, uxLog } from "../utils";
 
 export abstract class TicketProviderRoot {
   public isActive = false;
@@ -20,5 +20,14 @@ export abstract class TicketProviderRoot {
   public async postDeploymentComments(tickets: Ticket[], _org: string, _pullRequestInfo: any) {
     uxLog(this, c.yellow("postDeploymentComments is not implemented on " + this.getLabel()));
     return tickets;
+  }
+
+  public async getDeploymentTag(): Promise<string> {
+    const currentGitBranch = await getCurrentGitBranch();
+    let tag = currentGitBranch.toUpperCase + "_DEPLOYED";
+    if (process.env?.DEPLOYED_TAG_TEMPLATE && !(process.env?.DEPLOYED_TAG_TEMPLATE || "").includes("$(")) {
+      tag = process.env?.DEPLOYED_TAG_TEMPLATE.replace("{BRANCH}", currentGitBranch.toUpperCase);
+    }
+    return tag;
   }
 }
