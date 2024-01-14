@@ -24,9 +24,9 @@ export abstract class TicketProviderRoot {
 
   public async getDeploymentTag(): Promise<string> {
     const currentGitBranch = await getCurrentGitBranch();
-    let tag = currentGitBranch.toUpperCase + "_DEPLOYED";
+    let tag = currentGitBranch.toUpperCase() + "_DEPLOYED";
     if (process.env?.DEPLOYED_TAG_TEMPLATE && !(process.env?.DEPLOYED_TAG_TEMPLATE || "").includes("$(")) {
-      tag = process.env?.DEPLOYED_TAG_TEMPLATE.replace("{BRANCH}", currentGitBranch.toUpperCase);
+      tag = process.env?.DEPLOYED_TAG_TEMPLATE.replace("{BRANCH}", currentGitBranch.toUpperCase());
     }
     return tag;
   }

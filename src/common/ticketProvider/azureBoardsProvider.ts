@@ -193,10 +193,10 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             taggedTickets.push(ticket);
           }
           else {
-            throw new SfdxError("workItem: " + workItem);
+            throw new SfdxError("tag workItem: " + workItem);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting tag on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
         }
 
       }
@@ -204,13 +204,13 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     uxLog(
       this,
       c.gray(
-        `[AzureBoardsProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")
+        `[AzureBoardsProvider] Posted comments on ${commentedTickets.length} work item(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")
       )
     );
     uxLog(
       this,
       c.gray(
-        `[AzureBoardsProvider] Posted tags on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")
+        `[AzureBoardsProvider] Added tag ${tag} on ${taggedTickets.length} work item(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")
       )
     );
     return tickets;
