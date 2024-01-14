@@ -24,7 +24,7 @@ export class GenericTicketingProvider extends TicketProviderRoot {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static async getTicketsFromString(text: string, options = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
-    if (!this.isAvailable) {
+    if (!this.isAvailable()) {
       return tickets;
     }
     // Extract JIRA tickets

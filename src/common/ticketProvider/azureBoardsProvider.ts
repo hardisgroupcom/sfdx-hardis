@@ -54,7 +54,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
   public static async getTicketsFromString(text: string, options: any = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
-    // Extract JIRA tickets
+    // Extract Azuer Boards Work Items
     const azureBoardsUrlRegex = /(https:\/\/.*\/_workitems\/edit\/[0-9]+)/g;
     const azureBoardUrlsMatches = await extractRegexMatches(azureBoardsUrlRegex, text);
     for (const azureTicketUrl of azureBoardUrlsMatches) {
@@ -71,7 +71,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
     }
     const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
-    if (!this.isAvailable) {
+    if (!this.isAvailable()) {
       return ticketsSorted;
     }
     // Get tickets from Azure commits

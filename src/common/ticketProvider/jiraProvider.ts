@@ -70,7 +70,7 @@ export class JiraProvider extends TicketProviderRoot {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static async getTicketsFromString(text: string, options = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
-    // Extract JIRA tickets
+    // Extract JIRA tickets using URL references
     const jiraUrlRegex = /(https:\/\/.*(jira|atlassian\.net).*\/[A-Z0-9]+-\d+\b)/g;
     const jiraMatches = await extractRegexMatches(jiraUrlRegex, text);
     for (const jiraTicketUrl of jiraMatches) {
