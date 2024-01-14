@@ -24,6 +24,9 @@ export class UtilsNotifs {
     if (type === "jira") {
       return `{ "label": "${label}", "url": "${url}"}`;
     }
+    if (type == "html") {
+      return `<a href="${url}">${label}</a>`;
+    }
     return `<${url}|*${label}*>`;
   }
 

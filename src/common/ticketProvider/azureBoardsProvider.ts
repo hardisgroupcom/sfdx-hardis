@@ -148,8 +148,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
     uxLog(this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} work items...`));
-    const orgMarkdown = await getOrgMarkdown(org, "teams");
-    const branchMarkdown = await getBranchMarkdown("teams");
+    const orgMarkdown = await getOrgMarkdown(org, "html");
+    const branchMarkdown = await getBranchMarkdown("html");
     const commentedTickets: Ticket[] = [];
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
     for (const ticket of tickets) {
@@ -159,7 +159,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
           if (prUrl) {
             const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-            azureBoardsComment += `\n\n${pullRequestInfo.title}](${prUrl})` + (prAuthor ? ` by ${prAuthor}` : "");
+            azureBoardsComment += `<br/><br/><a href="${prUrl}">${pullRequestInfo.title}</a>` + (prAuthor ? ` by ${prAuthor}` : "");
           }
         }
 
