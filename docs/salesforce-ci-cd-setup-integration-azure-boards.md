@@ -4,14 +4,8 @@ description: Enrich pull requests with Azure Work Items info and post comments &
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Jira integration](#jira-integration)
-  - [For git providers](#for-git-providers)
-  - [For notifications providers](#for-notifications-providers)
-  - [Update JIRA issues](#update-jira-issues)
-- [Authentication](#authentication)
-  - [Jira Cloud](#jira-cloud)
-  - [Jira On-Premise](#jira-on-premise)
-- [Gitlab configuration](#gitlab-configuration)
+- [Azure Boards integration](#azure-boards-integration)
+  - [Update Work Items](#update-work-items)
 - [Technical notes](#technical-notes)
 
 ## Azure Boards integration
@@ -25,6 +19,12 @@ Make sure to link your Work Items to your Pull Requests before submitting them !
 ### Update Work Items
 
 Add **comments** and **tags** on JIRA tickets when they are deployed in a major org
+
+Default tag is `UPPERCASE(branch_name) + "_DEPLOYED"`.
+
+To override it, define env variable **DEPLOYED_TAG_TEMPLATE**, that must contain `{BRANCH}`.
+
+Example: `DEPLOYED_TO_{BRANCH}`
 
 ![](assets/images/screenshot-azure-work-item-comment.jpg)
 

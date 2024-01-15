@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import * as azdev from "azure-devops-node-api";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import * as c from "chalk";
@@ -8,6 +9,7 @@ import { extractRegexMatches, uxLog } from "../utils";
 import { SfdxError } from "@salesforce/core";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces";
+/* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
   protected serverUrl: string;
@@ -54,7 +56,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
   public static async getTicketsFromString(text: string, options: any = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
-    // Extract Azuer Boards Work Items
+    // Extract Azure Boards Work Items
     const azureBoardsUrlRegex = /(https:\/\/.*\/_workitems\/edit\/[0-9]+)/g;
     const azureBoardUrlsMatches = await extractRegexMatches(azureBoardsUrlRegex, text);
     for (const azureTicketUrl of azureBoardUrlsMatches) {
@@ -88,7 +90,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
       for (const commit of azureCommits) {
         for (const workItem of commit?.workItems || []) {
-          if (!tickets.some((ticket) => ticket.url === workItem.url)) {
+          if (!tickets.some((ticket) => ticket.id === workItem.id)) {
             tickets.push({
               provider: "AZURE",
               url: workItem.url,
@@ -100,9 +102,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
 
     // Get tickets from Azure PR
-    if (options?.pullRequestInfo?.workItemRefs?.length > 0) {
-      for (const workItemRef of options?.pullRequestInfo?.workItemRefs) {
-        if (!tickets.some((ticket) => ticket.url === workItemRef.url)) {
+    if (options?.pullRequestInfo?.workItemRefs?.length) {
+      for (const workItemRef of options.pullRequestInfo.workItemRefs) {
+        if (!tickets.some((ticket) => ticket.id === workItemRef.id)) {
           tickets.push({
             provider: "AZURE",
             url: workItemRef.url,

@@ -38,7 +38,13 @@ Slack, MsTeams: Add deployed JIRA tickets in deployment notifications
 
 ### Update JIRA issues
 
-Add comments on JIRA tickets when they are deployed in a major org
+Add comments and tags on JIRA tickets when they are deployed in a major org
+
+Default tag is `UPPERCASE(branch_name) + "_DEPLOYED"`.
+
+To override it, define env variable **DEPLOYED_TAG_TEMPLATE**, that must contain `{BRANCH}`.
+
+Example: `DEPLOYED_TO_{BRANCH}`
 
 ![](assets/images/screenshot-jira-comment.jpg)
 
