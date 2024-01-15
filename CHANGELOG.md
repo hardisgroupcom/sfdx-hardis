@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.25.0] 2024-01-15
+
+- Integration with Azure Boards (Work Items) ticketing system
+  - Enrich MR/PR comments by adding work items references and links
+  - Enrich notifications comments by adding work items references and links
+  - Post a comment and a tag on Azure Work Items when they are deployed in a major org
+- Enhance JIRA integration by posting labels once an issue is deployed in a major org
+
 ## [4.24.1] 2024-01-11
 
 - Improve display of Microsoft Teams notifications
