@@ -20,11 +20,12 @@ export class GenericTicketingProvider extends TicketProviderRoot {
     return process.env.GENERIC_TICKETING_PROVIDER_REGEX && process.env.GENERIC_TICKETING_PROVIDER_URL_BUILDER;
   }
 
-  public static async getTicketsFromString(text: string): Promise<Ticket[]> {
-    if (!this.isAvailable) {
-      return;
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static async getTicketsFromString(text: string, options = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
+    if (!this.isAvailable()) {
+      return tickets;
+    }
     // Extract JIRA tickets
     const ticketRefRegexExec = new RegExp(process.env.GENERIC_TICKETING_PROVIDER_REGEX, "g");
     const regexMatches = await extractRegexMatches(ticketRefRegexExec, text);

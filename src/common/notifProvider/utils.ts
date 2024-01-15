@@ -18,8 +18,14 @@ export class UtilsNotifs {
   }
 
   public static markdownLink(url: string, label: string, type = "slack") {
+    if (type == "teams") {
+      return `[${label}](${url})`;
+    }
     if (type === "jira") {
       return `{ "label": "${label}", "url": "${url}"}`;
+    }
+    if (type == "html") {
+      return `<a href="${url}">${label}</a>`;
     }
     return `<${url}|*${label}*>`;
   }

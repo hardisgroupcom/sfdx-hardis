@@ -401,7 +401,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         const commitsSummary = await this.collectNotifAttachments(attachments, pullRequestInfo);
         await TicketProvider.postDeploymentActions(commitsSummary.tickets, this.org?.getConnection()?.instanceUrl || targetUsername, pullRequestInfo);
       } catch (e4) {
-        uxLog(this, c.yellow("Unable to handle commit info or TicketProvider post deployment actions:\n" + e4.message));
+        uxLog(this, c.yellow("Unable to handle commit info on TicketProvider post deployment actions:\n" + e4.message) + "\n" + c.gray(e4.stack));
       }
 
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl || targetUsername);

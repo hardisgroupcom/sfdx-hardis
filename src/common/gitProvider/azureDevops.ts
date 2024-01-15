@@ -15,7 +15,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
 
   constructor() {
     super();
-    // Azure server url must be provided in AZURE_SERVER_URL. ex: https:/dev.azure.com/mycompany
+    // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = process.env.SYSTEM_COLLECTIONURI;
     // a Personal Access Token must be defined
     this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN;
@@ -75,14 +75,23 @@ ${this.getPipelineVariablesConfig()}
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     const azureGitApi = await this.azureApi.getGitApi();
     const currentGitBranch = await getCurrentGitBranch();
-    if (pullRequestIdStr !== null && !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID")) {
+    if (
+      pullRequestIdStr !== null &&
+      !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID") &&
+      !(pullRequestIdStr || "").includes("$(")
+    ) {
       const pullRequestId = Number(pullRequestIdStr);
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
       if (pullRequest && pullRequest.targetRefName) {
+        // Add references to work items in PR result
+        const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId, pullRequestId);
+        if (!pullRequest.workItemRefs) {
+          pullRequest.workItemRefs = pullRequestWorkItemRefs;
+        }
         return this.completePullRequestInfo(pullRequest);
       } else {
-        uxLog(this, c.yellow("[Azure Integration] Warning: incomplete PR found"));
-        uxLog(this, c.yellow(JSON.stringify(pullRequest || {})));
+        uxLog(this, c.yellow(`[Azure Integration] Warning: incomplete PR found (id: ${pullRequestIdStr})`));
+        uxLog(this, c.grey(JSON.stringify(pullRequest || {})));
       }
     }
     // Case when we find PR from a commit
@@ -95,6 +104,12 @@ ${this.getPipelineVariablesConfig()}
       (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && pr.lastMergeCommit?.commitId === sha,
     );
     if (latestMergedPullRequestOnBranch.length > 0) {
+      const pullRequest = latestMergedPullRequestOnBranch[0];
+      // Add references to work items in PR result
+      const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId, pullRequest.pullRequestId);
+      if (!pullRequest.workItemRefs) {
+        pullRequest.workItemRefs = pullRequestWorkItemRefs;
+      }
       return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
     }
     uxLog(this, c.grey(`[Azure Integration] Unable to find related Pull Request Info`));
