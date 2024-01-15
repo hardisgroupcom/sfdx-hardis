@@ -30,8 +30,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string> {
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
-      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID
-        }`;
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${
+        process.env.BUILD_BUILDID
+      }`;
       return jobUrl;
     }
     uxLog(
@@ -74,9 +75,11 @@ ${this.getPipelineVariablesConfig()}
     const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     const azureGitApi = await this.azureApi.getGitApi();
     const currentGitBranch = await getCurrentGitBranch();
-    if (pullRequestIdStr !== null &&
+    if (
+      pullRequestIdStr !== null &&
       !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID") &&
-      !(pullRequestIdStr || "").includes("$(")) {
+      !(pullRequestIdStr || "").includes("$(")
+    ) {
       const pullRequestId = Number(pullRequestIdStr);
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
       if (pullRequest && pullRequest.targetRefName) {

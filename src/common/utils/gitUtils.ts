@@ -37,8 +37,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-          return { title: branch, value: branch };
-        })
+            return { title: branch, value: branch };
+          })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -112,7 +112,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
 
   // Tickets and references can also be in PR description
   if (pullRequestInfo) {
-    const prText = (pullRequestInfo.title || "") + (pullRequestInfo.description || "")
+    const prText = (pullRequestInfo.title || "") + (pullRequestInfo.description || "");
     await collectTicketsAndManualActions(prText, tickets, manualActions, { pullRequestInfo: pullRequestInfo });
   }
 

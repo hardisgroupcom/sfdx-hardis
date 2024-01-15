@@ -124,8 +124,10 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       uxLog(
         this,
         c.cyan(
-          `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` + process.env.SYSTEM_COLLECTIONURI + " ..."
-        )
+          `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` +
+            process.env.SYSTEM_COLLECTIONURI +
+            " ...",
+        ),
       );
     }
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
@@ -173,8 +175,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, this.teamProject, Number(ticket.id));
           if (commentPostRes && commentPostRes?.id > 0) {
             commentedTickets.push(ticket);
-          }
-          else {
+          } else {
             throw new SfdxError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
@@ -185,35 +186,33 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         try {
           const patchDocument: JsonPatchDocument = [
             {
-              "op": "add",
-              "path": "/fields/System.Tags",
-              "value": tag
-            }
+              op: "add",
+              path: "/fields/System.Tags",
+              value: tag,
+            },
           ];
           const workItem = await azureWorkItemApi.updateWorkItem({}, patchDocument, Number(ticket.id), this.teamProject);
           if (workItem && workItem?.id > 0) {
             taggedTickets.push(ticket);
-          }
-          else {
+          } else {
             throw new SfdxError("tag workItem: " + workItem);
           }
         } catch (e6) {
           uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
         }
-
       }
     }
     uxLog(
       this,
       c.gray(
-        `[AzureBoardsProvider] Posted comments on ${commentedTickets.length} work item(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")
-      )
+        `[AzureBoardsProvider] Posted comments on ${commentedTickets.length} work item(s): ` + commentedTickets.map((ticket) => ticket.id).join(", "),
+      ),
     );
     uxLog(
       this,
       c.gray(
-        `[AzureBoardsProvider] Added tag ${tag} on ${taggedTickets.length} work item(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")
-      )
+        `[AzureBoardsProvider] Added tag ${tag} on ${taggedTickets.length} work item(s): ` + taggedTickets.map((ticket) => ticket.id).join(", "),
+      ),
     );
     return tickets;
   }
