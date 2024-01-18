@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.25.1] 2024-01-18
+
+- Fix Microsoft Teams notifications formatting
+
 ## [4.25.0] 2024-01-15
 
 - Integration with Azure Boards (Work Items) ticketing system
