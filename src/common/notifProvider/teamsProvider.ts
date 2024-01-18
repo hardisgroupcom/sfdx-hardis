@@ -81,13 +81,13 @@ export class TeamsProvider extends NotifProviderRoot {
 
   public slackToTeamsMarkdown(text: string) {
     // Bold
-    const boldRegex = /(\*(.*)\*)/gm;
+    const boldRegex = /(\*(.*?)\*)/gm;
     text = text.replace(boldRegex, "**$2**");
     // Carriage return
     const carriageReturnRegex = /\n/gm;
     text = text.replace(carriageReturnRegex, "\n\n");
     // Hyperlink
-    const hyperlinkRegex = /<(.*)\|(.*)>/gm;
+    const hyperlinkRegex = /<(.*?)\|(.*?)>/gm;
     text = text.replace(hyperlinkRegex, "[$2]($1)");
     return text;
   }
