@@ -5269,11 +5269,9 @@ lodash.once@^4.0.0:
   integrity sha1-DdOXEhPHxW34gJd9UEyI+0cal6w=
 
 lodash.set@^4.3.2:
-  version "4.17.19"
-  resolved ""
-  integrity ""
-  dependencies:
-    
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/lodash.set/-/lodash.set-4.3.2.tgz#d8757b1da807dde24816b0d6a84bea1a76230b23"
+  integrity "sha1-2HV7HagH3eJIFrDWqEvqGnYjCyM= sha512-4hNPN5jlm/N/HLMCO43v8BXKq9Z7QdAGc/VGrRD61w8gN9g/6jF9A4L1pbUgBLCffi0w9VsXfTOij5x8iTyFvg=="
 
 lodash.template@^4.4.0:
   version "4.5.0"
