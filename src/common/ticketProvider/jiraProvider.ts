@@ -104,7 +104,7 @@ export class JiraProvider extends TicketProviderRoot {
     if (jiraTicketsNumber > 0) {
       uxLog(
         this,
-        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ...")
+        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."),
       );
     }
     for (const ticket of tickets) {
@@ -165,7 +165,7 @@ export class JiraProvider extends TicketProviderRoot {
           branchMarkdown.url || "",
           prTitle,
           prUrl,
-          prAuthor
+          prAuthor,
         );
         // Post comment
         try {
@@ -195,11 +195,11 @@ export class JiraProvider extends TicketProviderRoot {
     // Summary
     uxLog(
       this,
-      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", "))
+      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
     );
     uxLog(
       this,
-      c.gray(`[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", "))
+      c.gray(`[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")),
     );
     return tickets;
   }
@@ -211,7 +211,7 @@ export class JiraProvider extends TicketProviderRoot {
     branchUrl: string,
     prTitle: string,
     prUrl: string,
-    prAuthor: string
+    prAuthor: string,
   ) {
     const comment = {
       version: 1,
