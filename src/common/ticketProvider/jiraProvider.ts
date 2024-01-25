@@ -6,6 +6,7 @@ import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { extractRegexMatches, uxLog } from "../utils";
 import { SfdxError } from "@salesforce/core";
+import { getEnvVar } from "../../config";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof JiraApi>;
@@ -14,19 +15,19 @@ export class JiraProvider extends TicketProviderRoot {
     super();
     const jiraOptions: JiraApi.JiraApiOptions = {
       protocol: "https",
-      host: (process.env.JIRA_HOST || "").replace("https://", ""),
+      host: (getEnvVar("JIRA_HOST") || "").replace("https://", ""),
       apiVersion: "3",
       strictSSL: true,
     };
     // Basic Auth
-    if (process.env.JIRA_EMAIL && process.env.JIRA_TOKEN) {
-      jiraOptions.username = process.env.JIRA_EMAIL;
-      jiraOptions.password = process.env.JIRA_TOKEN;
+    if (getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")) {
+      jiraOptions.username = getEnvVar("JIRA_EMAIL");
+      jiraOptions.password = getEnvVar("JIRA_TOKEN");
       this.isActive = true;
     }
     // Personal access token
-    if (process.env.JIRA_PAT) {
-      jiraOptions.bearer = process.env.JIRA_PAT;
+    if (getEnvVar("JIRA_PAT")) {
+      jiraOptions.bearer = getEnvVar("JIRA_PAT");
       this.isActive = true;
     }
     if (this.isActive) {
@@ -37,26 +38,16 @@ export class JiraProvider extends TicketProviderRoot {
   public static isAvailable() {
     if (
       // Basic auth
-      process.env.JIRA_TOKEN &&
-      process.env.JIRA_TOKEN.length > 5 &&
-      !process.env.JIRA_TOKEN.includes("JIRA_TOKEN") &&
-      process.env.JIRA_HOST &&
-      process.env.JIRA_HOST.length > 5 &&
-      !process.env.JIRA_HOST.includes("JIRA_HOST") &&
-      process.env.JIRA_EMAIL &&
-      process.env.JIRA_EMAIL.length > 5 &&
-      !process.env.JIRA_EMAIL.includes("JIRA_EMAIL")
+      getEnvVar("JIRA_HOST") &&
+      getEnvVar("JIRA_TOKEN") &&
+      getEnvVar("JIRA_EMAIL")
     ) {
       return true;
     }
     if (
       // Personal Access Token
-      process.env.JIRA_HOST &&
-      process.env.JIRA_HOST.length > 5 &&
-      !process.env.JIRA_HOST.includes("JIRA_HOST") &&
-      process.env.JIRA_PAT &&
-      process.env.JIRA_PAT.length > 5 &&
-      !process.env.JIRA_PAT.includes("JIRA_PAT")
+      getEnvVar("JIRA_HOST") &&
+      getEnvVar("JIRA_PAT")
     ) {
       return true;
     }
@@ -77,15 +68,33 @@ export class JiraProvider extends TicketProviderRoot {
       const pattern = /https:\/\/.*\/([A-Z0-9]+-\d+\b)/;
       const match = jiraTicketUrl.match(pattern);
       if (match) {
-        if (!tickets.some((ticket) => ticket.url === jiraTicketUrl)) {
+        const ticketId = match[1];
+        if (!tickets.some((ticket) => ticket.url === jiraTicketUrl || ticket.id === ticketId)) {
           tickets.push({
             provider: "JIRA",
             url: jiraTicketUrl,
-            id: match[1],
+            id: ticketId,
           });
         }
       }
     }
+    // Extract JIRA tickets using Identifiers
+    const jiraBaseUrl = getEnvVar("JIRA_HOST") || "https://define.JIRA_HOST.in.cicd.variables/";
+    const jiraRegex = getEnvVar("JIRA_TICKET_REGEX") || "/(?<=[^a-zA-Z0-9_-]|^)([A-Za-z]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)/mg";
+    const jiraRefRegex = new RegExp(jiraRegex, "gm");
+    const jiraRefs = await extractRegexMatches(jiraRefRegex, text);
+    const jiraBaseUrlBrowse = jiraBaseUrl.replace(/\/$/, "") + "/browse/";
+    for (const jiraRef of jiraRefs) {
+      const jiraTicketUrl = jiraBaseUrlBrowse + jiraRef;
+      if (!tickets.some((ticket) => ticket.url === jiraTicketUrl || ticket.id === jiraRef)) {
+        tickets.push({
+          provider: "JIRA",
+          url: jiraTicketUrl,
+          id: jiraRef,
+        });
+      }
+    }
+
     const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
     return ticketsSorted;
   }
@@ -95,7 +104,7 @@ export class JiraProvider extends TicketProviderRoot {
     if (jiraTicketsNumber > 0) {
       uxLog(
         this,
-        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."),
+        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ...")
       );
     }
     for (const ticket of tickets) {
@@ -156,7 +165,7 @@ export class JiraProvider extends TicketProviderRoot {
           branchMarkdown.url || "",
           prTitle,
           prUrl,
-          prAuthor,
+          prAuthor
         );
         // Post comment
         try {
@@ -186,11 +195,11 @@ export class JiraProvider extends TicketProviderRoot {
     // Summary
     uxLog(
       this,
-      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", "))
     );
     uxLog(
       this,
-      c.gray(`[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")),
+      c.gray(`[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", "))
     );
     return tickets;
   }
@@ -202,7 +211,7 @@ export class JiraProvider extends TicketProviderRoot {
     branchUrl: string,
     prTitle: string,
     prUrl: string,
-    prAuthor: string,
+    prAuthor: string
   ) {
     const comment = {
       version: 1,

@@ -444,7 +444,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
             if (ticket.foundOnServer) {
               return "• " + UtilsNotifs.markdownLink(ticket.url, ticket.id) + " " + ticket.subject;
             } else {
-              return "• " + ticket.url;
+              return "• " + UtilsNotifs.markdownLink(ticket.url, ticket.id);
             }
           })
           .join("\n")}`,

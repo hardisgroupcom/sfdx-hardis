@@ -8,7 +8,8 @@ description: Enrich pull requests with JIRA info and post comments & tags on tic
   - [For git providers](#for-git-providers)
   - [For notifications providers](#for-notifications-providers)
   - [Update JIRA issues](#update-jira-issues)
-- [Authentication](#authentication)
+- [Global Configuration](#global-configuration)
+  - [Identify JIRA tickets](#identify-jira-tickets)
   - [Jira Cloud](#jira-cloud)
   - [Jira On-Premise](#jira-on-premise)
 - [Gitlab configuration](#gitlab-configuration)
@@ -20,9 +21,13 @@ If you use JIRA on your project, sfdx-hardis can use it to enrich its integratio
 
 Sfdx-hardis will automatically analyze commits and PR/MR descriptions to collect JIRA tickets URLS !
 
-The only thing you have to make sure is to **use the full URL of JIRA tickets** in your commits and PR/MR descriptions.
+You can **use the full URL of JIRA tickets** in your commits and PR/MR descriptions.
 
 > Use `https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4` , not `CLOUDITY-4` !
+
+If you don't use full URL, a default expression will be used, that you can override for a better accuracy ([see Identify JIRA Tickets](#identify-jira-tickets) )
+
+> In that case, `CLOUDITY-4` will be detected, but make sure that JIRA_HOST is defined
 
 ### For git providers
 
@@ -48,7 +53,11 @@ Example: `DEPLOYED_TO_{BRANCH}`
 
 ![](assets/images/screenshot-jira-comment.jpg)
 
-## Authentication
+## Global configuration
+
+### Identify JIRA Tickets
+
+Define CI/CD variable **JIRA_TICKET_REGEX** with a regular expression allowing to identify the JIRA tickets of your project in commit& Pull Requests titles & bodies, for example `(CLOUDITY-[0-9]+)`
 
 ### Jira Cloud
 

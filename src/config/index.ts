@@ -173,3 +173,12 @@ export async function getReportDirectory() {
   await fs.ensureDir(reportDir);
   return reportDir;
 }
+
+export function getEnvVar(envVarName: string) {
+  const varValue = process.env[envVarName] || null ;
+  // Avoid Azure cases that sends the expression as string if variable not defined
+  if (varValue && varValue.includes(`(${envVarName}`)) {
+    return null ;
+  }
+  return varValue;
+}
