@@ -73,6 +73,10 @@ Are you ready ? [Configure the monitoring on your orgs](salesforce-monitoring-co
 
 The following checks are active out of the box.
 
+In order to avoid to overflow channels of notifications, some commands are run everyday whereas less critical ones are run weekly (on saturday).
+
+You can force the daily run of all commands by defining env var `MONITORING_IGNORE_FREQUENCY=true`.
+
 ### Metadata Backup
 
 Adds a new commit in the git branch with the newest updates since latest monitoring run.
