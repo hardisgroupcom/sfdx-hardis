@@ -9,6 +9,7 @@ import { extractRegexMatches, uxLog } from "../utils";
 import { SfdxError } from "@salesforce/core";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces";
+import { getEnvVar } from "../../config";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
@@ -19,10 +20,10 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   constructor() {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
-    this.serverUrl = process.env.SYSTEM_COLLECTIONURI;
+    this.serverUrl = getEnvVar("SYSTEM_COLLECTIONURI");
     // a Personal Access Token must be defined
-    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN;
-    this.teamProject = process.env.SYSTEM_TEAMPROJECT;
+    this.token = getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("SYSTEM_ACCESSTOKEN");
+    this.teamProject = getEnvVar("SYSTEM_TEAMPROJECT");
     if (this.serverUrl && this.token && this.teamProject) {
       this.isActive = true;
     }
@@ -35,15 +36,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   public static isAvailable() {
     if (
       // Basic auth
-      process.env.SYSTEM_COLLECTIONURI &&
-      process.env.SYSTEM_COLLECTIONURI.length > 5 &&
-      !process.env.SYSTEM_COLLECTIONURI.includes("SYSTEM_COLLECTIONURI") &&
-      process.env.SYSTEM_ACCESSTOKEN &&
-      process.env.SYSTEM_ACCESSTOKEN.length > 5 &&
-      !process.env.SYSTEM_ACCESSTOKEN.includes("SYSTEM_ACCESSTOKEN") &&
-      process.env.SYSTEM_TEAMPROJECT &&
-      process.env.SYSTEM_TEAMPROJECT.length > 5 &&
-      !process.env.SYSTEM_TEAMPROJECT.includes("SYSTEM_TEAMPROJECT")
+      getEnvVar("SYSTEM_COLLECTIONURI") &&
+      getEnvVar("SYSTEM_ACCESSTOKEN") &&
+      getEnvVar("SYSTEM_TEAMPROJECT")
     ) {
       return true;
     }
@@ -81,7 +76,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       const azureBoardsProvider = new AzureBoardsProvider();
       const azureApi = azureBoardsProvider.azureApi;
       const azureGitApi = await azureApi.getGitApi();
-      const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+      const repositoryId = getEnvVar("BUILD_REPOSITORY_ID");
       const commitIds = options.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
       const azureCommits: GitCommitRef[] = [];
       for (const commitId of commitIds) {

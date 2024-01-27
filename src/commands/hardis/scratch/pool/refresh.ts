@@ -113,8 +113,9 @@ export default class ScratchPoolRefresh extends SfdxCommand {
         uxLog(
           this,
           c.cyan(
-            `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result
-              ?.instanceUrl} has been deleted because only ${scratchOrgToDelete.daysBeforeExpiration} days were remaining.`,
+            `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${
+              scratchOrgToDelete?.authFileJson?.result?.instanceUrl
+            } has been deleted because only ${scratchOrgToDelete.daysBeforeExpiration} days were remaining.`,
           ),
         );
       }

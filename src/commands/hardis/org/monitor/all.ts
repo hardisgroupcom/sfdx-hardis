@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execCommand, uxLog } from "../../../../common/utils";
-import { getConfig } from "../../../../config";
+import { getConfig, getEnvVar } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -95,36 +95,43 @@ monitoringCommands:
         key: "AUDIT_TRAIL",
         title: "Detect suspect setup actions in major org",
         command: "sfdx hardis:org:diagnose:audittrail",
+        frequency: "daily",
       },
       {
         key: "LEGACY_API",
         title: "Detect calls to deprecated API versions",
         command: "sfdx hardis:org:diagnose:legacyapi",
+        frequency: "weekly",
       },
       {
         key: "LINT_ACCESS",
         title: "Detect custom elements with no access rights defined in permission sets",
         command: "sfdx hardis:lint:access",
+        frequency: "weekly",
       },
       {
         key: "UNUSED_LICENSES",
         title: "Detect permission set licenses that are assigned to users that do not need them",
         command: "sfdx hardis:org:diagnose:unusedlicenses",
+        frequency: "weekly",
       },
       {
         key: "UNUSED_METADATAS",
         title: "Detect custom labels and custom permissions that are not in use",
         command: "sfdx hardis:lint:unusedmetadatas",
+        frequency: "weekly",
       },
       {
         key: "METADATA_STATUS",
         title: "Detect inactive metadata",
         command: "sfdx hardis:lint:metadatastatus",
+        frequency: "weekly",
       },
       {
         key: "MISSING_ATTRIBUTES",
         title: "Detect missing description on custom field",
         command: "sfdx hardis:lint:missingattributes",
+        frequency: "weekly",
       },
     ];
     const config = await getConfig("user");
@@ -136,6 +143,10 @@ monitoringCommands:
     for (const command of commands) {
       if (monitoringDisable.includes(command.key)) {
         uxLog(this, c.grey(`Skipped command ${c.bold(command.key)} according to custom configuration`));
+        continue;
+      }
+      if (command?.frequency === "weekly" && new Date().getDay() !== 6 && getEnvVar("MONITORING_IGNORE_FREQUENCY") !== "true") {
+        uxLog(this, c.grey(`Skipped command ${c.bold(command.key)} as its frequency is defined as weekly and we are not Saturday`));
         continue;
       }
       // Run command

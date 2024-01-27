@@ -2,6 +2,7 @@ import { Ticket } from ".";
 import * as sortArray from "sort-array";
 import { extractRegexMatches } from "../utils";
 import { TicketProviderRoot } from "./ticketProviderRoot";
+import { getEnvVar } from "../../config";
 
 export class GenericTicketingProvider extends TicketProviderRoot {
   private ticketRefRegex: string;
@@ -9,15 +10,15 @@ export class GenericTicketingProvider extends TicketProviderRoot {
 
   constructor() {
     super();
-    this.ticketRefRegex = process.env.GENERIC_TICKETING_PROVIDER_REGEX || null; // Example: ([R|I][0-9]+-[0-9]+)
-    this.ticketUrlBuilder = process.env.GENERIC_TICKETING_PROVIDER_URL_BUILDER || null; // Example: https://instance.easyvista.com/index.php?ticket={REF}
+    this.ticketRefRegex = getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX"); // Example: ([R|I][0-9]+-[0-9]+)
+    this.ticketUrlBuilder = getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER"); // Example: https://instance.easyvista.com/index.php?ticket={REF}
     if (this.ticketRefRegex && this.ticketUrlBuilder) {
       this.isActive = true;
     }
   }
 
   public static isAvailable() {
-    return process.env.GENERIC_TICKETING_PROVIDER_REGEX && process.env.GENERIC_TICKETING_PROVIDER_URL_BUILDER;
+    return getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX") && getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER");
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -26,11 +27,12 @@ export class GenericTicketingProvider extends TicketProviderRoot {
     if (!this.isAvailable()) {
       return tickets;
     }
-    // Extract JIRA tickets
-    const ticketRefRegexExec = new RegExp(process.env.GENERIC_TICKETING_PROVIDER_REGEX, "g");
+    // Extract tickets using GENERIC_TICKETING_PROVIDER_REGEX regexp
+    const ticketRefRegexExec = new RegExp(getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX"), "g");
     const regexMatches = await extractRegexMatches(ticketRefRegexExec, text);
+    const ticketUrlBuilder = getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER");
     for (const genericTicketRef of regexMatches) {
-      const genericTicketUrl = process.env.GENERIC_TICKETING_PROVIDER_URL_BUILDER.replace("{REF}", genericTicketRef);
+      const genericTicketUrl = ticketUrlBuilder.replace("{REF}", genericTicketRef);
       if (!tickets.some((ticket) => ticket.url === genericTicketUrl)) {
         tickets.push({
           provider: "GENERIC",

@@ -81,8 +81,9 @@ export default class ScratchPoolReset extends SfdxCommand {
       uxLog(
         this,
         c.cyan(
-          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result
-            ?.instanceUrl} has been deleted`,
+          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${
+            scratchOrgToDelete?.authFileJson?.result?.instanceUrl
+          } has been deleted`,
         ),
       );
     }
