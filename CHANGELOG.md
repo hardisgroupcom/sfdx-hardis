@@ -4,10 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.26.1] 2024-01-25
+## [4.26.0] 2024-01-27
 
-- Fix PR comment ticket URL when detail has not been found on server
 - Detect JIRA tickets even if there is only their identifiers in commits / PR text (see [Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jira/))
+- Fix PR comment ticket URL when detail has not been found on server
 - Monitoring: run non-critical commands only weekly by default (on saturdays)
 
 ## [4.25.1] 2024-01-18
