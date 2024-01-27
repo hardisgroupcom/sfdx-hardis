@@ -3694,6 +3694,54 @@
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionmonitoringCommands_items_frequency">
+    <div class="card">
+        <div class="card-header" id="headingmonitoringCommands_items_frequency">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringCommands_items_frequency"
+                        aria-expanded="" aria-controls="monitoringCommands_items_frequency" onclick="setAnchor('#monitoringCommands_items_frequency')"><span class="property-name">frequency</span></button>
+            </h2>
+        </div>
+
+        <div id="monitoringCommands_items_frequency"
+             class="collapse property-definition-div" aria-labelledby="headingmonitoringCommands_items_frequency"
+             data-parent="#accordionmonitoringCommands_items_frequency">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands_items" onclick="anchorLink('monitoringCommands_items')">monitoringCommands items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringCommands_items_frequency" onclick="anchorLink('monitoringCommands_items_frequency')">frequency</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>daily or weekly</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div><br/>
 <div class="badge badge-secondary">Example:</div>
@@ -3701,12 +3749,14 @@
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="s2">&quot;title&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Detect calls to deprecated API versions&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;LEGACYAPI&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sfdx hardis:org:diagnose:legacyapi&quot;</span>
+<span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sfdx hardis:org:diagnose:legacyapi&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;weekly&quot;</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">        </span><span class="s2">&quot;title&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;My custom command&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;key&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;MY_CUSTOM_KEY&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sfdx my:custom:command&quot;</span>
+<span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sfdx my:custom:command&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;frequency&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;daily&quot;</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">]</span>
 </pre></div>
@@ -4893,6 +4943,6 @@
 </div>
 
     <footer>
-        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2024-01-15 at 11:14:16 +0100</p>
+        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2024-01-27 at 18:50:31 +0100</p>
     </footer></body>
 </html>
