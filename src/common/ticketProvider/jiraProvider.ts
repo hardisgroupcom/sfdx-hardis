@@ -80,7 +80,7 @@ export class JiraProvider extends TicketProviderRoot {
     }
     // Extract JIRA tickets using Identifiers
     const jiraBaseUrl = getEnvVar("JIRA_HOST") || "https://define.JIRA_HOST.in.cicd.variables/";
-    const jiraRegex = getEnvVar("JIRA_TICKET_REGEX") || "/(?<=[^a-zA-Z0-9_-]|^)([A-Za-z]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)/mg";
+    const jiraRegex = getEnvVar("JIRA_TICKET_REGEX") || "(?<=[^a-zA-Z0-9_-]|^)([A-Za-z]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)";
     const jiraRefRegex = new RegExp(jiraRegex, "gm");
     const jiraRefs = await extractRegexMatches(jiraRefRegex, text);
     const jiraBaseUrlBrowse = jiraBaseUrl.replace(/\/$/, "") + "/browse/";
