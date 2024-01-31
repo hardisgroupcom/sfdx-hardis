@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.26.1] 2024-01-31
+
+- Update [Contributor User Guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task/)
+- Empty predefined list of packages to install
+
 ## [4.26.0] 2024-01-27
 
 - Detect JIRA tickets even if there is only their identifiers in commits / PR text (see [Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jira/))
