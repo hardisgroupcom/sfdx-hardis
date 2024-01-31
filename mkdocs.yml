@@ -179,11 +179,11 @@ nav:
           - Clone the repository: salesforce-ci-cd-clone-repository.md
           - Create new task: salesforce-ci-cd-create-new-task.md
           - Work on your dev org:
-            - Work home: salesforce-ci-cd-work-on-task.md
-            - Open your org: salesforce-ci-cd-work-on-task-open-org.md
-            - Configure Salesforce: salesforce-ci-cd-work-on-task-configuration.md
-            - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
-            - Develop in Salesforce: salesforce-ci-cd-work-on-task-development.md
+              - Work home: salesforce-ci-cd-work-on-task.md
+              - Open your org: salesforce-ci-cd-work-on-task-open-org.md
+              - Configure Salesforce: salesforce-ci-cd-work-on-task-configuration.md
+              - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
+              - Develop in Salesforce: salesforce-ci-cd-work-on-task-development.md
           - Publish your work: salesforce-ci-cd-publish-task.md
           - Create Merge Request:
               - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
