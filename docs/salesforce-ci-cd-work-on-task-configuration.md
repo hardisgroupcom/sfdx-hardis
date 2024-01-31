@@ -1,6 +1,6 @@
 ---
 title: Perform configuration in your Salesforce org
-description: Learn how to peform configuration on a CI/CD project with a tracked sandbox or a scratch org
+description: Learn how to perform configuration on a CI/CD project with a tracked sandbox or a scratch org
 ---
 <!-- markdownlint-disable MD013 -->
 
