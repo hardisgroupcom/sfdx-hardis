@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.26.2] 2024-02-01
+
+- Display warning message when failed to upload connected app
+
 ## [4.26.1] 2024-01-31
 
 - Update [Contributor User Guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task/)
