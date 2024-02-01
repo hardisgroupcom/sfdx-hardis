@@ -4,6 +4,14 @@ description: Learn how to perform configuration on a CI/CD project with a tracke
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Configuration](#configuration)
+   - [Api names](#api-names)
+   - [Access management](#access-management)
+   - [Flows](#flows)
+   - [Hardcoded Ids](#hardcoded-ids)
+   - [Images](#images)
+   - [User references](#user-references)
+
 ## Configuration
 
 Please follow as much as possible these recommendations when you work on a CI/CD Salesforce project, otherwise it will generate more release management charges and risks of regressions.
@@ -35,3 +43,9 @@ Please follow as much as possible these recommendations when you work on a CI/CD
 ### Images
 
 - Use **static resources** or **content assets** to store images
+
+### User references
+
+- Do not use direct references to users, use [Public Groups](https://developer.salesforce.com/docs/atlas.en-us.securityImplGuide.meta/securityImplGuide/user_groups.htm) instead
+
+- Share your reports and email templates with public groups, not named users.

@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.26.2] 2024-02-01
 
 - Display warning message when failed to upload connected app
+- Update documentation about how to work on a dev sandbox / scratch org
 
 ## [4.26.1] 2024-01-31
 
