@@ -5,12 +5,12 @@ description: Learn how to perform configuration on a CI/CD project with a tracke
 <!-- markdownlint-disable MD013 -->
 
 - [Configuration](#configuration)
-   - [Api names](#api-names)
-   - [Access management](#access-management)
-   - [Flows](#flows)
-   - [Hardcoded Ids](#hardcoded-ids)
-   - [Images](#images)
-   - [User references](#user-references)
+  - [Api names](#api-names)
+  - [Access management](#access-management)
+  - [Flows](#flows)
+  - [Hardcoded Ids](#hardcoded-ids)
+  - [Images](#images)
+  - [User references](#user-references)
 
 ## Configuration
 
