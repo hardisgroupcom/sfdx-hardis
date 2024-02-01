@@ -1121,13 +1121,19 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       );
       uxLog(
         commandThis,
-        c.yellow(`If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName}:
+        c.yellow(`
+${c.bold("MANUAL INSTRUCTIONS")}
+If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName}:
 - Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
-  - Use certificate ${c.bold(crtFile)}
-- Once created, update variable ${c.green(
+  - Use certificate ${c.bold(crtFile)} in "Use Digital Signature section" (delete the file from your computer after !)
+- Once created, update CI/CD variable ${c.green(
           c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`),
-        )} with ConsumerKey of the newly created connected app`),
+        )} with the ConsumerKey of the newly created connected app`),
       );
+      await prompts({
+        type: "confirm",
+        message: c.cyanBright("You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS in the console, then continue here"),
+      });
     }
   } else {
     // Tell infos to install manually
@@ -1144,9 +1150,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
     );
     uxLog(
       commandThis,
-      `- configure CI variable ${c.green(
-        `SFDX_CLIENT_ID_${branchName.toUpperCase()}`,
-      )} with value of ConsumerKey on Connected App configuration page`,
+      `- configure CI variable ${c.green(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)} with value of ConsumerKey on Connected App configuration page`,
     );
     uxLog(commandThis, `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(encryptionKey)} key`);
   }
