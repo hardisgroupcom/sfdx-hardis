@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.26.3] 2024-02-02
+
+- Add bash to sfdx-hardis docker image
+
 ## [4.26.2] 2024-02-01
 
 - Display warning message when failed to upload connected app
