@@ -11,6 +11,10 @@ import { UtilsNotifs } from "../notifProvider";
 
 // Check if current process can send notifications
 export async function canSendNotifications(): Promise<boolean> {
+  if (globalThis?.skipLegacyNotifications === true) {
+    // Skip legacy notifications if NotifProvider has been used
+    return false;
+  }
   const config = await getConfig("user");
   return (
     process.env.MS_TEAMS_WEBHOOK_URL ||

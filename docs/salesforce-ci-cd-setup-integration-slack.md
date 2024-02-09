@@ -40,11 +40,19 @@ Create a slack app here -> <https://api.slack.com/apps>
 ### Configure sfdx-hardis for slack
 
 - Create a secret value named **SLACK_TOKEN** with auth token value in your Git provider configuration
+
 - Create a slack channel that will receive all notifications (ex: _#notifs-sfdx-hardis_)
+
 - Open the channel info, copy its ID and create a secret value named **SLACK_CHANNEL_ID** in your git provider configuration
+
 - Invite the sfdx-hardis bot user to the channel (ex: `/invite @sfdx-hardis-bot`)
+
 - Additionally, you can create branch-scoped channels by creating new channels and create appropriate variables
   - Example: Channel _#notifs-sfdx-hardis-integration_ and variable **SLACK_CHANNEL_ID_INTEGRATION**
+
+- You can also define an additional channel to receive only warning, error and critical notifications in another channel
+  - Example: Channel _#notifs-monitor-hot_ and variable **SLACK_CHANNEL_ID_ERRORS_WARNINGS**
+
 - Make sure all those variables are visible to your CI/CD pipelines
 
 That's all, you're all set !

@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.27.0] 2024-02-09
+
+- Skip legacy notifications if NotifProvider has been used
+- Allow to send warning, error and critical notifications to secondary Slack or Teams channel, using variables SLACK_CHANNEL_ID_ERRORS_WARNINGS or MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS
+
 ## [4.26.3] 2024-02-02
 
 - Add bash to sfdx-hardis docker image

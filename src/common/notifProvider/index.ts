@@ -48,6 +48,7 @@ export abstract class NotifProvider {
           uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
           notifProvider.postNotification(notifMessage);
         }
+        globalThis.skipLegacyNotifications = true;
       }
     });
   }

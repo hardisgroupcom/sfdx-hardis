@@ -27,6 +27,9 @@ _Example: `MS_TEAMS_WEBHOOK_URL=https://mycompany.webhook.office.com/webhookb2/f
 - Additionally, you can create branch-scoped channels by creating new channels and create appropriate variables
   - Example: Channel _#notifs-sfdx-hardis-integration_ and variable **MS_TEAMS_WEBHOOK_URL_INTEGRATION**
 
+- You a also define an additional channel to receive only warning, error and critical notifications in another channel
+  - Example: Channel _#notifs-monitor-hot_ and variable **MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS**
+
 - Make sure all those variables are visible in your CI/CD pipelines
 
 That's all, you're all set !
