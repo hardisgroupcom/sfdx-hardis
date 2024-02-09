@@ -4,6 +4,7 @@ import { NotifProviderRoot } from "./notifProviderRoot";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils";
 import { NotifMessage, UtilsNotifs } from ".";
+import { getEnvVar } from "../../config";
 
 export class SlackProvider extends NotifProviderRoot {
   private slackClient: InstanceType<typeof WebClient>;
@@ -20,18 +21,24 @@ export class SlackProvider extends NotifProviderRoot {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    const mainNotifsChannelId = process.env.SLACK_CHANNEL_ID || null;
+    const mainNotifsChannelId = getEnvVar("SLACK_CHANNEL_ID");
     if (mainNotifsChannelId == null) {
       throw new SfdxError(
         "[SlackProvider] You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN",
       );
     }
-    const slackChannelsIds = [mainNotifsChannelId];
+    const slackChannelsIds = mainNotifsChannelId.split(",");
     // Add branch custom slack channel if defined
     const customSlackChannelVariable = `SLACK_CHANNEL_ID_${(await getCurrentGitBranch()).toUpperCase()}`;
-    if (process.env[customSlackChannelVariable]) {
-      slackChannelsIds.push(process.env[customSlackChannelVariable]);
+    if (getEnvVar(customSlackChannelVariable)) {
+      slackChannelsIds.push(...getEnvVar(customSlackChannelVariable).split(","));
     }
+    // Handle specific channel for Warnings and errors
+    const warningsErrorsChannelId = getEnvVar("SLACK_CHANNEL_ID_ERRORS_WARNINGS");
+    if (warningsErrorsChannelId && ["critical", "error", "warning"].includes(notifMessage.severity || null)) {
+      slackChannelsIds.push(...warningsErrorsChannelId.split(","));
+    }
+
     // Main block
     const blocks: Block[] = [];
     const block: SectionBlock = {

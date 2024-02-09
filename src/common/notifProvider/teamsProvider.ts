@@ -4,6 +4,7 @@ import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, uxLog } from "../utils";
 import { NotifMessage, UtilsNotifs } from ".";
 import { IncomingWebhook } from "ms-teams-webhook";
+import { getEnvVar } from "../../config";
 
 export class TeamsProvider extends NotifProviderRoot {
   public getLabel(): string {
@@ -12,15 +13,21 @@ export class TeamsProvider extends NotifProviderRoot {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    const mainTeamsHook = process.env.MS_TEAMS_WEBHOOK_URL || null;
-    if (mainTeamsHook == null || (mainTeamsHook || "").includes("MS_TEAMS_WEBHOOK_URL")) {
+    const mainTeamsHook = getEnvVar("MS_TEAMS_WEBHOOK_URL");
+    if (mainTeamsHook == null) {
       throw new SfdxError("[MsTeamsProvider] You need to define a variable MS_TEAMS_WEBHOOK_URL to use sfdx-hardis MsTeams Integration");
     }
-    const teamsHooks = [mainTeamsHook];
+    const teamsHooks = mainTeamsHook.split(",");
     // Add branch custom Teams channel if defined
     const customMSTeamsChannelVariable = `MS_TEAMS_WEBHOOK_URL${(await getCurrentGitBranch()).toUpperCase()}`;
-    if (process.env[customMSTeamsChannelVariable]) {
-      teamsHooks.push(process.env[customMSTeamsChannelVariable]);
+    if (getEnvVar(customMSTeamsChannelVariable)) {
+      teamsHooks.push(...getEnvVar(customMSTeamsChannelVariable).split(","));
+    }
+
+    // Handle specific channel for Warnings and errors
+    const warningsErrorsChannelId = getEnvVar("MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS");
+    if (warningsErrorsChannelId && ["critical", "error", "warning"].includes(notifMessage.severity || null)) {
+      teamsHooks.push(...warningsErrorsChannelId.split(","));
     }
 
     // Main block
