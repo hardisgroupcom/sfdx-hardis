@@ -160,6 +160,13 @@ export async function forceSourceDeploy(
   let quickDeploy = false;
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
   const messages = [];
+  let deployXmlCount = splitDeployments.length;
+  
+  if (deployXmlCount === 0) {
+    uxLog(this, "No deployment to perform");
+    return { messages, quickDeploy, deployXmlCount };
+  }
+
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Process items of deployment plan
@@ -177,6 +184,7 @@ export async function forceSourceDeploy(
           )}`,
         ),
       );
+      deployXmlCount--;
       elapseEnd(`deploy ${deployment.label}`);
       continue;
     }
@@ -326,7 +334,7 @@ export async function forceSourceDeploy(
     messages.push(message);
   }
   elapseEnd("all deployments");
-  return { messages, quickDeploy };
+  return { messages, quickDeploy, deployXmlCount };
 }
 
 export function truncateProgressLogLines(rawLog: string) {
