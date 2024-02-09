@@ -3,6 +3,8 @@ import { elapseEnd, getCurrentGitBranch, getGitRepoName, uxLog } from "../../com
 import { canSendNotifications, sendNotification } from "../../common/utils/notifUtils";
 import { MetadataUtils } from "../../common/metadata-utils";
 
+// The use of this method is deprecated: use NotifProvider.sendNotification :)
+
 export const hook = async (options: any) => {
   if (globalThis.hardisLogFileStream) {
     globalThis.hardisLogFileStream.end();
