@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.27.1] 2024-02-10
+
+- Skip post-deployment notifications if nothing was deployed in delta mode
+- Simplify JIRA post deployment error output
+
 ## [4.27.0] 2024-02-09
 
 - Skip legacy notifications if NotifProvider has been used
