@@ -378,7 +378,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }
 
     // Process deployment (or deployment check)
-    const { messages, quickDeploy } = await forceSourceDeploy(
+    const { messages, quickDeploy, deployXmlCount } = await forceSourceDeploy(
       packageXmlFile,
       this.checkOnly,
       testlevel,
@@ -387,13 +387,15 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       forceSourceDeployOptions,
     );
 
+    const deployExecuted = !this.checkOnly && deployXmlCount > 0 ? true : false;
+
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
-    if (this.configInfo.listViewsToSetToMine && this.checkOnly === false) {
+    if (this.configInfo.listViewsToSetToMine && deployExecuted) {
       await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
     }
 
     // Send notification of deployment success
-    if (!this.checkOnly) {
+    if (deployExecuted) {
       const pullRequestInfo = await GitProvider.getPullRequestInfo();
       const attachments: MessageAttachment[] = [];
       try {
