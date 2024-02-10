@@ -140,6 +140,8 @@ export class JiraProvider extends TicketProviderRoot {
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
     uxLog(this, c.cyan(`[JiraProvider] Try to post comments on ${tickets.length} tickets...`));
+    
+    const genericHtmlResponseError = "Probably config/access error since response is HTML";
     const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "jira"));
     const branchMarkdown = JSON.parse(await getBranchMarkdown("jira"));
     const tag = await this.getDeploymentTag();
@@ -171,11 +173,11 @@ export class JiraProvider extends TicketProviderRoot {
         try {
           const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
           if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
-            throw new SfdxError(`This is a probably a config/rights errors as the response contain HTML`);
+            throw new SfdxError(genericHtmlResponseError);
           }
           commentedTickets.push(ticket);
         } catch (e6) {
-          uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}\n${e6.message}`));
+          uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}: ${e6.message}`));
         }
 
         // Add deployment label to JIRA ticket
@@ -188,19 +190,24 @@ export class JiraProvider extends TicketProviderRoot {
           await this.jiraClient.updateIssue(ticket.id, issueUpdate);
           taggedTickets.push(ticket);
         } catch (e6) {
-          uxLog(this, c.yellow(`[JiraProvider] Error while adding label ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+          if(e6.message != null && e6.message.includes("<!doctype html>")) {
+            e6.message = genericHtmlResponseError;
+          }
+          uxLog(this, c.yellow(`[JiraProvider] Error while adding label ${tag} on ${ticket.id}: ${e6.message}`));
         }
       }
     }
     // Summary
-    uxLog(
-      this,
-      c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
-    );
-    uxLog(
-      this,
-      c.gray(`[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")),
-    );
+    if(commentedTickets.length > 0 || taggedTickets.length > 0) {
+      uxLog(
+        this,
+        c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+      );
+      uxLog(
+        this,
+        c.gray(`[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")),
+      );
+    }
     return tickets;
   }
 
