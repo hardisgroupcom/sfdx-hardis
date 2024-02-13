@@ -1,17 +1,22 @@
+import { getEnvVar } from "../../config";
+
 export class UtilsNotifs {
   public static isSlackAvailable() {
-    if (process.env.SLACK_TOKEN && process.env.SLACK_TOKEN.length > 5 && !process.env.SLACK_TOKEN.includes("SLACK_TOKEN")) {
+    if (getEnvVar("SLACK_TOKEN")) {
       return true;
     }
     return false;
   }
 
   public static isMsTeamsAvailable() {
-    if (
-      process.env.MS_TEAMS_WEBHOOK_URL &&
-      process.env.MS_TEAMS_WEBHOOK_URL.length > 5 &&
-      !process.env.MS_TEAMS_WEBHOOK_URL.includes("MS_TEAMS_WEBHOOK_URL")
-    ) {
+    if (getEnvVar("MS_TEAMS_WEBHOOK_URL")) {
+      return true;
+    }
+    return false;
+  }
+
+  public static isEmailAvailable() {
+    if (getEnvVar("NOTIF_EMAIL_ADDRESS")) {
       return true;
     }
     return false;
@@ -44,7 +49,7 @@ export class UtilsNotifs {
 
   public static getImageUrl(imageKey: string) {
     const images = {
-      backup: "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/alpha/docs/assets/notif/backup.png",
+      backup: "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/docs/assets/notif/backup.png",
       test: "",
       monitoring: "",
       deployment: "",

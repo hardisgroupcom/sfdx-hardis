@@ -19,7 +19,7 @@ export class TeamsProvider extends NotifProviderRoot {
     }
     const teamsHooks = mainTeamsHook.split(",");
     // Add branch custom Teams channel if defined
-    const customMSTeamsChannelVariable = `MS_TEAMS_WEBHOOK_URL${(await getCurrentGitBranch()).toUpperCase()}`;
+    const customMSTeamsChannelVariable = `MS_TEAMS_WEBHOOK_URL_${(await getCurrentGitBranch()).toUpperCase()}`;
     if (getEnvVar(customMSTeamsChannelVariable)) {
       teamsHooks.push(...getEnvVar(customMSTeamsChannelVariable).split(","));
     }

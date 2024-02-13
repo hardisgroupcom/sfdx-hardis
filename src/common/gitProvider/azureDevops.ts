@@ -186,7 +186,7 @@ ${prMessage.message}
 
 <br/>
 
-_Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJobName}](${azureBuildUri})_
+_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJobName}](${azureBuildUri})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present

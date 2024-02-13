@@ -5,6 +5,7 @@ import { SlackProvider } from "./slackProvider";
 import { UtilsNotifs as utilsNotifs } from "./utils";
 import { TeamsProvider } from "./teamsProvider";
 import { getConfig } from "../../config";
+import { EmailProvider } from "./emailProvider";
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -16,6 +17,10 @@ export abstract class NotifProvider {
     // Ms Teams
     if (UtilsNotifs.isMsTeamsAvailable()) {
       notifProviders.push(new TeamsProvider());
+    }
+    // Email
+    if (UtilsNotifs.isEmailAvailable()) {
+      notifProviders.push(new EmailProvider());
     }
     return notifProviders;
   }
