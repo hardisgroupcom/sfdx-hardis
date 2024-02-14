@@ -198,6 +198,7 @@ You can remove more metadata types from backup, especially in case you have too 
             .join("\n"),
         },
       ];
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "BACKUP",
         text: `Updates detected in ${orgMarkdown}`,

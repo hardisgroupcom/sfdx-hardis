@@ -140,6 +140,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
           // Send notification
           const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
           const notifButtons = await getNotificationButtons();
+          globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
           NotifProvider.postNotifications({
             type: "APEX_TESTS",
             text: `Apex Tests run coverage issue in ${orgMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
@@ -172,6 +173,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       // Send notification
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "APEX_TESTS",
         text: `Apex Tests are failing in ${orgMarkdown}`,

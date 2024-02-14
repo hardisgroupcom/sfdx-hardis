@@ -76,6 +76,7 @@ export default class Access extends SfdxCommand {
 
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
+  protected static supportsUsername = true;
 
   // Comment this out if your command does not support a hub org username
   protected static supportsDevhubUsername = false;
@@ -443,6 +444,7 @@ export default class Access extends SfdxCommand {
       }
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "LINT_ACCESS",
         text: `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchMd}`,

@@ -337,6 +337,7 @@ monitoringAllowedSectionsActions:
 
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "AUDIT_TRAIL",
         text: `${suspectRecords.length} suspect Setup Audit Trail records has been found in ${orgMarkdown}`,

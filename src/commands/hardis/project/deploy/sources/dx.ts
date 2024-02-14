@@ -424,7 +424,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       } else {
         uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
       }
-
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "DEPLOYMENT",
         text: notifMessage,

@@ -222,6 +222,7 @@ See article to solve issue before it's too late:
     if (allErrors.length > 0) {
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "LEGACY_API",
         text: `Deprecated Salesforce API versions are used in ${orgMarkdown}`,

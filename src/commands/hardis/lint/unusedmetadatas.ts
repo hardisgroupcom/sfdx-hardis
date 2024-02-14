@@ -49,6 +49,7 @@ export default class UnusedMetadatas extends SfdxCommand {
   protected outputFile: string;
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
+  protected static supportsUsername = true;
   // Comment this out if your command does not support a hub org username
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -80,7 +81,7 @@ export default class UnusedMetadatas extends SfdxCommand {
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
-
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "UNUSED_METADATAS",
         text: `Unused metadatas detected in ${branchMd}\n`,
