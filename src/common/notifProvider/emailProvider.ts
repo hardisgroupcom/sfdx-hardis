@@ -19,17 +19,17 @@ export class EmailProvider extends NotifProviderRoot {
     if (mainEmailAddress == null) {
       throw new SfdxError("[EmailProvider] You need to define a variable NOTIF_EMAIL_ADDRESS to use sfdx-hardis Email notifications");
     }
-    const emailAdresses = mainEmailAddress.split(",");
+    const emailAddresses = mainEmailAddress.split(",");
     // Add branch custom Teams channel if defined
     const customEmailChannelVariable = `NOTIF_EMAIL_ADDRESS_${(await getCurrentGitBranch()).toUpperCase()}`;
     if (getEnvVar(customEmailChannelVariable)) {
-      emailAdresses.push(...getEnvVar(customEmailChannelVariable).split(","));
+      emailAddresses.push(...getEnvVar(customEmailChannelVariable).split(","));
     }
 
     // Handle specific channel for Warnings and errors
     const warningsErrorsEmail = getEnvVar("MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS");
     if (warningsErrorsEmail && ["critical", "error", "warning"].includes(notifMessage.severity || null)) {
-      emailAdresses.push(...warningsErrorsEmail.split(","));
+      emailAddresses.push(...warningsErrorsEmail.split(","));
     }
 
     // Main block
@@ -73,11 +73,11 @@ export class EmailProvider extends NotifProviderRoot {
     const emailMessage: EmailMessage = {
       subject: emailSubject,
       body_html: emailBodyHtmlSanitized,
-      to: emailAdresses
+      to: emailAddresses
     }
     const emailRes = await sendEmail(emailMessage);
     if (emailRes) {
-      uxLog(this, `[EmailProvider] Sent email to ${emailAdresses.join(";")}`);
+      uxLog(this, `[EmailProvider] Sent email to ${emailAddresses.join(";")}`);
     }
     return;
   }
