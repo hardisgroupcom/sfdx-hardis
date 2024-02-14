@@ -5,6 +5,7 @@ import { getCurrentGitBranch } from "../utils";
 import { NotifMessage, UtilsNotifs } from ".";
 import { getEnvVar } from "../../config";
 import { marked } from "marked";
+import { EmailMessage, sendEmail } from "../utils/emailUtils";
 
 export class EmailProvider extends NotifProviderRoot {
   public getLabel(): string {
@@ -31,7 +32,7 @@ export class EmailProvider extends NotifProviderRoot {
     }
 
     // Main block
-    const emailTitle = "[sfdx-hardis] " + UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
+    const emailSubject = "[sfdx-hardis] " + UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
     let emailBody = "";
 
     // Add text details
@@ -65,7 +66,12 @@ export class EmailProvider extends NotifProviderRoot {
 
     // Send email
     const emailBodyHtml = DOMPurify.sanitize(marked.parse(emailBody));
-    marked.
+    const emailMessage: EmailMessage = {
+      subject: emailSubject,
+      body: emailBodyHtml,
+      to: emailAdresses
+    }
+    await sendEmail(emailMessage);
 
     return;
   }
