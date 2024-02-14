@@ -16,7 +16,7 @@ export class UtilsNotifs {
   }
 
   public static isEmailAvailable() {
-    if (getEnvVar("NOTIF_EMAIL_ADDRESS")) {
+    if (getEnvVar("NOTIF_EMAIL_ADDRESS") && globalThis.jsForceConn) {
       return true;
     }
     return false;

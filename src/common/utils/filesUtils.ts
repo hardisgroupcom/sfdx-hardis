@@ -270,13 +270,13 @@ export class FilesExporter {
       this.dtl?.outputFileNameFormat === "id"
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
-          this.dtl?.outputFileNameFormat === "title_id"
+        this.dtl?.outputFileNameFormat === "title_id"
           ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
           : // Id + Title
-            this.dtl?.outputFileNameFormat === "id_title"
+          this.dtl?.outputFileNameFormat === "id_title"
             ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
             : // Title
-              path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -554,16 +554,21 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
     await fs.writeFile(outputPath, csvContent, "utf8");
     uxLog(this, c.italic(c.cyan(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
     WebSocketClient.requestOpenFile(outputPath);
-    try {
-      // Generate mirror XSLX file
-      const xlsDirName = path.join(path.dirname(outputPath), "xls");
-      const xslFileName = path.basename(outputPath).replace(".csv", ".xlsx");
-      const xslxFile = path.join(xlsDirName, xslFileName);
-      await fs.ensureDir(xlsDirName);
-      await csvToXls(outputPath, xslxFile);
-      uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
-    } catch (e2) {
-      uxLog(this, c.yellow("Error while generating XSLX log file:\n" + e2.message + "\n" + e2.stack));
+    if (data.length > 0) {
+      try {
+        // Generate mirror XSLX file
+        const xlsDirName = path.join(path.dirname(outputPath), "xls");
+        const xslFileName = path.basename(outputPath).replace(".csv", ".xlsx");
+        const xslxFile = path.join(xlsDirName, xslFileName);
+        await fs.ensureDir(xlsDirName);
+        await csvToXls(outputPath, xslxFile);
+        uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
+      } catch (e2) {
+        uxLog(this, c.yellow("Error while generating XSLX log file:\n" + e2.message + "\n" + e2.stack));
+      }
+    }
+    else {
+      uxLog(this, c.grey(`No XLS file generated as ${outputPath} is empty`));
     }
   } catch (e) {
     uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));

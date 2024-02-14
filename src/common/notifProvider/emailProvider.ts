@@ -1,11 +1,12 @@
 import { SfdxError } from "@salesforce/core";
-import * as DOMPurify from 'dompurify';
+import * as DOMPurify from "isomorphic-dompurify";
 import { NotifProviderRoot } from "./notifProviderRoot";
-import { getCurrentGitBranch } from "../utils";
+import { getCurrentGitBranch, uxLog } from "../utils";
 import { NotifMessage, UtilsNotifs } from ".";
 import { getEnvVar } from "../../config";
 import { marked } from "marked";
 import { EmailMessage, sendEmail } from "../utils/emailUtils";
+import { removeMarkdown } from "../utils/notifUtils";
 
 export class EmailProvider extends NotifProviderRoot {
   public getLabel(): string {
@@ -32,15 +33,16 @@ export class EmailProvider extends NotifProviderRoot {
     }
 
     // Main block
-    const emailSubject = "[sfdx-hardis] " + UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
-    let emailBody = "";
+    const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]), notifMessage.severity);
+    const emailSubject = "[sfdx-hardis] " + removeMarkdown(firstLineMarkdown);
+    let emailBody = UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
 
     // Add text details
     if (notifMessage?.attachments?.length > 0) {
-      let text = "";
+      let text = "\n\n";
       for (const attachment of notifMessage.attachments) {
         if (attachment.text) {
-          text = attachment.text + "\n";
+          text += attachment.text + "\n\n";
         }
       }
       if (text !== "") {
@@ -65,14 +67,18 @@ export class EmailProvider extends NotifProviderRoot {
     emailBody += "_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com)_";
 
     // Send email
-    const emailBodyHtml = DOMPurify.sanitize(marked.parse(emailBody));
+    const emailBodyHtml1 = marked.parse(emailBody);
+    const emailBodyHtml = typeof emailBodyHtml1 === 'string' ? emailBodyHtml1 : await emailBodyHtml1;
+    const emailBodyHtmlSanitized = DOMPurify.sanitize(emailBodyHtml);
     const emailMessage: EmailMessage = {
       subject: emailSubject,
-      body: emailBodyHtml,
+      body_html: emailBodyHtmlSanitized,
       to: emailAdresses
     }
-    await sendEmail(emailMessage);
-
+    const emailRes = await sendEmail(emailMessage);
+    if (emailRes) {
+      uxLog(this, `[EmailProvider] Sent email to ${emailAdresses.join(";")}`);
+    }
     return;
   }
 

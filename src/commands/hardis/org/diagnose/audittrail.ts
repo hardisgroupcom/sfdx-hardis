@@ -272,7 +272,7 @@ monitoringAllowedSectionsActions:
     const queryRes = await bulkQuery(auditTrailQuery, conn);
     const suspectRecords = [];
     let suspectUsers = [];
-    let suspectActions = [];
+    const suspectActions = [];
     const auditTrailRecords = queryRes.records.map((record) => {
       const section = record?.Section || "";
       record.Suspect = false;
@@ -293,6 +293,7 @@ monitoringAllowedSectionsActions:
 
     let statusCode = 0;
     let msg = "No suspect Setup Audit Trail records has been found";
+    const suspectActionsWithCount = [];
     if (suspectRecords.length > 0) {
       statusCode = 1;
       uxLog(this, c.yellow("Suspect records list"));
@@ -301,8 +302,14 @@ monitoringAllowedSectionsActions:
       uxLog(this, c.yellow(msg));
       suspectUsers = [...new Set(suspectUsers)];
       suspectUsers.sort();
-      suspectActions = [...new Set(suspectActions)];
-      suspectActions.sort();
+      const suspectActionsSummary = {};
+      for (const suspectAction of suspectActions) {
+        suspectActionsSummary[suspectAction] = (suspectActionsSummary[suspectAction] || 0) + 1
+      }
+      for (const suspectAction of Object.keys(suspectActionsSummary)) {
+        suspectActionsWithCount.push(`${suspectAction} (${suspectActionsSummary[suspectAction]})`);
+      }
+      suspectActionsWithCount.sort();
       uxLog(this, "");
       uxLog(this, c.yellow("Related users:"));
       for (const user of suspectUsers) {
@@ -310,7 +317,7 @@ monitoringAllowedSectionsActions:
       }
       uxLog(this, "");
       uxLog(this, c.yellow("Related actions:"));
-      for (const action of suspectActions) {
+      for (const action of suspectActionsWithCount) {
         uxLog(this, c.yellow(`- ${action}`));
       }
       uxLog(this, "");
@@ -331,7 +338,7 @@ monitoringAllowedSectionsActions:
       }
       notifDetailText += "\n";
       notifDetailText += "*Related actions*:\n";
-      for (const action of suspectActions) {
+      for (const action of suspectActionsWithCount) {
         notifDetailText += `• ${action}\n`;
       }
 
