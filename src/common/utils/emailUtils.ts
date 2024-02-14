@@ -20,9 +20,10 @@ export async function sendEmail(emailMessage: EmailMessage) {
          <urn:sendEmail>
             <urn:messages xsi:type="urn:SingleEmailMessage">
                <urn:charset>utf8</urn:charset>
+               <urn:senderDisplayName>${emailMessage.senderDisplayName || "SFDX-HARDIS Notifications"}</urn:senderDisplayName>
                <urn:subject>${emailMessage.subject}</urn:subject>
     `;
-
+    
     // Plain text Body
     if (emailMessage.body_text) {
         soapBody += `           <urn:plainTextBody>${sanitizeForXml(emailMessage.body_text || '')}</urn:plainTextBody>\n`
@@ -79,5 +80,6 @@ export interface EmailMessage {
     to?: string[];
     cc?: string[];
     cci?: string[];
+    senderDisplayName?: string;
     attachments?: any[];
 }
