@@ -327,7 +327,7 @@ monitoringAllowedSectionsActions:
 
     // Generate output CSV file
     this.outputFile = await generateReportPath("audit-trail", this.outputFile);
-    await generateCsvFile(auditTrailRecords, this.outputFile);
+    const outputFilesRes = await generateCsvFile(auditTrailRecords, this.outputFile);
 
     // Manage notifications
     if (suspectRecords.length > 0) {
@@ -351,6 +351,7 @@ monitoringAllowedSectionsActions:
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
+        attachedFiles: outputFilesRes.xlsxFile ? [outputFilesRes.xlsxFile]: []
       });
     }
 

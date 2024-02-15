@@ -1,5 +1,6 @@
 import { SfdxError } from "@salesforce/core";
 import * as DOMPurify from "isomorphic-dompurify";
+import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, uxLog } from "../utils";
 import { NotifMessage, UtilsNotifs } from ".";
@@ -73,11 +74,16 @@ export class EmailProvider extends NotifProviderRoot {
     const emailMessage: EmailMessage = {
       subject: emailSubject,
       body_html: emailBodyHtmlSanitized,
-      to: emailAddresses
+      to: emailAddresses,
+      attachments: notifMessage?.attachedFiles || []
     }
     const emailRes = await sendEmail(emailMessage);
-    if (emailRes) {
-      uxLog(this, `[EmailProvider] Sent email to ${emailAddresses.join(";")}`);
+    if (emailRes.success) {
+      uxLog(this, c.grey(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
+    }
+    else {
+      uxLog(this, c.yellow(`[EmailProvider] Error while sending email to ${emailAddresses.join(",")}`));
+      uxLog(this, c.grey(JSON.stringify(emailRes.detail, null, 2)));
     }
     return;
   }

@@ -548,11 +548,13 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
  * @param {string} outputPath - The path where the CSV file will be written.
  * @returns {Promise<void>} - A Promise that resolves when the operation is complete.
  */
-export async function generateCsvFile(data: any[], outputPath: string): Promise<void> {
+export async function generateCsvFile(data: any[], outputPath: string): Promise<any> {
+  const result: any = {};
   try {
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, "utf8");
     uxLog(this, c.italic(c.cyan(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
+    result.csvFile = outputPath;
     WebSocketClient.requestOpenFile(outputPath);
     if (data.length > 0) {
       try {
@@ -563,6 +565,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
         uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
+        result.xlsxFile = xslxFile;
       } catch (e2) {
         uxLog(this, c.yellow("Error while generating XSLX log file:\n" + e2.message + "\n" + e2.stack));
       }
@@ -573,6 +576,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
   } catch (e) {
     uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
   }
+  return result;
 }
 
 async function csvToXls(csvFile: string, xslxFile: string) {
