@@ -32,7 +32,7 @@ export class TeamsProvider extends NotifProviderRoot {
 
     // Main block
     const initText =
-      "## " + UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text) + "\n\n", notifMessage.severity) + "\n\n";
+      "## " + UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text) + "\n\n", notifMessage.severity) + "\n\n";
     const teamsHookData: any = {
       "@type": "MessageCard",
       "@context": "https://schema.org/extensions",
@@ -49,7 +49,7 @@ export class TeamsProvider extends NotifProviderRoot {
         }
       }
       if (text !== "") {
-        teamsHookData.text += "\n\n\n\n" + this.slackToTeamsMarkdown(text);
+        teamsHookData.text += "\n\n\n\n" + UtilsNotifs.slackToTeamsMarkdown(text);
       }
     }
 
@@ -86,16 +86,4 @@ export class TeamsProvider extends NotifProviderRoot {
     return;
   }
 
-  public slackToTeamsMarkdown(text: string) {
-    // Bold
-    const boldRegex = /(\*(.*?)\*)/gm;
-    text = text.replace(boldRegex, "**$2**");
-    // Carriage return
-    const carriageReturnRegex = /\n/gm;
-    text = text.replace(carriageReturnRegex, "\n\n");
-    // Hyperlink
-    const hyperlinkRegex = /<(.*?)\|(.*?)>/gm;
-    text = text.replace(hyperlinkRegex, "[$2]($1)");
-    return text;
-  }
 }

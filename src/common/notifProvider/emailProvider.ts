@@ -34,9 +34,9 @@ export class EmailProvider extends NotifProviderRoot {
     }
 
     // Main block
-    const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]), notifMessage.severity);
+    const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]), notifMessage.severity);
     const emailSubject = "[sfdx-hardis] " + removeMarkdown(firstLineMarkdown);
-    let emailBody = UtilsNotifs.prefixWithSeverityEmoji(this.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
+    let emailBody = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
 
     // Add text details
     if (notifMessage?.attachments?.length > 0) {
@@ -47,7 +47,7 @@ export class EmailProvider extends NotifProviderRoot {
         }
       }
       if (text !== "") {
-        emailBody += this.slackToTeamsMarkdown(text) + "\n\n";
+        emailBody += UtilsNotifs.slackToTeamsMarkdown(text) + "\n\n";
       }
     }
 
@@ -88,16 +88,4 @@ export class EmailProvider extends NotifProviderRoot {
     return;
   }
 
-  public slackToTeamsMarkdown(text: string) {
-    // Bold
-    const boldRegex = /(\*(.*?)\*)/gm;
-    text = text.replace(boldRegex, "**$2**");
-    // Carriage return
-    const carriageReturnRegex = /\n/gm;
-    text = text.replace(carriageReturnRegex, "\n\n");
-    // Hyperlink
-    const hyperlinkRegex = /<(.*?)\|(.*?)>/gm;
-    text = text.replace(hyperlinkRegex, "[$2]($1)");
-    return text;
-  }
 }
