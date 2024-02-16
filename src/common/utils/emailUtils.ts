@@ -33,7 +33,7 @@ export async function sendEmail(emailMessage: EmailMessage) {
     else if (emailMessage.body_html) {
         soapBody += `           <urn:htmlBody>${sanitizeForXml(emailMessage.body_html || '')}</urn:htmlBody>\n`;
     }
-    // Adresses
+    // Addresses
     if (emailMessage.to) {
         soapBody += `           <urn:toAddresses>${emailMessage.to.join(',')}</urn:toAddresses>\n`;
     }
@@ -46,7 +46,7 @@ export async function sendEmail(emailMessage: EmailMessage) {
     // Attachments
     if (emailMessage?.attachments?.length > 0) {
         let totalSize = 0;
-        for (const attachment of emailMessage?.attachments) {
+        for (const attachment of emailMessage?.attachments || []) {
             if (fs.existsSync(attachment)) {
                 const { size: fileSize } = fs.statSync(attachment);
                 totalSize += fileSize;
