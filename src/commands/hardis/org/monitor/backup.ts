@@ -70,6 +70,7 @@ You can remove more metadata types from backup, especially in case you have too 
   protected static triggerNotification = true;
 
   protected outputFile;
+  protected outputFilesRes: any = {};
   protected debugMode = false;
 
   /* jscpd:ignore-end */
@@ -177,7 +178,7 @@ You can remove more metadata types from backup, especially in case you have too 
           PrevName: diffFile?.from || "",
         };
       });
-      await generateCsvFile(diffFilesSimplified, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(diffFilesSimplified, this.outputFile);
     }
 
     // Send notifications
@@ -206,6 +207,7 @@ You can remove more metadata types from backup, especially in case you have too 
         attachments: attachments,
         severity: "info",
         sideImage: "backup",
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile]: []
       });
     } else {
       uxLog(this, c.grey("No updated metadata for today's backup :)"));

@@ -89,6 +89,7 @@ export default class Access extends SfdxCommand {
   protected missingElements: any[] = [];
   protected missingElementsMap: any = {};
   protected outputFile;
+  protected outputFilesRes: any = {};
 
   protected static sourceElements = [
     {
@@ -427,7 +428,7 @@ export default class Access extends SfdxCommand {
       return;
     }
     this.outputFile = await generateReportPath("lint-access", this.outputFile);
-    await generateCsvFile(this.missingElements, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.missingElements, this.outputFile);
   }
 
   private async manageNotification() {
@@ -451,6 +452,7 @@ export default class Access extends SfdxCommand {
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile]: []
       });
     }
   }

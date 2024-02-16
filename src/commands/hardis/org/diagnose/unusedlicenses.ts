@@ -70,6 +70,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
 
   protected debugMode = false;
   protected outputFile;
+  protected outputFilesRes: any = {};
   protected permissionSetLicenseAssignmentsActive = [];
   protected permissionSetLicenses = [];
   protected unusedPermissionSetLicenseAssignments = [];
@@ -176,7 +177,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     // Generate output CSV file
     if (this.unusedPermissionSetLicenseAssignments.length > 0) {
       this.outputFile = await generateReportPath("unused-ps-license-assignments", this.outputFile);
-      await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile);
     }
 
     // Manage notifications
@@ -333,6 +334,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile]: []
       });
     }
     return [];

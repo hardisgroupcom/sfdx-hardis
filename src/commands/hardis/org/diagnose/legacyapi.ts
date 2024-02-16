@@ -104,6 +104,7 @@ See article below
   ];
 
   protected outputFile;
+  protected outputFilesRes: any = {};
 
   /* jscpd:ignore-end */
 
@@ -180,7 +181,7 @@ See article below
 
     // Generate main CSV file
     this.outputFile = await generateReportPath("legacy-api-calls", this.outputFile);
-    await generateCsvFile(allErrors, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(allErrors, this.outputFile);
 
     // Generate one summary file by severity
     const outputFileIps = [];
@@ -229,6 +230,7 @@ See article to solve issue before it's too late:
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "error",
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile, this.outputFilesRes.xlsxFile2] : [],
       });
     }
 
@@ -323,7 +325,10 @@ See article to solve issue before it's too late:
     const outputFileIps = this.outputFile.endsWith(".csv")
       ? this.outputFile.replace(".csv", ".api-clients-" + severity + ".csv")
       : this.outputFile + "api-clients-" + severity + ".csv";
-    await generateCsvFile(ipResultsSorted, outputFileIps);
+    const outputFileIpsRes = await generateCsvFile(ipResultsSorted, outputFileIps);
+    if (outputFileIpsRes.xlsxFile) {
+      this.outputFilesRes.xlsxFile2 = outputFileIpsRes.xlsxFile;
+    }
     uxLog(this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
     return outputFileIps;
   }

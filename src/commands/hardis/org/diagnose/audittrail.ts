@@ -150,6 +150,7 @@ monitoringAllowedSectionsActions:
   protected debugMode = false;
 
   protected outputFile;
+  protected outputFilesRes: any = {};
 
   /* jscpd:ignore-end */
 
@@ -327,7 +328,7 @@ monitoringAllowedSectionsActions:
 
     // Generate output CSV file
     this.outputFile = await generateReportPath("audit-trail", this.outputFile);
-    const outputFilesRes = await generateCsvFile(auditTrailRecords, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(auditTrailRecords, this.outputFile);
 
     // Manage notifications
     if (suspectRecords.length > 0) {
@@ -351,7 +352,7 @@ monitoringAllowedSectionsActions:
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
-        attachedFiles: outputFilesRes.xlsxFile ? [outputFilesRes.xlsxFile]: []
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile]: []
       });
     }
 

@@ -55,6 +55,7 @@ export default class metadatastatus extends SfdxCommand {
   protected static requiresProject = true;
   private objectFileDirectory = "**/objects/**/fields/*.*";
   protected outputFile: string;
+  protected outputFilesRes: any = {};
   private nonCustomSettingsFieldDirectories: string[] = [];
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
 
@@ -62,6 +63,7 @@ export default class metadatastatus extends SfdxCommand {
     await this.filterOutCustomSettings();
     const fieldsWithoutDescription: string[] = await this.verifyFieldDescriptions();
     if (fieldsWithoutDescription.length > 0) {
+      await this.buildCsvFile(fieldsWithoutDescription);
       const attachments: MessageAttachment[] = [
         {
           text: `*Missing descriptions*\n${fieldsWithoutDescription.map((file) => `• ${file}`).join("\n")}`,
@@ -79,7 +81,7 @@ export default class metadatastatus extends SfdxCommand {
         sideImage: "flow",
       });
 
-      this.buildCsvFile(fieldsWithoutDescription);
+
     } else {
       uxLog(this, "No draft flow files detected.");
     }
@@ -166,6 +168,6 @@ export default class metadatastatus extends SfdxCommand {
   private async buildCsvFile(fieldsWithoutDescription: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-missingattributes", this.outputFile);
     const csvData = fieldsWithoutDescription.map((field) => ({ type: "Field", name: field }));
-    await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
   }
 }

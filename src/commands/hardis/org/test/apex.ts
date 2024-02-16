@@ -180,6 +180,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         attachments: [{ text: testResultStr }],
         buttons: notifButtons,
         severity: "error",
+        attachedFiles: fs.existsSync(reportDir + "/test-result.txt") ? [reportDir + "/test-result.txt"] : [],
       });
       // (LEGACY) Send notification if possible
       if (await canSendNotifications()) {

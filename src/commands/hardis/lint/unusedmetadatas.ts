@@ -47,6 +47,7 @@ export default class UnusedMetadatas extends SfdxCommand {
   };
   /* jscpd:ignore-end */
   protected outputFile: string;
+  protected outputFilesRes: any = {};
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
   protected static supportsUsername = true;
@@ -79,6 +80,7 @@ export default class UnusedMetadatas extends SfdxCommand {
     }
 
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
+      await this.buildCsvFile(unusedLabels, unusedCustomPermissions);
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
       globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
@@ -90,7 +92,6 @@ export default class UnusedMetadatas extends SfdxCommand {
         severity: "warning",
         sideImage: "flow",
       });
-      this.buildCsvFile(unusedLabels, unusedCustomPermissions);
     } else {
       uxLog(this, "No unused labels detected or custom permissions detected.");
     }
@@ -190,6 +191,6 @@ export default class UnusedMetadatas extends SfdxCommand {
       ...unusedCustomPermissions.map((permission) => ({ type: "Custom Permission", name: permission })),
     ];
 
-    await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
   }
 }
