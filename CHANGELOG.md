@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.28.0] 2024-02-16
+
+- New notifications channel: EmailProvider (use variable **NOTIF_EMAIL_ADDRESS** that can contain a comma-separated list of e-mail addresses)
+- Update existing call to notifications to add attached files when Email notif channel is active
+- Audit trail suspect actions: add the number of occurences for each suspect action found
+- Rename _Provided by sfdx-hardis_ into _Powered by sfdx-hardis_
+
 ## [4.27.1] 2024-02-10
 
 - Skip post-deployment notifications if nothing was deployed in delta mode
