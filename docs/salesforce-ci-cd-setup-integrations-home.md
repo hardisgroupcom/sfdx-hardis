@@ -34,7 +34,9 @@ Depending of your git provider, configure one of the following integrations.
 
 - [Microsoft Teams](salesforce-ci-cd-setup-integration-ms-teams.md)
   - Notifications
-  - Alerts
+
+- [Email](salesforce-ci-cd-setup-integration-email.md)
+  - Notifications
 
 ## Ticketing providers
 

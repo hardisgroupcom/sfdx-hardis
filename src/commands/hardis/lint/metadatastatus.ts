@@ -47,6 +47,7 @@ export default class metadatastatus extends SfdxCommand {
 
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
+  protected static supportsUsername = true;
   // Comment this out if your command does not support a hub org username
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -55,6 +56,7 @@ export default class metadatastatus extends SfdxCommand {
   private validationRuleFilePattern = "**/objects/**/validationRules/*.validationRule-meta.xml";
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
   protected outputFile: string;
+  protected outputFilesRes: any = {};
 
   public async run(): Promise<AnyJson> {
     const draftFlows = await this.verifyFlows();
@@ -74,9 +76,11 @@ export default class metadatastatus extends SfdxCommand {
         });
       }
 
+      await this.buildCsvFile(draftFlows, inactiveValidationRules);
+
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
-
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "METADATA_STATUS",
         text: `Inactive configuration elements in ${branchMd}`,
@@ -84,9 +88,8 @@ export default class metadatastatus extends SfdxCommand {
         buttons: notifButtons,
         severity: "warning",
         sideImage: "flow",
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       });
-
-      this.buildCsvFile(draftFlows, inactiveValidationRules);
     } else {
       uxLog(this, "No draft flow or validation rule files detected.");
     }
@@ -155,6 +158,6 @@ export default class metadatastatus extends SfdxCommand {
       ...inactiveValidationRules.map((rule) => ({ type: "Inactive VR", name: rule })),
     ];
 
-    await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
   }
 }

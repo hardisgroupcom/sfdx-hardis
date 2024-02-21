@@ -219,6 +219,7 @@ nav:
               - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
               - Slack: salesforce-ci-cd-setup-integration-slack.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+              - Email: salesforce-ci-cd-setup-integration-email.md
               - Jira: salesforce-ci-cd-setup-integration-jira.md
               - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
               - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md

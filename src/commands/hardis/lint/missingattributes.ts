@@ -48,12 +48,14 @@ export default class metadatastatus extends SfdxCommand {
 
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
+  protected static supportsUsername = true;
   // Comment this out if your command does not support a hub org username
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
   private objectFileDirectory = "**/objects/**/fields/*.*";
   protected outputFile: string;
+  protected outputFilesRes: any = {};
   private nonCustomSettingsFieldDirectories: string[] = [];
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
 
@@ -61,6 +63,7 @@ export default class metadatastatus extends SfdxCommand {
     await this.filterOutCustomSettings();
     const fieldsWithoutDescription: string[] = await this.verifyFieldDescriptions();
     if (fieldsWithoutDescription.length > 0) {
+      await this.buildCsvFile(fieldsWithoutDescription);
       const attachments: MessageAttachment[] = [
         {
           text: `*Missing descriptions*\n${fieldsWithoutDescription.map((file) => `• ${file}`).join("\n")}`,
@@ -68,7 +71,7 @@ export default class metadatastatus extends SfdxCommand {
       ];
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
-
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "MISSING_ATTRIBUTES",
         text: `Missing description on fields in ${branchMd}\n`,
@@ -77,8 +80,6 @@ export default class metadatastatus extends SfdxCommand {
         severity: "warning",
         sideImage: "flow",
       });
-
-      this.buildCsvFile(fieldsWithoutDescription);
     } else {
       uxLog(this, "No draft flow files detected.");
     }
@@ -165,6 +166,6 @@ export default class metadatastatus extends SfdxCommand {
   private async buildCsvFile(fieldsWithoutDescription: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-missingattributes", this.outputFile);
     const csvData = fieldsWithoutDescription.map((field) => ({ type: "Field", name: field }));
-    await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
   }
 }

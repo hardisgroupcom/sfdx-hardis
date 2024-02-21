@@ -103,9 +103,11 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;
     if (logResult.body) {
       commitsSummary += "<br/>" + logResult.body + "\n\n";
-      await collectTicketsAndManualActions(logResult.message + "\n" + logResult.body, tickets, manualActions, { commits: [logResult] });
+      await collectTicketsAndManualActions(currentGitBranch + "\n" + logResult.message + "\n" + logResult.body, tickets, manualActions, {
+        commits: [logResult],
+      });
     } else {
-      await collectTicketsAndManualActions(logResult.message, tickets, manualActions, { commits: [logResult] });
+      await collectTicketsAndManualActions(currentGitBranch + "\n" + logResult.message, tickets, manualActions, { commits: [logResult] });
       commitsSummary += "\n\n";
     }
   }
@@ -113,7 +115,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   // Tickets and references can also be in PR description
   if (pullRequestInfo) {
     const prText = (pullRequestInfo.title || "") + (pullRequestInfo.description || "");
-    await collectTicketsAndManualActions(prText, tickets, manualActions, { pullRequestInfo: pullRequestInfo });
+    await collectTicketsAndManualActions(currentGitBranch + "\n" + prText, tickets, manualActions, { pullRequestInfo: pullRequestInfo });
   }
 
   // Unify and sort tickets

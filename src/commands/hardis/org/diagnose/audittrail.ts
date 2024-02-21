@@ -35,6 +35,7 @@ Regular setup actions performed in major orgs are filtered.
 - Data Management
   - queueMembership
 - Email Administration
+  - dkimRotationPreparationSuccessful
   - dkimRotationSuccessful
 - Groups
   - groupMembership
@@ -81,6 +82,11 @@ Regular setup actions performed in major orgs are filtered.
   - suOrgAdminLogin
   - suOrgAdminLogout
   - useremailchangesent
+- Reporting Snapshots
+  - createdReportJob
+  - deletedReportJob
+- Sandboxes
+  - DeleteSandbox
 
 By default, deployment user defined in .sfdx-hardis.yml targetUsername property will be excluded.
 
@@ -150,6 +156,7 @@ monitoringAllowedSectionsActions:
   protected debugMode = false;
 
   protected outputFile;
+  protected outputFilesRes: any = {};
 
   /* jscpd:ignore-end */
 
@@ -190,7 +197,7 @@ monitoringAllowedSectionsActions:
       "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg", "loginasgrantedtopartnerbt"],
       "Certificate and Key Management": ["insertCertificate"],
       "Data Management": ["queueMembership"],
-      "Email Administration": ["dkimRotationSuccessful"],
+      "Email Administration": ["dkimRotationSuccessful", "dkimRotationPreparationSuccessful"],
       Holidays: ["holiday_insert"],
       "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
       Groups: ["groupMembership"],
@@ -235,6 +242,8 @@ monitoringAllowedSectionsActions:
         "suOrgAdminLogout",
         "useremailchangesent",
       ],
+      "Reporting Snapshots": ["createdReportJob", "deletedReportJob"],
+      Sandboxes: ["DeleteSandbox"],
     };
 
     // Append custom sections & actions considered as not suspect
@@ -272,7 +281,7 @@ monitoringAllowedSectionsActions:
     const queryRes = await bulkQuery(auditTrailQuery, conn);
     const suspectRecords = [];
     let suspectUsers = [];
-    let suspectActions = [];
+    const suspectActions = [];
     const auditTrailRecords = queryRes.records.map((record) => {
       const section = record?.Section || "";
       record.Suspect = false;
@@ -293,6 +302,7 @@ monitoringAllowedSectionsActions:
 
     let statusCode = 0;
     let msg = "No suspect Setup Audit Trail records has been found";
+    const suspectActionsWithCount = [];
     if (suspectRecords.length > 0) {
       statusCode = 1;
       uxLog(this, c.yellow("Suspect records list"));
@@ -301,8 +311,14 @@ monitoringAllowedSectionsActions:
       uxLog(this, c.yellow(msg));
       suspectUsers = [...new Set(suspectUsers)];
       suspectUsers.sort();
-      suspectActions = [...new Set(suspectActions)];
-      suspectActions.sort();
+      const suspectActionsSummary = {};
+      for (const suspectAction of suspectActions) {
+        suspectActionsSummary[suspectAction] = (suspectActionsSummary[suspectAction] || 0) + 1;
+      }
+      for (const suspectAction of Object.keys(suspectActionsSummary)) {
+        suspectActionsWithCount.push(`${suspectAction} (${suspectActionsSummary[suspectAction]})`);
+      }
+      suspectActionsWithCount.sort();
       uxLog(this, "");
       uxLog(this, c.yellow("Related users:"));
       for (const user of suspectUsers) {
@@ -310,7 +326,7 @@ monitoringAllowedSectionsActions:
       }
       uxLog(this, "");
       uxLog(this, c.yellow("Related actions:"));
-      for (const action of suspectActions) {
+      for (const action of suspectActionsWithCount) {
         uxLog(this, c.yellow(`- ${action}`));
       }
       uxLog(this, "");
@@ -320,7 +336,7 @@ monitoringAllowedSectionsActions:
 
     // Generate output CSV file
     this.outputFile = await generateReportPath("audit-trail", this.outputFile);
-    await generateCsvFile(auditTrailRecords, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(auditTrailRecords, this.outputFile);
 
     // Manage notifications
     if (suspectRecords.length > 0) {
@@ -331,18 +347,20 @@ monitoringAllowedSectionsActions:
       }
       notifDetailText += "\n";
       notifDetailText += "*Related actions*:\n";
-      for (const action of suspectActions) {
+      for (const action of suspectActionsWithCount) {
         notifDetailText += `• ${action}\n`;
       }
 
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "AUDIT_TRAIL",
         text: `${suspectRecords.length} suspect Setup Audit Trail records has been found in ${orgMarkdown}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       });
     }
 

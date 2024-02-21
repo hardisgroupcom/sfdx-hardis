@@ -76,6 +76,7 @@ export default class Access extends SfdxCommand {
 
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
+  protected static supportsUsername = true;
 
   // Comment this out if your command does not support a hub org username
   protected static supportsDevhubUsername = false;
@@ -88,6 +89,7 @@ export default class Access extends SfdxCommand {
   protected missingElements: any[] = [];
   protected missingElementsMap: any = {};
   protected outputFile;
+  protected outputFilesRes: any = {};
 
   protected static sourceElements = [
     {
@@ -426,7 +428,7 @@ export default class Access extends SfdxCommand {
       return;
     }
     this.outputFile = await generateReportPath("lint-access", this.outputFile);
-    await generateCsvFile(this.missingElements, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.missingElements, this.outputFile);
   }
 
   private async manageNotification() {
@@ -443,12 +445,14 @@ export default class Access extends SfdxCommand {
       }
       const branchMd = await getBranchMarkdown();
       const notifButtons = await getNotificationButtons();
+      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "LINT_ACCESS",
         text: `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchMd}`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       });
     }
   }

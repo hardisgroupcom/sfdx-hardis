@@ -42,11 +42,13 @@
     "glob-promise": "^4.1.0",
     "he": "^1.2.0",
     "inquirer": "^8.0.0",
+    "isomorphic-dompurify": "^2.3.0",
     "jira-client": "^8.2.2",
     "js-yaml": "^4.0.0",
     "jsforce": "^1.11.0",
     "keyv": "^4.0.3",
     "markdown-toc": "^1.2.0",
+    "marked": "^12.0.0",
     "mega-linter-runner": "^4.39.0",
     "moment": "^2.29.1",
     "ms-teams-webhook": "^2.0.2",
@@ -77,6 +79,7 @@
     "@oclif/test": "^1",
     "@salesforce/dev-config": "^2.1.0",
     "@types/chai": "^4",
+    "@types/dompurify": "^3.0.5",
     "@types/jira-client": "^7.1.9",
     "@types/node": "^14.14.32",
     "chai": "^4",
@@ -91,7 +94,7 @@
     "graceful-fs": "^4.2.4"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "files": [
     "/lib",

@@ -111,7 +111,7 @@ export class GitlabProvider extends GitProviderRoot {
 
 ${prMessage.message}
 
-_Provided by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
+_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
