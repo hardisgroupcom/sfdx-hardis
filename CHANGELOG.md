@@ -11,6 +11,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Update existing call to notifications to add attached files when Email notif channel is active
 - Audit trail suspect actions: add the number of occurences for each suspect action found
 - Add more unsuspect actions: dkimRotationPreparationSuccessful,createdReportJob,deletedReportJob,DeleteSandbox
+- Get tickets info: also check in ticket ids in branch name
+- Remove force config restDeploy=true
 - Rename _Provided by sfdx-hardis_ into _Powered by sfdx-hardis_
 
 ## [4.27.1] 2024-02-10
