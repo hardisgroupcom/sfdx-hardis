@@ -197,7 +197,7 @@ monitoringAllowedSectionsActions:
       "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg", "loginasgrantedtopartnerbt"],
       "Certificate and Key Management": ["insertCertificate"],
       "Data Management": ["queueMembership"],
-      "Email Administration": ["dkimRotationSuccessful","dkimRotationPreparationSuccessful"],
+      "Email Administration": ["dkimRotationSuccessful", "dkimRotationPreparationSuccessful"],
       Holidays: ["holiday_insert"],
       "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
       Groups: ["groupMembership"],
@@ -242,7 +242,7 @@ monitoringAllowedSectionsActions:
         "suOrgAdminLogout",
         "useremailchangesent",
       ],
-      "Reporting Snapshots": ["createdReportJob","deletedReportJob"],
+      "Reporting Snapshots": ["createdReportJob", "deletedReportJob"],
       Sandboxes: ["DeleteSandbox"],
     };
 
