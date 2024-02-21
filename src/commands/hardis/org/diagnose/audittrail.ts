@@ -35,6 +35,7 @@ Regular setup actions performed in major orgs are filtered.
 - Data Management
   - queueMembership
 - Email Administration
+  - dkimRotationPreparationSuccessful
   - dkimRotationSuccessful
 - Groups
   - groupMembership
@@ -81,6 +82,11 @@ Regular setup actions performed in major orgs are filtered.
   - suOrgAdminLogin
   - suOrgAdminLogout
   - useremailchangesent
+- Reporting Snapshots
+  - createdReportJob
+  - deletedReportJob
+- Sandboxes
+  - DeleteSandbox
 
 By default, deployment user defined in .sfdx-hardis.yml targetUsername property will be excluded.
 
@@ -191,7 +197,7 @@ monitoringAllowedSectionsActions:
       "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg", "loginasgrantedtopartnerbt"],
       "Certificate and Key Management": ["insertCertificate"],
       "Data Management": ["queueMembership"],
-      "Email Administration": ["dkimRotationSuccessful"],
+      "Email Administration": ["dkimRotationSuccessful","dkimRotationPreparationSuccessful"],
       Holidays: ["holiday_insert"],
       "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
       Groups: ["groupMembership"],
@@ -236,6 +242,8 @@ monitoringAllowedSectionsActions:
         "suOrgAdminLogout",
         "useremailchangesent",
       ],
+      "Reporting Snapshots": ["createdReportJob","deletedReportJob"],
+      Sandboxes: ["DeleteSandbox"],
     };
 
     // Append custom sections & actions considered as not suspect

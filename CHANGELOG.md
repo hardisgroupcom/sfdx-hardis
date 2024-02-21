@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New notifications channel: **EmailProvider** (use variable **NOTIF_EMAIL_ADDRESS** that can contain a comma-separated list of e-mail addresses)
 - Update existing call to notifications to add attached files when Email notif channel is active
 - Audit trail suspect actions: add the number of occurences for each suspect action found
+- Add more unsuspect actions: dkimRotationPreparationSuccessful,createdReportJob,deletedReportJob,DeleteSandbox
 - Rename _Provided by sfdx-hardis_ into _Powered by sfdx-hardis_
 
 ## [4.27.1] 2024-02-10
