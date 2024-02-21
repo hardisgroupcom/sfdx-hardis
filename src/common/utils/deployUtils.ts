@@ -161,7 +161,7 @@ export async function forceSourceDeploy(
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
   const messages = [];
   let deployXmlCount = splitDeployments.length;
-  
+
   if (deployXmlCount === 0) {
     uxLog(this, "No deployment to perform");
     return { messages, quickDeploy, deployXmlCount };

@@ -140,7 +140,7 @@ export class JiraProvider extends TicketProviderRoot {
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
     uxLog(this, c.cyan(`[JiraProvider] Try to post comments on ${tickets.length} tickets...`));
-    
+
     const genericHtmlResponseError = "Probably config/access error since response is HTML";
     const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "jira"));
     const branchMarkdown = JSON.parse(await getBranchMarkdown("jira"));
@@ -190,7 +190,7 @@ export class JiraProvider extends TicketProviderRoot {
           await this.jiraClient.updateIssue(ticket.id, issueUpdate);
           taggedTickets.push(ticket);
         } catch (e6) {
-          if(e6.message != null && e6.message.includes("<!doctype html>")) {
+          if (e6.message != null && e6.message.includes("<!doctype html>")) {
             e6.message = genericHtmlResponseError;
           }
           uxLog(this, c.yellow(`[JiraProvider] Error while adding label ${tag} on ${ticket.id}: ${e6.message}`));
@@ -198,7 +198,7 @@ export class JiraProvider extends TicketProviderRoot {
       }
     }
     // Summary
-    if(commentedTickets.length > 0 || taggedTickets.length > 0) {
+    if (commentedTickets.length > 0 || taggedTickets.length > 0) {
       uxLog(
         this,
         c.gray(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),

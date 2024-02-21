@@ -334,7 +334,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile]: []
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       });
     }
     return [];

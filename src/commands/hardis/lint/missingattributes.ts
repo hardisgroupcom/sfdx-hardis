@@ -80,8 +80,6 @@ export default class metadatastatus extends SfdxCommand {
         severity: "warning",
         sideImage: "flow",
       });
-
-
     } else {
       uxLog(this, "No draft flow files detected.");
     }

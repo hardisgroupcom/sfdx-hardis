@@ -305,7 +305,7 @@ monitoringAllowedSectionsActions:
       suspectUsers.sort();
       const suspectActionsSummary = {};
       for (const suspectAction of suspectActions) {
-        suspectActionsSummary[suspectAction] = (suspectActionsSummary[suspectAction] || 0) + 1
+        suspectActionsSummary[suspectAction] = (suspectActionsSummary[suspectAction] || 0) + 1;
       }
       for (const suspectAction of Object.keys(suspectActionsSummary)) {
         suspectActionsWithCount.push(`${suspectAction} (${suspectActionsSummary[suspectAction]})`);
@@ -352,7 +352,7 @@ monitoringAllowedSectionsActions:
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile]: []
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       });
     }
 

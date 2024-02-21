@@ -85,7 +85,7 @@ export interface NotifMessage {
   attachments?: any[];
   severity?: "critical" | "error" | "warning" | "info" | "success";
   sideImage?: string;
-  attachedFiles?: string[]
+  attachedFiles?: string[];
 }
 
 export interface NotifButton {

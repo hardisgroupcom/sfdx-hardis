@@ -207,7 +207,7 @@ You can remove more metadata types from backup, especially in case you have too 
         attachments: attachments,
         severity: "info",
         sideImage: "backup",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile]: []
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       });
     } else {
       uxLog(this, c.grey("No updated metadata for today's backup :)"));

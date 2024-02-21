@@ -88,10 +88,8 @@ export default class metadatastatus extends SfdxCommand {
         buttons: notifButtons,
         severity: "warning",
         sideImage: "flow",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile]: []
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       });
-
-
     } else {
       uxLog(this, "No draft flow or validation rule files detected.");
     }

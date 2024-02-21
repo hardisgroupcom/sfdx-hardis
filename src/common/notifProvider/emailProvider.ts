@@ -34,7 +34,10 @@ export class EmailProvider extends NotifProviderRoot {
     }
 
     // Main block
-    const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]), notifMessage.severity);
+    const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
+      UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
+      notifMessage.severity,
+    );
     const emailSubject = "[sfdx-hardis] " + removeMarkdown(firstLineMarkdown);
     let emailBody = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
 
@@ -69,23 +72,21 @@ export class EmailProvider extends NotifProviderRoot {
 
     // Send email
     const emailBodyHtml1 = marked.parse(emailBody);
-    const emailBodyHtml = typeof emailBodyHtml1 === 'string' ? emailBodyHtml1 : await emailBodyHtml1;
+    const emailBodyHtml = typeof emailBodyHtml1 === "string" ? emailBodyHtml1 : await emailBodyHtml1;
     const emailBodyHtmlSanitized = DOMPurify.sanitize(emailBodyHtml);
     const emailMessage: EmailMessage = {
       subject: emailSubject,
       body_html: emailBodyHtmlSanitized,
       to: emailAddresses,
-      attachments: notifMessage?.attachedFiles || []
-    }
+      attachments: notifMessage?.attachedFiles || [],
+    };
     const emailRes = await sendEmail(emailMessage);
     if (emailRes.success) {
       uxLog(this, c.grey(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
-    }
-    else {
+    } else {
       uxLog(this, c.yellow(`[EmailProvider] Error while sending email to ${emailAddresses.join(",")}`));
       uxLog(this, c.grey(JSON.stringify(emailRes.detail, null, 2)));
     }
     return;
   }
-
 }

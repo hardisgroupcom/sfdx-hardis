@@ -426,11 +426,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n"),
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n"),
         ),
       );
     }
@@ -1171,6 +1171,5 @@ export async function isMonitoringJob() {
 }
 
 export function getNested(nestedObj, pathArr) {
-  return pathArr.reduce((obj, key) =>
-    (obj && obj[key] !== 'undefined') ? obj[key] : undefined, nestedObj);
+  return pathArr.reduce((obj, key) => (obj && obj[key] !== "undefined" ? obj[key] : undefined), nestedObj);
 }

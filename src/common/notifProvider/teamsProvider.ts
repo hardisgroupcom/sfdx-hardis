@@ -85,5 +85,4 @@ export class TeamsProvider extends NotifProviderRoot {
     }
     return;
   }
-
 }
