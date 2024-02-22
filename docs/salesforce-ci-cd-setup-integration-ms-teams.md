@@ -9,7 +9,7 @@ description: Learn how to configure Microsoft Teams notifications using Web Hook
 You can receive notifications on Microsoft Teams channels when sfdx-hardis events are happening:
 
 - Deployment from a major branch to a major Salesforce org (ex: integration git branch to Integration Org)
-- Salesforce org monitoring
+- Salesforce [Org Monitoring](salesforce-monitoring-home.md)
   - Latest updates
   - Failing apex tests
   - Monitoring checks notifications

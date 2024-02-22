@@ -11,7 +11,7 @@ description: Send notifications on slack channels during CI/CD operations
 You can receive notifications on slack channels when sfdx-hardis events are happening:
 
 - Deployment from a major branch to a major Salesforce org (ex: integration git branch to Integration Org)
-- [Salesforce org monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
+- Salesforce [Org Monitoring](salesforce-monitoring-home.md)
   - Latest updates
   - Failing apex tests
   - Monitoring checks notifications
