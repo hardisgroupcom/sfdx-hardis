@@ -33,14 +33,14 @@ export async function sendEmail(emailMessage: EmailMessage) {
     soapBody += `           <urn:htmlBody>${sanitizeForXml(emailMessage.body_html || "")}</urn:htmlBody>\n`;
   }
   // Addresses
-  if (emailMessage.to) {
-    soapBody += `           <urn:toAddresses>${emailMessage.to.join(",")}</urn:toAddresses>\n`;
+  if (emailMessage?.to?.length > 0) {
+    soapBody += buildArrayOfStrings(emailMessage.to, "             <urn:toAddresses>", "</urn:toAddresses>");
   }
-  if (emailMessage.cc) {
-    soapBody += `           <urn:ccAddresses>${emailMessage.cc.join(",")}</urn:ccAddresses>\n`;
+  if (emailMessage?.cc?.length > 0) {
+    soapBody += buildArrayOfStrings(emailMessage.cc, "             <urn:ccAddresses>", "</urn:ccAddresses>");
   }
-  if (emailMessage.cci) {
-    soapBody += `           <urn:bccAddresses>${emailMessage.cci.join(",")}</urn:bccAddresses>\n`;
+  if (emailMessage?.cci?.length > 0) {
+    soapBody += buildArrayOfStrings(emailMessage.cci, "             <urn:bccAddresses>", "</urn:bccAddresses>");
   }
   // Attachments
   if (emailMessage?.attachments?.length > 0) {
@@ -89,6 +89,14 @@ export async function sendEmail(emailMessage: EmailMessage) {
     return { success: true, detail: soapResponse };
   }
   return { success: false, detail: soapResponse };
+}
+
+function buildArrayOfStrings(elements: string[], openingTag: string, closingTag: string): string {
+  let result = "";
+  for (const element of elements) {
+    result += `${openingTag}${element}${closingTag}\n`;
+  }
+  return result;
 }
 
 function sanitizeForXml(value) {

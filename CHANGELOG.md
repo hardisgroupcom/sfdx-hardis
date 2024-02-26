@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.28.1] 2024-02-26
+
+- Fix issue when using email notifications with multiple recipients
+
 ## [4.28.0] 2024-02-21
 
 - Minimum Node.js version is now v18
