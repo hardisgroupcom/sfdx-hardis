@@ -26,7 +26,8 @@ Open the file to see the errors
 
 - If the errors are from imported or generated classes, you can bypass them by adding annotation `@SuppressWarnings('PMD')` at the top of the classes
 
-- `//NOPMD` at the end of a line will make an issue ignored, but again use it only in case of false positive, never to "Publish more quickly", else you'll create [technical debt](https://en.wikipedia.org/wiki/Technical_debt).
+- `// NOPMD` at the end of a line will make an issue ignored, but again use it only in case of false positive, never to "Publish more quickly", else you'll create [technical debt](https://en.wikipedia.org/wiki/Technical_debt).
+  - If you use `// NOPMD`, specify why as comment . Example: `// NOPMD Strings already escaped before`
 
 ## LWC best practices using eslint
 
