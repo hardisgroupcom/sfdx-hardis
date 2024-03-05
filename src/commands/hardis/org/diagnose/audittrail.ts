@@ -62,6 +62,8 @@ Regular setup actions performed in major orgs are filtered.
   - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
+  - changedUserPhoneNumber
+  - changedUserPhoneVerifiedStatusUnverified
   - deactivateduser
   - deleteAuthenticatorPairing
   - deleteTwoFactorInfo2
@@ -221,6 +223,8 @@ monitoringAllowedSectionsActions:
         "changedpassword",
         "changedUserEmailVerifiedStatusUnverified",
         "changedUserEmailVerifiedStatusVerified",
+        "changedUserPhoneNumber",
+        "changedUserPhoneVerifiedStatusUnverified",
         "deactivateduser",
         "deleteAuthenticatorPairing",
         "deleteTwoFactorInfo2",

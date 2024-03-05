@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.28.3] 2024-03-05
+
+- Audit trail check: Ignore change phone number events
+
 ## [4.28.2] 2024-02-27
 
 - Fix wrong upgrade version notification
