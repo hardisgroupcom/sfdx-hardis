@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+    // Environment variable
+    environment {
+        SFDX_CLIENT_ID_DEVELOP =  credentials('SFDX_CLIENT_ID_DEVELOP')
+        SFDX_CLIENT_KEY_DEVELOP =  credentials('SFDX_CLIENT_KEY_DEVELOP')
+        SFDX_CLIENT_ID_UAT =  credentials('SFDX_CLIENT_ID_UAT')
+        SFDX_CLIENT_KEY_UAT =  credentials('SFDX_CLIENT_KEY_UAT')
+        SFDX_CLIENT_ID_PRE_PROD =  credentials('SFDX_CLIENT_ID_PRE_PROD')
+        SFDX_CLIENT_KEY_PRE_PROD=  credentials('SFDX_CLIENT_KEY_PRE_PROD')
+        SFDX_CLIENT_ID_PRODUCTION =  credentials('SFDX_CLIENT_ID_PRODUCTION')
+        SFDX_CLIENT_KEY_PRODUCTION =  credentials('SFDX_CLIENT_KEY_PRODUCTION')*/
+        CONFIG_BRANCH = "${GIT_BRANCH}"
+        CI_COMMIT_REF_NAME= "${GIT_BRANCH}"
+        ORG_ALIAS = "${GIT_BRANCH}"
+    }
+
+    
+    //Stage of the job
+    stages {
+        parallel {
+            stage('MegaLinter') {
+                agent {
+                    docker {
+                        image 'oxsecurity/megalinter:v7'
+                        args "-u root -e VALIDATE_ALL_CODEBASE=true -v ${WORKSPACE}:/tmp/lint --entrypoint=''"
+                        reuseNode true
+                    }
+                }
+                steps {
+                    sh '/entrypoint.sh'
+                }
+                post {
+                    always {
+                        archiveArtifacts allowEmptyArchive: true, artifacts: 'mega-linter.log,megalinter-reports/**/*', defaultExcludes: false, followSymlinks: false
+                    }
+                }
+            }
+            stage('Validation'){
+                agent {
+                    docker {
+                        image 'hardisgroupcom/sfdx-hardis:latest'
+                    }
+                }
+                when { changeRequest()}   
+                //Validation on the appropriate org
+                steps {
+                    script {
+                        sh "sfdx hardis:auth:login"
+                        sh "sfdx hardis:project:deploy:sources:dx --check" 
+                    }
+                }
+                post {
+                    always {
+                        archiveArtifacts allowEmptyArchive: true, artifacts: 'mega-linter.log,megalinter-reports/**/*', defaultExcludes: false, followSymlinks: false
+                    }
+                }
+            }
+            stage('Deployment'){
+                agent {
+                    docker {
+                        image 'hardisgroupcom/sfdx-hardis:latest'
+                    }
+                }
+                when { anyOf {branch 'develop'; branch 'uat' ; branch 'recette' ; branch 'formation'; branch 'pre_prod';branch 'TMALOT2' ; branch 'master' } }
+                //deploy on the appropriate org
+                steps {
+                    script { 
+                        sh "sfdx hardis:auth:login"
+                        sh "sfdx hardis:project:deploy:sources:dx" 
+                    }
+                }
+                post {
+                    always {
+                        archiveArtifacts allowEmptyArchive: true, artifacts: 'mega-linter.log,megalinter-reports/**/*', defaultExcludes: false, followSymlinks: false
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
