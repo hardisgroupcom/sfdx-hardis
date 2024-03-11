@@ -81,9 +81,12 @@ export default class ConfigureQuality extends SfdxCommand {
     await fs.writeFile(prettierRcJsonFile, JSON.stringify(prettierRcJson, null, 2));
     uxLog(this, c.gray("Updated .prettierrc file to have CloudiScore configuration"));
 
-    uxLog(this, c.green(`Now you can run command ${c.bold("npm install")} to install local dependencies`));
-
-    uxLog(this, c.yellow(`Before running ${c.bold("npm run prettier")}, make sure to add imported/generated code in ${c.bold(".prettierignore")} and ${c.bold(".eslintignore")} files !`));
+    uxLog(this, c.green("What's next ?"));
+    uxLog(this, c.green(`- Run command ${c.bold("npm install")} to install local dependencies`));
+    uxLog(this, c.yellow(`- Discard updated GitHub/GitLab/Azure/Bitbucket CI/CD items that you are not using`));
+    uxLog(this, c.yellow(`- Add exceptions in ${c.bold(".prettierignore")} and ${c.bold(".eslintignore")} to ignore generated or imported Apex/LWC files`));
+    uxLog(this, c.yellow(`- Create a first commit, so you can discard later in case you forgot prettier / eslint exceptions`));
+    uxLog(this, c.green(`- Run ${c.bold("npm run prettier")} to apply formatting on files`));
 
     // Return an object to be displayed with --json
     return { outputString: "Configured project for CloudiScore" };
