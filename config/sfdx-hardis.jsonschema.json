@@ -895,6 +895,13 @@
       "title": "Scratch org init apex scripts",
       "type": "array"
     },
+    "scratchOrgDuration": {
+      "$id": "#/properties/scratchOrgDuration",
+      "default": 30,
+      "description": "Defines the lifespan of the scratch org in number of days, from 1 to 30",
+      "title": "Duration of Scratch Org",
+      "type": "number"
+    },
     "sfdmuCanModify": {
       "$id": "#/properties/sfdmuCanModify",
       "default": "",
