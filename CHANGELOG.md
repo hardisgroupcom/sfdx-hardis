@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.28.4] 2024-03-11
+
+- Allow to override default scratch org duration using .sfdx-hardis.yml property **scratchOrgDuration**
+
 ## [4.28.3] 2024-03-05
 
 - Audit trail check: Ignore change phone number events
