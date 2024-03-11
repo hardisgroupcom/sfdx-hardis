@@ -197,7 +197,12 @@ export default class ScratchCreate extends SfdxCommand {
     this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;
     this.devHubAlias = process.env.DEVHUB_ALIAS || this.configInfo.devHubAlias;
 
-    this.scratchOrgDuration = (process.env.SCRATCH_ORG_DURATION || isCI) && this.pool === false ? 1 : this.configInfo.scratchOrgDuration;
+    this.scratchOrgDuration =
+      process.env?.SCRATCH_ORG_DURATION ? process.env.SCRATCH_ORG_DURATION : // Priority to global variable if defined
+        isCI && this.pool === false ? 1 : // If CI and not during pool feed job, default is 1 day because the scratch will not be used after the job
+          this.configInfo?.scratchOrgDuration ? this.configInfo.scratchOrgDuration : // Override default value in scratchOrgDuration
+            30; // Default value: 30
+
     this.userEmail = process.env.USER_EMAIL || process.env.GITLAB_USER_EMAIL || this.configInfo.userEmail;
 
     // If not found, prompt user email and store it in user config file
