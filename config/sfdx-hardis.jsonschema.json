@@ -900,7 +900,9 @@
       "default": 30,
       "description": "Defines the lifespan of the scratch org in number of days, from 1 to 30",
       "title": "Duration of Scratch Org",
-      "type": "number"
+      "type": "number",
+      "minimum": 1,
+      "maximum": 30
     },
     "sfdmuCanModify": {
       "$id": "#/properties/sfdmuCanModify",
