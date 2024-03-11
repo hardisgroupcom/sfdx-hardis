@@ -15,12 +15,12 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ConfigureCloudiscore extends SfdxCommand {
+export default class ConfigureQuality extends SfdxCommand {
   public static title = "Configure SFDX Project local files";
 
-  public static description = "Configure sfdx project for CloudiScore";
+  public static description = "Configure sfdx project for Quality Checks";
 
-  public static examples = ["$ sfdx hardis:project:configure:localconfig"];
+  public static examples = ["$ sfdx hardis:project:configure:quality"];
 
   // public static args = [{name: 'file'}];
 
@@ -81,7 +81,9 @@ export default class ConfigureCloudiscore extends SfdxCommand {
     await fs.writeFile(prettierRcJsonFile, JSON.stringify(prettierRcJson, null, 2));
     uxLog(this, c.gray("Updated .prettierrc file to have CloudiScore configuration"));
 
-    uxLog(this, c.green(`Now you can run command ${c.bold("npm install")}`));
+    uxLog(this, c.green(`Now you can run command ${c.bold("npm install")} to install local dependencies`));
+
+    uxLog(this, c.yellow(`Before running ${c.bold("npm run prettier")}, make sure to add imported/generated code in ${c.bold(".prettierignore")} and ${c.bold(".eslintignore")} files !`));
 
     // Return an object to be displayed with --json
     return { outputString: "Configured project for CloudiScore" };
