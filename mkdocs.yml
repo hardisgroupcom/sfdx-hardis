@@ -67,6 +67,9 @@ nav:
             generate: hardis/doc/plugin/generate.md
         lint:
           access: hardis/lint/access.md
+          metadatastatus: hardis/lint/metadatastatus.md
+          missingattributes: hardis/lint/missingattributes.md
+          unusedmetadatas: hardis/lint/unusedmetadatas.md
         mdapi:
           deploy: hardis/mdapi/deploy.md
         misc:
@@ -83,13 +86,18 @@ nav:
             export: hardis/org/data/export.md
             import: hardis/org/data/import.md
           diagnose:
+            audittrail: hardis/org/diagnose/audittrail.md
             legacyapi: hardis/org/diagnose/legacyapi.md
+            unusedlicenses: hardis/org/diagnose/unusedlicenses.md
           files:
             export: hardis/org/files/export.md
           fix:
             listviewmine: hardis/org/fix/listviewmine.md
           generate:
             packagexmlfull: hardis/org/generate/packagexmlfull.md
+          monitor:
+            all: hardis/org/monitor/all.md
+            backup: hardis/org/monitor/backup.md
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md
