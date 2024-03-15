@@ -1,7 +1,7 @@
 import * as c from "chalk";
 import * as readPkgUp from "read-pkg-up";
 import * as updateNotifier from "update-notifier";
-import * as semver from 'semver';
+import * as semver from "semver";
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
@@ -17,7 +17,12 @@ export const hook = async (options: any) => {
     pkg: pkg.packageJson,
     updateCheckInterval: 900, // check every 15 mn
   });
-  if (notifier && notifier.update && notifier.update.current !== notifier.update.latest && semver.compare(notifier.update.latest,notifier.update.current) === 1) {
+  if (
+    notifier &&
+    notifier.update &&
+    notifier.update.current !== notifier.update.latest &&
+    semver.compare(notifier.update.latest, notifier.update.current) === 1
+  ) {
     console.warn(c.yellow("***********************************************************************************************************************"));
     console.warn(
       c.yellow(
