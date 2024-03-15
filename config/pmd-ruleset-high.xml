@@ -23,13 +23,13 @@
     </rule>
     <rule ref="category/apex/bestpractices.xml/ApexUnitTestShouldNotUseSeeAllDataTrue"
           message="@isTest(seeAllData=true) should not be used in Apex unit tests because it opens up the existing database data for unexpected modification by tests">
-        <priority>3</priority>
+        <priority>1</priority>
     </rule>
     <rule ref="category/apex/bestpractices.xml/AvoidGlobalModifier" message="Avoid using global modifier">
-        <priority>3</priority>
+        <priority>2</priority>
     </rule>
     <rule ref="category/apex/bestpractices.xml/AvoidLogicInTrigger" message="Avoid logic in triggers">
-        <priority>3</priority>
+        <priority>1</priority>
     </rule>
     <rule ref="category/apex/bestpractices.xml/DebugsShouldUseLoggingLevel"
           message="Debug statements should include a LoggingLevel">
@@ -89,14 +89,14 @@
         </properties>
     </rule>
     <rule ref="category/apex/design.xml/CyclomaticComplexity">
-        <priority>3</priority>
+        <priority>2</priority>
         <properties>
-            <property name="classReportLevel" value="30"/>
-            <property name="methodReportLevel" value="10"/>
+            <property name="classReportLevel" value="80"/>
+            <property name="methodReportLevel" value="20"/>
         </properties>
     </rule>
     <rule ref="category/apex/design.xml/ExcessiveClassLength" message="Avoid really long classes (lines of code)">
-        <priority>3</priority>
+        <priority>2</priority>
         <properties>
             <property name="minimum" value="500"/>
         </properties>
@@ -132,13 +132,6 @@
             <property name="minimum" value="700"/>
         </properties>
     </rule>
-    <rule ref="category/apex/design.xml/StdCyclomaticComplexity"
-          message="The {0} ''{1}'' has a Standard Cyclomatic Complexity of {2}">
-        <priority>3</priority>
-        <properties>
-            <property name="reportLevel" value="10"/>
-        </properties>
-    </rule>
     <rule ref="category/apex/design.xml/TooManyFields" message="Too many fields">
         <priority>2</priority>
         <properties>
@@ -152,7 +145,7 @@
     <!-- Documentation -->
     <rule ref="category/apex/documentation.xml/ApexDoc"
           message="ApexDoc comments should be present and valid for classes, methods, and properties that are public or global">
-        <priority>1</priority>
+        <priority>3</priority>
     </rule>
 
     <!-- Error Prone -->
@@ -205,10 +198,6 @@
     <rule ref="category/apex/security.xml/ApexBadCrypto" message="Apex Crypto should use random IV/key">
         <priority>1</priority>
     </rule>
-    <rule ref="category/apex/security.xml/ApexCRUDViolation"
-          message="Validate CRUD permission before SOQL/DML operation">
-        <priority>3</priority>
-    </rule>
     <rule ref="category/apex/security.xml/ApexDangerousMethods" message="Calling potentially dangerous method">
         <priority>1</priority>
     </rule>
@@ -222,7 +211,7 @@
     </rule>
     <rule ref="category/apex/security.xml/ApexSharingViolations"
           message="Apex classes should declare a sharing model if DML or SOQL is used">
-        <priority>3</priority>
+        <priority>2</priority>
     </rule>
     <rule ref="category/apex/security.xml/ApexSOQLInjection"
           message="Apex classes should escape variables merged in DML query">
