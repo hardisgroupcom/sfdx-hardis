@@ -47,9 +47,9 @@ jobs:
       run: |
         npm install --no-cache @salesforce/cli --global
         sf plugins install @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install sfdx-hardis
-        echo 'y' | sfdx plugins:install sfdx-essentials
-        echo 'y' | sfdx plugins:install sfdx-git-delta
+        echo 'y' | sf plugins:install sfdx-hardis
+        echo 'y' | sf plugins:install sfdx-essentials
+        echo 'y' | sf plugins:install sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Retrieve Metadata
@@ -69,8 +69,8 @@ jobs:
         FORCE_COLOR: "1"
       run: |
         echo "Monitoring sfdx-hardis: Metadata Backup for \"$CONFIG_BRANCH\""
-        sfdx hardis:auth:login
-        sfdx hardis:org:monitor:backup
+        sf hardis:auth:login
+        sf hardis:org:monitor:backup
 
     # Push new commit if applicable
     # (for now works only on PR from same repository, not from forks)
@@ -117,9 +117,9 @@ jobs:
       run: |
         npm install --no-cache @salesforce/cli --global
         sf plugins install @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install sfdx-hardis
-        echo 'y' | sfdx plugins:install sfdx-essentials
-        echo 'y' | sfdx plugins:install sfdx-git-delta
+        echo 'y' | sf plugins:install sfdx-hardis
+        echo 'y' | sf plugins:install sfdx-essentials
+        echo 'y' | sf plugins:install sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Run apex tests
@@ -140,8 +140,8 @@ jobs:
       run: |
         echo "Run apex tests against \"$CONFIG_BRANCH\""
         git pull origin ${{ env.BRANCH }}
-        sfdx hardis:auth:login
-        sfdx hardis:org:test:apex
+        sf hardis:auth:login
+        sf hardis:org:test:apex
 
     - name: Upload artifacts
       if:  success() || failure()
@@ -215,9 +215,9 @@ jobs:
       run: |
         npm install --no-cache @salesforce/cli --global
         sf plugins install @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install sfdx-hardis
-        echo 'y' | sfdx plugins:install sfdx-essentials
-        echo 'y' | sfdx plugins:install sfdx-git-delta
+        echo 'y' | sf plugins:install sfdx-hardis
+        echo 'y' | sf plugins:install sfdx-essentials
+        echo 'y' | sf plugins:install sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Run monitoring checks
@@ -238,8 +238,8 @@ jobs:
       run: |
         echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
         git pull origin ${{ env.BRANCH }}
-        sfdx hardis:auth:login
-        sfdx hardis:org:monitor:all
+        sf hardis:auth:login
+        sf hardis:org:monitor:all
 
     - name: Upload artifacts
       if:  success() || failure()

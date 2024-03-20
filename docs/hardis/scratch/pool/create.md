@@ -7,9 +7,9 @@ Select a data storage service and configure information to build a scratch org p
 
   Run the command, follow instruction, then you need to schedule a daily CI job for the pool maintenance:
 
-- Define CI ENV variable SCRATCH_ORG_POOL with value "true"
+  - Define CI ENV variable SCRATCH_ORG_POOL with value "true"
 
-- Call the following lines in the CI job:
+  - Call the following lines in the CI job:
 
 ```shell
   sfdx hardis:auth:login --devhub
@@ -19,20 +19,20 @@ Select a data storage service and configure information to build a scratch org p
 
 ## Parameters
 
-| Name                        |  Type   | Description                                                          | Default | Required |                        Options                        |
-|:----------------------------|:-------:|:---------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
-| apiversion                  | option  | override the api version used for api requests made by this command  |         |          |                                                       |
-| debug<br/>-d                | boolean | Activate debug mode (more logs)                                      |         |          |                                                       |
-| json                        | boolean | format output as json                                                |         |          |                                                       |
-| loglevel                    | option  | logging level for this command invocation                            |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| skipauth                    | boolean | Skip authentication check when a default username is required        |         |          |                                                       |
-| targetdevhubusername<br/>-v | option  | username or alias for the dev hub org; overrides default dev hub org |         |          |                                                       |
-| websocket                   | option  | Websocket host:port for VsCode SFDX Hardis UI integration            |         |          |                                                       |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|apiversion|option|override the api version used for api requests made by this command||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|json|boolean|format output as json||||
+|loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|targetdevhubusername<br/>-v|option|username or alias for the dev hub org; overrides default dev hub org||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sfdx hardis:scratch:pool:configure
+$ sfdx hardis:scratch:pool:configure
 ```
 
 
