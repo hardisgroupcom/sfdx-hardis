@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add links to FAQ in documentation
+
 ## [4.29.0] 2024-03-25
 
 - Handle **manifest/preDestructiveChanges.xml** to delete items before deployments if necessary
