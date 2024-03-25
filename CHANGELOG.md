@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Handle **manifest/preDestructiveChanges.xml** to delete items before deployments if necessary.
+
 ## [4.28.4] 2024-03-11
 
 - Allow to override default scratch org duration using .sfdx-hardis.yml property **scratchOrgDuration**
