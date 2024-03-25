@@ -16,7 +16,9 @@
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Toolbox for Salesforce DX, by [Cloudity](https://cloudity.com/)
+Toolbox for Salesforce DX, by [Cloudity](https://cloudity.com/), natively compliant with most platforms and tools
+
+![](docs/assets/images/integrations.png)
 
 It will allow you to:
 
@@ -36,7 +38,15 @@ _See Dreamforce presentation_
 
 ## Installation
 
-### SFDX Plugin
+### With IDE
+
+You can install [Visual Studio Code](https://code.visualstudio.com/) extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+
+Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, and follow the additional installation instructions
+
+[![Installation tutorial](https://img.youtube.com/vi/LA8m-t7CjHA/0.jpg)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
+
+### As SFDX Plugin
 
 #### Pre-requisites
 
@@ -60,14 +70,6 @@ sfdx plugins:install texei-sfdx-plugin
 ```
 
 If you are using CI/CD scripts, use `echo y | sfdx plugins:install ...` to bypass prompt.
-
-### With IDE
-
-You can install [Visual Studio Code](https://code.visualstudio.com/) extension [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
-
-Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, and follow the additional installation instructions
-
-[![Installation tutorial](https://img.youtube.com/vi/LA8m-t7CjHA/0.jpg)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
 ### Docker
 
