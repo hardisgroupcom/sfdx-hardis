@@ -234,7 +234,7 @@ export async function forceSourceDeploy(
         " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
         ` --testlevel ${testlevel}` +
         (options.testClasses ? ` --runtests ${options.testClasses}` : "") +
-        (options.preDestructiveChanges ? ` --predestructivechanges ${options.postDestructiveChanges}` : "") +
+        (options.preDestructiveChanges ? ` --predestructivechanges ${options.preDestructiveChanges}` : "") +
         (options.postDestructiveChanges ? ` --postdestructivechanges ${options.postDestructiveChanges}` : "") +
         (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
         (check ? " --checkonly" : "") +
