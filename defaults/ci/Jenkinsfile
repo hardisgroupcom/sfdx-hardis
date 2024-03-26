@@ -2,14 +2,8 @@ pipeline {
     agent any
     // Environment variable
     environment {
-        SFDX_CLIENT_ID_DEVELOP =  credentials('SFDX_CLIENT_ID_DEVELOP')
-        SFDX_CLIENT_KEY_DEVELOP =  credentials('SFDX_CLIENT_KEY_DEVELOP')
-        SFDX_CLIENT_ID_UAT =  credentials('SFDX_CLIENT_ID_UAT')
-        SFDX_CLIENT_KEY_UAT =  credentials('SFDX_CLIENT_KEY_UAT')
-        SFDX_CLIENT_ID_PRE_PROD =  credentials('SFDX_CLIENT_ID_PRE_PROD')
-        SFDX_CLIENT_KEY_PRE_PROD=  credentials('SFDX_CLIENT_KEY_PRE_PROD')
-        SFDX_CLIENT_ID_PRODUCTION =  credentials('SFDX_CLIENT_ID_PRODUCTION')
-        SFDX_CLIENT_KEY_PRODUCTION =  credentials('SFDX_CLIENT_KEY_PRODUCTION')
+        SFDX_CLIENT_ID_INTEGRATION =  credentials('SFDX_CLIENT_ID_INTEGRATION')
+        SFDX_CLIENT_KEY_INTEGRATION =  credentials('SFDX_CLIENT_KEY_INTEGRATION')
         CONFIG_BRANCH = "${GIT_BRANCH}"
         CI_COMMIT_REF_NAME= "${GIT_BRANCH}"
         ORG_ALIAS = "${GIT_BRANCH}"
@@ -42,7 +36,7 @@ pipeline {
                         image 'hardisgroupcom/sfdx-hardis:latest'
                     }
                 }
-                when { changeRequest()}   
+                when {changeRequest()}   
                 //Validation on the appropriate org
                 steps {
                     script {
