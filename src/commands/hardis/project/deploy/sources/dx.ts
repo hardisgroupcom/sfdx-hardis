@@ -321,12 +321,23 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
       testClasses: testClasses,
     };
     // Get destructiveChanges.xml and add it in options if existing
-    const packageDeletedXmlFile =
+    const postDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE || this.configInfo.packageXmlToDelete || fs.existsSync("./manifest/destructiveChanges.xml")
         ? "./manifest/destructiveChanges.xml"
         : "./config/destructiveChanges.xml";
-    if (fs.existsSync(packageDeletedXmlFile)) {
-      forceSourceDeployOptions.postDestructiveChanges = packageDeletedXmlFile;
+    if (fs.existsSync(postDestructiveChanges)) {
+      forceSourceDeployOptions.postDestructiveChanges = postDestructiveChanges;
+    }
+
+    // Get preDestructiveChanges.xml and add it in options if existing
+    const preDestructiveChanges =
+      process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
+      this.configInfo.packageXmlToDeletePreDeploy ||
+      fs.existsSync("./manifest/preDestructiveChanges.xml")
+        ? "./manifest/preDestructiveChanges.xml"
+        : "./config/preDestructiveChanges.xml";
+    if (fs.existsSync(preDestructiveChanges)) {
+      forceSourceDeployOptions.preDestructiveChanges = preDestructiveChanges;
     }
 
     // Compute and apply delta if required
