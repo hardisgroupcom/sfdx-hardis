@@ -43,6 +43,8 @@ Solve the security issues if they are critical like hardcoded tokens, or bypass 
 
 Refactor your code to avoid excessive copy-pastes !
 
+You can also add exceptions in `.jscpd.json` file, but really in case it has sense, not out of laziness
+
 ## Example of .mega-linter.yml config file
 
 ```yaml

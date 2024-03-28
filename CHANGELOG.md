@@ -4,6 +4,24 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add links to FAQ in documentation
+- Add two new PMD rules for quality **pmd-ruleset-high.xml** and **pmd-ruleset-medium.xml**
+
+## [4.29.0] 2024-03-25
+
+- Handle **manifest/preDestructiveChanges.xml** to delete items before deployments if necessary
+- Update documentation about integrations
+- Upgrade dependencies
+
+
+## [4.28.4] 2024-03-11
+
+- Allow to override default scratch org duration using .sfdx-hardis.yml property **scratchOrgDuration**
+
+## [4.28.3] 2024-03-05
+
+- Audit trail check: Ignore change phone number events
+
 ## [4.28.2] 2024-02-27
 
 - Fix wrong upgrade version notification

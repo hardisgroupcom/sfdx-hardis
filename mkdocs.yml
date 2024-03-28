@@ -238,6 +238,7 @@ nav:
   - Configuration reference: sfdx-hardis-config-file.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles
   - Special Thanks: special-thanks.md
+  - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
   - Contributing: https://sfdx-hardis.cloudity.com/#contributing
   - License: license.md
   - Changelog: CHANGELOG.md
