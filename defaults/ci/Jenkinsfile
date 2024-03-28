@@ -5,7 +5,7 @@
  You may also:
  - Update manifest/package-skip-items.xml to filter elements to retrieve
 
- Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
+ Doc & support: 
  */
 pipeline {
     agent any
