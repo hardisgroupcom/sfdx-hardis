@@ -20,6 +20,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
   public static description = messages.getMessage("orgPurgeFlow");
 
   public static examples = [
+    `$ sfdx hardis:org:purge:flow --no-prompt`,
     `$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
   Found 1 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS

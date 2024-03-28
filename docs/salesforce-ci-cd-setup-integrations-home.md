@@ -4,6 +4,8 @@ description: Manage sfdx integrations with Gitlab, GitHub, Azure, BitBucket, Mic
 ---
 <!-- markdownlint-disable MD013 -->
 
+![](assets/images/integrations.png)
+
 Every info that sfdx-hardis can provide is available in log files or console terminals.
 
 In order to enhance the user experience, integrations with external tools must be configured.
