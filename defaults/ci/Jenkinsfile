@@ -1,24 +1,21 @@
- /*Pipeline for Salesforce monitoring using sfdx-hardis
+ /*Pipeline for Salesforce using sfdx-hardis
 
- You need to (do a CTRL+F on "MANUAL")
- - 
- You may also:
- - Update manifest/package-skip-items.xml to filter elements to retrieve
+ You need to do a CTRL+F on "MANUAL" and add your variable instead of example variable
 
- Doc & support: 
+
  */
 pipeline {
     agent any
     // MANUAL : Add Environment variable if necessary
     environment {
-        SFDX_CLIENT_ID_INTEGRATION =  credentials('SFDX_CLIENT_ID_INTEGRATION')
-        SFDX_CLIENT_KEY_INTEGRATION =  credentials('SFDX_CLIENT_KEY_INTEGRATION')
-        SFDX_CLIENT_ID_UAT =  credentials('SFDX_CLIENT_ID_UAT')
-        SFDX_CLIENT_KEY_UAT =  credentials('SFDX_CLIENT_KEY_UAT')
-        SFDX_CLIENT_ID_PREPROD =  credentials('SFDX_CLIENT_ID_PREPROD')
-        SFDX_CLIENT_KEY_PREPROD =  credentials('SFDX_CLIENT_KEY_PREPROD')
-        SFDX_CLIENT_ID_MAIN =  credentials('SFDX_CLIENT_ID_MAIN')
-        SFDX_CLIENT_KEY_MAIN =  credentials('SFDX_CLIENT_KEY_MAIN')
+        SFDX_CLIENT_ID_INTEGRATION =  credentials('SFDX_CLIENT_ID_INTEGRATION') //Example
+        SFDX_CLIENT_KEY_INTEGRATION =  credentials('SFDX_CLIENT_KEY_INTEGRATION') //Example
+        SFDX_CLIENT_ID_UAT =  credentials('SFDX_CLIENT_ID_UAT') //Example
+        SFDX_CLIENT_KEY_UAT =  credentials('SFDX_CLIENT_KEY_UAT') //Example
+        SFDX_CLIENT_ID_PREPROD =  credentials('SFDX_CLIENT_ID_PREPROD') //Example
+        SFDX_CLIENT_KEY_PREPROD =  credentials('SFDX_CLIENT_KEY_PREPROD') //Example
+        SFDX_CLIENT_ID_MAIN =  credentials('SFDX_CLIENT_ID_MAIN') //Example
+        SFDX_CLIENT_KEY_MAIN =  credentials('SFDX_CLIENT_KEY_MAIN') //Example
         CONFIG_BRANCH = "${GIT_BRANCH}"
         CI_COMMIT_REF_NAME = "${GIT_BRANCH}"
         ORG_ALIAS = "${GIT_BRANCH}"
@@ -74,10 +71,10 @@ pipeline {
                 //MANUAL: add your major branch if necessary
                 when {
                     anyOf {
-                            branch 'integration';
-                            branch: 'uat';
-                            branch: 'preprod';
-                            branch 'main'
+                            branch 'integration'; //Example
+                            branch: 'uat'; //Example
+                            branch: 'preprod'; //Example
+                            branch 'main' //Example
                     }
                 }
                 //deploy on the appropriate org
