@@ -1,7 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
-// import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
@@ -59,19 +58,10 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-  protected static additionalPermissionSetsToAlwaysGet = ["Sales_User"];
-
-  protected static permSetsPermSetLicenses = [{ permSet: "Sales_User", permSetLicense: "SalesUserPsl" }];
-
-  protected static profilesPermissionSetLicenses = [{ profile: "Salesforce API Only", permSetLicense: "SalesforceAPIIntegrationPsl" }];
-
-  protected static alwaysExcludeForActiveUsersPermissionSetLicenses = ["IdentityConnect"];
-
-  protected lastNdays: number;
-
   protected debugMode = false;
   protected outputFile;
   protected outputFilesRes: any = {};
+  protected lastNdays: number;
   protected unusedUsers = [];
   protected statusCode = 0;
 
@@ -102,10 +92,8 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
       this.lastNdays = lastNdaysResponse.days;
     }
 
-
     const conn = this.org.getConnection();
     uxLog(this, c.cyan(`Extracting active users who haven't logged in for a while on ${conn.instanceUrl} ...`));
-
 
     // Retrieve the list of users who haven't logged in for a while
     this.unusedUsers = await this.listUnusedUsersWithSfdcLicense(conn);
@@ -171,7 +159,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
       globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "UNUSED_USERS",
-        text: `${this.unusedUsers.length} active users have not logged in to ${orgMarkdown} in the last ${this.lastNdays}`,
+        text: `${this.unusedUsers.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`,
         attachments: [{ text: notifDetailText }],
         buttons: notifButtons,
         severity: "warning",
