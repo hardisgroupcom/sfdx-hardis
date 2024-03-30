@@ -116,6 +116,12 @@ monitoringCommands:
         frequency: "weekly",
       },
       {
+        key: "UNUSED_USERS",
+        title: "Detect active users without recent logins",
+        command: "sfdx hardis:org:diagnose:unusedusers",
+        frequency: "weekly",
+      },
+      {
         key: "UNUSED_METADATAS",
         title: "Detect custom labels and custom permissions that are not in use",
         command: "sfdx hardis:lint:unusedmetadatas",

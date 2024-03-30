@@ -80,7 +80,8 @@ export interface NotifMessage {
     | "UNUSED_METADATAS"
     | "METADATA_STATUS"
     | "MISSING_ATTRIBUTES"
-    | "UNUSED_LICENSES";
+    | "UNUSED_LICENSES"
+    | "UNUSED_USERS";
   buttons?: NotifButton[];
   attachments?: any[];
   severity?: "critical" | "error" | "warning" | "info" | "success";
