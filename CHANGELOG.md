@@ -4,8 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.30.0] 2024-03-25
+
+- Fix default **package-no-overwrite.xml** (typos on NamesCredential & RemoteSiteSetting)
 - Add links to FAQ in documentation
 - Add two new PMD rules for quality **pmd-ruleset-high.xml** and **pmd-ruleset-medium.xml**
+
 
 ## [4.29.0] 2024-03-25
 
