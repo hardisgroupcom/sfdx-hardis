@@ -83,8 +83,8 @@ check_deploy_to_target_branch_org:
     ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
   script:
     - '[ -z "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ] && exit 0;' # Skip this job if it is launched from web UI and we are not in merge request context
-    - sfdx hardis:auth:login
-    - sfdx hardis:project:deploy:sources:dx --check
+    - sf hardis:auth:login
+    - sf hardis:project:deploy:sources:dx --check
 
 # Create scratch org to check the sources push & the unit tests
 create_scratch_org:
@@ -101,8 +101,8 @@ create_scratch_org:
       - $USE_SCRATCH_ORGS == "false"
   interruptible: true
   script:
-    - sfdx hardis:auth:login --devhub
-    - sfdx hardis:scratch:create
+    - sf hardis:auth:login --devhub
+    - sf hardis:scratch:create
   artifacts:
     when: always
     expire_in: 60 minutes
@@ -121,8 +121,8 @@ refresh_scratch_org_pool:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
-    - sfdx hardis:auth:login --devhub
-    - sfdx hardis:scratch:pool:refresh
+    - sf hardis:auth:login --devhub
+    - sf hardis:scratch:pool:refresh
   artifacts:
     when: always
 
@@ -145,8 +145,8 @@ test_apex:
       artifacts: true
   script:
     - sleep 120 # Orgs just created can be not ready yet, let's wait a while before running tests
-    - sfdx hardis:auth:login --scratchorg || true
-    - sfdx hardis:org:test:apex
+    - sf hardis:auth:login --scratchorg || true
+    - sf hardis:org:test:apex
   artifacts:
     when: always
     paths:
@@ -187,9 +187,9 @@ clean:
     - job: create_scratch_org
     - job: test_apex
   script:
-    - sfdx hardis:auth:login --devhub
-    - sfdx hardis:auth:login --scratchorg || true
-    - sfdx force:org:delete --noprompt || true
+    - sf hardis:auth:login --devhub
+    - sf hardis:auth:login --scratchorg || true
+    - sf force:org:delete --noprompt || true
 
 # Simulate deployment to related org
 # Is triggered only when scheduled, or via manual launch
@@ -206,8 +206,8 @@ check_deploy_to_current_branch_org:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
-    - sfdx hardis:auth:login
-    - sfdx hardis:project:deploy:sources:dx --check
+    - sf hardis:auth:login
+    - sf hardis:project:deploy:sources:dx --check
 
 # Deploy to branch related org when detecting new commit (after a merged merge request)
 # Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
@@ -224,5 +224,5 @@ deploy_to_org:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
-    - sfdx hardis:auth:login
-    - sfdx hardis:project:deploy:sources:dx
+    - sf hardis:auth:login
+    - sf hardis:project:deploy:sources:dx
