@@ -7,7 +7,6 @@
 /package-lock.json
 /tmp
 node_modules
-report
 sfdx-hardis-*.tgz
 
 .nyc_output/
