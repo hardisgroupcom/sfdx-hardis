@@ -77,7 +77,7 @@ This means that **an item matching package-no-overwrite.xml** will be **deployed
   <types>
     <!-- Name Credentials can contain auth info that are different between dev, uat, preprod and prod: let's not overwrite them ! -->
     <members>*</members>
-    <name>NamedCredentials</name>
+    <name>NamedCredential</name>
   </types>  
   <types>
     <!-- Use permission sets -->
@@ -87,7 +87,7 @@ This means that **an item matching package-no-overwrite.xml** will be **deployed
   <types>
     <!-- Remote site settings can be different between dev, uat, preprod and prod: let's not overwrite them ! -->
     <members>*</members>
-    <name>RemoteSiteSettings</name>
+    <name>RemoteSiteSetting</name>
   </types>  
   <types>
     <!-- Reports are maintained directly in production -->
