@@ -119,8 +119,9 @@ export default class ReportExport extends SfdxCommand {
         // Visit report URL
         const reportUiUrl = `${this.org.getConnection().instanceUrl}/lightning/r/Report/${reportRecord.Id}/view`;
         uxLog(this, c.grey("Opening report url: " + reportUiUrl));
+        const navigationPromise = page.waitForNavigation();
         await page.goto(reportUiUrl);
-        await page.waitForNavigation();
+        await navigationPromise ;
 
         // Click on contextual button
         uxLog(this, c.grey("Checking for contextual button..."));
@@ -136,11 +137,15 @@ export default class ReportExport extends SfdxCommand {
         await exportButton.click();
 
         // Click on Details
+        uxLog(this, c.grey("Selecting option Details..."));
         const detailsOnlyButton = await page.waitForXPath("//span[contains(text(), 'Details Only')]");
         await detailsOnlyButton.click();
 
         // Select output format
-        const formatLabel = await page.waitForXPath(`"//label[contains(text(), 'Format')]"`);
+        const formatOption = await page.$$eval('option', options => options.find(o => o.getAttribute("value") === this.format));
+        (await formatOption.getProperty('parentNode')).asElement().select(this.format);
+
+        const formatLabel = await page.waitForXPath("//span[contains(text(), 'Format')]");
         const labelSibling = await formatLabel.$x("following-sibling::*");
         const selectItem = await labelSibling[0].waitForSelector("select");
         await selectItem.select(this.format);
@@ -157,11 +162,11 @@ export default class ReportExport extends SfdxCommand {
         });
 
         // Click on Export
+        uxLog(this, c.grey(`Downloading report...`));
         const processExportButton = await page.waitForXPath("//button[contains(@title, 'Export')]");
         await processExportButton.click();
 
         // Wait for download progress
-        uxLog(this, c.grey(`Downloading report...`));
         await new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
                 resolve("Download timeout reached");
