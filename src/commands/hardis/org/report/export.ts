@@ -43,9 +43,10 @@ export default class ReportExport extends SfdxCommand {
             char: "e",
             description: "Comma separated list of emails that must receive the report export",
         }),
-        outputfile: flags.string({
-            char: "o",
-            description: "Force the path and name of output report file. Must end with .xls",
+        format: flags.enum({
+            char: "f",
+            options: ["xls", "xlsx", "csv", "localecsv"],
+            description: "Format of output",
         }),
         debug: flags.boolean({
             char: "d",
@@ -72,16 +73,16 @@ export default class ReportExport extends SfdxCommand {
     // Trigger notification(s) to MsTeams channel
     protected static triggerNotification = true;
 
-    protected outputFile: string;
+    protected format: string;
     protected reportName: string;
     protected emails: string[];
-    protected outputFilesRes: any = {};
+    protected reportFile: any = {};
     protected debugMode = false;
 
     /* jscpd:ignore-end */
 
     public async run(): Promise<AnyJson> {
-        this.outputFile = this.flags.outputfile || null;
+        this.format = this.flags.format || "xslx";
         this.reportName = process.env.EXPORT_REPORT_NAME || this.flags.reportname || null;
         this.emails = process.env?.EXPORT_REPORT_EMAILS ? process.env.EXPORT_REPORT_EMAILS.split(",") :
             this.flags.emails ? this.flags.emails.split(",") :
@@ -106,6 +107,8 @@ export default class ReportExport extends SfdxCommand {
             await puppet.browser.close();
             throw e;
         }
+
+        uxLog(this, c.cyan(`Downloaded report file: ${c.bold(this.reportFile)}`))
 
         return { outputString: "Report exported from" + this.org.getConnection().instanceUrl };
     }
@@ -133,8 +136,17 @@ export default class ReportExport extends SfdxCommand {
         await exportButton.click();
 
         // Click on Details
-        const detailsOnlyButton = await frame.waitForXPath("//span[contains(text(), 'Details Only')]");
+        const detailsOnlyButton = await page.waitForXPath("//span[contains(text(), 'Details Only')]");
         await detailsOnlyButton.click();
+
+        // Select output format
+        const formatLabel = await page.waitForXPath(`"//label[contains(text(), 'Format')]"`);
+        const labelSibling = await formatLabel.$x("following-sibling::*");
+        const selectItem = await labelSibling[0].waitForSelector("select");
+        await selectItem.select(this.format);
+
+        // Wait for the selection to be completed
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
         // Set download folder
         const downloadFolder = path.join(await getReportDirectory(), "downloaded-reports");
@@ -145,16 +157,16 @@ export default class ReportExport extends SfdxCommand {
         });
 
         // Click on Export
-        const processExportButton = await frame.waitForXPath("//button[contains(@title, 'Export')]");
+        const processExportButton = await page.waitForXPath("//button[contains(@title, 'Export')]");
         await processExportButton.click();
 
         // Wait for download progress
         uxLog(this, c.grey(`Downloading report...`));
         await new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                reject("Download timeout reached");
+                resolve("Download timeout reached");
             }, 60000);
-            client.on('Browser.downloadProgress', e => {
+            client.on('Page.downloadProgress', e => {
                 if (e.state === 'completed') {
                     clearTimeout(timeout);
                     resolve(true);
@@ -167,10 +179,9 @@ export default class ReportExport extends SfdxCommand {
 
         // Return file name
         try {
-            const reportFile = fs.readdirSync(downloadFolder)
+            this.reportFile = fs.readdirSync(downloadFolder)
                 .map(name => ({ name, ctime: fs.statSync(name).ctime }))
                 .sort((a: any, b: any) => b.ctime - a.ctime)[0].name;
-            return reportFile;
         } catch {
             throw new SfdxError("Unable to find downloaded report");
         }
