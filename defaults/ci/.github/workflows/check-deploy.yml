@@ -65,6 +65,9 @@ jobs:
         SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         SLACK_CHANNEL_ID_INTEGRATION: ${{ secrets.SLACK_CHANNEL_ID_INTEGRATION }}
+        MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+        JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        JIRA_PAT: ${{ secrets.JIRA_HOST }}
         FORCE_COLOR: "1"
       run: |
         echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""

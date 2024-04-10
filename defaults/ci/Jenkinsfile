@@ -1,21 +1,25 @@
- /*Pipeline for Salesforce using sfdx-hardis
+ /* sfdx-hardis CI/CD Pipeline for Jenkins
 
  You need to do a CTRL+F on "MANUAL" and add your variable instead of example variable
-
 
  */
 pipeline {
     agent any
     // MANUAL : Add Environment variable if necessary
     environment {
-        SFDX_CLIENT_ID_INTEGRATION =  credentials('SFDX_CLIENT_ID_INTEGRATION') //Example
-        SFDX_CLIENT_KEY_INTEGRATION =  credentials('SFDX_CLIENT_KEY_INTEGRATION') //Example
-        SFDX_CLIENT_ID_UAT =  credentials('SFDX_CLIENT_ID_UAT') //Example
-        SFDX_CLIENT_KEY_UAT =  credentials('SFDX_CLIENT_KEY_UAT') //Example
-        SFDX_CLIENT_ID_PREPROD =  credentials('SFDX_CLIENT_ID_PREPROD') //Example
-        SFDX_CLIENT_KEY_PREPROD =  credentials('SFDX_CLIENT_KEY_PREPROD') //Example
-        SFDX_CLIENT_ID_MAIN =  credentials('SFDX_CLIENT_ID_MAIN') //Example
-        SFDX_CLIENT_KEY_MAIN =  credentials('SFDX_CLIENT_KEY_MAIN') //Example
+        SFDX_CLIENT_ID_INTEGRATION = credentials('SFDX_CLIENT_ID_INTEGRATION') //Example
+        SFDX_CLIENT_KEY_INTEGRATION = credentials('SFDX_CLIENT_KEY_INTEGRATION') //Example
+        SFDX_CLIENT_ID_UAT = credentials('SFDX_CLIENT_ID_UAT') //Example
+        SFDX_CLIENT_KEY_UAT = credentials('SFDX_CLIENT_KEY_UAT') //Example
+        SFDX_CLIENT_ID_PREPROD = credentials('SFDX_CLIENT_ID_PREPROD') //Example
+        SFDX_CLIENT_KEY_PREPROD = credentials('SFDX_CLIENT_KEY_PREPROD') //Example
+        SFDX_CLIENT_ID_MAIN = credentials('SFDX_CLIENT_ID_MAIN') //Example
+        SFDX_CLIENT_KEY_MAIN = credentials('SFDX_CLIENT_KEY_MAIN') //Example
+        SLACK_TOKEN = credentials('SLACK_TOKEN') // Remove if not used
+        SLACK_CHANNEL_ID = credentials('SLACK_CHANNEL_ID') // Remove if not used
+        MS_TEAMS_WEBHOOK_URL = credentials('MS_TEAMS_WEBHOOK_URL') // Remove if not used
+        JIRA_TOKEN = credentials('JIRA_TOKEN') // Remove if not used
+        JIRA_PAT = credentials('JIRA_HOST') // Remove if not used
         CONFIG_BRANCH = "${GIT_BRANCH}"
         CI_COMMIT_REF_NAME = "${GIT_BRANCH}"
         ORG_ALIAS = "${GIT_BRANCH}"
