@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.31.2] 2024-04-10
+
+- QuickFix Monitoring setup
+
 ## [4.31.1] 2024-04-10
 
 - Fix json output (remove other console logs that are not supposed to be here)
