@@ -109,7 +109,12 @@ export class JiraProvider extends TicketProviderRoot {
     }
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
-        const ticketInfo = await this.jiraClient.getIssue(ticket.id);
+        let ticketInfo: JiraApi.JsonResponse;
+        try {
+          ticketInfo = await this.jiraClient.getIssue(ticket.id);
+        } catch (e) {
+          uxLog(this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${e.message}`));
+        }
         if (ticketInfo) {
           const body =
             ticketInfo?.fields?.description?.content?.length > 0
