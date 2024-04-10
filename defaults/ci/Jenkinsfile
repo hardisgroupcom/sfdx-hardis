@@ -33,6 +33,7 @@ pipeline {
                         reuseNode true
                     }
                 }
+                when { changeRequest() }
                 steps {
                     sh '/entrypoint.sh'
                 }
@@ -71,10 +72,10 @@ pipeline {
                 //MANUAL: add your major branch if necessary
                 when {
                     anyOf {
-                            branch 'integration'; //Example
+                            branch: 'integration'; //Example
                             branch: 'uat'; //Example
                             branch: 'preprod'; //Example
-                            branch 'main' //Example
+                            branch: 'main' //Example
                     }
                 }
                 //deploy on the appropriate org
