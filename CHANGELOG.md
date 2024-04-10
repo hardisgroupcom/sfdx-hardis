@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.30.0] 2024-04-02
+
+- Fix default **package-no-overwrite.xml** (typos on NamesCredential & RemoteSiteSetting)
 - Add links to FAQ in documentation
 - Add two new PMD rules for quality **pmd-ruleset-high.xml** and **pmd-ruleset-medium.xml**
 
@@ -12,7 +15,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Handle **manifest/preDestructiveChanges.xml** to delete items before deployments if necessary
 - Update documentation about integrations
 - Upgrade dependencies
-
 
 ## [4.28.4] 2024-03-11
 
