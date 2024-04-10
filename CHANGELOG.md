@@ -7,6 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.31.0] 2024-04-10
 
 - Add native Jenkins integration with Jenkinsfile for CI/CD Pipeline
+- Update default pipelines to add JIRA variables
+- Better handle of Jira API issues
 
 ## [4.30.0] 2024-04-02
 
