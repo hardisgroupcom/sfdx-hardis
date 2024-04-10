@@ -4,6 +4,8 @@ import * as os from "os";
 import { isCI } from "../../common/utils";
 
 export const hook = async (options: any) => {
+  // Set argv as global as sf arch messes with it !
+  globalThis.processArgv = [...options.argv];
   // Skip hooks from other commands than hardis commands
   const commandId = options?.id || "unknown";
   if (!commandId.startsWith("hardis")) {
