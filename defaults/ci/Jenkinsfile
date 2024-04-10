@@ -71,11 +71,14 @@ pipeline {
                 }
                 //MANUAL: add your major branch if necessary
                 when {
-                    anyOf {
+                    allOf{ 
+                        anyOf {
                             branch: 'integration'; //Example
                             branch: 'uat'; //Example
                             branch: 'preprod'; //Example
                             branch: 'main' //Example
+                        }; 
+                    not {changeRequest()}
                     }
                 }
                 //deploy on the appropriate org
