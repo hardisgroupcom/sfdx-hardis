@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.31.0] 2024-04-10
+
+- Add native Jenkins integration with Jenkinsfile for CI/CD Pipeline
+
 ## [4.30.0] 2024-04-02
 
 - Fix default **package-no-overwrite.xml** (typos on NamesCredential & RemoteSiteSetting)
