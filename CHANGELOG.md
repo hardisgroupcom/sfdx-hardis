@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.31.1] 2024-04-10
+
+- Fix json output (remove other console logs that are not supposed to be here)
+
 ## [4.31.0] 2024-04-10
 
 - Add native Jenkins integration with Jenkinsfile for CI/CD Pipeline

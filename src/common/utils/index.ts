@@ -944,7 +944,7 @@ export function uxLog(commandThis: any, text: string) {
   text = text.includes("[sfdx-hardis]") ? text : "[sfdx-hardis]" + (text.startsWith("[") ? "" : " ") + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
-  } else if (!process.argv.includes("--json")) {
+  } else if (!(globalThis.processArgv || process.argv).includes("--json")) {
     console.log(text);
   }
   if (globalThis.hardisLogFileStream) {
