@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD034 -->
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
-# sfdx-hardis
+# sfdx-hardis murf test
 
 [_Presented at Dreamforce 23!_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl)
 
