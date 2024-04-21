@@ -4,6 +4,7 @@ import { AzureDevopsProvider } from "./azureDevops";
 import { GithubProvider } from "./github";
 import { GitlabProvider } from "./gitlab";
 import { GitProviderRoot } from "./gitProviderRoot";
+import { BitbucketProvider } from "./bitbucket";
 
 export abstract class GitProvider {
   static getInstance(): GitProviderRoot {
@@ -40,11 +41,26 @@ export abstract class GitProvider {
     // Github
     else if (process.env.GITHUB_TOKEN) {
       return new GithubProvider();
-    } else if (isCI) {
+    } 
+    // Bitbucket
+    else if (process.env.BITBUCKET_WORKSPACE) {
+      const token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || null;
+      if (token == null) {
+        uxLog(
+          this,
+          c.yellow(`To benefit from Bitbucket advanced integration, you need to :
+- Go to Repository Settings -> Access Tokens -> Create a repository access token with the scopes pullrequest, pullrequest:write, repository, repository:write and copy its value
+- Go to Repository Settings -> Repository Variables -> Create a variable named CI_SFDX_HARDIS_BITBUCKET_TOKEN and paste the access token value`),
+        );
+        return null;
+      }
+      return new BitbucketProvider();
+    }
+    else if (isCI) {
       uxLog(
         this,
         c.grey(
-          "To use sfdx-hardis GitProvider capabilities, SYSTEM_ACCESSTOKEN, CI_JOB_TOKEN or GITHUB_TOKEN must be accessible for Azure Pipelines, Gitlab or GitHub",
+          "To use sfdx-hardis GitProvider capabilities, SYSTEM_ACCESSTOKEN, CI_JOB_TOKEN, GITHUB_TOKEN or CI_SFDX_HARDIS_BITBUCKET_TOKEN must be accessible for Azure Pipelines, Gitlab, GitHub or Bitbucket",
         ),
       );
     }
