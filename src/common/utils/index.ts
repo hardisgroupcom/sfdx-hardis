@@ -311,10 +311,13 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
     } else {
       if (options?.parent === "main") {
         // Create from main branch
-        const mainBranch = branches.all.includes("main") ? "main" :
-          branches.all.includes("origin/main") ? "main" :
-            branches.all.includes("remotes/origin/main") ? "main" :
-              "master";
+        const mainBranch = branches.all.includes("main")
+          ? "main"
+          : branches.all.includes("origin/main")
+            ? "main"
+            : branches.all.includes("remotes/origin/main")
+              ? "main"
+              : "master";
         await git().checkout(mainBranch);
         await git().checkoutBranch(branchName, mainBranch);
       } else {
@@ -429,11 +432,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-          filesFiltered
-            .map((fileStatus: FileStatusResult) => {
-              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-            })
-            .join("\n"),
+            filesFiltered
+              .map((fileStatus: FileStatusResult) => {
+                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+              })
+              .join("\n"),
         ),
       );
     }

@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Remove useless close WebSocket issue display
+
 ## [4.31.2] 2024-04-10
 
 - QuickFix Monitoring setup
