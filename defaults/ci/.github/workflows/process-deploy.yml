@@ -12,7 +12,7 @@ on:
       - integration
 
 name: Process Deployment (sfdx-hardis)
-
+permissions: read-all
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
@@ -22,12 +22,12 @@ jobs:
     name: Process Deployment to Major Org
     runs-on: ubuntu-latest
     steps:
-      # Checkout repo
-      - name: Checkout code
+      # Git Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          persist-credentials: true
-          fetch-depth: 0 # Fetch all branches
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       # Setup node
       - name: Setup Node
         uses: actions/setup-node@v3
