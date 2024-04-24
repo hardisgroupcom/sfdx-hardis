@@ -41,7 +41,7 @@ export abstract class GitProvider {
     // Github
     else if (process.env.GITHUB_TOKEN) {
       return new GithubProvider();
-    } 
+    }
     // Bitbucket
     else if (process.env.BITBUCKET_WORKSPACE) {
       const token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || null;
@@ -55,8 +55,7 @@ export abstract class GitProvider {
         return null;
       }
       return new BitbucketProvider();
-    }
-    else if (isCI) {
+    } else if (isCI) {
       uxLog(
         this,
         c.grey(
