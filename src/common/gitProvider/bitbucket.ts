@@ -76,7 +76,8 @@ export class BitbucketProvider extends GitProviderRoot {
 
     // Case when we find PR from a commit
     const sha = await git().revparse(["HEAD"]);
-    const latestPullRequestsOnBranch = await this.bitbucket.repositories.listPullrequestsForCommit({ // cspell:disable-line
+    const latestPullRequestsOnBranch = await this.bitbucket.repositories.listPullrequestsForCommit({
+      // cspell:disable-line
       commit: sha,
       repo_slug: repoSlug,
       workspace: workspace,
