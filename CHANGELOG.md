@@ -4,6 +4,31 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.32.0] 2024-04-24
+
+- Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
+  - Deployment status in Pull Request comments
+  - Quick Deploy to enhance performance
+
+- Remove useless close WebSocket issue display
+
+## [4.31.2] 2024-04-10
+
+- QuickFix Monitoring setup
+
+## [4.31.1] 2024-04-10
+
+- Fix json output (remove other console logs that are not supposed to be here)
+
+## [4.31.0] 2024-04-10
+
+- Add native Jenkins integration with Jenkinsfile for CI/CD Pipeline
+- Update default pipelines to add JIRA variables
+- Better handle of Jira API issues
+
+## [4.30.0] 2024-04-02
+
+- Fix default **package-no-overwrite.xml** (typos on NamesCredential & RemoteSiteSetting)
 - Add links to FAQ in documentation
 - Add two new PMD rules for quality **pmd-ruleset-high.xml** and **pmd-ruleset-medium.xml**
 
@@ -12,7 +37,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Handle **manifest/preDestructiveChanges.xml** to delete items before deployments if necessary
 - Update documentation about integrations
 - Upgrade dependencies
-
 
 ## [4.28.4] 2024-03-11
 

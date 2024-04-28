@@ -311,7 +311,13 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
     } else {
       if (options?.parent === "main") {
         // Create from main branch
-        const mainBranch = branches.all.includes("main") ? "main" : "master";
+        const mainBranch = branches.all.includes("main")
+          ? "main"
+          : branches.all.includes("origin/main")
+            ? "main"
+            : branches.all.includes("remotes/origin/main")
+              ? "main"
+              : "master";
         await git().checkout(mainBranch);
         await git().checkoutBranch(branchName, mainBranch);
       } else {
@@ -944,7 +950,7 @@ export function uxLog(commandThis: any, text: string) {
   text = text.includes("[sfdx-hardis]") ? text : "[sfdx-hardis]" + (text.startsWith("[") ? "" : " ") + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
-  } else if (!process.argv.includes("--json")) {
+  } else if (!(globalThis.processArgv || process.argv).includes("--json")) {
     console.log(text);
   }
   if (globalThis.hardisLogFileStream) {

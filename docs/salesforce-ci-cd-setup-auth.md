@@ -29,6 +29,7 @@ How to set CI variables on different Git providers:
 - [Azure tutorial](salesforce-ci-cd-setup-auth-azure.md)
 - [GitHub tutorial](salesforce-ci-cd-setup-auth-github.md)
 - [BitBucket tutorial](salesforce-ci-cd-setup-auth-bitbucket.md)
+- [Jenkins tutorial](salesforce-ci-cd-setup-auth-jenkins.md)
 
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
