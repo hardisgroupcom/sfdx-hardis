@@ -7,6 +7,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils";
 import { PACKAGE_ROOT_DIR } from "../../../../settings";
+import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -80,6 +81,25 @@ export default class ConfigureQuality extends SfdxCommand {
     prettierRcJson.printWidth = 120;
     await fs.writeFile(prettierRcJsonFile, JSON.stringify(prettierRcJson, null, 2));
     uxLog(this, c.gray("Updated .prettierrc file to have CloudiScore configuration"));
+
+    // PMD Ruleset Selection
+    const promptsPmdLevel = await prompts(
+      {
+        type: "select",
+        name: "pmdLevelFile",
+        message: "Please select the PMD ruleset level",
+        choices: [
+          { title: "High quality", description: "Use for a new BUILD project", value: "pmd-ruleset-high.xml" },
+          { title: "Medium quality", description: "Use to improve the quality of a RUN project", value: "pmd-ruleset-medium.xml" },
+          { title: "Low quality", description: "Use for RUN project", value: "pmd-ruleset.xml" },
+        ],
+      },
+    );
+    const pmdLevelFile = promptsPmdLevel.pmdLevelFile;
+    const pmdRuleSetFileSource = path.join(PACKAGE_ROOT_DIR, "config", pmdLevelFile);
+    const pmdRuleSetFileTarget = path.join(process.cwd(), "config", "pmd-ruleset.xml");
+    await fs.copy(pmdRuleSetFileSource, pmdRuleSetFileTarget, { overwrite: true });
+    uxLog(this, c.gray(`Imported PMD rules file ${c.bold(pmdLevelFile)} into config/pmd-ruleset.xml`));
 
     uxLog(this, c.green("What's next ?"));
     uxLog(this, c.green(`- Run command ${c.bold("npm install")} to install local dependencies`));
