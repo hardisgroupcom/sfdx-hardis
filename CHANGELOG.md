@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.32.2] 2024-05-01
+
+- Fix GitHub Actions check deploy workflow
+
 ## [4.32.1] 2024-04-30
 
 - hardis:work:new : Replace all non alphanumeric characters in new git branch name
