@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.32.1] 2024-04-30
+
+- hardis:work:new : Replace all non alphanumeric characters in new git branch name
+
 ## [4.32.0] 2024-04-24
 
 - Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
