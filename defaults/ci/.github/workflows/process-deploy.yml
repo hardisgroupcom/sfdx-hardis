@@ -26,6 +26,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          persist-credentials: true
           token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       # Setup node

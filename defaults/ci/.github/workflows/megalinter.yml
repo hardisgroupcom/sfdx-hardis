@@ -3,6 +3,7 @@
 # More info at https://megalinter.io
 name: Mega-Linter
 on:
+  push: # Comment this line to trigger action only on pull-requests (not recommended if you don't pay for GH Actions)
   # Trigger mega-linter at every push. Action will also be visible from Pull Requests to master
   pull_request:
     branches: [master, main]
