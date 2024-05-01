@@ -19,15 +19,15 @@ You can send notifications to an external API endpoints, for example to build Gr
 Define the following CI/CD variables:
 
 - **NOTIF_API_URL** : API endpoint
-- **NOTIF_API_BASIC_AUTH_USER** : Basic auth username _(if using Basic Auth)_
+- **NOTIF_API_BASIC_AUTH_USERNAME** : Basic auth username _(if using Basic Auth)_
 - **NOTIF_API_BASIC_AUTH_PASSWORD** : Basic auth password/token _(if using Basic Auth)_
 - **NOTIF_API_BEARER_TOKEN** : Bearer token _(if using bearer auth)_
 
 Examples:
 
 ```sh
-NOTIF_API_URL=https://logs-prod-012.grafana.net
-NOTIF_API_BASIC_AUTH_USER=3435645645
+NOTIF_API_URL=https://logs-prod-012.grafana.net/loki/api/v1/push
+NOTIF_API_BASIC_AUTH_USERNAME=3435645645
 NOTIF_API_BASIC_AUTH_PASSWORD=GHTRGDHDHdhghg23345DFG^sfg!ss
 ```
 

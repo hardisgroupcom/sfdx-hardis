@@ -8,10 +8,12 @@ import { getEnvVar } from "../../config";
 import { removeMarkdown } from "../utils/notifUtils";
 import { Connection } from "jsforce";
 import { GitProvider } from "../gitProvider";
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 
 export class ApiProvider extends NotifProviderRoot {
+  protected apiUrl: string;
   public payload: ApiNotifMessage;
+  public payloadFormatted: any;
 
   public getLabel(): string {
     return "sfdx-hardis Api connector";
@@ -19,17 +21,18 @@ export class ApiProvider extends NotifProviderRoot {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    const apiUrl = getEnvVar("NOTIF_API_URL");
-    if (apiUrl == null) {
+    this.apiUrl = getEnvVar("NOTIF_API_URL");
+    if (this.apiUrl == null) {
       throw new SfdxError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");
     }
     // Build initial payload data from notifMessage
     this.buildPlayload(notifMessage);
     // Add SF org  & git info
     await this.addPayloadContext();
-
+    // Format payload according to API endpoint: for example, Grafana loki
+    await this.formatPayload();
     // Send notif
-    await this.sendToApi(apiUrl);
+    await this.sendToApi();
     return;
   }
 
@@ -113,22 +116,64 @@ export class ApiProvider extends NotifProviderRoot {
     }
   }
 
+  private async formatPayload() {
+    if (this.apiUrl.includes("loki/api/v1/push")) {
+      await this.formatPayloadLoki();
+      return;
+    }
+    this.payloadFormatted = this.payload;
+  }
+
+  private async formatPayloadLoki() {
+    const currentTimeNanoseconds = Date.now() * 1000 * 1000;
+    this.payloadFormatted = {
+      "streams": [
+        {
+          "stream": {
+            "source": this.payload.source,
+            "type": this.payload.type,
+            "severity": this.payload.severity,
+            "metric": this.payload.metric,
+            "instanceUrl": this.payload.instanceUrl || "unknown",
+            "username": this.payload.username || "unknown",
+            "gitRepoName": this.payload.gitRepoName || "unknown",
+            "gitRepoUrl": this.payload.gitRepoUrl || "unknown",
+            "gitBranch": this.payload.gitBranch || "unknown",
+          },
+          "values": [
+            [`${currentTimeNanoseconds}`, JSON.stringify(this.payload)]
+          ]
+        }]
+    }
+  }
+
   // Call remote API
-  private async sendToApi(apiUrl: string) {
+  private async sendToApi() {
+    const axiosConfig: AxiosRequestConfig = {
+      responseType: "json",
+    }
+    // Basic Auth
+    if (getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME") != null) {
+      axiosConfig.auth = {
+        username: getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME"),
+        password: getEnvVar("NOTIF_API_BASIC_AUTH_PASSWORD")
+      }
+    }
+    // Bearer token
+    else if (getEnvVar("NOTIF_API_BEARER_TOKEN") != null) {
+      axiosConfig.headers = { Authorization: `Bearer ${getEnvVar("NOTIF_API_BEARER_TOKEN")}` }
+    }
+    // POST message
     try {
-      const axiosResponse = await axios({
-        method: "post",
-        url: apiUrl,
-        responseType: "json",
-        data: this.payload,
-      });
+      const axiosResponse = await axios.post(this.apiUrl, this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
-        uxLog(this, c.grey(`[ApiProvider] Sent message to API ${apiUrl} (${httpStatus})`));
+        uxLog(this, c.grey(`[ApiProvider] Sent message to API ${this.apiUrl} (${httpStatus})`));
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${apiUrl}`));
-      uxLog(this, c.grey(e.message));
+      uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${e.message}`));
+      uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
+      uxLog(this, c.grey("Response body: \n" + JSON.stringify(e?.response?.data || {})));
     }
   }
 }
