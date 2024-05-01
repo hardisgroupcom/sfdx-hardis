@@ -93,7 +93,7 @@ export class SlackProvider extends NotifProviderRoot {
       };
       try {
         const resp = await this.slackClient.chat.postMessage(slackMessage);
-        uxLog(this, c.gray(`[SlackProvider] Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
+        uxLog(this, c.cyan(`[SlackProvider] Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
       } catch (error) {
         uxLog(this, c.gray("[SlackProvider] Failed slack message content: \n" + JSON.stringify(slackMessage, null, 2)));
         uxLog(this, c.red(`[SlackProvider] Error while sending message to channel ${mainNotifsChannelId}\n${error.message}`));

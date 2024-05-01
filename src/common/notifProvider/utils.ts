@@ -1,3 +1,4 @@
+import { NotifSeverity } from ".";
 import { getEnvVar } from "../../config";
 
 export class UtilsNotifs {
@@ -42,7 +43,7 @@ export class UtilsNotifs {
     return `<${url}|*${label}*>`;
   }
 
-  public static prefixWithSeverityEmoji(text: string, severity: "critical" | "error" | "warning" | "info" | "success" | null) {
+  public static prefixWithSeverityEmoji(text: string, severity: NotifSeverity | null) {
     const emojis = {
       critical: "💥",
       error: "❌",

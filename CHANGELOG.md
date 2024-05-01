@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New notifications provider: ApiProvider, that allows to send notifications via HTTP/JSON to remote endpoints, like Grafana Loki, but also any custom one
+- New notification severity level: **log**, to send notifications via ApiProvider even when there is no detected issue (currently applied to backup and audit trail)
+- Update all existing notifications to add detailed log lines and additional log data
 - hardis:org:diagnose:audittrail: Fix lastndays not taken in account in some contexts
+- Notifications: Display success logs in blue
 
 ## [4.32.2] 2024-05-01
 
