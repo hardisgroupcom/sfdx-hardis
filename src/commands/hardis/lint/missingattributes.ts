@@ -54,6 +54,7 @@ export default class metadatastatus extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
   private objectFileDirectory = "**/objects/**/fields/*.*";
+  protected fieldsWithoutDescription = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
   private nonCustomSettingsFieldDirectories: string[] = [];
@@ -61,12 +62,12 @@ export default class metadatastatus extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     await this.filterOutCustomSettings();
-    const fieldsWithoutDescription: string[] = await this.verifyFieldDescriptions();
-    if (fieldsWithoutDescription.length > 0) {
-      await this.buildCsvFile(fieldsWithoutDescription);
+    this.fieldsWithoutDescription = await this.verifyFieldDescriptions();
+    if (this.fieldsWithoutDescription.length > 0) {
+      await this.buildCsvFile(this.fieldsWithoutDescription);
       const attachments: MessageAttachment[] = [
         {
-          text: `*Missing descriptions*\n${fieldsWithoutDescription.map((file) => `• ${file}`).join("\n")}`,
+          text: `*Missing descriptions*\n${this.fieldsWithoutDescription.map((file) => `• ${file}`).join("\n")}`,
         },
       ];
       const branchMd = await getBranchMarkdown();
@@ -79,6 +80,8 @@ export default class metadatastatus extends SfdxCommand {
         buttons: notifButtons,
         severity: "warning",
         sideImage: "flow",
+        logElements: this.fieldsWithoutDescription,
+        metric: this.fieldsWithoutDescription.length
       });
     } else {
       uxLog(this, "No draft flow files detected.");

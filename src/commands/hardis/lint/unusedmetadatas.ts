@@ -46,6 +46,7 @@ export default class UnusedMetadatas extends SfdxCommand {
     }),
   };
   /* jscpd:ignore-end */
+  protected unusedData = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
   // Comment this out if your command does not require an org username
@@ -91,6 +92,8 @@ export default class UnusedMetadatas extends SfdxCommand {
         buttons: notifButtons,
         severity: "warning",
         sideImage: "flow",
+        logElements: this.unusedData,
+        metric: this.unusedData.length
       });
     } else {
       uxLog(this, "No unused labels detected or custom permissions detected.");
@@ -186,11 +189,11 @@ export default class UnusedMetadatas extends SfdxCommand {
 
   private async buildCsvFile(unusedLabels: string[], unusedCustomPermissions: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-unusedmetadatas", this.outputFile);
-    const csvData = [
+    this.unusedData = [
       ...unusedLabels.map((label) => ({ type: "Label", name: label })),
       ...unusedCustomPermissions.map((permission) => ({ type: "Custom Permission", name: permission })),
     ];
 
-    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.unusedData, this.outputFile);
   }
 }

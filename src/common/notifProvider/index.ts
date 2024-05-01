@@ -6,6 +6,7 @@ import { UtilsNotifs as utilsNotifs } from "./utils";
 import { TeamsProvider } from "./teamsProvider";
 import { getConfig } from "../../config";
 import { EmailProvider } from "./emailProvider";
+import { ApiProvider } from "./apiProvider";
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -21,6 +22,10 @@ export abstract class NotifProvider {
     // Email
     if (UtilsNotifs.isEmailAvailable()) {
       notifProviders.push(new EmailProvider());
+    }
+    // Api
+    if (UtilsNotifs.isApiAvailable()) {
+      notifProviders.push(new ApiProvider());
     }
     return notifProviders;
   }
@@ -86,6 +91,9 @@ export interface NotifMessage {
   severity?: "critical" | "error" | "warning" | "info" | "success";
   sideImage?: string;
   attachedFiles?: string[];
+  logElements: any[];
+  metric: number;
+  additionalData?: any;
 }
 
 export interface NotifButton {

@@ -157,6 +157,7 @@ monitoringAllowedSectionsActions:
   protected allowedSectionsActions = {};
   protected debugMode = false;
 
+  protected auditTrailRecords = [];
   protected outputFile;
   protected outputFilesRes: any = {};
 
@@ -192,7 +193,7 @@ monitoringAllowedSectionsActions:
       });
       this.lastNdays = lastNdaysResponse.lastndays;
     } else {
-      this.lastNdays = 1;
+      this.lastNdays = this.lastNdays || 1;
     }
 
     this.allowedSectionsActions = {
@@ -286,7 +287,7 @@ monitoringAllowedSectionsActions:
     const suspectRecords = [];
     let suspectUsers = [];
     const suspectActions = [];
-    const auditTrailRecords = queryRes.records.map((record) => {
+    this.auditTrailRecords = queryRes.records.map((record) => {
       const section = record?.Section || "";
       record.Suspect = false;
       // Unallowed actions
@@ -340,7 +341,7 @@ monitoringAllowedSectionsActions:
 
     // Generate output CSV file
     this.outputFile = await generateReportPath("audit-trail", this.outputFile);
-    this.outputFilesRes = await generateCsvFile(auditTrailRecords, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.auditTrailRecords, this.outputFile);
 
     // Manage notifications
     if (suspectRecords.length > 0) {
@@ -365,6 +366,8 @@ monitoringAllowedSectionsActions:
         buttons: notifButtons,
         severity: "warning",
         attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements: this.auditTrailRecords,
+        metric: suspectRecords.length
       });
     }
 

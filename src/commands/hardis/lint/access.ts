@@ -453,6 +453,8 @@ export default class Access extends SfdxCommand {
         buttons: notifButtons,
         severity: "warning",
         attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements: this.missingElements,
+        metric: this.missingElements.length
       });
     }
   }

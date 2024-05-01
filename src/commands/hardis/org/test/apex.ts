@@ -60,6 +60,8 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
   // protected static requiresProject = true;
 
   protected configInfo: any = {};
+  protected minCoverageTestRun = 75.0;
+  protected coverageTestRun = 0.0;
 
   /* jscpd:ignore-start */
   public async run(): Promise<AnyJson> {
@@ -127,37 +129,43 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       // Check code coverage ()
       if (testResStr.includes("Test Run Coverage")) {
         // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
-        const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(testResStr)[1].replace("%", ""));
-        const minCoverageTestRun =
+        this.coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(testResStr)[1].replace("%", ""));
+        this.minCoverageTestRun =
           process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
           process.env.APEX_TESTS_MIN_COVERAGE ||
           this.configInfo.apexTestsMinCoverage ||
           minCoverageOrgWide;
-        if (minCoverageTestRun < 75.0) {
+        if (this.minCoverageTestRun < 75.0) {
           throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
         }
-        if (coverageTestRun < minCoverageTestRun) {
+        if (this.coverageTestRun < this.minCoverageTestRun) {
           // Send notification
           const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
           const notifButtons = await getNotificationButtons();
           globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
           NotifProvider.postNotifications({
             type: "APEX_TESTS",
-            text: `Apex Tests run coverage issue in ${orgMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
+            text: `Apex Tests run coverage issue in ${orgMarkdown}\nTest run coverage ${this.coverageTestRun}% should be > to ${this.minCoverageTestRun}%`,
             buttons: notifButtons,
             severity: "error",
+            logElements: [],
+            metric: this.coverageTestRun,
+            additionalData: {
+              coverageTestRun: this.coverageTestRun,
+              minCoverageTestRun: this.minCoverageTestRun
+            }
           });
           // (LEGACY) Send notification if possible
           if (isCI && (await canSendNotifications())) {
             await sendNotification({
               title: `WARNING: Apex Tests run coverage issue in ${currentGitBranch}`,
-              text: `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
+              text: `Test run coverage ${this.coverageTestRun}% should be > to ${this.minCoverageTestRun}%`,
               severity: "warning",
             });
           }
-          throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
+          throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${this.coverageTestRun}% should be > to ${this.minCoverageTestRun}%`);
         } else {
-          uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
+          uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(this.coverageTestRun))}% is > to ${c.bold(this.minCoverageTestRun)}%`));
         }
       }
     } else {
@@ -181,6 +189,12 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         buttons: notifButtons,
         severity: "error",
         attachedFiles: fs.existsSync(reportDir + "/test-result.txt") ? [reportDir + "/test-result.txt"] : [],
+        logElements: [],
+        metric: this.coverageTestRun,
+        additionalData: {
+          coverageTestRun: this.coverageTestRun,
+          minCoverageTestRun: this.minCoverageTestRun
+        }
       });
       // (LEGACY) Send notification if possible
       if (await canSendNotifications()) {

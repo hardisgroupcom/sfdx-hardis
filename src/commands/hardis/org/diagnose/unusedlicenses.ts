@@ -335,6 +335,8 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
         buttons: notifButtons,
         severity: "warning",
         attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements: this.unusedPermissionSetLicenseAssignments,
+        metric: this.unusedPermissionSetLicenseAssignments.length
       });
     }
     return [];

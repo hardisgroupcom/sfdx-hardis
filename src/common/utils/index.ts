@@ -82,6 +82,14 @@ export async function getGitRepoName() {
   return null;
 }
 
+export async function getGitRepoUrl() {
+  if (!isGitRepo) {
+    return null;
+  }
+  const origin = await git().getConfig("remote.origin.url");
+  return origin.value || null ;
+}
+
 export async function gitHasLocalUpdates(options = { show: false }) {
   const changes = await git().status();
   if (options.show) {

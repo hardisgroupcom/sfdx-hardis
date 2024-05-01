@@ -55,6 +55,7 @@ export default class metadatastatus extends SfdxCommand {
   private flowFilePattern = "**/flows/**/*.flow-meta.xml";
   private validationRuleFilePattern = "**/objects/**/validationRules/*.validationRule-meta.xml";
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
+  protected inactiveItems = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
 
@@ -89,6 +90,8 @@ export default class metadatastatus extends SfdxCommand {
         severity: "warning",
         sideImage: "flow",
         attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements:this.inactiveItems,
+        metric: this.inactiveItems.length
       });
     } else {
       uxLog(this, "No draft flow or validation rule files detected.");
@@ -153,11 +156,11 @@ export default class metadatastatus extends SfdxCommand {
   private async buildCsvFile(draftFlows: string[], inactiveValidationRules: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-metadatastatus", this.outputFile);
 
-    const csvData = [
+    this.inactiveItems = [
       ...draftFlows.map((file) => ({ type: "Draft Flow", name: file })),
       ...inactiveValidationRules.map((rule) => ({ type: "Inactive VR", name: rule })),
     ];
 
-    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.inactiveItems, this.outputFile);
   }
 }

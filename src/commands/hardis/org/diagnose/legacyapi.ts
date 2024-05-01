@@ -103,6 +103,8 @@ See article below
     },
   ];
 
+  protected allErrors = [];
+  protected ipResultsSorted = [];
   protected outputFile;
   protected outputFilesRes: any = {};
 
@@ -151,7 +153,7 @@ See article below
       allSoonDeprecatedApiCalls.push(...soonDeprecatedApiCalls);
       allEndOfSupportApiCalls.push(...endOfSupportApiCalls);
     }
-    const allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
+    this.allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
 
     // Display summary
     const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red;
@@ -181,7 +183,7 @@ See article below
 
     // Generate main CSV file
     this.outputFile = await generateReportPath("legacy-api-calls", this.outputFile);
-    this.outputFilesRes = await generateCsvFile(allErrors, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.allErrors, this.outputFile);
 
     // Generate one summary file by severity
     const outputFileIps = [];
@@ -220,7 +222,7 @@ See article to solve issue before it's too late:
 • FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
     // Manage notifications
-    if (allErrors.length > 0) {
+    if (this.allErrors.length > 0) {
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
@@ -231,11 +233,16 @@ See article to solve issue before it's too late:
         buttons: notifButtons,
         severity: "error",
         attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile, this.outputFilesRes.xlsxFile2] : [],
+        logElements: this.allErrors,
+        metric: this.allErrors.length,
+        additionalData: {
+          legacyApiSummary: this.ipResultsSorted
+        }
       });
     }
 
     // Send notification if possible
-    if (isCI && allErrors.length > 0 && (await canSendNotifications())) {
+    if (isCI && this.allErrors.length > 0 && (await canSendNotifications())) {
       const currentGitBranch = await getCurrentGitBranch();
       await sendNotification({
         title: `WARNING: Deprecated Salesforce API versions are used in ${currentGitBranch}`,
@@ -317,7 +324,7 @@ See article to solve issue before it's too late:
       const ipResult = { CLIENT_IP: ip, CLIENT_HOSTNAME: hostname, SFDX_HARDIS_COUNT: ipInfo.count };
       ipResults.push(ipResult);
     }
-    const ipResultsSorted = sortArray(ipResults, {
+    this.ipResultsSorted = sortArray(ipResults, {
       by: ["SFDX_HARDIS_COUNT"],
       order: ["desc"],
     });
@@ -325,7 +332,7 @@ See article to solve issue before it's too late:
     const outputFileIps = this.outputFile.endsWith(".csv")
       ? this.outputFile.replace(".csv", ".api-clients-" + severity + ".csv")
       : this.outputFile + "api-clients-" + severity + ".csv";
-    const outputFileIpsRes = await generateCsvFile(ipResultsSorted, outputFileIps);
+    const outputFileIpsRes = await generateCsvFile(this.ipResultsSorted, outputFileIps);
     if (outputFileIpsRes.xlsxFile) {
       this.outputFilesRes.xlsxFile2 = outputFileIpsRes.xlsxFile;
     }

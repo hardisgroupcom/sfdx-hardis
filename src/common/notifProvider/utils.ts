@@ -22,6 +22,13 @@ export class UtilsNotifs {
     return false;
   }
 
+  public static isApiAvailable() {
+    if (getEnvVar("NOTIF_API_URL")) {
+      return true;
+    }
+    return false;
+  }
+
   public static markdownLink(url: string, label: string, type = "slack") {
     if (type == "teams") {
       return `[${label}](${url})`;

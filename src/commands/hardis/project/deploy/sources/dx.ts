@@ -442,6 +442,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         buttons: notifButtons,
         severity: "success",
         attachments: attachments,
+        logElements: [],
+        metric: 0 // Todo: if delta used, count the number of items deployed
       });
     }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };

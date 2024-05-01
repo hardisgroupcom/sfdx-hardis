@@ -61,7 +61,6 @@ export class EmailProvider extends NotifProviderRoot {
         // Url button
         if (button.url) {
           emailBody += "  - " + UtilsNotifs.markdownLink(button.url, button.text, "teams") + "\n\n";
-          emailBody += "  - " + UtilsNotifs.markdownLink(button.url, button.text, "teams");
         }
       }
       emailBody += "\n\n";

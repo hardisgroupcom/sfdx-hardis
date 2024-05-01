@@ -69,6 +69,8 @@ You can remove more metadata types from backup, especially in case you have too 
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
 
+  protected diffFiles = [];
+  protected diffFilesSimplified = [];
   protected outputFile;
   protected outputFilesRes: any = {};
   protected debugMode = false;
@@ -165,12 +167,12 @@ You can remove more metadata types from backup, especially in case you have too 
       await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
     }
 
-    const diffFiles = await MetadataUtils.listChangedFiles();
+    this.diffFiles = await MetadataUtils.listChangedFiles();
 
     // Write output file
-    if (diffFiles.length > 0) {
+    if (this.diffFiles.length > 0) {
       this.outputFile = await generateReportPath("backup-updated-files", this.outputFile);
-      const diffFilesSimplified = diffFiles.map((diffFile) => {
+      this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
         return {
           File: diffFile.path.replace("force-app/main/default/", ""),
           ChangeType: diffFile.index === "?" ? "A" : diffFile.index,
@@ -178,16 +180,16 @@ You can remove more metadata types from backup, especially in case you have too 
           PrevName: diffFile?.from || "",
         };
       });
-      this.outputFilesRes = await generateCsvFile(diffFilesSimplified, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile);
     }
 
     // Send notifications
-    if (diffFiles.length > 0) {
+    if (this.diffFiles.length > 0) {
       const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const attachments: MessageAttachment[] = [
         {
-          text: diffFiles
+          text: this.diffFiles
             .map((diffFile) => {
               let flag = "";
               if (diffFile.index && diffFile.index !== " ") {
@@ -208,6 +210,8 @@ You can remove more metadata types from backup, especially in case you have too 
         severity: "info",
         sideImage: "backup",
         attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements: this.diffFilesSimplified,
+        metric: this.diffFilesSimplified.length
       });
     } else {
       uxLog(this, c.grey("No updated metadata for today's backup :)"));
