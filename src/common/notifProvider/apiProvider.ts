@@ -2,7 +2,7 @@ import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, getGitRepoName, getGitRepoUrl, uxLog } from "../utils";
-import { NotifButton, NotifMessage, UtilsNotifs } from ".";
+import { NotifButton, NotifMessage, NotifSeverity, UtilsNotifs } from ".";
 import { getEnvVar } from "../../config";
 
 import { removeMarkdown } from "../utils/notifUtils";
@@ -17,6 +17,12 @@ export class ApiProvider extends NotifProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Api connector";
+  }
+
+  // Always send notifications to API endpoint
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public isApplicableForNotif(notifMessage: NotifMessage) {
+    return true
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -168,7 +174,7 @@ export class ApiProvider extends NotifProviderRoot {
       const axiosResponse = await axios.post(this.apiUrl, this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
-        uxLog(this, c.grey(`[ApiProvider] Sent message to API ${this.apiUrl} (${httpStatus})`));
+        uxLog(this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
       }
     } catch (e) {
       uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${e.message}`));
@@ -181,7 +187,7 @@ export class ApiProvider extends NotifProviderRoot {
 export interface ApiNotifMessage {
   source: string;
   type: string;
-  severity: "critical" | "error" | "warning" | "info" | "success";
+  severity: NotifSeverity;
   links?: NotifButton[];
   title: string;
   bodyText: string;

@@ -56,7 +56,12 @@ export abstract class NotifProvider {
         }
         for (const notifProvider of notifProviders) {
           uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
-          notifProvider.postNotification(notifMessage);
+          if (notifProvider.isApplicableForNotif(notifMessage)) {
+            notifProvider.postNotification(notifMessage);
+          }
+          else {
+            uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
+          }
         }
         globalThis.skipLegacyNotifications = true;
       }
@@ -73,22 +78,24 @@ export abstract class NotifProvider {
   }
 }
 
+export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success" | "log";
+
 export interface NotifMessage {
   text: string;
   type:
-    | "AUDIT_TRAIL"
-    | "APEX_TESTS"
-    | "BACKUP"
-    | "DEPLOYMENT"
-    | "LEGACY_API"
-    | "LINT_ACCESS"
-    | "UNUSED_METADATAS"
-    | "METADATA_STATUS"
-    | "MISSING_ATTRIBUTES"
-    | "UNUSED_LICENSES";
+  | "AUDIT_TRAIL"
+  | "APEX_TESTS"
+  | "BACKUP"
+  | "DEPLOYMENT"
+  | "LEGACY_API"
+  | "LINT_ACCESS"
+  | "UNUSED_METADATAS"
+  | "METADATA_STATUS"
+  | "MISSING_ATTRIBUTES"
+  | "UNUSED_LICENSES";
   buttons?: NotifButton[];
   attachments?: any[];
-  severity?: "critical" | "error" | "warning" | "info" | "success";
+  severity: NotifSeverity;
   sideImage?: string;
   attachedFiles?: string[];
   logElements: any[];

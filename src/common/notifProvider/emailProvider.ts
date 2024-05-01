@@ -81,7 +81,7 @@ export class EmailProvider extends NotifProviderRoot {
     };
     const emailRes = await sendEmail(emailMessage);
     if (emailRes.success) {
-      uxLog(this, c.grey(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
+      uxLog(this, c.cyan(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
     } else {
       uxLog(this, c.yellow(`[EmailProvider] Error while sending email to ${emailAddresses.join(",")}`));
       uxLog(this, c.grey(JSON.stringify(emailRes.detail, null, 2)));
