@@ -3,10 +3,10 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import { execCommand, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
-import { canSendNotifications, getNotificationButtons, getOrgMarkdown, sendNotification } from "../../../../common/utils/notifUtils";
+import { execCommand, uxLog } from "../../../../common/utils";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 import { getConfig, getReportDirectory } from "../../../../config";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -104,7 +104,6 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     let message = "";
     const testResStr = testRes.stdout + testRes.stderr;
     outcome = outcome || /Outcome *(.*) */.exec(testResStr)[1].trim();
-    const currentGitBranch = await getCurrentGitBranch();
     if (outcome === "Passed") {
       //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
       message = "[sfdx-hardis] Successfully run apex tests on org";
@@ -138,34 +137,33 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         if (this.minCoverageTestRun < 75.0) {
           throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
         }
+        // Build notification
+        const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+        const notifButtons = await getNotificationButtons();
+        let notifSeverity: NotifSeverity = "log";
+        let notifText = `Apex Tests successful in ${orgMarkdown}\nTest run coverage ${this.coverageTestRun}% is > to ${this.minCoverageTestRun}%`;
         if (this.coverageTestRun < this.minCoverageTestRun) {
-          // Send notification
-          const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-          const notifButtons = await getNotificationButtons();
-          globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-          NotifProvider.postNotifications({
-            type: "APEX_TESTS",
-            text: `Apex Tests run coverage issue in ${orgMarkdown}\nTest run coverage ${this.coverageTestRun}% should be > to ${this.minCoverageTestRun}%`,
-            buttons: notifButtons,
-            severity: "error",
-            logElements: [],
-            metric: this.coverageTestRun,
-            additionalData: {
-              coverageTestRun: this.coverageTestRun,
-              minCoverageTestRun: this.minCoverageTestRun
-            }
-          });
-          // (LEGACY) Send notification if possible
-          if (isCI && (await canSendNotifications())) {
-            await sendNotification({
-              title: `WARNING: Apex Tests run coverage issue in ${currentGitBranch}`,
-              text: `Test run coverage ${this.coverageTestRun}% should be > to ${this.minCoverageTestRun}%`,
-              severity: "warning",
-            });
-          }
-          throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${this.coverageTestRun}% should be > to ${this.minCoverageTestRun}%`);
+          notifSeverity = "error";
+          notifText = `Apex Tests run coverage issue in ${orgMarkdown}\nTest run coverage ${this.coverageTestRun}% should be > to ${this.minCoverageTestRun}%`;
         } else {
           uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(this.coverageTestRun))}% is > to ${c.bold(this.minCoverageTestRun)}%`));
+        }
+        // Post notification
+        globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+        NotifProvider.postNotifications({
+          type: "APEX_TESTS",
+          text: notifText,
+          buttons: notifButtons,
+          severity: notifSeverity,
+          logElements: [],
+          metric: this.coverageTestRun,
+          additionalData: {
+            coverageTestRun: this.coverageTestRun,
+            minCoverageTestRun: this.minCoverageTestRun,
+          },
+        });
+        if (notifSeverity === "error") {
+          throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${this.coverageTestRun}% should be > to ${this.minCoverageTestRun}%`);
         }
       }
     } else {
@@ -193,19 +191,9 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         metric: this.coverageTestRun,
         additionalData: {
           coverageTestRun: this.coverageTestRun,
-          minCoverageTestRun: this.minCoverageTestRun
-        }
+          minCoverageTestRun: this.minCoverageTestRun,
+        },
       });
-      // (LEGACY) Send notification if possible
-      if (await canSendNotifications()) {
-        await sendNotification({
-          title: `WARNING: Apex Tests are failing in ${currentGitBranch}`,
-          text: `Outcome: ${outcome},
-
-${testResultStr}`,
-          severity: "severe",
-        });
-      }
       throw new SfdxError("[sfdx-hardis] " + message);
     }
 
