@@ -9,7 +9,7 @@ import * as dns from "dns";
 import { canSendNotifications, getNotificationButtons, getOrgMarkdown, sendNotification } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { WebSocketClient } from "../../../../common/websocketClient";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 const dnsPromises = dns.promises;
 
@@ -221,25 +221,30 @@ See article to solve issue before it's too late:
 • EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
 • FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
-    // Manage notifications
+    // Build notifications
+    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No deprecated Salesforce API versions are used in ${orgMarkdown}`;
     if (this.allErrors.length > 0) {
-      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "LEGACY_API",
-        text: `Deprecated Salesforce API versions are used in ${orgMarkdown}`,
-        attachments: [{ text: notifDetailText }],
-        buttons: notifButtons,
-        severity: "error",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile, this.outputFilesRes.xlsxFile2] : [],
-        logElements: this.allErrors,
-        metric: this.allErrors.length,
-        additionalData: {
-          legacyApiSummary: this.ipResultsSorted
-        }
-      });
+      notifSeverity = "error";
+      notifText = `${this.allErrors.length} deprecated Salesforce API versions are used in ${orgMarkdown}`;
     }
+    // Post notifications
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "LEGACY_API",
+      text: notifText,
+      attachments: [{ text: notifDetailText }],
+      buttons: notifButtons,
+      severity: notifSeverity,
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile, this.outputFilesRes.xlsxFile2] : [],
+      logElements: this.allErrors,
+      metric: this.allErrors.length,
+      additionalData: {
+        legacyApiSummary: this.ipResultsSorted,
+      },
+    });
 
     // Send notification if possible
     if (isCI && this.allErrors.length > 0 && (await canSendNotifications())) {

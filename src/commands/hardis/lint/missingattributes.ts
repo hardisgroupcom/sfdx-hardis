@@ -12,7 +12,7 @@ import { AnyJson } from "@salesforce/ts-types";
 
 // Project Specific Utilities
 import { uxLog } from "../../../common/utils";
-import { NotifProvider } from "../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
 import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
@@ -63,29 +63,37 @@ export default class metadatastatus extends SfdxCommand {
   public async run(): Promise<AnyJson> {
     await this.filterOutCustomSettings();
     this.fieldsWithoutDescription = await this.verifyFieldDescriptions();
+
+    // Build notifications
+    const branchMd = await getBranchMarkdown();
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No missing descriptions on fields has been found in ${branchMd}`
+    let attachments: MessageAttachment[] = [];
     if (this.fieldsWithoutDescription.length > 0) {
+      notifSeverity = "warning";
+      notifText = `${this.fieldsWithoutDescription.length} missing descriptions on fields have been found in ${branchMd}`
       await this.buildCsvFile(this.fieldsWithoutDescription);
-      const attachments: MessageAttachment[] = [
+      attachments = [
         {
           text: `*Missing descriptions*\n${this.fieldsWithoutDescription.map((file) => `• ${file}`).join("\n")}`,
         },
       ];
-      const branchMd = await getBranchMarkdown();
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "MISSING_ATTRIBUTES",
-        text: `Missing description on fields in ${branchMd}\n`,
-        attachments: attachments,
-        buttons: notifButtons,
-        severity: "warning",
-        sideImage: "flow",
-        logElements: this.fieldsWithoutDescription,
-        metric: this.fieldsWithoutDescription.length
-      });
     } else {
-      uxLog(this, "No draft flow files detected.");
+      uxLog(this, "No missing descriptions on fields have been found");
     }
+    // Post notifications
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "MISSING_ATTRIBUTES",
+      text: notifText,
+      attachments: attachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      sideImage: "flow",
+      logElements: this.fieldsWithoutDescription,
+      metric: this.fieldsWithoutDescription.length
+    });
     return {};
   }
 
