@@ -6,7 +6,7 @@ import * as c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
 import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from "../../../../common/utils/apiUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -208,7 +208,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     FROM PermissionSetLicenseAssign
     WHERE Assignee.IsActive=true
     ORDER BY PermissionSetLicense.MasterLabel, Assignee.Username`,
-      conn,
+      conn
     );
     return pslaQueryRes.records;
   }
@@ -231,7 +231,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
          FROM PermissionSetLicense
          WHERE Id in ({{IN}})`,
         conn,
-        psLicensesIds,
+        psLicensesIds
       );
       return pslQueryRes.records;
     }
@@ -245,14 +245,14 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
        FROM PermissionSet
        WHERE LicenseId in ({{IN}})`,
       conn,
-      psLicensesIds,
+      psLicensesIds
     );
     const psQueryAdditionalRes = await bulkQueryChunksIn(
       `SELECT Id,Label,Name,LicenseId
        FROM PermissionSet
        WHERE Name in ({{IN}})`,
       conn,
-      DiagnoseUnusedLicenses.additionalPermissionSetsToAlwaysGet,
+      DiagnoseUnusedLicenses.additionalPermissionSetsToAlwaysGet
     );
     return psQueryRes.records.concat(psQueryAdditionalRes.records);
   }
@@ -264,7 +264,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
          FROM PermissionSetGroupComponent
          WHERE PermissionSetId in ({{IN}})`,
       conn,
-      permissionSetsIds,
+      permissionSetsIds
     );
     return psgcQueryRes.records;
   }
@@ -278,7 +278,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
            FROM PermissionSetAssignment
            WHERE PermissionSetGroupId in ({{IN}})`,
         conn,
-        permissionSetsGroupIds,
+        permissionSetsGroupIds
       );
       // Add related licenses in licenseIds for each PS Assignment
       psgaQueryRes.records = psgaQueryRes.records.map((psga) => {
@@ -304,7 +304,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
        FROM PermissionSetAssignment
        WHERE PermissionSetId in ({{IN}})`,
       conn,
-      permissionSetsIds,
+      permissionSetsIds
     );
     // Add related license in licenseIds for each PS Assignment
     psaQueryRes.records = psaQueryRes.records.map((psa) => {
@@ -318,27 +318,34 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
   }
 
   private async manageNotifications(unusedPermissionSetLicenseAssignments: any[], summary: any) {
+    // Build notification
+    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No unused Permission Set Licenses Assignments has been found in ${orgMarkdown}`;
+    let notifDetailText = ``;
+    let attachments = [];
     if (unusedPermissionSetLicenseAssignments.length > 0) {
-      let notifDetailText = ``;
+      notifSeverity = "warning";
+      notifText = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`;
       for (const pslMasterLabel of Object.keys(summary).sort()) {
         const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
         notifDetailText += `• ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)\n`;
       }
-
-      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "UNUSED_LICENSES",
-        text: `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`,
-        attachments: [{ text: notifDetailText }],
-        buttons: notifButtons,
-        severity: "warning",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-        logElements: this.unusedPermissionSetLicenseAssignments,
-        metric: this.unusedPermissionSetLicenseAssignments.length
-      });
+      attachments = [{ text: notifDetailText }];
     }
+    // Send notifications
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "UNUSED_LICENSES",
+      text: notifText,
+      attachments: attachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+      logElements: this.unusedPermissionSetLicenseAssignments,
+      metric: this.unusedPermissionSetLicenseAssignments.length,
+    });
     return [];
   }
 
