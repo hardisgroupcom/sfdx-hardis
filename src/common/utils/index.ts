@@ -87,7 +87,11 @@ export async function getGitRepoUrl() {
     return null;
   }
   const origin = await git().getConfig("remote.origin.url");
-  return origin.value || null ;
+  if (origin && origin.value) {
+    // Replace https://username:token@gitlab.com/toto by https://gitlab.com/toto
+    return origin.value.replace(/\/\/(.*:.*@)/gm, `//`);
+  }
+  return null;
 }
 
 export async function gitHasLocalUpdates(options = { show: false }) {
@@ -440,11 +444,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n"),
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n"),
         ),
       );
     }

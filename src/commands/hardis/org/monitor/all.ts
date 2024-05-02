@@ -47,6 +47,8 @@ monitoringCommands:
     command: sfdx my:other:custom:command
 \`\`\`
 
+You can force the daily run of all commands by defining env var \`MONITORING_IGNORE_FREQUENCY=true\`
+
 `;
 
   public static examples = ["$ sfdx hardis:org:monitor:all"];
