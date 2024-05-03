@@ -136,12 +136,18 @@ export class ApiProvider extends NotifProviderRoot {
   private async formatPayloadLoki() {
     const currentTimeNanoseconds = Date.now() * 1000 * 1000;
     const payloadCopy = Object.assign({}, this.payload);
+    delete payloadCopy._instanceUrl
+    delete payloadCopy._username;
+    delete payloadCopy._gitRepoUrl;
+    delete payloadCopy._gitRepoName;
+    delete payloadCopy._gitBranch;
+    delete payloadCopy._gitBranchUrl;
     delete payloadCopy._bodyText;
     this.payloadFormatted = {
       streams: [
         {
           stream: payloadCopy,
-          values: [[`${currentTimeNanoseconds}`, JSON.stringify(this.payload._bodyText)]],
+          values: [[`${currentTimeNanoseconds}`, this.payload._title + "\n" + this.payload._bodyText]],
         },
       ],
     };
