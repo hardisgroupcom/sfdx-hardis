@@ -2,7 +2,7 @@ import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, getGitRepoName, getGitRepoUrl, uxLog } from "../utils";
-import { NotifButton, NotifMessage, NotifSeverity, UtilsNotifs } from ".";
+import { NotifMessage, NotifSeverity, UtilsNotifs } from ".";
 import { getEnvVar } from "../../config";
 
 import { removeMarkdown } from "../utils/notifUtils";
@@ -22,7 +22,7 @@ export class ApiProvider extends NotifProviderRoot {
   // Always send notifications to API endpoint
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public isApplicableForNotif(notifMessage: NotifMessage) {
-    return true
+    return true;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -81,18 +81,16 @@ export class ApiProvider extends NotifProviderRoot {
     logBodyText = removeMarkdown(logBodyText);
 
     this.payload = {
-      source: 'sfdx-hardis',
-      type: notifMessage.type,
-      severity: notifMessage.severity || 'info',
-      logElements: notifMessage.logElements,
-      metric: notifMessage.metric || notifMessage.logElements.length,
-      additionalData: notifMessage.additionalData || {},
-      links: notifMessage.buttons || [],
-      title: logTitle,
-      bodyText: logBodyText,
-      _initialText: notifMessage.text,
-      _initialAttachments: notifMessage.attachments || [],
+      _source: "sfdx-hardis",
+      _type: notifMessage.type,
+      _severity: notifMessage.severity,
+      _logElements: notifMessage.logElements,
+      _metric: notifMessage.metric || notifMessage.logElements.length,
+      _title: logTitle,
+      _bodyText: logBodyText,
     };
+
+    this.payload = Object.assign(this.payload, notifMessage.additionalData);
   }
 
   // Add source context infos
@@ -100,25 +98,30 @@ export class ApiProvider extends NotifProviderRoot {
     // Add SF org info
     const conn: Connection = globalThis.jsForceConn || null;
     if (conn && conn.instanceUrl) {
-      this.payload.instanceUrl = conn.instanceUrl;
-      this.payload.username = (await conn.identity())?.username || "";
+      this.payload._instanceUrl = conn.instanceUrl;
+      this.payload._orgIdentifier = this.payload._instanceUrl.replace("https://", "").replace(".my.salesforce.com", "")
+      this.payload._username = (await conn.identity())?.username || "";
     }
     // Add git info
     const repoName = await getGitRepoName();
     if (repoName) {
-      this.payload.gitRepoName = repoName;
+      this.payload._gitRepoName = repoName;
     }
     const repoUrl = await getGitRepoUrl();
     if (repoUrl) {
-      this.payload.gitRepoUrl = repoUrl;
+      this.payload._gitRepoUrl = repoUrl;
     }
     const currentGitBranch = await getCurrentGitBranch();
     if (currentGitBranch) {
-      this.payload.gitBranch = currentGitBranch;
+      this.payload._gitBranch = currentGitBranch;
     }
     const branchUrl = await GitProvider.getCurrentBranchUrl();
     if (branchUrl) {
-      this.payload.gitBranchUrl = branchUrl;
+      this.payload._gitBranchUrl = branchUrl;
+    }
+    const jobUrl = await GitProvider.getJobUrl();
+    if (jobUrl) {
+      this.payload._jobUrl = jobUrl;
     }
   }
 
@@ -132,42 +135,33 @@ export class ApiProvider extends NotifProviderRoot {
 
   private async formatPayloadLoki() {
     const currentTimeNanoseconds = Date.now() * 1000 * 1000;
+    const payloadCopy = Object.assign({}, this.payload);
+    delete payloadCopy._bodyText;
     this.payloadFormatted = {
-      "streams": [
+      streams: [
         {
-          "stream": {
-            "source": this.payload.source,
-            "type": this.payload.type,
-            "severity": this.payload.severity,
-            "metric": this.payload.metric,
-            "instanceUrl": this.payload.instanceUrl || "unknown",
-            "username": this.payload.username || "unknown",
-            "gitRepoName": this.payload.gitRepoName || "unknown",
-            "gitRepoUrl": this.payload.gitRepoUrl || "unknown",
-            "gitBranch": this.payload.gitBranch || "unknown",
-          },
-          "values": [
-            [`${currentTimeNanoseconds}`, JSON.stringify(this.payload)]
-          ]
-        }]
-    }
+          stream: payloadCopy,
+          values: [[`${currentTimeNanoseconds}`, JSON.stringify(this.payload._bodyText)]],
+        },
+      ],
+    };
   }
 
   // Call remote API
   private async sendToApi() {
     const axiosConfig: AxiosRequestConfig = {
       responseType: "json",
-    }
+    };
     // Basic Auth
     if (getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME") != null) {
       axiosConfig.auth = {
         username: getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME"),
-        password: getEnvVar("NOTIF_API_BASIC_AUTH_PASSWORD")
-      }
+        password: getEnvVar("NOTIF_API_BASIC_AUTH_PASSWORD"),
+      };
     }
     // Bearer token
     else if (getEnvVar("NOTIF_API_BEARER_TOKEN") != null) {
-      axiosConfig.headers = { Authorization: `Bearer ${getEnvVar("NOTIF_API_BEARER_TOKEN")}` }
+      axiosConfig.headers = { Authorization: `Bearer ${getEnvVar("NOTIF_API_BEARER_TOKEN")}` };
     }
     // POST message
     try {
@@ -185,21 +179,19 @@ export class ApiProvider extends NotifProviderRoot {
 }
 
 export interface ApiNotifMessage {
-  source: string;
-  type: string;
-  severity: NotifSeverity;
-  links?: NotifButton[];
-  title: string;
-  bodyText: string;
-  logElements: any[];
-  metric: number,
-  additionalData?: any;
-  instanceUrl?: string;
-  username?: string;
-  gitRepoName?: string;
-  gitRepoUrl?: string;
-  gitBranch?: string;
-  gitBranchUrl?: string;
-  _initialText?: string;
-  _initialAttachments?: any[];
+  _source: string;
+  _type: string;
+  _severity: NotifSeverity;
+  _title: string;
+  _bodyText: string;
+  _logElements: any[];
+  _metric: number;
+  _instanceUrl?: string;
+  _orgIdentifier?: string;
+  _username?: string;
+  _gitRepoName?: string;
+  _gitRepoUrl?: string;
+  _gitBranch?: string;
+  _gitBranchUrl?: string;
+  _jobUrl?: string;
 }
