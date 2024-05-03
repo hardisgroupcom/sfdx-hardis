@@ -99,7 +99,7 @@ export class ApiProvider extends NotifProviderRoot {
     const conn: Connection = globalThis.jsForceConn || null;
     if (conn && conn.instanceUrl) {
       this.payload._instanceUrl = conn.instanceUrl;
-      this.payload._orgIdentifier = this.payload._instanceUrl.replace("https://", "").replace(".my.salesforce.com", "")
+      this.payload._orgIdentifier = this.payload._instanceUrl.replace("https://", "").replace(".my.salesforce.com", "");
       this.payload._username = (await conn.identity())?.username || "";
     }
     // Add git info
@@ -169,6 +169,9 @@ export class ApiProvider extends NotifProviderRoot {
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
         uxLog(this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
+        if (getEnvVar("NOTIF_API_DEBUG") === "true") {
+          uxLog(this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
+        }
       }
     } catch (e) {
       uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${e.message}`));
