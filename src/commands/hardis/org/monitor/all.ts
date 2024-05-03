@@ -106,6 +106,12 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
         frequency: "weekly",
       },
       {
+        key: "ORG_LIMITS",
+        title: "Detect if org limits are close to be reached",
+        command: "sfdx hardis:org:monitor:limits",
+        frequency: "daily",
+      },
+      {
         key: "LINT_ACCESS",
         title: "Detect custom elements with no access rights defined in permission sets",
         command: "sfdx hardis:lint:access",
