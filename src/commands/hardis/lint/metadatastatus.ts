@@ -11,7 +11,7 @@ import { AnyJson } from "@salesforce/ts-types";
 
 // Project Specific Utilities
 import { uxLog } from "../../../common/utils";
-import { NotifProvider } from "../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
 import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
@@ -55,6 +55,7 @@ export default class metadatastatus extends SfdxCommand {
   private flowFilePattern = "**/flows/**/*.flow-meta.xml";
   private validationRuleFilePattern = "**/objects/**/validationRules/*.validationRule-meta.xml";
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
+  protected inactiveItems = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
 
@@ -62,37 +63,44 @@ export default class metadatastatus extends SfdxCommand {
     const draftFlows = await this.verifyFlows();
     const inactiveValidationRules = await this.verifyValidationRules();
 
+    // Prepare notifications
+    const branchMd = await getBranchMarkdown();
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No inactive configuration elements has been found in ${branchMd}`;
+    const attachments: MessageAttachment[] = [];
     if (draftFlows.length > 0 || inactiveValidationRules.length > 0) {
-      const attachments: MessageAttachment[] = [];
+      notifSeverity = "warning";
       if (draftFlows.length > 0) {
         attachments.push({
           text: `*Inactive Flows*\n${draftFlows.map((file) => `• ${file}`).join("\n")}`,
         });
       }
-
       if (inactiveValidationRules.length > 0) {
         attachments.push({
           text: `*Inactive Validation Rules*\n${inactiveValidationRules.map((file) => `• ${file}`).join("\n")}`,
         });
       }
-
+      const numberInactive = draftFlows.length + inactiveValidationRules.length;
+      notifText = `${numberInactive} inactive configuration elements have been found in ${branchMd}`;
       await this.buildCsvFile(draftFlows, inactiveValidationRules);
-
-      const branchMd = await getBranchMarkdown();
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "METADATA_STATUS",
-        text: `Inactive configuration elements in ${branchMd}`,
-        attachments: attachments,
-        buttons: notifButtons,
-        severity: "warning",
-        sideImage: "flow",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-      });
     } else {
       uxLog(this, "No draft flow or validation rule files detected.");
     }
+    // Post notifications
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "METADATA_STATUS",
+      text: notifText,
+      attachments: attachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      sideImage: "flow",
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+      logElements: this.inactiveItems,
+      data: { metric: this.inactiveItems.length },
+    });
+
     return {};
   }
 
@@ -153,11 +161,11 @@ export default class metadatastatus extends SfdxCommand {
   private async buildCsvFile(draftFlows: string[], inactiveValidationRules: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-metadatastatus", this.outputFile);
 
-    const csvData = [
+    this.inactiveItems = [
       ...draftFlows.map((file) => ({ type: "Draft Flow", name: file })),
       ...inactiveValidationRules.map((rule) => ({ type: "Inactive VR", name: rule })),
     ];
 
-    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.inactiveItems, this.outputFile);
   }
 }

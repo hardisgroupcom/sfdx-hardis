@@ -11,7 +11,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 
 // Project Specific Utilities
-import { NotifProvider } from "../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
 import { getNotificationButtons, getBranchMarkdown } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
@@ -46,6 +46,7 @@ export default class UnusedMetadatas extends SfdxCommand {
     }),
   };
   /* jscpd:ignore-end */
+  protected unusedData = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
   // Comment this out if your command does not require an org username
@@ -65,36 +66,42 @@ export default class UnusedMetadatas extends SfdxCommand {
     await this.setProjectFiles();
     const unusedLabels = await this.verifyLabels();
     const unusedCustomPermissions = await this.verifyCustomPermissions();
-    const attachments: MessageAttachment[] = [];
 
+    // Build notification
+    const branchMd = await getBranchMarkdown();
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No unused metadatas has been detected in ${branchMd}`;
+    const attachments: MessageAttachment[] = [];
     if (unusedLabels.length > 0) {
       attachments.push({
         text: `*Unused Labels*\n${unusedLabels.map((label) => `• ${label}`).join("\n")}`,
       });
     }
-
     if (unusedCustomPermissions.length > 0) {
       attachments.push({
         text: `*Unused Custom Permissions*\n${unusedCustomPermissions.map((permission) => `• ${permission}`).join("\n")}`,
       });
     }
-
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
+      notifSeverity = "warning";
+      notifText = `${this.unusedData.length} unused metadatas have been detected in ${branchMd}`;
       await this.buildCsvFile(unusedLabels, unusedCustomPermissions);
-      const branchMd = await getBranchMarkdown();
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "UNUSED_METADATAS",
-        text: `Unused metadatas detected in ${branchMd}\n`,
-        attachments: attachments,
-        buttons: notifButtons,
-        severity: "warning",
-        sideImage: "flow",
-      });
     } else {
-      uxLog(this, "No unused labels detected or custom permissions detected.");
+      uxLog(this, "No unused labels or custom permissions detected.");
     }
+    // Post notification
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "UNUSED_METADATAS",
+      text: notifText,
+      attachments: attachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      sideImage: "flow",
+      logElements: this.unusedData,
+      data: { metric: this.unusedData.length },
+    });
 
     return {};
   }
@@ -186,11 +193,11 @@ export default class UnusedMetadatas extends SfdxCommand {
 
   private async buildCsvFile(unusedLabels: string[], unusedCustomPermissions: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-unusedmetadatas", this.outputFile);
-    const csvData = [
+    this.unusedData = [
       ...unusedLabels.map((label) => ({ type: "Label", name: label })),
       ...unusedCustomPermissions.map((permission) => ({ type: "Custom Permission", name: permission })),
     ];
 
-    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.unusedData, this.outputFile);
   }
 }

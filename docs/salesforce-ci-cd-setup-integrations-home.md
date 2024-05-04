@@ -41,6 +41,9 @@ Depending of your git provider, configure one of the following integrations.
 - [Email](salesforce-ci-cd-setup-integration-email.md)
   - Notifications
 
+- [API (ex: Grafana)](salesforce-ci-cd-setup-integration-api.md)
+  - Notifications
+
 ## Ticketing providers
 
 - [Jira](salesforce-ci-cd-setup-integration-jira.md)

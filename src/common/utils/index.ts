@@ -82,6 +82,18 @@ export async function getGitRepoName() {
   return null;
 }
 
+export async function getGitRepoUrl() {
+  if (!isGitRepo) {
+    return null;
+  }
+  const origin = await git().getConfig("remote.origin.url");
+  if (origin && origin.value) {
+    // Replace https://username:token@gitlab.com/toto by https://gitlab.com/toto
+    return origin.value.replace(/\/\/(.*:.*@)/gm, `//`);
+  }
+  return null;
+}
+
 export async function gitHasLocalUpdates(options = { show: false }) {
   const changes = await git().status();
   if (options.show) {

@@ -6,6 +6,7 @@ import { UtilsNotifs as utilsNotifs } from "./utils";
 import { TeamsProvider } from "./teamsProvider";
 import { getConfig } from "../../config";
 import { EmailProvider } from "./emailProvider";
+import { ApiProvider } from "./apiProvider";
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -21,6 +22,10 @@ export abstract class NotifProvider {
     // Email
     if (UtilsNotifs.isEmailAvailable()) {
       notifProviders.push(new EmailProvider());
+    }
+    // Api
+    if (UtilsNotifs.isApiAvailable()) {
+      notifProviders.push(new ApiProvider());
     }
     return notifProviders;
   }
@@ -51,7 +56,11 @@ export abstract class NotifProvider {
         }
         for (const notifProvider of notifProviders) {
           uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
-          notifProvider.postNotification(notifMessage);
+          if (notifProvider.isApplicableForNotif(notifMessage)) {
+            notifProvider.postNotification(notifMessage);
+          } else {
+            uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
+          }
         }
         globalThis.skipLegacyNotifications = true;
       }
@@ -68,6 +77,8 @@ export abstract class NotifProvider {
   }
 }
 
+export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success" | "log";
+
 export interface NotifMessage {
   text: string;
   type:
@@ -80,12 +91,15 @@ export interface NotifMessage {
     | "UNUSED_METADATAS"
     | "METADATA_STATUS"
     | "MISSING_ATTRIBUTES"
+    | "ORG_LIMITS"
     | "UNUSED_LICENSES";
   buttons?: NotifButton[];
   attachments?: any[];
-  severity?: "critical" | "error" | "warning" | "info" | "success";
+  severity: NotifSeverity;
   sideImage?: string;
   attachedFiles?: string[];
+  logElements: any[];
+  data: any;
 }
 
 export interface NotifButton {

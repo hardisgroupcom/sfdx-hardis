@@ -16,7 +16,7 @@ import { isCI, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
-import { NotifProvider } from "../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { Parser } from "xml2js";
 
 // Config
@@ -432,8 +432,15 @@ export default class Access extends SfdxCommand {
   }
 
   private async manageNotification() {
-    // Manage notifications
+    const branchMd = await getBranchMarkdown();
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No custom elements have no access defined in any Profile or Permission set in ${branchMd}`;
+    let attachments = [];
+    // Manage detail in case there are issues
     if (this.missingElements.length > 0) {
+      notifSeverity = "warning";
+      notifText = `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchMd}`;
       let notifDetailText = ``;
       for (const missingType of Object.keys(this.missingElementsMap)) {
         if (this.missingElementsMap[missingType]?.length > 0) {
@@ -443,18 +450,20 @@ export default class Access extends SfdxCommand {
           }
         }
       }
-      const branchMd = await getBranchMarkdown();
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "LINT_ACCESS",
-        text: `${this.missingElements.length} custom elements have no access defined in any Profile or Permission set in ${branchMd}`,
-        attachments: [{ text: notifDetailText }],
-        buttons: notifButtons,
-        severity: "warning",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-      });
+      attachments = [{ text: notifDetailText }];
     }
+
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "LINT_ACCESS",
+      text: notifText,
+      attachments: attachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+      logElements: this.missingElements,
+      data: { metric: this.missingElements.length },
+    });
   }
 
   private async handleFixIssues() {
