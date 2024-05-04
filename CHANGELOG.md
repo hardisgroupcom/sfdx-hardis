@@ -4,12 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.33.0] 2024-05-04
+
 - New notifications provider: **ApiProvider (beta)**, that allows to send notifications via HTTP/JSON to remote endpoints, like Grafana Loki, but also any custom one
 - New notification severity level: **log**, to send notifications via ApiProvider even when there is no detected issue
 - Update all existing notifications to add detailed log lines and additional log data
 - hardis:org:diagnose:audittrail: Fix lastndays not taken in account in some contexts
 - Complete refactoring of hardis:org:test:apex (same behavior but much organized code)
 - Notifications: Display success logs in blue
+- New monitoring command: **sfdx hardis:org:monitor:limits** to alert in case org limits are over 50% or 75% usage
 
 ## [4.32.2] 2024-05-01
 
