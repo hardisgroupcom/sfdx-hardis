@@ -6,7 +6,7 @@ description: Monitor your Salesforce orgs with daily metadata backup and more, w
 
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
 - [How does it work ?](#how-does-it-work--)
-- [All Monitoring Commands](#other-monitoring-commands)
+- [All Monitoring Commands](#all-monitoring-commands)
 
 ## Monitor your Salesforce org with sfdx-hardis
 
