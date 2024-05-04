@@ -6,7 +6,7 @@ import * as c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
 import { bulkQuery } from "../../../../common/utils/apiUtils";
 import { getConfig } from "../../../../config";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { prompts } from "../../../../common/utils/prompts";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
@@ -157,6 +157,7 @@ monitoringAllowedSectionsActions:
   protected allowedSectionsActions = {};
   protected debugMode = false;
 
+  protected auditTrailRecords = [];
   protected outputFile;
   protected outputFilesRes: any = {};
 
@@ -192,7 +193,7 @@ monitoringAllowedSectionsActions:
       });
       this.lastNdays = lastNdaysResponse.lastndays;
     } else {
-      this.lastNdays = 1;
+      this.lastNdays = this.lastNdays || 1;
     }
 
     this.allowedSectionsActions = {
@@ -286,7 +287,7 @@ monitoringAllowedSectionsActions:
     const suspectRecords = [];
     let suspectUsers = [];
     const suspectActions = [];
-    const auditTrailRecords = queryRes.records.map((record) => {
+    this.auditTrailRecords = queryRes.records.map((record) => {
       const section = record?.Section || "";
       record.Suspect = false;
       // Unallowed actions
@@ -340,10 +341,17 @@ monitoringAllowedSectionsActions:
 
     // Generate output CSV file
     this.outputFile = await generateReportPath("audit-trail", this.outputFile);
-    this.outputFilesRes = await generateCsvFile(auditTrailRecords, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.auditTrailRecords, this.outputFile);
 
     // Manage notifications
+    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No suspect Setup Audit Trail records has been found in ${orgMarkdown}`;
+    let notifAttachments = [];
     if (suspectRecords.length > 0) {
+      notifSeverity = "warning";
+      notifText = `${suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
       let notifDetailText = ``;
       notifDetailText += "*Related users*:\n";
       for (const user of suspectUsers) {
@@ -354,19 +362,20 @@ monitoringAllowedSectionsActions:
       for (const action of suspectActionsWithCount) {
         notifDetailText += `• ${action}\n`;
       }
-
-      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "AUDIT_TRAIL",
-        text: `${suspectRecords.length} suspect Setup Audit Trail records has been found in ${orgMarkdown}`,
-        attachments: [{ text: notifDetailText }],
-        buttons: notifButtons,
-        severity: "warning",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-      });
+      notifAttachments = [{ text: notifDetailText }];
     }
+
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "AUDIT_TRAIL",
+      text: notifText,
+      attachments: notifAttachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+      logElements: this.auditTrailRecords,
+      data: { metric: suspectRecords.length },
+    });
 
     if ((this.argv || []).includes("audittrail")) {
       process.exitCode = statusCode;

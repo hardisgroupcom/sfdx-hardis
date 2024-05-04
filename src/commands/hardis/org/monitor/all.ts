@@ -47,6 +47,8 @@ monitoringCommands:
     command: sfdx my:other:custom:command
 \`\`\`
 
+You can force the daily run of all commands by defining env var \`MONITORING_IGNORE_FREQUENCY=true\`
+
 `;
 
   public static examples = ["$ sfdx hardis:org:monitor:all"];
@@ -102,6 +104,12 @@ monitoringCommands:
         title: "Detect calls to deprecated API versions",
         command: "sfdx hardis:org:diagnose:legacyapi",
         frequency: "weekly",
+      },
+      {
+        key: "ORG_LIMITS",
+        title: "Detect if org limits are close to be reached",
+        command: "sfdx hardis:org:monitor:limits",
+        frequency: "daily",
       },
       {
         key: "LINT_ACCESS",

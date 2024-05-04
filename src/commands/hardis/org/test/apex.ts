@@ -1,12 +1,12 @@
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import { execCommand, getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
-import { canSendNotifications, getNotificationButtons, getOrgMarkdown, sendNotification } from "../../../../common/utils/notifUtils";
+import { execCommand, uxLog } from "../../../../common/utils";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 import { getConfig, getReportDirectory } from "../../../../config";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -60,6 +60,18 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
   // protected static requiresProject = true;
 
   protected configInfo: any = {};
+  protected testRunOutcome: string;
+  protected testRunOutputString: string;
+  protected statusMessage: string;
+  protected coverageTarget = 75.0;
+  protected coverageValue = 0.0;
+  protected failingTestClasses = [];
+  private notifSeverity: NotifSeverity;
+  private notifText: string;
+  private notifAttachments = [];
+  private notifAttachedFiles = [];
+  private orgMarkdown = "";
+  private notifButtons = [];
 
   /* jscpd:ignore-start */
   public async run(): Promise<AnyJson> {
@@ -68,7 +80,55 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     const debugMode = this.flags.debug || false;
 
     this.configInfo = await getConfig("branch");
+    this.orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
+    await this.runApexTests(testlevel, check, debugMode);
+    // No Apex
+    if (this.testRunOutcome === "NoApex") {
+      this.notifSeverity = "log";
+      this.statusMessage = "No Apex found in the org";
+      this.notifText = `No Apex found in org ${this.orgMarkdown}`;
+    }
+    // Failed tests
+    else if (this.testRunOutcome === "Failed") {
+      await this.processApexTestsFailure();
+    }
+    // Passed tests: check coverage
+    else if (this.testRunOutcome === "Passed") {
+      await this.checkOrgWideCoverage();
+      await this.checkTestRunCoverage();
+    }
+
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "APEX_TESTS",
+      text: this.notifText,
+      attachments: this.notifAttachments,
+      buttons: this.notifButtons,
+      severity: this.notifSeverity,
+      attachedFiles: this.notifAttachedFiles,
+      logElements: this.failingTestClasses,
+      data: {
+        metric: this.failingTestClasses.length,
+        coverageTarget: this.coverageTarget,
+        coverageValue: this.coverageValue,
+      },
+    });
+
+    // Handle output message & exit code
+    if (this.notifSeverity === "error") {
+      process.exitCode = 1;
+      uxLog(this, c.red(this.statusMessage));
+    } else {
+      uxLog(this, c.green(this.statusMessage));
+    }
+
+    return { orgId: this.org.getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
+  }
+
+  private async runApexTests(testlevel: any, check: any, debugMode: any) {
+    // Run tests with SFDX commands
     const reportDir = await getReportDirectory();
     const testCommand =
       "sfdx force:apex:test:run" +
@@ -79,122 +139,107 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       ` --testlevel ${testlevel}` +
       (check ? " --checkonly" : "") +
       (debugMode ? " --verbose" : "");
-    let testRes;
-    let outcome;
     try {
-      testRes = await execCommand(testCommand, this, {
+      const execCommandRes = await execCommand(testCommand, this, {
         output: true,
         debug: debugMode,
         fail: true,
       });
+      // Parse outcome value from logs with Regex
+      this.testRunOutcome = /Outcome *(.*) */.exec(execCommandRes.stdout + execCommandRes.stderr)[1].trim();
+      this.testRunOutputString = execCommandRes.stdout + execCommandRes.stderr;
     } catch (e) {
+      // No Apex in the org
       if (
         e.message.includes("Toujours fournir une propriété classes, suites, tests ou testLevel") ||
         e.message.includes("Always provide a classes, suites, tests, or testLevel property")
       ) {
-        uxLog(this, c.yellow("No Apex classes were found in the project"));
-        return { orgId: this.org.getOrgId(), outputString: "No Apex classes were found in the project" };
+        this.testRunOutcome = "NoApex";
+      } else {
+        // Failing Apex tests
+        this.testRunOutputString = e.message;
+        this.testRunOutcome = "Failed";
       }
-      uxLog(this, c.red("Error during apex tests: " + e.message));
-      testRes = { stdout: "", stderr: e.message };
-      outcome = "Failed";
     }
-    let message = "";
-    const testResStr = testRes.stdout + testRes.stderr;
-    outcome = outcome || /Outcome *(.*) */.exec(testResStr)[1].trim();
-    const currentGitBranch = await getCurrentGitBranch();
-    if (outcome === "Passed") {
-      //uxLog(this, c.grey(`Test results:\n${JSON.stringify(testRes.result.summary, null, 2)}`));
-      message = "[sfdx-hardis] Successfully run apex tests on org";
-      uxLog(this, c.green(message));
-      // Check code coverage (orgWide)
-      //const coverageOrgWide = parseFloat(testRes.result.summary.orgWideCoverage.replace('%', ''));
-      const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(testResStr)[1].replace("%", ""));
-      const minCoverageOrgWide =
-        process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
+  }
+
+  private async processApexTestsFailure() {
+    this.notifSeverity = "error";
+    this.statusMessage = `Org apex tests failure (Outcome: ${this.testRunOutcome})`;
+    this.notifText = `Org apex tests failure in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
+    const reportDir = await getReportDirectory();
+    // Parse log from external file
+    if (fs.existsSync(reportDir + "/test-result.txt")) {
+      let testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
+      testResultStr = testResultStr.split("=== Test Results")[0];
+      this.notifAttachments = [{ text: testResultStr }];
+    }
+    this.failingTestClasses = [{ class: "TO_IMPLEMENT", error: "TO IMPLEMENT" }];
+    this.notifAttachedFiles = fs.existsSync(reportDir + "/test-result.txt") ? [reportDir + "/test-result.txt"] : [];
+  }
+
+  private async checkOrgWideCoverage() {
+    const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
+    const minCoverageOrgWide = parseFloat(
+      process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
         process.env.APEX_TESTS_MIN_COVERAGE ||
         this.configInfo.apexTestsMinCoverageOrgWide ||
         this.configInfo.apexTestsMinCoverage ||
-        75.0;
-      if (minCoverageOrgWide < 75.0) {
-        throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
-      }
-      if (coverageOrgWide < minCoverageOrgWide) {
-        throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage (org wide) ${coverageOrgWide}% should be > to ${minCoverageOrgWide}%`);
-      } else {
-        uxLog(this, c.cyan(`[apextest] Test run coverage (org wide) ${c.bold(c.green(coverageOrgWide))}% is > to ${c.bold(minCoverageOrgWide)}%`));
-      }
-      // Check code coverage ()
-      if (testResStr.includes("Test Run Coverage")) {
-        // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
-        const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(testResStr)[1].replace("%", ""));
-        const minCoverageTestRun =
-          process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
+        75.0,
+    );
+    this.coverageTarget = minCoverageOrgWide;
+    this.coverageValue = coverageOrgWide;
+    // Developer tried to cheat in config ^^
+    if (minCoverageOrgWide < 75.0) {
+      this.notifSeverity = "error";
+      this.statusMessage = `Don't try to cheat with configuration: Minimum org wide coverage must be 75% ;)`;
+      this.notifText = this.statusMessage;
+    }
+    // Min coverage not reached
+    else if (coverageOrgWide < minCoverageOrgWide) {
+      this.notifSeverity = "error";
+      this.statusMessage = `Test run coverage (org wide) ${coverageOrgWide}% should be > to ${minCoverageOrgWide}%`;
+      this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
+    }
+    // We are good !
+    else {
+      this.notifSeverity = "log";
+      this.statusMessage = `Test run coverage (org wide) ${coverageOrgWide}% is > to ${minCoverageOrgWide}%`;
+      this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
+    }
+  }
+
+  private async checkTestRunCoverage() {
+    if (this.testRunOutputString.includes("Test Run Coverage")) {
+      // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
+      const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
+      const minCoverageTestRun = parseFloat(
+        process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
           process.env.APEX_TESTS_MIN_COVERAGE ||
           this.configInfo.apexTestsMinCoverage ||
-          minCoverageOrgWide;
-        if (minCoverageTestRun < 75.0) {
-          throw new SfdxError("[sfdx-hardis] Good try, hacker, but minimum org coverage can't be less than 75% :)");
-        }
-        if (coverageTestRun < minCoverageTestRun) {
-          // Send notification
-          const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-          const notifButtons = await getNotificationButtons();
-          globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-          NotifProvider.postNotifications({
-            type: "APEX_TESTS",
-            text: `Apex Tests run coverage issue in ${orgMarkdown}\nTest run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
-            buttons: notifButtons,
-            severity: "error",
-          });
-          // (LEGACY) Send notification if possible
-          if (isCI && (await canSendNotifications())) {
-            await sendNotification({
-              title: `WARNING: Apex Tests run coverage issue in ${currentGitBranch}`,
-              text: `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`,
-              severity: "warning",
-            });
-          }
-          throw new SfdxError(`[sfdx-hardis][apextest] Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`);
-        } else {
-          uxLog(this, c.cyan(`[apextest] Test run coverage ${c.bold(c.green(coverageTestRun))}% is > to ${c.bold(minCoverageTestRun)}%`));
-        }
-      }
-    } else {
-      message = `Org apex tests failure (Outcome: ${outcome} )`;
-      uxLog(this, c.red(message));
+          this.coverageTarget,
+      );
+      this.coverageTarget = minCoverageTestRun;
+      this.coverageValue = coverageTestRun;
 
-      let testResultStr;
-      const reportDir = await getReportDirectory();
-      if (fs.existsSync(reportDir + "/test-result.txt")) {
-        testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
-        testResultStr = testResultStr.split("=== Test Results")[0];
+      // Developer tried to cheat in config ^^
+      if (minCoverageTestRun < 75.0) {
+        this.notifSeverity = "error";
+        this.statusMessage = `Don't try to cheat with configuration: Minimum test run coverage must be 75% ;)`;
+        this.notifText = this.statusMessage;
       }
-      // Send notification
-      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "APEX_TESTS",
-        text: `Apex Tests are failing in ${orgMarkdown}`,
-        attachments: [{ text: testResultStr }],
-        buttons: notifButtons,
-        severity: "error",
-        attachedFiles: fs.existsSync(reportDir + "/test-result.txt") ? [reportDir + "/test-result.txt"] : [],
-      });
-      // (LEGACY) Send notification if possible
-      if (await canSendNotifications()) {
-        await sendNotification({
-          title: `WARNING: Apex Tests are failing in ${currentGitBranch}`,
-          text: `Outcome: ${outcome},
-
-${testResultStr}`,
-          severity: "severe",
-        });
+      // Min coverage not reached
+      else if (coverageTestRun < minCoverageTestRun) {
+        this.notifSeverity = "error";
+        this.statusMessage = `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`;
+        this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
-      throw new SfdxError("[sfdx-hardis] " + message);
+      // We are good !
+      else {
+        this.notifSeverity = "log";
+        this.statusMessage = `Test run coverage ${coverageTestRun}% is > to ${minCoverageTestRun}%`;
+        this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
+      }
     }
-
-    return { orgId: this.org.getOrgId(), outputString: message };
   }
 }
