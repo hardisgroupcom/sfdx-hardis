@@ -351,7 +351,7 @@ monitoringAllowedSectionsActions:
     let notifAttachments = [];
     if (suspectRecords.length > 0) {
       notifSeverity = "warning";
-      notifText = `${suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`
+      notifText = `${suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
       let notifDetailText = ``;
       notifDetailText += "*Related users*:\n";
       for (const user of suspectUsers) {
@@ -362,7 +362,7 @@ monitoringAllowedSectionsActions:
       for (const action of suspectActionsWithCount) {
         notifDetailText += `• ${action}\n`;
       }
-      notifAttachments =  [{ text: notifDetailText }]
+      notifAttachments = [{ text: notifDetailText }];
     }
 
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
@@ -374,7 +374,7 @@ monitoringAllowedSectionsActions:
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.auditTrailRecords,
-      data: { metric: suspectRecords.length }
+      data: { metric: suspectRecords.length },
     });
 
     if ((this.argv || []).includes("audittrail")) {

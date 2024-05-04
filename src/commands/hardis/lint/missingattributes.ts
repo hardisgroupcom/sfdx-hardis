@@ -68,11 +68,11 @@ export default class metadatastatus extends SfdxCommand {
     const branchMd = await getBranchMarkdown();
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
-    let notifText = `No missing descriptions on fields has been found in ${branchMd}`
+    let notifText = `No missing descriptions on fields has been found in ${branchMd}`;
     let attachments: MessageAttachment[] = [];
     if (this.fieldsWithoutDescription.length > 0) {
       notifSeverity = "warning";
-      notifText = `${this.fieldsWithoutDescription.length} missing descriptions on fields have been found in ${branchMd}`
+      notifText = `${this.fieldsWithoutDescription.length} missing descriptions on fields have been found in ${branchMd}`;
       await this.buildCsvFile(this.fieldsWithoutDescription);
       attachments = [
         {
@@ -92,7 +92,7 @@ export default class metadatastatus extends SfdxCommand {
       severity: notifSeverity,
       sideImage: "flow",
       logElements: this.fieldsWithoutDescription,
-      data: { metric: this.fieldsWithoutDescription.length }
+      data: { metric: this.fieldsWithoutDescription.length },
     });
     return {};
   }

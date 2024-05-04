@@ -332,8 +332,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     // Get preDestructiveChanges.xml and add it in options if existing
     const preDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-        this.configInfo.packageXmlToDeletePreDeploy ||
-        fs.existsSync("./manifest/preDestructiveChanges.xml")
+      this.configInfo.packageXmlToDeletePreDeploy ||
+      fs.existsSync("./manifest/preDestructiveChanges.xml")
         ? "./manifest/preDestructiveChanges.xml"
         : "./config/preDestructiveChanges.xml";
     if (fs.existsSync(preDestructiveChanges)) {
@@ -443,7 +443,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         severity: "success",
         attachments: attachments,
         logElements: [],
-        data: { metric: 0 } // Todo: if delta used, count the number of items deployed
+        data: { metric: 0 }, // Todo: if delta used, count the number of items deployed
       });
     }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };

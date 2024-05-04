@@ -44,7 +44,7 @@ export class ApiProvider extends NotifProviderRoot {
   private async buildPayload(notifMessage: NotifMessage) {
     const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
       UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
-      notifMessage.severity
+      notifMessage.severity,
     );
     const logTitle = removeMarkdown(firstLineMarkdown);
     let logBodyText = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
@@ -79,20 +79,20 @@ export class ApiProvider extends NotifProviderRoot {
     logBodyText = removeMarkdown(logBodyText);
 
     // Build payload
-    const repoName = (await getGitRepoName()).replace(".git","");
+    const repoName = (await getGitRepoName()).replace(".git", "");
     const currentGitBranch = await getCurrentGitBranch();
-    const conn: Connection = globalThis.jsForceConn
+    const conn: Connection = globalThis.jsForceConn;
     this.payload = {
       source: "sfdx-hardis",
       type: notifMessage.type,
-      orgIdentifier:  conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""),
+      orgIdentifier: conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""),
       gitIdentifier: `${repoName}/${currentGitBranch}`,
       severity: notifMessage.severity,
       data: Object.assign(notifMessage.data, {
         _title: logTitle,
         _logBodyText: logBodyText,
-        _logElements: notifMessage.logElements
-      })
+        _logElements: notifMessage.logElements,
+      }),
     };
     // Add job url if available
     const jobUrl = await GitProvider.getJobUrl();
@@ -117,11 +117,7 @@ export class ApiProvider extends NotifProviderRoot {
       streams: [
         {
           stream: payloadCopy,
-          values: [
-            [
-              `${currentTimeNanoseconds}`,
-              JSON.stringify(this.payload.data)]
-          ],
+          values: [[`${currentTimeNanoseconds}`, JSON.stringify(this.payload.data)]],
         },
       ],
     };
@@ -167,5 +163,5 @@ export interface ApiNotifMessage {
   severity: NotifSeverity;
   orgIdentifier: string;
   gitIdentifier: string;
-  data: any
+  data: any;
 }

@@ -450,7 +450,7 @@ export default class Access extends SfdxCommand {
           }
         }
       }
-      attachments = [{ text: notifDetailText }]
+      attachments = [{ text: notifDetailText }];
     }
 
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
@@ -462,7 +462,7 @@ export default class Access extends SfdxCommand {
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.missingElements,
-      data: { metric: this.missingElements.length }
+      data: { metric: this.missingElements.length },
     });
   }
 

@@ -208,7 +208,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     FROM PermissionSetLicenseAssign
     WHERE Assignee.IsActive=true
     ORDER BY PermissionSetLicense.MasterLabel, Assignee.Username`,
-      conn
+      conn,
     );
     return pslaQueryRes.records;
   }
@@ -231,7 +231,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
          FROM PermissionSetLicense
          WHERE Id in ({{IN}})`,
         conn,
-        psLicensesIds
+        psLicensesIds,
       );
       return pslQueryRes.records;
     }
@@ -245,14 +245,14 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
        FROM PermissionSet
        WHERE LicenseId in ({{IN}})`,
       conn,
-      psLicensesIds
+      psLicensesIds,
     );
     const psQueryAdditionalRes = await bulkQueryChunksIn(
       `SELECT Id,Label,Name,LicenseId
        FROM PermissionSet
        WHERE Name in ({{IN}})`,
       conn,
-      DiagnoseUnusedLicenses.additionalPermissionSetsToAlwaysGet
+      DiagnoseUnusedLicenses.additionalPermissionSetsToAlwaysGet,
     );
     return psQueryRes.records.concat(psQueryAdditionalRes.records);
   }
@@ -264,7 +264,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
          FROM PermissionSetGroupComponent
          WHERE PermissionSetId in ({{IN}})`,
       conn,
-      permissionSetsIds
+      permissionSetsIds,
     );
     return psgcQueryRes.records;
   }
@@ -278,7 +278,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
            FROM PermissionSetAssignment
            WHERE PermissionSetGroupId in ({{IN}})`,
         conn,
-        permissionSetsGroupIds
+        permissionSetsGroupIds,
       );
       // Add related licenses in licenseIds for each PS Assignment
       psgaQueryRes.records = psgaQueryRes.records.map((psga) => {
@@ -304,7 +304,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
        FROM PermissionSetAssignment
        WHERE PermissionSetId in ({{IN}})`,
       conn,
-      permissionSetsIds
+      permissionSetsIds,
     );
     // Add related license in licenseIds for each PS Assignment
     psaQueryRes.records = psaQueryRes.records.map((psa) => {

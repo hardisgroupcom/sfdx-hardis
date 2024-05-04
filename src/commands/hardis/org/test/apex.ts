@@ -92,7 +92,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     }
     // Failed tests
     else if (this.testRunOutcome === "Failed") {
-      await this.processApexTestsFailure()
+      await this.processApexTestsFailure();
     }
     // Passed tests: check coverage
     else if (this.testRunOutcome === "Passed") {
@@ -112,16 +112,15 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       data: {
         metric: this.failingTestClasses.length,
         coverageTarget: this.coverageTarget,
-        coverageValue: this.coverageValue
-      }
+        coverageValue: this.coverageValue,
+      },
     });
 
     // Handle output message & exit code
     if (this.notifSeverity === "error") {
       process.exitCode = 1;
       uxLog(this, c.red(this.statusMessage));
-    }
-    else {
+    } else {
       uxLog(this, c.green(this.statusMessage));
     }
 
@@ -131,7 +130,8 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
   private async runApexTests(testlevel: any, check: any, debugMode: any) {
     // Run tests with SFDX commands
     const reportDir = await getReportDirectory();
-    const testCommand = "sfdx force:apex:test:run" +
+    const testCommand =
+      "sfdx force:apex:test:run" +
       " --codecoverage" +
       " --resultformat human" +
       ` --outputdir ${reportDir}` +
@@ -150,11 +150,12 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       this.testRunOutputString = execCommandRes.stdout + execCommandRes.stderr;
     } catch (e) {
       // No Apex in the org
-      if (e.message.includes("Toujours fournir une propriété classes, suites, tests ou testLevel") ||
-        e.message.includes("Always provide a classes, suites, tests, or testLevel property")) {
+      if (
+        e.message.includes("Toujours fournir une propriété classes, suites, tests ou testLevel") ||
+        e.message.includes("Always provide a classes, suites, tests, or testLevel property")
+      ) {
         this.testRunOutcome = "NoApex";
-      }
-      else {
+      } else {
         // Failing Apex tests
         this.testRunOutputString = e.message;
         this.testRunOutcome = "Failed";
@@ -171,20 +172,21 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     if (fs.existsSync(reportDir + "/test-result.txt")) {
       let testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
       testResultStr = testResultStr.split("=== Test Results")[0];
-      this.notifAttachments = [{ text: testResultStr }]
+      this.notifAttachments = [{ text: testResultStr }];
     }
     this.failingTestClasses = [{ class: "TO_IMPLEMENT", error: "TO IMPLEMENT" }];
-    this.notifAttachedFiles = fs.existsSync(reportDir + "/test-result.txt") ? [reportDir + "/test-result.txt"] : []
+    this.notifAttachedFiles = fs.existsSync(reportDir + "/test-result.txt") ? [reportDir + "/test-result.txt"] : [];
   }
 
   private async checkOrgWideCoverage() {
     const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
-      process.env.APEX_TESTS_MIN_COVERAGE ||
-      this.configInfo.apexTestsMinCoverageOrgWide ||
-      this.configInfo.apexTestsMinCoverage ||
-      75.0);
+        process.env.APEX_TESTS_MIN_COVERAGE ||
+        this.configInfo.apexTestsMinCoverageOrgWide ||
+        this.configInfo.apexTestsMinCoverage ||
+        75.0,
+    );
     this.coverageTarget = minCoverageOrgWide;
     this.coverageValue = coverageOrgWide;
     // Developer tried to cheat in config ^^
@@ -213,9 +215,10 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
-        process.env.APEX_TESTS_MIN_COVERAGE ||
-        this.configInfo.apexTestsMinCoverage ||
-        this.coverageTarget);
+          process.env.APEX_TESTS_MIN_COVERAGE ||
+          this.configInfo.apexTestsMinCoverage ||
+          this.coverageTarget,
+      );
       this.coverageTarget = minCoverageTestRun;
       this.coverageValue = coverageTestRun;
 

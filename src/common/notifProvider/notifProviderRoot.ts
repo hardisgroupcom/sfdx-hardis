@@ -11,7 +11,7 @@ export abstract class NotifProviderRoot {
 
   // By default, we don't send logs to other notif targets than API to avoid noise
   public isApplicableForNotif(notifMessage: NotifMessage) {
-    return ["critical", "error", "warning", "info", "success"].includes(notifMessage.severity)
+    return ["critical", "error", "warning", "info", "success"].includes(notifMessage.severity);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

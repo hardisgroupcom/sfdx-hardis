@@ -145,7 +145,7 @@ export default class MonitorBackup extends SfdxCommand {
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.limitEntries,
-      data: { metric: numberLimitsWarning + numberLimitsError, limits: limitEntriesMap }
+      data: { metric: numberLimitsWarning + numberLimitsError, limits: limitEntriesMap },
     });
 
     return { outputString: "Limits check on org " + this.org.getConnection().instanceUrl, limitEntries: this.limitEntries };
