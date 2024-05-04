@@ -129,6 +129,11 @@ export default class MonitorBackup extends SfdxCommand {
       uxLog(this, c.green("No limit issue has been found"));
     }
 
+    const limitEntriesMap = {};
+    for (const limit of this.limitEntries) {
+      limitEntriesMap[limit.name] = limit;
+    }
+
     // Post notifications
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
@@ -139,7 +144,7 @@ export default class MonitorBackup extends SfdxCommand {
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.limitEntries,
-      data: { metric: numberLimitsWarning + numberLimitsError },
+      data: { metric: numberLimitsWarning + numberLimitsError, limits: limitEntriesMap }
     });
 
     return { outputString: "Limits check on org " + this.org.getConnection().instanceUrl, limitEntries: this.limitEntries };

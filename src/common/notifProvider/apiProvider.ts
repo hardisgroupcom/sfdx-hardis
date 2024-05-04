@@ -79,7 +79,7 @@ export class ApiProvider extends NotifProviderRoot {
     logBodyText = removeMarkdown(logBodyText);
 
     // Build payload
-    const repoName = await getGitRepoName();
+    const repoName = (await getGitRepoName()).replace(".git","");
     const currentGitBranch = await getCurrentGitBranch();
     const conn: Connection = globalThis.jsForceConn
     this.payload = {
