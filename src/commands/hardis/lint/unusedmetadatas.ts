@@ -100,7 +100,7 @@ export default class UnusedMetadatas extends SfdxCommand {
       severity: notifSeverity,
       sideImage: "flow",
       logElements: this.unusedData,
-      metric: this.unusedData.length,
+      data: { metric: this.unusedData.length },
     });
 
     return {};

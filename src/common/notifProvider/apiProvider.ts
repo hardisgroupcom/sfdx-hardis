@@ -1,7 +1,7 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
-import { getCurrentGitBranch, getGitRepoName, getGitRepoUrl, uxLog } from "../utils";
+import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils";
 import { NotifMessage, NotifSeverity, UtilsNotifs } from ".";
 import { getEnvVar } from "../../config";
 
@@ -32,9 +32,7 @@ export class ApiProvider extends NotifProviderRoot {
       throw new SfdxError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");
     }
     // Build initial payload data from notifMessage
-    this.buildPlayload(notifMessage);
-    // Add SF org  & git info
-    await this.addPayloadContext();
+    await this.buildPlayload(notifMessage);
     // Format payload according to API endpoint: for example, Grafana loki
     await this.formatPayload();
     // Send notif
@@ -43,7 +41,7 @@ export class ApiProvider extends NotifProviderRoot {
   }
 
   // Build message
-  private buildPlayload(notifMessage: NotifMessage) {
+  private async buildPlayload(notifMessage: NotifMessage) {
     const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
       UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
       notifMessage.severity
@@ -80,48 +78,26 @@ export class ApiProvider extends NotifProviderRoot {
     logBodyText += "Powered by sfdx-hardis: https://sfdx-hardis.cloudity.com";
     logBodyText = removeMarkdown(logBodyText);
 
-    this.payload = {
-      _source: "sfdx-hardis",
-      _type: notifMessage.type,
-      _severity: notifMessage.severity,
-      _logElements: notifMessage.logElements,
-      _metric: notifMessage.metric || notifMessage.logElements.length,
-      _title: logTitle,
-      _bodyText: logBodyText,
-    };
-
-    this.payload = Object.assign(this.payload, notifMessage.additionalData);
-  }
-
-  // Add source context infos
-  private async addPayloadContext() {
-    // Add SF org info
-    const conn: Connection = globalThis.jsForceConn || null;
-    if (conn && conn.instanceUrl) {
-      this.payload._instanceUrl = conn.instanceUrl;
-      this.payload._orgIdentifier = this.payload._instanceUrl.replace("https://", "").replace(".my.salesforce.com", "");
-      this.payload._username = (await conn.identity())?.username || "";
-    }
-    // Add git info
+    // Build payload
     const repoName = await getGitRepoName();
-    if (repoName) {
-      this.payload._gitRepoName = repoName;
-    }
-    const repoUrl = await getGitRepoUrl();
-    if (repoUrl) {
-      this.payload._gitRepoUrl = repoUrl;
-    }
     const currentGitBranch = await getCurrentGitBranch();
-    if (currentGitBranch) {
-      this.payload._gitBranch = currentGitBranch;
-    }
-    const branchUrl = await GitProvider.getCurrentBranchUrl();
-    if (branchUrl) {
-      this.payload._gitBranchUrl = branchUrl;
-    }
+    const conn: Connection = globalThis.jsForceConn
+    this.payload = {
+      source: "sfdx-hardis",
+      type: notifMessage.type,
+      orgIdentifier:  conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""),
+      gitIdentifier: `${repoName}/${currentGitBranch}`,
+      severity: notifMessage.severity,
+      data: Object.assign(notifMessage.data, {
+        _title: logTitle,
+        _logBodyText: logBodyText,
+        _logElements: notifMessage.logElements
+      })
+    };
+    // Add job url if available
     const jobUrl = await GitProvider.getJobUrl();
     if (jobUrl) {
-      this.payload._jobUrl = jobUrl;
+      this.payload.data._jobUrl = jobUrl;
     }
   }
 
@@ -136,18 +112,16 @@ export class ApiProvider extends NotifProviderRoot {
   private async formatPayloadLoki() {
     const currentTimeNanoseconds = Date.now() * 1000 * 1000;
     const payloadCopy = Object.assign({}, this.payload);
-    delete payloadCopy._instanceUrl
-    delete payloadCopy._username;
-    delete payloadCopy._gitRepoUrl;
-    delete payloadCopy._gitRepoName;
-    delete payloadCopy._gitBranch;
-    delete payloadCopy._gitBranchUrl;
-    delete payloadCopy._bodyText;
+    delete payloadCopy.data;
     this.payloadFormatted = {
       streams: [
         {
           stream: payloadCopy,
-          values: [[`${currentTimeNanoseconds}`, this.payload._title + "\n" + this.payload._bodyText]],
+          values: [
+            [
+              `${currentTimeNanoseconds}`,
+              JSON.stringify(this.payload.data)]
+          ],
         },
       ],
     };
@@ -188,19 +162,10 @@ export class ApiProvider extends NotifProviderRoot {
 }
 
 export interface ApiNotifMessage {
-  _source: string;
-  _type: string;
-  _severity: NotifSeverity;
-  _title: string;
-  _bodyText: string;
-  _logElements: any[];
-  _metric: number;
-  _instanceUrl?: string;
-  _orgIdentifier?: string;
-  _username?: string;
-  _gitRepoName?: string;
-  _gitRepoUrl?: string;
-  _gitBranch?: string;
-  _gitBranchUrl?: string;
-  _jobUrl?: string;
+  source: string;
+  type: string;
+  severity: NotifSeverity;
+  orgIdentifier: string;
+  gitIdentifier: string;
+  data: any
 }

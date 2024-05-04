@@ -457,12 +457,12 @@ export default class Access extends SfdxCommand {
     NotifProvider.postNotifications({
       type: "LINT_ACCESS",
       text: notifText,
-      attachments:attachments ,
+      attachments: attachments,
       buttons: notifButtons,
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.missingElements,
-      metric: this.missingElements.length
+      data: { metric: this.missingElements.length }
     });
   }
 

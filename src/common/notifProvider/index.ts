@@ -100,8 +100,7 @@ export interface NotifMessage {
   sideImage?: string;
   attachedFiles?: string[];
   logElements: any[];
-  metric: number;
-  additionalData?: any;
+  data: any;
 }
 
 export interface NotifButton {

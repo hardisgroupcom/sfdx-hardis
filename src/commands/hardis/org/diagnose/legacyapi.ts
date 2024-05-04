@@ -240,8 +240,8 @@ See article to solve issue before it's too late:
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile, this.outputFilesRes.xlsxFile2] : [],
       logElements: this.allErrors,
-      metric: this.allErrors.length,
-      additionalData: {
+      data: {
+        metric: this.allErrors.length,
         legacyApiSummary: this.ipResultsSorted,
       },
     });

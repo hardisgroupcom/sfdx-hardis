@@ -109,11 +109,11 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       severity: this.notifSeverity,
       attachedFiles: this.notifAttachedFiles,
       logElements: this.failingTestClasses,
-      additionalData: {
+      data: {
+        metric: this.failingTestClasses.length,
         coverageTarget: this.coverageTarget,
         coverageValue: this.coverageValue
-      },
-      metric: this.failingTestClasses.length
+      }
     });
 
     // Handle output message & exit code

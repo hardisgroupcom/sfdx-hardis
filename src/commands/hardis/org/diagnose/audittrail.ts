@@ -374,7 +374,7 @@ monitoringAllowedSectionsActions:
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.auditTrailRecords,
-      metric: suspectRecords.length
+      data: { metric: suspectRecords.length }
     });
 
     if ((this.argv || []).includes("audittrail")) {
