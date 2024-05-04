@@ -6,17 +6,7 @@ description: Monitor your Salesforce orgs with daily metadata backup and more, w
 
 - [Monitor your Salesforce org with sfdx-hardis](#monitor-your-salesforce-org-with-sfdx-hardis)
 - [How does it work ?](#how-does-it-work--)
-- [All Monitoring Commands](#other-monitoring-commands)
-  - [Metadata Backup](#metadata-backup)
-  - [Apex tests](#apex-tests)
-  - [Quality Checks with MegaLinter](#quality-checks-with-megalinter)
-  - [Detect suspect setup actions in major org](#detect-suspect-setup-actions-in-major-org)
-  - [Detect calls to deprecated API versions](#detect-calls-to-deprecated-api-versions)
-  - [Detect custom elements with no access rights defined in permission sets](#detect-custom-elements-with-no-access-rights-defined-in-permission-sets)
-  - [Detect unused licenses](#detect-unused-licenses)
-  - [Detect custom labels and custom permissions that are not in use](#detect-custom-labels-and-custom-permissions-that-are-not-in-use)
-  - [Detect inactive metadata](#detect-inactive-metadata)
-  - [Detect missing attributes](#detect-missing-attributes)
+- [All Monitoring Commands](#all-monitoring-commands)
 
 ## Monitor your Salesforce org with sfdx-hardis
 
@@ -37,6 +27,12 @@ _Example of a monitoring git repository_
 _Example notifications with Slack_
 
 ![](assets/images/screenshot-slack-monitoring.jpg)
+
+_Example of visualization in Grafana_
+
+![](assets/images/grafana-screenshot.png)
+
+![](assets/images/grafana-screenshot-2.png)
 
 Extra features are also available, like:
 
@@ -76,6 +72,17 @@ The following checks are active out of the box.
 In order to avoid to overflow channels of notifications, some commands are run everyday whereas less critical ones are run weekly (on saturday).
 
 You can force the daily run of all commands by defining env var `MONITORING_IGNORE_FREQUENCY=true`.
+
+- [Metadata Backup](#metadata-backup)
+- [Apex tests](#apex-tests)
+- [Quality Checks with MegaLinter](#quality-checks-with-megalinter)
+- [Detect suspect setup actions in major org](#detect-suspect-setup-actions-in-major-org)
+- [Detect calls to deprecated API versions](#detect-calls-to-deprecated-api-versions)
+- [Detect custom elements with no access rights defined in permission sets](#detect-custom-elements-with-no-access-rights-defined-in-permission-sets)
+- [Detect unused licenses](#detect-unused-licenses)
+- [Detect custom labels and custom permissions that are not in use](#detect-custom-labels-and-custom-permissions-that-are-not-in-use)
+- [Detect inactive metadata](#detect-inactive-metadata)
+- [Detect missing attributes](#detect-missing-attributes)
 
 ### Metadata Backup
 
