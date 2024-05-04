@@ -81,6 +81,7 @@ export default class MonitorBackup extends SfdxCommand {
         limit.used = limit.max - limit.remaining;
         limit.percentUsed = ((100 / limit.max) * limit.used).toFixed(2);
         limit.severity = limit.percentUsed > this.limitThresoldError ? "error" : limit.percentUsed > this.limitThresoldWarning ? "warning" : "info";
+        limit.label = limit.name.replace(/([A-Z])/g, " $1");
         return limit;
       });
 
