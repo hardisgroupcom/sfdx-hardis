@@ -13,6 +13,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Complete refactoring of hardis:org:test:apex (same behavior but much organized code)
 - Notifications: Display success logs in blue
 - New monitoring command: **sfdx hardis:org:monitor:limits** to alert in case org limits are over 50% or 75% usage
+- Fix gitlab-ci-config.yml: More restrictive regex for deployment branches
 
 ## [4.32.2] 2024-05-01
 
