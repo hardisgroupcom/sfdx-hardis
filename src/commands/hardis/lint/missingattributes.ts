@@ -92,7 +92,7 @@ export default class metadatastatus extends SfdxCommand {
       severity: notifSeverity,
       sideImage: "flow",
       logElements: this.fieldsWithoutDescription,
-      metric: this.fieldsWithoutDescription.length
+      data: { metric: this.fieldsWithoutDescription.length }
     });
     return {};
   }

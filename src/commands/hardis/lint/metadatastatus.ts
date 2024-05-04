@@ -98,7 +98,7 @@ export default class metadatastatus extends SfdxCommand {
       sideImage: "flow",
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.inactiveItems,
-      metric: this.inactiveItems.length,
+      data: { metric: this.inactiveItems.length },
     });
 
     return {};

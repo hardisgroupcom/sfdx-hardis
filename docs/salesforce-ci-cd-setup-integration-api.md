@@ -36,6 +36,8 @@ NOTIF_API_URL=https://my.custom.endpoint.net
 NOTIF_API_BEARER_TOKEN=DDHGHfgfgjfhQESRDTHFKGKHFswgFHDHGDH
 ```
 
+If you want to see the content of the API notifications in execution logs, you can define `NOTIF_API_DEBUG=true`
+
 That's all, you're all set !
 
 

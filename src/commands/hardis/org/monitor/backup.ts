@@ -221,7 +221,7 @@ You can remove more metadata types from backup, especially in case you have too 
       sideImage: "backup",
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.diffFilesSimplified,
-      metric: this.diffFilesSimplified.length
+      data: { metric: this.diffFilesSimplified.length }
     });
 
     return { outputString: "BackUp processed on org " + this.org.getConnection().instanceUrl };

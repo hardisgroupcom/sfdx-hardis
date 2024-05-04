@@ -1,8 +1,8 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
-import { getCurrentGitBranch, getGitRepoName, getGitRepoUrl, uxLog } from "../utils";
-import { NotifButton, NotifMessage, NotifSeverity, UtilsNotifs } from ".";
+import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils";
+import { NotifMessage, NotifSeverity, UtilsNotifs } from ".";
 import { getEnvVar } from "../../config";
 
 import { removeMarkdown } from "../utils/notifUtils";
@@ -22,7 +22,7 @@ export class ApiProvider extends NotifProviderRoot {
   // Always send notifications to API endpoint
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public isApplicableForNotif(notifMessage: NotifMessage) {
-    return true
+    return true;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -32,9 +32,7 @@ export class ApiProvider extends NotifProviderRoot {
       throw new SfdxError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");
     }
     // Build initial payload data from notifMessage
-    this.buildPlayload(notifMessage);
-    // Add SF org  & git info
-    await this.addPayloadContext();
+    await this.buildPlayload(notifMessage);
     // Format payload according to API endpoint: for example, Grafana loki
     await this.formatPayload();
     // Send notif
@@ -43,7 +41,7 @@ export class ApiProvider extends NotifProviderRoot {
   }
 
   // Build message
-  private buildPlayload(notifMessage: NotifMessage) {
+  private async buildPlayload(notifMessage: NotifMessage) {
     const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
       UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
       notifMessage.severity
@@ -80,45 +78,26 @@ export class ApiProvider extends NotifProviderRoot {
     logBodyText += "Powered by sfdx-hardis: https://sfdx-hardis.cloudity.com";
     logBodyText = removeMarkdown(logBodyText);
 
-    this.payload = {
-      source: 'sfdx-hardis',
-      type: notifMessage.type,
-      severity: notifMessage.severity || 'info',
-      logElements: notifMessage.logElements,
-      metric: notifMessage.metric || notifMessage.logElements.length,
-      additionalData: notifMessage.additionalData || {},
-      links: notifMessage.buttons || [],
-      title: logTitle,
-      bodyText: logBodyText,
-      _initialText: notifMessage.text,
-      _initialAttachments: notifMessage.attachments || [],
-    };
-  }
-
-  // Add source context infos
-  private async addPayloadContext() {
-    // Add SF org info
-    const conn: Connection = globalThis.jsForceConn || null;
-    if (conn && conn.instanceUrl) {
-      this.payload.instanceUrl = conn.instanceUrl;
-      this.payload.username = (await conn.identity())?.username || "";
-    }
-    // Add git info
-    const repoName = await getGitRepoName();
-    if (repoName) {
-      this.payload.gitRepoName = repoName;
-    }
-    const repoUrl = await getGitRepoUrl();
-    if (repoUrl) {
-      this.payload.gitRepoUrl = repoUrl;
-    }
+    // Build payload
+    const repoName = (await getGitRepoName()).replace(".git","");
     const currentGitBranch = await getCurrentGitBranch();
-    if (currentGitBranch) {
-      this.payload.gitBranch = currentGitBranch;
-    }
-    const branchUrl = await GitProvider.getCurrentBranchUrl();
-    if (branchUrl) {
-      this.payload.gitBranchUrl = branchUrl;
+    const conn: Connection = globalThis.jsForceConn
+    this.payload = {
+      source: "sfdx-hardis",
+      type: notifMessage.type,
+      orgIdentifier:  conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""),
+      gitIdentifier: `${repoName}/${currentGitBranch}`,
+      severity: notifMessage.severity,
+      data: Object.assign(notifMessage.data, {
+        _title: logTitle,
+        _logBodyText: logBodyText,
+        _logElements: notifMessage.logElements
+      })
+    };
+    // Add job url if available
+    const jobUrl = await GitProvider.getJobUrl();
+    if (jobUrl) {
+      this.payload.data._jobUrl = jobUrl;
     }
   }
 
@@ -132,42 +111,37 @@ export class ApiProvider extends NotifProviderRoot {
 
   private async formatPayloadLoki() {
     const currentTimeNanoseconds = Date.now() * 1000 * 1000;
+    const payloadCopy = Object.assign({}, this.payload);
+    delete payloadCopy.data;
     this.payloadFormatted = {
-      "streams": [
+      streams: [
         {
-          "stream": {
-            "source": this.payload.source,
-            "type": this.payload.type,
-            "severity": this.payload.severity,
-            "metric": this.payload.metric,
-            "instanceUrl": this.payload.instanceUrl || "unknown",
-            "username": this.payload.username || "unknown",
-            "gitRepoName": this.payload.gitRepoName || "unknown",
-            "gitRepoUrl": this.payload.gitRepoUrl || "unknown",
-            "gitBranch": this.payload.gitBranch || "unknown",
-          },
-          "values": [
-            [`${currentTimeNanoseconds}`, JSON.stringify(this.payload)]
-          ]
-        }]
-    }
+          stream: payloadCopy,
+          values: [
+            [
+              `${currentTimeNanoseconds}`,
+              JSON.stringify(this.payload.data)]
+          ],
+        },
+      ],
+    };
   }
 
   // Call remote API
   private async sendToApi() {
     const axiosConfig: AxiosRequestConfig = {
       responseType: "json",
-    }
+    };
     // Basic Auth
     if (getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME") != null) {
       axiosConfig.auth = {
         username: getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME"),
-        password: getEnvVar("NOTIF_API_BASIC_AUTH_PASSWORD")
-      }
+        password: getEnvVar("NOTIF_API_BASIC_AUTH_PASSWORD"),
+      };
     }
     // Bearer token
     else if (getEnvVar("NOTIF_API_BEARER_TOKEN") != null) {
-      axiosConfig.headers = { Authorization: `Bearer ${getEnvVar("NOTIF_API_BEARER_TOKEN")}` }
+      axiosConfig.headers = { Authorization: `Bearer ${getEnvVar("NOTIF_API_BEARER_TOKEN")}` };
     }
     // POST message
     try {
@@ -175,6 +149,9 @@ export class ApiProvider extends NotifProviderRoot {
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
         uxLog(this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
+        if (getEnvVar("NOTIF_API_DEBUG") === "true") {
+          uxLog(this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
+        }
       }
     } catch (e) {
       uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${e.message}`));
@@ -188,18 +165,7 @@ export interface ApiNotifMessage {
   source: string;
   type: string;
   severity: NotifSeverity;
-  links?: NotifButton[];
-  title: string;
-  bodyText: string;
-  logElements: any[];
-  metric: number,
-  additionalData?: any;
-  instanceUrl?: string;
-  username?: string;
-  gitRepoName?: string;
-  gitRepoUrl?: string;
-  gitBranch?: string;
-  gitBranchUrl?: string;
-  _initialText?: string;
-  _initialAttachments?: any[];
+  orgIdentifier: string;
+  gitIdentifier: string;
+  data: any
 }
