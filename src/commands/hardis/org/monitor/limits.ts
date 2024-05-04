@@ -54,8 +54,8 @@ export default class MonitorBackup extends SfdxCommand {
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
 
-  protected limitThresoldWarning = Number(getEnvVar("LIMIT_THRESOLD_WARNING") || 50.0);
-  protected limitThresoldError = Number(getEnvVar("LIMIT_THRESOLD_WARNING") || 75.0);
+  protected limitThresholdWarning = Number(getEnvVar("LIMIT_THRESHOLD_WARNING") || 50.0);
+  protected limitThresholdError = Number(getEnvVar("LIMIT_THRESHOLD_WARNING") || 75.0);
 
   protected limitEntries = [];
   protected outputFile;
@@ -80,7 +80,7 @@ export default class MonitorBackup extends SfdxCommand {
       .map((limit) => {
         limit.used = limit.max - limit.remaining;
         limit.percentUsed = ((100 / limit.max) * limit.used).toFixed(2);
-        limit.severity = limit.percentUsed > this.limitThresoldError ? "error" : limit.percentUsed > this.limitThresoldWarning ? "warning" : "info";
+        limit.severity = limit.percentUsed > this.limitThresholdError ? "error" : limit.percentUsed > this.limitThresholdWarning ? "warning" : "info";
         limit.label = limit.name.replace(/([A-Z])/g, " $1");
         return limit;
       });

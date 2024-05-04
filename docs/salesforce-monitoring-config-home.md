@@ -63,7 +63,7 @@ For a better user experience, it is highly recommended to configure notification
 - [Slack instructions](salesforce-ci-cd-setup-integration-slack.md)
 - [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md)
 - [Email instructions](salesforce-ci-cd-setup-integration-email.md)
-- [API (ex Grafana) instructions](salesforce-ci-cd-setup-integration-api.md)
+- [API (Beta) instructions](salesforce-ci-cd-setup-integration-api.md) (example: for Grafana Loki integration)
 
 You can decide to run  commands but not send some notifications by defining either a **notificationsDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **NOTIFICATIONS_DISABLE**
 

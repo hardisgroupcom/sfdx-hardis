@@ -32,7 +32,7 @@ export class EmailProvider extends NotifProviderRoot {
     if (warningsErrorsEmail && ["critical", "error", "warning"].includes(notifMessage.severity || null)) {
       emailAddresses.push(...warningsErrorsEmail.split(","));
     }
-
+    /* jscpd:ignore-start */
     // Main block
     const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
       UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
@@ -53,6 +53,7 @@ export class EmailProvider extends NotifProviderRoot {
         emailBody += UtilsNotifs.slackToTeamsMarkdown(text) + "\n\n";
       }
     }
+    /* jscpd:ignore-end */
 
     // Add action blocks
     if (notifMessage.buttons?.length > 0) {

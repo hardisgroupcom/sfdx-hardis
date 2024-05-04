@@ -32,7 +32,7 @@ export class ApiProvider extends NotifProviderRoot {
       throw new SfdxError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");
     }
     // Build initial payload data from notifMessage
-    await this.buildPlayload(notifMessage);
+    await this.buildPayload(notifMessage);
     // Format payload according to API endpoint: for example, Grafana loki
     await this.formatPayload();
     // Send notif
@@ -41,7 +41,7 @@ export class ApiProvider extends NotifProviderRoot {
   }
 
   // Build message
-  private async buildPlayload(notifMessage: NotifMessage) {
+  private async buildPayload(notifMessage: NotifMessage) {
     const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
       UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
       notifMessage.severity

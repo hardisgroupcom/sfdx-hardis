@@ -222,7 +222,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       // Developer tried to cheat in config ^^
       if (minCoverageTestRun < 75.0) {
         this.notifSeverity = "error";
-        this.statusMessage = `Don't try to cheat with configuration: Minimum tesr run coverage must be 75% ;)`;
+        this.statusMessage = `Don't try to cheat with configuration: Minimum test run coverage must be 75% ;)`;
         this.notifText = this.statusMessage;
       }
       // Min coverage not reached
