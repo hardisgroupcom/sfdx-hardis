@@ -130,9 +130,11 @@ See article below
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
       uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
-      return { status: 0 };
     }
-    uxLog(this, c.grey("Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
+    else {
+      uxLog(this, c.grey("Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
+    }
+
     if (logCountRes.totalSize > limit) {
       uxLog(this, c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`));
     }
