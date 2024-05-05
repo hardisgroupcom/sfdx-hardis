@@ -4,9 +4,9 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as sortArray from "sort-array";
-import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
+import {  uxLog } from "../../../../common/utils";
 import * as dns from "dns";
-import { canSendNotifications, getNotificationButtons, getOrgMarkdown, getSeverityIcon, sendNotification } from "../../../../common/utils/notifUtils";
+import {  getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { WebSocketClient } from "../../../../common/websocketClient";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
@@ -245,16 +245,6 @@ See article to solve issue before it's too late:
         legacyApiSummary: this.ipResultsSorted,
       },
     });
-
-    // Send notification if possible
-    if (isCI && this.allErrors.length > 0 && (await canSendNotifications())) {
-      const currentGitBranch = await getCurrentGitBranch();
-      await sendNotification({
-        title: `WARNING: Deprecated Salesforce API versions are used in ${currentGitBranch}`,
-        text: notifDetailText,
-        severity: "critical",
-      });
-    }
 
     if ((this.argv || []).includes("legacyapi")) {
       process.exitCode = statusCode;
