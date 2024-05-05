@@ -195,7 +195,7 @@ export default class UnusedMetadatas extends SfdxCommand {
       return {
         name: name,
         severity: "info",
-        seveirtyIcon: severityIconInfo
+        severityIcon: severityIconInfo
       }
     });
     return result;
