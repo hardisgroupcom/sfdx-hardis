@@ -14,7 +14,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "../../../common/utils";
 import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
-import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
+import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 
@@ -76,7 +76,7 @@ export default class metadatastatus extends SfdxCommand {
       await this.buildCsvFile(this.fieldsWithoutDescription);
       attachments = [
         {
-          text: `*Missing descriptions*\n${this.fieldsWithoutDescription.map((file) => `• ${file}`).join("\n")}`,
+          text: `*Missing descriptions*\n${this.fieldsWithoutDescription.map((file) => `• ${file.name}`).join("\n")}`,
         },
       ];
     } else {
@@ -127,14 +127,14 @@ export default class metadatastatus extends SfdxCommand {
   }
 
   private async verifyFieldDescriptions(): Promise<string[]> {
-    const fieldsWithoutDescription: string[] = [];
+    const fieldsWithoutDescription: any[] = [];
     const fieldResults = await Promise.all(
       this.nonCustomSettingsFieldDirectories.map(async (fieldFile) => {
         const fieldContent = await this.readFileAsync(fieldFile);
         return await this.parseXmlStringAsync(fieldContent);
       }),
     );
-
+    const severityIconInfo = getSeverityIcon("info")
     for (let i = 0; i < fieldResults.length; i++) {
       const fieldResult = fieldResults[i];
       if (fieldResult && fieldResult.CustomField) {
@@ -143,7 +143,13 @@ export default class metadatastatus extends SfdxCommand {
           const fieldFile = this.nonCustomSettingsFieldDirectories[i];
           const objectName = fieldFile.split("/").slice(-3, -2)[0];
           const fullFieldName = `${objectName}.${fieldName}`;
-          fieldsWithoutDescription.push(fullFieldName);
+          fieldsWithoutDescription.push({
+            name: fullFieldName,
+            object: objectName,
+            field: fieldName,
+            severity: "info",
+            severityIcon: severityIconInfo
+          });
         }
       }
     }

@@ -21,7 +21,7 @@ import { Parser } from "xml2js";
 
 // Config
 import { getConfig } from "../../../config";
-import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
+import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -332,9 +332,10 @@ export default class Access extends SfdxCommand {
       //list remaining elements after checking on profiles and permissions sets
       this.missingElementsMap = Object.assign({}, remainingElements);
       this.missingElements = [];
+      const severityIcon = getSeverityIcon("warning");
       for (const missingType of Object.keys(this.missingElementsMap)) {
         for (const missingItem of this.missingElementsMap[missingType]) {
-          this.missingElements.push({ type: missingType, element: missingItem });
+          this.missingElements.push({ type: missingType, element: missingItem, severity: "warning", severityIcon: severityIcon });
         }
       }
       remainingElements = this.constructLogAndDisplayTable(remainingElements);

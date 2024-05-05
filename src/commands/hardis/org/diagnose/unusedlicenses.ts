@@ -7,7 +7,7 @@ import { isCI, uxLog } from "../../../../common/utils";
 import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from "../../../../common/utils/apiUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
@@ -115,6 +115,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     this.allPermissionSetAssignments = this.permissionSetGroupAssignments.concat(this.permissionSetAssignments);
 
     // Browse Permission Sets License assignments
+    const severityIconWarning = getSeverityIcon("warning");
     for (const psla of this.permissionSetLicenseAssignmentsActive) {
       const pslaUsername = psla["Assignee.Username"];
       // Find related Permission Set assignments
@@ -149,6 +150,8 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
           PermissionsSetLicense: psla["PermissionSetLicense.MasterLabel"],
           User: psla["Assignee.Username"],
           Reason: "Related PS assignment not found",
+          severity: "warning",
+          severityIcon: severityIconWarning
         });
       }
     }

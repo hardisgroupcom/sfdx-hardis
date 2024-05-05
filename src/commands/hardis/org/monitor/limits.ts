@@ -7,7 +7,7 @@ import { execSfdxJson, uxLog } from "../../../../common/utils";
 import { getEnvVar } from "../../../../config";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { MessageAttachment } from "@slack/web-api";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 
 // Initialize Messages with the current plugin directory
@@ -81,6 +81,7 @@ export default class MonitorBackup extends SfdxCommand {
         limit.used = limit.max - limit.remaining;
         limit.percentUsed = ((100 / limit.max) * limit.used).toFixed(2);
         limit.severity = limit.percentUsed > this.limitThresholdError ? "error" : limit.percentUsed > this.limitThresholdWarning ? "warning" : "info";
+        limit.severityIcon = getSeverityIcon(limit.severity);
         limit.label = limit.name.replace(/([A-Z])/g, " $1");
         return limit;
       });

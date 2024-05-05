@@ -13,7 +13,7 @@ import { AnyJson } from "@salesforce/ts-types";
 // Project Specific Utilities
 import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
-import { getNotificationButtons, getBranchMarkdown } from "../../../common/utils/notifUtils";
+import { getNotificationButtons, getBranchMarkdown, getSeverityIcon } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { uxLog } from "../../../common/utils";
 import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
@@ -75,12 +75,12 @@ export default class UnusedMetadatas extends SfdxCommand {
     const attachments: MessageAttachment[] = [];
     if (unusedLabels.length > 0) {
       attachments.push({
-        text: `*Unused Labels*\n${unusedLabels.map((label) => `• ${label}`).join("\n")}`,
+        text: `*Unused Labels*\n${unusedLabels.map((label) => `• ${label.name}`).join("\n")}`,
       });
     }
     if (unusedCustomPermissions.length > 0) {
       attachments.push({
-        text: `*Unused Custom Permissions*\n${unusedCustomPermissions.map((permission) => `• ${permission}`).join("\n")}`,
+        text: `*Unused Custom Permissions*\n${unusedCustomPermissions.map((permission) => `• ${permission.name}`).join("\n")}`,
       });
     }
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
@@ -110,7 +110,7 @@ export default class UnusedMetadatas extends SfdxCommand {
    * @description Verify if custom labels are used in the project
    * @returns
    */
-  private async verifyLabels(): Promise<string[]> {
+  private async verifyLabels(): Promise<any[]> {
     const labelFiles = await glob(this.labelFilePattern, { ignore: this.ignorePatterns });
     const labelFilePath = labelFiles[0];
 
@@ -131,9 +131,9 @@ export default class UnusedMetadatas extends SfdxCommand {
             reject(errorParseString);
             return;
           }
-
+          const severityIconInfo = getSeverityIcon("info");
           const labelsArray: string[] = result.CustomLabels.labels.map((label: any) => label.fullName[0]);
-          const unusedLabels: string[] = labelsArray.filter((label) => {
+          const unusedLabels: any[] = labelsArray.filter((label) => {
             const labelLower = `label.${label.toLowerCase()}`;
             const cLower = `c.${label.toLowerCase()}`;
             const auraPattern = `{!$Label.c.${label.toLowerCase()}}`;
@@ -141,6 +141,12 @@ export default class UnusedMetadatas extends SfdxCommand {
               const fileContent = fs.readFileSync(filePath, "utf-8").toLowerCase();
               return fileContent.includes(labelLower) || fileContent.includes(cLower) || fileContent.includes(auraPattern);
             });
+          }).map(label => {
+            return {
+              name: label,
+              severity: "info",
+              severityIcon: severityIconInfo
+            }
           });
 
           resolve(unusedLabels);
@@ -153,7 +159,7 @@ export default class UnusedMetadatas extends SfdxCommand {
    * @description Verify if custom permissions are used in the project
    * @returns
    */
-  private async verifyCustomPermissions(): Promise<string[]> {
+  private async verifyCustomPermissions(): Promise<any[]> {
     const foundLabels = new Map<string, number>();
     const customPermissionFiles: string[] = await glob(this.customPermissionFilePattern, { ignore: this.ignorePatterns });
 
@@ -174,7 +180,6 @@ export default class UnusedMetadatas extends SfdxCommand {
         }
         label = result.CustomPermission.label[0];
       });
-
       for (const filePath of this.projectFiles) {
         const fileContent: string = fs.readFileSync(filePath, "utf-8");
         if (fileContent.includes(fileName) || fileContent.includes(label)) {
@@ -183,8 +188,17 @@ export default class UnusedMetadatas extends SfdxCommand {
         }
       }
     }
-
-    return [...foundLabels.keys()].filter((key) => (foundLabels.get(key) || 0) < 2);
+    const severityIconInfo = getSeverityIcon("info");
+    const result = [...foundLabels.keys()]
+    .filter((key) => (foundLabels.get(key) || 0) < 2)
+    .map(name => {
+      return {
+        name: name,
+        severity: "info",
+        seveirtyIcon: severityIconInfo
+      }
+    });
+    return result;
   }
 
   private async setProjectFiles(): Promise<void> {

@@ -8,7 +8,7 @@ import * as c from "chalk";
 import { IncomingWebhook } from "ms-teams-webhook";
 import { getConfig } from "../../config";
 import { GitProvider } from "../gitProvider";
-import { UtilsNotifs } from "../notifProvider";
+import { NotifSeverity, UtilsNotifs } from "../notifProvider";
 
 // Check if current process can send notifications
 export async function canSendNotifications(): Promise<boolean> {
@@ -293,4 +293,16 @@ export function removeMarkdown(
     return markdown;
   }
   return output;
+}
+
+export function getSeverityIcon(severity: NotifSeverity) {
+  const severityIcons = {
+    critical: "⛔",
+    error: "❌",
+    warning: "⚠️",
+    info: "📄",
+    success: "✅",
+    log: "📰"
+  };
+  return severityIcons[severity] || "❔";
 }
