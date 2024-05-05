@@ -11,7 +11,7 @@ import { MetadataUtils } from "../../../../common/metadata-utils";
 import { CONSTANTS } from "../../../../config";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { MessageAttachment } from "@slack/web-api";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 import { parsePackageXmlFile, writePackageXmlFile } from "../../../../common/utils/xmlUtils";
 
@@ -171,6 +171,7 @@ You can remove more metadata types from backup, especially in case you have too 
 
     // Write output file
     if (this.diffFiles.length > 0) {
+      const severityIconLog = getSeverityIcon("log");
       this.outputFile = await generateReportPath("backup-updated-files", this.outputFile);
       this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
         return {
@@ -178,6 +179,8 @@ You can remove more metadata types from backup, especially in case you have too 
           ChangeType: diffFile.index === "?" ? "A" : diffFile.index,
           WorkingDir: diffFile.working_dir === "?" ? "" : diffFile.working_dir,
           PrevName: diffFile?.from || "",
+          severity: "log",
+          severityIcon: severityIconLog,
         };
       });
       this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile);

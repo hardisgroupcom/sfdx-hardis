@@ -4,9 +4,9 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as sortArray from "sort-array";
-import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils";
 import * as dns from "dns";
-import { canSendNotifications, getNotificationButtons, getOrgMarkdown, sendNotification } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { WebSocketClient } from "../../../../common/websocketClient";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
@@ -130,9 +130,10 @@ See article below
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
       uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
-      return { status: 0 };
+    } else {
+      uxLog(this, c.grey("Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
     }
-    uxLog(this, c.grey("Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
+
     if (logCountRes.totalSize > limit) {
       uxLog(this, c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`));
     }
@@ -246,16 +247,6 @@ See article to solve issue before it's too late:
       },
     });
 
-    // Send notification if possible
-    if (isCI && this.allErrors.length > 0 && (await canSendNotifications())) {
-      const currentGitBranch = await getCurrentGitBranch();
-      await sendNotification({
-        title: `WARNING: Deprecated Salesforce API versions are used in ${currentGitBranch}`,
-        text: notifDetailText,
-        severity: "critical",
-      });
-    }
-
     if ((this.argv || []).includes("legacyapi")) {
       process.exitCode = statusCode;
     }
@@ -278,6 +269,9 @@ See article to solve issue before it's too late:
     const soonDeprecatedApiCalls = [];
     const endOfSupportApiCalls = [];
     const logEntries = await conn.request(logFileUrl);
+    const severityIconError = getSeverityIcon("error");
+    const severityIconWarning = getSeverityIcon("warning");
+    const severityIconInfo = getSeverityIcon("info");
     for (const logEntry of logEntries) {
       const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : parseFloat("999.0");
       // const apiType = logEntry.API_TYPE || null ;
@@ -292,11 +286,17 @@ See article to solve issue before it's too late:
           logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease;
           logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
           if (legacyApiDescriptor.severity === "ERROR") {
+            logEntry.severity = "error";
+            logEntry.severityIcon = severityIconError;
             deadApiCalls.push(logEntry);
           } else if (legacyApiDescriptor.severity === "WARNING") {
+            logEntry.severity = "warning";
+            logEntry.severityIcon = severityIconWarning;
             soonDeprecatedApiCalls.push(logEntry);
           } else {
             // severity === 'INFO'
+            logEntry.severity = "info";
+            logEntry.severityIcon = severityIconInfo;
             endOfSupportApiCalls.push(logEntry);
           }
           break;

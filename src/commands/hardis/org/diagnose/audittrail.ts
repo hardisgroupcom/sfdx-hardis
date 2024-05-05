@@ -9,7 +9,7 @@ import { getConfig } from "../../../../config";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { prompts } from "../../../../common/utils/prompts";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -287,9 +287,13 @@ monitoringAllowedSectionsActions:
     const suspectRecords = [];
     let suspectUsers = [];
     const suspectActions = [];
+    const severityIconLog = getSeverityIcon("log");
+    const severityIconWarning = getSeverityIcon("warning");
     this.auditTrailRecords = queryRes.records.map((record) => {
       const section = record?.Section || "";
       record.Suspect = false;
+      record.severity = "log";
+      record.severityIcon = severityIconLog;
       // Unallowed actions
       if (
         (this.allowedSectionsActions[section] && !this.allowedSectionsActions[section].includes(record.Action)) ||
@@ -297,6 +301,8 @@ monitoringAllowedSectionsActions:
       ) {
         record.Suspect = true;
         record.SuspectReason = `Manual config in unallowed section ${section} with action ${record.Action}`;
+        record.severity = "warning";
+        record.severityIcon = severityIconWarning;
         suspectRecords.push(record);
         suspectUsers.push(record["CreatedBy.Username"] + " - " + record["CreatedBy.Name"]);
         suspectActions.push(`${section} - ${record.Action}`);

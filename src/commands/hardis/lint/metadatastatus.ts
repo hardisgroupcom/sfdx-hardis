@@ -13,7 +13,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "../../../common/utils";
 import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
-import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
+import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 
@@ -73,12 +73,12 @@ export default class metadatastatus extends SfdxCommand {
       notifSeverity = "warning";
       if (draftFlows.length > 0) {
         attachments.push({
-          text: `*Inactive Flows*\n${draftFlows.map((file) => `• ${file}`).join("\n")}`,
+          text: `*Inactive Flows*\n${draftFlows.map((file) => `• ${file.name}`).join("\n")}`,
         });
       }
       if (inactiveValidationRules.length > 0) {
         attachments.push({
-          text: `*Inactive Validation Rules*\n${inactiveValidationRules.map((file) => `• ${file}`).join("\n")}`,
+          text: `*Inactive Validation Rules*\n${inactiveValidationRules.map((file) => `• ${file.name}`).join("\n")}`,
         });
       }
       const numberInactive = draftFlows.length + inactiveValidationRules.length;
@@ -111,14 +111,15 @@ export default class metadatastatus extends SfdxCommand {
    *
    * @returns {Promise<string[]>} - A Promise that resolves to an array of draft files. Each entry in the array is the name of a draft file.
    */
-  private async verifyFlows(): Promise<string[]> {
-    const draftFiles: string[] = [];
+  private async verifyFlows(): Promise<any[]> {
+    const draftFiles: any[] = [];
     const flowFiles: string[] = await glob(this.flowFilePattern, { ignore: this.ignorePatterns });
+    const severityIcon = getSeverityIcon("warning");
     for (const file of flowFiles) {
       const flowContent: string = await fs.readFile(file, "utf-8");
       if (flowContent.includes("<status>Draft</status>")) {
         const fileName = path.basename(file, ".flow-meta.xml");
-        draftFiles.push(fileName);
+        draftFiles.push({ type: "Draft Flow", name: fileName, severity: "warning", severityIcon: severityIcon });
       }
     }
 
@@ -132,16 +133,16 @@ export default class metadatastatus extends SfdxCommand {
    *
    * @returns {Promise<string[]>} - A Promise that resolves to an array of inactive rules. Each entry in the array is a string in the format 'ObjectName - RuleName'.
    */
-  private async verifyValidationRules(): Promise<string[]> {
-    const inactiveRules: string[] = [];
+  private async verifyValidationRules(): Promise<any[]> {
+    const inactiveRules: any[] = [];
     const validationRuleFiles: string[] = await glob(this.validationRuleFilePattern, { ignore: this.ignorePatterns });
-
+    const severityIcon = getSeverityIcon("warning");
     for (const file of validationRuleFiles) {
       const ruleContent: string = await fs.readFile(file, "utf-8");
       if (ruleContent.includes("<active>false</active>")) {
         const ruleName = path.basename(file, ".validationRule-meta.xml");
         const objectName = path.basename(path.dirname(path.dirname(file)));
-        inactiveRules.push(`${objectName} - ${ruleName}`);
+        inactiveRules.push({ type: "Inactive VR", name: `${objectName} - ${ruleName}`, severity: "warning", severityIcon: severityIcon });
       }
     }
 
@@ -160,11 +161,7 @@ export default class metadatastatus extends SfdxCommand {
    */
   private async buildCsvFile(draftFlows: string[], inactiveValidationRules: string[]): Promise<void> {
     this.outputFile = await generateReportPath("lint-metadatastatus", this.outputFile);
-
-    this.inactiveItems = [
-      ...draftFlows.map((file) => ({ type: "Draft Flow", name: file })),
-      ...inactiveValidationRules.map((rule) => ({ type: "Inactive VR", name: rule })),
-    ];
+    this.inactiveItems = [...draftFlows, ...inactiveValidationRules];
 
     this.outputFilesRes = await generateCsvFile(this.inactiveItems, this.outputFile);
   }

@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.33.1] 2024-05-05
+
+- Api logs enhancements:
+  - Add severity and severityIcon in all log elements details
+  - Add dateTime property (ISO format) in all API logs
+- Remove deprecated way to call MsTeams notifications
+- hardis:org:monitor:limits : Fix bug when some values are not returned
+
 ## [4.33.0] 2024-05-04
 
 - New notifications provider: **ApiProvider (beta)**, that allows to send notifications via HTTP/JSON to remote endpoints, like Grafana Loki, but also any custom one

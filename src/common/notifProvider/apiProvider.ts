@@ -5,7 +5,7 @@ import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils";
 import { NotifMessage, NotifSeverity, UtilsNotifs } from ".";
 import { getEnvVar } from "../../config";
 
-import { removeMarkdown } from "../utils/notifUtils";
+import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils";
 import { Connection } from "jsforce";
 import { GitProvider } from "../gitProvider";
 import axios, { AxiosRequestConfig } from "axios";
@@ -89,6 +89,8 @@ export class ApiProvider extends NotifProviderRoot {
       gitIdentifier: `${repoName}/${currentGitBranch}`,
       severity: notifMessage.severity,
       data: Object.assign(notifMessage.data, {
+        _dateTime: new Date().toISOString(),
+        _severityIcon: getSeverityIcon(notifMessage.severity),
         _title: logTitle,
         _logBodyText: logBodyText,
         _logElements: notifMessage.logElements,

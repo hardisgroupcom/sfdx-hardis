@@ -7,7 +7,7 @@ import { execSfdxJson, uxLog } from "../../../../common/utils";
 import { getEnvVar } from "../../../../config";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { MessageAttachment } from "@slack/web-api";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 
 // Initialize Messages with the current plugin directory
@@ -79,8 +79,14 @@ export default class MonitorBackup extends SfdxCommand {
       .filter((limit) => limit?.max > 0)
       .map((limit) => {
         limit.used = limit.max - limit.remaining;
-        limit.percentUsed = ((100 / limit.max) * limit.used).toFixed(2);
-        limit.severity = limit.percentUsed > this.limitThresholdError ? "error" : limit.percentUsed > this.limitThresholdWarning ? "warning" : "info";
+        if (limit.max && limit.max > 0) {
+          limit.percentUsed = parseFloat(((100 / limit.max) * limit.used).toFixed(2));
+        } else {
+          limit.percentUsed = 0.0;
+        }
+        limit.severity =
+          limit.percentUsed > this.limitThresholdError ? "error" : limit.percentUsed > this.limitThresholdWarning ? "warning" : "success";
+        limit.severityIcon = getSeverityIcon(limit.severity);
         limit.label = limit.name.replace(/([A-Z])/g, " $1");
         return limit;
       });
@@ -107,7 +113,9 @@ export default class MonitorBackup extends SfdxCommand {
       notifSeverity = "error";
       notifText = `Limit severe alerts have been detected in ${orgMarkdown} (error: ${numberLimitsError}, warning: ${numberLimitsWarning})`;
       const errorText = `*Error Limits*\n${limitsError
-        .map((limit) => `• ${limit.name}: ${limit.percentUsed.toFixed(2)}% used (${limit.used}/${limit.max})`)
+        .map((limit) => {
+          return `• ${limit.name}: ${limit.percentUsed}% used (${limit.used}/${limit.max})`;
+        })
         .join("\n")}`;
       notifAttachments.push({
         text: errorText,
@@ -120,7 +128,9 @@ export default class MonitorBackup extends SfdxCommand {
       notifSeverity = "warning";
       notifText = `Limit warning alerts have been detected in ${orgMarkdown} (${numberLimitsWarning})`;
       const warningText = `*Warning Limits*\n${limitsWarning
-        .map((limit) => `• ${limit.name}: ${limit.percentUsed.toFixed(2)}% used (${limit.used}/${limit.max})`)
+        .map((limit) => {
+          return `• ${limit.name}: ${limit.percentUsed}% used (${limit.used}/${limit.max})`;
+        })
         .join("\n")}`;
       notifAttachments.push({
         text: warningText,
