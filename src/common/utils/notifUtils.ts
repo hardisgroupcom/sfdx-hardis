@@ -7,7 +7,6 @@ import { getCurrentGitBranch } from ".";
 import { GitProvider } from "../gitProvider";
 import { NotifSeverity, UtilsNotifs } from "../notifProvider";
 
-
 /**
  * @description This function retrieves the job URL from the GitProvider and creates a notification button if the job URL exists.
  * The notification button is an object with a 'text' property set to "View Job" and a 'url' property set to the job URL.
@@ -169,7 +168,7 @@ export function getSeverityIcon(severity: NotifSeverity) {
     warning: "⚠️",
     info: "📄",
     success: "✅",
-    log: "📰"
+    log: "📰",
   };
   return severityIcons[severity] || "❔";
 }

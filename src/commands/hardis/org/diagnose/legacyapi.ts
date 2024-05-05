@@ -4,9 +4,9 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as sortArray from "sort-array";
-import {  uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils";
 import * as dns from "dns";
-import {  getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { WebSocketClient } from "../../../../common/websocketClient";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
@@ -130,8 +130,7 @@ See article below
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
       uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
-    }
-    else {
+    } else {
       uxLog(this, c.grey("Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
     }
 

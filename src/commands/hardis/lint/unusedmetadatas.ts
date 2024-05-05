@@ -133,21 +133,23 @@ export default class UnusedMetadatas extends SfdxCommand {
           }
           const severityIconInfo = getSeverityIcon("info");
           const labelsArray: string[] = result.CustomLabels.labels.map((label: any) => label.fullName[0]);
-          const unusedLabels: any[] = labelsArray.filter((label) => {
-            const labelLower = `label.${label.toLowerCase()}`;
-            const cLower = `c.${label.toLowerCase()}`;
-            const auraPattern = `{!$Label.c.${label.toLowerCase()}}`;
-            return !this.projectFiles.some((filePath) => {
-              const fileContent = fs.readFileSync(filePath, "utf-8").toLowerCase();
-              return fileContent.includes(labelLower) || fileContent.includes(cLower) || fileContent.includes(auraPattern);
+          const unusedLabels: any[] = labelsArray
+            .filter((label) => {
+              const labelLower = `label.${label.toLowerCase()}`;
+              const cLower = `c.${label.toLowerCase()}`;
+              const auraPattern = `{!$Label.c.${label.toLowerCase()}}`;
+              return !this.projectFiles.some((filePath) => {
+                const fileContent = fs.readFileSync(filePath, "utf-8").toLowerCase();
+                return fileContent.includes(labelLower) || fileContent.includes(cLower) || fileContent.includes(auraPattern);
+              });
+            })
+            .map((label) => {
+              return {
+                name: label,
+                severity: "info",
+                severityIcon: severityIconInfo,
+              };
             });
-          }).map(label => {
-            return {
-              name: label,
-              severity: "info",
-              severityIcon: severityIconInfo
-            }
-          });
 
           resolve(unusedLabels);
         });
@@ -190,14 +192,14 @@ export default class UnusedMetadatas extends SfdxCommand {
     }
     const severityIconInfo = getSeverityIcon("info");
     const result = [...foundLabels.keys()]
-    .filter((key) => (foundLabels.get(key) || 0) < 2)
-    .map(name => {
-      return {
-        name: name,
-        severity: "info",
-        severityIcon: severityIconInfo
-      }
-    });
+      .filter((key) => (foundLabels.get(key) || 0) < 2)
+      .map((name) => {
+        return {
+          name: name,
+          severity: "info",
+          severityIcon: severityIconInfo,
+        };
+      });
     return result;
   }
 

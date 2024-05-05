@@ -167,4 +167,3 @@ export interface ApiNotifMessage {
   gitIdentifier: string;
   data: any;
 }
-

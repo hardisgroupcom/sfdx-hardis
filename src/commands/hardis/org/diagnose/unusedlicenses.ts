@@ -151,7 +151,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
           User: psla["Assignee.Username"],
           Reason: "Related PS assignment not found",
           severity: "warning",
-          severityIcon: severityIconWarning
+          severityIcon: severityIconWarning,
         });
       }
     }

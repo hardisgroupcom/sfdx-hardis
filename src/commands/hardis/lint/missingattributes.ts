@@ -134,7 +134,7 @@ export default class metadatastatus extends SfdxCommand {
         return await this.parseXmlStringAsync(fieldContent);
       }),
     );
-    const severityIconInfo = getSeverityIcon("info")
+    const severityIconInfo = getSeverityIcon("info");
     for (let i = 0; i < fieldResults.length; i++) {
       const fieldResult = fieldResults[i];
       if (fieldResult && fieldResult.CustomField) {
@@ -148,7 +148,7 @@ export default class metadatastatus extends SfdxCommand {
             object: objectName,
             field: fieldName,
             severity: "info",
-            severityIcon: severityIconInfo
+            severityIcon: severityIconInfo,
           });
         }
       }

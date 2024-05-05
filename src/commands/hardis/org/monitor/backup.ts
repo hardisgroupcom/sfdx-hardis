@@ -180,7 +180,7 @@ You can remove more metadata types from backup, especially in case you have too 
           WorkingDir: diffFile.working_dir === "?" ? "" : diffFile.working_dir,
           PrevName: diffFile?.from || "",
           severity: "log",
-          severityIcon: severityIconLog
+          severityIcon: severityIconLog,
         };
       });
       this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile);

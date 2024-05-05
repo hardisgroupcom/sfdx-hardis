@@ -292,7 +292,7 @@ monitoringAllowedSectionsActions:
     this.auditTrailRecords = queryRes.records.map((record) => {
       const section = record?.Section || "";
       record.Suspect = false;
-      record.severity = 'log';
+      record.severity = "log";
       record.severityIcon = severityIconLog;
       // Unallowed actions
       if (
@@ -301,7 +301,7 @@ monitoringAllowedSectionsActions:
       ) {
         record.Suspect = true;
         record.SuspectReason = `Manual config in unallowed section ${section} with action ${record.Action}`;
-        record.severity = 'warning';
+        record.severity = "warning";
         record.severityIcon = severityIconWarning;
         suspectRecords.push(record);
         suspectUsers.push(record["CreatedBy.Username"] + " - " + record["CreatedBy.Name"]);
