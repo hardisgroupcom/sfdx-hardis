@@ -15,9 +15,9 @@
     
     <title>sfdx-hardis configuration</title>
 </head>
-<body onload="anchorOnLoad();" id="root"><h1>sfdx-hardis configuration</h1>
+<body onload="anchorOnLoad();" id="root">
 
-    <div class="breadcrumbs"></div><span class="badge badge-dark value-type">Type: object</span><br/>
+    <div class="breadcrumbs"></div> <h1>sfdx-hardis configuration</h1><span class="badge badge-dark value-type">Type: object</span><br/>
 <span class="description"><p>Configuration file definition for sfdx-hardis Salesforce DX plugin</p>
 </span> <span class="badge badge-info no-additional">No Additional Properties</span>
         
@@ -47,7 +47,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#allowedOrgTypes" onclick="anchorLink('allowedOrgTypes')">allowedOrgTypes</a></div><span class="badge badge-dark value-type">Type: array of enum (of string)</span><br/>
+    <a href="#allowedOrgTypes" onclick="anchorLink('allowedOrgTypes')">allowedOrgTypes</a></div><h4>Allowed org types</h4><span class="badge badge-dark value-type">Type: array of enum (of string)</span><br/>
 <span class="description"><p>Types of orgs allowed for config &amp; development. If not set, sandbox and scratch are allowed by default</p>
 </span>
         
@@ -55,7 +55,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="allowedOrgTypes_items">
             
@@ -118,7 +118,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#autoCleanTypes" onclick="anchorLink('autoCleanTypes')">autoCleanTypes</a></div><span class="badge badge-dark value-type">Type: array of enum (of string)</span><br/>
+    <a href="#autoCleanTypes" onclick="anchorLink('autoCleanTypes')">autoCleanTypes</a></div><h4>Auto-Cleaning types</h4><span class="badge badge-dark value-type">Type: array of enum (of string)</span><br/>
 <span class="description"><p>When saving a sfdx-hardis task, the list of cleanings will be automatically applied to sfdx sources</p>
 </span>
         
@@ -126,7 +126,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="autoCleanTypes_items">
             
@@ -191,7 +191,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#autoRemoveUserPermissions" onclick="anchorLink('autoRemoveUserPermissions')">autoRemoveUserPermissions</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#autoRemoveUserPermissions" onclick="anchorLink('autoRemoveUserPermissions')">autoRemoveUserPermissions</a></div><h4>Auto-Remove User Permissions on profiles</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>When saving a sfdx-hardis task, these permissions will be removed from profiles</p>
 </span>
         
@@ -199,7 +199,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="autoRemoveUserPermissions_items">
             
@@ -261,7 +261,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#autoRetrieveWhenPull" onclick="anchorLink('autoRetrieveWhenPull')">autoRetrieveWhenPull</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#autoRetrieveWhenPull" onclick="anchorLink('autoRetrieveWhenPull')">autoRetrieveWhenPull</a></div><h4>Auto-Retrieve when pull</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>When calling hardis:scratch:pull, if you define metadatas (named or not), they will also be retrieved using force:source:retrieve</p>
 </span>
         
@@ -269,7 +269,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="autoRetrieveWhenPull_items">
             
@@ -334,7 +334,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#apexTestsMinCoverageOrgWide" onclick="anchorLink('apexTestsMinCoverageOrgWide')">apexTestsMinCoverageOrgWide</a></div><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 75.0</span><br/>
+    <a href="#apexTestsMinCoverageOrgWide" onclick="anchorLink('apexTestsMinCoverageOrgWide')">apexTestsMinCoverageOrgWide</a></div><h4>Minimum apex test coverage %</h4><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 75.0</span><br/>
 <span class="description"><p>Minimum percentage of apex code coverage accepted</p>
 </span>
         
@@ -374,7 +374,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#availableProjects" onclick="anchorLink('availableProjects')">availableProjects</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#availableProjects" onclick="anchorLink('availableProjects')">availableProjects</a></div><h4>Available projects</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>List of business projects that are managed in the same repository. Will be used to build git branch name when using hardis:work:new</p>
 </span>
         
@@ -382,7 +382,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="availableProjects_items">
             
@@ -444,7 +444,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#availableTargetBranches" onclick="anchorLink('availableTargetBranches')">availableTargetBranches</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#availableTargetBranches" onclick="anchorLink('availableTargetBranches')">availableTargetBranches</a></div><h4>Available target branches</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>List of git branches that can be used as target for merge requests</p>
 </span>
         
@@ -452,7 +452,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="availableTargetBranches_items">
             
@@ -513,7 +513,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#branchPrefixChoices" onclick="anchorLink('branchPrefixChoices')">branchPrefixChoices</a></div><span class="badge badge-dark value-type">Type: array</span> <span class="badge badge-success default-value">Default: [{"title": "Feature", "value": "feat", "description": "New feature, evolution of an existing feature... If you don't know, just select Feature"}, {"title": "Debug", "value": "fix", "description": "A bug has been identified and you are the right person to solve it !"}]</span><br/>
+    <a href="#branchPrefixChoices" onclick="anchorLink('branchPrefixChoices')">branchPrefixChoices</a></div><h4>New branches prefixes choices</h4><span class="badge badge-dark value-type">Type: array</span> <span class="badge badge-success default-value">Default: [{"title": "Feature", "value": "feat", "description": "New feature, evolution of an existing feature... If you don't know, just select Feature"}, {"title": "Debug", "value": "fix", "description": "A bug has been identified and you are the right person to solve it !"}]</span><br/>
 <span class="description"><p>When calling hardis:work:new, you can override the default branch prefixes. Input title, value and description for each of them</p>
 </span>
         
@@ -521,7 +521,7 @@
         
         
 
-        <br/>
+         <span class="badge badge-info no-additional">No Additional Items</span><br/>
 <div class="badge badge-secondary">Example:</div>
 <br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#branchPrefixChoices_ex1" aria-controls="branchPrefixChoices_ex1"></button><div id="branchPrefixChoices_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
@@ -562,7 +562,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#cleanXmlPatterns" onclick="anchorLink('cleanXmlPatterns')">cleanXmlPatterns</a></div><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#cleanXmlPatterns" onclick="anchorLink('cleanXmlPatterns')">cleanXmlPatterns</a></div><h4>Clean XML Patterns</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <span class="description"><p>List of patterns to automatically clean XML files</p>
 </span>
         
@@ -570,7 +570,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="cleanXmlPatterns_items">
             
@@ -633,7 +633,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#cleanXmlPatterns_items_globPattern" onclick="anchorLink('cleanXmlPatterns_items_globPattern')">globPattern</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#cleanXmlPatterns_items_globPattern" onclick="anchorLink('cleanXmlPatterns_items_globPattern')">globPattern</a></div><h4>Glob pattern</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Glob pattern to identify XML files to clean</p>
 </span>
         
@@ -685,7 +685,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#cleanXmlPatterns_items_xpaths" onclick="anchorLink('cleanXmlPatterns_items_xpaths')">xpaths</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#cleanXmlPatterns_items_xpaths" onclick="anchorLink('cleanXmlPatterns_items_xpaths')">xpaths</a></div><h4>XPath list</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>XPaths to identify elements to remove</p>
 </span>
         
@@ -693,7 +693,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="cleanXmlPatterns_items_xpaths_items">
             
@@ -790,7 +790,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands" onclick="anchorLink('customCommands')">customCommands</a></div><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#customCommands" onclick="anchorLink('customCommands')">customCommands</a></div><h4>Custom commands</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <span class="description"><p>List of custom commands for VsCode SFDX-Hardis extension</p>
 </span>
         
@@ -798,7 +798,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="customCommands_items">
             
@@ -861,7 +861,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_id" onclick="anchorLink('customCommands_items_id')">id</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customCommands_items_id" onclick="anchorLink('customCommands_items_id')">id</a></div><h4>Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Identifier of the menu (can be any string)</p>
 </span>
         
@@ -909,7 +909,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_label" onclick="anchorLink('customCommands_items_label')">label</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customCommands_items_label" onclick="anchorLink('customCommands_items_label')">label</a></div><h4>Label</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Label of the menu</p>
 </span>
         
@@ -957,7 +957,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_commands" onclick="anchorLink('customCommands_items_commands')">commands</a></div><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#customCommands_items_commands" onclick="anchorLink('customCommands_items_commands')">commands</a></div><h4>Label</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <span class="description"><p>List of commands of the menu</p>
 </span>
         
@@ -965,7 +965,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="customCommands_items_commands_items">
             
@@ -1056,7 +1056,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_commands_items_id" onclick="anchorLink('customCommands_items_commands_items_id')">id</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customCommands_items_commands_items_id" onclick="anchorLink('customCommands_items_commands_items_id')">id</a></div><h4>Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Identifier of the command (can be any string)</p>
 </span>
         
@@ -1118,7 +1118,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_commands_items_label" onclick="anchorLink('customCommands_items_commands_items_label')">label</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customCommands_items_commands_items_label" onclick="anchorLink('customCommands_items_commands_items_label')">label</a></div><h4>Label</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Label of the command that will appear in menu</p>
 </span>
         
@@ -1180,7 +1180,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_commands_items_icon" onclick="anchorLink('customCommands_items_commands_items_icon')">icon</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customCommands_items_commands_items_icon" onclick="anchorLink('customCommands_items_commands_items_icon')">icon</a></div><h4>Icon</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Icon (can be any of svg icons of this list: https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources</p>
 </span>
         
@@ -1242,7 +1242,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_commands_items_tooltip" onclick="anchorLink('customCommands_items_commands_items_tooltip')">tooltip</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customCommands_items_commands_items_tooltip" onclick="anchorLink('customCommands_items_commands_items_tooltip')">tooltip</a></div><h4>Tooltip</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Text that will appear when user will hover the command</p>
 </span>
         
@@ -1304,7 +1304,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_commands_items_command" onclick="anchorLink('customCommands_items_commands_items_command')">command</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customCommands_items_commands_items_command" onclick="anchorLink('customCommands_items_commands_items_command')">command</a></div><h4>Command</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Command line to run when clicking on the menu</p>
 </span>
         
@@ -1366,7 +1366,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommands_items_commands_items_helpUrl" onclick="anchorLink('customCommands_items_commands_items_helpUrl')">helpUrl</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customCommands_items_commands_items_helpUrl" onclick="anchorLink('customCommands_items_commands_items_helpUrl')">helpUrl</a></div><h4>Help url</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>URL for help page of the command</p>
 </span>
         
@@ -1450,7 +1450,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customCommandsPosition" onclick="anchorLink('customCommandsPosition')">customCommandsPosition</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "first"</span><br/>
+    <a href="#customCommandsPosition" onclick="anchorLink('customCommandsPosition')">customCommandsPosition</a></div><h4>Custom commands position</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "first"</span><br/>
 <span class="description"><p>Position of custom commands in the menu (first or last)</p>
 </span><div class="enum-value" id="customCommandsPosition_enum">
             <h4>Must be one of:</h4>
@@ -1493,7 +1493,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customOrgColors" onclick="anchorLink('customOrgColors')">customOrgColors</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+    <a href="#customOrgColors" onclick="anchorLink('customOrgColors')">customOrgColors</a></div><h4>Custom Org Colors</h4><span class="badge badge-dark value-type">Type: object</span><br/>
 <span class="description"><p>Custom colors set by VsCode SFDX Hardis</p>
 </span>
         
@@ -1567,7 +1567,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customPlugins" onclick="anchorLink('customPlugins')">customPlugins</a></div><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#customPlugins" onclick="anchorLink('customPlugins')">customPlugins</a></div><h4>Custom plugins</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <span class="description"><p>List of additional plugins that will be displayed in VsCode SFDX-Hardis Dependencies panel</p>
 </span>
         
@@ -1575,7 +1575,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="customPlugins_items">
             
@@ -1594,7 +1594,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customPlugins_items" onclick="anchorLink('customPlugins_items')">Plugin</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+    <a href="#customPlugins_items" onclick="anchorLink('customPlugins_items')">Plugin</a></div><h4>Plugin</h4><span class="badge badge-dark value-type">Type: object</span><br/>
 <span class="description"><p>Plugin definition</p>
 </span> <span class="badge badge-info no-additional">No Additional Properties</span>
         
@@ -1638,7 +1638,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customPlugins_items_name" onclick="anchorLink('customPlugins_items_name')">name</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customPlugins_items_name" onclick="anchorLink('customPlugins_items_name')">name</a></div><h4>Name</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Name of the plugin npm package</p>
 </span>
         
@@ -1692,7 +1692,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#customPlugins_items_helpUrl" onclick="anchorLink('customPlugins_items_helpUrl')">helpUrl</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#customPlugins_items_helpUrl" onclick="anchorLink('customPlugins_items_helpUrl')">helpUrl</a></div><h4>Name</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Url of plugin documentation</p>
 </span>
         
@@ -1751,7 +1751,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#dataPackages" onclick="anchorLink('dataPackages')">dataPackages</a></div><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#dataPackages" onclick="anchorLink('dataPackages')">dataPackages</a></div><h4>Data packages</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <span class="description"><p>List of data packages</p>
 </span>
         
@@ -1759,7 +1759,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="dataPackages_items">
             
@@ -1822,7 +1822,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#dataPackages_items_dataPath" onclick="anchorLink('dataPackages_items_dataPath')">dataPath</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#dataPackages_items_dataPath" onclick="anchorLink('dataPackages_items_dataPath')">dataPath</a></div><h4>SFDMU Data project path</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Path to SFDMU project</p>
 </span>
         
@@ -1870,7 +1870,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#dataPackages_items_importInScratchOrgs" onclick="anchorLink('dataPackages_items_importInScratchOrgs')">importInScratchOrgs</a></div><span class="badge badge-dark value-type">Type: boolean</span><br/>
+    <a href="#dataPackages_items_importInScratchOrgs" onclick="anchorLink('dataPackages_items_importInScratchOrgs')">importInScratchOrgs</a></div><h4>SFDMU Data project path</h4><span class="badge badge-dark value-type">Type: boolean</span><br/>
 <span class="description"><p>Path to SFDMU project</p>
 </span>
         
@@ -1910,7 +1910,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#defaultPackageInstallationKey" onclick="anchorLink('defaultPackageInstallationKey')">defaultPackageInstallationKey</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#defaultPackageInstallationKey" onclick="anchorLink('defaultPackageInstallationKey')">defaultPackageInstallationKey</a></div><h4>Defaut package installation key</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>When generating a new package version protected with password, use this value as default package installation key</p>
 </span>
         
@@ -1952,7 +1952,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#developmentBranch" onclick="anchorLink('developmentBranch')">developmentBranch</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "developpement"</span><br/>
+    <a href="#developmentBranch" onclick="anchorLink('developmentBranch')">developmentBranch</a></div><h4>Default pull/merge request target org</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "developpement"</span><br/>
 <span class="description"><p>When creating a new sfdx-hardis task, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.</p>
 </span>
         
@@ -1994,7 +1994,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan" onclick="anchorLink('deploymentPlan')">deploymentPlan</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+    <a href="#deploymentPlan" onclick="anchorLink('deploymentPlan')">deploymentPlan</a></div><h4>Deployment plan</h4><span class="badge badge-dark value-type">Type: object</span><br/>
 <span class="description"><p>Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments</p>
 </span>
         
@@ -2053,7 +2053,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan_packages" onclick="anchorLink('deploymentPlan_packages')">packages</a></div><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#deploymentPlan_packages" onclick="anchorLink('deploymentPlan_packages')">packages</a></div><h4>List of packages to deploy</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <span class="description"><p>During deployment, main package.xml will be split into these packages. Can also contain data packages</p>
 </span>
         <div class="enum-value">
@@ -2064,7 +2064,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="deploymentPlan_packages_items">
             
@@ -2141,7 +2141,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan_packages_items_dataPath" onclick="anchorLink('deploymentPlan_packages_items_dataPath')">dataPath</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#deploymentPlan_packages_items_dataPath" onclick="anchorLink('deploymentPlan_packages_items_dataPath')">dataPath</a></div><h4>Path to SFDMU data project to deploy</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -2199,7 +2199,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan_packages_items_label" onclick="anchorLink('deploymentPlan_packages_items_label')">label</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#deploymentPlan_packages_items_label" onclick="anchorLink('deploymentPlan_packages_items_label')">label</a></div><h4>Source or data package label</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -2259,7 +2259,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan_packages_items_order" onclick="anchorLink('deploymentPlan_packages_items_order')">order</a></div><span class="badge badge-dark value-type">Type: number</span><br/>
+    <a href="#deploymentPlan_packages_items_order" onclick="anchorLink('deploymentPlan_packages_items_order')">order</a></div><h4>Execution order in deployment plan</h4><span class="badge badge-dark value-type">Type: number</span><br/>
 
         
 
@@ -2321,7 +2321,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan_packages_items_packageXmlFile" onclick="anchorLink('deploymentPlan_packages_items_packageXmlFile')">packageXmlFile</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#deploymentPlan_packages_items_packageXmlFile" onclick="anchorLink('deploymentPlan_packages_items_packageXmlFile')">packageXmlFile</a></div><h4>Path to package.xml file to use for deployment</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -2379,7 +2379,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan_packages_items_waitAfter" onclick="anchorLink('deploymentPlan_packages_items_waitAfter')">waitAfter</a></div><span class="badge badge-dark value-type">Type: number</span><br/>
+    <a href="#deploymentPlan_packages_items_waitAfter" onclick="anchorLink('deploymentPlan_packages_items_waitAfter')">waitAfter</a></div><h4>Wait after install (seconds)</h4><span class="badge badge-dark value-type">Type: number</span><br/>
 <span class="description"><p>Delay to wait before installing the next package</p>
 </span>
         
@@ -2444,7 +2444,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#devHubAlias" onclick="anchorLink('devHubAlias')">devHubAlias</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#devHubAlias" onclick="anchorLink('devHubAlias')">devHubAlias</a></div><h4>Dev Hub org alias</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Dev Hub alias, usually DevHub_ProjectName</p>
 </span>
         
@@ -2486,7 +2486,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#devHubUsername" onclick="anchorLink('devHubUsername')">devHubUsername</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#devHubUsername" onclick="anchorLink('devHubUsername')">devHubUsername</a></div><h4>Dev Hub Username</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Dev Hub username, used to authenticate to DevHub from CI jobs</p>
 </span>
         
@@ -2528,7 +2528,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#extends" onclick="anchorLink('extends')">extends</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#extends" onclick="anchorLink('extends')">extends</a></div><h4>Extends remote configuration URL</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>You can base your local sfdx-hardis configuration on a remote config file. That allows you to have the same config base for all your projects</p>
 </span>
         
@@ -2566,7 +2566,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#initPermissionSets" onclick="anchorLink('initPermissionSets')">initPermissionSets</a></div><span class="badge badge-dark value-type">Type: array</span><br/>
+    <a href="#initPermissionSets" onclick="anchorLink('initPermissionSets')">initPermissionSets</a></div><h4>Initial Permission Sets</h4><span class="badge badge-dark value-type">Type: array</span><br/>
 <span class="description"><p>When creating a scratch org, Admin user will be automatically assigned to those permission sets</p>
 </span>
         
@@ -2574,7 +2574,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="initPermissionSets_items">
             
@@ -2637,7 +2637,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#initPermissionSets_items_name" onclick="anchorLink('initPermissionSets_items_name')">name</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#initPermissionSets_items_name" onclick="anchorLink('initPermissionSets_items_name')">name</a></div><h4>Name</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Permission Set or Permission Set Group name</p>
 </span>
         
@@ -2692,7 +2692,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages" onclick="anchorLink('installedPackages')">installedPackages</a></div><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#installedPackages" onclick="anchorLink('installedPackages')">installedPackages</a></div><h4>Installed Packages</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <span class="description"><p>Defines the list of packages installed on the project. Use </p>
 </span>
         
@@ -2700,7 +2700,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="installedPackages_items">
             
@@ -2719,7 +2719,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items" onclick="anchorLink('installedPackages_items')">Salesforce package</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+    <a href="#installedPackages_items" onclick="anchorLink('installedPackages_items')">Salesforce package</a></div><h4>Salesforce package</h4><span class="badge badge-dark value-type">Type: object</span><br/>
 <span class="description"><p>Salesforce package info (managed, unlocked or unmanaged)</p>
 </span> <span class="badge badge-info no-additional">No Additional Properties</span>
         
@@ -2763,7 +2763,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_Id" onclick="anchorLink('installedPackages_items_Id')">Id</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#installedPackages_items_Id" onclick="anchorLink('installedPackages_items_Id')">Id</a></div><h4>(unused) PackageId</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -2814,7 +2814,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_SubscriberPackageId" onclick="anchorLink('installedPackages_items_SubscriberPackageId')">SubscriberPackageId</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#installedPackages_items_SubscriberPackageId" onclick="anchorLink('installedPackages_items_SubscriberPackageId')">SubscriberPackageId</a></div><h4>Subscriber Package Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -2865,7 +2865,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_SubscriberPackageName" onclick="anchorLink('installedPackages_items_SubscriberPackageName')">SubscriberPackageName</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#installedPackages_items_SubscriberPackageName" onclick="anchorLink('installedPackages_items_SubscriberPackageName')">SubscriberPackageName</a></div><h4>Subscriber Package Name</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -2916,7 +2916,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_SubscriberPackageNamespace" onclick="anchorLink('installedPackages_items_SubscriberPackageNamespace')">SubscriberPackageNamespace</a></div><span class="badge badge-dark value-type">Type: string or null</span><br/>
+    <a href="#installedPackages_items_SubscriberPackageNamespace" onclick="anchorLink('installedPackages_items_SubscriberPackageNamespace')">SubscriberPackageNamespace</a></div><h4>Subscriber Package NameSpace</h4><span class="badge badge-dark value-type">Type: string or null</span><br/>
 
         
 
@@ -2967,7 +2967,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_SubscriberPackageVersionId" onclick="anchorLink('installedPackages_items_SubscriberPackageVersionId')">SubscriberPackageVersionId</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#installedPackages_items_SubscriberPackageVersionId" onclick="anchorLink('installedPackages_items_SubscriberPackageVersionId')">SubscriberPackageVersionId</a></div><h4>Subscriber Version Id (IMPORTANT)</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -3018,7 +3018,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_SubscriberPackageVersionName" onclick="anchorLink('installedPackages_items_SubscriberPackageVersionName')">SubscriberPackageVersionName</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#installedPackages_items_SubscriberPackageVersionName" onclick="anchorLink('installedPackages_items_SubscriberPackageVersionName')">SubscriberPackageVersionName</a></div><h4>Subscriber Version Name</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -3069,7 +3069,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_SubscriberPackageVersionNumber" onclick="anchorLink('installedPackages_items_SubscriberPackageVersionNumber')">SubscriberPackageVersionNumber</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#installedPackages_items_SubscriberPackageVersionNumber" onclick="anchorLink('installedPackages_items_SubscriberPackageVersionNumber')">SubscriberPackageVersionNumber</a></div><h4>Subscriber Version Number</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 
         
 
@@ -3120,7 +3120,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_installDuringDeployments" onclick="anchorLink('installedPackages_items_installDuringDeployments')">installDuringDeployments</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#installedPackages_items_installDuringDeployments" onclick="anchorLink('installedPackages_items_installDuringDeployments')">installDuringDeployments</a></div><h4>Install during deployments</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>If true, during deployments this package will be installed in target org if not installed yet</p>
 </span>
         
@@ -3174,7 +3174,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_installOnScratchOrgs" onclick="anchorLink('installedPackages_items_installOnScratchOrgs')">installOnScratchOrgs</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#installedPackages_items_installOnScratchOrgs" onclick="anchorLink('installedPackages_items_installOnScratchOrgs')">installOnScratchOrgs</a></div><h4>Install on scratch orgs</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>If true, this package will be installed when creating a new scratch org with sfdx-hardis</p>
 </span>
         
@@ -3228,7 +3228,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installedPackages_items_installationkey" onclick="anchorLink('installedPackages_items_installationkey')">installationkey</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#installedPackages_items_installationkey" onclick="anchorLink('installedPackages_items_installationkey')">installationkey</a></div><h4>Package installation key</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Installation key for key-protected package</p>
 </span>
         
@@ -3302,7 +3302,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#installPackagesDuringCheckDeploy" onclick="anchorLink('installPackagesDuringCheckDeploy')">installPackagesDuringCheckDeploy</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#installPackagesDuringCheckDeploy" onclick="anchorLink('installPackagesDuringCheckDeploy')">installPackagesDuringCheckDeploy</a></div><h4>Install packages during deployment checks</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>When calling deployment check command, installs any package referred within installedPackages property</p>
 </span>
         
@@ -3340,7 +3340,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#instanceUrl" onclick="anchorLink('instanceUrl')">instanceUrl</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#instanceUrl" onclick="anchorLink('instanceUrl')">instanceUrl</a></div><h4>Instance URL</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Salesforce instance URL used by CI for deployment or backups</p>
 </span>
         
@@ -3382,15 +3382,15 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#listViewsToSetToMine" onclick="anchorLink('listViewsToSetToMine')">listViewsToSetToMine</a></div><span class="badge badge-dark value-type">Type: array of string</span> <span class="badge badge-success default-value">Default: []</span><br/>
-<span class="description"><p>List of ListView items to set to Mine after a delivery (that does not accept value 'Everything')</p>
+    <a href="#listViewsToSetToMine" onclick="anchorLink('listViewsToSetToMine')">listViewsToSetToMine</a></div><h4>List views to set to Mine</h4><span class="badge badge-dark value-type">Type: array of string</span> <span class="badge badge-success default-value">Default: []</span><br/>
+<span class="description"><p>List of ListView items to set to Mine after a delivery (that does not accept value &#39;Everything&#39;)</p>
 </span>
         
 
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="listViewsToSetToMine_items">
             
@@ -3444,7 +3444,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#sourcesToRetrofit" onclick="anchorLink('sourcesToRetrofit')">sourcesToRetrofit</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#sourcesToRetrofit" onclick="anchorLink('sourcesToRetrofit')">sourcesToRetrofit</a></div><h4>Metadata to retrofit</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>List of metadata to retrieve for retrofit job</p>
 </span>
         
@@ -3452,7 +3452,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="sourcesToRetrofit_items">
             
@@ -3514,7 +3514,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a></div><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#monitoringCommands" onclick="anchorLink('monitoringCommands')">monitoringCommands</a></div><h4>Monitoring commands</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <span class="description"><p>List of monitoring commands to run with command hardis:org:monitor:all</p>
 </span>
         
@@ -3522,7 +3522,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="monitoringCommands_items">
             
@@ -3585,7 +3585,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_key" onclick="anchorLink('monitoringCommands_items_key')">key</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#monitoringCommands_items_key" onclick="anchorLink('monitoringCommands_items_key')">key</a></div><h4>Key</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Unique identifier of the monitoring command. Can be used with monitoringDisable</p>
 </span>
         
@@ -3633,7 +3633,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_title" onclick="anchorLink('monitoringCommands_items_title')">title</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#monitoringCommands_items_title" onclick="anchorLink('monitoringCommands_items_title')">title</a></div><h4>Title</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Title of the command (will appear in logs)</p>
 </span>
         
@@ -3681,7 +3681,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_command" onclick="anchorLink('monitoringCommands_items_command')">command</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#monitoringCommands_items_command" onclick="anchorLink('monitoringCommands_items_command')">command</a></div><h4>Command</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Bash command to run</p>
 </span>
         
@@ -3729,7 +3729,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringCommands_items_frequency" onclick="anchorLink('monitoringCommands_items_frequency')">frequency</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#monitoringCommands_items_frequency" onclick="anchorLink('monitoringCommands_items_frequency')">frequency</a></div><h4>Frequency</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>daily or weekly</p>
 </span>
         
@@ -3786,8 +3786,8 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringAllowedSectionsActions" onclick="anchorLink('monitoringAllowedSectionsActions')">monitoringAllowedSectionsActions</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
-<span class="description"><p>Override list of Setup Audit Trail elements that won't be considered as suspect by monitoring tools</p>
+    <a href="#monitoringAllowedSectionsActions" onclick="anchorLink('monitoringAllowedSectionsActions')">monitoringAllowedSectionsActions</a></div><h4>Monitoring Allowed Sections Actions</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Override list of Setup Audit Trail elements that won&#39;t be considered as suspect by monitoring tools</p>
 </span>
         
 
@@ -3860,7 +3860,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringDisable" onclick="anchorLink('monitoringDisable')">monitoringDisable</a></div><span class="badge badge-dark value-type">Type: array</span><br/>
+    <a href="#monitoringDisable" onclick="anchorLink('monitoringDisable')">monitoringDisable</a></div><h4>Disabled monitoring commands</h4><span class="badge badge-dark value-type">Type: array</span><br/>
 <span class="description"><p>List of commands to skip during monitoring jobs</p>
 </span>
         
@@ -3868,7 +3868,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="monitoringDisable_items">
             
@@ -3934,7 +3934,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#monitoringExcludeUsernames" onclick="anchorLink('monitoringExcludeUsernames')">monitoringExcludeUsernames</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#monitoringExcludeUsernames" onclick="anchorLink('monitoringExcludeUsernames')">monitoringExcludeUsernames</a></div><h4>Monitoring usernames to exclude</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>List of usernames to exclude while running monitoring commands</p>
 </span>
         
@@ -3942,7 +3942,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="monitoringExcludeUsernames_items">
             
@@ -4003,7 +4003,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#msTeamsWebhookUrl" onclick="anchorLink('msTeamsWebhookUrl')">msTeamsWebhookUrl</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#msTeamsWebhookUrl" onclick="anchorLink('msTeamsWebhookUrl')">msTeamsWebhookUrl</a></div><h4>MsTeams WebHook Url (ALL)</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Url of the Ms Teams channel Web Hook that can be used to send ALL notifications</p>
 </span>
         
@@ -4041,7 +4041,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#msTeamsWebhookUrlCritical" onclick="anchorLink('msTeamsWebhookUrlCritical')">msTeamsWebhookUrlCritical</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#msTeamsWebhookUrlCritical" onclick="anchorLink('msTeamsWebhookUrlCritical')">msTeamsWebhookUrlCritical</a></div><h4>MsTeams WebHook Url (CRITICAL)</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Url of the Ms Teams channel Web Hook that can be used to send CRITICAL notifications</p>
 </span>
         
@@ -4079,7 +4079,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#msTeamsWebhookUrlSevere" onclick="anchorLink('msTeamsWebhookUrlSevere')">msTeamsWebhookUrlSevere</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#msTeamsWebhookUrlSevere" onclick="anchorLink('msTeamsWebhookUrlSevere')">msTeamsWebhookUrlSevere</a></div><h4>MsTeams WebHook Url (SEVERE)</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Url of the Ms Teams channel Web Hook that can be used to send SEVERE notifications</p>
 </span>
         
@@ -4117,7 +4117,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#msTeamsWebhookUrlWarning" onclick="anchorLink('msTeamsWebhookUrlWarning')">msTeamsWebhookUrlWarning</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#msTeamsWebhookUrlWarning" onclick="anchorLink('msTeamsWebhookUrlWarning')">msTeamsWebhookUrlWarning</a></div><h4>MsTeams WebHook Url (WARNING)</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Url of the Ms Teams channel Web Hook that can be used to send WARNING notifications</p>
 </span>
         
@@ -4155,7 +4155,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#msTeamsWebhookUrlInfo" onclick="anchorLink('msTeamsWebhookUrlInfo')">msTeamsWebhookUrlInfo</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#msTeamsWebhookUrlInfo" onclick="anchorLink('msTeamsWebhookUrlInfo')">msTeamsWebhookUrlInfo</a></div><h4>MsTeams WebHook Url (INFO)</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Url of the Ms Teams channel Web Hook that can be used to send INFO notifications</p>
 </span>
         
@@ -4193,7 +4193,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#notificationsDisable" onclick="anchorLink('notificationsDisable')">notificationsDisable</a></div><span class="badge badge-dark value-type">Type: array</span><br/>
+    <a href="#notificationsDisable" onclick="anchorLink('notificationsDisable')">notificationsDisable</a></div><h4>Disabled notification types</h4><span class="badge badge-dark value-type">Type: array</span><br/>
 <span class="description"><p>List of notifications types to skip sending</p>
 </span>
         
@@ -4201,7 +4201,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="notificationsDisable_items">
             
@@ -4267,7 +4267,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#poolConfig" onclick="anchorLink('poolConfig')">poolConfig</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+    <a href="#poolConfig" onclick="anchorLink('poolConfig')">poolConfig</a></div><h4>Scratch org pool configuration</h4><span class="badge badge-dark value-type">Type: object</span><br/>
 <span class="description"><p>Configuration allowing to generate and fetch scratch orgs from scratch org pool</p>
 </span>
         
@@ -4311,7 +4311,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#poolConfig_minScratchOrgRemainingDays" onclick="anchorLink('poolConfig_minScratchOrgRemainingDays')">minScratchOrgRemainingDays</a></div><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 25</span><br/>
+    <a href="#poolConfig_minScratchOrgRemainingDays" onclick="anchorLink('poolConfig_minScratchOrgRemainingDays')">minScratchOrgRemainingDays</a></div><h4>Min scratch org remaining days</h4><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 25</span><br/>
 <span class="description"><p>When pool scratch org is less than this number, it is deleted and another one is created</p>
 </span>
         
@@ -4352,7 +4352,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#poolConfig_maxScratchOrgsNumber" onclick="anchorLink('poolConfig_maxScratchOrgsNumber')">maxScratchOrgsNumber</a></div><span class="badge badge-dark value-type">Type: number</span><br/>
+    <a href="#poolConfig_maxScratchOrgsNumber" onclick="anchorLink('poolConfig_maxScratchOrgsNumber')">maxScratchOrgsNumber</a></div><h4>Maximum number of scratch orgs</h4><span class="badge badge-dark value-type">Type: number</span><br/>
 <span class="description"><p>Maximum number of active scratch orgs in the scratch org pool</p>
 </span>
         
@@ -4393,7 +4393,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#poolConfig_maxScratchOrgsNumberToCreateOnce" onclick="anchorLink('poolConfig_maxScratchOrgsNumberToCreateOnce')">maxScratchOrgsNumberToCreateOnce</a></div><span class="badge badge-dark value-type">Type: number</span><br/>
+    <a href="#poolConfig_maxScratchOrgsNumberToCreateOnce" onclick="anchorLink('poolConfig_maxScratchOrgsNumberToCreateOnce')">maxScratchOrgsNumberToCreateOnce</a></div><h4>Maximum number of scratch orgs to create once</h4><span class="badge badge-dark value-type">Type: number</span><br/>
 <span class="description"><p>Maximum number of scratch orgs to create in one CI job</p>
 </span>
         
@@ -4434,7 +4434,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#poolConfig_storageService" onclick="anchorLink('poolConfig_storageService')">storageService</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+    <a href="#poolConfig_storageService" onclick="anchorLink('poolConfig_storageService')">storageService</a></div><h4>Storage service for scratch org pool</h4><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Remote service allowing to store scratch org pool details</p>
 </span>
         
@@ -4472,7 +4472,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#productionBranch" onclick="anchorLink('productionBranch')">productionBranch</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#productionBranch" onclick="anchorLink('productionBranch')">productionBranch</a></div><h4>Production branch name</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Name of the git branch corresponding to production environment</p>
 </span>
         
@@ -4514,7 +4514,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#projectName" onclick="anchorLink('projectName')">projectName</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#projectName" onclick="anchorLink('projectName')">projectName</a></div><h4>Project Name</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Identifier for the project (can be the client and project)</p>
 </span>
         
@@ -4556,7 +4556,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#retrofitBranch" onclick="anchorLink('retrofitBranch')">retrofitBranch</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#retrofitBranch" onclick="anchorLink('retrofitBranch')">retrofitBranch</a></div><h4>Retrofit branch name</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Name of the git branch where retrofit merge requests targets to</p>
 </span>
         
@@ -4598,7 +4598,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#retrofitIgnoredFiles" onclick="anchorLink('retrofitIgnoredFiles')">retrofitIgnoredFiles</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#retrofitIgnoredFiles" onclick="anchorLink('retrofitIgnoredFiles')">retrofitIgnoredFiles</a></div><h4>Retrofit ignored files</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>When calling hardis:org:retrieve:sources:retrofit, list of files to ignore (discard just after retrieve)</p>
 </span>
         
@@ -4606,7 +4606,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="retrofitIgnoredFiles_items">
             
@@ -4667,7 +4667,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#scratchOrgInitApexScripts" onclick="anchorLink('scratchOrgInitApexScripts')">scratchOrgInitApexScripts</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+    <a href="#scratchOrgInitApexScripts" onclick="anchorLink('scratchOrgInitApexScripts')">scratchOrgInitApexScripts</a></div><h4>Scratch org init apex scripts</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
 <span class="description"><p>Apex scripts to call after scratch org initialization</p>
 </span>
         
@@ -4675,7 +4675,7 @@
         
         
 
-        <h4>Each item of this array must be:</h4>
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
     <div class="card">
         <div class="card-body items-definition" id="scratchOrgInitApexScripts_items">
             
@@ -4736,7 +4736,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#scratchOrgDuration" onclick="anchorLink('scratchOrgDuration')">scratchOrgDuration</a></div><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 30</span><br/>
+    <a href="#scratchOrgDuration" onclick="anchorLink('scratchOrgDuration')">scratchOrgDuration</a></div><h4>Duration of Scratch Org</h4><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 30</span><br/>
 <span class="description"><p>Defines the lifespan of the scratch org in number of days, from 1 to 30</p>
 </span>
         
@@ -4770,7 +4770,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#sfdmuCanModify" onclick="anchorLink('sfdmuCanModify')">sfdmuCanModify</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#sfdmuCanModify" onclick="anchorLink('sfdmuCanModify')">sfdmuCanModify</a></div><h4>SFDMU can modify</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Instance host name to allow SFDMU to deploy data in a production org</p>
 </span>
         
@@ -4808,7 +4808,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#skipUpdateForceIgnore" onclick="anchorLink('skipUpdateForceIgnore')">skipUpdateForceIgnore</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#skipUpdateForceIgnore" onclick="anchorLink('skipUpdateForceIgnore')">skipUpdateForceIgnore</a></div><h4>Skip update .forceignore file</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>Defines if sfdx-hardis will propose to upgrade local .forceignore file</p>
 </span>
         
@@ -4842,7 +4842,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#skipUpdateGitIgnore" onclick="anchorLink('skipUpdateGitIgnore')">skipUpdateGitIgnore</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#skipUpdateGitIgnore" onclick="anchorLink('skipUpdateGitIgnore')">skipUpdateGitIgnore</a></div><h4>Skip update .gitignore file</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>Defines if sfdx-hardis will propose to upgrade local .gitignore file</p>
 </span>
         
@@ -4876,7 +4876,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#targetUsername" onclick="anchorLink('targetUsername')">targetUsername</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#targetUsername" onclick="anchorLink('targetUsername')">targetUsername</a></div><h4>Target Username</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Salesforce username used by CI for deployment or backups</p>
 </span>
         
@@ -4918,7 +4918,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#useDeltaDeployment" onclick="anchorLink('useDeltaDeployment')">useDeltaDeployment</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#useDeltaDeployment" onclick="anchorLink('useDeltaDeployment')">useDeltaDeployment</a></div><h4>Use Delta Deployment</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>Defines if sfdx-hardis will deploy in delta from minor to major branches</p>
 </span>
         
@@ -4952,7 +4952,7 @@
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#linterIgnoreRightMetadataFile" onclick="anchorLink('linterIgnoreRightMetadataFile')">linterIgnoreRightMetadataFile</a></div><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+    <a href="#linterIgnoreRightMetadataFile" onclick="anchorLink('linterIgnoreRightMetadataFile')">linterIgnoreRightMetadataFile</a></div><h4>Linter ignore permission set or/and profile</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
 <span class="description"><p>Ignore profiles or permission sets</p>
 </span>
         
@@ -4977,6 +4977,6 @@
 </div>
 
     <footer>
-        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2024-05-05 at 21:45:24 +0200</p>
+        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2024-05-07 at 00:07:59 +0200</p>
     </footer></body>
 </html>
