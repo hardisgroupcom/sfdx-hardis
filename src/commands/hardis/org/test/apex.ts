@@ -3,7 +3,8 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import { execCommand, uxLog } from "../../../../common/utils";
+import * as path from "path";
+import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from "../../../../common/utils";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 import { getConfig, getReportDirectory } from "../../../../config";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
@@ -66,7 +67,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
   protected coverageTarget = 75.0;
   protected coverageValue = 0.0;
   protected failingTestClasses = [];
-  private notifSeverity: NotifSeverity;
+  private notifSeverity: NotifSeverity = "log";
   private notifText: string;
   private notifAttachments = [];
   private notifAttachedFiles = [];
@@ -94,11 +95,11 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     else if (this.testRunOutcome === "Failed") {
       await this.processApexTestsFailure();
     }
-    // Passed tests: check coverage
-    else if (this.testRunOutcome === "Passed") {
-      await this.checkOrgWideCoverage();
-      await this.checkTestRunCoverage();
-    }
+    // Get test coverage (and fail if not reached)
+    await this.checkOrgWideCoverage();
+    await this.checkTestRunCoverage();
+
+    uxLog(this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
 
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
@@ -169,26 +170,44 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     this.notifText = `Org apex tests failure in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
     const reportDir = await getReportDirectory();
     // Parse log from external file
-    if (fs.existsSync(reportDir + "/test-result.txt")) {
-      let testResultStr = await fs.readFile(reportDir + "/test-result.txt", "utf8");
-      testResultStr = testResultStr.split("=== Test Results")[0];
-      this.notifAttachments = [{ text: testResultStr }];
+    const sfReportFile = path.join(reportDir, "/test-result.txt");
+    if (fs.existsSync(sfReportFile)) {
+      this.notifAttachedFiles = [sfReportFile];
     }
-    this.failingTestClasses = [{ class: "TO_IMPLEMENT", error: "TO IMPLEMENT" }];
-    this.notifAttachedFiles = fs.existsSync(reportDir + "/test-result.txt") ? [reportDir + "/test-result.txt"] : [];
+    // Parse failing test classes
+    const failuresRegex = /(.*) Fail (.*)/gm;
+    const regexMatches = await extractRegexMatchesMultipleGroups(failuresRegex, this.testRunOutputString);
+    uxLog(this, c.yellow("Failing tests:"));
+    for (const match of regexMatches) {
+      this.failingTestClasses.push({ name: match[1].trim(), error: match[2].trim() });
+    }
+    this.notifAttachments = [
+      {
+        text: this.failingTestClasses
+          .map((failingTestClass) => {
+            return "• " + failingTestClass.name + " / " + failingTestClass.error;
+          })
+          .join("\n"),
+      },
+    ];
+    console.table(this.failingTestClasses);
   }
 
   private async checkOrgWideCoverage() {
     const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
-        process.env.APEX_TESTS_MIN_COVERAGE ||
-        this.configInfo.apexTestsMinCoverageOrgWide ||
-        this.configInfo.apexTestsMinCoverage ||
-        75.0,
+      process.env.APEX_TESTS_MIN_COVERAGE ||
+      this.configInfo.apexTestsMinCoverageOrgWide ||
+      this.configInfo.apexTestsMinCoverage ||
+      75.0,
     );
     this.coverageTarget = minCoverageOrgWide;
     this.coverageValue = coverageOrgWide;
+    // Do not test if tests failed
+    if (this.testRunOutcome !== "Passed") {
+      return;
+    }
     // Developer tried to cheat in config ^^
     if (minCoverageOrgWide < 75.0) {
       this.notifSeverity = "error";
@@ -215,13 +234,16 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
-          process.env.APEX_TESTS_MIN_COVERAGE ||
-          this.configInfo.apexTestsMinCoverage ||
-          this.coverageTarget,
+        process.env.APEX_TESTS_MIN_COVERAGE ||
+        this.configInfo.apexTestsMinCoverage ||
+        this.coverageTarget,
       );
       this.coverageTarget = minCoverageTestRun;
       this.coverageValue = coverageTestRun;
-
+      // Do not test if tests failed
+      if (this.testRunOutcome !== "Passed") {
+        return;
+      }
       // Developer tried to cheat in config ^^
       if (minCoverageTestRun < 75.0) {
         this.notifSeverity = "error";

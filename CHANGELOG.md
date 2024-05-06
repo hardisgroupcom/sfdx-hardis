@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.33.2] 2024-05-06
+
+- hardis:org:test:apex : Always send coverageValue, coverageTarget and the list of failing classes to API logs
+
 ## [4.33.1] 2024-05-05
 
 - Api logs enhancements:

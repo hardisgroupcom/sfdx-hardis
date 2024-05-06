@@ -444,11 +444,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n"),
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n"),
         ),
       );
     }
@@ -903,6 +903,24 @@ export async function extractRegexMatches(regex: RegExp, text: string): Promise<
     });
   }
   return matchStrings;
+}
+
+export async function extractRegexMatchesMultipleGroups(regex: RegExp, text: string): Promise<any[]> {
+  let m;
+  const matchResults = [];
+  while ((m = regex.exec(text)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    // Iterate thru the regex matches
+    const matchGroups = [];
+    m.forEach((match) => {
+      matchGroups.push(match);
+    });
+    matchResults.push(matchGroups);
+  }
+  return matchResults;
 }
 
 export function arrayUniqueByKey(array, key: string) {
