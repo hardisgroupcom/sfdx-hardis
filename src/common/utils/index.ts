@@ -905,6 +905,24 @@ export async function extractRegexMatches(regex: RegExp, text: string): Promise<
   return matchStrings;
 }
 
+export async function extractRegexMatchesMultipleGroups(regex: RegExp, text: string): Promise<any[]> {
+  let m;
+  const matchResults = [];
+  while ((m = regex.exec(text)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    // Iterate thru the regex matches
+    const matchGroups = [];
+    m.forEach((match) => {
+      matchGroups.push(match);
+    });
+    matchResults.push(matchGroups);
+  }
+  return matchResults;
+}
+
 export function arrayUniqueByKey(array, key: string) {
   const keys = new Set();
   return array.filter((el) => !keys.has(el[key]) && keys.add(el[key]));
