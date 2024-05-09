@@ -444,6 +444,9 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
         attachments: attachments,
         logElements: [],
         data: { metric: 0 }, // Todo: if delta used, count the number of items deployed
+        metrics: {
+          "DeployedItems": 0 // Todo: if delta used, count the number of items deployed
+        }
       });
     }
     return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };

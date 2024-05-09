@@ -381,6 +381,9 @@ monitoringAllowedSectionsActions:
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.auditTrailRecords,
       data: { metric: suspectRecords.length },
+      metrics: {
+        "SuspectMetadataUpdates": suspectRecords.length
+      }
     });
 
     if ((this.argv || []).includes("audittrail")) {

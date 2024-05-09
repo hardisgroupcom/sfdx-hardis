@@ -115,6 +115,10 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         coverageTarget: this.coverageTarget,
         coverageValue: this.coverageValue,
       },
+      metrics: {
+        "ApexTestsFailingClasses": this.failingTestClasses.length,
+        "ApexTestsCodeCoverage": this.coverageValue
+      }
     });
 
     // Handle output message & exit code
@@ -197,10 +201,10 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
     const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
-        process.env.APEX_TESTS_MIN_COVERAGE ||
-        this.configInfo.apexTestsMinCoverageOrgWide ||
-        this.configInfo.apexTestsMinCoverage ||
-        75.0,
+      process.env.APEX_TESTS_MIN_COVERAGE ||
+      this.configInfo.apexTestsMinCoverageOrgWide ||
+      this.configInfo.apexTestsMinCoverage ||
+      75.0,
     );
     this.coverageTarget = minCoverageOrgWide;
     this.coverageValue = coverageOrgWide;
@@ -234,9 +238,9 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
       const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
-          process.env.APEX_TESTS_MIN_COVERAGE ||
-          this.configInfo.apexTestsMinCoverage ||
-          this.coverageTarget,
+        process.env.APEX_TESTS_MIN_COVERAGE ||
+        this.configInfo.apexTestsMinCoverage ||
+        this.coverageTarget,
       );
       this.coverageTarget = minCoverageTestRun;
       this.coverageValue = coverageTestRun;

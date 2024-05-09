@@ -348,6 +348,9 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.unusedPermissionSetLicenseAssignments,
       data: { metric: this.unusedPermissionSetLicenseAssignments.length },
+      metrics: {
+        "UnusedPermissionSetLicenses": this.unusedPermissionSetLicenseAssignments.length
+      }
     });
     return [];
   }

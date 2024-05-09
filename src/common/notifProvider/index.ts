@@ -99,6 +99,7 @@ export interface NotifMessage {
   sideImage?: string;
   attachedFiles?: string[];
   logElements: any[];
+  metrics: any;
   data: any;
 }
 

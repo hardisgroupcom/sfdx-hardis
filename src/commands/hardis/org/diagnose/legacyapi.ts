@@ -245,6 +245,9 @@ See article to solve issue before it's too late:
         metric: this.allErrors.length,
         legacyApiSummary: this.ipResultsSorted,
       },
+      metrics: {
+        "LegaciApiCalls": this.allErrors.length
+      }
     });
 
     if ((this.argv || []).includes("legacyapi")) {

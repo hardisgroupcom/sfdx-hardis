@@ -93,6 +93,9 @@ export default class metadatastatus extends SfdxCommand {
       sideImage: "flow",
       logElements: this.fieldsWithoutDescription,
       data: { metric: this.fieldsWithoutDescription.length },
+      metrics: {
+        "MetadatasWithoutDescription": this.fieldsWithoutDescription.length
+      }
     });
     return {};
   }

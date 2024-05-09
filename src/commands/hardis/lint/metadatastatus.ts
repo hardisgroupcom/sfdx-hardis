@@ -99,6 +99,9 @@ export default class metadatastatus extends SfdxCommand {
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.inactiveItems,
       data: { metric: this.inactiveItems.length },
+      metrics: {
+        "InactiveMetadatas": this.inactiveItems.length
+      }
     });
 
     return {};
