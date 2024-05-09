@@ -224,7 +224,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // POST message
     try {
-      const axiosResponse = await axios.post(this.apiUrl, this.metricsPayload, axiosConfig);
+      const axiosResponse = await axios.post(this.metricsApiUrl, this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
         uxLog(this, c.cyan(`[ApiMetricProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
