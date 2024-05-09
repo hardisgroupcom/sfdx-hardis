@@ -14,7 +14,7 @@ You can send notifications to an external API endpoints, for example to build Gr
   - Failing apex tests
   - Monitoring checks notifications
 
-## Configuration
+## Logs Configuration
 
 Define the following CI/CD variables:
 
@@ -36,8 +36,26 @@ NOTIF_API_URL=https://my.custom.endpoint.net
 NOTIF_API_BEARER_TOKEN=DDHGHfgfgjfhQESRDTHFKGKHFswgFHDHGDH
 ```
 
+## Metrics Configuration
+
+Additionnally, you can send metrics in Prometheus format to a secondary API endpoint.
+
+The configuration is the same than for logs, but with different variable names.
+
+- **NOTIF_API_METRICS_URL**
+- **NOTIF_API_METRICS_BASIC_AUTH_USERNAME**
+- **NOTIF_API_METRICS_BASIC_AUTH_PASSWORD**
+- **NOTIF_API_METRICS_BEARER_TOKEN**
+
+Example:
+
+```sh
+NOTIF_API_METRICS_URL=https://influx-prod-72-prod-eu-west-2.grafana.net/api/v1/push/influx/write
+NOTIF_API_BASIC_AUTH_USERNAME=345673
+NOTIF_API_BASIC_AUTH_PASSWORD=GHTRGDHDHdhghg23345DFG^sfg!ss
+```
+
+## Troubleshooting
+
 If you want to see the content of the API notifications in execution logs, you can define `NOTIF_API_DEBUG=true`
-
-That's all, you're all set !
-
 
