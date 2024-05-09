@@ -183,8 +183,8 @@ export class ApiProvider extends NotifProviderRoot {
 
     // Add extra fields and value
     const metricsPayloadLines = [];
-    for (const metricId of Object.keys(this.payload.data.metrics)) {
-      const metricData = this.payload.data.metrics[metricId];
+    for (const metricId of Object.keys(this.payload.data._metrics)) {
+      const metricData = this.payload.data._metrics[metricId];
       let metricPayloadLine = metricId + "," + metricFields;
       if (typeof metricData === "number") {
         metricPayloadLine += " metric=" + metricData.toFixed(2);
