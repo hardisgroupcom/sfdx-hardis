@@ -176,12 +176,11 @@ export class ApiProvider extends NotifProviderRoot {
     }
   }
 
-  // Build something like MetricName,source=sfdx-hardis org=toto,metric=12.7
+  // Build something like MetricName,source=sfdx-hardis metric=12.7,min=0,max=70,pencent=0.63
   private buildMetricsPayload() {
     // Build tag field
-    const tags = `source=${this.payload.source}`;
-    // Build common metric fields string
-    const metricFields =
+    const metricTags =
+      `source=${this.payload.source},` +
       `type="${this.payload.type}",` +
       `orgIdentifier="${this.payload.orgIdentifier}",` +
       `gitIdentifier="${this.payload.gitIdentifier}",` +
@@ -191,19 +190,24 @@ export class ApiProvider extends NotifProviderRoot {
     const metricsPayloadLines = [];
     for (const metricId of Object.keys(this.payload.data._metrics)) {
       const metricData = this.payload.data._metrics[metricId];
-      let metricPayloadLine = metricId + "," + tags+" "+metricFields;
+      let metricPayloadLine = metricId + "," + metricTags + " ";
       if (typeof metricData === "number") {
-        metricPayloadLine += ",metric=" + metricData.toFixed(2);
+        metricPayloadLine += "metric=" + metricData.toFixed(2);
         metricsPayloadLines.push(metricPayloadLine);
       }
       else if (typeof metricData === "object") {
+        const metricFields = [];
+        if (metricData.min) {
+          metricFields.push("min=" + metricData.min.toFixed(2));
+        }
         if (metricData.max) {
-          metricPayloadLine += ",max=" + metricData.max.toFixed(2);
+          metricFields.push("max=" + metricData.max.toFixed(2));
         }
         if (metricData.percent) {
-          metricPayloadLine += ",percent=" + metricData.percent.toFixed(2);
+          metricFields.push("percent=" + metricData.percent.toFixed(2));
         }
-        metricPayloadLine += ",metric=" + metricData.value.toFixed(2);
+        metricFields.push("metric=" + metricData.value.toFixed(2));
+        metricPayloadLine += metricFields.join(",");
         metricsPayloadLines.push(metricPayloadLine);
       }
     }
