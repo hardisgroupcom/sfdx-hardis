@@ -181,10 +181,10 @@ export class ApiProvider extends NotifProviderRoot {
     // Build tag field
     const metricTags =
       `source=${this.payload.source},` +
-      `type="${this.payload.type}",` +
-      `orgIdentifier="${this.payload.orgIdentifier}",` +
-      `gitIdentifier="${this.payload.gitIdentifier}",` +
-      `severity="${this.payload.severity}"`;
+      `type=${this.payload.type},` +
+      `orgIdentifier=${this.payload.orgIdentifier},` +
+      `gitIdentifier=${this.payload.gitIdentifier},` +
+      `severity=${this.payload.severity}`;
 
     // Add extra fields and value
     const metricsPayloadLines = [];
