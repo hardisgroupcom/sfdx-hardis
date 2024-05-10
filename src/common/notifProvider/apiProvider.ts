@@ -172,22 +172,24 @@ export class ApiProvider extends NotifProviderRoot {
     }
   }
 
-  // Build something like MetricName,source=sfdx-hardis,org=toto metric=12.7
+  // Build something like MetricName,source=sfdx-hardis org=toto,metric=12.7
   private buildMetricsPayload() {
+    // Build tag field
+    const tags = `source=${this.payload.source}`;
     // Build common metric fields string
-    const metricFields = `source=${this.payload.source},` +
-      `type=${this.payload.type},` +
-      `orgIdentifier=${this.payload.orgIdentifier},` +
-      `gitIdentifier=${this.payload.gitIdentifier},` +
-      `severity=${this.payload.severity}`;
+    const metricFields =
+      `type="${this.payload.type}",` +
+      `orgIdentifier="${this.payload.orgIdentifier}",` +
+      `gitIdentifier="${this.payload.gitIdentifier}",` +
+      `severity="${this.payload.severity}"`;
 
     // Add extra fields and value
     const metricsPayloadLines = [];
     for (const metricId of Object.keys(this.payload.data._metrics)) {
       const metricData = this.payload.data._metrics[metricId];
-      let metricPayloadLine = metricId + "," + metricFields;
+      let metricPayloadLine = metricId + "," + tags+" "+metricFields;
       if (typeof metricData === "number") {
-        metricPayloadLine += " metric=" + metricData.toFixed(2);
+        metricPayloadLine += ",metric=" + metricData.toFixed(2);
         metricsPayloadLines.push(metricPayloadLine);
       }
       else if (typeof metricData === "object") {
@@ -197,7 +199,7 @@ export class ApiProvider extends NotifProviderRoot {
         if (metricData.percent) {
           metricPayloadLine += ",percent=" + metricData.percent.toFixed(2);
         }
-        metricPayloadLine += " metric=" + metricData.value.toFixed(2);
+        metricPayloadLine += ",metric=" + metricData.value.toFixed(2);
         metricsPayloadLines.push(metricPayloadLine);
       }
     }
