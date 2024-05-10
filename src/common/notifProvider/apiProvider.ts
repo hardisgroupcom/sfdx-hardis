@@ -34,7 +34,7 @@ export class ApiProvider extends NotifProviderRoot {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    const apiPromises: Promise<void>[] = []; // Use Promises to optimize perfs with api calls
+    const apiPromises: Promise<void>[] = []; // Use Promises to optimize performances with api calls
     this.apiUrl = getEnvVar("NOTIF_API_URL");
     if (this.apiUrl == null) {
       throw new SfdxError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");

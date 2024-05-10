@@ -246,7 +246,7 @@ See article to solve issue before it's too late:
         legacyApiSummary: this.ipResultsSorted,
       },
       metrics: {
-        "LegaciApiCalls": this.allErrors.length
+        "LegacyApiCalls": this.allErrors.length
       }
     });
 

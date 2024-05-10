@@ -38,7 +38,7 @@ NOTIF_API_BEARER_TOKEN=DDHGHfgfgjfhQESRDTHFKGKHFswgFHDHGDH
 
 ## Metrics Configuration
 
-Additionnally, you can send metrics in Prometheus format to a secondary API endpoint.
+Additionally, you can send metrics in Prometheus format to a secondary API endpoint.
 
 The configuration is the same than for logs, but with different variable names.
 
