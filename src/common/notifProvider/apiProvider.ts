@@ -227,14 +227,14 @@ export class ApiProvider extends NotifProviderRoot {
       const axiosResponse = await axios.post(this.metricsApiUrl, this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
-        uxLog(this, c.cyan(`[ApiMetricProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
+        uxLog(this, c.cyan(`[ApiMetricProvider] Posted message to API ${this.metricsApiUrl} (${httpStatus})`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog(this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
+          uxLog(this, c.cyan(JSON.stringify(this.metricsPayload, null, 2)));
         }
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.apiUrl}: ${e.message}`));
-      uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
+      uxLog(this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.metricsApiUrl}: ${e.message}`));
+      uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.metricsPayload)));
       uxLog(this, c.grey("Response body: \n" + JSON.stringify(e?.response?.data || {})));
     }
   }
