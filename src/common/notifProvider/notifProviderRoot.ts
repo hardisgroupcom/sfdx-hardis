@@ -14,6 +14,11 @@ export abstract class NotifProviderRoot {
     return ["critical", "error", "warning", "info", "success"].includes(notifMessage.severity);
   }
 
+  // Defines if the provider targets Users or Machines (Logs,Metrics like for Grafana Loki & Prometheus)
+  public isUserNotifProvider() {
+    return true;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     uxLog(this, `Method postNotification is not implemented yet on ${this.getLabel()}`);

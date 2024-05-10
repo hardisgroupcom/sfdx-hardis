@@ -28,6 +28,10 @@ export class ApiProvider extends NotifProviderRoot {
     return true;
   }
 
+  public isUserNotifProvider() {
+    return false;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const apiPromises: Promise<void>[] = []; // Use Promises to optimize perfs with api calls

@@ -36,34 +36,35 @@ export abstract class NotifProvider {
     getConfig("user").then((config) => {
       const notificationsDisable =
         config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
-      if (notificationsDisable.includes(notifMessage.type)) {
+      uxLog(this, c.gray(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
+      const notifProviders = this.getInstances();
+      if (notifProviders.length === 0) {
         uxLog(
           this,
-          c.yellow(
-            `[NotifProvider] Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
+          c.gray(
+            `[NotifProvider] No notif has been configured: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
           ),
         );
-      } else {
-        uxLog(this, c.gray(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
-        const notifProviders = this.getInstances();
-        if (notifProviders.length === 0) {
+      }
+      for (const notifProvider of notifProviders) {
+        uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
+        // Skip if matching NOTIFICATIONS_DISABLE except for Api
+        if (notificationsDisable.includes(notifMessage.type) && notifProvider.isUserNotifProvider()) {
           uxLog(
             this,
-            c.gray(
-              `[NotifProvider] No notif has been configured: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+            c.yellow(
+              `[NotifProvider] Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
             ),
           );
         }
-        for (const notifProvider of notifProviders) {
-          uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
-          if (notifProvider.isApplicableForNotif(notifMessage)) {
-            notifProvider.postNotification(notifMessage);
-          } else {
-            uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
-          }
+        // Do not send notifs for level "log" to Users, but just to logs/metrics API
+        else if (notifProvider.isApplicableForNotif(notifMessage)) {
+          notifProvider.postNotification(notifMessage);
+        } else {
+          uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
         }
-        globalThis.skipLegacyNotifications = true;
       }
+
     });
   }
 
@@ -82,17 +83,17 @@ export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success
 export interface NotifMessage {
   text: string;
   type:
-    | "AUDIT_TRAIL"
-    | "APEX_TESTS"
-    | "BACKUP"
-    | "DEPLOYMENT"
-    | "LEGACY_API"
-    | "LINT_ACCESS"
-    | "UNUSED_METADATAS"
-    | "METADATA_STATUS"
-    | "MISSING_ATTRIBUTES"
-    | "ORG_LIMITS"
-    | "UNUSED_LICENSES";
+  | "AUDIT_TRAIL"
+  | "APEX_TESTS"
+  | "BACKUP"
+  | "DEPLOYMENT"
+  | "LEGACY_API"
+  | "LINT_ACCESS"
+  | "UNUSED_METADATAS"
+  | "METADATA_STATUS"
+  | "MISSING_ATTRIBUTES"
+  | "ORG_LIMITS"
+  | "UNUSED_LICENSES";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;
