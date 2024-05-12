@@ -100,8 +100,8 @@ export default class metadatastatus extends SfdxCommand {
       logElements: this.inactiveItems,
       data: { metric: this.inactiveItems.length },
       metrics: {
-        "InactiveMetadatas": this.inactiveItems.length
-      }
+        InactiveMetadatas: this.inactiveItems.length,
+      },
     });
 
     return {};

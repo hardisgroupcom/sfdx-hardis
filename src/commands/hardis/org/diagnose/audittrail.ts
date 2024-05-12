@@ -382,8 +382,8 @@ monitoringAllowedSectionsActions:
       logElements: this.auditTrailRecords,
       data: { metric: suspectRecords.length },
       metrics: {
-        "SuspectMetadataUpdates": suspectRecords.length
-      }
+        SuspectMetadataUpdates: suspectRecords.length,
+      },
     });
 
     if ((this.argv || []).includes("audittrail")) {

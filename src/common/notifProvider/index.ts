@@ -64,7 +64,6 @@ export abstract class NotifProvider {
           uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
         }
       }
-
     });
   }
 
@@ -83,17 +82,17 @@ export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success
 export interface NotifMessage {
   text: string;
   type:
-  | "AUDIT_TRAIL"
-  | "APEX_TESTS"
-  | "BACKUP"
-  | "DEPLOYMENT"
-  | "LEGACY_API"
-  | "LINT_ACCESS"
-  | "UNUSED_METADATAS"
-  | "METADATA_STATUS"
-  | "MISSING_ATTRIBUTES"
-  | "ORG_LIMITS"
-  | "UNUSED_LICENSES";
+    | "AUDIT_TRAIL"
+    | "APEX_TESTS"
+    | "BACKUP"
+    | "DEPLOYMENT"
+    | "LEGACY_API"
+    | "LINT_ACCESS"
+    | "UNUSED_METADATAS"
+    | "METADATA_STATUS"
+    | "MISSING_ATTRIBUTES"
+    | "ORG_LIMITS"
+    | "UNUSED_LICENSES";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;

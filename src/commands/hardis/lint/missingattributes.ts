@@ -94,8 +94,8 @@ export default class metadatastatus extends SfdxCommand {
       logElements: this.fieldsWithoutDescription,
       data: { metric: this.fieldsWithoutDescription.length },
       metrics: {
-        "MetadatasWithoutDescription": this.fieldsWithoutDescription.length
-      }
+        MetadatasWithoutDescription: this.fieldsWithoutDescription.length,
+      },
     });
     return {};
   }

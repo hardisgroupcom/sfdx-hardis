@@ -349,8 +349,8 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
       logElements: this.unusedPermissionSetLicenseAssignments,
       data: { metric: this.unusedPermissionSetLicenseAssignments.length },
       metrics: {
-        "UnusedPermissionSetLicenses": this.unusedPermissionSetLicenseAssignments.length
-      }
+        UnusedPermissionSetLicenses: this.unusedPermissionSetLicenseAssignments.length,
+      },
     });
     return [];
   }

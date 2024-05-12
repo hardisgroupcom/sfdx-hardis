@@ -102,8 +102,8 @@ export default class UnusedMetadatas extends SfdxCommand {
       logElements: this.unusedData,
       data: { metric: this.unusedData.length },
       metrics: {
-        "MetadatasNotUsed": this.unusedData.length
-      }
+        MetadatasNotUsed: this.unusedData.length,
+      },
     });
 
     return {};

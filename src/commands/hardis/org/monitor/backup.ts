@@ -226,8 +226,8 @@ You can remove more metadata types from backup, especially in case you have too 
       logElements: this.diffFilesSimplified,
       data: { metric: this.diffFilesSimplified.length },
       metrics: {
-        "UpdatedMetadatas": this.diffFilesSimplified.length
-      }
+        UpdatedMetadatas: this.diffFilesSimplified.length,
+      },
     });
 
     return { outputString: "BackUp processed on org " + this.org.getConnection().instanceUrl };

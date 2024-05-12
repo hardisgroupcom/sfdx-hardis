@@ -465,8 +465,8 @@ export default class Access extends SfdxCommand {
       logElements: this.missingElements,
       data: { metric: this.missingElements.length },
       metrics: {
-        "ElementsWithNoProfileOrPermissionSetAccess": this.missingElements.length
-      }
+        ElementsWithNoProfileOrPermissionSetAccess: this.missingElements.length,
+      },
     });
   }
 

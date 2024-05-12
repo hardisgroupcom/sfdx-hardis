@@ -112,7 +112,7 @@ export class ApiProvider extends NotifProviderRoot {
         _logBodyText: logBodyText,
         _logElements: notifMessage.logElements,
         _metrics: notifMessage.metrics,
-        _metricsKeys: Object.keys(notifMessage.metrics)
+        _metricsKeys: Object.keys(notifMessage.metrics),
       }),
     };
     // Add job url if available
@@ -193,8 +193,7 @@ export class ApiProvider extends NotifProviderRoot {
       if (typeof metricData === "number") {
         metricPayloadLine += "metric=" + metricData.toFixed(2);
         metricsPayloadLines.push(metricPayloadLine);
-      }
-      else if (typeof metricData === "object") {
+      } else if (typeof metricData === "object") {
         const metricFields = [];
         if (metricData.min) {
           metricFields.push("min=" + metricData.min.toFixed(2));
