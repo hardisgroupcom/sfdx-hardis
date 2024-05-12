@@ -111,7 +111,8 @@ export class ApiProvider extends NotifProviderRoot {
         _title: logTitle,
         _logBodyText: logBodyText,
         _logElements: notifMessage.logElements,
-        _metrics: notifMessage.metrics
+        _metrics: notifMessage.metrics,
+        _metricsKeys: Object.keys(notifMessage.metrics)
       }),
     };
     // Add job url if available
