@@ -177,7 +177,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
   }
 
-  // Build something like MetricName,source=sfdx-hardis metric=12.7,min=0,max=70,pencent=0.63
+  // Build something like MetricName,source=sfdx-hardis,orgIdentifier=hardis-group metric=12.7,min=0,max=70,percent=0.63
   private buildMetricsPayload() {
     // Build tag field
     const metricTags =
