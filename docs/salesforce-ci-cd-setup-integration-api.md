@@ -86,8 +86,6 @@ ApexTestsFailingClasses,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-
 ApexTestsCodeCoverage,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-group,gitIdentifier=monitoring-hardis-org/monitoring_hardis_group metric=90.00
 ```
 
-## Examples of
-
 ## Troubleshooting
 
 If you want to see the content of the API notifications in execution logs, you can define `NOTIF_API_DEBUG=true`
