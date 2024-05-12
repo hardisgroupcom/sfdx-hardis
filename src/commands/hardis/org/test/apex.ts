@@ -115,6 +115,10 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
         coverageTarget: this.coverageTarget,
         coverageValue: this.coverageValue,
       },
+      metrics: {
+        ApexTestsFailingClasses: this.failingTestClasses.length,
+        ApexTestsCodeCoverage: this.coverageValue,
+      },
     });
 
     // Handle output message & exit code

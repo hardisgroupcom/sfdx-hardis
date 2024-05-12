@@ -101,6 +101,9 @@ export default class UnusedMetadatas extends SfdxCommand {
       sideImage: "flow",
       logElements: this.unusedData,
       data: { metric: this.unusedData.length },
+      metrics: {
+        MetadatasNotUsed: this.unusedData.length,
+      },
     });
 
     return {};

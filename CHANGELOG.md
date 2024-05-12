@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.34.0] 2024-05-12
+
+- NotifProvider
+  - Updates to also send metrics to Prometheus
+  - NOTIFICATIONS_DISABLE is now not applicable to ApiProvider who always sends notifs
+
 ## [4.33.2] 2024-05-06
 
 - hardis:org:test:apex : Always send coverageValue, coverageTarget and the list of failing classes to API logs

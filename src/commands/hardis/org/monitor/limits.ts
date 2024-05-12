@@ -141,8 +141,14 @@ export default class MonitorBackup extends SfdxCommand {
     }
 
     const limitEntriesMap = {};
+    const limitMetricsMap = {};
     for (const limit of this.limitEntries) {
       limitEntriesMap[limit.name] = limit;
+      limitMetricsMap[limit.name] = {
+        value: limit.used,
+        max: limit.max,
+        percent: limit.percentUsed,
+      };
     }
 
     // Post notifications
@@ -156,6 +162,7 @@ export default class MonitorBackup extends SfdxCommand {
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.limitEntries,
       data: { metric: numberLimitsWarning + numberLimitsError, limits: limitEntriesMap },
+      metrics: limitMetricsMap,
     });
 
     return { outputString: "Limits check on org " + this.org.getConnection().instanceUrl, limitEntries: this.limitEntries };

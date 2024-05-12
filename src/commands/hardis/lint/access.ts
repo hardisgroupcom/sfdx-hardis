@@ -464,6 +464,9 @@ export default class Access extends SfdxCommand {
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.missingElements,
       data: { metric: this.missingElements.length },
+      metrics: {
+        ElementsWithNoProfileOrPermissionSetAccess: this.missingElements.length,
+      },
     });
   }
 
