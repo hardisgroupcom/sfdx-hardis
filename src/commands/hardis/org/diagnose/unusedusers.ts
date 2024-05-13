@@ -23,12 +23,23 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
   public static description = `Efficient user management is vital in Salesforce to ensure resources are optimized and costs are controlled. However, inactive or unused user accounts can often go unnoticed, leading to wasted licenses and potential security risks. This tool addresses this challenge by enabling administrators to identify users who haven't logged in within a specified period.
 
 By analyzing user login activity and last login timestamps, this feature highlights inactive user accounts, allowing administrators to take appropriate action. Whether it's deactivating dormant accounts, freeing up licenses, or ensuring compliance with security policies, this functionality empowers administrators to maintain a lean and secure Salesforce environment.
-  
-You can see the full list of available license identifiers in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm)
+
+licensetypes values are the following:
+
+- all-crm: SFDC,AUL,AUL1,AULL_IGHT
+
+- all-paying: SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login
+
+Note: You can see the full list of available license identifiers in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm)
 `;
 
 
-  public static examples = ["$ sfdx hardis:org:diagnose:unusedusers", "$ sfdx hardis:org:diagnose:unusedusers --days 365"];
+  public static examples = [
+    "$ sfdx hardis:org:diagnose:unusedusers",
+    "$ sfdx hardis:org:diagnose:unusedusers --days 365",
+    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm",
+    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1"
+  ];
 
   //Comment default values to test the prompts
   protected static flagsConfig = {
