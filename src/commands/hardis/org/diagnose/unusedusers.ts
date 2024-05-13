@@ -4,9 +4,9 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
-import { bulkQuery } from "../../../../common/utils/apiUtils";
+import { bulkQuery} from "../../../../common/utils/apiUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -162,9 +162,6 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
       this.outputFilesRes = await generateCsvFile(this.unusedUsers, this.outputFile);
     }
 
-    // Manage notifications
-    await this.manageNotifications();
-
     const userSummaryInfo = this.unusedUsers.length == 1 ? 'user has' : 'users have'
     let msg = `No unused users have been found`;
     let summary;
@@ -179,6 +176,9 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
     if ((this.argv || []).includes("unusedusers")) {
       process.exitCode = this.statusCode;
     }
+
+    // Manage notifications
+    await this.manageNotifications(this.unusedUsers, summary);
 
     // Return an object to be displayed with --json
     return {
@@ -204,26 +204,69 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
     return unusedUsersQueryRes.records;
   }
 
-  private async manageNotifications() {
-    if (this.unusedUsers.length > 0) {
-      let notifDetailText = ``;
-      notifDetailText += "*Related users*:\n";
-      for (const user of this.unusedUsers) {
-        notifDetailText += `• ${user}\n`;
-      }
+  // private async manageNotifications() {
+  //   if (this.unusedUsers.length > 0) {
+  //     let notifDetailText = ``;
+  //     notifDetailText += "*Related users*:\n";
+  //     for (const user of this.unusedUsers) {
+  //       notifDetailText += `• ${user}\n`;
+  //     }
 
-      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "UNUSED_USERS",
-        text: `${this.unusedUsers.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`,
-        attachments: [{ text: notifDetailText }],
-        buttons: notifButtons,
-        severity: "warning",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-      });
+  //     const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+  //     const notifButtons = await getNotificationButtons();
+  //     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+  //     NotifProvider.postNotifications({
+  //       type: "UNUSED_USERS",
+  //       text: `${this.unusedUsers.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`,
+  //       attachments: [{ text: notifDetailText }],
+  //       buttons: notifButtons,
+  //       severity: "warning",
+  //       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+  //     });
+  //   }
+  //   return [];
+  // }
+
+  private async manageNotifications(unusedUsers: any[], summary: any) {
+    // Build notification
+    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No unused Permission Set Licenses Assignments has been found in ${orgMarkdown}`;
+    const notifDetailText = ``;
+    let attachments = [];
+    if (unusedUsers.length > 0) {
+      notifSeverity = "warning";
+      notifText = `${this.unusedUsers.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
+      // for (const pslMasterLabel of Object.keys(summary).sort()) {
+      //   const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
+      //   notifDetailText += `• ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)\n`;
+      // }
+      attachments = [{ text: notifDetailText }];
     }
+    // Send notifications
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "UNUSED_LICENSES",
+      text: notifText,
+      attachments: attachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+      logElements: this.unusedUsers,
+      data: { metric: this.unusedUsers.length },
+      metrics: {
+        UnusedUsers: this.unusedUsers.length,
+      },
+    });
     return [];
   }
+
+  // private getPermissionSetLicenseByMasterLabel(masterLabel: string) {
+  //   const pslList = this.permissionSetLicenses.filter((psl) => psl.MasterLabel === masterLabel);
+  //   if (pslList.length === 1) {
+  //     return pslList[0];
+  //   }
+  //   throw new SfdxError(`Unable to find Permission Set License with MasterLabel ${masterLabel}`);
+  // }
 }

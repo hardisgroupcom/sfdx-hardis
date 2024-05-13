@@ -32,7 +32,7 @@ export class EmailProvider extends NotifProviderRoot {
     if (warningsErrorsEmail && ["critical", "error", "warning"].includes(notifMessage.severity || null)) {
       emailAddresses.push(...warningsErrorsEmail.split(","));
     }
-
+    /* jscpd:ignore-start */
     // Main block
     const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
       UtilsNotifs.slackToTeamsMarkdown(notifMessage.text.split("\n")[0]),
@@ -53,6 +53,7 @@ export class EmailProvider extends NotifProviderRoot {
         emailBody += UtilsNotifs.slackToTeamsMarkdown(text) + "\n\n";
       }
     }
+    /* jscpd:ignore-end */
 
     // Add action blocks
     if (notifMessage.buttons?.length > 0) {
@@ -61,7 +62,6 @@ export class EmailProvider extends NotifProviderRoot {
         // Url button
         if (button.url) {
           emailBody += "  - " + UtilsNotifs.markdownLink(button.url, button.text, "teams") + "\n\n";
-          emailBody += "  - " + UtilsNotifs.markdownLink(button.url, button.text, "teams");
         }
       }
       emailBody += "\n\n";
@@ -82,7 +82,7 @@ export class EmailProvider extends NotifProviderRoot {
     };
     const emailRes = await sendEmail(emailMessage);
     if (emailRes.success) {
-      uxLog(this, c.grey(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
+      uxLog(this, c.cyan(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
     } else {
       uxLog(this, c.yellow(`[EmailProvider] Error while sending email to ${emailAddresses.join(",")}`));
       uxLog(this, c.grey(JSON.stringify(emailRes.detail, null, 2)));

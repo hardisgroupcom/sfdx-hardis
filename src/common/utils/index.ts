@@ -82,6 +82,18 @@ export async function getGitRepoName() {
   return null;
 }
 
+export async function getGitRepoUrl() {
+  if (!isGitRepo) {
+    return null;
+  }
+  const origin = await git().getConfig("remote.origin.url");
+  if (origin && origin.value) {
+    // Replace https://username:token@gitlab.com/toto by https://gitlab.com/toto
+    return origin.value.replace(/\/\/(.*:.*@)/gm, `//`);
+  }
+  return null;
+}
+
 export async function gitHasLocalUpdates(options = { show: false }) {
   const changes = await git().status();
   if (options.show) {
@@ -311,7 +323,13 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
     } else {
       if (options?.parent === "main") {
         // Create from main branch
-        const mainBranch = branches.all.includes("main") ? "main" : "master";
+        const mainBranch = branches.all.includes("main")
+          ? "main"
+          : branches.all.includes("origin/main")
+            ? "main"
+            : branches.all.includes("remotes/origin/main")
+              ? "main"
+              : "master";
         await git().checkout(mainBranch);
         await git().checkoutBranch(branchName, mainBranch);
       } else {
@@ -887,6 +905,24 @@ export async function extractRegexMatches(regex: RegExp, text: string): Promise<
   return matchStrings;
 }
 
+export async function extractRegexMatchesMultipleGroups(regex: RegExp, text: string): Promise<any[]> {
+  let m;
+  const matchResults = [];
+  while ((m = regex.exec(text)) !== null) {
+    // This is necessary to avoid infinite loops with zero-width matches
+    if (m.index === regex.lastIndex) {
+      regex.lastIndex++;
+    }
+    // Iterate thru the regex matches
+    const matchGroups = [];
+    m.forEach((match) => {
+      matchGroups.push(match);
+    });
+    matchResults.push(matchGroups);
+  }
+  return matchResults;
+}
+
 export function arrayUniqueByKey(array, key: string) {
   const keys = new Set();
   return array.filter((el) => !keys.has(el[key]) && keys.add(el[key]));
@@ -944,7 +980,7 @@ export function uxLog(commandThis: any, text: string) {
   text = text.includes("[sfdx-hardis]") ? text : "[sfdx-hardis]" + (text.startsWith("[") ? "" : " ") + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
-  } else if (!process.argv.includes("--json")) {
+  } else if (!(globalThis.processArgv || process.argv).includes("--json")) {
     console.log(text);
   }
   if (globalThis.hardisLogFileStream) {

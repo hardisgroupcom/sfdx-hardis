@@ -7,8 +7,7 @@ import * as child from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository, execCommand, isCI, isMonitoringJob, uxLog } from "../../../../../common/utils";
-import { canSendNotifications, sendNotification } from "../../../../../common/utils/notifUtils";
+import { ensureGitRepository, execCommand, isMonitoringJob, uxLog } from "../../../../../common/utils";
 import LegacyApi from "../../diagnose/legacyapi";
 import OrgTestApex from "../../test/apex";
 import * as util from "util";
@@ -108,13 +107,6 @@ export default class DxSources extends SfdxCommand {
     } catch (e) {
       if (!isMonitoring) {
         throw e;
-      }
-      if (isCI && (await canSendNotifications())) {
-        await sendNotification({
-          title: `Crash while retrieving metadatas`,
-          text: e.message,
-          severity: "warning",
-        });
       }
       message = "[sfdx-hardis] Error retrieving metadatas";
     }

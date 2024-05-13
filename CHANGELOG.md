@@ -4,6 +4,72 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.34.1] 2024-05-13
+
+- Notifications org identifier: replace dot by __ to avoid mess with Grafana label filters
+
+## [4.34.0] 2024-05-12
+
+- NotifProvider
+  - Updates to also send metrics to Prometheus
+  - NOTIFICATIONS_DISABLE is now not applicable to ApiProvider who always sends notifs
+
+## [4.33.2] 2024-05-06
+
+- hardis:org:test:apex : Always send coverageValue, coverageTarget and the list of failing classes to API logs
+
+## [4.33.1] 2024-05-05
+
+- Api logs enhancements:
+  - Add severity and severityIcon in all log elements details
+  - Add dateTime property (ISO format) in all API logs
+- Remove deprecated way to call MsTeams notifications
+- hardis:org:monitor:limits : Fix bug when some values are not returned
+
+## [4.33.0] 2024-05-04
+
+- New notifications provider: **ApiProvider (beta)**, that allows to send notifications via HTTP/JSON to remote endpoints, like Grafana Loki, but also any custom one
+- New notification severity level: **log**, to send notifications via ApiProvider even when there is no detected issue
+- Update all existing notifications to add detailed log lines and additional log data
+- hardis:org:diagnose:audittrail: Fix lastndays not taken in account in some contexts
+- Complete refactoring of hardis:org:test:apex (same behavior but much organized code)
+- Notifications: Display success logs in blue
+- New monitoring command: **sfdx hardis:org:monitor:limits** to alert in case org limits are over 50% or 75% usage
+- Fix gitlab-ci-config.yml: More restrictive regex for deployment branches
+
+## [4.32.2] 2024-05-01
+
+- Fix GitHub Actions check deploy workflow
+
+## [4.32.1] 2024-04-30
+
+- hardis:work:new : Replace all non alphanumeric characters in new git branch name
+
+## [4.32.0] 2024-04-24
+
+- Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
+  - Deployment status in Pull Request comments
+  - Quick Deploy to enhance performance
+
+- Remove useless close WebSocket issue display
+
+## [4.31.2] 2024-04-10
+
+- QuickFix Monitoring setup
+
+## [4.31.1] 2024-04-10
+
+- Fix json output (remove other console logs that are not supposed to be here)
+
+## [4.31.0] 2024-04-10
+
+- Add native Jenkins integration with Jenkinsfile for CI/CD Pipeline
+- Update default pipelines to add JIRA variables
+- Better handle of Jira API issues
+
+## [4.30.0] 2024-04-02
+
+- Fix default **package-no-overwrite.xml** (typos on NamesCredential & RemoteSiteSetting)
 - Add links to FAQ in documentation
 - Add two new PMD rules for quality **pmd-ruleset-high.xml** and **pmd-ruleset-medium.xml**
 
@@ -12,7 +78,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Handle **manifest/preDestructiveChanges.xml** to delete items before deployments if necessary
 - Update documentation about integrations
 - Upgrade dependencies
-
 
 ## [4.28.4] 2024-03-11
 

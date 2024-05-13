@@ -6,8 +6,8 @@ import * as c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
 import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from "../../../../common/utils/apiUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { NotifProvider } from "../../../../common/notifProvider";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
@@ -115,6 +115,7 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
     this.allPermissionSetAssignments = this.permissionSetGroupAssignments.concat(this.permissionSetAssignments);
 
     // Browse Permission Sets License assignments
+    const severityIconWarning = getSeverityIcon("warning");
     for (const psla of this.permissionSetLicenseAssignmentsActive) {
       const pslaUsername = psla["Assignee.Username"];
       // Find related Permission Set assignments
@@ -149,6 +150,8 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
           PermissionsSetLicense: psla["PermissionSetLicense.MasterLabel"],
           User: psla["Assignee.Username"],
           Reason: "Related PS assignment not found",
+          severity: "warning",
+          severityIcon: severityIconWarning,
         });
       }
     }
@@ -318,25 +321,37 @@ export default class DiagnoseUnusedLicenses extends SfdxCommand {
   }
 
   private async manageNotifications(unusedPermissionSetLicenseAssignments: any[], summary: any) {
+    // Build notification
+    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No unused Permission Set Licenses Assignments has been found in ${orgMarkdown}`;
+    let notifDetailText = ``;
+    let attachments = [];
     if (unusedPermissionSetLicenseAssignments.length > 0) {
-      let notifDetailText = ``;
+      notifSeverity = "warning";
+      notifText = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`;
       for (const pslMasterLabel of Object.keys(summary).sort()) {
         const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
         notifDetailText += `• ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)\n`;
       }
-
-      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "UNUSED_LICENSES",
-        text: `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`,
-        attachments: [{ text: notifDetailText }],
-        buttons: notifButtons,
-        severity: "warning",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-      });
+      attachments = [{ text: notifDetailText }];
     }
+    // Send notifications
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "UNUSED_LICENSES",
+      text: notifText,
+      attachments: attachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+      logElements: this.unusedPermissionSetLicenseAssignments,
+      data: { metric: this.unusedPermissionSetLicenseAssignments.length },
+      metrics: {
+        UnusedPermissionSetLicenses: this.unusedPermissionSetLicenseAssignments.length,
+      },
+    });
     return [];
   }
 

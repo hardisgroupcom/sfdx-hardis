@@ -4,12 +4,12 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as sortArray from "sort-array";
-import { getCurrentGitBranch, isCI, uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils";
 import * as dns from "dns";
-import { canSendNotifications, getNotificationButtons, getOrgMarkdown, sendNotification } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { WebSocketClient } from "../../../../common/websocketClient";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 const dnsPromises = dns.promises;
 
@@ -103,6 +103,8 @@ See article below
     },
   ];
 
+  protected allErrors = [];
+  protected ipResultsSorted = [];
   protected outputFile;
   protected outputFilesRes: any = {};
 
@@ -128,9 +130,10 @@ See article below
     if (logCountRes.totalSize === 0) {
       uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
       uxLog(this, c.green("This indicates that no legacy APIs were called during the log retention window."));
-      return { status: 0 };
+    } else {
+      uxLog(this, c.grey("Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
     }
-    uxLog(this, c.grey("Found " + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
+
     if (logCountRes.totalSize > limit) {
       uxLog(this, c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`));
     }
@@ -151,7 +154,7 @@ See article below
       allSoonDeprecatedApiCalls.push(...soonDeprecatedApiCalls);
       allEndOfSupportApiCalls.push(...endOfSupportApiCalls);
     }
-    const allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
+    this.allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
 
     // Display summary
     const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red;
@@ -181,7 +184,7 @@ See article below
 
     // Generate main CSV file
     this.outputFile = await generateReportPath("legacy-api-calls", this.outputFile);
-    this.outputFilesRes = await generateCsvFile(allErrors, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.allErrors, this.outputFile);
 
     // Generate one summary file by severity
     const outputFileIps = [];
@@ -219,30 +222,33 @@ See article to solve issue before it's too late:
 • EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
 • FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
-    // Manage notifications
-    if (allErrors.length > 0) {
-      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "LEGACY_API",
-        text: `Deprecated Salesforce API versions are used in ${orgMarkdown}`,
-        attachments: [{ text: notifDetailText }],
-        buttons: notifButtons,
-        severity: "error",
-        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile, this.outputFilesRes.xlsxFile2] : [],
-      });
+    // Build notifications
+    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No deprecated Salesforce API versions are used in ${orgMarkdown}`;
+    if (this.allErrors.length > 0) {
+      notifSeverity = "error";
+      notifText = `${this.allErrors.length} deprecated Salesforce API versions are used in ${orgMarkdown}`;
     }
-
-    // Send notification if possible
-    if (isCI && allErrors.length > 0 && (await canSendNotifications())) {
-      const currentGitBranch = await getCurrentGitBranch();
-      await sendNotification({
-        title: `WARNING: Deprecated Salesforce API versions are used in ${currentGitBranch}`,
-        text: notifDetailText,
-        severity: "critical",
-      });
-    }
+    // Post notifications
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "LEGACY_API",
+      text: notifText,
+      attachments: [{ text: notifDetailText }],
+      buttons: notifButtons,
+      severity: notifSeverity,
+      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile, this.outputFilesRes.xlsxFile2] : [],
+      logElements: this.allErrors,
+      data: {
+        metric: this.allErrors.length,
+        legacyApiSummary: this.ipResultsSorted,
+      },
+      metrics: {
+        LegacyApiCalls: this.allErrors.length,
+      },
+    });
 
     if ((this.argv || []).includes("legacyapi")) {
       process.exitCode = statusCode;
@@ -266,6 +272,9 @@ See article to solve issue before it's too late:
     const soonDeprecatedApiCalls = [];
     const endOfSupportApiCalls = [];
     const logEntries = await conn.request(logFileUrl);
+    const severityIconError = getSeverityIcon("error");
+    const severityIconWarning = getSeverityIcon("warning");
+    const severityIconInfo = getSeverityIcon("info");
     for (const logEntry of logEntries) {
       const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : parseFloat("999.0");
       // const apiType = logEntry.API_TYPE || null ;
@@ -280,11 +289,17 @@ See article to solve issue before it's too late:
           logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease;
           logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
           if (legacyApiDescriptor.severity === "ERROR") {
+            logEntry.severity = "error";
+            logEntry.severityIcon = severityIconError;
             deadApiCalls.push(logEntry);
           } else if (legacyApiDescriptor.severity === "WARNING") {
+            logEntry.severity = "warning";
+            logEntry.severityIcon = severityIconWarning;
             soonDeprecatedApiCalls.push(logEntry);
           } else {
             // severity === 'INFO'
+            logEntry.severity = "info";
+            logEntry.severityIcon = severityIconInfo;
             endOfSupportApiCalls.push(logEntry);
           }
           break;
@@ -317,7 +332,7 @@ See article to solve issue before it's too late:
       const ipResult = { CLIENT_IP: ip, CLIENT_HOSTNAME: hostname, SFDX_HARDIS_COUNT: ipInfo.count };
       ipResults.push(ipResult);
     }
-    const ipResultsSorted = sortArray(ipResults, {
+    this.ipResultsSorted = sortArray(ipResults, {
       by: ["SFDX_HARDIS_COUNT"],
       order: ["desc"],
     });
@@ -325,7 +340,7 @@ See article to solve issue before it's too late:
     const outputFileIps = this.outputFile.endsWith(".csv")
       ? this.outputFile.replace(".csv", ".api-clients-" + severity + ".csv")
       : this.outputFile + "api-clients-" + severity + ".csv";
-    const outputFileIpsRes = await generateCsvFile(ipResultsSorted, outputFileIps);
+    const outputFileIpsRes = await generateCsvFile(this.ipResultsSorted, outputFileIps);
     if (outputFileIpsRes.xlsxFile) {
       this.outputFilesRes.xlsxFile2 = outputFileIpsRes.xlsxFile;
     }

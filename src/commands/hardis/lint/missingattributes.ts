@@ -12,9 +12,9 @@ import { AnyJson } from "@salesforce/ts-types";
 
 // Project Specific Utilities
 import { uxLog } from "../../../common/utils";
-import { NotifProvider } from "../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { MessageAttachment } from "@slack/types";
-import { getBranchMarkdown, getNotificationButtons } from "../../../common/utils/notifUtils";
+import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 
@@ -54,6 +54,7 @@ export default class metadatastatus extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
   private objectFileDirectory = "**/objects/**/fields/*.*";
+  protected fieldsWithoutDescription = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
   private nonCustomSettingsFieldDirectories: string[] = [];
@@ -61,28 +62,41 @@ export default class metadatastatus extends SfdxCommand {
 
   public async run(): Promise<AnyJson> {
     await this.filterOutCustomSettings();
-    const fieldsWithoutDescription: string[] = await this.verifyFieldDescriptions();
-    if (fieldsWithoutDescription.length > 0) {
-      await this.buildCsvFile(fieldsWithoutDescription);
-      const attachments: MessageAttachment[] = [
+    this.fieldsWithoutDescription = await this.verifyFieldDescriptions();
+
+    // Build notifications
+    const branchMd = await getBranchMarkdown();
+    const notifButtons = await getNotificationButtons();
+    let notifSeverity: NotifSeverity = "log";
+    let notifText = `No missing descriptions on fields has been found in ${branchMd}`;
+    let attachments: MessageAttachment[] = [];
+    if (this.fieldsWithoutDescription.length > 0) {
+      notifSeverity = "warning";
+      notifText = `${this.fieldsWithoutDescription.length} missing descriptions on fields have been found in ${branchMd}`;
+      await this.buildCsvFile(this.fieldsWithoutDescription);
+      attachments = [
         {
-          text: `*Missing descriptions*\n${fieldsWithoutDescription.map((file) => `• ${file}`).join("\n")}`,
+          text: `*Missing descriptions*\n${this.fieldsWithoutDescription.map((file) => `• ${file.name}`).join("\n")}`,
         },
       ];
-      const branchMd = await getBranchMarkdown();
-      const notifButtons = await getNotificationButtons();
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: "MISSING_ATTRIBUTES",
-        text: `Missing description on fields in ${branchMd}\n`,
-        attachments: attachments,
-        buttons: notifButtons,
-        severity: "warning",
-        sideImage: "flow",
-      });
     } else {
-      uxLog(this, "No draft flow files detected.");
+      uxLog(this, "No missing descriptions on fields have been found");
     }
+    // Post notifications
+    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: "MISSING_ATTRIBUTES",
+      text: notifText,
+      attachments: attachments,
+      buttons: notifButtons,
+      severity: notifSeverity,
+      sideImage: "flow",
+      logElements: this.fieldsWithoutDescription,
+      data: { metric: this.fieldsWithoutDescription.length },
+      metrics: {
+        MetadatasWithoutDescription: this.fieldsWithoutDescription.length,
+      },
+    });
     return {};
   }
 
@@ -116,14 +130,14 @@ export default class metadatastatus extends SfdxCommand {
   }
 
   private async verifyFieldDescriptions(): Promise<string[]> {
-    const fieldsWithoutDescription: string[] = [];
+    const fieldsWithoutDescription: any[] = [];
     const fieldResults = await Promise.all(
       this.nonCustomSettingsFieldDirectories.map(async (fieldFile) => {
         const fieldContent = await this.readFileAsync(fieldFile);
         return await this.parseXmlStringAsync(fieldContent);
       }),
     );
-
+    const severityIconInfo = getSeverityIcon("info");
     for (let i = 0; i < fieldResults.length; i++) {
       const fieldResult = fieldResults[i];
       if (fieldResult && fieldResult.CustomField) {
@@ -132,7 +146,13 @@ export default class metadatastatus extends SfdxCommand {
           const fieldFile = this.nonCustomSettingsFieldDirectories[i];
           const objectName = fieldFile.split("/").slice(-3, -2)[0];
           const fullFieldName = `${objectName}.${fieldName}`;
-          fieldsWithoutDescription.push(fullFieldName);
+          fieldsWithoutDescription.push({
+            name: fullFieldName,
+            object: objectName,
+            field: fieldName,
+            severity: "info",
+            severityIcon: severityIconInfo,
+          });
         }
       }
     }

@@ -26,8 +26,9 @@ Depending of your git provider, configure one of the following integrations.
   - Deployment status in Pull Request threads
   - Quick Deploy to enhance performances
 
-- BitBucket
-  - Coming soon !
+- [BitBucket](salesforce-ci-cd-setup-integrations-bitbucket.md)
+  - Deployment status in Pull Request comments
+  - Quick Deploy to enhance performance
 
 ## Message notifications
 
@@ -38,6 +39,9 @@ Depending of your git provider, configure one of the following integrations.
   - Notifications
 
 - [Email](salesforce-ci-cd-setup-integration-email.md)
+  - Notifications
+
+- [API (ex: Grafana)](salesforce-ci-cd-setup-integration-api.md)
   - Notifications
 
 ## Ticketing providers
