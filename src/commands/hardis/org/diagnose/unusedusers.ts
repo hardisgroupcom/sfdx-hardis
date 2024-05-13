@@ -140,7 +140,6 @@ Note: You can see the full list of available license identifiers in [Salesforce 
 
     if (this.unusedUsers.length > 0) {
       uxLog(this, c.yellow(summary));
-      console.table(this.unusedUsers);
     }
     else {
       uxLog(this, c.green(summary));
@@ -163,11 +162,11 @@ Note: You can see the full list of available license identifiers in [Salesforce 
         const licenseTypesResponse = await prompts({
           type: "select",
           name: "licensetypes",
-          message: "Please select the period to detect inactive active users.",
+          message: "Please select the type of licenses you want to detect ",
           choices: [
-            { title: 'all', value: 'all' },
-            { title: `all-crm`, value: 'SFDC,AUL,AUL1,AULL_IGHT' },
-            { title: `all-paying`, value: 'SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login' },
+            { value: 'all', title: 'All licenses types' },
+            { value: `all-crm`, title: 'Salesforce Licenses' },
+            { value: `all-paying`, title: 'Salesforce Licences + Experience + Other paying' },
           ],
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
@@ -208,18 +207,18 @@ Note: You can see the full list of available license identifiers in [Salesforce 
 
   private async listUnusedUsersWithSfdcLicense(conn) {
     let whereConstraint = `WHERE IsActive = true AND (` +
-      `(LastLoginDate != LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
-      `(CreatedDate != LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
+      `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
+      `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
       `)`;
     // Add License constraint only if necessary
     if (this.licenseTypes !== 'all') {
-      const licenseTypeValues = this.licenseTypes.split(',');
-      const licenseTypeCondition = licenseTypeValues.map(value => `'${value}'`).join(',');
-      whereConstraint += ` AND Profile.UserLicense.LicenseDefinitionKey IN (${licenseTypeCondition})`;
+      const licenseIdentifierValues = this.licenseIdentifiers.split(',');
+      const licenseIdentifierCondition = licenseIdentifierValues.map(value => `'${value}'`).join(',');
+      whereConstraint += ` AND Profile.UserLicense.LicenseDefinitionKey IN (${licenseIdentifierCondition})`;
     }
     // Build & call Bulk API Query
     const unusedUsersQuery =
-      `SELECT Id, User.Firstname, User.LastName, Profile.Name, Username, LastLoginDate, IsActive, Profile.UserLicense.LicenseDefinitionKey ` +
+      `SELECT Id, User.Firstname, User.LastName, Profile.Name, Username, LastLoginDate, IsActive, Profile.UserLicense.Name, Profile.UserLicense.LicenseDefinitionKey ` +
       `FROM User ` +
       whereConstraint +
       ` ORDER BY LastLoginDate DESC`;
