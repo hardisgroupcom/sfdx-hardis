@@ -27,6 +27,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
 
   public static examples = ["$ sfdx hardis:org:diagnose:unusedusers", "$ sfdx hardis:org:diagnose:unusedusers --days 365"];
 
+  //Comment default values to test the prompts
   protected static flagsConfig = {
     outputfile: flags.string({
       char: "o",
@@ -35,12 +36,12 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
     days: flags.number({
       char: "t",
       default: 100,
-      description: "Extracts the users that have been inactive for the amount of days specified",
+      description: "Extracts the users that have been inactive for the amount of days specified.",
     }),
     licensetypes: flags.string({
       char: "t",
       default: 'SFDC,AUL,AUL1,AULL_IGHT',
-      description: "Number of days to extract from today (included)",
+      description: "Extracts the users that have the following license types.",
     }),
     debug: flags.boolean({
       char: "d",
@@ -76,6 +77,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
     this.outputFile = this.flags.outputfile || null;
     this.lastNdays = this.flags.days;
     this.licenseTypes = this.flags.licensetypes;
+
     // If manual mode and days not sent as parameter, prompt user
     if (!isCI) {
       if(!this.lastNdays){
@@ -94,6 +96,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
         });
         this.lastNdays = lastNdaysResponse.days;
       }
+      
 
       if(!this.licenseTypes){
         const licenseTypesResponse = await prompts({
@@ -101,9 +104,10 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
           name: "licensetypes",
           message: "Please select the period to detect inactive active users.",
           choices: [
+            { title: 'all', value: 'all' },
             { title: `all-crm`, value: 'SFDC,AUL,AUL1,AULL_IGHT' },
             { title: `all-paying`, value: 'SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login' },
-            { title: `all`, value: 'AUL,AUL1,AUL_LIGHT,FDC_ONE,FDC_SUB,Overage_Platform_Portal_User,PID_STRATEGIC_PRM,PID_CHATTER,PID_CONTENT,PID_Customer_Portal_Basic,PID_Customer_Portal_Standard,PID_FDC_FREE,PID_IDEAS,PID_Ideas_Only_Portal,PID_Ideas_Only_Site,PID_KNOWLEDGE,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login,PID_Overage_High Volume Customer Portal,PID_Overage_Customer_Portal_Basic,PID_Limited_Customer_Portal_Standard,PID_Limited_Customer_Portal_Basic,Platform_Portal_User,POWER_SSP,POWER_PRM,SFDC' }
+            // { title: 'all-original', value: 'AUL, AUL1, AUL_LIGHT, FDC_ONE, FDC_SUB, Overage_Platform_Portal_User, PID_STRATEGIC_PRM, PID_CHATTER, PID_CONTENT, PID_Customer_Portal_Basic, PID_Customer_Portal_Standard, PID_FDC_FREE, PID_IDEAS, PID_Ideas_Only_Portal, PID_Ideas_Only_Site, PID_KNOWLEDGE, PID_Customer_Community, PID_Customer_Community_Login, PID_Partner_Community, PID_Partner_Community_Login, PID_Limited_Customer_Portal_Basic, PID_Limited_Customer_Portal_Standard, PID_Overage_Customer_Portal_Basic, PID_Overage_High Volume Customer Portal, Platform_Portal_User, POWER_PRM, POWER_SSP, SFDC'}
             // I think you can add more licenses types by default, to handle all the "paying" ones
 
             // For example Platform & Partner Community licenses ^^
@@ -121,7 +125,6 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
       }
-      
     }
 
     // If manual mode and lastndays not sent as parameter, prompt user
@@ -146,8 +149,6 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
         ],
       });
       this.lastNdays = lastNdaysResponse.lastndays;
-    } else {
-      this.lastNdays = 1;
     }
 
     const conn = this.org.getConnection();
@@ -192,40 +193,27 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
   }
 
   private async listUnusedUsersWithSfdcLicense(conn) {
-    const whereConstraint = `WHERE IsActive = true AND LastLoginDate != LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL AND Profile.UserLicense.LicenseDefinitionKey = 'SFDC' `;
+    let whereConstraint = `WHERE IsActive = true AND LastLoginDate != LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL`;
+    
+    if (this.licenseTypes !== 'all') {
+      const licenseTypeValues = this.licenseTypes.split(',');
+      const licenseTypeCondition = licenseTypeValues.map(value => `'${value}'`).join(',');
+      whereConstraint += ` AND Profile.UserLicense.LicenseDefinitionKey IN (${licenseTypeCondition})`;
+    }
+  
     const unusedUsersQuery =
       `SELECT Id, User.Firstname, User.LastName, Profile.Name, Username, LastLoginDate, IsActive, Profile.UserLicense.LicenseDefinitionKey ` +
       `FROM User ` +
       whereConstraint +
-      `ORDER BY LastLoginDate DESC`;
+      ` ORDER BY LastLoginDate DESC`;
+    
+    console.log(unusedUsersQuery);
+    
     uxLog(this, c.grey("Query: " + c.italic(unusedUsersQuery)));
     const unusedUsersQueryRes = await bulkQuery(unusedUsersQuery, conn);
-
+  
     return unusedUsersQueryRes.records;
   }
-
-  // private async manageNotifications() {
-  //   if (this.unusedUsers.length > 0) {
-  //     let notifDetailText = ``;
-  //     notifDetailText += "*Related users*:\n";
-  //     for (const user of this.unusedUsers) {
-  //       notifDetailText += `• ${user}\n`;
-  //     }
-
-  //     const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
-  //     const notifButtons = await getNotificationButtons();
-  //     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
-  //     NotifProvider.postNotifications({
-  //       type: "UNUSED_USERS",
-  //       text: `${this.unusedUsers.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`,
-  //       attachments: [{ text: notifDetailText }],
-  //       buttons: notifButtons,
-  //       severity: "warning",
-  //       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-  //     });
-  //   }
-  //   return [];
-  // }
 
   private async manageNotifications(unusedUsers: any[], summary: any) {
     // Build notification
