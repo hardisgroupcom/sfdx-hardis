@@ -49,7 +49,6 @@ Note: You can see the full list of available license identifiers in [Salesforce 
     }),
     days: flags.number({
       char: "t",
-      default: 100,
       description: "Extracts the users that have been inactive for the amount of days specified.",
     }),
     licensetypes: flags.enum({
@@ -218,7 +217,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
     }
     // Build & call Bulk API Query
     const unusedUsersQuery =
-      `SELECT Id, User.Firstname, User.LastName, Profile.Name, Username, LastLoginDate, IsActive, Profile.UserLicense.Name, Profile.UserLicense.LicenseDefinitionKey ` +
+      `SELECT Id, LastLoginDate, User.LastName, User.Firstname, Profile.UserLicense.Name, Profile.Name, Username, Profile.UserLicense.LicenseDefinitionKey, IsActive, CreatedDate ` +
       `FROM User ` +
       whereConstraint +
       ` ORDER BY LastLoginDate DESC`;
