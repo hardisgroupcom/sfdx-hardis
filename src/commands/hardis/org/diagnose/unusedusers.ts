@@ -49,12 +49,12 @@ Note: You can see the full list of available license identifiers in [Salesforce 
     }),
     days: flags.number({
       char: "t",
-      description: "Extracts the users that have been inactive for the amount of days specified.",
+      description: "Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days",
     }),
     licensetypes: flags.enum({
       char: "l",
       options: ["all", "all-crm", "all-paying"],
-      description: "Type of licenses to check. If set, do not use licenseidentifiers option",
+      description: "Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm",
     }),
     licenseidentifiers: flags.string({
       char: "i",
@@ -199,7 +199,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
         this.lastNdays = lastNdaysResponse.days;
       }
       else {
-        this.lastNdays = 90;
+        this.lastNdays = 180;
       }
     }
   }
