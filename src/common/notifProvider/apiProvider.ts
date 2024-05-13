@@ -102,7 +102,7 @@ export class ApiProvider extends NotifProviderRoot {
     this.payload = {
       source: "sfdx-hardis",
       type: notifMessage.type,
-      orgIdentifier: conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", ""),
+      orgIdentifier: conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__"),
       gitIdentifier: `${repoName}/${currentGitBranch}`,
       severity: notifMessage.severity,
       data: Object.assign(notifMessage.data, {

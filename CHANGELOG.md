@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.34.1] 2024-05-13
+
+- Notifications org identifier: replace dot by __ to avoid mess with Grafana label filters
+
 ## [4.34.0] 2024-05-12
 
 - NotifProvider
