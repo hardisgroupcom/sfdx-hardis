@@ -209,7 +209,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
   private async listUnusedUsersWithSfdcLicense(conn) {
     let whereConstraint = `WHERE IsActive = true AND (` +
       `(LastLoginDate != LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
-      `(CreatedDate != LAST_N_DAYS:${this.lastNdays} AND LastLoginDate == NULL)` + // Check also for users never used
+      `(CreatedDate != LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
       `)`;
     // Add License constraint only if necessary
     if (this.licenseTypes !== 'all') {
