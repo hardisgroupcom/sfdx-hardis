@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.35.1] 2024-05-14
+
+- Fix unused users notification identifier
+
 ## [4.35.0] 2024-05-14
 
 - New command **sfdx hardis:org:diagnose:unusedusers** to find users that don't use their license !
