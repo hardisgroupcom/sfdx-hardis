@@ -775,6 +775,7 @@
     "yamllint",
     "zipfile",
     "\u00eatre",
-    "\u00ecntegration"
+    "\u00ecntegration",
+    "unusedusers"
   ]
 }
