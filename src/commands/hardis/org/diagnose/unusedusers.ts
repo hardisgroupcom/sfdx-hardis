@@ -242,7 +242,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
     // Send notifications
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "UNUSED_LICENSES",
+      type: "UNUSED_USERS",
       text: notifText,
       attachments: attachments,
       buttons: notifButtons,
