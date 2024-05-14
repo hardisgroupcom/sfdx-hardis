@@ -33,12 +33,11 @@ licensetypes values are the following:
 Note: You can see the full list of available license identifiers in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm)
 `;
 
-
   public static examples = [
     "$ sfdx hardis:org:diagnose:unusedusers",
     "$ sfdx hardis:org:diagnose:unusedusers --days 365",
     "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1"
+    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1",
   ];
 
   //Comment default values to test the prompts
@@ -58,7 +57,8 @@ Note: You can see the full list of available license identifiers in [Salesforce 
     }),
     licenseidentifiers: flags.string({
       char: "i",
-      description: "Comma-separated list of license identifiers, in case licensetypes is not used.. Identifiers available at https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm",
+      description:
+        "Comma-separated list of license identifiers, in case licensetypes is not used.. Identifiers available at https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm",
     }),
     debug: flags.boolean({
       char: "d",
@@ -81,11 +81,10 @@ Note: You can see the full list of available license identifiers in [Salesforce 
   protected static requiresProject = false;
 
   protected licenseTypesCorrespondances = {
-    'all': 'all',
-    'all-crm': 'SFDC,AUL,AUL1,AULL_IGHT',
-    'all-paying': 'SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login'
-  }
-
+    all: "all",
+    "all-crm": "SFDC,AUL,AUL1,AULL_IGHT",
+    "all-paying": "SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login",
+  };
 
   protected debugMode = false;
   protected outputFile;
@@ -107,7 +106,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
 
     // Calculate lastNdays to use
     await this.defineNumberOfInactiveDays();
-    // Calculate license identifiers from input parameters or default values    
+    // Calculate license identifiers from input parameters or default values
     await this.defineLicenseIdentifiers();
 
     // Retrieve the list of users who haven't logged in for a while
@@ -121,7 +120,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
       this.outputFilesRes = await generateCsvFile(this.unusedUsers, this.outputFile);
     }
 
-    const userSummaryInfo = this.unusedUsers.length == 1 ? 'user has' : 'users have'
+    const userSummaryInfo = this.unusedUsers.length == 1 ? "user has" : "users have";
     let summary = `No unused users have been found`;
     if (this.unusedUsers.length === 0) {
       summary = `All users have logged in to ${conn.instanceUrl} within the last ${this.lastNdays} days!`;
@@ -139,8 +138,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
 
     if (this.unusedUsers.length > 0) {
       uxLog(this, c.yellow(summary));
-    }
-    else {
+    } else {
       uxLog(this, c.green(summary));
     }
 
@@ -163,14 +161,13 @@ Note: You can see the full list of available license identifiers in [Salesforce 
           name: "licensetypes",
           message: "Please select the type of licenses you want to detect ",
           choices: [
-            { value: 'all', title: 'All licenses types' },
-            { value: `all-crm`, title: 'Salesforce Licenses' },
-            { value: `all-paying`, title: 'Salesforce Licences + Experience + Other paying' },
+            { value: "all", title: "All licenses types" },
+            { value: `all-crm`, title: "Salesforce Licenses" },
+            { value: `all-paying`, title: "Salesforce Licences + Experience + Other paying" },
           ],
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
-      }
-      else if (!this.licenseTypes){
+      } else if (!this.licenseTypes) {
         this.licenseTypes = "all-crm";
       }
       // Get licenseIdentifiers from licenseType
@@ -193,26 +190,26 @@ Note: You can see the full list of available license identifiers in [Salesforce 
             { title: `3 months (90 days)`, value: 90 },
             { title: `6 months (180 days)`, value: 180 },
             { title: `1 year (365 days)`, value: 365 },
-            { title: `2 years (730 days)`, value: 730 }
+            { title: `2 years (730 days)`, value: 730 },
           ],
         });
         this.lastNdays = lastNdaysResponse.days;
-      }
-      else {
+      } else {
         this.lastNdays = 180;
       }
     }
   }
 
   private async listUnusedUsersWithSfdcLicense(conn) {
-    let whereConstraint = `WHERE IsActive = true AND (` +
+    let whereConstraint =
+      `WHERE IsActive = true AND (` +
       `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
       `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
       `)`;
     // Add License constraint only if necessary
-    if (this.licenseTypes !== 'all') {
-      const licenseIdentifierValues = this.licenseIdentifiers.split(',');
-      const licenseIdentifierCondition = licenseIdentifierValues.map(value => `'${value}'`).join(',');
+    if (this.licenseTypes !== "all") {
+      const licenseIdentifierValues = this.licenseIdentifiers.split(",");
+      const licenseIdentifierCondition = licenseIdentifierValues.map((value) => `'${value}'`).join(",");
       whereConstraint += ` AND Profile.UserLicense.LicenseDefinitionKey IN (${licenseIdentifierCondition})`;
     }
     // Build & call Bulk API Query
