@@ -107,7 +107,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
 
     // Calculate lastNdays to use
     await this.defineNumberOfInactiveDays();
-    // Calculate license identifiers from input parameters or default values
+    // Calculate license identifiers from input parameters or default values    
     await this.defineLicenseIdentifiers();
 
     // Retrieve the list of users who haven't logged in for a while
@@ -170,7 +170,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
       }
-      else {
+      else if (!this.licenseTypes){
         this.licenseTypes = "all-crm";
       }
       // Get licenseIdentifiers from licenseType
