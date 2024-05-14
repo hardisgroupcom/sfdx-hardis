@@ -238,6 +238,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
       notifText = `${this.unusedUsers.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
       attachments = [{ text: notifDetailText }];
     }
+    /* jscpd:ignore-start */
     // Send notifications
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
@@ -253,6 +254,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
         UnusedUsers: this.unusedUsers.length,
       },
     });
+    /* jscpd:ignore-end */
     return [];
   }
 }
