@@ -66,6 +66,12 @@ jobs:
         SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+        NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
+        NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+        NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+        NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
+        NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+        NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
         FORCE_COLOR: "1"
       run: |
         echo "Monitoring sfdx-hardis: Metadata Backup for \"$CONFIG_BRANCH\""
@@ -136,6 +142,12 @@ jobs:
         SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+        NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
+        NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+        NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+        NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
+        NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+        NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
         FORCE_COLOR: "1"
       run: |
         echo "Run apex tests against \"$CONFIG_BRANCH\""
@@ -181,6 +193,13 @@ jobs:
           # https://megalinter.io/latest/config-file/
           VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/master&#39; }} to validate only diff with master branch
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_REPORTER: "true"
+          NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
+          NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+          NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+          NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
+          NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+          NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
           # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
 
       # Upload Mega-Linter artifacts
@@ -234,6 +253,12 @@ jobs:
         SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+        NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
+        NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+        NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+        NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
+        NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+        NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
         FORCE_COLOR: "1"
       run: |
         echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
