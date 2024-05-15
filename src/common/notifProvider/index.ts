@@ -91,8 +91,9 @@ export interface NotifMessage {
     | "UNUSED_METADATAS"
     | "METADATA_STATUS"
     | "MISSING_ATTRIBUTES"
-    | "ORG_LIMITS"
-    | "UNUSED_LICENSES";
+    | "UNUSED_LICENSES"
+    | "UNUSED_USERS"
+    | "ORG_LIMITS";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;
