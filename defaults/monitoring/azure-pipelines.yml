@@ -265,6 +265,7 @@ jobs:
       sfdx hardis:auth:login
       sfdx hardis:org:monitor:all
     displayName: sfdx-hardis login & other checks
+    continueOnError: "true"
     env:
       # MANUAL: Add your branch related variables here
       SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX)
