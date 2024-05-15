@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add JIRA variables to GitHub Workflows
+
 ## [4.35.2] 2024-05-15
 
 - Update monitoring default Gitlab, Azure & GitHub Workflows
