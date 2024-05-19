@@ -32,7 +32,7 @@ licensetypes values are the following:
 
 Note: You can see the full list of available license identifiers in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm)
 
-Use --activeusers to retrieve users that has logged in during the period.
+Use --returnactiveusers to revert the command and retrieve active users that has logged in during the period.
 `;
 
   public static examples = [
@@ -120,7 +120,9 @@ Use --activeusers to retrieve users that has logged in during the period.
 
     // Retrieve the list of users who haven't logged in for a while
     const conn = this.org.getConnection();
-    uxLog(this, c.cyan(`Extracting active users who haven't logged in for a while on ${conn.instanceUrl} ...`));
+    uxLog(this, c.cyan(this.returnActiveUsers ?
+      `Extracting active users on ${conn.instanceUrl} ...` :
+      `Extracting active users who haven't logged in for a while on ${conn.instanceUrl} ...`));
     this.users = await this.listUsersFromLicenses(conn);
 
     // Generate output CSV file
@@ -152,7 +154,7 @@ Use --activeusers to retrieve users that has logged in during the period.
     // Manage notifications
     await this.manageNotifications(this.users);
 
-    if (this.users.length > 0) {
+    if (this.users.length > 0 && !this.returnActiveUsers) {
       uxLog(this, c.yellow(summary));
     } else {
       uxLog(this, c.green(summary));
@@ -222,12 +224,12 @@ Use --activeusers to retrieve users that has logged in during the period.
   private async listUsersFromLicenses(conn) {
     let whereConstraint = this.returnActiveUsers
       ? // Active users
-        `WHERE IsActive = true AND (` + `(LastLoginDate >= LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL)` + `)`
+      `WHERE IsActive = true AND (` + `(LastLoginDate >= LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL)` + `)`
       : // Inactive users
-        `WHERE IsActive = true AND (` +
-        `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
-        `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
-        `)`;
+      `WHERE IsActive = true AND (` +
+      `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
+      `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
+      `)`;
     // Add License constraint only if necessary
     if (this.licenseTypes !== "all") {
       const licenseIdentifierValues = this.licenseIdentifiers.split(",");
@@ -249,19 +251,23 @@ Use --activeusers to retrieve users that has logged in during the period.
     const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
-    let notifText = `No unused Permission Set Licenses Assignments has been found in ${orgMarkdown}`;
+    let notifText = this.returnActiveUsers
+      ? `No active user has logged in in ${orgMarkdown}`
+      : `No inactive user has been found in ${orgMarkdown}`;
     const notifDetailText = ``;
     let attachments = [];
     if (users.length > 0) {
-      notifSeverity = "warning";
-      notifText = `${this.users.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
+      notifSeverity = this.returnActiveUsers ? "log" : "warning";
+      notifText = this.returnActiveUsers
+        ? `${this.users.length} active users have logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`
+        : `${this.users.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
       attachments = [{ text: notifDetailText }];
     }
     /* jscpd:ignore-start */
     // Send notifications
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "UNUSED_USERS",
+      type: this.returnActiveUsers ? "ACTIVE_USERS" : "UNUSED_USERS",
       text: notifText,
       attachments: attachments,
       buttons: notifButtons,
