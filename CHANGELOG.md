@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.36.0] 2024-05-19
 
 - Update **hardis:org:diagnose:unusedusers** so it can also extract active users on a time period, thanks to option --returnactiveusers
+- Add ACTIVE_USERS in weekly monitoring jobs
 - Add JIRA variables to GitHub Workflows
 
 ## [4.35.2] 2024-05-15
