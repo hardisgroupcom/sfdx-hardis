@@ -82,6 +82,7 @@ export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success
 export interface NotifMessage {
   text: string;
   type:
+    | "ACTIVE_USERS"
     | "AUDIT_TRAIL"
     | "APEX_TESTS"
     | "BACKUP"
