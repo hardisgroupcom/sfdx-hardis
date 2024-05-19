@@ -120,9 +120,14 @@ Use --returnactiveusers to revert the command and retrieve active users that has
 
     // Retrieve the list of users who haven't logged in for a while
     const conn = this.org.getConnection();
-    uxLog(this, c.cyan(this.returnActiveUsers ?
-      `Extracting active users on ${conn.instanceUrl} ...` :
-      `Extracting active users who haven't logged in for a while on ${conn.instanceUrl} ...`));
+    uxLog(
+      this,
+      c.cyan(
+        this.returnActiveUsers
+          ? `Extracting active users on ${conn.instanceUrl} ...`
+          : `Extracting active users who haven't logged in for a while on ${conn.instanceUrl} ...`,
+      ),
+    );
     this.users = await this.listUsersFromLicenses(conn);
 
     // Generate output CSV file
@@ -224,12 +229,12 @@ Use --returnactiveusers to revert the command and retrieve active users that has
   private async listUsersFromLicenses(conn) {
     let whereConstraint = this.returnActiveUsers
       ? // Active users
-      `WHERE IsActive = true AND (` + `(LastLoginDate >= LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL)` + `)`
+        `WHERE IsActive = true AND (` + `(LastLoginDate >= LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL)` + `)`
       : // Inactive users
-      `WHERE IsActive = true AND (` +
-      `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
-      `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
-      `)`;
+        `WHERE IsActive = true AND (` +
+        `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
+        `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
+        `)`;
     // Add License constraint only if necessary
     if (this.licenseTypes !== "all") {
       const licenseIdentifierValues = this.licenseIdentifiers.split(",");
@@ -251,9 +256,7 @@ Use --returnactiveusers to revert the command and retrieve active users that has
     const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
-    let notifText = this.returnActiveUsers
-      ? `No active user has logged in in ${orgMarkdown}`
-      : `No inactive user has been found in ${orgMarkdown}`;
+    let notifText = this.returnActiveUsers ? `No active user has logged in in ${orgMarkdown}` : `No inactive user has been found in ${orgMarkdown}`;
     const notifDetailText = ``;
     let attachments = [];
     if (users.length > 0) {
