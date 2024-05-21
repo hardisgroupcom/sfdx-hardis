@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add **flowPositions** in .sfdx-hardis.yml JSON Schema
+
 ## [4.37.0] 2024-05-21
 
 - New command **hardis:project:clean:flowpositions** to replace positions by 0 on AutoLayout Flows, in order to diminish conflicts
