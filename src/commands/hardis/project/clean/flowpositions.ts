@@ -37,7 +37,15 @@ After:
 \`\`\`
 
 Can be automated at each **hardis:work:save** if **flowPositions** is added in .sfdx-hardis.yml **autoCleanTypes** property  
-  `;
+
+Example in config/.sfdx-hardis.yml:
+
+\`\`\`yaml
+autoCleanTypes:
+  - destructivechanges
+  - flowPositions
+\`\`\`
+`;
 
   public static examples = ["$ sfdx hardis:project:clean:flowpositions"];
 
