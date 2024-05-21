@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.37.0] 2024-05-21
+
+- New command **hardis:project:clean:flowpositions** to replace positions by 0 on AutoLayout Flows, in order to diminish conflicts
+  - Can be automated at each **hardis:work:save** if `flowPositions` added in .sfdx-hardis.yml **autoCleanTypes** property
+
 ## [4.36.0] 2024-05-19
 
 - Update **hardis:org:diagnose:unusedusers** so it can also extract active users on a time period, thanks to option --returnactiveusers
