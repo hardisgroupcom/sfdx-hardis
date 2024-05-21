@@ -69,13 +69,13 @@ Can be automated at each **hardis:work:save** if **flowPositions** is added in .
     let counter = 0;
     for (const flowMetadataFile of matchingFlows) {
       const flowXml = await fs.readFile(flowMetadataFile, "utf8");
-      if (flowXml.includes('<stringValue>AUTO_LAYOUT_CANVAS</stringValue>')) {
-        let updatedFlowXml = flowXml.replace(/<locationX>([0-9]*)<\/locationX>/gm, '<locationX>0</locationX>');
-        updatedFlowXml = updatedFlowXml.replace(/<locationY>([0-9]*)<\/locationY>/gm, '<locationY>0</locationY>');
+      if (flowXml.includes("<stringValue>AUTO_LAYOUT_CANVAS</stringValue>")) {
+        let updatedFlowXml = flowXml.replace(/<locationX>([0-9]*)<\/locationX>/gm, "<locationX>0</locationX>");
+        updatedFlowXml = updatedFlowXml.replace(/<locationY>([0-9]*)<\/locationY>/gm, "<locationY>0</locationY>");
         if (updatedFlowXml !== flowXml) {
           await fs.writeFile(flowMetadataFile, updatedFlowXml);
           counter++;
-          uxLog(this,c.grey(`Removed positions from Flow ${flowMetadataFile}`));
+          uxLog(this, c.grey(`Removed positions from Flow ${flowMetadataFile}`));
         }
       }
     }
