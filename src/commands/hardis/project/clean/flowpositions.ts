@@ -18,8 +18,24 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class CleanListViews extends SfdxCommand {
   public static title = "Clean Flow Positions";
 
-  public static description = `Replace all positions in Flows by 0,0 to simplify conflicts management
+  public static description = `Replace all positions in Auto-Layout Flows by 0 to simplify conflicts management
+
+As Flows are defined as Auto-Layout, the edition in Setup UI is not impacted.
   
+Before:
+
+\`\`\`xml
+<locationX>380</locationX>
+<locationY>259</locationY>
+\`\`\`
+
+After:
+
+\`\`\`xml
+<locationX>0</locationX>
+<locationY>0</locationY>
+\`\`\`
+
 Can be automated at each **hardis:work:save** if **flowPositions** is added in .sfdx-hardis.yml **autoCleanTypes** property  
   `;
 
