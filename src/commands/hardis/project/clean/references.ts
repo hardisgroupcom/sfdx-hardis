@@ -73,52 +73,52 @@ export default class CleanReferences extends SfdxCommand {
   protected cleaningTypes = [];
   protected allCleaningTypes = [
     {
-      value: "caseentitlement",
-      title: "References to Entitlement Management items",
-    },
-    {
       value: "checkPermissions",
       title: "Check custom items are existing it at least one Permission Set",
       command: "sfdx hardis:lint:access",
     },
     {
       value: "dashboards",
-      title: "Reference to users in Dashboards",
+      title: "Dashboards: Remove reference to hardcoded users",
+    },
+    {
+      value: "destructivechanges",
+      title: "DestructiveChanges.xml: Remove source files mentioned in destructiveChanges.xml",
+    },
+    {
+      value: "flowPositions",
+      title: `Flows: Replace all positions in AutoLayout Flows by 0 to simplify conflicts management`,
+      command: "sfdx hardis:project:clean:flowpositions",
+    },
+    {
+      value: "listViewsMine",
+      title: `ListViews: Convert scope "Everything" into scope "Mine" on ListViews`,
+      command: "sfdx hardis:project:clean:listviews",
+    },
+    {
+      value: "minimizeProfiles",
+      title: "Profiles: Remove profile attributes that exists on permission sets",
+      command: "sfdx hardis:project:clean:minimizeprofiles",
+    },
+    {
+      value: "caseentitlement",
+      title: "References to Entitlement Management items",
     },
     {
       value: "datadotcom",
       title: "References to Data.com items. https://help.salesforce.com/articleView?id=000320795&type=1&mode=1",
     },
     {
-      value: "destructivechanges",
-      title: "References to destructiveChanges.xml items",
+      value: "entitlement",
+      title: "References to Entitlement object",
     },
     {
       value: "localfields",
       title: "References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5",
     },
     {
-      value: "flowPositions",
-      title: `Replace all positions in Flows by 0,0 to simplify conflicts management`,
-      command: "sfdx hardis:project:clean:flowpositions",
-    },
-    {
-      value: "listViewsMine",
-      title: `Convert scope "Everything" into scope "Mine" on ListViews`,
-      command: "sfdx hardis:project:clean:listviews",
-    },
-    {
-      value: "minimizeProfiles",
-      title: "Remove profile attributes that exists on permission sets",
-      command: "sfdx hardis:project:clean:minimizeprofiles",
-    },
-    {
       value: "productrequest",
       title: "References to ProductRequest object",
-    },
-    {
-      value: "entitlement",
-      title: "References to Entitlement object",
     },
     {
       value: "systemDebug",
