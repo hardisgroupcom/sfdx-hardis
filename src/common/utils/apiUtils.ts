@@ -100,3 +100,87 @@ export async function bulkUpdate(objectName: string, action: string, records: Ar
     });
   });
 }
+
+export async function testMeric(conn: Connection): Promise<any> {
+  console.log(conn.query('SELECT Id FROM Account'));
+  
+  return {
+    status: 0,
+    summary: 0,
+    unusedUsers: 0,
+    csvLogFile: 0,
+    xlsxLogFile: 0,
+  };
+
+
+}
+
+export async function bulkDeleteTooling(objectName: string, records: Array<any>, conn: Connection): Promise<any> {
+  // uxLog(this, c.grey("SOQL TOOLING: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
+  // const a = ['301J7000000GoOkIAK','301J7000000GobKIAS','301J7000000GobPIAS'];
+  uxLog(this, c.red('WE ARE DELETING THE RECORDS: ' + records)); 
+  const res2 = await conn.tooling.del(objectName, records);
+  // console.log(res2);
+  console.log(res2[0].SuccessResult);
+  console.log(res2[0].ErrorResult);
+}
+
+export async function bulkDeleteToolingOld(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
+  uxLog(this, c.grey("SOQL TOOLING: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
+  // conn.bulk.pollInterval = 5000; // 5 sec
+  // conn.bulk.pollTimeout = 60000; // 60 sec
+  // conn.tooling.query
+
+
+  // const records = [];
+  // const res = await conn.tooling.executeAnonymous("System.debug('Hello World');");
+  // console.log("ExecuteAnonymousResult column: " + res.column);
+  // console.log("ExecuteAnonymousResult compiled: " + res.compiled);
+  // console.log("ExecuteAnonymousResult compileProblem: " + res.compileProblem);
+  // console.log("ExecuteAnonymousResult exceptionMessage: " + res.exceptionMessage);
+  // console.log("ExecuteAnonymousResult exceptionStackTrace: " + res.exceptionStackTrace);
+  // console.log("ExecuteAnonymousResult line: " + res.line);
+  // console.log("ExecuteAnonymousResult success: " + res.success);
+  const a = ['301J7000000GoOkIAK','301J7000000GobKIAS','301J7000000GobPIAS'];
+  const res2 = await conn.tooling.del('Flow',a);
+  // console.log(res2);
+  console.log(res2[0].SuccessResult);
+  console.log(res2[0].ErrorResult);
+  
+
+  // return new Promise((resolve, reject) => {
+  //   spinnerQ = ora({ text: `Tooling query...`, spinner: "moon" }).start();
+  //   // const job = conn.tooling.autoFetchQuery(soqlQuery);
+
+  //   conn.tooling.del('Flow','aaa');
+  //   // job.then
+  //   // job
+  //   //   .on("record", async (record) => {
+  //   //     records.push(record);
+  //   //   })
+  //   //   .on("error", async (err) => {
+  //   //     spinnerQ.fail(`Bulk query error.`);
+  //   //     uxLog(this, c.yellow("Bulk query error: " + err));
+  //   //     // In case of timeout, retry if max retry is not reached
+  //   //     if ((err + "").includes("ETIMEDOUT") && retries < maxRetry) {
+  //   //       uxLog(this, c.yellow("Bulk query retry attempt #" + retries + 1));
+  //   //       bulkQuery(soqlQuery, conn, retries + 1)
+  //   //         .then((resRetry) => {
+  //   //           resolve(resRetry);
+  //   //         })
+  //   //         .catch((resErr) => {
+  //   //           reject(resErr);
+  //   //         });
+  //   //     } else {
+  //   //       // If max retry attempts reached, give up
+  //   //       uxLog(this, c.red("Bulk query error: max retry attempts reached, or not timeout error."));
+  //   //       globalThis.sfdxHardisFatalError = true;
+  //   //       reject(err);
+  //   //     }
+  //   //   })
+  //   //   .on("end", () => {
+  //   //     spinnerQ.succeed(`Bulk query completed with ${records.length} results.`);
+  //   //     resolve({ records: records, totalSize: records.length });
+  //   //   });
+  // });
+}

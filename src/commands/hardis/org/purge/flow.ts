@@ -6,6 +6,7 @@ import * as c from "chalk";
 import * as columnify from "columnify";
 import { execSfdxJson, isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
+import { bulkDeleteTooling } from "../../../../common/utils/apiUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -113,9 +114,15 @@ export default class OrgPurgeFlow extends SfdxCommand {
       statusFilter = ["Obsolete"];
     } else {
       // Query all flows
-      const allFlowQueryCommand =
+      // const allFlowQueryCommand =
+      //   "sfdx force:data:soql:query " +
+      //   ` -q "SELECT Id,MasterLabel,VersionNumber,ManageableState FROM Flow WHERE ${manageableConstraint} ORDER BY MasterLabel"` +
+      //   ` --targetusername ${username}` +
+      //   " --usetoolingapi";
+
+        const allFlowQueryCommand =
         "sfdx force:data:soql:query " +
-        ` -q "SELECT Id,MasterLabel,VersionNumber,ManageableState FROM Flow WHERE ${manageableConstraint} ORDER BY MasterLabel"` +
+        ` -q "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
         ` --targetusername ${username}` +
         " --usetoolingapi";
       const allFlowQueryRes = await execSfdxJson(allFlowQueryCommand, this, {
@@ -124,7 +131,8 @@ export default class OrgPurgeFlow extends SfdxCommand {
         fail: true,
       });
       const flowRecordsRaw = allFlowQueryRes?.result?.records || allFlowQueryRes.records || [];
-      const flowNamesUnique = [...new Set(flowRecordsRaw.map((flowRecord) => flowRecord.MasterLabel))];
+      // const flowNamesUnique = [...new Set(flowRecordsRaw.map((flowRecord) => flowRecord.MasterLabel))];
+      const flowNamesUnique = [...new Set(flowRecordsRaw.map((flowRecord) => flowRecord.DeveloperName))];
       const flowNamesChoice = flowNamesUnique.map((flowName) => {
         return { title: flowName, value: flowName };
       });
@@ -158,14 +166,23 @@ export default class OrgPurgeFlow extends SfdxCommand {
       throw new SfdxError("You can not delete active records");
     }
 
+    // // Build query with name filter if sent
+    // let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE ${manageableConstraint} AND Status IN ('${statusFilter.join(
+    //   "','",
+    // )}')`;
+    // if (nameFilter && nameFilter != "all") {
+    //   query += ` AND MasterLabel LIKE '${nameFilter}%'`;
+    // }
+    // query += " ORDER BY MasterLabel,VersionNumber";
+
     // Build query with name filter if sent
-    let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description FROM Flow WHERE ${manageableConstraint} AND Status IN ('${statusFilter.join(
+    let query = `SELECT Id,MasterLabel,VersionNumber,Definition.DeveloperName,Status,Description FROM Flow WHERE ${manageableConstraint} AND Status IN ('${statusFilter.join(
       "','",
     )}')`;
     if (nameFilter && nameFilter != "all") {
-      query += ` AND MasterLabel LIKE '${nameFilter}%'`;
+      query += ` AND Definition.DeveloperName = '${nameFilter}'`;
     }
-    query += " ORDER BY MasterLabel,VersionNumber";
+    query += " ORDER BY Definition.DeveloperName,VersionNumber";
 
     const flowQueryCommand = "sfdx force:data:soql:query " + ` -q "${query}"` + ` --targetusername ${username}` + " --usetoolingapi";
     const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
@@ -183,16 +200,24 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }
 
     // Simplify results format & display them
-    const records = recordsRaw.map((record: any) => {
-      return {
-        Id: record.Id,
-        MasterLabel: record.MasterLabel,
-        VersionNumber: record.VersionNumber,
-        Description: record.Description,
-        Status: record.Status,
-      };
-    });
-    uxLog(this, `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(columnify(records))}`);
+    // const records = recordsRaw.map((record: any) => {
+    //   return {
+    //     Id: record.Id,
+    //     MasterLabel: record.MasterLabel,
+    //     VersionNumber: record.VersionNumber,
+    //     Description: record.Description,
+    //     Status: record.Status,
+    //   };
+    // });
+    const records = recordsRaw.map((record: any) => record.Id);
+
+    // const records = recordsRaw.map((record: any) => {
+    //   return {
+    //     record.Id
+    //   };
+    // });
+    uxLog(this, `[sfdx-hardis] Found ${c.bold(records.length)} records!`);
+    // uxLog(this, `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(columnify(records))}`);
 
     // Confirm deletion
     if (prompt) {
@@ -209,34 +234,58 @@ export default class OrgPurgeFlow extends SfdxCommand {
     // Perform deletion
     const deleted = [];
     const deleteErrors = [];
-    for (const record of records) {
-      const deleteCommand =
-        "sfdx force:data:record:delete" + " --sobjecttype Flow" + ` --sobjectid ${record.Id}` + ` --targetusername ${username}` + " --usetoolingapi";
-      const deleteRes = await execSfdxJson(deleteCommand, this, {
-        fail: false,
-        output: false,
-        debug: debugMode,
-      });
-      if (!(deleteRes.status === 0)) {
-        this.ux.error(c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
-        deleteErrors.push(deleteRes);
-      }
-      deleted.push(record);
-    }
 
-    if (deleteErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`;
-      if (allowPurgeFailure) {
-        uxLog(this, c.yellow(errMsg));
-      } else {
-        throw new SfdxError(c.yellow(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`));
-      }
-    }
+    //MERIC START
 
-    const summary =
-      deleted.length > 0 ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : "[sfdx-hardis] No record to delete";
-    uxLog(this, c.green(summary));
+    const conn = this.org.getConnection();
+    console.log(records);
+    
+    await bulkDeleteTooling('Flow', records, conn);
+    // const deleteResults = await bulkDeleteTooling('Flow', records, conn);
+   
+      
+    //MERIC END
+
+    // for (const record of records) {
+    //   const deleteCommand =
+    //     "sfdx force:data:record:delete" + " --sobjecttype Flow" + ` --sobjectid ${record.Id}` + ` --targetusername ${username}` + " --usetoolingapi";
+    //   const deleteRes = await execSfdxJson(deleteCommand, this, {
+    //     fail: false,
+    //     output: false,
+    //     debug: debugMode,
+    //   });
+    //   if (!(deleteRes.status === 0)) {
+    //     this.ux.error(c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
+    //     deleteErrors.push(deleteRes);
+    //   }
+    //   deleted.push(record);
+    // }
+
+    // if (deleteErrors.length > 0) {
+    //   const errMsg = `[sfdx-hardis] There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`;
+    //   if (allowPurgeFailure) {
+    //     uxLog(this, c.yellow(errMsg));
+    //   } else {
+    //     throw new SfdxError(c.yellow(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`));
+    //   }
+    // }
+
+    // const summary =
+    //   deleted.length > 0 ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : "[sfdx-hardis] No record to delete";
+    // uxLog(this, c.green(summary));
     // Return an object to be displayed with --json
-    return { orgId: this.org.getOrgId(), outputString: summary };
+    return {};
+    // return { orgId: this.org.getOrgId(), outputString: summary };
   }
+
+  // private async deleteFlows(conn: any) {
+  //   uxLog(this, c.cyan(`Extracting Flow Test...`));
+  //   await bulkDeleteTooling(
+  //       `
+  //     SELECT Id
+  //     FROM Flow`,
+  //       conn,
+  //   );
+  //   // return flowQueery.records;
+  // }
 }
