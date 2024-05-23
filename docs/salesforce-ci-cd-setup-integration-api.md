@@ -228,10 +228,54 @@ Optionnally , you can look in the logs, you should see \[ApiProvider\] and \[Api
 
 ![](assets/images/grafana-config-13.jpg)
 
-### Import default sfdx-hardis Grafana Dashboards
+### Download sfdx-hardis dashboards
+
+![](assets/images/grafana-config-16.jpg)
+
+- Download all sfdx-hardis Dashboard JSON files from [this sfdx-hardis repo folder](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/dashboards)
+
+### Create Dashboard folder
 
 ![](assets/images/grafana-config-14.jpg)
 
 - Go in menu **Dashboards** then click on **New** then **New folder**
+
+___
+
+![](assets/images/grafana-config-15.jpg)
+
 - Create folder `Sfdx-hardis Dashboards`
+
+### Import default sfdx-hardis Grafana Dashboards
+
+For each downloaded Dashboard JSON file, process the following actions.
+
+![](assets/images/grafana-config-17.jpg)
+
+- Click **New** then **Import**
+
+___
+
+![](assets/images/grafana-config-18.jpg)
+
+- Click on **Upload Dashboard JSON File**
+
+___
+
+![](assets/images/grafana-config-19.jpg)
+
+- Let Name, Folder and UID default values
+- Select your Loki or Prometheus source. They can be:
+  - **grafanacloud-YOURORGNAME-logs (Loki)**
+  - **grafanacloud-YOURORGNAME-prom (Prometheus)**
+
+![](assets/images/grafana-config-20.jpg)
+
+- Click **Import**
+___
+
+Repeat the operation for all Dashboard JSON files, and you're all set !
+
+![](assets/images/grafana-config-21.jpg)
+
 
