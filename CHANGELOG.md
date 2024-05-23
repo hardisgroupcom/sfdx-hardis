@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Add **flowPositions** in .sfdx-hardis.yml JSON Schema
+- Add Grafana Cloud setup tutorial
 
 ## [4.37.0] 2024-05-21
 
