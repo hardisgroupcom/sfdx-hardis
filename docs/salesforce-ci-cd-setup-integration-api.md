@@ -224,7 +224,7 @@ Now configure the 6 variables on the monitoring repository. (Ignore other paragr
 
 Now you can force a run of your monitoring job (just add a dumb commit on a monitoring_xxxx branch to trigger it)
 
-Optionnally , you can look in the logs, you should see \[ApiProvider\] and \[ApiMetricProvider\] items.
+Optionally , you can look in the logs, you should see \[ApiProvider\] and \[ApiMetricProvider\] items.
 
 ![](assets/images/grafana-config-13.jpg)
 
