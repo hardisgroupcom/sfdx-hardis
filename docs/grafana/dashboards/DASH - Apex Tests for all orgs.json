@@ -115,9 +115,7 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -206,9 +204,7 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -252,11 +248,7 @@
   ],
   "refresh": "",
   "schemaVersion": 39,
-  "tags": [
-    "sfdx-hardis",
-    "salesforce",
-    "monitoring"
-  ],
+  "tags": ["sfdx-hardis", "salesforce", "monitoring"],
   "templating": {
     "list": [
       {

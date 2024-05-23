@@ -120,9 +120,7 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -214,9 +212,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "limit": 1,
           "values": false
@@ -343,9 +339,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "limit": 1,
           "values": false
@@ -472,9 +466,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "limit": 1,
           "values": false
@@ -601,9 +593,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "limit": 1,
           "values": false
@@ -730,9 +720,7 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "limit": 1,
           "values": false
@@ -811,11 +799,7 @@
   ],
   "refresh": "",
   "schemaVersion": 39,
-  "tags": [
-    "sfdx-hardis",
-    "salesforce",
-    "monitoring"
-  ],
+  "tags": ["sfdx-hardis", "salesforce", "monitoring"],
   "templating": {
     "list": [
       {

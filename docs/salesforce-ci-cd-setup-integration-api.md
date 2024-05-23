@@ -204,9 +204,9 @@ ___
 
 ![](assets/images/grafana-config-12.jpg)
 
-- On the next screen, click on **Copy to clipboard** then paste in your notepad in front of variables **NOTIF_API_BASIC_AUTH_PASSWORD** and **NOTIF_API_METRICS_BASIC_AUTH_PASSWORD** 
+- On the next screen, click on **Copy to clipboard** then paste in your notepad in front of variables **NOTIF_API_BASIC_AUTH_PASSWORD** and **NOTIF_API_METRICS_BASIC_AUTH_PASSWORD**
 
-Example: 
+Example:
 
 ```
 NOTIF_API_BASIC_AUTH_PASSWORD=glc_eyJvIjoiMTEzMjI4OCIsIm4iOiJzZmR4aGFyZGlzLXNmZHhoYXJkaXMtdG9rZW4iLCJrIjoiN0x6MzNXS0hKR1J5ODNsMVE5NU1IM041IiwibSI6eyJyXN0LTIifX0=

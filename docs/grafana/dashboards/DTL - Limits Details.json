@@ -131,9 +131,7 @@
             "countRows": false,
             "enablePagination": false,
             "fields": "",
-            "reducer": [
-              "sum"
-            ],
+            "reducer": ["sum"],
             "show": false
           },
           "showHeader": true,
@@ -184,9 +182,7 @@
             "id": "reduce",
             "options": {
               "labelsToFields": false,
-              "reducers": [
-                "allValues"
-              ]
+              "reducers": ["allValues"]
             }
           },
           {
