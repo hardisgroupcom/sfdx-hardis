@@ -258,7 +258,7 @@ ___
 
 ![](assets/images/grafana-config-18.jpg)
 
-- Click on **Upload Dashboard JSON File**
+- Click on **Upload Dashboard JSON File** and select one of the Dashboards JSON files you downloaded on your computer.
 
 ___
 
@@ -268,6 +268,8 @@ ___
 - Select your Loki or Prometheus source. They can be:
   - **grafanacloud-YOURORGNAME-logs (Loki)**
   - **grafanacloud-YOURORGNAME-prom (Prometheus)**
+
+___
 
 ![](assets/images/grafana-config-20.jpg)
 
