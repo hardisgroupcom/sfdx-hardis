@@ -96,21 +96,21 @@ If you don't have a Grafana server, you can use Grafana Cloud Free Tier (14 days
 
 ### Create Grafana Account
 
-![](assets/images/grafana-config-1.jpg)
-
 Create a Grafana Cloud Free account at [this url](https://grafana.com/auth/sign-up/create-user?pg=hp&plcmt=cloud-promo&cta=create-free-account){target=blank}
 
-___
+![](assets/images/grafana-config-1.jpg)
 
-![](assets/images/grafana-config-2.jpg)
+___
 
 Input a Grafana Cloud org name (sfdxhardis in the example)
 
+![](assets/images/grafana-config-2.jpg)
+
 ___
 
-![](assets/images/grafana-config-3.jpg)
-
 Next screen, you can skip setup
+
+![](assets/images/grafana-config-3.jpg)
 
 ### Gather URLs & auth info
 
@@ -127,13 +127,13 @@ NOTIF_API_METRICS_BASIC_AUTH_PASSWORD=
 
 ### Get Loki configuration
 
-![](assets/images/grafana-config-4.jpg)
-
 Go to **Connections** -> **Data Sources** and click on **grafanacloud-YOURORGNAME-logs (Loki)**
+
+![](assets/images/grafana-config-4.jpg)
 
 ___
 
-![](assets/images/grafana-config-5.jpg)
+Build Logs push url
 
 - Copy value of Connection URL (something like `https://logs-prod-012.grafana.net/`)
 - Add `/loki/api/v1/push` at the end
@@ -141,23 +141,25 @@ ___
 
 Example: `NOTIF_API_URL=https://logs-prod-012.grafana.net/loki/api/v1/push`
 
-- Copy value of Authentication -> User and paste it with variable `NOTIF_API_BASIC_AUTH_USERNAME`
+Copy value of Authentication -> User and paste it with variable `NOTIF_API_BASIC_AUTH_USERNAME`
 
 Example: `NOTIF_API_BASIC_AUTH_USERNAME=898189`
 
-- Leave NOTIF_API_BASIC_AUTH_PASSWORD empty for now, you can't get it here
+Leave NOTIF_API_BASIC_AUTH_PASSWORD empty for now, you can't get it here
+
+![](assets/images/grafana-config-5.jpg)
 
 _See [Grafana documentation](https://grafana.com/blog/2024/03/21/how-to-use-http-apis-to-send-metrics-and-logs-to-grafana-cloud/#sending-logs-using-the-http-api) for more info_
 
 ### Get Prometheus configuration
 
-![](assets/images/grafana-config-6.jpg)
-
 Go to **Connections** -> **Data Sources** and click on **grafanacloud-YOURORGNAME-prom (Prometheus)**
+
+![](assets/images/grafana-config-6.jpg)
 
 ___
 
-![](assets/images/grafana-config-7.jpg)
+Build Metrics push url
 
 - Copy value of Connection URL (something like `https://prometheus-prod-24-prod-eu-west-2.grafana.net/api/prom`)
 - Replace `prometheus` by `influx`
@@ -166,45 +168,49 @@ ___
 
 Example: `NOTIF_API_METRICS_URL=https://influx-prod-24-prod-eu-west-2.grafana.net/api/v1/push/influx/write`
 
-- Copy value of Authentication -> User and paste it with variable `NOTIF_API_METRICS_BASIC_AUTH_USERNAME`
+Copy value of Authentication -> User and paste it with variable `NOTIF_API_METRICS_BASIC_AUTH_USERNAME`
 
 Example: `NOTIF_API_METRICS_BASIC_AUTH_USERNAME=1596503`
 
-- Leave `NOTIF_API_METRICS_BASIC_AUTH_PASSWORD` empty for now, you can't get it here
+Leave `NOTIF_API_METRICS_BASIC_AUTH_PASSWORD` empty for now, you can't get it here
+
+![](assets/images/grafana-config-7.jpg)
 
 _See [Grafana documentation](https://grafana.com/blog/2024/03/21/how-to-use-http-apis-to-send-metrics-and-logs-to-grafana-cloud/#sending-metrics-using-the-http-api) for more info_
 
 ### Create Service Account
 
-![](assets/images/grafana-config-8.jpg)
-
 Go to **Administration** -> **Users and Access** -> **Cloud Access Policies**, then click on **Create Access Policy**
+
+![](assets/images/grafana-config-8.jpg)
 
 ___
 
-![](assets/images/grafana-config-9.jpg)
+Create the access policy
 
 - Define sfdxhardis as name and display name
 - Select **write** for items **metrics, logs, traces, profiles, alerts** (only metrics and logs are used today, but who knows hat new features we'll release in the future !)
 - Click on **Create**
 
+![](assets/images/grafana-config-9.jpg)
+
 ___
+
+On the new Access Policy `sfdxhardis`, click on **Add Token** at the bottom right
 
 ![](assets/images/grafana-config-10.jpg)
 
-- On the new Access Policy `sfdxhardis`, click on **Add Token** at the bottom right
-
 ___
+
+Name it sfdxhardis-token, let `No expiration` then click **Create**
 
 ![](assets/images/grafana-config-11.jpg)
 
-- Name it sfdxhardis-token, let `No expiration` then click **Create**
-
 ___
 
-![](assets/images/grafana-config-12.jpg)
+On the next screen, click on **Copy to clipboard** then paste in your notepad in front of variables **NOTIF_API_BASIC_AUTH_PASSWORD** and **NOTIF_API_METRICS_BASIC_AUTH_PASSWORD**
 
-- On the next screen, click on **Copy to clipboard** then paste in your notepad in front of variables **NOTIF_API_BASIC_AUTH_PASSWORD** and **NOTIF_API_METRICS_BASIC_AUTH_PASSWORD**
+![](assets/images/grafana-config-12.jpg)
 
 Example:
 
@@ -230,51 +236,52 @@ Optionally , you can look in the logs, you should see \[ApiProvider\] and \[ApiM
 
 ### Download sfdx-hardis dashboards
 
-![](assets/images/grafana-config-16.jpg)
+Download all sfdx-hardis Dashboard JSON files from [this sfdx-hardis repo folder](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/dashboards)
 
-- Download all sfdx-hardis Dashboard JSON files from [this sfdx-hardis repo folder](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/dashboards)
+![](assets/images/grafana-config-16.jpg)
 
 ### Create Dashboard folder
 
-![](assets/images/grafana-config-14.jpg)
+Go in menu **Dashboards** then click on **New** then **New folder**
 
-- Go in menu **Dashboards** then click on **New** then **New folder**
+![](assets/images/grafana-config-14.jpg)
 
 ___
 
-![](assets/images/grafana-config-15.jpg)
+Create folder `Sfdx-hardis Dashboards`
 
-- Create folder `Sfdx-hardis Dashboards`
+![](assets/images/grafana-config-15.jpg)
 
 ### Import default sfdx-hardis Grafana Dashboards
 
 For each downloaded Dashboard JSON file, process the following actions.
 
+Click **New** then **Import**
+
 ![](assets/images/grafana-config-17.jpg)
 
-- Click **New** then **Import**
-
 ___
+
+Click on **Upload Dashboard JSON File** and select one of the Dashboards JSON files you downloaded on your computer.
 
 ![](assets/images/grafana-config-18.jpg)
 
-- Click on **Upload Dashboard JSON File** and select one of the Dashboards JSON files you downloaded on your computer.
-
 ___
-
-![](assets/images/grafana-config-19.jpg)
 
 - Let Name, Folder and UID default values
 - Select your Loki or Prometheus source. They can be:
   - **grafanacloud-YOURORGNAME-logs (Loki)**
   - **grafanacloud-YOURORGNAME-prom (Prometheus)**
 
+![](assets/images/grafana-config-19.jpg)
+
 ___
+
+Click **Import**
 
 ![](assets/images/grafana-config-20.jpg)
 
-- Click **Import**
-___
+__
 
 Repeat the operation for all Dashboard JSON files, and you're all set !
 
