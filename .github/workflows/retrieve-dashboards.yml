@@ -2,14 +2,14 @@
 name: "Retrieve Dashboards"
 on:
   # Run when there is an update in main
-  push:
-    branches:
-      - main
-      - features/save-dashboards
-  # Automatically run every day at 21:49 UTC, before a start of hour peak
-  schedule:
-    - cron: "49 21 * * *"
-  # Allow to manually trigger a run of the workflow
+  # push:
+  #   branches:
+  #     - main
+  #     - features/save-dashboards
+  # # Automatically run every day at 21:49 UTC, before a start of hour peak
+  # schedule:
+  #   - cron: "49 21 * * *"
+  # # Allow to manually trigger a run of the workflow
   workflow_dispatch:
 
 concurrency:
