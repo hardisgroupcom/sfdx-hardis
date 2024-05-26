@@ -1,5 +1,5 @@
 ---
-name: "Auto-Update Linters"
+name: "Retrieve Dashboards"
 on:
   # Run when there is an update in main
   push:
