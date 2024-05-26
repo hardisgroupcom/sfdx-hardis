@@ -1,0 +1,4 @@
+[tool.poetry]
+name = "sfdx-hardis workaround"
+version = "0.0.0"
+description = "sfdx-hardis Workaround for grafana-dashboard-manager"
