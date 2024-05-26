@@ -1,41 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_GRAFANACLOUD-CLOUDITY-LOGS",
-      "label": "grafanacloud-cloudity-logs",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "loki",
-      "pluginName": "Loki"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "gauge",
-      "name": "Gauge",
-      "version": ""
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.1.0-70903"
-    },
-    {
-      "type": "datasource",
-      "id": "loki",
-      "name": "Loki",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -55,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 24,
   "links": [],
   "panels": [
     {
@@ -76,7 +39,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -87,7 +50,7 @@
           "links": [
             {
               "title": "Show details",
-              "url": "/d/sfdx-hardis-limits-details/50-limits-details?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}"
+              "url": "/d/sfdx-hardis-limits-details/50-limits-details?orgId=1&${org:queryparam}\ufeff\ufeff&\ufeff\ufeff${__url_time_range}"
             }
           ],
           "mappings": [],
@@ -128,12 +91,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-69950",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
@@ -163,7 +126,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -175,7 +138,7 @@
           "links": [
             {
               "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}\ufeff\ufeff&\ufeff\ufeff${__url_time_range}&var-limitId=${__data.fields.limitName}"
             }
           ],
           "mappings": [],
@@ -221,12 +184,12 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-69950",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
@@ -290,7 +253,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -302,7 +265,7 @@
           "links": [
             {
               "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}\ufeff\ufeff&\ufeff\ufeff${__url_time_range}&var-limitId=${__data.fields.limitName}"
             }
           ],
           "mappings": [],
@@ -348,12 +311,12 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-69950",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
@@ -417,7 +380,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -429,7 +392,7 @@
           "links": [
             {
               "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}\ufeff\ufeff&\ufeff\ufeff${__url_time_range}&var-limitId=${__data.fields.limitName}"
             }
           ],
           "mappings": [],
@@ -475,12 +438,12 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-69950",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
@@ -544,7 +507,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -556,7 +519,7 @@
           "links": [
             {
               "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}\ufeff\ufeff&\ufeff\ufeff${__url_time_range}&var-limitId=${__data.fields.limitName}"
             }
           ],
           "mappings": [],
@@ -602,12 +565,12 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-69950",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
@@ -671,7 +634,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -683,7 +646,7 @@
           "links": [
             {
               "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}\ufeff\ufeff&\ufeff\ufeff${__url_time_range}&var-limitId=${__data.fields.limitName}"
             }
           ],
           "mappings": [],
@@ -729,12 +692,12 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-69950",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
@@ -803,10 +766,14 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": ["All"],
+          "value": ["$__all"]
+        },
         "datasource": {
           "type": "loki",
-          "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          "uid": "grafanacloud-logs"
         },
         "definition": "",
         "hide": 0,

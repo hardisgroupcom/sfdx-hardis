@@ -1,47 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_GRAFANACLOUD-CLOUDITY-LOGS",
-      "label": "grafanacloud-cloudity-logs",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "loki",
-      "pluginName": "Loki"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "gauge",
-      "name": "Gauge",
-      "version": ""
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.1.0-70903"
-    },
-    {
-      "type": "datasource",
-      "id": "loki",
-      "name": "Loki",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -61,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 22,
   "links": [
     {
       "asDropdown": false,
@@ -95,7 +52,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -107,7 +64,7 @@
           "links": [
             {
               "title": "View evolution in time",
-              "url": "/d/sfdx-hardis-indicator-evol-prom/dtl-indicator-evolution-long-time?${org:queryparam}﻿﻿&var-limitId=${limitId}_metric"
+              "url": "/d/sfdx-hardis-indicator-evol-prom/dtl-indicator-evolution-long-time?${org:queryparam}\ufeff\ufeff&var-limitId=${limitId}_metric"
             }
           ],
           "mappings": [],
@@ -144,12 +101,12 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-69950",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} | json limitData=\"limits.${limitId}\"",
@@ -230,7 +187,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -309,7 +266,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} | json limitData=\"limits.${limitId}\"",
@@ -384,7 +341,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "description": "",
       "fieldConfig": {
@@ -436,12 +393,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-69950",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
           "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
@@ -491,10 +448,14 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": ["hardis-group"],
+          "value": ["hardis-group"]
+        },
         "datasource": {
           "type": "loki",
-          "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          "uid": "grafanacloud-logs"
         },
         "definition": "",
         "hide": 0,
@@ -516,10 +477,14 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "selected": false,
+          "text": "APEX_TESTS",
+          "value": "APEX_TESTS"
+        },
         "datasource": {
           "type": "loki",
-          "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          "uid": "grafanacloud-logs"
         },
         "definition": "",
         "hide": 2,
