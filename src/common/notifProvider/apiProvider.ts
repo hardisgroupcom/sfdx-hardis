@@ -10,6 +10,9 @@ import { Connection } from "jsforce";
 import { GitProvider } from "../gitProvider";
 import axios, { AxiosRequestConfig } from "axios";
 
+const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
+const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
+
 export class ApiProvider extends NotifProviderRoot {
   protected apiUrl: string;
   public payload: ApiNotifMessage;
@@ -134,11 +137,34 @@ export class ApiProvider extends NotifProviderRoot {
     const currentTimeNanoseconds = Date.now() * 1000 * 1000;
     const payloadCopy = Object.assign({}, this.payload);
     delete payloadCopy.data;
+    let payloadDataJson = JSON.stringify(this.payload.data);
+    const bodyBytesLen = new TextEncoder().encode(payloadDataJson).length;
+    // Truncate log elements if log entry is too big
+    if (bodyBytesLen > MAX_LOKI_LOG_LENGTH) {
+      const newPayloadData = Object.assign({}, this.payload.data);
+      const logElements: Array<any> = newPayloadData._logElements;
+      if (logElements.length > TRUNCATE_LOKI_ELEMENTS_LENGTH) {
+        const truncatedLogElements = logElements.slice(0, TRUNCATE_LOKI_ELEMENTS_LENGTH);
+        newPayloadData._logElements = truncatedLogElements;
+        newPayloadData._logElementsTruncated = true;
+        payloadDataJson = JSON.stringify(newPayloadData);
+        uxLog(
+          this,
+          c.grey(
+            `[ApiProvider] Truncated _logElements from ${logElements.length} to ${truncatedLogElements.length} to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`,
+          ),
+        );
+      } else {
+        newPayloadData._logBodyText = (newPayloadData._logBodyText || "").slice(0, 100) + "\n ... (truncated)";
+        payloadDataJson = JSON.stringify(newPayloadData);
+        uxLog(this, c.grey(`[ApiProvider] Truncated _logBodyText to 100 to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`));
+      }
+    }
     this.payloadFormatted = {
       streams: [
         {
           stream: payloadCopy,
-          values: [[`${currentTimeNanoseconds}`, JSON.stringify(this.payload.data)]],
+          values: [[`${currentTimeNanoseconds}`, payloadDataJson]],
         },
       ],
     };
