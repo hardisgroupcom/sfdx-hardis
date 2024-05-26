@@ -139,7 +139,7 @@ export class ApiProvider extends NotifProviderRoot {
     delete payloadCopy.data;
     let payloadDataJson = JSON.stringify(this.payload.data);
     const bodyBytesLen = (new TextEncoder().encode(payloadDataJson)).length;
-    // Truncage log elements if log entry is too big
+    // Truncate log elements if log entry is too big
     if (bodyBytesLen > MAX_LOKI_LOG_LENGTH) {
       const newPayloadData = Object.assign({}, this.payload.data);
       const logElements: Array<any> = newPayloadData._logElements;
