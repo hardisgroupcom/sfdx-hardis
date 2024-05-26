@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Half-automate the retrieve of default Grafana Dashboards
+
 ## [4.37.1] 2024-05-26
 
 - Truncate logs sent to Grafana Loki in case they are too big, to avoid they are not taken in account

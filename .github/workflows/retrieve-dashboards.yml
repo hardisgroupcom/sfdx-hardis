@@ -64,7 +64,7 @@ jobs:
           delete-branch: true
           title: "[automation] Auto-update dashboards"
           body: "[automation] Auto-update dashboards"
-          labels: dependencies,automerge
+          labels: dependencies
       - name: Create PR output
         run: |
           echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
