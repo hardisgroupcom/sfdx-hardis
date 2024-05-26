@@ -11,7 +11,7 @@ import { GitProvider } from "../gitProvider";
 import axios, { AxiosRequestConfig } from "axios";
 
 const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
-const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 300);
+const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
 
 export class ApiProvider extends NotifProviderRoot {
   protected apiUrl: string;
