@@ -138,7 +138,7 @@ export class ApiProvider extends NotifProviderRoot {
     const payloadCopy = Object.assign({}, this.payload);
     delete payloadCopy.data;
     let payloadDataJson = JSON.stringify(this.payload.data);
-    const bodyBytesLen = (new TextEncoder().encode(payloadDataJson)).length;
+    const bodyBytesLen = new TextEncoder().encode(payloadDataJson).length;
     // Truncate log elements if log entry is too big
     if (bodyBytesLen > MAX_LOKI_LOG_LENGTH) {
       const newPayloadData = Object.assign({}, this.payload.data);
@@ -148,9 +148,13 @@ export class ApiProvider extends NotifProviderRoot {
         newPayloadData._logElements = truncatedLogElements;
         newPayloadData._logElementsTruncated = true;
         payloadDataJson = JSON.stringify(newPayloadData);
-        uxLog(this, c.grey(`[ApiProvider] Truncated _logElements from ${logElements.length} to ${truncatedLogElements.length} to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`));
-      }
-      else {
+        uxLog(
+          this,
+          c.grey(
+            `[ApiProvider] Truncated _logElements from ${logElements.length} to ${truncatedLogElements.length} to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`,
+          ),
+        );
+      } else {
         newPayloadData._logBodyText = (newPayloadData._logBodyText || "").slice(0, 100) + "\n ... (truncated)";
         payloadDataJson = JSON.stringify(newPayloadData);
         uxLog(this, c.grey(`[ApiProvider] Truncated _logBodyText to 100 to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`));
