@@ -1,117 +1,113 @@
 {
-    "annotations": {
-        "list": [
-            {
-                "builtIn": 1,
-                "datasource": {
-                    "type": "grafana",
-                    "uid": "-- Grafana --"
-                },
-                "enable": true,
-                "hide": true,
-                "iconColor": "rgba(0, 211, 255, 1)",
-                "name": "Annotations & Alerts",
-                "type": "dashboard"
-            }
-        ]
-    },
-    "description": "Displays the limits of a Salesforce org",
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 0,
-    "id": 21,
-    "links": [
-        {
-            "asDropdown": false,
-            "icon": "dashboard",
-            "includeVars": true,
-            "keepTime": true,
-            "tags": [],
-            "targetBlank": false,
-            "title": "Back to main dashboard",
-            "tooltip": "",
-            "type": "link",
-            "url": "/d/sfdx-hardis-today-summary/dash-today-summary"
-        }
-    ],
-    "panels": [
-        {
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 0
-            },
-            "id": 3,
-            "panels": [],
-            "repeat": "org",
-            "repeatDirection": "h",
-            "title": "$org",
-            "type": "row"
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
-        {
-            "gridPos": {
-                "h": 18,
-                "w": 24,
-                "x": 0,
-                "y": 1
-            },
-            "id": 2,
-            "libraryPanel": {
-                "name": "Org Limits details",
-                "uid": "edkpfxvlsp3wgd"
-            },
-            "title": ""
-        }
-    ],
-    "schemaVersion": 39,
-    "tags": [],
-    "templating": {
-        "list": [
-            {
-                "current": {
-                    "selected": true,
-                    "text": [
-                        "hardis-group"
-                    ],
-                    "value": [
-                        "hardis-group"
-                    ]
-                },
-                "datasource": {
-                    "type": "loki",
-                    "uid": "grafanacloud-logs"
-                },
-                "definition": "",
-                "hide": 0,
-                "includeAll": true,
-                "label": "Salesforce Org",
-                "multi": true,
-                "name": "org",
-                "options": [],
-                "query": {
-                    "label": "orgIdentifier",
-                    "refId": "LokiVariableQueryEditor-VariableQuery",
-                    "stream": "{source=\"sfdx-hardis\"}",
-                    "type": 1
-                },
-                "refresh": 1,
-                "regex": "^[^.]*$",
-                "skipUrlSync": false,
-                "sort": 1,
-                "type": "query"
-            }
-        ]
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Displays the limits of a Salesforce org",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 21,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Back to main dashboard",
+      "tooltip": "",
+      "type": "link",
+      "url": "/d/sfdx-hardis-today-summary/dash-today-summary"
+    }
+  ],
+  "panels": [
+    {
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 3,
+      "panels": [],
+      "repeat": "org",
+      "repeatDirection": "h",
+      "title": "$org",
+      "type": "row"
     },
-    "time": {
-        "from": "now-30d",
-        "to": "now"
-    },
-    "timeRangeUpdatedDuringEditOrView": false,
-    "timepicker": {},
-    "timezone": "browser",
-    "title": "DTL - Limits Details",
-    "uid": "sfdx-hardis-limits-details",
-    "version": 16,
-    "weekStart": ""
+    {
+      "gridPos": {
+        "h": 18,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "libraryPanel": {
+        "name": "Org Limits details",
+        "uid": "edkpfxvlsp3wgd"
+      },
+      "title": ""
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ["hardis-group"],
+          "value": ["hardis-group"]
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "grafanacloud-logs"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Salesforce Org",
+        "multi": true,
+        "name": "org",
+        "options": [],
+        "query": {
+          "label": "orgIdentifier",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "{source=\"sfdx-hardis\"}",
+          "type": 1
+        },
+        "refresh": 1,
+        "regex": "^[^.]*$",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timeRangeUpdatedDuringEditOrView": false,
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "DTL - Limits Details",
+  "uid": "sfdx-hardis-limits-details",
+  "version": 16,
+  "weekStart": ""
 }

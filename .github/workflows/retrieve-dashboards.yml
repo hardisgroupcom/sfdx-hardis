@@ -20,7 +20,6 @@ concurrency:
 # Set the Job #
 ###############
 jobs:
-
   retrieve_dashboards:
     # Name the Job
     name: Retrieve Dashboards

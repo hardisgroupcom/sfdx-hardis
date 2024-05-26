@@ -1,455 +1,439 @@
 {
-    "annotations": {
-        "list": [
-            {
-                "builtIn": 1,
-                "datasource": {
-                    "type": "grafana",
-                    "uid": "-- Grafana --"
-                },
-                "enable": true,
-                "hide": true,
-                "iconColor": "rgba(0, 211, 255, 1)",
-                "name": "Annotations & Alerts",
-                "type": "dashboard"
-            }
-        ]
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 27,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 10,
+      "panels": [],
+      "repeat": "org",
+      "repeatDirection": "h",
+      "title": "$org",
+      "type": "row"
     },
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 0,
-    "id": 27,
-    "links": [],
-    "panels": [
-        {
-            "collapsed": false,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 0
-            },
-            "id": 10,
-            "panels": [],
-            "repeat": "org",
-            "repeatDirection": "h",
-            "title": "$org",
-            "type": "row"
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "grafanacloud-logs"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Deactivated Flows & VR",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}\ufeff\ufeff&var-type=METADATA_STATUS&\ufeff\ufeff${__url_time_range}&var-indicatorLabel=Deactivated Flow & VR"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
         },
-        {
-            "datasource": {
-                "type": "loki",
-                "uid": "grafanacloud-logs"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "thresholds"
-                    },
-                    "displayName": "Deactivated Flows & VR",
-                    "links": [
-                        {
-                            "title": "Show details",
-                            "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}\ufeff\ufeff&var-type=METADATA_STATUS&\ufeff\ufeff${__url_time_range}&var-indicatorLabel=Deactivated Flow & VR"
-                        }
-                    ],
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "#EAB839",
-                                "value": 1
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 4,
-                "w": 6,
-                "x": 0,
-                "y": 1
-            },
-            "id": 6,
-            "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-            },
-            "pluginVersion": "11.1.0-69950",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "loki",
-                        "uid": "grafanacloud-logs"
-                    },
-                    "editorMode": "builder",
-                    "expr": "{type=\"METADATA_STATUS\", orgIdentifier=\"$org\"} |= ``",
-                    "maxLines": 1,
-                    "queryType": "range",
-                    "refId": "A"
-                }
-            ],
-            "transformations": [
-                {
-                    "id": "extractFields",
-                    "options": {
-                        "format": "json",
-                        "jsonPaths": [
-                            {
-                                "path": "metric"
-                            }
-                        ],
-                        "source": "Line"
-                    }
-                }
-            ],
-            "type": "stat"
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
         },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.0-69950",
+      "targets": [
         {
-            "datasource": {
-                "type": "loki",
-                "uid": "grafanacloud-logs"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "thresholds"
-                    },
-                    "displayName": "Attributes without permissions",
-                    "links": [
-                        {
-                            "title": "Show detailsl",
-                            "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}\ufeff\ufeff&var-type=LINT_ACCESS&\ufeff\ufeff${__url_time_range}&var-indicatorLabel=Attributes without permissions"
-                        }
-                    ],
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "#EAB839",
-                                "value": 1
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 4,
-                "w": 6,
-                "x": 6,
-                "y": 1
-            },
-            "id": 4,
-            "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-            },
-            "pluginVersion": "11.1.0-69950",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "loki",
-                        "uid": "grafanacloud-logs"
-                    },
-                    "editorMode": "builder",
-                    "expr": "{type=\"LINT_ACCESS\", orgIdentifier=\"$org\"} |= ``",
-                    "maxLines": 1,
-                    "queryType": "range",
-                    "refId": "A"
-                }
-            ],
-            "transformations": [
-                {
-                    "id": "extractFields",
-                    "options": {
-                        "format": "json",
-                        "jsonPaths": [
-                            {
-                                "path": "metric"
-                            }
-                        ],
-                        "source": "Line"
-                    }
-                }
-            ],
-            "type": "stat"
-        },
-        {
-            "datasource": {
-                "type": "loki",
-                "uid": "grafanacloud-logs"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "thresholds"
-                    },
-                    "displayName": "Unused Metadatas",
-                    "links": [
-                        {
-                            "title": "Show details",
-                            "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}\ufeff\ufeff&var-type=UNUSED_METADATAS&\ufeff\ufeff${__url_time_range}&var-indicatorLabel=Unused Metadatas"
-                        }
-                    ],
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "#EAB839",
-                                "value": 1
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 4,
-                "w": 6,
-                "x": 12,
-                "y": 1
-            },
-            "id": 3,
-            "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-            },
-            "pluginVersion": "11.1.0-69950",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "loki",
-                        "uid": "grafanacloud-logs"
-                    },
-                    "editorMode": "builder",
-                    "expr": "{type=\"UNUSED_METADATAS\", orgIdentifier=\"$org\"} |= ``",
-                    "maxLines": 1,
-                    "queryType": "range",
-                    "refId": "A"
-                }
-            ],
-            "transformations": [
-                {
-                    "id": "extractFields",
-                    "options": {
-                        "format": "json",
-                        "jsonPaths": [
-                            {
-                                "path": "metric"
-                            }
-                        ],
-                        "source": "Line"
-                    }
-                }
-            ],
-            "type": "stat"
-        },
-        {
-            "datasource": {
-                "type": "loki",
-                "uid": "grafanacloud-logs"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "thresholds"
-                    },
-                    "displayName": "Fields without description",
-                    "links": [
-                        {
-                            "title": "Show details",
-                            "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}\ufeff\ufeff&var-type=MISSING_ATTRIBUTES&\ufeff\ufeff${__url_time_range}&var-indicatorLabel=Fields without description"
-                        }
-                    ],
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "#EAB839",
-                                "value": 1
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 4,
-                "w": 6,
-                "x": 18,
-                "y": 1
-            },
-            "id": 5,
-            "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "orientation": "auto",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
-            },
-            "pluginVersion": "11.1.0-69950",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "loki",
-                        "uid": "grafanacloud-logs"
-                    },
-                    "editorMode": "builder",
-                    "expr": "{type=\"MISSING_ATTRIBUTES\", orgIdentifier=\"$org\"} |= ``",
-                    "maxLines": 1,
-                    "queryType": "range",
-                    "refId": "A"
-                }
-            ],
-            "transformations": [
-                {
-                    "id": "extractFields",
-                    "options": {
-                        "format": "json",
-                        "jsonPaths": [
-                            {
-                                "path": "metric"
-                            }
-                        ],
-                        "source": "Line"
-                    }
-                }
-            ],
-            "type": "stat"
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"METADATA_STATUS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
         }
-    ],
-    "refresh": "",
-    "schemaVersion": 39,
-    "tags": [
-        "sfdx-hardis",
-        "salesforce",
-        "monitoring"
-    ],
-    "templating": {
-        "list": [
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "grafanacloud-logs"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Attributes without permissions",
+          "links": [
             {
-                "current": {
-                    "selected": true,
-                    "text": [
-                        "All"
-                    ],
-                    "value": [
-                        "$__all"
-                    ]
-                },
-                "datasource": {
-                    "type": "loki",
-                    "uid": "grafanacloud-logs"
-                },
-                "definition": "",
-                "hide": 0,
-                "includeAll": true,
-                "label": "Salesforce Org",
-                "multi": true,
-                "name": "org",
-                "options": [],
-                "query": {
-                    "label": "orgIdentifier",
-                    "refId": "LokiVariableQueryEditor-VariableQuery",
-                    "stream": "{source=\"sfdx-hardis\"}",
-                    "type": 1
-                },
-                "refresh": 1,
-                "regex": "^[^.]*$",
-                "skipUrlSync": false,
-                "sort": 1,
-                "type": "query"
+              "title": "Show detailsl",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}\ufeff\ufeff&var-type=LINT_ACCESS&\ufeff\ufeff${__url_time_range}&var-indicatorLabel=Attributes without permissions"
             }
-        ]
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.0-69950",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"LINT_ACCESS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
     },
-    "time": {
-        "from": "now-7d",
-        "to": "now"
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "grafanacloud-logs"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Unused Metadatas",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}\ufeff\ufeff&var-type=UNUSED_METADATAS&\ufeff\ufeff${__url_time_range}&var-indicatorLabel=Unused Metadatas"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.0-69950",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"UNUSED_METADATAS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
     },
-    "timeRangeUpdatedDuringEditOrView": false,
-    "timepicker": {},
-    "timezone": "browser",
-    "title": "DASH - Tech Debt for all orgs",
-    "uid": "sfdx-hardis-tech-debt-all-orgs",
-    "version": 7,
-    "weekStart": ""
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "grafanacloud-logs"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Fields without description",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}\ufeff\ufeff&var-type=MISSING_ATTRIBUTES&\ufeff\ufeff${__url_time_range}&var-indicatorLabel=Fields without description"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.0-69950",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"MISSING_ATTRIBUTES\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": ["sfdx-hardis", "salesforce", "monitoring"],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": ["All"],
+          "value": ["$__all"]
+        },
+        "datasource": {
+          "type": "loki",
+          "uid": "grafanacloud-logs"
+        },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Salesforce Org",
+        "multi": true,
+        "name": "org",
+        "options": [],
+        "query": {
+          "label": "orgIdentifier",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "{source=\"sfdx-hardis\"}",
+          "type": 1
+        },
+        "refresh": 1,
+        "regex": "^[^.]*$",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timeRangeUpdatedDuringEditOrView": false,
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "DASH - Tech Debt for all orgs",
+  "uid": "sfdx-hardis-tech-debt-all-orgs",
+  "version": 7,
+  "weekStart": ""
 }
