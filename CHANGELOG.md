@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Half-automate the retrieve of default Grafana Dashboards
+- Fix ticketing collection on PR with GitHub integration
 
 ## [4.37.1] 2024-05-26
 
