@@ -235,7 +235,7 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubWo
     const prInfo: any = Object.assign({}, prData);
     prInfo.sourceBranch = (prData?.head?.ref || "").replace("refs/heads/", "");
     prInfo.targetBranch = (prData?.base?.ref || "").replace("refs/heads/", "");
-    prInfo.description = (prData?.body || "");
+    prInfo.description = prData?.body || "";
     return prInfo;
   }
 }
