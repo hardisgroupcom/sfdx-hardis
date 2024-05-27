@@ -11,43 +11,43 @@ definitions:
 
 pipelines:
   default:
-      ##############################################
-      ### Sfdx Sources Backup + Push new commit ####
-      ##############################################
-      - step:
-          name: Backup sfdx-hardis
-          script: 
-            # Install SF Cli & dependencies
-            - npm install --no-cache @salesforce/cli --global
-            - sf plugins install @salesforce/plugin-packaging
-            - echo 'y' | sfdx plugins:install sfdx-hardis
-            - echo 'y' | sfdx plugins:install sfdx-essentials
-            - echo 'y' | sfdx plugins:install sfdx-git-delta
-            - sf version --verbose --json
-            - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
-            - export CI_COMMIT_REF_NAME=$BRANCH_NAME
-            - export CONFIG_BRANCH=$BRANCH_NAME
-            - export ORG_ALIAS=$BRANCH_NAME
-            - export FORCE_COLOR=1
-            # Login
-            - sfdx hardis:auth:login
-            # Backup
-            - sfdx hardis:org:monitor:backup
-            # Commit & push
-            - git status
-            - git add --all
-            - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
-            - git push --set-upstream origin "$BRANCH_NAME"
-          artifacts:
-            - hardis-report/**
+    ##############################################
+    ### Sfdx Sources Backup + Push new commit ####
+    ##############################################
+    - step:
+        name: Backup sfdx-hardis
+        script:
+          # Install SF Cli & dependencies
+          - npm install --no-cache @salesforce/cli --global
+          - sf plugins install @salesforce/plugin-packaging
+          - echo 'y' | sfdx plugins:install sfdx-hardis
+          - echo 'y' | sfdx plugins:install sfdx-essentials
+          - echo 'y' | sfdx plugins:install sfdx-git-delta
+          - sf version --verbose --json
+          - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
+          - export CI_COMMIT_REF_NAME=$BRANCH_NAME
+          - export CONFIG_BRANCH=$BRANCH_NAME
+          - export ORG_ALIAS=$BRANCH_NAME
+          - export FORCE_COLOR=1
+          # Login
+          - sfdx hardis:auth:login
+          # Backup
+          - sfdx hardis:org:monitor:backup
+          # Commit & push
+          - git status
+          - git add --all
+          - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
+          - git push --set-upstream origin "$BRANCH_NAME"
+        artifacts:
+          - hardis-report/**
 
-      - parallel:
+    - parallel:
         ######################
         ### Run Apex Tests ###
         ######################
         - step:
             name: Apex Tests sfdx-hardis
-            script: 
+            script:
               # Install SF Cli & dependencies
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
@@ -75,9 +75,10 @@ pipelines:
         - step:
             name: Run MegaLinter
             image: oxsecurity/megalinter-salesforce:latest
-            
+
             script:
               # Get latest commit of the branch
+              - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
               - git pull origin "${BRANCH_NAME}"
               - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash /entrypoint.sh
             artifacts:
@@ -86,7 +87,7 @@ pipelines:
         # Other monitoring tools
         - step:
             name: Other Monitoring checks sfdx-hardis
-            script: 
+            script:
               # Install SF Cli & dependencies
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
@@ -107,4 +108,3 @@ pipelines:
               - sfdx hardis:org:monitor:all
             artifacts:
               - hardis-report/**
-
