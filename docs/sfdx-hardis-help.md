@@ -16,4 +16,4 @@ Ask any technical question directly in [sfdx-hardis repository GitHub issues](ht
 
 ## Assistance / Consulting
 
-If you need assistance from Cloudity to use any of sfdx-hardis features, in the context of a larger project or not, please contact us on [Cloudity Contact Form](TODO: link here){target=blank} :)
+If you need assistance from Cloudity to use any of sfdx-hardis features, in the context of a larger project or not, please [**contact us**](https://cloudity.com/#form){target=blank} :)

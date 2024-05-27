@@ -4,9 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.37.1] 2024-05-23
+- Half-automate the retrieve of default Grafana Dashboards
 
-- Truncate logs sent to Grafana Loki in case they are too big, to avoid they are not taken in account.
+## [4.37.1] 2024-05-26
+
+- Truncate logs sent to Grafana Loki in case they are too big, to avoid they are not taken in account
+  - Default truncate size: 500
+- Add **flowPositions** in .sfdx-hardis.yml JSON Schema
+- Add Grafana Cloud setup tutorial
 
 ## [4.37.0] 2024-05-21
 
