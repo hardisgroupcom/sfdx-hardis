@@ -2,10 +2,10 @@
 name: "Retrieve Dashboards"
 on:
   # Run when there is an update in main
-  # push:
-  #   branches:
-  #     - main
-  #     - features/save-dashboards
+  push:
+    branches:
+      # - main # uncomment when working
+      - improve/dashboards-retrieve
   # # Automatically run every day at 21:49 UTC, before a start of hour peak
   # schedule:
   #   - cron: "49 21 * * *"
