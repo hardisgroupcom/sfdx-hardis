@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.37.4] 2024-05-28
+
+- Fix pipeline and instructions for Monitoring using GitHub Actions
+
 ## [4.37.3] 2024-05-28
 
 - Revert to previous dashboards version to avoid issues with use of panel

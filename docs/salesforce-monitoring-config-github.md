@@ -28,8 +28,19 @@ None
 
 ## Update org-monitoring.yml
 
-- Open **.github/workflows/org-monitoring.yml** in VsCode and update all places where `MANUAL` is found
-  - environment variables
+WARNING: Scheduling can be run only on main branch on GitHub Actions, so there is a specific config.
+
+- Configure all your monitored org using VsCode SFDX Hardis command "Configure Org Monitoring" (jobs will fail but that's ok)
+  - Reply questions, configure variables, let sfdx-hardis upload connected apps...
+  - This will create one git branch per monitored org
+
+AND ONLY THEN:
+
+- Checkout your "main" branch, create a file `.github/workflows/org-monitoring.yml` and copy there the content of [org-monitoring.yml](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml)
+  - Do a CTRL+F and look for **MANUAL**
+  - Add your monitored git branches here where asked to replace
+  - Add your authentication variable names where asked to replace
+  - Commit & push: there should be a SINGLE GitHub Actions job (using matrix) that will run the monitoring on all orgs
 
 Examples:
 
@@ -41,11 +52,9 @@ Examples:
         SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
 ```
 
-- Commit and push
-
 ## Schedule the monitoring job
 
-Schedule is already included within **org-monitoring.yml**.
+Schedule is already included within **org-monitoring.yml** in **main** branch.
 
 Default is everyday at midnight, but you can update the [CRON expression](https://crontab.cronhub.io/).
 
