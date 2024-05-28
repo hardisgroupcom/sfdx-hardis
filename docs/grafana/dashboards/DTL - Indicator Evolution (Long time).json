@@ -1,4 +1,49 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_GRAFANACLOUD-CLOUDITY-PROM",
+      "label": "grafanacloud-cloudity-prom",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    },
+    {
+      "name": "DS_GRAFANACLOUD-CLOUDITY-LOGS",
+      "label": "grafanacloud-cloudity-logs",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "loki",
+      "pluginName": "Loki"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.1.0-70903"
+    },
+    {
+      "type": "datasource",
+      "id": "loki",
+      "name": "Loki",
+      "version": "1.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
   "annotations": {
     "list": [
       {
@@ -18,7 +63,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 32,
+  "id": null,
   "links": [
     {
       "asDropdown": false,
@@ -52,7 +97,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "grafanacloud-prom"
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-PROM}"
       },
       "fieldConfig": {
         "defaults": {
@@ -142,7 +187,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "grafanacloud-prom"
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-PROM}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -167,14 +212,10 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": true,
-          "text": ["hardis-group"],
-          "value": ["hardis-group"]
-        },
+        "current": {},
         "datasource": {
           "type": "loki",
-          "uid": "grafanacloud-logs"
+          "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
         },
         "definition": "",
         "hide": 0,
@@ -196,14 +237,10 @@
         "type": "query"
       },
       {
-        "current": {
-          "selected": true,
-          "text": ["All"],
-          "value": ["$__all"]
-        },
+        "current": {},
         "datasource": {
           "type": "prometheus",
-          "uid": "grafanacloud-prom"
+          "uid": "${DS_GRAFANACLOUD-CLOUDITY-PROM}"
         },
         "definition": "metrics(_metric)",
         "hide": 0,

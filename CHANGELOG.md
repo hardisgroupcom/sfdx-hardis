@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Revert to previous dashboards version to avoid issues with use of panel
+
 ## [4.37.2] 2024-05-27
 
 - Half-automate the retrieve of default Grafana Dashboards
