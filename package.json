@@ -32,6 +32,7 @@
     "cosmiconfig": "^7.0.0",
     "cross-spawn": "^7.0.3",
     "csv-stringify": "^5.6.1",
+    "debug": "^4.3.4",
     "email-validator": "^2.0.4",
     "eslint": "^7.21.0",
     "exceljs": "^4.4.0",

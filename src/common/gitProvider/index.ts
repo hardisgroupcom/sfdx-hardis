@@ -5,6 +5,8 @@ import { GithubProvider } from "./github";
 import { GitlabProvider } from "./gitlab";
 import { GitProviderRoot } from "./gitProviderRoot";
 import { BitbucketProvider } from "./bitbucket";
+import Debug from "debug";
+const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
   static getInstance(): GitProviderRoot {
@@ -139,9 +141,12 @@ export abstract class GitProvider {
   static async getPullRequestInfo(): Promise<any> {
     const gitProvider = GitProvider.getInstance();
     if (gitProvider == null) {
+      debug("[PR Info] No GitProvider instance found");
       return null;
     }
-    return gitProvider.getPullRequestInfo();
+    const prInfo = gitProvider.getPullRequestInfo();
+    debug("[PR Info] " + JSON.stringify(prInfo, null, 2));
+    return prInfo;
   }
 }
 
