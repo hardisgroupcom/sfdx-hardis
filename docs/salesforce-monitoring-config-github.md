@@ -40,7 +40,7 @@ AND ONLY THEN:
   - Do a CTRL+F and look for **MANUAL**
   - Add your monitored git branches here where asked to replace
   - Add your authentication variable names where asked to replace
-  - Commit & push: there should be a SINGLE GitHub Actions job (using matrix) that will run the monitoring on all orgs 
+  - Commit & push: there should be a SINGLE GitHub Actions job (using matrix) that will run the monitoring on all orgs
 
 Examples:
 
