@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfdxError, Connection } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as columnify from "columnify";
@@ -211,11 +211,6 @@ export default class OrgPurgeFlow extends SfdxCommand {
     // });
     const records = recordsRaw.map((record: any) => record.Id);
 
-    // const records = recordsRaw.map((record: any) => {
-    //   return {
-    //     record.Id
-    //   };
-    // });
     uxLog(this, `[sfdx-hardis] Found ${c.bold(records.length)} records!`);
     // uxLog(this, `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(columnify(records))}`);
 
@@ -235,57 +230,47 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const deleted = [];
     const deleteErrors = [];
 
-    //MERIC START
+    // Create a connection to your database
+    const conn: Connection = this.org.getConnection();    
+    try {
+      //TODO: Make this method dynamic, send in the operation we are requesting.  Ex: await toolingApi('Flow', records, 'delete', conn);
+      const deleteResults = await bulkDeleteTooling('Flow', records, conn);
+      console.log('Full Delete Results Below');
+        
+      console.log(JSON.stringify(deleteResults, null, 2));
 
-    const conn = this.org.getConnection();
-    console.log(records);
-    
-    await bulkDeleteTooling('Flow', records, conn);
-    // const deleteResults = await bulkDeleteTooling('Flow', records, conn);
-   
+
+      console.log('Just The Results Below');
+        
+      console.log(JSON.stringify(deleteResults.results, null, 2));
+
+      for (const eachResult of deleteResults.results) {
+        if (eachResult.success) {
+          deleted.push(eachResult);
+        } else {
+          deleteErrors.push(eachResult);
+        }
+      }
+
+      if (deleteErrors.length > 0) {
+        const errMsg = `[sfdx-hardis] There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`;
+        if (allowPurgeFailure) {
+          uxLog(this, c.yellow(errMsg));
+        } else {
+          throw new SfdxError(c.yellow(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`));
+        }
+      }
+
+      const summary =
+      deleted.length > 0 ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : "[sfdx-hardis] No record to delete";
+      uxLog(this, c.green(summary));
+      // Return an object to be displayed with --json
+      // return {};
+      return { orgId: this.org.getOrgId(), outputString: summary };
       
-    //MERIC END
-
-    // for (const record of records) {
-    //   const deleteCommand =
-    //     "sfdx force:data:record:delete" + " --sobjecttype Flow" + ` --sobjectid ${record.Id}` + ` --targetusername ${username}` + " --usetoolingapi";
-    //   const deleteRes = await execSfdxJson(deleteCommand, this, {
-    //     fail: false,
-    //     output: false,
-    //     debug: debugMode,
-    //   });
-    //   if (!(deleteRes.status === 0)) {
-    //     this.ux.error(c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
-    //     deleteErrors.push(deleteRes);
-    //   }
-    //   deleted.push(record);
-    // }
-
-    // if (deleteErrors.length > 0) {
-    //   const errMsg = `[sfdx-hardis] There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`;
-    //   if (allowPurgeFailure) {
-    //     uxLog(this, c.yellow(errMsg));
-    //   } else {
-    //     throw new SfdxError(c.yellow(`There are been errors while deleting ${deleteErrors.length} records: \n${JSON.stringify(deleteErrors)}`));
-    //   }
-    // }
-
-    // const summary =
-    //   deleted.length > 0 ? `[sfdx-hardis] Deleted the following list of records:\n${columnify(deleted)}` : "[sfdx-hardis] No record to delete";
-    // uxLog(this, c.green(summary));
-    // Return an object to be displayed with --json
-    return {};
-    // return { orgId: this.org.getOrgId(), outputString: summary };
+      // Further processing can be done here
+    } catch (error) {
+      console.error('Error during deletion:', error);
+    }
   }
-
-  // private async deleteFlows(conn: any) {
-  //   uxLog(this, c.cyan(`Extracting Flow Test...`));
-  //   await bulkDeleteTooling(
-  //       `
-  //     SELECT Id
-  //     FROM Flow`,
-  //       conn,
-  //   );
-  //   // return flowQueery.records;
-  // }
 }
