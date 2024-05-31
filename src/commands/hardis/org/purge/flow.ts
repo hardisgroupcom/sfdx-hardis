@@ -113,14 +113,8 @@ export default class OrgPurgeFlow extends SfdxCommand {
       // Obsolete by default for CI
       statusFilter = ["Obsolete"];
     } else {
-      // Query all flows
-      // const allFlowQueryCommand =
-      //   "sfdx force:data:soql:query " +
-      //   ` -q "SELECT Id,MasterLabel,VersionNumber,ManageableState FROM Flow WHERE ${manageableConstraint} ORDER BY MasterLabel"` +
-      //   ` --targetusername ${username}` +
-      //   " --usetoolingapi";
-
-        const allFlowQueryCommand =
+      // Query all flows definitions
+      const allFlowQueryCommand =
         "sfdx force:data:soql:query " +
         ` -q "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
         ` --targetusername ${username}` +
@@ -131,7 +125,6 @@ export default class OrgPurgeFlow extends SfdxCommand {
         fail: true,
       });
       const flowRecordsRaw = allFlowQueryRes?.result?.records || allFlowQueryRes.records || [];
-      // const flowNamesUnique = [...new Set(flowRecordsRaw.map((flowRecord) => flowRecord.MasterLabel))];
       const flowNamesUnique = [...new Set(flowRecordsRaw.map((flowRecord) => flowRecord.DeveloperName))];
       const flowNamesChoice = flowNamesUnique.map((flowName) => {
         return { title: flowName, value: flowName };
@@ -171,10 +164,8 @@ export default class OrgPurgeFlow extends SfdxCommand {
       "','",
     )}')`;
     if (nameFilter && nameFilter != "all") {
-    //   query += ` AND MasterLabel LIKE '${nameFilter}%'`;
       query += ` AND Definition.DeveloperName = '${nameFilter}'`;
     }
-    // query += " ORDER BY MasterLabel,VersionNumber";
     query += " ORDER BY Definition.DeveloperName,VersionNumber";
 
     const flowQueryCommand = "sfdx force:data:soql:query " + ` -q "${query}"` + ` --targetusername ${username}` + " --usetoolingapi";
@@ -215,16 +206,15 @@ export default class OrgPurgeFlow extends SfdxCommand {
       });
 
       if (confirmDelete.value === false) {
-        uxLog(this, c.magenta("Action cancelled by user" ));
+        uxLog(this, c.magenta("Action cancelled by user"));
         return { outputString: "Action cancelled by user" };
-      }      
+      }
     }
 
     // Perform deletion
     const deleted = [];
     const deleteErrors = [];
     const conn = this.org.getConnection();
-    //TODO: Make this method dynamic, send in the operation we are requesting.  Ex: await toolingApi('Flow', records, 'delete', conn);
     const deleteResults = await bulkDeleteTooling('Flow', records, conn);
     for (const deleteRes of deleteResults.results) {
       if (deleteRes.success) {

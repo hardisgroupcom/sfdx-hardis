@@ -10,8 +10,5 @@
     "**/lib": true,
     "**/bin": true
   },
-  "sarif-viewer.connectToGithubCodeScanning": "off",
-  "workbench.colorCustomizations": {
-    "editor.selectionHighlightBorder": "#ff0000"
-  }
+  "sarif-viewer.connectToGithubCodeScanning": "off"
 }
