@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.37.5] 2024-05-31
+
 - **hardis:org:purge:flow**: Bulkify Flow deletion to improve performances
 
 ## [4.37.4] 2024-05-28
