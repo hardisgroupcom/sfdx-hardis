@@ -21,7 +21,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "11.1.0-70903"
+      "version": "11.1.0-70958"
     },
     {
       "type": "datasource",
@@ -33,6 +33,12 @@
       "type": "panel",
       "id": "stat",
       "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
       "version": ""
     }
   ],
@@ -118,7 +124,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -126,7 +134,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -210,7 +218,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "limit": 1,
           "values": false
@@ -219,7 +229,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -337,7 +347,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "limit": 1,
           "values": false
@@ -346,7 +358,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -464,7 +476,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "limit": 1,
           "values": false
@@ -473,7 +487,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -591,7 +605,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "limit": 1,
           "values": false
@@ -600,7 +616,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -718,7 +734,9 @@
         "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "limit": 1,
           "values": false
@@ -727,7 +745,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -850,7 +868,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -858,7 +878,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -941,7 +961,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -949,7 +971,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1026,7 +1048,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1034,7 +1058,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1115,7 +1139,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1123,7 +1149,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1200,7 +1226,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1208,7 +1236,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1299,7 +1327,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1307,7 +1337,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1402,7 +1432,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1410,7 +1442,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1478,7 +1510,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -1506,7 +1539,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1514,7 +1549,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1566,7 +1601,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -1594,7 +1630,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1602,7 +1640,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1654,7 +1692,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -1682,7 +1721,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1690,7 +1731,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1742,7 +1783,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -1766,7 +1808,9 @@
         "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -1774,7 +1818,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.1.0-70958",
       "targets": [
         {
           "datasource": {
@@ -1803,11 +1847,418 @@
         }
       ],
       "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 23,
+      "panels": [],
+      "title": "Licenses",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MasterLabel"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 248
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UsedLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TotalLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "id": 25,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Used"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.0-70958",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "keepTime": false,
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "allValues"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "All values"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "PermissionSetLicense"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Name": true,
+              "type": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
+            },
+            "renameByName": {
+              "MasterLabel": "Permission Set License",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MasterLabel"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 248
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UsedLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TotalLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "id": 24,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Used"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.0-70958",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "keepTime": false,
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "allValues"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "All values"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "UserLicense"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Name": true,
+              "type": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
+            },
+            "renameByName": {
+              "MasterLabel": "User License",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
+            }
+          }
+        }
+      ],
+      "type": "table"
     }
   ],
   "refresh": "",
   "schemaVersion": 39,
-  "tags": ["sfdx-hardis", "salesforce", "monitoring"],
+  "tags": [
+    "sfdx-hardis",
+    "salesforce",
+    "monitoring"
+  ],
   "templating": {
     "list": [
       {
@@ -1846,6 +2297,6 @@
   "timezone": "browser",
   "title": "DASH - 00_Home",
   "uid": "sfdx-hardis-today-summary",
-  "version": 83,
+  "version": 91,
   "weekStart": ""
 }
