@@ -20,9 +20,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
 
   public static description = `Mostly used for monitoring (Grafana) but you can also use it manually :)`;
 
-  public static examples = [
-    "$ sfdx hardis:org:diagnose:licenses"
-  ];
+  public static examples = ["$ sfdx hardis:org:diagnose:licenses"];
 
   //Comment default values to test the prompts
   protected static flagsConfig = {
@@ -71,7 +69,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
 
     // Retrieve the list of users who haven't logged in for a while
     const conn = this.org.getConnection();
-    uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? "(used only)" : ''));
+    uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? "(used only)" : ""));
 
     const licensesByKey = {};
     const usedLicenses = [];
@@ -139,7 +137,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
       data: {
         activeLicenses: Object.keys(licensesByKey).sort(),
         usedLicenses: usedLicenses,
-        licenses: licensesByKey
+        licenses: licensesByKey,
       },
       metrics: {},
     });

@@ -204,10 +204,7 @@ monitoringAllowedSectionsActions:
       Holidays: ["holiday_insert"],
       "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
       Groups: ["groupMembership"],
-      "Manage Territories": [
-        "tm2_userAddedToTerritory",
-        "tm2_userRemovedFromTerritory"
-      ],
+      "Manage Territories": ["tm2_userAddedToTerritory", "tm2_userRemovedFromTerritory"],
       "Manage Users": [
         "activateduser",
         "createduser",

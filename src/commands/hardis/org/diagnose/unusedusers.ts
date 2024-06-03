@@ -229,12 +229,12 @@ Use --returnactiveusers to revert the command and retrieve active users that has
   private async listUsersFromLicenses(conn) {
     let whereConstraint = this.returnActiveUsers
       ? // Active users
-      `WHERE IsActive = true AND (` + `(LastLoginDate >= LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL)` + `)`
+        `WHERE IsActive = true AND (` + `(LastLoginDate >= LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL)` + `)`
       : // Inactive users
-      `WHERE IsActive = true AND (` +
-      `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
-      `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
-      `)`;
+        `WHERE IsActive = true AND (` +
+        `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
+        `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
+        `)`;
     // Add License constraint only if necessary
     if (this.licenseTypes !== "all") {
       const licenseIdentifierValues = this.licenseIdentifiers.split(",");
