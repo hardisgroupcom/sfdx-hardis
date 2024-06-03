@@ -4,7 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Monitoring: Exclude some Add / Remove users from a Territory events from Suspect Audit Trail actions
+- hardis:org:diagnose:audittrail: Exclude some Add / Remove users from a Territory events from Suspect Audit Trail actions
+- hardis:org:diagnose:unusedusers: Fix metric name for ActiveUsers
 
 ## [4.37.5] 2024-05-31
 
