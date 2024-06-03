@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.38.0] 2024-06-03
+
+- New command **hardis:org:diagnose:licenses** to send used licenses to monitoring logs like Grafana
+- **hardis:org:diagnose:audittrail**: Exclude some Add / Remove users from a Territory events from Suspect Audit Trail actions
+- **hardis:org:diagnose:unusedusers**: Fix metric name for ActiveUsers
+
 ## [4.37.5] 2024-05-31
 
 - **hardis:org:purge:flow**: Bulkify Flow deletion to improve performances

@@ -34,6 +34,10 @@ _Example of visualization in Grafana_
 
 ![](assets/images/grafana-screenshot-2.png)
 
+_See presentation at Wir Sind Ohana conference in Berlin, may 2024_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/xGbT6at7RZ0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
 Extra features are also available, like:
 
 - Run **apex tests** (and soon flow tests)

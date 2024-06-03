@@ -183,7 +183,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
       return { deleted: [], outputString };
     }
 
-    // Simplify results format & display them 
+    // Simplify results format & display them
     const records = recordsRaw.map((record: any) => {
       return {
         Id: record.Id,
@@ -215,7 +215,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const deleted = [];
     const deleteErrors = [];
     const conn = this.org.getConnection();
-    const deleteResults = await bulkDeleteTooling('Flow', records, conn);
+    const deleteResults = await bulkDeleteTooling("Flow", records, conn);
     for (const deleteRes of deleteResults.results) {
       if (deleteRes.success) {
         deleted.push(deleteRes);

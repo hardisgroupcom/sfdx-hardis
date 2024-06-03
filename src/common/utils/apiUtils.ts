@@ -102,9 +102,9 @@ export async function bulkUpdate(objectName: string, action: string, records: Ar
   });
 }
 
-export async function bulkDeleteTooling(objectName: string, recordsFull: {Id: string}[], conn: Connection): Promise<any> {
+export async function bulkDeleteTooling(objectName: string, recordsFull: { Id: string }[], conn: Connection): Promise<any> {
   return new Promise((resolve, reject) => {
-    const records = recordsFull.map(record => record.Id);
+    const records = recordsFull.map((record) => record.Id);
     const options: RestApiOptions = { allOrNone: false };
     const handleCallback = (err: Error, result: RecordResult | RecordResult[]) => {
       if (err) {
@@ -114,9 +114,9 @@ export async function bulkDeleteTooling(objectName: string, recordsFull: {Id: st
         throw new SfdxError(c.red(`Error deleting ${objectName} records:` + resultObject));
       } else {
         const resultsArray = Array.isArray(result) ? result : [result];
-        const anyFailure = resultsArray.some(result => !result.success);
+        const anyFailure = resultsArray.some((result) => !result.success);
 
-        const resultObject = createResultObject(records, !anyFailure, anyFailure ? `One or more ${objectName} records failed to delete.` : '');
+        const resultObject = createResultObject(records, !anyFailure, anyFailure ? `One or more ${objectName} records failed to delete.` : "");
         resolve(resultObject);
       }
     };
@@ -124,21 +124,21 @@ export async function bulkDeleteTooling(objectName: string, recordsFull: {Id: st
       const recordsArray = Array.isArray(records) ? records : [records];
 
       return {
-        results: recordsArray.map(record => ({
+        results: recordsArray.map((record) => ({
           id: record,
           success: success,
-          errors: success ? [] : [errorMessage]
+          errors: success ? [] : [errorMessage],
         })),
         totalSize: recordsArray.length,
         successRecordsNb: success ? recordsArray.length : 0,
         errorRecordsNb: success ? 0 : recordsArray.length,
-        errorDetails: success ? [] : [{ error: errorMessage }]
+        errorDetails: success ? [] : [{ error: errorMessage }],
       };
     };
     try {
       conn.tooling.del(objectName, records, options, handleCallback);
     } catch (error) {
-      const resultObject = createResultObject(records, false, 'One or more records failed to delete due to a synchronous error.');
+      const resultObject = createResultObject(records, false, "One or more records failed to delete due to a synchronous error.");
       reject(resultObject);
       throw new SfdxError(c.red("Tooling Error:" + resultObject));
     }

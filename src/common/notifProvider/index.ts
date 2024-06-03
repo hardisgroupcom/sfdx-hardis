@@ -88,6 +88,7 @@ export interface NotifMessage {
     | "BACKUP"
     | "DEPLOYMENT"
     | "LEGACY_API"
+    | "LICENSES"
     | "LINT_ACCESS"
     | "UNUSED_METADATAS"
     | "METADATA_STATUS"

@@ -266,6 +266,7 @@ Use --returnactiveusers to revert the command and retrieve active users that has
         : `${this.users.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
       attachments = [{ text: notifDetailText }];
     }
+    const metrics = this.returnActiveUsers ? { ActiveUsers: this.users.length } : { UnusedUsers: this.users.length };
     /* jscpd:ignore-start */
     // Send notifications
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
@@ -278,9 +279,7 @@ Use --returnactiveusers to revert the command and retrieve active users that has
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.users,
       data: { metric: this.users.length },
-      metrics: {
-        UnusedUsers: this.users.length,
-      },
+      metrics: metrics,
     });
     /* jscpd:ignore-end */
     return [];
