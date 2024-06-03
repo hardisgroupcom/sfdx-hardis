@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Monitoring: Exclude some Add / Remove users from a Territory events from Suspect Audit Trail actions
+
 ## [4.37.5] 2024-05-31
 
 - **hardis:org:purge:flow**: Bulkify Flow deletion to improve performances
