@@ -171,8 +171,8 @@ You can remove more metadata types from backup, especially in case you have too 
         SubscriberPackageNamespace: installedPackage.SubscriberPackageNamespace,
         SubscriberPackageVersionId: installedPackage.SubscriberPackageVersionId,
         SubscriberPackageVersionName: installedPackage.SubscriberPackageVersionName,
-        SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber
-      }
+        SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
+      };
       installedPackagesLog.push(installedPackageLog);
     }
 
@@ -235,7 +235,7 @@ You can remove more metadata types from backup, especially in case you have too 
       logElements: this.diffFilesSimplified,
       data: {
         metric: this.diffFilesSimplified.length,
-        installedPackages: installedPackagesLog
+        installedPackages: installedPackagesLog,
       },
       metrics: {
         UpdatedMetadatas: this.diffFilesSimplified.length,
