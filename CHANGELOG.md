@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix npm packages installation for GitHub monitoring to avoid random failures
+
 ## [4.38.1] 2024-06-04
 
 - Add installed packages in monitoring backup logs

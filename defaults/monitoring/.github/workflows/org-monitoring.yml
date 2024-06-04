@@ -68,10 +68,10 @@ jobs:
     - name: Install SFDX and plugins
       run: |
         npm install --no-cache @salesforce/cli --global
-        sf plugins install @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install sfdx-hardis
-        echo 'y' | sfdx plugins:install sfdx-essentials
-        echo 'y' | sfdx plugins:install sfdx-git-delta
+        sf plugins install --force @salesforce/plugin-packaging
+        echo 'y' | sfdx plugins:install --force sfdx-hardis
+        echo 'y' | sfdx plugins:install --force sfdx-essentials
+        echo 'y' | sfdx plugins:install --force sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Retrieve Metadata
@@ -156,10 +156,10 @@ jobs:
     - name: Install SFDX and plugins
       run: |
         npm install --no-cache @salesforce/cli --global
-        sf plugins install @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install sfdx-hardis
-        echo 'y' | sfdx plugins:install sfdx-essentials
-        echo 'y' | sfdx plugins:install sfdx-git-delta
+        sf plugins install --force @salesforce/plugin-packaging
+        echo 'y' | sfdx plugins:install --force sfdx-hardis
+        echo 'y' | sfdx plugins:install --force sfdx-essentials
+        echo 'y' | sfdx plugins:install --force sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Run apex tests
@@ -282,10 +282,10 @@ jobs:
     - name: Install SFDX and plugins
       run: |
         npm install --no-cache @salesforce/cli --global
-        sf plugins install @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install sfdx-hardis
-        echo 'y' | sfdx plugins:install sfdx-essentials
-        echo 'y' | sfdx plugins:install sfdx-git-delta
+        sf plugins install --force @salesforce/plugin-packaging
+        echo 'y' | sfdx plugins:install --force sfdx-hardis
+        echo 'y' | sfdx plugins:install --force sfdx-essentials
+        echo 'y' | sfdx plugins:install --force sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Run monitoring checks
