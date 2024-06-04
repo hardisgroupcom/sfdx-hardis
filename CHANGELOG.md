@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.38.1] 2024-06-04
+
+- Add installed packages in monitoring backup logs
+
 ## [4.38.0] 2024-06-03
 
 - New command **hardis:org:diagnose:licenses** to send used licenses to monitoring logs like Grafana

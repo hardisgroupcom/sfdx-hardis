@@ -158,6 +158,7 @@ You can remove more metadata types from backup, especially in case you have too 
 
     // Write installed packages
     uxLog(this, c.cyan(`Write installed packages ...`));
+    const installedPackagesLog = [];
     const packageFolder = path.join(process.cwd(), "installedPackages");
     await fs.ensureDir(packageFolder);
     for (const installedPackage of installedPackages) {
@@ -165,6 +166,14 @@ You can remove more metadata types from backup, especially in case you have too 
       const fileNameNoSep = fileName.replace(/\//g, "_"); // Handle case when package name contains slashes
       delete installedPackage.Id; // Not needed for diffs
       await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
+      const installedPackageLog = {
+        SubscriberPackageName: installedPackage.SubscriberPackageName,
+        SubscriberPackageNamespace: installedPackage.SubscriberPackageNamespace,
+        SubscriberPackageVersionId: installedPackage.SubscriberPackageVersionId,
+        SubscriberPackageVersionName: installedPackage.SubscriberPackageVersionName,
+        SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber
+      }
+      installedPackagesLog.push(installedPackageLog);
     }
 
     this.diffFiles = await MetadataUtils.listChangedFiles();
@@ -224,7 +233,10 @@ You can remove more metadata types from backup, especially in case you have too 
       sideImage: "backup",
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.diffFilesSimplified,
-      data: { metric: this.diffFilesSimplified.length },
+      data: {
+        metric: this.diffFilesSimplified.length,
+        installedPackages: installedPackagesLog
+      },
       metrics: {
         UpdatedMetadatas: this.diffFilesSimplified.length,
       },
