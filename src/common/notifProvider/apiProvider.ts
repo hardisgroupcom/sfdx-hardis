@@ -102,10 +102,12 @@ export class ApiProvider extends NotifProviderRoot {
     const repoName = (await getGitRepoName()).replace(".git", "");
     const currentGitBranch = await getCurrentGitBranch();
     const conn: Connection = globalThis.jsForceConn;
+    const orgIdentifier = conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__");
+    const notifKey = orgIdentifier + "!!" + notifMessage.type;
     this.payload = {
       source: "sfdx-hardis",
       type: notifMessage.type,
-      orgIdentifier: conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__"),
+      orgIdentifier: orgIdentifier,
       gitIdentifier: `${repoName}/${currentGitBranch}`,
       severity: notifMessage.severity,
       data: Object.assign(notifMessage.data, {
@@ -116,6 +118,7 @@ export class ApiProvider extends NotifProviderRoot {
         _logElements: notifMessage.logElements,
         _metrics: notifMessage.metrics,
         _metricsKeys: Object.keys(notifMessage.metrics),
+        _notifKey: notifKey,
       }),
     };
     // Add job url if available
