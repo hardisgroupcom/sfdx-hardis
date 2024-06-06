@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Fix npm packages installation for GitHub monitoring to avoid random failures
+- Add _notifKey in Grafana notifications to be able to build unique alerts
 
 ## [4.38.1] 2024-06-04
 
