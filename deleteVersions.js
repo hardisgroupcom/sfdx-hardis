@@ -24,8 +24,8 @@ function main() {
   const versions = getPackageVersions(packageName);
   const versionsToDelete = versions.filter(version => /alpha|beta|canary/.test(version));
 
-  console.log(JSON.stringify(versionsToDelete,null,2));
-  // versionsToDelete.forEach(version => deletePackageVersion(packageName, version));
+  console.log("Versions to delete: "+JSON.stringify(versionsToDelete,null,2));
+  versionsToDelete.forEach(version => deletePackageVersion(packageName, version));
 }
 
 main();
