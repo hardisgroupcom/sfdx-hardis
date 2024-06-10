@@ -1,0 +1,26 @@
+name: Delete NPM Versions
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  delete-npm-versions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*'
+
+      - name: Run deleteVersions script
+        env:
+          PACKAGE_NAME: sfdx-hardis
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          node deleteVersions.js
