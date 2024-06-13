@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.40.0] 2024-06-13
+
 - Deployment tips: add missingDataCategoryGroup (no DataCategoryGroup named...)
+- handle **commandsPreDeploy** and **commandPostDeploy** to run custom command before and after deployments
 
 ## [4.39.0] 2024-06-13
 

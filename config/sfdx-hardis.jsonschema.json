@@ -276,6 +276,11 @@
         },
         "title": "Command"
       },
+      "required": [
+        "id",
+        "label",
+        "command"
+      ],
       "title": "Commands Pre-Deployment",
       "type": "array"
     },
@@ -306,8 +311,20 @@
             "description": "Command line to run",
             "title": "Command",
             "type": "string"
+          },
+          "skipIfError": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
+            "description": "Do not run the command if there is a deployment error",
+            "title": "Skip if error",
+            "default": "false",
+            "type": "boolean"
           }
         },
+        "required": [
+          "id",
+          "label",
+          "command"
+        ],
         "title": "Command"
       },
       "title": "Commands Post-Deployment",

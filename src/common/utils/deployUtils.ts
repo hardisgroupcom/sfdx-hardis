@@ -166,9 +166,10 @@ export async function forceSourceDeploy(
     uxLog(this, "No deployment to perform");
     return { messages, quickDeploy, deployXmlCount };
   }
-
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
+  // Run deployment pre-commands
+  await executePrePostCommands('commandsPreDeploy',true);
   // Process items of deployment plan
   uxLog(this, c.cyan("Processing split deployments build from deployment plan..."));
   uxLog(this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
@@ -266,6 +267,7 @@ export async function forceSourceDeploy(
         if (check) {
           await GitProvider.managePostPullRequestComment();
         }
+        await executePrePostCommands('commandsPostDeploy',false);
         throw new SfdxError("Deployment failure. Check messages above");
       }
 
@@ -333,6 +335,8 @@ export async function forceSourceDeploy(
     }
     messages.push(message);
   }
+  // Run deployment post commands
+  await executePrePostCommands('commandsPostDeploy',true);
   elapseEnd("all deployments");
   return { messages, quickDeploy, deployXmlCount };
 }
@@ -849,6 +853,23 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   }
 
   return packageXmlFull;
+}
+
+export async function executePrePostCommands(property: 'commandsPreDeploy'|'commandsPostDeploy', success = true) {
+  const branchConfig = await getConfig("branch");
+  const commands = branchConfig[property] || [];
+  if (commands.length === 0) {
+    uxLog(this,c.grey(`No ${property} found to run`));
+    return;
+  }
+  uxLog(this,c.cyan(`Running ${property} found in .sfdx-hardis.yml configuration...`));
+  for (const cmd of commands) {
+    if (success === false && cmd.skipIfError === true) {
+      uxLog(this,c.yellow(`Skipping skipIfError=true command [${cmd.id}]: ${cmd.label}`));
+    }
+    uxLog(this,c.cyan(`Running [${cmd.id}]: ${cmd.label}`));
+    await execCommand(cmd.command, this, { fail: false, output: true });
+  }
 }
 
 export async function extractOrgCoverageFromLog(stdout) {
