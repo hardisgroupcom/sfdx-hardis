@@ -19,7 +19,15 @@
       "type": "string"
     },
     "enum_monitoring_commands": {
-      "enum": ["AUDIT_TRAIL", "LEGACY_API", "LINT_ACCESS", "UNUSED_METADATAS", "METADATA_STATUS", "MISSING_ATTRIBUTES", "UNUSED_LICENSES"],
+      "enum": [
+        "AUDIT_TRAIL",
+        "LEGACY_API",
+        "LINT_ACCESS",
+        "UNUSED_METADATAS",
+        "METADATA_STATUS",
+        "MISSING_ATTRIBUTES",
+        "UNUSED_LICENSES"
+      ],
       "type": "string"
     }
   },
@@ -28,10 +36,17 @@
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
       "description": "Types of orgs allowed for config & development. If not set, sandbox and scratch are allowed by default",
-      "examples": [["sandbox"]],
+      "examples": [
+        [
+          "sandbox"
+        ]
+      ],
       "items": {
         "type": "string",
-        "enum": ["sandbox", "scratch"]
+        "enum": [
+          "sandbox",
+          "scratch"
+        ]
       },
       "title": "Allowed org types",
       "type": "array"
@@ -39,7 +54,13 @@
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving a sfdx-hardis task, the list of cleanings will be automatically applied to sfdx sources",
-      "examples": [["dashboards", "datadotcom", "destructivechanges"]],
+      "examples": [
+        [
+          "dashboards",
+          "datadotcom",
+          "destructivechanges"
+        ]
+      ],
       "items": {
         "type": "string",
         "enum": [
@@ -62,7 +83,13 @@
     "autoRemoveUserPermissions": {
       "$id": "#/properties/autoRemoveUserPermissions",
       "description": "When saving a sfdx-hardis task, these permissions will be removed from profiles",
-      "examples": [["EnableCommunityAppLauncher", "FieldServiceAccess", "OmnichannelInventorySync"]],
+      "examples": [
+        [
+          "EnableCommunityAppLauncher",
+          "FieldServiceAccess",
+          "OmnichannelInventorySync"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -72,7 +99,15 @@
     "autoRetrieveWhenPull": {
       "$id": "#/properties/autoRetrieveWhenPull",
       "description": "When calling hardis:scratch:pull, if you define metadatas (named or not), they will also be retrieved using force:source:retrieve",
-      "examples": [["CustomApplication"], ["CustomApplication:MyApp1", "CustomApplication:MyApp2"]],
+      "examples": [
+        [
+          "CustomApplication"
+        ],
+        [
+          "CustomApplication:MyApp1",
+          "CustomApplication:MyApp2"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -83,14 +118,23 @@
       "$id": "#/properties/apexTestsMinCoverageOrgWide",
       "default": 75.0,
       "description": "Minimum percentage of apex code coverage accepted",
-      "examples": [80.0, 95.0],
+      "examples": [
+        80.0,
+        95.0
+      ],
       "title": "Minimum apex test coverage %",
       "type": "number"
     },
     "availableProjects": {
       "$id": "#/properties/availableProjects",
       "description": "List of business projects that are managed in the same repository. Will be used to build git branch name when using hardis:work:new",
-      "examples": [["sales_cloud", "service_cloud", "community"]],
+      "examples": [
+        [
+          "sales_cloud",
+          "service_cloud",
+          "community"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -100,7 +144,12 @@
     "availableTargetBranches": {
       "$id": "#/properties/availableTargetBranches",
       "description": "List of git branches that can be used as target for merge requests",
-      "examples": [["develop", "develop_next"]],
+      "examples": [
+        [
+          "develop",
+          "develop_next"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -145,11 +194,15 @@
         [
           {
             "globPattern": "/**/*.flexipage-meta.xml",
-            "xpaths": ["//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"]
+            "xpaths": [
+              "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
+            ]
           },
           {
             "globPattern": "/**/*.layout-meta.xml",
-            "xpaths": ["//ns:relatedLists//ns:relatedList[contains(text(),'RelatedSolutionList')]"]
+            "xpaths": [
+              "//ns:relatedLists//ns:relatedList[contains(text(),'RelatedSolutionList')]"
+            ]
           }
         ]
       ],
@@ -163,14 +216,20 @@
           "globPattern": {
             "$id": "#/properties/cleanXmlPatterns/items/properties/globPattern",
             "description": "Glob pattern to identify XML files to clean",
-            "examples": ["/**/*.flexipage-meta.xml"],
+            "examples": [
+              "/**/*.flexipage-meta.xml"
+            ],
             "title": "Glob pattern",
             "type": "string"
           },
           "xpaths": {
             "$id": "#/properties/cleanXmlPatterns/items/properties/xpaths",
             "description": "XPaths to identify elements to remove",
-            "examples": [["//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"]],
+            "examples": [
+              [
+                "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
+              ]
+            ],
             "title": "XPath list",
             "items": {
               "type": "string"
@@ -178,7 +237,10 @@
             "type": "array"
           }
         },
-        "required": ["globPattern", "xpaths"]
+        "required": [
+          "globPattern",
+          "xpaths"
+        ]
       },
       "title": "Clean XML Patterns",
       "type": "array"
@@ -186,7 +248,20 @@
     "commandsPreDeploy": {
       "$id": "#/properties/commandsPreDeploy",
       "description": "List of commands to run before a deployment",
-      "examples": [],
+      "examples": [
+        [
+          {
+            "id": "knowledgeUnassign",
+            "label": "Remove KnownledgeUser right to the user who has it",
+            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
+          },
+          {
+            "id": "knowledgeAssign",
+            "label": "Assign Knowledge user to desired username",
+            "command": "sf data update record --sobject User --where \"Username='deployment-user@myclient.com'\" --values \"UserPermissionsKnowledgeUser='true'\" --json"
+          }
+        ]
+      ],
       "items": {
         "$id": "#/properties/commandsPreDeploy/items",
         "type": "object",
@@ -214,14 +289,31 @@
         },
         "title": "Command"
       },
-      "required": ["id", "label", "command"],
+      "required": [
+        "id",
+        "label",
+        "command"
+      ],
       "title": "Commands Pre-Deployment",
       "type": "array"
     },
     "commandsPostDeploy": {
       "$id": "#/properties/commandsPostDeploy",
       "description": "List of commands to run after a deployment",
-      "examples": [],
+      "examples": [
+        [
+          {
+            "id": "knowledgeUnassign",
+            "label": "Remove KnownledgeUser right to the user who has it",
+            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
+          },
+          {
+            "id": "knowledgeAssign",
+            "label": "Assign Knowledge user to desired username",
+            "command": "sf data update record --sobject User --where \"Username='admin-user@myclient.com'\" --values \"UserPermissionsKnowledgeUser='true'\" --json"
+          }
+        ]
+      ],
       "items": {
         "$id": "#/properties/commandsPostDeploy/items",
         "type": "object",
@@ -254,7 +346,11 @@
             "type": "boolean"
           }
         },
-        "required": ["id", "label", "command"],
+        "required": [
+          "id",
+          "label",
+          "command"
+        ],
         "title": "Command"
       },
       "title": "Commands Post-Deployment",
@@ -364,13 +460,20 @@
                   "type": "string"
                 }
               },
-              "required": ["id", "label", "command"]
+              "required": [
+                "id",
+                "label",
+                "command"
+              ]
             },
             "title": "Label",
             "type": "array"
           }
         },
-        "required": ["id", "label"]
+        "required": [
+          "id",
+          "label"
+        ]
       },
       "title": "Custom commands",
       "type": "array"
@@ -379,8 +482,14 @@
       "$id": "#/properties/customCommandsPosition",
       "description": "Position of custom commands in the menu (first or last)",
       "default": "first",
-      "enum": ["first", "last"],
-      "examples": ["first", "last"],
+      "enum": [
+        "first",
+        "last"
+      ],
+      "examples": [
+        "first",
+        "last"
+      ],
       "title": "Custom commands position",
       "type": "string"
     },
@@ -415,14 +524,20 @@
           "name": {
             "$Id": "#/properties/customPlugins/items/properties/name",
             "description": "Name of the plugin npm package",
-            "examples": ["mo-dx-plugin", "shane-sfdx-plugins"],
+            "examples": [
+              "mo-dx-plugin",
+              "shane-sfdx-plugins"
+            ],
             "title": "Name",
             "type": "string"
           },
           "helpUrl": {
             "$Id": "#/properties/customPlugins/items/properties/helpUrl",
             "description": "Url of plugin documentation",
-            "examples": ["https://github.com/msrivastav13/mo-dx-plugin", "https://github.com/mshanemc/shane-sfdx-plugins"],
+            "examples": [
+              "https://github.com/msrivastav13/mo-dx-plugin",
+              "https://github.com/mshanemc/shane-sfdx-plugins"
+            ],
             "title": "Name",
             "type": "string"
           }
@@ -454,7 +569,10 @@
             "type": "boolean"
           }
         },
-        "required": ["dataPath", "importInScratchOrgs"]
+        "required": [
+          "dataPath",
+          "importInScratchOrgs"
+        ]
       },
       "title": "Data packages",
       "type": "array"
@@ -462,7 +580,11 @@
     "defaultPackageInstallationKey": {
       "$id": "#/properties/defaultPackageInstallationKey",
       "description": "When generating a new package version protected with password, use this value as default package installation key",
-      "examples": ["hardis", "myPassword", "dFGGF43656YfdFDG{{{dhgfh:::;FSEDSFd78"],
+      "examples": [
+        "hardis",
+        "myPassword",
+        "dFGGF43656YfdFDG{{{dhgfh:::;FSEDSFd78"
+      ],
       "title": "Defaut package installation key",
       "type": "string"
     },
@@ -470,7 +592,11 @@
       "$id": "#/properties/developmentBranch",
       "default": "developpement",
       "description": "When creating a new sfdx-hardis task, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
-      "examples": ["developpement", "dev_lot2", "hotfixes"],
+      "examples": [
+        "developpement",
+        "dev_lot2",
+        "hotfixes"
+      ],
       "title": "Default pull/merge request target org",
       "type": "string"
     },
@@ -524,38 +650,55 @@
             "properties": {
               "dataPath": {
                 "$id": "#/properties/install/properties/packages/items/dataPath",
-                "examples": ["scripts/data/EmailTemplate"],
+                "examples": [
+                  "scripts/data/EmailTemplate"
+                ],
                 "title": "Path to SFDMU data project to deploy",
                 "type": "string"
               },
               "label": {
                 "$id": "#/properties/install/properties/packages/items/label",
-                "examples": ["Deploy EmailTemplate", "Import EmailTemplate records"],
+                "examples": [
+                  "Deploy EmailTemplate",
+                  "Import EmailTemplate records"
+                ],
                 "title": "Source or data package label",
                 "type": "string"
               },
               "order": {
                 "$id": "#/properties/install/properties/packages/items/order",
-                "examples": [-20, 13, 50],
+                "examples": [
+                  -20,
+                  13,
+                  50
+                ],
                 "title": "Execution order in deployment plan",
                 "type": "number"
               },
               "packageXmlFile": {
                 "$id": "#/properties/install/properties/packages/items/packageXmlFile",
-                "examples": ["manifest/splits/packageXmlEmails.xml"],
+                "examples": [
+                  "manifest/splits/packageXmlEmails.xml"
+                ],
                 "title": "Path to package.xml file to use for deployment",
                 "type": "string"
               },
               "waitAfter": {
                 "$id": "#/properties/install/properties/packages/items/waitAfter",
                 "description": "Delay to wait before installing the next package",
-                "examples": [10, 20],
+                "examples": [
+                  10,
+                  20
+                ],
                 "title": "Wait after install (seconds)",
                 "type": "number"
               }
             }
           },
-          "required": ["label", "order"],
+          "required": [
+            "label",
+            "order"
+          ],
           "title": "List of packages to deploy",
           "type": "array"
         }
@@ -567,7 +710,11 @@
       "$id": "#/properties/devHubAlias",
       "default": "",
       "description": "Dev Hub alias, usually DevHub_ProjectName",
-      "examples": ["DevHub_MyClientMyProject", "DevHub_GoogleGmail", "DevHub_AppleIWatch"],
+      "examples": [
+        "DevHub_MyClientMyProject",
+        "DevHub_GoogleGmail",
+        "DevHub_AppleIWatch"
+      ],
       "title": "Dev Hub org alias",
       "type": "string"
     },
@@ -575,31 +722,51 @@
       "$id": "#/properties/devHubUsername",
       "default": "",
       "description": "Dev Hub username, used to authenticate to DevHub from CI jobs",
-      "examples": ["cicd-user@myclient.com", "scratch-user@google.fr", "scratch-user@apple.fr"],
+      "examples": [
+        "cicd-user@myclient.com",
+        "scratch-user@google.fr",
+        "scratch-user@apple.fr"
+      ],
       "title": "Dev Hub Username",
       "type": "string"
     },
     "extends": {
       "$id": "#/properties/extends",
       "description": "You can base your local sfdx-hardis configuration on a remote config file. That allows you to have the same config base for all your projects",
-      "examples": ["https://raw.githubusercontent.com/worldcompany/shared-config/main/.sfdx-hardis.yml"],
+      "examples": [
+        "https://raw.githubusercontent.com/worldcompany/shared-config/main/.sfdx-hardis.yml"
+      ],
       "title": "Extends remote configuration URL",
       "type": "string"
     },
     "initPermissionSets": {
       "$id": "#/properties/initPermissionSets",
       "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets",
-      "examples": [["MyPermissionSet", "MyPermissionSetGroup"]],
+      "examples": [
+        [
+          "MyPermissionSet",
+          "MyPermissionSetGroup"
+        ]
+      ],
       "items": {
         "$id": "#/properties/initPermissionSets/items",
-        "type": ["object", "string"],
+        "type": [
+          "object",
+          "string"
+        ],
         "additionalProperties": false,
         "description": "Permission Set or Permission Set Group",
         "properties": {
           "name": {
             "$Id": "#/properties/initPermissionSets/items/properties/name",
             "description": "Permission Set or Permission Set Group name",
-            "examples": [["MyPermissionSet", "MyPermissionSetGroup", "MyPermissionSetGroup2"]],
+            "examples": [
+              [
+                "MyPermissionSet",
+                "MyPermissionSetGroup",
+                "MyPermissionSetGroup2"
+              ]
+            ],
             "title": "Name",
             "type": "string"
           }
@@ -646,43 +813,60 @@
         "properties": {
           "Id": {
             "$Id": "#/properties/install/properties/packages/items/Id",
-            "examples": ["0A35r000000GveVCAS"],
+            "examples": [
+              "0A35r000000GveVCAS"
+            ],
             "title": "(unused) PackageId",
             "type": "string"
           },
           "SubscriberPackageId": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageId",
-            "examples": ["033b0000000Pf2AAAS"],
+            "examples": [
+              "033b0000000Pf2AAAS"
+            ],
             "title": "Subscriber Package Id",
             "type": "string"
           },
           "SubscriberPackageName": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageName",
-            "examples": ["Files Attachment Notes"],
+            "examples": [
+              "Files Attachment Notes"
+            ],
             "title": "Subscriber Package Name",
             "type": "string"
           },
           "SubscriberPackageNamespace": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageNamespace",
-            "examples": ["fan_astrea"],
+            "examples": [
+              "fan_astrea"
+            ],
             "title": "Subscriber Package NameSpace",
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "SubscriberPackageVersionId": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionId",
-            "examples": ["04t0o000003nRWAAA2"],
+            "examples": [
+              "04t0o000003nRWAAA2"
+            ],
             "title": "Subscriber Version Id (IMPORTANT)",
             "type": "string"
           },
           "SubscriberPackageVersionName": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionName",
-            "examples": ["Summer2021"],
+            "examples": [
+              "Summer2021"
+            ],
             "title": "Subscriber Version Name",
             "type": "string"
           },
           "SubscriberPackageVersionNumber": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionNumber",
-            "examples": ["1.22.0.2"],
+            "examples": [
+              "1.22.0.2"
+            ],
             "title": "Subscriber Version Number",
             "type": "string"
           },
@@ -690,7 +874,10 @@
             "$Id": "#/properties/install/properties/packages/items/installDuringDeployments",
             "default": false,
             "description": "If true, during deployments this package will be installed in target org if not installed yet",
-            "examples": [true, false],
+            "examples": [
+              true,
+              false
+            ],
             "title": "Install during deployments",
             "type": "boolean"
           },
@@ -698,19 +885,27 @@
             "$Id": "#/properties/install/properties/packages/items/installOnScratchOrgs",
             "default": false,
             "description": "If true, this package will be installed when creating a new scratch org with sfdx-hardis",
-            "examples": [true, false],
+            "examples": [
+              true,
+              false
+            ],
             "title": "Install on scratch orgs",
             "type": "boolean"
           },
           "installationkey": {
             "$Id": "#/properties/install/properties/packages/items/installationkey",
-            "examples": ["MyInstallationKey", "4FzkMzUSwFfP#@"],
+            "examples": [
+              "MyInstallationKey",
+              "4FzkMzUSwFfP#@"
+            ],
             "description": "Installation key for key-protected package",
             "title": "Package installation key",
             "type": "string"
           }
         },
-        "required": ["SubscriberPackageVersionId"],
+        "required": [
+          "SubscriberPackageVersionId"
+        ],
         "title": "Salesforce package"
       },
       "title": "Installed Packages",
@@ -720,7 +915,9 @@
       "$id": "#/properties/installPackagesDuringCheckDeploy",
       "default": false,
       "description": "When calling deployment check command, installs any package referred within installedPackages property",
-      "examples": [true],
+      "examples": [
+        true
+      ],
       "title": "Install packages during deployment checks",
       "type": "boolean"
     },
@@ -728,7 +925,11 @@
       "$id": "#/properties/instanceUrl",
       "default": "",
       "description": "Salesforce instance URL used by CI for deployment or backups",
-      "examples": ["https://myclient.force.com", "https://google.force.com", "https://apple.force.com"],
+      "examples": [
+        "https://myclient.force.com",
+        "https://google.force.com",
+        "https://apple.force.com"
+      ],
       "title": "Instance URL",
       "type": "string"
     },
@@ -746,7 +947,13 @@
     "sourcesToRetrofit": {
       "$id": "#/properties/sourcesToRetrofit",
       "description": "List of metadata to retrieve for retrofit job",
-      "examples": [["CustomField", "Layout", "PermissionSet"]],
+      "examples": [
+        [
+          "CustomField",
+          "Layout",
+          "PermissionSet"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -803,7 +1010,10 @@
             "type": "string"
           }
         },
-        "required": ["title", "command"]
+        "required": [
+          "title",
+          "command"
+        ]
       },
       "title": "Monitoring commands",
       "type": "array"
@@ -818,7 +1028,12 @@
     "monitoringDisable": {
       "$id": "#/properties/monitoringDisable",
       "description": "List of commands to skip during monitoring jobs",
-      "examples": [["METADATA_STATUS", "UNUSED_METADATAS"]],
+      "examples": [
+        [
+          "METADATA_STATUS",
+          "UNUSED_METADATAS"
+        ]
+      ],
       "items": {
         "$ref": "#/definitions/enum_monitoring_commands"
       },
@@ -828,7 +1043,12 @@
     "monitoringExcludeUsernames": {
       "$id": "#/properties/monitoringExcludeUsernames",
       "description": "List of usernames to exclude while running monitoring commands",
-      "examples": [["deploymentuser@cloudity.com", "mc-cloud-user@cloudity.com"]],
+      "examples": [
+        [
+          "deploymentuser@cloudity.com",
+          "mc-cloud-user@cloudity.com"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -839,7 +1059,9 @@
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send ALL notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (ALL)",
       "type": "string"
     },
@@ -847,7 +1069,9 @@
       "$id": "#/properties/msTeamsWebhookUrlCritical",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send CRITICAL notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (CRITICAL)",
       "type": "string"
     },
@@ -855,7 +1079,9 @@
       "$id": "#/properties/msTeamsWebhookUrlSevere",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send SEVERE notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (SEVERE)",
       "type": "string"
     },
@@ -863,7 +1089,9 @@
       "$id": "#/properties/msTeamsWebhookUrlWarning",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send WARNING notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (WARNING)",
       "type": "string"
     },
@@ -871,14 +1099,21 @@
       "$id": "#/properties/msTeamsWebhookUrlWarning",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send INFO notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
     },
     "notificationsDisable": {
       "$id": "#/properties/notificationsDisable",
       "description": "List of notifications types to skip sending",
-      "examples": [["METADATA_STATUS", "UNUSED_METADATAS"]],
+      "examples": [
+        [
+          "METADATA_STATUS",
+          "UNUSED_METADATAS"
+        ]
+      ],
       "items": {
         "$ref": "#/definitions/enum_notification_types"
       },
@@ -928,7 +1163,11 @@
       "$id": "#/properties/productionBranch",
       "default": "",
       "description": "Name of the git branch corresponding to production environment",
-      "examples": ["master", "main", "production"],
+      "examples": [
+        "master",
+        "main",
+        "production"
+      ],
       "title": "Production branch name",
       "type": "string"
     },
@@ -936,7 +1175,11 @@
       "$id": "#/properties/projectName",
       "default": "",
       "description": "Identifier for the project (can be the client and project)",
-      "examples": ["MyClientMyProject", "GoogleGmail", "AppleIWatch"],
+      "examples": [
+        "MyClientMyProject",
+        "GoogleGmail",
+        "AppleIWatch"
+      ],
       "title": "Project Name",
       "type": "string"
     },
@@ -944,7 +1187,11 @@
       "$id": "#/properties/retrofitBranch",
       "default": "",
       "description": "Name of the git branch where retrofit merge requests targets to",
-      "examples": ["preprod", "dev", "maintenance"],
+      "examples": [
+        "preprod",
+        "dev",
+        "maintenance"
+      ],
       "title": "Retrofit branch name",
       "type": "string"
     },
@@ -966,7 +1213,12 @@
     "scratchOrgInitApexScripts": {
       "$id": "#/properties/scratchOrgInitApexScripts",
       "description": "Apex scripts to call after scratch org initialization",
-      "examples": [["scripts/apex/init-scratch.apex", "scripts/apex/init-custom-settings.apex"]],
+      "examples": [
+        [
+          "scripts/apex/init-scratch.apex",
+          "scripts/apex/init-custom-settings.apex"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -986,7 +1238,9 @@
       "$id": "#/properties/sfdmuCanModify",
       "default": "",
       "description": "Instance host name to allow SFDMU to deploy data in a production org",
-      "examples": ["myproject.force.com"],
+      "examples": [
+        "myproject.force.com"
+      ],
       "title": "SFDMU can modify",
       "type": "string"
     },
@@ -1008,7 +1262,11 @@
       "$id": "#/properties/targetUsername",
       "default": "",
       "description": "Salesforce username used by CI for deployment or backups",
-      "examples": ["deployments@myclient.com", "deployments@google.fr", "deployments@apple.com"],
+      "examples": [
+        "deployments@myclient.com",
+        "deployments@google.fr",
+        "deployments@apple.com"
+      ],
       "title": "Target Username",
       "type": "string"
     },
@@ -1023,7 +1281,12 @@
       "$id": "#/properties/linterIgnoreRightMetadataFile",
       "default": "",
       "description": "Ignore profiles or permission sets",
-      "examples": ["Profile", "Profile:ProfileA", "PermissionSet", "PermissionSet:PermissionSetA, Profile:ProfileA"],
+      "examples": [
+        "Profile",
+        "Profile:ProfileA",
+        "PermissionSet",
+        "PermissionSet:PermissionSetA, Profile:ProfileA"
+      ],
       "title": "Linter ignore permission set or/and profile",
       "type": "string"
     }
