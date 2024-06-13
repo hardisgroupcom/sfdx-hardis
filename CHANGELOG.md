@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.39.0] 2024-06-13
+
+- hardis:clean:references: new option **v60**
+  - Remove v61 userPermissions that do not exist in v60
+
 ## [4.38.2] 2024-06-06
 
 - Fix npm packages installation for GitHub monitoring to avoid random failures
