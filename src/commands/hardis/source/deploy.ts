@@ -126,7 +126,7 @@ Notes:
 
   public async run(): Promise<AnyJson> {
     // Run pre deployment commands if defined
-    await executePrePostCommands('commandsPreDeploy', true);
+    await executePrePostCommands("commandsPreDeploy", true);
     const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, this.flags.debug);
     // Check org coverage if requested
     if (this.flags.checkcoverage && result.stdout) {
@@ -142,7 +142,7 @@ Notes:
       }
     }
     // Run post deployment commands if defined
-    await executePrePostCommands('commandsPostDeploy', process.exitCode === 0);
+    await executePrePostCommands("commandsPostDeploy", process.exitCode === 0);
     await GitProvider.managePostPullRequestComment();
     return result;
   }
