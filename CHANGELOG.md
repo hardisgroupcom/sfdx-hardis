@@ -8,6 +8,26 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Deployment tips: add missingDataCategoryGroup (no DataCategoryGroup named...)
 - handle **commandsPreDeploy** and **commandPostDeploy** to run custom command before and after deployments
+  - If the commands are not the same depending on the target org, you can define them into config/branches/.sfdx-hardis-BRANCHNAME.yml instead of root config/.sfdx-hardis.yml
+
+Example:
+
+```yaml
+commandsPreDeploy:
+  - id: knowledgeUnassign
+    label: Remove KnowledgeUser right to the user who has it
+    command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
+  - id: knowledgeAssign
+    label: Assign Knowledge user to the deployment user
+    command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+commandsPostDeploy:
+  - id: knowledgeUnassign
+    label: Remove KnowledgeUser right to the user who has it
+    command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
+  - id: knowledgeAssign
+    label: Assign Knowledge user to the deployment user
+    command: sf data update record --sobject User --where "Username='admin.user@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+```
 
 ## [4.39.0] 2024-06-13
 
