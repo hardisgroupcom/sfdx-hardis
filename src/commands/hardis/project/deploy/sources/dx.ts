@@ -139,14 +139,14 @@ Example:
 \`\`\`yaml
 commandsPreDeploy:
   - id: knowledgeUnassign
-    label: Remove KnownledgeUser right to the user who has it
+    label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
   - id: knowledgeAssign
     label: Assign Knowledge user to the deployment user
     command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
 commandsPostDeploy:
   - id: knowledgeUnassign
-    label: Remove KnownledgeUser right to the user who has it
+    label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
   - id: knowledgeAssign
     label: Assign Knowledge user to desired username

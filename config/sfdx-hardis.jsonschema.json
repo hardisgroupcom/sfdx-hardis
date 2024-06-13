@@ -252,7 +252,7 @@
         [
           {
             "id": "knowledgeUnassign",
-            "label": "Remove KnownledgeUser right to the user who has it",
+            "label": "Remove KnowledgeUser right to the user who has it",
             "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
           },
           {
@@ -304,7 +304,7 @@
         [
           {
             "id": "knowledgeUnassign",
-            "label": "Remove KnownledgeUser right to the user who has it",
+            "label": "Remove KnowledgeUser right to the user who has it",
             "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
           },
           {
