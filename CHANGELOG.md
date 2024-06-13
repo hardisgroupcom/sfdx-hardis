@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Deployment tips: add missingDataCategoryGroup (no DataCategoryGroup named...)
+
 ## [4.39.0] 2024-06-13
 
 - hardis:clean:references: new option **v60**
