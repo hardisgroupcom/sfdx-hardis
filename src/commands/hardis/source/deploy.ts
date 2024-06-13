@@ -2,7 +2,7 @@ import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import { GitProvider } from "../../../common/gitProvider";
-import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
+import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
 // Wrapper for sfdx force:source:deploy
@@ -125,6 +125,8 @@ Notes:
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
+    // Run pre deployment commands if defined
+    await executePrePostCommands('commandsPreDeploy', true);
     const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, this.flags.debug);
     // Check org coverage if requested
     if (this.flags.checkcoverage && result.stdout) {
@@ -139,6 +141,8 @@ Notes:
         }
       }
     }
+    // Run post deployment commands if defined
+    await executePrePostCommands('commandsPostDeploy', process.exitCode === 0);
     await GitProvider.managePostPullRequestComment();
     return result;
   }
