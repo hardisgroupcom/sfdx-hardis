@@ -125,6 +125,10 @@ export default class CleanReferences extends SfdxCommand {
       title: "Remove System.debug from sources",
       command: "sfdx hardis:project:clean:systemdebug",
     },
+    {
+      value: "v60",
+      title: "Make metadata compliant with v60",
+    },
   ];
 
   protected configFile: string;

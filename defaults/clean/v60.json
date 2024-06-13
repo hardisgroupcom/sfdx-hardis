@@ -1,0 +1,15 @@
+{
+  "items": {
+    "CustomPermissions": [
+      "FreezeUsers",
+      "ManageCustomDomains",
+      "ManageDevSandboxes",
+      "ManageMobileAppSecurity",
+      "ManagePartners",
+      "ManageSandboxes",
+      "MonitorLoginHistory",
+      "ShareFilesWithNetworks",
+      "ShareInternalArticles"
+    ]
+  }
+}
