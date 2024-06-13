@@ -45,7 +45,7 @@ commandsPostDeploy:
   - id: knowledgeAssign
     label: Assign Knowledge user to desired username
     command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
-\`\`\`yaml
+\`\`\`
 
 Notes:
 
