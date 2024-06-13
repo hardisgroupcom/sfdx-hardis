@@ -183,6 +183,109 @@
       "title": "Clean XML Patterns",
       "type": "array"
     },
+    "commandsPreDeploy": {
+      "$id": "#/properties/commandsPreDeploy",
+      "description": "List of commands to run before a deployment",
+      "examples": [
+        [
+          {
+            "id": "knowledgeUnassign",
+            "label": "Remove KnowledgeUser right to the user who has it",
+            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
+          },
+          {
+            "id": "knowledgeAssign",
+            "label": "Assign Knowledge user to desired username",
+            "command": "sf data update record --sobject User --where \"Username='deployment-user@myclient.com'\" --values \"UserPermissionsKnowledgeUser='true'\" --json"
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/commandsPreDeploy/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Command definition",
+        "properties": {
+          "id": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/id",
+            "description": "Identifier of the command (can be any string)",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/label",
+            "description": "Label of the command (what does it do ?)",
+            "title": "Label",
+            "type": "string"
+          },
+          "command": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/command",
+            "description": "Command line to run",
+            "title": "Command",
+            "type": "string"
+          }
+        },
+        "title": "Command"
+      },
+      "required": ["id", "label", "command"],
+      "title": "Commands Pre-Deployment",
+      "type": "array"
+    },
+    "commandsPostDeploy": {
+      "$id": "#/properties/commandsPostDeploy",
+      "description": "List of commands to run after a deployment",
+      "examples": [
+        [
+          {
+            "id": "knowledgeUnassign",
+            "label": "Remove KnowledgeUser right to the user who has it",
+            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
+          },
+          {
+            "id": "knowledgeAssign",
+            "label": "Assign Knowledge user to desired username",
+            "command": "sf data update record --sobject User --where \"Username='admin-user@myclient.com'\" --values \"UserPermissionsKnowledgeUser='true'\" --json"
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/commandsPostDeploy/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Command definition",
+        "properties": {
+          "id": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/id",
+            "description": "Identifier of the command (can be any string)",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/label",
+            "description": "Label of the command (what does it do ?)",
+            "title": "Label",
+            "type": "string"
+          },
+          "command": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/command",
+            "description": "Command line to run",
+            "title": "Command",
+            "type": "string"
+          },
+          "skipIfError": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
+            "description": "Do not run the command if there is a deployment error",
+            "title": "Skip if error",
+            "default": "false",
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "label", "command"],
+        "title": "Command"
+      },
+      "title": "Commands Post-Deployment",
+      "type": "array"
+    },
     "customCommands": {
       "$id": "#/properties/customCommands",
       "description": "List of custom commands for VsCode SFDX-Hardis extension",
