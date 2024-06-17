@@ -7,6 +7,7 @@ import * as glob from "glob-promise";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils";
 import { minimizeProfile } from "../../../../common/utils/profileUtils";
+import { getConfig } from "../../../../config";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -37,7 +38,17 @@ The following XML tags are removed automatically:
 - userPermissions (except on Admin Profile)
 
 You can override this list by defining a property minimizeProfilesNodesToRemove in your .sfdx-hardis.yml config file.
-  `;
+
+You can also skip profiles using property skipMinimizeProfiles
+
+Example: 
+
+\`\`\`yaml
+skipMinimizeProfiles
+  - MyClient Customer Community Login User
+  - MyClientPortail Profile
+\`\`\`
+`;
 
   public static examples = ["$ sfdx hardis:project:clean:minimizeprofiles"];
 
@@ -82,8 +93,15 @@ You can override this list by defining a property minimizeProfilesNodesToRemove 
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.profile-meta.xml`;
     const matchingProfileFiles = await glob(findManagedPattern, { cwd: process.cwd() });
+    const config = await getConfig("branch");
+    const skipMinimizeProfiles = config.skipMinimizeProfiles || [];
     let counter = 0;
     for (const profileFile of matchingProfileFiles) {
+      const profileName = path.basename(profileFile).replace(".profile-meta.xml", "");
+      if (skipMinimizeProfiles.includes(profileName)) {
+        uxLog(this, c.grey(`Skipped ${profileName} as found in skipMinimizeProfiles property`));
+        continue;
+      }
       const res = await minimizeProfile(profileFile);
       if (res.updated === true) {
         counter++;

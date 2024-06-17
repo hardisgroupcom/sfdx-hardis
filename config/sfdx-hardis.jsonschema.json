@@ -1016,6 +1016,16 @@
       "title": "SFDMU can modify",
       "type": "string"
     },
+    "skipMinimizeProfiles": {
+      "$id": "#/properties/skipMinimizeProfiles",
+      "description": "These profiles will not be reformatted by command hardis:project:clean:minimizeprofiles",
+      "examples": [["MyClient Customer Community Login User", "MyClientPortail Profile"]],
+      "items": {
+        "type": "string"
+      },
+      "title": "Skip Minimize Profiles",
+      "type": "array"
+    },
     "skipUpdateForceIgnore": {
       "$id": "#/properties/skipUpdateForceIgnore",
       "default": false,
