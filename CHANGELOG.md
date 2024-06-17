@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [4.40.1] 2024-06-17
 
--  hardis:project:clean:minimizeprofiles: Allow to skip profiles refactoring using .sfdx-hardis.yml property **skipMinimizeProfiles** (can be useful for Experience Cloud profiles)
+- hardis:project:clean:minimizeprofiles: Allow to skip profiles refactoring using .sfdx-hardis.yml property **skipMinimizeProfiles** (can be useful for Experience Cloud profiles)
 
 ## [4.40.0] 2024-06-13
 
