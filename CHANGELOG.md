@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- hardis:org:diagnose:audittrail: Define `Currency: updateddatedexchrate` as not suspect action
+
 ## [4.40.1] 2024-06-17
 
 - hardis:project:clean:minimizeprofiles: Allow to skip profiles refactoring using .sfdx-hardis.yml property **skipMinimizeProfiles** (can be useful for Experience Cloud profiles)

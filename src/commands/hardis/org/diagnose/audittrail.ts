@@ -32,6 +32,8 @@ Regular setup actions performed in major orgs are filtered.
   - loginasgrantedtopartnerbt
 - Certificate and Key Management
   - insertCertificate
+- Currency
+  - updateddatedexchrate
 - Data Management
   - queueMembership
 - Email Administration
@@ -199,6 +201,7 @@ monitoringAllowedSectionsActions:
     this.allowedSectionsActions = {
       "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg", "loginasgrantedtopartnerbt"],
       "Certificate and Key Management": ["insertCertificate"],
+      Currency: ["updateddatedexchrate"],
       "Data Management": ["queueMembership"],
       "Email Administration": ["dkimRotationSuccessful", "dkimRotationPreparationSuccessful"],
       Holidays: ["holiday_insert"],
