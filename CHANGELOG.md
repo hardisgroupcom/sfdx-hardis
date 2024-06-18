@@ -4,7 +4,19 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- hardis:org:diagnose:audittrail: Define `Currency: updateddatedexchrate` as not suspect action
+## [4.40.2] 2024-06-18
+
+- hardis:org:diagnose:audittrail: Define new not suspect actions
+  - Currency
+    - updateddatedexchrate
+  - Custom App Licenses
+    - addeduserpackagelicense
+    - granteduserpackagelicense
+  - Manage Users
+    - unfrozeuser
+  - Mobile Administration
+    - assigneduserstomobileconfig
+- hardis:org:monitor:all: Define relevant items as weekly, not daily
 
 ## [4.40.1] 2024-06-17
 

@@ -115,7 +115,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
         key: "LICENSES",
         title: "Extract licenses information",
         command: "sfdx hardis:org:diagnose:licenses",
-        frequency: "daily", // TODO: Set as weekly later
+        frequency: "weekly", 
       },
       {
         key: "LINT_ACCESS",
@@ -133,13 +133,13 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
         key: "UNUSED_USERS",
         title: "Detect active users without recent logins",
         command: "sfdx hardis:org:diagnose:unusedusers",
-        frequency: "daily", // TODO: Set as weekly later
+        frequency: "weekly", 
       },
       {
         key: "ACTIVE_USERS",
         title: "Detect active users with recent logins",
         command: "sfdx hardis:org:diagnose:unusedusers --returnactiveusers",
-        frequency: "daily", // TODO: Set as weekly later
+        frequency: "weekly",
       },
       {
         key: "UNUSED_METADATAS",
