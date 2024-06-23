@@ -234,6 +234,19 @@ A reference to a custom metadata {3} of type {2} is not found in {1}:
 
 ```
 
+## Missing Data Category Group
+
+- `Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found`
+
+**Resolution tip**
+
+```shell
+If Data Category Group {2} is not existing yet in target org, you might need to:
+- create it manually in target org before deployment
+- comment DataCategoryGroup in {1} XML
+
+```
+
 ## Dependent class is invalid and needs recompilation
 
 - `Error (.*) Dependent class is invalid and needs recompilation`

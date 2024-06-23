@@ -2,7 +2,7 @@ import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import { GitProvider } from "../../../common/gitProvider";
-import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
+import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
 // Wrapper for sfdx force:source:deploy
@@ -10,6 +10,8 @@ export class Deploy extends SfdxCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors.
 
 Additional to the base command wrapper: If using **--checkonly**, add options **--checkcoverage** and **--coverageformatters json-summary** to check that org coverage is > 75% (or value defined in .sfdx-hardis.yml property **apexTestsMinCoverageOrgWide**)
+
+### Deployment results
 
 You can also have deployment results as pull request comments, on:
 
@@ -19,6 +21,31 @@ You can also have deployment results as pull request comments, on:
 
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
+
+### Deployment pre or post commands
+
+You can define command lines to run before or after a deployment
+
+If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
+
+Example:
+
+\`\`\`yaml
+commandsPreDeploy:
+  - id: knowledgeUnassign
+    label: Remove KnowledgeUser right to the user who has it
+    command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
+  - id: knowledgeAssign
+    label: Assign Knowledge user to the deployment user
+    command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+commandsPostDeploy:
+  - id: knowledgeUnassign
+    label: Remove KnowledgeUser right to the user who has it
+    command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
+  - id: knowledgeAssign
+    label: Assign Knowledge user to desired username
+    command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+\`\`\`
 
 Notes:
 
@@ -125,6 +152,8 @@ Notes:
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
+    // Run pre deployment commands if defined
+    await executePrePostCommands("commandsPreDeploy", true);
     const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, this.flags.debug);
     // Check org coverage if requested
     if (this.flags.checkcoverage && result.stdout) {
@@ -139,6 +168,8 @@ Notes:
         }
       }
     }
+    // Run post deployment commands if defined
+    await executePrePostCommands("commandsPostDeploy", process.exitCode === 0);
     await GitProvider.managePostPullRequestComment();
     return result;
   }

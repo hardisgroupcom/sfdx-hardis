@@ -27,6 +27,11 @@
                     "type_tag": "tabSettings",
                     "identifier_tag": "tab",
                     "values": {{ CustomTab }}
+                },
+                {
+                    "type_tag": "userPermissions",
+                    "identifier_tag": "name",
+                    "values": {{ CustomPermissions }}
                 }
             ]
         },

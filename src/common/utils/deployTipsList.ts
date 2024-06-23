@@ -154,6 +154,15 @@ Example of element to delete:
 `,
     },
     {
+      name: "missingDataCategoryGroup",
+      label: "Missing Data Category Group",
+      expressionRegex: [/Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found/gm],
+      tip: `If Data Category Group {2} is not existing yet in target org, you might need to:
+- create it manually in target org before deployment
+- comment DataCategoryGroup in {1} XML
+`,
+    },
+    {
       name: "dependent-class-invalid",
       label: "Dependent class is invalid and needs recompilation",
       expressionRegex: [/Error (.*) Dependent class is invalid and needs recompilation/gm],

@@ -32,6 +32,11 @@ Regular setup actions performed in major orgs are filtered.
   - loginasgrantedtopartnerbt
 - Certificate and Key Management
   - insertCertificate
+- Custom App Licenses
+  - addeduserpackagelicense
+  - granteduserpackagelicense
+- Currency
+  - updateddatedexchrate
 - Data Management
   - queueMembership
 - Email Administration
@@ -83,7 +88,10 @@ Regular setup actions performed in major orgs are filtered.
   - resetpassword
   - suOrgAdminLogin
   - suOrgAdminLogout
+  - unfrozeuser
   - useremailchangesent
+- Mobile Administration
+  - assigneduserstomobileconfig
 - Reporting Snapshots
   - createdReportJob
   - deletedReportJob
@@ -199,6 +207,8 @@ monitoringAllowedSectionsActions:
     this.allowedSectionsActions = {
       "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg", "loginasgrantedtopartnerbt"],
       "Certificate and Key Management": ["insertCertificate"],
+      "Custom App Licenses": ["addeduserpackagelicense", "granteduserpackagelicense"],
+      Currency: ["updateddatedexchrate"],
       "Data Management": ["queueMembership"],
       "Email Administration": ["dkimRotationSuccessful", "dkimRotationPreparationSuccessful"],
       Holidays: ["holiday_insert"],
@@ -246,8 +256,10 @@ monitoringAllowedSectionsActions:
         "resetpassword",
         "suOrgAdminLogin",
         "suOrgAdminLogout",
+        "unfrozeuser",
         "useremailchangesent",
       ],
+      "Mobile Administration": ["assigneduserstomobileconfig"],
       "Reporting Snapshots": ["createdReportJob", "deletedReportJob"],
       Sandboxes: ["DeleteSandbox"],
     };

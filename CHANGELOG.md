@@ -4,6 +4,54 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.40.2] 2024-06-18
+
+- hardis:org:diagnose:audittrail: Define new not suspect actions
+  - Currency
+    - updateddatedexchrate
+  - Custom App Licenses
+    - addeduserpackagelicense
+    - granteduserpackagelicense
+  - Manage Users
+    - unfrozeuser
+  - Mobile Administration
+    - assigneduserstomobileconfig
+- hardis:org:monitor:all: Define relevant items as weekly, not daily
+
+## [4.40.1] 2024-06-17
+
+- hardis:project:clean:minimizeprofiles: Allow to skip profiles refactoring using .sfdx-hardis.yml property **skipMinimizeProfiles** (can be useful for Experience Cloud profiles)
+
+## [4.40.0] 2024-06-13
+
+- Deployment tips: add missingDataCategoryGroup (no DataCategoryGroup named...)
+- handle **commandsPreDeploy** and **commandPostDeploy** to run custom command before and after deployments
+  - If the commands are not the same depending on the target org, you can define them into config/branches/.sfdx-hardis-BRANCHNAME.yml instead of root config/.sfdx-hardis.yml
+
+Example:
+
+```yaml
+commandsPreDeploy:
+  - id: knowledgeUnassign
+    label: Remove KnowledgeUser right to the user who has it
+    command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
+  - id: knowledgeAssign
+    label: Assign Knowledge user to the deployment user
+    command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+commandsPostDeploy:
+  - id: knowledgeUnassign
+    label: Remove KnowledgeUser right to the user who has it
+    command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
+  - id: knowledgeAssign
+    label: Assign Knowledge user to the deployment user
+    command: sf data update record --sobject User --where "Username='admin.user@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+```
+
+## [4.39.0] 2024-06-13
+
+- hardis:clean:references: new option **v60**
+  - Remove v61 userPermissions that do not exist in v60
+
 ## [4.38.2] 2024-06-06
 
 - Fix npm packages installation for GitHub monitoring to avoid random failures
