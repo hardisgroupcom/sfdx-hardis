@@ -4,9 +4,8 @@ import * as format from "string-template";
 import stripAnsi = require("strip-ansi");
 import { getAllTips } from "./deployTipsList";
 import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown";
-import { askOpenApi, isOpenApiAvailable } from "./openaiUtils";
-import { ChatCompletion } from "openai/resources";
 import { uxLog } from ".";
+import { AiProvider, AiResponse } from "../aiProvider";
 
 let logRes = null;
 let errorsAndTips = [];
@@ -38,22 +37,28 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
     if (logLine.trim().startsWith("Error") && !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].trim().startsWith("Error"))) {
       const aiTip = await findAiTip(logLine.trim());
       // Complete with AI if possible
-      if (aiTip && aiTip.choices.length > 0) {
+      if (aiTip && aiTip.success) {
         logResLines.push(c.yellow((`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed('(can be good or stupid, this is AI !)'))}:`)));
-        logResLines.push(c.magenta(c.italic(aiTip.choices[0].message.content)));
+        logResLines.push(c.magenta(c.italic(aiTip.promptResponse)));
         logResLines.push(c.yellow(""));
         errorsAndTips.push({
           error: { message: stripAnsi(logLine.trim()) },
-          tipFromAi: aiTip.choices[0].message.content
+          tipFromAi: {
+            promptResponse: aiTip.promptResponse
+          }
         });
       }
       else {
+        const promptText = buildPrompt(logLine.trim());
         // No tip found, give the user an AI prompt
         logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. You can try the following prompt:"));
-        logResLines.push(c.yellow(buildPrompt(logLine.trim())));
+        logResLines.push(c.yellow(promptText));
         logResLines.push(c.yellow(""));
         errorsAndTips.push({
           error: { message: stripAnsi(logLine.trim()) },
+          tipFromAi: {
+            promptText: promptText
+          }
         });
       }
 
@@ -132,12 +137,14 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
         if (found) {
           const aiTip = await findAiTip(line.trim());
           // Complete with AI if possible
-          if (aiTip && aiTip.choices.length > 0) {
+          if (aiTip && aiTip.success) {
             newLogLines.push(c.yellow((`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed('(can be good or stupid, this is AI !)'))}:`)));
-            newLogLines.push(c.magenta(c.italic(aiTip.choices[0].message.content)));
+            newLogLines.push(c.magenta(c.italic(aiTip.promptResponse)));
             newLogLines.push(c.yellow(""));
             const lastErrorAndTip = errorsAndTips[errorsAndTips.length - 1];
-            lastErrorAndTip.tipFromAi = aiTip.choices[0].message.content;
+            lastErrorAndTip.tipFromAi = {
+              promptResponse: aiTip.promptResponse
+            };
             errorsAndTips[errorsAndTips.length - 1] = lastErrorAndTip;
           }
         }
@@ -164,7 +171,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
           expressionRegex.lastIndex = 0; // reset regex last index to be able to reuse it
           const matches = [...line.matchAll(expressionRegex)];
           for (const m of matches) {
-            found = true ;
+            found = true;
             const replacements = m.map((str: string) => c.bold(str.trim().replace(/'/gm, "")));
             const replacementsMarkdown = m.map((str: string) => `**${str.trim().replace(/'/gm, "")}**`);
             newLogLines.push(c.yellow(c.italic(format(tipDefinition.label, replacements))));
@@ -183,12 +190,14 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
           if (found) {
             const aiTip = await findAiTip(line.trim());
             // Complete with AI if possible
-            if (aiTip && aiTip.choices.length > 0) {
+            if (aiTip && aiTip.success) {
               newLogLines.push(c.yellow((`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed('(can be good or stupid, this is AI !)'))}:`)));
-              newLogLines.push(c.magenta(c.italic(aiTip.choices[0].message.content)));
+              newLogLines.push(c.magenta(c.italic(aiTip.promptResponse)));
               newLogLines.push(c.yellow(""));
               const lastErrorAndTip = errorsAndTips[errorsAndTips.length - 1];
-              lastErrorAndTip.tipFromAi = aiTip.choices[0].message.content;
+              lastErrorAndTip.tipFromAi = {
+                promptResponse: aiTip.promptResponse
+              };
               errorsAndTips[errorsAndTips.length - 1] = lastErrorAndTip;
             }
           }
@@ -226,15 +235,15 @@ async function updatePullRequestResult(errorsAndTips: Array<any>, failedTests: A
   globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
 }
 
-async function findAiTip(errorLine: any): Promise<ChatCompletion | null> {
+async function findAiTip(errorLine: any): Promise<AiResponse | null> {
   if (alreadyProcessedErrors.includes(errorLine)) {
-    return null ;
+    return null;
   }
   alreadyProcessedErrors.push(errorLine);
-  if (isOpenApiAvailable()) {
+  if (AiProvider.isAiAvailable()) {
     const prompt = buildPrompt(errorLine);
     try {
-      const aiResponse = await askOpenApi(prompt);
+      const aiResponse = await AiProvider.promptAi(prompt);
       return aiResponse;
     } catch (e) {
       uxLog(this, c.yellow("[AI] Error while calling OpenAI: " + e.message));

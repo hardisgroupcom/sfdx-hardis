@@ -1,26 +1,16 @@
 ---
-title: How to solve Salesforce DX Deployment errors
-description: Learn how to fix issues that can happen during sfdx deployments
+title: Sfdx-hardis deployment assistant list of errors
+description: List of errors that are handled by sfdx-hardis deployment assistant
 ---
 <!-- markdownlint-disable MD013 -->
 
-# Salesforce deployment errors tips
+# Salesforce deployment assistant errors list
 
-This page summarizes all errors that can be detected by sfdx-hardis wrapper commands
+sfdx-hardis can help solve solve deployment errors using a predefined list of issues and associated solutions
 
-| sfdx command             | sfdx-hardis wrapper command |
-| :-----------             | :-------------------------- |
-| [sfdx force:source:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy) | [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/)   |
-| [sfdx force:source:push](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)   | [sfdx hardis:source:push](https://sfdx-hardis.cloudity.com/hardis/source/push/)     |
-| [sfdx force:mdapi:deploy](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_beta_deploy)  | [sfdx hardis:mdapi:deploy](https://sfdx-hardis.cloudity.com/hardis/mdapi/deploy/)    |
-
-You can also use this function on a [sfdx-hardis Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+See how to [setup sfdx-hardis deployment assistant](salesforce-deployment-assistant-setup.md)
 
 If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)
-
-Example:
-
-![Deployment Tip example](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/deploy-tip-example.jpg)
 
 ## API Version error
 
@@ -35,6 +25,7 @@ Example:
       
 ```
 
+---
 ## Allow deployment with pending Apex Jobs
 
 - `You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup.`
@@ -46,6 +37,7 @@ Go to target org, in Setup -> Deployment Settings -> Activate option "Allow depl
 
 ```
 
+---
 ## Can not change field type to a formula field
 
 - `Error (.*) Cannot update a field from a Formula to something else`
@@ -58,6 +50,7 @@ You need to manually delete or rename the field in the target org to allow the d
 - if you can't delete {1}, rename it into {1}_ToDel, then once the deployment done, delete {1}_ToDel
 ```
 
+---
 ## Can not change type due to existing data
 
 - `Error (.*) Cannot change type due to existing data`
@@ -73,6 +66,7 @@ It is usually not recommended to change types of fields, but if it's really nece
 - More help: https://help.salesforce.com/s/articleView?id=000327186&type=1
 ```
 
+---
 ## Can not change field type with picklist
 
 - `Error (.*) Cannot change which global value set this picklist uses`
@@ -86,6 +80,7 @@ You probably updated the type of field {1}, and Salesforce does not allows that 
 - Create another field with desired type and manage data recovery if the target is a production org
 ```
 
+---
 ## Can not delete custom field
 
 - `This (.*) is referenced elsewhere in salesforce.com`
@@ -98,6 +93,7 @@ Custom field {1} can not be deleted because it is used elsewhere. Remove its ref
 THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed separately from updated items deployment check
 ```
 
+---
 ## Can not delete record type
 
 - `Error (.*) Cannot delete record type through API`
@@ -110,6 +106,7 @@ You need to manually delete record type {1} in target org
 - Delete record type {1}
 ```
 
+---
 ## Can not find folder
 
 - `Error (.*) Cannot find folder:(.*)`
@@ -124,6 +121,7 @@ Folder {2} is missing.
 
 ```
 
+---
 ## Can not find user
 
 - `Error (.*) Cannot find a user that matches any of the following usernames`
@@ -145,6 +143,7 @@ Example of XML you have to remove in {1}:
 </folderShares>
 ```
 
+---
 ## Can not find user (2)
 
 - `Error (.*) In field: (.*) - no User named (.*) found`
@@ -158,6 +157,7 @@ You made reference to username {3} in {1}, and it probably does not exist in the
 - or open {1} metadata and remove the XML part referring to hardcoded username {3}
 ```
 
+---
 ## Cannot update a field to a Summary from something else
 
 - `Error (.*) Cannot update a field to a (.*) from something else`
@@ -171,6 +171,7 @@ You probably updated the type of field {1} to type {2}, and Salesforce does not 
 - Create another field with desired type and manage data recovery if the target is a production org
 ```
 
+---
 ## Custom object not found
 
 - `Error (.*) In field: field - no CustomObject named (.*) found`
@@ -186,6 +187,7 @@ You may also have a look to command sfdx hardis:project:clean:references
 
 ```
 
+---
 ## Custom field not found
 
 - `Error (.*) In field: (.*) - no CustomField named (.*)\.(.*) found`
@@ -203,6 +205,7 @@ A reference to a custom field {3}.{4} is not found in {1}:
 
 ```
 
+---
 ## Mandatory custom field can not be in a profile/permission set
 
 - `Error (.*) You cannot deploy to a required field: (.*)`
@@ -221,6 +224,7 @@ Example of element to delete:
 
 ```
 
+---
 ## Custom metadata entry not found
 
 - `Error (.*) In field: (.*) - no CustomMetadata named (.*) found`
@@ -234,6 +238,7 @@ A reference to a custom metadata {3} of type {2} is not found in {1}:
 
 ```
 
+---
 ## Missing Data Category Group
 
 - `Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found`
@@ -247,6 +252,7 @@ If Data Category Group {2} is not existing yet in target org, you might need to:
 
 ```
 
+---
 ## Dependent class is invalid and needs recompilation
 
 - `Error (.*) Dependent class is invalid and needs recompilation`
@@ -258,6 +264,7 @@ Solve the other errors and this one will disappear !
 
 ```
 
+---
 ## Duplicate value Platform Action Id List
 
 - `duplicate value found: PlatformActionListId duplicates value on record with id`
@@ -268,6 +275,7 @@ Solve the other errors and this one will disappear !
 There are probably issue with conflict management. Open the XML of the source item, and replace all <sortOrder> numbers to make an ascending order, starting with 0
 ```
 
+---
 ## Duplicate label
 
 - `Error (.*) Duplicate label: (.*)`
@@ -278,6 +286,7 @@ There are probably issue with conflict management. Open the XML of the source it
 You probably renamed the picklist API name for {2}. Please update manually the picklist {1} in the target org to avoid to have a duplicate label
 ```
 
+---
 ## Missing e-mail template
 
 - `In field: template - no EmailTemplate named (.*) found`
@@ -289,6 +298,7 @@ An email template should be present in the sources. To retrieve it, you can run:
 sfdx force:source:retrieve -m EmailTemplate:{1} -u YOUR_ORG_USERNAME
 ```
 
+---
 ## Empty source items
 
 - `Required field is missing: sharingOwnerRules`
@@ -302,6 +312,7 @@ You probably retrieved empty items, that must not be included within the SFDX pr
 To remove them, please run sfdx:hardis:project:clean:emptyitems
 ```
 
+---
 ## Enable CRM Analytics
 
 - `It should be created by enabling the CRM Analytics Cloud preference`
@@ -313,6 +324,7 @@ You must enable CRM Analytics (ex Wave, Einstein Analytics & Tableau CRM) in the
 You probably also need to add CRM Analytics Admin Permission Set assignment to the deployment user
 ```
 
+---
 ## Error parsing file
 
 - `Error (.*) Error parsing file: (.*) `
@@ -324,6 +336,7 @@ There has been an error parsing the XML file of {1}: {2}
 - Open file {1} and look where the error can be ! (merge issue, typo, XML tag not closed...)
 ```
 
+---
 ## Formula picklist field issue
 
 - `Field:(.*) must not be Required`
@@ -335,6 +348,7 @@ You probably made read only field {1} that was required before.
 Find field {1} in the layout source XML, then replace Required by Readonly
 ```
 
+---
 ## Field not available for element
 
 - `Field (.*) is not available for`
@@ -346,6 +360,7 @@ You probably changed the type of field {1}.
 Find field {1} in the source XML, and remove the section using it
 ```
 
+---
 ## Formula picklist field issue
 
 - `Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions.`
@@ -358,6 +373,7 @@ Update the formula to use a field compliant with formulas.
 More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_formulas.htm&type=5
 ```
 
+---
 ## Flow must be deleted manually
 
 - `.flow (.*) insufficient access rights on cross-reference id`
@@ -368,6 +384,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 Flow {1} can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
 ```
 
+---
 ## Insufficient access rights on cross-reference id
 
 - `Error (.*) insufficient access rights on cross-reference id`
@@ -379,6 +396,7 @@ Flow {1} can not be deleted using deployments, please delete it manually in the 
 - If you changed a custom field from unique to not unique, you need to manually make the change in the target org
 ```
 
+---
 ## Invalid formula grouping context
 
 - `Invalid custom summary formula definition: You must select a grouping context to use any report summary function`
@@ -389,6 +407,7 @@ Flow {1} can not be deleted using deployments, please delete it manually in the 
 You need to update your Report definition. See workaround here -> https://salesforce.stackexchange.com/questions/294850/grouping-error-with-prevgroupval-function
 ```
 
+---
 ## Invalid report type
 
 - `Error (.*) invalid report type`
@@ -401,6 +420,7 @@ Report type is missing for report {1}
 - Retrieve the report type from an org and add it to the sfdx sources
 ```
 
+---
 ## Invalid scope:Mine, not allowed
 
 - `Invalid scope:Mine, not allowed`
@@ -414,6 +434,7 @@ https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/
 
 ```
 
+---
 ## Invalid field in related list
 
 - `Error (.*) Invalid field:(.*) in related list:(.*)`
@@ -436,6 +457,7 @@ Example of XML to remove:
 
 ```
 
+---
 ## Invalid field for upsert
 
 - `Error (.*) Invalid field for upsert, must be an External Id custom or standard indexed field: (.*) \((.*)\)`
@@ -450,6 +472,7 @@ You tried to use field {2} for an upsert call in {1}.
 
 ```
 
+---
 ## Invalid type
 
 - `Error (.*) Invalid type: (.*) \((.*)\)`
@@ -460,6 +483,7 @@ You tried to use field {2} for an upsert call in {1}.
 Apex error in {1} with unknown type {2} at position {3}. If {2} is a class name, try to fix it, or maybe it is missing in the files or in package.xml !
 ```
 
+---
 ## Campaign can not be updated
 
 - `The object "Campaign" can't be updated`
@@ -471,6 +495,7 @@ Add "MarketingUser" in project-scratch-def.json features
 If it is already done, you may manually check "MarketingUser" field on the scratch org user
 ```
 
+---
 ## Missing field MiddleName
 
 - `field MiddleName`
@@ -487,6 +512,7 @@ MiddleNames must be activated in the target org.
 }
 ```
 
+---
 ## Missing field Suffix
 
 - `field Suffix`
@@ -502,6 +528,7 @@ Suffix must be activated in the target org.
 },
 ```
 
+---
 ## Missing field SyncedQuoteId
 
 - `field SyncedQuoteId`
@@ -519,6 +546,7 @@ Quotes must be activated in the target org.
 }
 ```
 
+---
 ## Missing feature ContactToMultipleAccounts
 
 - `no CustomObject named AccountContactRelation found`
@@ -533,6 +561,7 @@ Contacts to multiple accounts be activated in the target org.
 "features": ["ContactsToMultipleAccounts"]
 ```
 
+---
 ## Missing feature Chatter Collaboration Group
 
 - `CollaborationGroup`
@@ -548,6 +577,7 @@ Quotes must be activated in the target org.
 },
 ```
 
+---
 ## Missing feature Enhanced notes
 
 - `FeedItem.ContentNote`
@@ -563,6 +593,7 @@ Enhanced Notes must be activated in the target org.
 },
 ```
 
+---
 ## Missing feature Ideas notes
 
 - `Idea.InternalIdeasIdeaRecordType`
@@ -578,6 +609,7 @@ Ideas must be activated in the target org.
 }
 ```
 
+---
 ## Missing feature Live Agent
 
 - `FeedItem.ContentNote`
@@ -590,6 +622,7 @@ Live Agent must be activated in the target org.
 - Scratch org feature: LiveAgent
 ```
 
+---
 ## Missing feature Product Request
 
 - `ProductRequest`
@@ -602,6 +635,7 @@ Maybe you would like to clean its references within Profiles / PS using the foll
 sfdx hardis:project:clean:references , then select "ProductRequest references"
 ```
 
+---
 ## Missing feature Social Customer Service
 
 - `SocialPersona.AreWeFollowing`
@@ -614,6 +648,7 @@ Social Custom Service must be activated in the target org.
 - Scratch org feature: SocialCustomerService
 ```
 
+---
 ## Missing feature Translation Workbench
 
 - `report-meta.xml(.*)filterlanguage`
@@ -630,6 +665,7 @@ Translation workbench must be activated in the target org.
 }
 ```
 
+---
 ## Missing feature Opportunity Teams
 
 - `OpportunityTeam`
@@ -645,6 +681,7 @@ Opportunity Teams must be activated in the target org.
 }
 ```
 
+---
 ## Missing Feature Work.Com
 
 - `WorkBadgeDefinition`
@@ -656,6 +693,7 @@ Work.com feature must be activated in the target org.
 - Org & Scratch: https://developer.salesforce.com/docs/atlas.en-us.workdotcom_dev_guide.meta/workdotcom_dev_guide/wdc_cc_setup_dev_org.htm
 ```
 
+---
 ## Missing multi-currency field
 
 - `A reference to a custom field (.*)CurrencyIsoCode`
@@ -666,6 +704,7 @@ Work.com feature must be activated in the target org.
 You probably need to activate MultiCurrency (from Setup -> Company information)
 ```
 
+---
 ## Missing object referenced in package.xml
 
 - `An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory`
@@ -678,6 +717,7 @@ You can either:
 - Add the missing {2} {1} in your project source files
 ```
 
+---
 ## Missing Quick Action
 
 - `Error (.*) In field: QuickAction - no QuickAction named (.*) found`
@@ -695,6 +735,7 @@ QuickAction {2} referred in {1} is unknown. You can either:
 </quickActionListItems>
 ```
 
+---
 ## Missing report
 
 - `Error (.*) The (.*) report chart has a problem with the "reportName" field`
@@ -708,6 +749,7 @@ QuickAction {2} referred in {1} is unknown. You can either:
 
 ```
 
+---
 ## Missing Sales Team
 
 - `related list:RelatedAccountSalesTeam`
@@ -724,6 +766,7 @@ Account Teams must be activated in the target org.
 }
 ```
 
+---
 ## sharing operation already in progress
 
 - `sharing operation already in progress`
@@ -738,6 +781,7 @@ You can not deploy multiple SharingRules at the same time. You can either:
 
 ```
 
+---
 ## Not available for deploy for this organization
 
 - `Error (.*) Not available for deploy for this organization`
@@ -749,6 +793,7 @@ The user you use for deployments probably lacks of the rights (Profiles, Permiss
 - Assign the deployment user to the good Permission Sets, or modify its profile rights, then try again
 ```
 
+---
 ## Not valid sharing model
 
 - `Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)`
@@ -763,6 +808,7 @@ It seems that Sharing Models of {1} and {4} are not compatible in target org.
 
 ```
 
+---
 ## Picklist sharing is not supported
 
 - `Picklist sharing is not supported`
@@ -775,6 +821,7 @@ Go manually make the change in the target org, so the deployment will pass
 
 ```
 
+---
 ## Picklist value not found
 
 - `Picklist value: (.*) in picklist: (.*) not found`
@@ -788,6 +835,7 @@ Sources have references to value {1} of picklist {2}
 
 ```
 
+---
 ## Please choose a different name
 
 - `Error (.*) This (.*) already exists or has been previously used(.*)Please choose a different name.`
@@ -800,6 +848,7 @@ Sources have references to value {1} of picklist {2}
 
 ```
 
+---
 ## Missing profile default application
 
 - `You can't remove the only default app from the profile.`
@@ -818,6 +867,7 @@ You must have a default application for a profile. You can:
 </applicationVisibilities>
 ```
 
+---
 ## CRM Analytics: A Recipe must specify a DataFlow
 
 - `Error (.*) A Recipe must specify a Dataflow`
@@ -832,6 +882,7 @@ You can also retrieve all analytics sources in one shot using sfdx hardis:org:re
   - https://help.salesforce.com/s/articleView?id=000319274&type=1
 ```
 
+---
 ## Record Type not found
 
 - `Error (.*) In field: recordType - no RecordType named (.*) found`
@@ -845,6 +896,7 @@ An unknown record type {2} is referenced in {1}
 
 ```
 
+---
 ## Objects rights on a role is below org default
 
 - `access level below organization default`
@@ -858,6 +910,7 @@ Your org wide settings default must be lower than the level defined in roles:
             
 ```
 
+---
 ## Unsupported sharing configuration
 
 - `not supported for (.*) since it's org wide default is`
@@ -870,6 +923,7 @@ Please check https://salesforce.stackexchange.com/questions/260923/sfdx-deployin
 If you already did that, please try again to run the job
 ```
 
+---
 ## A sharing rule may be useless
 
 - `Required field is missing: sharingCriteriaRules`
@@ -880,6 +934,7 @@ If you already did that, please try again to run the job
 Are you sure you need this sharing rule ? You may remove it from the sfdx project
 ```
 
+---
 ## Sharing recalculation lock
 
 - `because it interferes with another operation already in progress`
@@ -891,6 +946,7 @@ Are you sure you need this sharing rule ? You may remove it from the sfdx projec
 If you changed a field from MasterDetail to Lookup, you must do it manually in the target org before being able to deploy
 ```
 
+---
 ## Send email is disabled
 
 - `Send Email is disabled or activities are not allowed`
@@ -902,6 +958,7 @@ If you changed a field from MasterDetail to Lookup, you must do it manually in t
 Go to Email -> Deliverability -> Select value "All emails"
 ```
 
+---
 ## Sort order must be in sequential order
 
 - `Error (.*) SortOrder must be in sequential order from`
@@ -913,6 +970,7 @@ You probably have a default DuplicateRule in the target org. Retrieve it from ta
 Ref: https://developer.salesforce.com/forums/?id=9060G000000I6SoQAK
 ```
 
+---
 ## Async exception in test class
 
 - `System.AsyncException: (.*) Apex`
@@ -924,6 +982,7 @@ This may be a test class implementation issue in {1}.
 Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 ```
 
+---
 ## Test classes with 0% coverage
 
 - ` 0%`
@@ -934,6 +993,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 Please make sure that none of the test classes are 0% covered
 ```
 
+---
 ## Can not test item deployment in simulation mode
 
 - `Test only deployment cannot update`
@@ -945,6 +1005,7 @@ THIS IS A FALSE POSITIVE
 When effective deployment will happen, it should pass
 ```
 
+---
 ## Unknown user permission: CreateAuditFields
 
 - `Unknown user permission: CreateAuditFields`
@@ -956,6 +1017,7 @@ You need to enable the "Create audit field" permission in the target org
 Please check https://help.salesforce.com/articleView?id=000334139&type=1&mode=1
 ```
 
+---
 ## Unknown user permission: FieldServiceAccess
 
 - `Unknown user permission: FieldServiceAccess`
@@ -967,6 +1029,7 @@ You need to enable the "Field Service Access" permission in the target org
 Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5
 ```
 
+---
 ## Unknown user permission
 
 - `Unknown user permission:`
@@ -979,6 +1042,7 @@ You can:
 - or remove references to the permission in source XML files (Probably a Profile or a Permission set)
 ```
 
+---
 ## Variable does not exist
 
 - `Error (.*) Variable does not exist: (.*) \((.*)\)`
@@ -989,6 +1053,7 @@ You can:
 Apex error in {1} with unknown variable {2} at position {3}. If {2} is a class name, try to fix it, or maybe it is missing in the files or in package.xml !
 ```
 
+---
 ## Visibility is not allowed for type
 
 - `Error (.*) set the visibility for a (.*) to Protected unless you are in a developer`
@@ -999,6 +1064,7 @@ Apex error in {1} with unknown variable {2} at position {3}. If {2} is a class n
 Update the visibility of {1} to "Public"
 ```
 
+---
 ## Tableau CRM / Wave digest error
 
 - `Fix the sfdcDigest node errors and then upload the file again`
@@ -1009,6 +1075,7 @@ Update the visibility of {1} to "Public"
 Go to the target org, open profile "Analytics Cloud Integration User" and add READ rights to the missing object fields 
 ```
 
+---
 ## XML item appears more than once
 
 - `Error (.*) Field:(.*), value:(.*) appears more than once`
@@ -1021,3 +1088,4 @@ Look for {3} in the XML of {1}
 If you see two {2} XML blocks with {3}, please decide which one you keep and remove the other one
 ```
 
+---
