@@ -7,7 +7,7 @@ function getPackageVersions(packageName) {
 
 function deletePackageVersion(packageName, version) {
   try {
-    execSync(`npm unpublish ${packageName}@${version}`);
+    execSync(`npm unpublish --force ${packageName}@${version}`);
     console.log(`Successfully deleted ${packageName}@${version}`);
   } catch (error) {
     console.error(`Failed to delete ${packageName}@${version}: ${error.message}`);
