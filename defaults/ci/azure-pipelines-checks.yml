@@ -86,6 +86,7 @@ jobs:
           JIRA_TOKEN: $(JIRA_TOKEN)
           JIRA_PAT: $(JIRA_HOST)
           JIRA_TICKET_REGEX: $(JIRA_TICKET_REGEX)
+          OPENAI_API_KEY: $(OPENAI_API_KEY)
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
           SYSTEM_COLLECTIONURI: $(System.CollectionUri)
