@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { AiResponse } from ".";
 import { AiProviderRoot } from "./aiProviderRoot";
-import * as c from 'chalk';
+import * as c from "chalk";
 import { uxLog } from "../utils";
 
 export class OpenApiProvider extends AiProviderRoot {
@@ -23,7 +23,7 @@ export class OpenApiProvider extends AiProviderRoot {
       return null;
     }
     const gptModel = process.env.OPENAI_MODEL || "gpt-4o";
-    uxLog(this, c.grey('[OpenAi] Requesting the following prompt to ' + gptModel + ": " + promptText + " ..."));
+    uxLog(this, c.grey("[OpenAi] Requesting the following prompt to " + gptModel + ": " + promptText + " ..."));
     this.incrementAiCallsNumber();
     const completion = await this.openai.chat.completions.create({
       messages: [{ role: "system", content: promptText }],
@@ -31,13 +31,12 @@ export class OpenApiProvider extends AiProviderRoot {
     });
     const aiResponse: AiResponse = {
       success: false,
-      model: completion.model
-    }
+      model: completion.model,
+    };
     if (completion?.choices?.length > 0) {
-      aiResponse.success = true ;
+      aiResponse.success = true;
       aiResponse.promptResponse = completion.choices[0].message.content;
     }
     return aiResponse;
   }
-
 }

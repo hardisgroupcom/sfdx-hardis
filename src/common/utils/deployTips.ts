@@ -16,11 +16,11 @@ const firstYellowChar = c.yellow("*")[0];
 // returns formatted and completed error log
 export async function analyzeDeployErrorLogs(log: string, includeInLog = true, options: any): Promise<any> {
   errorsAndTips = []; // reset
-  alreadyProcessedErrors = [] // reset
+  alreadyProcessedErrors = []; // reset
   logRes = returnErrorLines(log).join("\n"); // reset
   const tips: any = [];
   for (const tipDefinition of getAllTips()) {
-    if ((await matchesTip(tipDefinition, includeInLog))) {
+    if (await matchesTip(tipDefinition, includeInLog)) {
       tips.push(tipDefinition);
     }
   }
@@ -38,17 +38,16 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
       const aiTip = await findAiTip(logLine.trim());
       // Complete with AI if possible
       if (aiTip && aiTip.success) {
-        logResLines.push(c.yellow((`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed('(can be good or stupid, this is AI !)'))}:`)));
+        logResLines.push(c.yellow(`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed("(can be good or stupid, this is AI !)"))}:`));
         logResLines.push(c.magenta(c.italic(aiTip.promptResponse)));
         logResLines.push(c.yellow(""));
         errorsAndTips.push({
           error: { message: stripAnsi(logLine.trim()) },
           tipFromAi: {
-            promptResponse: aiTip.promptResponse
-          }
+            promptResponse: aiTip.promptResponse,
+          },
         });
-      }
-      else {
+      } else {
         const promptText = buildPrompt(logLine.trim());
         // No tip found, give the user an AI prompt
         logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. You can try the following prompt:"));
@@ -57,11 +56,10 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
         errorsAndTips.push({
           error: { message: stripAnsi(logLine.trim()) },
           tipFromAi: {
-            promptText: promptText
-          }
+            promptText: promptText,
+          },
         });
       }
-
     }
     index++;
   }
@@ -138,12 +136,14 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
           const aiTip = await findAiTip(line.trim());
           // Complete with AI if possible
           if (aiTip && aiTip.success) {
-            newLogLines.push(c.yellow((`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed('(can be good or stupid, this is AI !)'))}:`)));
+            newLogLines.push(
+              c.yellow(`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed("(can be good or stupid, this is AI !)"))}:`),
+            );
             newLogLines.push(c.magenta(c.italic(aiTip.promptResponse)));
             newLogLines.push(c.yellow(""));
             const lastErrorAndTip = errorsAndTips[errorsAndTips.length - 1];
             lastErrorAndTip.tipFromAi = {
-              promptResponse: aiTip.promptResponse
+              promptResponse: aiTip.promptResponse,
             };
             errorsAndTips[errorsAndTips.length - 1] = lastErrorAndTip;
           }
@@ -191,12 +191,14 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
             const aiTip = await findAiTip(line.trim());
             // Complete with AI if possible
             if (aiTip && aiTip.success) {
-              newLogLines.push(c.yellow((`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed('(can be good or stupid, this is AI !)'))}:`)));
+              newLogLines.push(
+                c.yellow(`[AI] ${aiTip.model} suggested the following tip ${c.bold(c.bgRed("(can be good or stupid, this is AI !)"))}:`),
+              );
               newLogLines.push(c.magenta(c.italic(aiTip.promptResponse)));
               newLogLines.push(c.yellow(""));
               const lastErrorAndTip = errorsAndTips[errorsAndTips.length - 1];
               lastErrorAndTip.tipFromAi = {
-                promptResponse: aiTip.promptResponse
+                promptResponse: aiTip.promptResponse,
               };
               errorsAndTips[errorsAndTips.length - 1] = lastErrorAndTip;
             }
@@ -253,7 +255,8 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
 }
 
 function buildPrompt(errorLine: string) {
-  const prompt = `How to solve Salesforce deployment error "${errorLine}" ? \n` +
+  const prompt =
+    `How to solve Salesforce deployment error "${errorLine}" ? \n` +
     "- Please answer using sfdx source format, not metadata format. \n" +
     "- Please provide XML example if applicable. \n" +
     "- Please skip the part of the response about retrieving or deploying the changes with Salesforce CLI.";

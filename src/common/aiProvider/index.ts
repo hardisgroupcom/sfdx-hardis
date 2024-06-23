@@ -4,7 +4,7 @@ import { OpenApiProvider } from "./openapiProvider";
 
 export abstract class AiProvider {
   static isAiAvailable(): boolean {
-    return this.getInstance() != null
+    return this.getInstance() != null;
   }
 
   static getInstance(): AiProviderRoot {

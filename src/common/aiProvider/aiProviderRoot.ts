@@ -20,7 +20,7 @@ export abstract class AiProviderRoot {
 
   // Increment number of api calls performed
   incrementAiCallsNumber() {
-    globalThis.aiCallsNumber = (globalThis.aiCallsNumber || 0) + 1
+    globalThis.aiCallsNumber = (globalThis.aiCallsNumber || 0) + 1;
   }
 
   // Check if max number of calls during a sfdx-hardis command has been reached
@@ -28,6 +28,4 @@ export abstract class AiProviderRoot {
     const maxCalls = globalThis.aiCallsNumber || 0;
     return maxCalls < this.getAiMaxCallsNumber();
   }
-
 }
-
