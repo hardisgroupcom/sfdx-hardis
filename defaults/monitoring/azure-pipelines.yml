@@ -120,6 +120,7 @@ jobs:
   dependsOn: BackupSfdxHardis
   pool:
     vmImage: 'ubuntu-latest'
+  timeoutInMinutes: "120"
 
   steps:
   - checkout: self
