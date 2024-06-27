@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Integrate with OpenAI ChatGPT to find solutions to deployment issues
 - Monitoring: Default 120mn timeout in Azure Workflow
+- Backup: Replace colon in package file name
 
 ## [4.40.2] 2024-06-18
 
