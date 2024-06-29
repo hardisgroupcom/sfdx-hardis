@@ -236,7 +236,7 @@ nav:
           - Bitbucket: salesforce-monitoring-config-bitbucket.md
           - Slack: salesforce-ci-cd-setup-integration-slack.md
           - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-  - Deployment AI Assistant:
+  - AI Deployment Assistant:
       - Deployment Assistant home: salesforce-deployment-assistant-home.md
       - Configuration:
           - Setup Deployment Assistant: salesforce-deployment-assistant-setup.md

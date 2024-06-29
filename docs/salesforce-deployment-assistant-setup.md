@@ -12,7 +12,7 @@ If you are using [sfdx-hardis CI/CD](https://sfdx-hardis.cloudity.com/salesforce
 
 Just make sure to have configured your [GitHub](salesforce-ci-cd-setup-integration-github.md), [Gitlab](salesforce-ci-cd-setup-integration-gitlab.md), [Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md) or [BitBucket](salesforce-ci-cd-setup-integration-bitbucket.md) integration so the deployment assistant can post its help in Pull Request comments.
 
-If you want to **supercharge Salesforce deployment assistant with AI**, process [sfdx-hardis AI setup]().
+If you want to **supercharge Salesforce deployment assistant with AI**, process [sfdx-hardis AI setup](salesforce-ai-setup.md).
 
 ## Using custom CI/CD pipeline
 

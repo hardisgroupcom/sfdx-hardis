@@ -1,5 +1,6 @@
 import { SfdxError } from "@salesforce/core";
 import { AiResponse } from ".";
+import { getEnvVar } from "../../config";
 
 export abstract class AiProviderRoot {
   protected token: string;
@@ -15,7 +16,7 @@ export abstract class AiProviderRoot {
 
   // Get user defined maximum number of calls during an sfdx hardis command
   getAiMaxCallsNumber() {
-    return process.env.AI_MAXIMUM_CALL_NUMBER || 10;
+    return parseInt(getEnvVar("AI_MAXIMUM_CALL_NUMBER") || "10");
   }
 
   // Increment number of api calls performed

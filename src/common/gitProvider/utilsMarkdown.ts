@@ -1,5 +1,5 @@
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
-  let md = "";
+  let md = "## Deployment errors\n\n";
   for (const err of errorsAndTips) {
     const errorMessage = err.error.message.trim().includes("Error ")
       ? err.error.message
@@ -12,7 +12,7 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
     // sfdx-hardis tip
     if (err.tip) {
       const aiText = err?.tipFromAi?.promptResponse
-        ? getAiPromptResponseMarkdown("Deployment AI Assistant recommendation", err.tipFromAi.promptResponse)
+        ? getAiPromptResponseMarkdown("AI Deployment Assistant recommendation", err.tipFromAi.promptResponse)
         : err?.tipFromAi?.promptText
           ? getAiPromptTextMarkdown("Get prompt for AI", err.tipFromAi.promptText)
           : "";
@@ -43,7 +43,7 @@ ${aiText}
 }
 
 export function testFailuresToMarkdown(testFailures: any[]) {
-  let md = "";
+  let md = "## Test classes failures\n\n";
   for (const err of testFailures) {
     const errorMessage = `<b>${err.class}.${err.method}</b><br/>${err.error}`;
     if (err.stack) {
@@ -69,18 +69,18 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
 }
 
 function getAiPromptResponseMarkdown(title, message) {
-  return `<details><summary>🤖 ${title}</summary>
+  return `<details><summary>🤖 <b>${title}</b> 🤖</summary>
 
-_Deployment AI Assistant tip (not verified !)_
+_AI Deployment Assistant tip (not verified !)_
 
-${message.replace(/:\n-/gm, `:\n\n-`)}
+${message.replace(/:\n-/gm, `:\n\n-`).trim()}
 </details>
 <br/>
 `;
 }
 
 function getAiPromptTextMarkdown(title, message) {
-  return `<details><summary>${title}</summary>
+  return `<details><summary><b>${title}</b></summary>
 
 _Request AI by copy-pasting the following text in ChatGPT or other AI prompt_
 
