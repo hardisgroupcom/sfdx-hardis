@@ -69,18 +69,18 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
 }
 
 function getAiPromptResponseMarkdown(title, message) {
-  return `<details><summary>🤖 ${title} 🤖</summary>
+  return `<details><summary>🤖 <b>${title}</b> 🤖</summary>
 
 _Deployment AI Assistant tip (not verified !)_
 
-${message.replace(/:\n-/gm, `:\n\n-`).replace("Deployment AI Assistant tip (not verified !)", "").trim()}
+${message.replace(/:\n-/gm, `:\n\n-`).replace("_Deployment AI Assistant tip (not verified !)_","").trim()}
 </details>
 <br/>
 `;
 }
 
 function getAiPromptTextMarkdown(title, message) {
-  return `<details><summary>${title}</summary>
+  return `<details><summary><b>${title}</b></summary>
 
 _Request AI by copy-pasting the following text in ChatGPT or other AI prompt_
 
