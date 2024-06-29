@@ -73,7 +73,7 @@ function getAiPromptResponseMarkdown(title, message) {
 
 _Deployment AI Assistant tip (not verified !)_
 
-${message.replace(/:\n-/gm, `:\n\n-`).replace("Deployment AI Assistant tip (not verified !)","").trim()}
+${message.replace(/:\n-/gm, `:\n\n-`).replace("Deployment AI Assistant tip (not verified !)", "").trim()}
 </details>
 <br/>
 `;
