@@ -12,7 +12,10 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
 
 // Perform simple SOQL query with Tooling API
 export function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
-  uxLog(this, c.grey("SOQL REST Tooling: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery) + " on " + conn.instanceUrl));
+  uxLog(
+    this,
+    c.grey("SOQL REST Tooling: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery) + " on " + conn.instanceUrl),
+  );
   return conn.tooling.query(soqlQuery);
 }
 

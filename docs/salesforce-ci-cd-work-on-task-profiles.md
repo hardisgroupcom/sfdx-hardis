@@ -6,7 +6,7 @@ description: Learn how to handle the profile mess !
 
 ## Deploy Profiles
 
-### Use Permission Sets !
+### Use Permission Sets
 
 In case an attribute is available on Profiles and Permission Sets: **USE PERMISSION SETS** :)
 

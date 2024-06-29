@@ -146,7 +146,7 @@ export default class FixV53Flexipages extends SfdxCommand {
         {
           by: ["key"],
           order: ["asc"],
-        }
+        },
       ).map((sorted) => sorted.value);
       profile.Profile["tabVisibilities"] = sortedTabVisibility;
       // Update Profile XML File
