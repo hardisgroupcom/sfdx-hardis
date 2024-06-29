@@ -11,5 +11,6 @@ description: Learn how to work on a task with a tracked sandbox or a scratch org
 There are a set of recommended rules to follow to help the Release Management to be as fluid as possible
 
 - [Guidelines for Salesforce configuration](salesforce-ci-cd-work-on-task-configuration.md)
+- [Guidelines for Profiles & Permissions Sets](salesforce-ci-cd-work-on-task-profiles.md)
 - [Guidelines for Package installation](salesforce-ci-cd-work-on-task-install-packages.md)
 - [Guidelines for Salesforce Development](salesforce-ci-cd-work-on-task-development.md)

@@ -4,9 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.41.0] 2024-06-29
+
 - **AI Deployment Assistant**: Integrate with OpenAI ChatGPT to find solutions to deployment issues
 - Monitoring: Default 120mn timeout in Azure Workflow
 - Backup: Replace colon in package file name
+- New command **hardis:project:fix:profiletabs** to add / hide tabs directly in XML when such info is not retrieved by Salesforce CLI
 
 ## [4.40.2] 2024-06-18
 

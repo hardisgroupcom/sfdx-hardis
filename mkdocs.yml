@@ -182,6 +182,7 @@ nav:
               - Work home: salesforce-ci-cd-work-on-task.md
               - Open your org: salesforce-ci-cd-work-on-task-open-org.md
               - Configure Salesforce: salesforce-ci-cd-work-on-task-configuration.md
+              - Handle Profiles: salesforce-ci-cd-work-on-task-profiles.md
               - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
               - Develop in Salesforce: salesforce-ci-cd-work-on-task-development.md
           - Publish your work: salesforce-ci-cd-publish-task.md
