@@ -60,7 +60,7 @@ class SfdxHardisBuilder {
     const readmeFile = "./README.md";
     const readmeContent = fs.readFileSync(readmeFile, "utf-8");
     const chunks = readmeContent.split("## Commands")
-    fs.writeFileSync(readmeFile, chunks[0]);
+    fs.writeFileSync(readmeFile, chunks[0]+"\n\n## [Read Online Documentation](https://sfdx-hardis.cloudity.com)");
     console.log("Removed README.md commands");
   }
 }

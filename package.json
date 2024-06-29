@@ -107,7 +107,7 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://sfdx-hardis.cloudity.com/",
+  "homepage": "https://sfdx-hardis.cloudity.com",
   "keywords": [
     "salesforce",
     "sfdx",
@@ -125,7 +125,11 @@
     "azure",
     "pipeline",
     "trailblazer",
-    "metadata"
+    "metadata",
+    "monitoring",
+    "ai",
+    "openai",
+    "grafana"
   ],
   "license": "AGPL-3.0",
   "oclif": {
