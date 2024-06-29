@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Reduce size of README
+
 ## [4.41.0] 2024-06-29
 
 - [**AI Deployment Assistant**](https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/): Integrate with OpenAI ChatGPT to find solutions to deployment issues
