@@ -69,11 +69,11 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
 }
 
 function getAiPromptResponseMarkdown(title, message) {
-  return `<details><summary>🤖 ${title}</summary>
+  return `<details><summary>🤖 ${title} 🤖</summary>
 
 _Deployment AI Assistant tip (not verified !)_
 
-${message.replace(/:\n-/gm, `:\n\n-`)}
+${message.replace(/:\n-/gm, `:\n\n-`).replace("Deployment AI Assistant tip (not verified !)","").trim()}
 </details>
 <br/>
 `;
