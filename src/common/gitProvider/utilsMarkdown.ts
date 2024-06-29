@@ -12,7 +12,7 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
     // sfdx-hardis tip
     if (err.tip) {
       const aiText = err?.tipFromAi?.promptResponse
-        ? getAiPromptResponseMarkdown("Deployment AI Assistant recommendation", err.tipFromAi.promptResponse)
+        ? getAiPromptResponseMarkdown("AI Deployment Assistant recommendation", err.tipFromAi.promptResponse)
         : err?.tipFromAi?.promptText
           ? getAiPromptTextMarkdown("Get prompt for AI", err.tipFromAi.promptText)
           : "";
@@ -71,9 +71,9 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
 function getAiPromptResponseMarkdown(title, message) {
   return `<details><summary>🤖 <b>${title}</b> 🤖</summary>
 
-_Deployment AI Assistant tip (not verified !)_
+_AI Deployment Assistant tip (not verified !)_
 
-${message.replace(/:\n-/gm, `:\n\n-`).replace("_Deployment AI Assistant tip (not verified !)_","").trim()}
+${message.replace(/:\n-/gm, `:\n\n-`).trim()}
 </details>
 <br/>
 `;
