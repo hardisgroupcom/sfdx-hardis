@@ -12,11 +12,15 @@ Sfdx-hardis deployment assistant will help you to solve them, even if you are no
 
 The assistant contain core rules and can be integrated with AI to provide you the best guidance :)
 
+![](assets/images/AI-Assistant.gif)
+
 ## Integrations
 
 Deployment assistant will provide tips in Pull Request comments (GitHub, Gitlab, Azure, Bitbucket).
 
 It will also provide tips in console log.
+
+![](assets/images/AI-deployment-assistant-console.png)
 
 ## Setup
 
