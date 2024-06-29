@@ -24,7 +24,7 @@ If you are on a build project, it is recommended to [automate Minimize Profile](
 
 When you retrieve a profile, standard tabs visibility is not present in the XML.
 
-This is quite boring because if you do nothing, Calendar, Tasks, Home or Contact tab vibilities won't be deployed !
+This is quite boring because if you do nothing, Calendar, Tasks, Home or Contact tab visibilities won't be deployed !
 
 To avoid that, standard tab visibility must be added in the Profile XML.
 

@@ -136,7 +136,7 @@ export default class FixV53Flexipages extends SfdxCommand {
         });
       }
       // Sort items by name
-      const sortedTabVibility = sortArray(
+      const sortedTabVisibility = sortArray(
         tabVisibilities.map((tabVisibility) => {
           return {
             key: tabVisibility.tab[0],
@@ -148,7 +148,7 @@ export default class FixV53Flexipages extends SfdxCommand {
           order: ["asc"],
         }
       ).map((sorted) => sorted.value);
-      profile.Profile["tabVisibilities"] = sortedTabVibility;
+      profile.Profile["tabVisibilities"] = sortedTabVisibility;
       // Update Profile XML File
       await writeXmlFile(profileFile, profile);
       uxLog(this, c.grey("Updated " + profileFile));
