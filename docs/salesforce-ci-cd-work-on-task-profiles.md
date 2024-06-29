@@ -28,5 +28,5 @@ This is quite boring because if you do nothing, Calendar, Tasks, Home or Contact
 
 To avoid that, standard tab visibility must be added in the Profile XML.
 
-You can use sfdx-hardis command [Fix Profile Tabs]() to Show / Hide tabs in your Profile XML files.
+You can use sfdx-hardis command [Fix Profile Tabs](https://sfdx-hardis.cloudity.com/hardis/project/fix/profiletabs/) to Show / Hide tabs in your Profile XML files.
 
