@@ -7,6 +7,7 @@ class SfdxHardisBuilder {
   run() {
     console.log("Start additional building of sfdx-hardis repository...");
     this.buildDeployTipsDoc();
+    this.truncateReadme();
   }
 
   buildDeployTipsDoc() {
@@ -53,6 +54,14 @@ class SfdxHardisBuilder {
     }
     fs.writeFileSync(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
     console.log("Written doc file " + deployTipsDocFile);
+  }
+
+  truncateReadme() {
+    const readmeFile = "./README.md";
+    const readmeContent = fs.readFileSync(readmeFile, "utf-8");
+    const chunks = readmeContent.split("## Commands")
+    fs.writeFileSync(readmeFile, chunks[0]);
+    console.log("Removed README.md commands");
   }
 }
 
