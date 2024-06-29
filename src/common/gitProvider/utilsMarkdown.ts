@@ -43,7 +43,7 @@ ${aiText}
 }
 
 export function testFailuresToMarkdown(testFailures: any[]) {
-  let md = "## Test classes failures\n\n";;
+  let md = "## Test classes failures\n\n";
   for (const err of testFailures) {
     const errorMessage = `<b>${err.class}.${err.method}</b><br/>${err.error}`;
     if (err.stack) {
