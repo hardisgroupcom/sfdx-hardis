@@ -163,7 +163,7 @@ You can remove more metadata types from backup, especially in case you have too 
     await fs.ensureDir(packageFolder);
     for (const installedPackage of installedPackages) {
       const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + ".json";
-      const fileNameNoSep = fileName.replace(/\//g, "_"); // Handle case when package name contains slashes
+      const fileNameNoSep = fileName.replace(/\//g, "_").replace(/:/g, "_"); // Handle case when package name contains slashes or colon
       delete installedPackage.Id; // Not needed for diffs
       await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
       const installedPackageLog = {

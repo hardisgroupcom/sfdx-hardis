@@ -73,6 +73,8 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
           JIRA_PAT: ${{ secrets.JIRA_HOST }}
+          JIRA_TICKET_REGEX: ${{ secrets.JIRA_TICKET_REGEX }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           FORCE_COLOR: "1"
         run: |
           echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
