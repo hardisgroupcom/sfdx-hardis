@@ -9,36 +9,36 @@ Retrieve changes from org link to a ref branch not present in sources
 
   Define the following properties in **.sfdx-hardis.yml**
 
-  - **productionBranch** : Name of the git branch that is corresponding to production org
-  - **retrofitBranch** : Name of the git branch that will be used as merge request target
+- **productionBranch** : Name of the git branch that is corresponding to production org
+- **retrofitBranch** : Name of the git branch that will be used as merge request target
 
   List of metadata to retrieve can be set in three way, in order of priority :
 
-  - `CI_SOURCES_TO_RETROFIT`: env variable (can be defined in CI context)
-  - `sourcesToRetrofit` property in `.sfdx-hardis.yml`
-  - Default list:
+- `CI_SOURCES_TO_RETROFIT`: env variable (can be defined in CI context)
+- `sourcesToRetrofit` property in `.sfdx-hardis.yml`
+- Default list:
 
-    - CompactLayout
-    - CustomApplication
-    - CustomField
-    - CustomLabel
-    - CustomLabels
-    - CustomMetadata
-    - CustomObject
-    - CustomObjectTranslation
-    - CustomTab
-    - DuplicateRule
-    - EmailTemplate
-    - FlexiPage
-    - GlobalValueSet
-    - Layout
-    - ListView
-    - MatchingRules
-    - PermissionSet
-    - RecordType
-    - StandardValueSet
-    - Translations
-    - ValidationRule
+  - CompactLayout
+  - CustomApplication
+  - CustomField
+  - CustomLabel
+  - CustomLabels
+  - CustomMetadata
+  - CustomObject
+  - CustomObjectTranslation
+  - CustomTab
+  - DuplicateRule
+  - EmailTemplate
+  - FlexiPage
+  - GlobalValueSet
+  - Layout
+  - ListView
+  - MatchingRules
+  - PermissionSet
+  - RecordType
+  - StandardValueSet
+  - Translations
+  - ValidationRule
 
   You can also ignore some files even if they have been updated in production. To do that, define property **retrofitIgnoredFiles** in .sfdx-hardis.yml
 
@@ -56,14 +56,14 @@ Retrieve changes from org link to a ref branch not present in sources
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|apiversion|option|override the api version used for api requests made by this command||||
-|commit|boolean|If true, a commit will be performed after the retrofit||||
-|commitmode|option|Defines if we commit all retrieved updates, or all updates including creations|updated||updated<br/>all|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|json|boolean|format output as json||||
-|loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+| Name         |  Type   | Description                                                                    | Default | Required |                        Options                        |
+|:-------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
+| apiversion   | option  | override the api version used for api requests made by this command            |         |          |                                                       |
+| commit       | boolean | If true, a commit will be performed after the retrofit                         |         |          |                                                       |
+| commitmode   | option  | Defines if we commit all retrieved updates, or all updates including creations | updated |          |                    updated<br/>all                    |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                                                |         |          |                                                       |
+| json         | boolean | format output as json                                                          |         |          |                                                       |
+| loglevel     | option  | logging level for this command invocation                                      |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
 |productionbranch|option|Name of the git branch corresponding to the org we want to perform the retrofit on.
 Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |push|boolean|If true, a push will be performed after the retrofit||||
@@ -77,7 +77,7 @@ Can be defined in retrofitBranch property in .sfdx-hardis.yml||||
 ## Examples
 
 ```shell
-$ sfdx hardis:org:retrieve:sources:retrofit
+sfdx hardis:org:retrieve:sources:retrofit
 ```
 
 ```shell
