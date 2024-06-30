@@ -22,23 +22,33 @@ The following XML tags are removed automatically:
 - userPermissions (except on Admin Profile)
 
 You can override this list by defining a property minimizeProfilesNodesToRemove in your .sfdx-hardis.yml config file.
-  
+
+You can also skip profiles using property skipMinimizeProfiles
+
+Example: 
+
+```yaml
+skipMinimizeProfiles
+  - MyClient Customer Community Login User
+  - MyClientPortail Profile
+```
+
 
 ## Parameters
 
-| Name          |  Type   | Description                                                   |  Default  | Required |                        Options                        |
-|:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-----------------------------------------------------:|
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |                                                       |
-| folder<br/>-f | option  | Root folder                                                   | force-app |          |                                                       |
-| json          | boolean | format output as json                                         |           |          |                                                       |
-| loglevel      | option  | logging level for this command invocation                     |   warn    |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| skipauth      | boolean | Skip authentication check when a default username is required |           |          |                                                       |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |                                                       |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|format output as json||||
+|loglevel|option|logging level for this command invocation|warn||trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal|
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:minimizeprofiles
+$ sfdx hardis:project:clean:minimizeprofiles
 ```
 
 
