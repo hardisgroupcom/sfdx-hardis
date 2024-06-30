@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Reduce size of README
 - Update documentation about Authentication & Security
+- Add missing variables in workflows
 
 ## [4.41.0] 2024-06-29
 
