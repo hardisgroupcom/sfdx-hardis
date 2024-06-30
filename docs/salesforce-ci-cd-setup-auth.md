@@ -23,22 +23,24 @@ For example, run the command for `integration`, `uat`, `preprod` and `production
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/OzREUu5utVI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
-How to set CI variables on different Git providers:
+> ![Under the hood](assets/images/engine.png) **_Under the hood_**
+>
+> This command will create/update:
+>
+> - .sfdx-hardis.yml configuration file (repo)
+> - Self signed certificate (encrypted in repo as .key)
+> - Connected App (uploaded to org via metadata api)
+> - CI environment variables (manually set in CI/CD server UIs)
+>
+> At runtime, we use [OAuth 2.0 JSON Web Tokens (JWT) bearer flow](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_jwt_flow.htm) with the client Id stored in secured CI/CD Variable + the Certificate decrypted on the fly using token stored in secured CI/CD variable.
+
+See how to set CI variables on different Git providers:
 
 - [Gitlab tutorial](salesforce-ci-cd-setup-auth-gitlab.md)
 - [Azure tutorial](salesforce-ci-cd-setup-auth-azure.md)
 - [GitHub tutorial](salesforce-ci-cd-setup-auth-github.md)
 - [BitBucket tutorial](salesforce-ci-cd-setup-auth-bitbucket.md)
 - [Jenkins tutorial](salesforce-ci-cd-setup-auth-jenkins.md)
-
-> ![Under the hood](assets/images/engine.png) **_Under the hood_**
->
-> This command will create/update:
->
-> - .sfdx-hardis.yml configuration file (repo)
-> - Self signed certificate (encrypted in repo)
-> - Connected App (uploaded to org via metadata api)
-> - CI environment variables (manually set in CI/CD server UIs)
 
 ## Dev Hub
 
