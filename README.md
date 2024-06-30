@@ -143,6 +143,6 @@ Anyone is welcome to contribute to this sfdx-hardis
   <img src="https://contrib.rocks/image?repo=hardisgroupcom/sfdx-hardis" />
 </a>
 
+## Commands
 
-
-## [Read Online Documentation](https://sfdx-hardis.cloudity.com)
+[**Read Online Documentation**](https://sfdx-hardis.cloudity.com)

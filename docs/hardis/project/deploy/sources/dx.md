@@ -17,6 +17,14 @@ If you do not want to use QuickDeploy, define variable `SFDX_HARDIS_QUICK_DEPLOY
 - [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
 - [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
 
+### Delta deployments
+
+To activate delta deployments, define property `useDeltaDeployment: true` in `config/.sfdx-hardis.yml`.
+
+This will activate delta deployments only between minor and major branches (major to major remains full deployment mode)
+
+If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
+
 ### Dynamic deployment items / Overwrite management
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
@@ -82,6 +90,31 @@ installedPackages:
     installDuringDeployments: true
 ```
 
+### Deployment pre or post commands
+
+You can define command lines to run before or after a deployment
+
+If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
+
+Example:
+
+```yaml
+commandsPreDeploy:
+  - id: knowledgeUnassign
+    label: Remove KnowledgeUser right to the user who has it
+    command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
+  - id: knowledgeAssign
+    label: Assign Knowledge user to the deployment user
+    command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+commandsPostDeploy:
+  - id: knowledgeUnassign
+    label: Remove KnowledgeUser right to the user who has it
+    command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
+  - id: knowledgeAssign
+    label: Assign Knowledge user to desired username
+    command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+```
+
 ### Automated fixes post deployments
 
 #### List view with scope Mine
@@ -120,6 +153,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 | apiversion            | option  | override the api version used for api requests made by this command                                       |               |          |                                                                                               |
 | check<br/>-c          | boolean | Only checks the deployment, there is no impact on target org                                              |               |          |                                                                                               |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                           |               |          |                                                                                               |
+| delta                 | boolean | Applies sfdx-git-delta to package.xml before other deployment processes                                   |               |          |                                                                                               |
 | json                  | boolean | format output as json                                                                                     |               |          |                                                                                               |
 | loglevel              | option  | logging level for this command invocation                                                                 |     warn      |          |                     trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal                     |
 | packagexml<br/>-p     | option  | Path to package.xml containing what you want to deploy in target org                                      |               |          |                                                                                               |

@@ -1,36 +1,34 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:project:clean:minimizeprofiles
+# hardis:project:clean:flowpositions
 
 ## Description
 
-Remove all profile attributes that exist on Permission Sets
+Replace all positions in Auto-Layout Flows by 0 to simplify conflicts management
 
-It is a bad practice to define on Profiles elements that can be defined on Permission Sets.
+As Flows are defined as Auto-Layout, the edition in Setup UI is not impacted.
+  
+Before:
 
-Salesforce will deprecate such capability in Spring 26.
+```xml
+<locationX>380</locationX>
+<locationY>259</locationY>
+```
 
-Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that exists on a Permission Set !
+After:
 
-The following XML tags are removed automatically:
+```xml
+<locationX>0</locationX>
+<locationY>0</locationY>
+```
 
-- classAccesses
-- customMetadataTypeAccesses
-- externalDataSourceAccesses
-- fieldPermissions
-- objectPermissions
-- pageAccesses
-- userPermissions (except on Admin Profile)
+Can be automated at each **hardis:work:save** if **flowPositions** is added in .sfdx-hardis.yml **autoCleanTypes** property  
 
-You can override this list by defining a property minimizeProfilesNodesToRemove in your .sfdx-hardis.yml config file.
-
-You can also skip profiles using property skipMinimizeProfiles
-
-Example:
+Example in config/.sfdx-hardis.yml:
 
 ```yaml
-skipMinimizeProfiles
-  - MyClient Customer Community Login User
-  - MyClientPortail Profile
+autoCleanTypes:
+  - destructivechanges
+  - flowPositions
 ```
 
 
@@ -48,7 +46,7 @@ skipMinimizeProfiles
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:minimizeprofiles
+sfdx hardis:project:clean:flowpositions
 ```
 
 

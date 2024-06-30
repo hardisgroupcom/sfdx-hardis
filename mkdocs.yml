@@ -67,6 +67,9 @@ nav:
             generate: hardis/doc/plugin/generate.md
         lint:
           access: hardis/lint/access.md
+          metadatastatus: hardis/lint/metadatastatus.md
+          missingattributes: hardis/lint/missingattributes.md
+          unusedmetadatas: hardis/lint/unusedmetadatas.md
         mdapi:
           deploy: hardis/mdapi/deploy.md
         misc:
@@ -83,13 +86,21 @@ nav:
             export: hardis/org/data/export.md
             import: hardis/org/data/import.md
           diagnose:
+            audittrail: hardis/org/diagnose/audittrail.md
             legacyapi: hardis/org/diagnose/legacyapi.md
+            licenses: hardis/org/diagnose/licenses.md
+            unusedlicenses: hardis/org/diagnose/unusedlicenses.md
+            unusedusers: hardis/org/diagnose/unusedusers.md
           files:
             export: hardis/org/files/export.md
           fix:
             listviewmine: hardis/org/fix/listviewmine.md
           generate:
             packagexmlfull: hardis/org/generate/packagexmlfull.md
+          monitor:
+            all: hardis/org/monitor/all.md
+            backup: hardis/org/monitor/backup.md
+            limits: hardis/org/monitor/limits.md
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md
@@ -124,6 +135,7 @@ nav:
             remotesites: hardis/project/audit/remotesites.md
           clean:
             emptyitems: hardis/project/clean/emptyitems.md
+            flowpositions: hardis/project/clean/flowpositions.md
             hiddenitems: hardis/project/clean/hiddenitems.md
             listviews: hardis/project/clean/listviews.md
             manageditems: hardis/project/clean/manageditems.md
@@ -144,6 +156,7 @@ nav:
               dx: hardis/project/deploy/sources/dx.md
               metadata: hardis/project/deploy/sources/metadata.md
           fix:
+            profiletabs: hardis/project/fix/profiletabs.md
             v53flexipages: hardis/project/fix/v53flexipages.md
           generate:
             gitdelta: hardis/project/generate/gitdelta.md
@@ -246,7 +259,8 @@ nav:
   - Configuration reference: sfdx-hardis-config-file.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles
   - Special Thanks: special-thanks.md
-  - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
+  - Frequently Asked Questions: >-
+      https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
   - Contributing: https://sfdx-hardis.cloudity.com/#contributing
   - License: license.md
   - Changelog: CHANGELOG.md

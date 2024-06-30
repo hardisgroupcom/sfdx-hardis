@@ -1,9 +1,9 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:org:configure:monitoring
+# hardis:org:diagnose:licenses
 
 ## Description
 
-Configure monitoring of an org
+Mostly used for monitoring (Grafana) but you can also use it manually :)
 
 ## Parameters
 
@@ -13,15 +13,16 @@ Configure monitoring of an org
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                     |         |          |                                                       |
 | json                  | boolean | format output as json                                               |         |          |                                                       |
 | loglevel              | option  | logging level for this command invocation                           |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| orginstanceurl        | option  | Org instance url (technical param, do not use manually)             |         |          |                                                       |
+| outputfile<br/>-o     | option  | Force the path and name of output report file. Must end with .csv   |         |          |                                                       |
 | skipauth              | boolean | Skip authentication check when a default username is required       |         |          |                                                       |
 | targetusername<br/>-u | option  | username or alias for the target org; overrides default target org  |         |          |                                                       |
+| usedonly<br/>-u       | boolean | Filter to have only used licenses                                   |         |          |                                                       |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |         |          |                                                       |
 
 ## Examples
 
 ```shell
-sfdx hardis:org:configure:monitoring
+sfdx hardis:org:diagnose:licenses
 ```
 
 

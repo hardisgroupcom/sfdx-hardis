@@ -25,6 +25,10 @@ Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Stat
 ## Examples
 
 ```shell
+sfdx hardis:org:purge:flow --no-prompt
+```
+
+```shell
 $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
   Found 1 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS

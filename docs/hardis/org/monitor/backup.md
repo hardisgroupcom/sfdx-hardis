@@ -1,9 +1,16 @@
 <!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:org:configure:monitoring
+# hardis:org:monitor:backup
 
 ## Description
 
-Configure monitoring of an org
+Retrieve sfdx sources in the context of a monitoring backup
+  
+You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
+
+- Manual update of `manifest/package-skip-items.xml` config file (then commit & push in the same branch)
+
+- Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: `MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation`): that will be applied to all monitoring branches.
+
 
 ## Parameters
 
@@ -13,7 +20,7 @@ Configure monitoring of an org
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                     |         |          |                                                       |
 | json                  | boolean | format output as json                                               |         |          |                                                       |
 | loglevel              | option  | logging level for this command invocation                           |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| orginstanceurl        | option  | Org instance url (technical param, do not use manually)             |         |          |                                                       |
+| outputfile<br/>-o     | option  | Force the path and name of output report file. Must end with .csv   |         |          |                                                       |
 | skipauth              | boolean | Skip authentication check when a default username is required       |         |          |                                                       |
 | targetusername<br/>-u | option  | username or alias for the target org; overrides default target org  |         |          |                                                       |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |         |          |                                                       |
@@ -21,7 +28,7 @@ Configure monitoring of an org
 ## Examples
 
 ```shell
-sfdx hardis:org:configure:monitoring
+sfdx hardis:org:monitor:backup
 ```
 
 
