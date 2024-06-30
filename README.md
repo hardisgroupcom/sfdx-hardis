@@ -146,3 +146,7 @@ Anyone is welcome to contribute to this sfdx-hardis
 ## Commands
 
 [**Read Online Documentation**](https://sfdx-hardis.cloudity.com)
+
+
+
+<!-- commands -->
