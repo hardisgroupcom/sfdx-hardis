@@ -200,7 +200,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }),
     runtests: flags.string({
       char: "r",
-      description: messages.getMessage("runtests"),
+      description: `If testlevel=RunSpecifiedTests, please provide a list of classes.
+If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.`,
     }),
     packagexml: flags.string({
       char: "p",
@@ -245,7 +246,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
     if (givenTestlevel === "RunRepositoryTests") {
-      const testClassList = await getApexTestClasses();
+      const testClassList = await getApexTestClasses(testClasses);
       if (Array.isArray(testClassList) && testClassList.length) {
         this.flags.testlevel = "RunSpecifiedTests";
         testClasses = testClassList.join();
@@ -357,8 +358,8 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     // Get preDestructiveChanges.xml and add it in options if existing
     const preDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-      this.configInfo.packageXmlToDeletePreDeploy ||
-      fs.existsSync("./manifest/preDestructiveChanges.xml")
+        this.configInfo.packageXmlToDeletePreDeploy ||
+        fs.existsSync("./manifest/preDestructiveChanges.xml")
         ? "./manifest/preDestructiveChanges.xml"
         : "./config/preDestructiveChanges.xml";
     if (fs.existsSync(preDestructiveChanges)) {

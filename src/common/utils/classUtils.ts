@@ -1,4 +1,4 @@
-import { uxLog } from ".";
+import { countRegexMatches, uxLog } from ".";
 import * as c from "chalk";
 import * as readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
@@ -21,7 +21,7 @@ function findSubstringInFile(filePath: string, substring: string): Promise<boole
 }
 
 // Detect all test classes under the repository
-export async function getApexTestClasses() {
+export async function getApexTestClasses(classRegexFilter: string | null) {
   const pathToBrowser = process.cwd();
   uxLog(this, c.grey(`Finding all repository APEX tests in ${c.bold(pathToBrowser)}`));
 
@@ -38,10 +38,23 @@ export async function getApexTestClasses() {
     const isTestClass = await findSubstringInFile(entry.fullPath, "@IsTest");
     if (isTestClass) {
       const className = entry.fileName.substring(0, entry.fileName.length - 4);
-      testClasses.push(className);
+      if (await matchRegexFilter(classRegexFilter, className)) {
+        testClasses.push(className);
+      }
     }
   }
 
   uxLog(this, c.grey(`Found APEX tests: ${c.bold(testClasses.join())}`));
   return testClasses;
+}
+
+async function matchRegexFilter(classRegexFilter: string, className: string) {
+  if (classRegexFilter && classRegexFilter !== "") {
+    if ((await countRegexMatches(new RegExp(classRegexFilter), className)) > 0) {
+      return true;
+    }
+    uxLog(this, c.grey(`Filtered class ${className} because not matching RegExp ${classRegexFilter}`));
+    return false;
+  }
+  return true;
 }

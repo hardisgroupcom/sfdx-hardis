@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- hardis:project:deploy:sources:dx : If **testlevel=RunRepositoryTests**, option **runtests** can contain a regular expression to keep only class names matching it. If not set, it will run all test classes found in the repo
 - Reduce size of README
 - Update documentation about Authentication & Security
 - Add missing variables in workflows
