@@ -358,8 +358,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get preDestructiveChanges.xml and add it in options if existing
     const preDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-        this.configInfo.packageXmlToDeletePreDeploy ||
-        fs.existsSync("./manifest/preDestructiveChanges.xml")
+      this.configInfo.packageXmlToDeletePreDeploy ||
+      fs.existsSync("./manifest/preDestructiveChanges.xml")
         ? "./manifest/preDestructiveChanges.xml"
         : "./config/preDestructiveChanges.xml";
     if (fs.existsSync(preDestructiveChanges)) {
