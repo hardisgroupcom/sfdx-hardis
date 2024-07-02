@@ -327,7 +327,7 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
 ---
 ## Error parsing file
 
-- `Error (.*) Error parsing file: (.*)`
+- `Error (.*) Error parsing file: (.*) `
 
 **Resolution tip**
 
@@ -985,7 +985,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 ---
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 
