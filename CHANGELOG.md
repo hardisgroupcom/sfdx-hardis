@@ -8,6 +8,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - hardis:work:save : Update prompt messages
 - Remove direct URL to target org in case of deployment failure
+- AI Deployment Assistant: Fix identification of error messages
+- Add deployment tip "Condition missing reference"
 
 ## [4.42.0] 2024-07-02
 
