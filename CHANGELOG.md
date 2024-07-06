@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.42.1] 2024-07-06
+## [4.43.0] 2024-07-06
 
 - hardis:work:save : Update prompt messages
 - Remove direct URL to target org in case of deployment failure
