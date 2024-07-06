@@ -184,7 +184,12 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 If you need to increase the deployment waiting time (force:source:deploy --wait arg), you can define env var SFDX_DEPLOY_WAIT_MINUTES
   `;
 
-  public static examples = ["$ sfdx hardis:project:deploy:sources:dx", "$ sfdx hardis:project:deploy:sources:dx --check"];
+  public static examples = [
+    "$ sfdx hardis:project:deploy:sources:dx",
+    "$ sfdx hardis:project:deploy:sources:dx --check",
+    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests",
+    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|JDC).*'"
+  ];
 
   protected static flagsConfig = {
     check: flags.boolean({
@@ -358,8 +363,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get preDestructiveChanges.xml and add it in options if existing
     const preDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-      this.configInfo.packageXmlToDeletePreDeploy ||
-      fs.existsSync("./manifest/preDestructiveChanges.xml")
+        this.configInfo.packageXmlToDeletePreDeploy ||
+        fs.existsSync("./manifest/preDestructiveChanges.xml")
         ? "./manifest/preDestructiveChanges.xml"
         : "./config/preDestructiveChanges.xml";
     if (fs.existsSync(preDestructiveChanges)) {

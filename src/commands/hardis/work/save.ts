@@ -189,9 +189,9 @@ autoRemoveUserPermissions:
     uxLog(
       this,
       c.cyan(
-        `If you are working with a ticketing system like JIRA, make sure to add the FULL URL of the tickets in the MR/PR description
+        `If you are working with a ticketing system like JIRA, try to add the FULL URL of the tickets in the MR/PR description
 - Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
-- Bad example: CLOUDITY-4
+- Less good example but will work anyway on most cases: CLOUDITY-4
 `,
       ),
     );
@@ -237,21 +237,21 @@ autoRemoveUserPermissions:
     const commitReadyRes = await prompts({
       type: "select",
       name: "value",
-      message: c.cyanBright("Is your commit ready ?"),
+      message: c.cyanBright("Have you already committed the updated metadata you want to deploy ?"),
       choices: [
         {
-          title: "Yes, my commit is ready !",
+          title: "😎 Yes, my commit(s) is ready ! I staged my files then created one or multiple commits !",
           value: "commitReady",
           description:
             "You have already pulled updates from your org (or locally updated the files if you're a nerd) then staged your files and created a commit",
         },
         {
-          title: "No, please pull my latest updates from my org",
+          title: "😐 No, please pull my latest updates from my org so I can commit my metadatas",
           value: "pleasePull",
           description: "Pull latest updates from org so then you can stage files and create your commit",
         },
         {
-          title: "What is a commit ? What does mean pull ? Help !",
+          title: "😱 What is a commit ? What does mean pull ? Help !",
           value: "help",
           description: "Don't panic, just click on the link that will appear in the console (CTRL + Click) and then you will know :)",
         },
