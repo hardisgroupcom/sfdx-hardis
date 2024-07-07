@@ -30,7 +30,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   let index = 0;
   for (const logLine of updatedLogLines) {
     logResLines.push(logLine.trim());
-    if (logLine.includes("Error (1): Deploy failed.")) {
+    if (logLine.includes("Deploy failed.")) {
       index++;
       continue;
     }

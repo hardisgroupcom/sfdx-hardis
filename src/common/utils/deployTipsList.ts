@@ -106,6 +106,16 @@ Example of XML you have to remove in {1}:
 - Delete field {1} in target org: it will be recreated after deployment (but you will loose data on existing records, so be careful if your target is a production org)
 - Create another field with desired type and manage data recovery if the target is a production org`,
     },
+
+    {
+      name: "condition-missing-reference",
+      label: "Condition missing reference",
+      expressionRegex: [/Error (.*) field integrity exception: unknown \(A condition has a reference to (.*), which doesn't exist.\)/gm],
+      tip: `There is a reference to {2} in {1}, and {2} is not found. You can either:
+- Add {2} in your deployment sources and make sure it is named in package.xml
+- Remove the reference to {2} in {1}
+`,
+    },
     {
       name: "custom-object-not-found",
       label: "Custom object not found",

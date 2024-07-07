@@ -184,7 +184,12 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 If you need to increase the deployment waiting time (force:source:deploy --wait arg), you can define env var SFDX_DEPLOY_WAIT_MINUTES
   `;
 
-  public static examples = ["$ sfdx hardis:project:deploy:sources:dx", "$ sfdx hardis:project:deploy:sources:dx --check"];
+  public static examples = [
+    "$ sfdx hardis:project:deploy:sources:dx",
+    "$ sfdx hardis:project:deploy:sources:dx --check",
+    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests",
+    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|JDC).*'",
+  ];
 
   protected static flagsConfig = {
     check: flags.boolean({

@@ -4,7 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.42.0] 2024-06-29
+## [4.43.0] 2024-07-06
+
+- hardis:work:save : Update prompt messages
+- Remove direct URL to target org in case of deployment failure
+- AI Deployment Assistant: Fix identification of error messages
+- Add deployment tip "Condition missing reference"
+
+## [4.42.0] 2024-07-02
 
 - hardis:project:deploy:sources:dx : If **testlevel=RunRepositoryTests**, option **runtests** can contain a regular expression to keep only class names matching it. If not set, it will run all test classes found in the repo
 - Reduce size of README

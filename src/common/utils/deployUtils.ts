@@ -361,22 +361,24 @@ async function getDeploymentId(rawLog: string) {
 
 // Display deployment link in target org
 async function displayDeploymentLink(rawLog: string, options: any) {
-  let deploymentUrl = "lightning/setup/DeployStatus/home";
-  const deploymentId = await getDeploymentId(rawLog);
-  if (deploymentId) {
-    const detailedDeploymentUrl =
-      "/changemgmt/monitorDeploymentsDetails.apexp?" + encodeURIComponent(`retURL=/changemgmt/monitorDeployment.apexp&asyncId=${deploymentId}`);
-    deploymentUrl = "lightning/setup/DeployStatus/page?address=" + encodeURIComponent(detailedDeploymentUrl);
+  if (process?.env?.SFDX_HARDIS_DISPLAY_DEPLOYMENT_LINK === "true") {
+    let deploymentUrl = "lightning/setup/DeployStatus/home";
+    const deploymentId = await getDeploymentId(rawLog);
+    if (deploymentId) {
+      const detailedDeploymentUrl =
+        "/changemgmt/monitorDeploymentsDetails.apexp?" + encodeURIComponent(`retURL=/changemgmt/monitorDeployment.apexp&asyncId=${deploymentId}`);
+      deploymentUrl = "lightning/setup/DeployStatus/page?address=" + encodeURIComponent(detailedDeploymentUrl);
+    }
+    const openRes = await execSfdxJson(
+      `sfdx force:org:open -p ${deploymentUrl} --urlonly` + (options.targetUsername ? ` --targetusername ${options.targetUsername}` : ""),
+      this,
+      {
+        fail: true,
+        output: false,
+      },
+    );
+    uxLog(this, c.yellowBright(`Open deployment status page in org with url: ${c.bold(c.greenBright(openRes?.result?.url))}`));
   }
-  const openRes = await execSfdxJson(
-    `sfdx force:org:open -p ${deploymentUrl} --urlonly` + (options.targetUsername ? ` --targetusername ${options.targetUsername}` : ""),
-    this,
-    {
-      fail: true,
-      output: false,
-    },
-  );
-  uxLog(this, c.yellowBright(`Open deployment status page in org with url: ${c.bold(c.greenBright(openRes?.result?.url))}`));
 }
 
 // In some case we can not deploy the whole package.xml, so let's split it before :)
