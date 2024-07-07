@@ -172,6 +172,20 @@ You probably updated the type of field {1} to type {2}, and Salesforce does not 
 ```
 
 ---
+## Condition missing reference
+
+- `Error (.*) field integrity exception: unknown \(A condition has a reference to (.*), which doesn't exist.\)`
+
+**Resolution tip**
+
+```shell
+There is a reference to {2} in {1}, and {2} is not found. You can either:
+- Add {2} in your deployment sources and make sure it is named in package.xml
+- Remove the reference to {2} in {1}
+
+```
+
+---
 ## Custom object not found
 
 - `Error (.*) In field: field - no CustomObject named (.*) found`
@@ -327,7 +341,7 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
 ---
 ## Error parsing file
 
-- `Error (.*) Error parsing file: (.*)`
+- `Error (.*) Error parsing file: (.*) `
 
 **Resolution tip**
 
@@ -985,7 +999,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 ---
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 
