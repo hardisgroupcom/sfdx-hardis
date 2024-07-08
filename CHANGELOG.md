@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.44.1] 2024-07-08
+
+- QuickFix testlevel default value
+
 ## [4.44.0] 2024-07-08
 
 - New JSON schema properties, to use ONLY on branch scoped config and with caution !

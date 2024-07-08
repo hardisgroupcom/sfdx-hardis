@@ -199,7 +199,6 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     }),
     testlevel: flags.enum({
       char: "l",
-      default: "RunLocalTests",
       options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunLocalTests", "RunAllTestsInOrg"],
       description: messages.getMessage("testLevelExtended"),
     }),
@@ -246,7 +245,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     this.checkOnly = this.flags.check || false;
     const deltaFromArgs = this.flags.delta || false;
 
-    const givenTestlevel = this.flags.testlevel || this.configInfo.testLevel || "";
+    const givenTestlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
     let testClasses = this.flags.runtests || this.configInfo.runtests || "";
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
