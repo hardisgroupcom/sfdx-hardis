@@ -943,12 +943,16 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
   }
 
   if (orgCoverage < minCoverage) {
-    await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverage, options);
-    throw new SfdxError(`[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverage}%`);
+    if (config?.testCoverageNotBlocking === true) {
+      await updatePullRequestResultCoverage("invalid_ignored", orgCoverage, minCoverage, options);
+    } else {
+      await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverage, options);
+      throw new SfdxError(`[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverage}%`);
+    }
+  } else {
+    await updatePullRequestResultCoverage("valid", orgCoverage, minCoverage, options);
+    uxLog(this, c.cyan(`[apextest] Test run ${codeCoverageText} ${c.bold(c.green(orgCoverage))}% is greater than ${c.bold(minCoverage)}%`));
   }
-
-  await updatePullRequestResultCoverage("valid", orgCoverage, minCoverage, options);
-  uxLog(this, c.cyan(`[apextest] Test run ${codeCoverageText} ${c.bold(c.green(orgCoverage))}% is greater than ${c.bold(minCoverage)}%`));
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
@@ -976,10 +980,17 @@ async function updatePullRequestResultCoverage(coverageStatus: string, orgCovera
     codeCoverageMarkdownBody: "Code coverage is valid",
     deployStatus: existingPrData ?? coverageStatus,
   };
+  // Code coverage failure
   if (coverageStatus === "invalid") {
     prDataCodeCoverage.title = existingPrData.deployStatus === "valid" ? "❌ Deployment failed: Code coverage error" : prDataCodeCoverage.title;
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
     prDataCodeCoverage.status = "invalid";
+  }
+  // Code coverage failure but ignored thanks to config testCoverageNotBlocking
+  else if (coverageStatus === "invalid_ignored") {
+    prDataCodeCoverage.title =
+      existingPrData.deployStatus === "valid" ? "✅⚠️ Deployment success with ignored Code coverage error" : prDataCodeCoverage.title;
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
   } else {
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
   }
