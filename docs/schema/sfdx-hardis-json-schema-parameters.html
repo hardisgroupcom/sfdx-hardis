@@ -5141,6 +5141,46 @@
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionruntests">
+    <div class="card">
+        <div class="card-header" id="headingruntests">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#runtests"
+                        aria-expanded="" aria-controls="runtests" onclick="setAnchor('#runtests')"><span class="property-name">runtests</span></button>
+            </h2>
+        </div>
+
+        <div id="runtests"
+             class="collapse property-definition-div" aria-labelledby="headingruntests"
+             data-parent="#accordionruntests">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#runtests" onclick="anchorLink('runtests')">runtests</a></div><h4>Selected tests to run (list or regex)</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
+<span class="description"><p>WARNING: Use with caution, only in branch scoped config ! Can be a list of test classes if testLevel=RunSpecifiedTests, or a regex if testLevel=RunRepositoryTests</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="runtests_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;MyTestClass1,MyTestClass2&quot;</span>
+</pre></div>
+</div><div id="runtests_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;^(?!FLI|fli|BatchableCodeSolvaTest|BatchableRemoveCodeSolvaTest|HelperNovaxelApiTest).*&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionscratchOrgInitApexScripts">
     <div class="card">
         <div class="card-header" id="headingscratchOrgInitApexScripts">
@@ -5461,6 +5501,83 @@
         </div>
     </div>
 </div>
+<div class="accordion" id="accordiontestCoverageNotBlocking">
+    <div class="card">
+        <div class="card-header" id="headingtestCoverageNotBlocking">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#testCoverageNotBlocking"
+                        aria-expanded="" aria-controls="testCoverageNotBlocking" onclick="setAnchor('#testCoverageNotBlocking')"><span class="property-name">testCoverageNotBlocking</span></button>
+            </h2>
+        </div>
+
+        <div id="testCoverageNotBlocking"
+             class="collapse property-definition-div" aria-labelledby="headingtestCoverageNotBlocking"
+             data-parent="#accordiontestCoverageNotBlocking">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#testCoverageNotBlocking" onclick="anchorLink('testCoverageNotBlocking')">testCoverageNotBlocking</a></div><h4>Test Coverage not blocking</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Does not make the deployment job fail if apex tests code coverage is failing</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiontestLevel">
+    <div class="card">
+        <div class="card-header" id="headingtestLevel">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#testLevel"
+                        aria-expanded="" aria-controls="testLevel" onclick="setAnchor('#testLevel')"><span class="property-name">testLevel</span></button>
+            </h2>
+        </div>
+
+        <div id="testLevel"
+             class="collapse property-definition-div" aria-labelledby="headingtestLevel"
+             data-parent="#accordiontestLevel">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#testLevel" onclick="anchorLink('testLevel')">testLevel</a></div><h4>Test level for deployments</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "RunLocalTests"</span><br/>
+<span class="description"><p>WARNING: Use with caution, only in branch scoped config ! You can override default test level for deployments for special use cases, for example when you have SeeAllData=true you can use RunRepositoryTests associated with a regex in runtests option</p>
+</span><div class="enum-value" id="testLevel_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"NoTestRun"</li><li class="list-group-item enum-item">"RunSpecifiedTests"</li><li class="list-group-item enum-item">"RunRepositoryTests"</li><li class="list-group-item enum-item">"RunLocalTests"</li><li class="list-group-item enum-item">"RunAllTestsInOrg"</li></ul>
+            </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="testLevel_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;RunRepositoryTests&quot;</span>
+</pre></div>
+</div><div id="testLevel_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;RunSpecifiedTests&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionuseDeltaDeployment">
     <div class="card">
         <div class="card-header" id="headinguseDeltaDeployment">
@@ -5541,6 +5658,6 @@
 </div>
 
     <footer>
-        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2024-07-07 at 22:50:10 +0200</p>
+        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2024-07-08 at 18:43:23 +0200</p>
     </footer></body>
 </html>
