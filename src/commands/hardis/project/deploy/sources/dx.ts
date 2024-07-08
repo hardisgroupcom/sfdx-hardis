@@ -188,7 +188,7 @@ If you need to increase the deployment waiting time (force:source:deploy --wait 
     "$ sfdx hardis:project:deploy:sources:dx",
     "$ sfdx hardis:project:deploy:sources:dx --check",
     "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests",
-    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|JDC).*'",
+    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
   ];
 
   protected static flagsConfig = {

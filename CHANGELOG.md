@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.44.0] 2024-07-08
+
+- New JSON schema properties, to use ONLY on branch scoped config and with caution !
+  - `testLevel`, to override the test level, with `RunRepositoryTests` for example
+  - `runtests`, to override the list of tests to run, with `^(?!FLI|MyPrefix).*` for example
+  - `testCoverageNotBlocking` , to make code coverage not blocking on a branch
+- Take in account `testCoverageNotBlocking` in deployment checks and PR summaries
+
 ## [4.43.0] 2024-07-06
 
 - hardis:work:save : Update prompt messages

@@ -989,6 +989,14 @@
       "title": "Retrofit ignored files",
       "type": "array"
     },
+    "runtests": {
+      "$id": "#/properties/runtests",
+      "default": "",
+      "description": "WARNING: Use with caution, only in branch scoped config ! Can be a list of test classes if testLevel=RunSpecifiedTests, or a regex if testLevel=RunRepositoryTests",
+      "examples": ["MyTestClass1,MyTestClass2", "^(?!FLI|fli|BatchableCodeSolvaTest|BatchableRemoveCodeSolvaTest|HelperNovaxelApiTest).*"],
+      "title": "Selected tests to run (list or regex)",
+      "type": "string"
+    },
     "scratchOrgInitApexScripts": {
       "$id": "#/properties/scratchOrgInitApexScripts",
       "description": "Apex scripts to call after scratch org initialization",
@@ -1046,6 +1054,22 @@
       "description": "Salesforce username used by CI for deployment or backups",
       "examples": ["deployments@myclient.com", "deployments@google.fr", "deployments@apple.com"],
       "title": "Target Username",
+      "type": "string"
+    },
+    "testCoverageNotBlocking": {
+      "$id": "#/properties/testCoverageNotBlocking",
+      "default": false,
+      "description": "Does not make the deployment job fail if apex tests code coverage is failing",
+      "title": "Test Coverage not blocking",
+      "type": "boolean"
+    },
+    "testLevel": {
+      "$id": "#/properties/testLevel",
+      "description": "WARNING: Use with caution, only in branch scoped config ! You can override default test level for deployments for special use cases, for example when you have SeeAllData=true you can use RunRepositoryTests associated with a regex in runtests option",
+      "default": "RunLocalTests",
+      "enum": ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunLocalTests", "RunAllTestsInOrg"],
+      "examples": ["RunRepositoryTests", "RunSpecifiedTests"],
+      "title": "Test level for deployments",
       "type": "string"
     },
     "useDeltaDeployment": {
