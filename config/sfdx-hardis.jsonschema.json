@@ -1024,6 +1024,13 @@
       "title": "SFDMU can modify",
       "type": "string"
     },
+    "skipCodeCoverage": {
+      "$id": "#/properties/skipCodeCoverage",
+      "default": false,
+      "description": "WARNING: Use with caution, only in branch scoped config ! Do not check code coverage for a deployment",
+      "title": "Skip code coverage check",
+      "type": "boolean"
+    },
     "skipMinimizeProfiles": {
       "$id": "#/properties/skipMinimizeProfiles",
       "description": "These profiles will not be reformatted by command hardis:project:clean:minimizeprofiles",
