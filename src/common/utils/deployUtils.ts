@@ -229,6 +229,7 @@ export async function forceSourceDeploy(
         }
       }
       // No QuickDeploy Available, or QuickDeploy failing : try full deploy
+      const branchConfig = await getConfig("branch");
       const deployCommand =
         `sfdx force:source:deploy -x "${deployment.packageXmlFile}"` +
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
@@ -240,7 +241,7 @@ export async function forceSourceDeploy(
         (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
         (check ? " --checkonly" : "") +
         " --verbose" +
-        " --coverageformatters json-summary" +
+        (branchConfig?.skipCodeCoverage === true ? "" : " --coverageformatters json-summary") +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? " --dev-debug" : "");
       let deployRes;
       try {
@@ -291,7 +292,10 @@ export async function forceSourceDeploy(
         const prDataCodeCoverage: any = {
           messageKey: existingPrData.messageKey ?? "deployment",
           title: existingPrData.title ?? check ? "✅ Deployment check success" : "✅ Deployment success",
-          codeCoverageMarkdownBody: "No code coverage: It seems there is not Apex in this project",
+          codeCoverageMarkdownBody:
+            branchConfig?.skipCodeCoverage === true
+              ? "✅⚠️ Code coverage has been skipped for this level"
+              : "✅ No code coverage: It seems there is not Apex in this project",
           deployStatus: "valid",
         };
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
