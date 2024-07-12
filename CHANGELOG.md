@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.44.3] 2024-07-12
+
+- Set **GITLAB_API_REJECT_UNAUTHORIZED=false** to avoid SSH rejections from Gitlab API
+
 ## [4.44.2] 2024-07-09
 
 - New config **skipCodeCoverage**, to use only in branch scoped config to not check for code coverage (Use with caution because won't work when deploying to production !)
