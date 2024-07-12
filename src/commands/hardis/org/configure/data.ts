@@ -11,6 +11,7 @@ import { dataFolderRoot } from "../../../../common/utils/dataUtils";
 import { prompts } from "../../../../common/utils/prompts";
 import { WebSocketClient } from "../../../../common/websocketClient";
 import { getConfig, setConfig } from "../../../../config";
+import { PACKAGE_ROOT_DIR } from "../../../../settings";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -206,6 +207,17 @@ If you don't have unique field to identify an object, use composite external ids
 
   private async selectTemplate() {
     const templateChoices = [];
+    const templatesFolder = path.join(PACKAGE_ROOT_DIR, "defaults/templates/sfdmu");
+    const templateFiles = fs.readdirSync(templatesFolder);
+    for (const templateFile of templateFiles) {
+      const templateName = path.basename(templateFile).replace(".json", "");
+      templateChoices.push({
+        title: templateName,
+        value: templateFile,
+        description: `sfdx-hardis template for ${templateName}`,
+      });
+    }
+
     const defaultTemplateChoice = { title: "Blank template", value: "blank", description: "Configure your data import/export from scratch :)" };
 
     const templateResp = await prompts({
@@ -218,9 +230,9 @@ If you don't have unique field to identify an object, use composite external ids
   }
 
   private async buildExportJsonInfoFromTemplate(templateFile) {
-    const templateName = path.basename(templateFile).replace(".json","");
+    const templateName = path.basename(templateFile).replace(".json", "");
     this.dataPath = pascalcase(templateName);
-    this.sfdmuConfig = JSON.parse(fs.readFileSync(templateFile,"utf-8"));
+    this.sfdmuConfig = JSON.parse(fs.readFileSync(templateFile, "utf-8"));
   }
 
   private async promptImportInScratchOrgs(sfdmuProjectFolder) {
