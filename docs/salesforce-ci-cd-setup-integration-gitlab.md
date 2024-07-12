@@ -41,3 +41,4 @@ Notes:
   - CI_MERGE_REQUEST_IID (provided by Gitlab CI)
   - CI_JOB_NAME (provided by Gitlab CI)
   - CI_JOB_URL (provided by Gitlab CI)
+  - GITLAB_API_REJECT_UNAUTHORIZED: set to `"false"` if you want to allow connection even without certificate (can be useful on on-premise GitLab instance)
