@@ -223,7 +223,7 @@ If you don't have unique field to identify an object, use composite external ids
     const templateResp = await prompts({
       type: "select",
       name: "template",
-      message: c.cyanBright("Please select a template, or the blank one"),
+      message: c.cyanBright("Please select a SFDMU template, or the blank one"),
       choices: [...[defaultTemplateChoice], ...templateChoices],
     });
     return templateResp.template;

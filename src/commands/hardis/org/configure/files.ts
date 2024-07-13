@@ -10,6 +10,8 @@ import { uxLog } from "../../../../common/utils";
 import { filesFolderRoot } from "../../../../common/utils/filesUtils";
 import { promptFilesExportConfiguration } from "../../../../common/utils/filesUtils";
 import { WebSocketClient } from "../../../../common/websocketClient";
+import { PACKAGE_ROOT_DIR } from "../../../../settings";
+import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -52,38 +54,24 @@ See article below
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
+  exportConfig: any;
+  filesExportPath: any;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    // Request info to build files export workspace
-    const defaultConfig = {
-      sfdxHardisLabel: "",
-      sfdxHardisDescription: "",
-      soqlQuery: "SELECT Id,Name FROM Opportunity",
-      fileTypes: "all",
-      outputFolderNameField: "Name",
-      outputFileNameFormat: "title",
-      overwriteParentRecords: true,
-      overwriteFiles: false,
-    };
 
-    const exportConfig = await promptFilesExportConfiguration(defaultConfig, false);
+    const template = await this.selectTemplate();
 
-    // Collect / reformat data
-    const filesExportPath = pascalcase(exportConfig.filesExportPath);
-    delete exportConfig.filesExportPath;
-
-    // Check if not already existing
-    const filesProjectFolder = path.join(filesFolderRoot, filesExportPath);
-    if (fs.existsSync(filesProjectFolder)) {
-      throw new SfdxError(`[sfdx-hardis]${c.red(`Folder ${c.bold(filesProjectFolder)} already exists`)}`);
+    if (template === "blank") {
+      // Request info to build sfdmu workspace
+      await this.buildExportJsonInfo();
+    } else {
+      await this.buildExportJsonInfoFromTemplate(template);
     }
 
-    // Create folder & export.json
-    await fs.ensureDir(filesProjectFolder);
-    const exportJsonFile = path.join(filesProjectFolder, "export.json");
-    await fs.writeFile(exportJsonFile, JSON.stringify(exportConfig, null, 2));
+    // Check if not already existing
+    const { exportJsonFile, filesProjectFolder } = await this.createConfigFiles();
 
     // Trigger command to open SFDMU config file in VsCode extension
     WebSocketClient.requestOpenFile(exportJsonFile);
@@ -95,4 +83,67 @@ You can now call it using ${c.white("sfdx hardis:org:files:export")}
     uxLog(this, message);
     return { outputString: message };
   }
+
+  private async createConfigFiles() {
+    const filesProjectFolder = path.join(filesFolderRoot, this.filesExportPath);
+    if (fs.existsSync(filesProjectFolder)) {
+      throw new SfdxError(`[sfdx-hardis]${c.red(`Folder ${c.bold(filesProjectFolder)} already exists`)}`);
+    }
+
+    // Create folder & export.json
+    await fs.ensureDir(filesProjectFolder);
+    const exportJsonFile = path.join(filesProjectFolder, "export.json");
+    await fs.writeFile(exportJsonFile, JSON.stringify(this.exportConfig, null, 2));
+    return { exportJsonFile, filesProjectFolder };
+  }
+
+  private async selectTemplate() {
+    const templateFileChoices = [];
+    const templatesfilesFolder = path.join(PACKAGE_ROOT_DIR, "defaults/templates/files");
+    const templateFiles = fs.readdirSync(templatesfilesFolder);
+    for (const templateFile of templateFiles) {
+      const templateName = path.basename(templateFile).replace(".json", "");
+      templateFileChoices.push({
+        title: templateName,
+        value: templateFile,
+        description: `sfdx-hardis template for ${templateName}`,
+      });
+    }
+
+    const defaultTemplateChoice = { title: "Blank template", value: "blank", description: "Configure your files import/export from scratch :)" };
+
+    const templateResp = await prompts({
+      type: "select",
+      name: "template",
+      message: c.cyanBright("Please select a Files import/export template, or the blank one"),
+      choices: [...[defaultTemplateChoice], ...templateFileChoices],
+    });
+    return templateResp.template;
+  }
+
+  private async buildExportJsonInfo() {
+    const defaultConfig = {
+      sfdxHardisLabel: "",
+      sfdxHardisDescription: "",
+      soqlQuery: "SELECT Id,Name FROM Opportunity",
+      fileTypes: "all",
+      outputFolderNameField: "Name",
+      outputFileNameFormat: "title",
+      overwriteParentRecords: true,
+      overwriteFiles: false,
+    };
+
+    this.exportConfig = await promptFilesExportConfiguration(defaultConfig, false);
+        // Collect / reformat data
+        this.filesExportPath = pascalcase(this.exportConfig.filesExportPath);
+        delete this.exportConfig.filesExportPath;
+  }
+
+  private async buildExportJsonInfoFromTemplate(templateFile) {
+    const templateName = path.basename(templateFile).replace(".json", "");
+    this.filesExportPath = pascalcase(templateName);
+    this.exportConfig = JSON.parse(fs.readFileSync(templateFile, "utf-8"));
+  }
 }
+
+
