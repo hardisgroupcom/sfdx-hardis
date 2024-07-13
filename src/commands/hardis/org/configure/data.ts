@@ -213,7 +213,7 @@ If you don't have unique field to identify an object, use composite external ids
       const templateName = path.basename(templateFile).replace(".json", "");
       templateChoices.push({
         title: templateName,
-        value: templateFile,
+        value: path.join(templatesFolder, templateFile),
         description: `sfdx-hardis template for ${templateName}`,
       });
     }
@@ -242,7 +242,7 @@ If you don't have unique field to identify an object, use composite external ids
       message: c.cyanBright("Do you want this SFDMU config to be used to import data when initializing a new scratch org ?"),
       default: false,
     });
-    this.importInScratchOrgs = importResp.confirm === true;
+    this.importInScratchOrgs = importResp.importInScratchOrgs === true;
 
     // Manage dataPackages if importInScratchOrgs is true
     if (this.importInScratchOrgs === true) {

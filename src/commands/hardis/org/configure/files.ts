@@ -105,7 +105,7 @@ You can now call it using ${c.white("sfdx hardis:org:files:export")}
       const templateName = path.basename(templateFile).replace(".json", "");
       templateFileChoices.push({
         title: templateName,
-        value: templateFile,
+        value: path.join(templatesfilesFolder, templateFile),
         description: `sfdx-hardis template for ${templateName}`,
       });
     }
@@ -134,9 +134,9 @@ You can now call it using ${c.white("sfdx hardis:org:files:export")}
     };
 
     this.exportConfig = await promptFilesExportConfiguration(defaultConfig, false);
-        // Collect / reformat data
-        this.filesExportPath = pascalcase(this.exportConfig.filesExportPath);
-        delete this.exportConfig.filesExportPath;
+    // Collect / reformat data
+    this.filesExportPath = pascalcase(this.exportConfig.filesExportPath);
+    delete this.exportConfig.filesExportPath;
   }
 
   private async buildExportJsonInfoFromTemplate(templateFile) {

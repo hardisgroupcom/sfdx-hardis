@@ -270,13 +270,13 @@ export class FilesExporter {
       this.dtl?.outputFileNameFormat === "id"
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
-          this.dtl?.outputFileNameFormat === "title_id"
+        this.dtl?.outputFileNameFormat === "title_id"
           ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
           : // Id + Title
-            this.dtl?.outputFileNameFormat === "id_title"
+          this.dtl?.outputFileNameFormat === "id_title"
             ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
             : // Title
-              path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -353,6 +353,116 @@ export class FilesExporter {
       apiCallsRemaining,
     };
   }
+}
+
+export class FilesImporter {
+  private filesPath: string;
+  private conn: Connection;
+  private commandThis: any;
+
+  private dtl: any = null; // export config
+  private exportedFilesFolder: string;
+
+  constructor(
+    filesPath: string,
+    conn: Connection,
+    options: { exportConfig?: any; },
+    commandThis: any,
+  ) {
+    this.filesPath = filesPath;
+    this.exportedFilesFolder = path.join(this.filesPath, 'export');
+    this.conn = conn;
+    this.commandThis = commandThis;
+    if (options.exportConfig) {
+      this.dtl = options.exportConfig;
+    }
+  }
+
+  async processImport() {
+    // Get config
+    if (this.dtl === null) {
+      this.dtl = await getFilesWorkspaceDetail(this.filesPath);
+    }
+    uxLog(this.commandThis, c.cyan(`Importing files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
+
+    // Get folders and files
+    const allRecordFolders = fs.readdirSync(this.exportedFilesFolder).filter(function (file) {
+      return fs.statSync(path.join(this.exportedFilesFolder, file)).isDirectory();
+    });
+    let totalFilesNumber = 0;
+    for (const folder of allRecordFolders) {
+      totalFilesNumber += fs.readdirSync(path.join(this.exportedFilesFolder, folder)).length;
+    }
+
+    await this.calculateApiConsumption(totalFilesNumber);
+
+    const parentObjectsRes = await bulkQuery(this.dtl.soqlQuery, this.conn);
+    const parentObjects = parentObjectsRes.records;
+    let successNb = 0;
+    let errorNb = 0 ;
+
+    for (const recordFolder of allRecordFolders) {
+      uxLog(this, c.grey(`Processing record ${recordFolder} ...`));
+      const recordFolderPath = path.join(this.exportedFilesFolder, recordFolder);
+      // List files in folder
+      const files = fs.readdirSync(recordFolderPath).filter(function (file) {
+        return fs.statSync(path.join(this.exportedFilesFolder, file)).isFile();
+      });
+      // Find Id of parent object using folder name
+      const parentRecordIds = parentObjects.filter((parentObj) => parentObj[this.dtl.outputFolderNameField] === recordFolder);
+      if (parentRecordIds.length === 0) {
+        uxLog(this,c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+        continue;
+      }
+      const parentRecordId = parentRecordIds[0].Id;
+
+      for (const file of files) {
+        uxLog(this, c.grey(`Uploading attachment ${file} ...`));
+        const fileData = fs.readFileSync(path.join(this.exportedFilesFolder, file));
+        const insertResult = await this.conn.sobject('ContentVersion').create({
+          Title: file,
+          PathOnClient: file,
+          VersionData: fileData.toString('base64'),
+          FirstPublishLocationId: parentRecordId
+        });
+        if (!insertResult.success) {
+          uxLog(this,c.red(`Unable to upload file ${file}`));
+          errorNb++;
+        }
+        else {
+          successNb++;
+        }
+      }
+    }
+
+    uxLog(this,c.green(`Uploaded ${successNb} files`));
+    if (errorNb > 0) {
+      uxLog(this,c.yellow(`Errors during the upload of ${successNb} files`));
+    }
+    return {successNb: successNb, errorNb:errorNb};
+
+  }
+
+  // Calculate API consumption
+  private async calculateApiConsumption(totalFilesNumber) {
+    const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
+    const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
+    const bulkCallsNb = (countSoqlQueryRes / 1000).toFixed(0);
+    // Check if there are enough API calls available
+    // Request user confirmation
+    if (!isCI) {
+      const warningMessage = c.cyanBright(
+        `Files import consumes one REST API call per uploaded file.
+        (Estimation: ${bulkCallsNb} Bulks calls and ${totalFilesNumber} REST calls) Do you confirm you want to proceed ?`,
+      );
+      const promptRes = await prompts({ type: "confirm", message: warningMessage });
+      if (promptRes.value !== true) {
+        throw new SfdxError("Command cancelled by user");
+      }
+    }
+  }
+
 }
 
 export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please select a files folder to export" }) {
