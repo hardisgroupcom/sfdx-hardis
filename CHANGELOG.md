@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update JSON schema to add `v60` in autoCleanTypes
+
 ## [4.44.3] 2024-07-12
 
 - Set **GITLAB_API_REJECT_UNAUTHORIZED=false** to avoid SSH rejections from Gitlab API
