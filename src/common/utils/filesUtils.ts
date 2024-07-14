@@ -270,13 +270,13 @@ export class FilesExporter {
       this.dtl?.outputFileNameFormat === "id"
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
-        this.dtl?.outputFileNameFormat === "title_id"
+          this.dtl?.outputFileNameFormat === "title_id"
           ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
           : // Id + Title
-          this.dtl?.outputFileNameFormat === "id_title"
+            this.dtl?.outputFileNameFormat === "id_title"
             ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
             : // Title
-            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+              path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -364,14 +364,9 @@ export class FilesImporter {
   private exportedFilesFolder: string;
   private handleOverwrite = false;
 
-  constructor(
-    filesPath: string,
-    conn: Connection,
-    options: { exportConfig?: any; handleOverwrite?: boolean },
-    commandThis: any,
-  ) {
+  constructor(filesPath: string, conn: Connection, options: { exportConfig?: any; handleOverwrite?: boolean }, commandThis: any) {
     this.filesPath = filesPath;
-    this.exportedFilesFolder = path.join(this.filesPath, 'export');
+    this.exportedFilesFolder = path.join(this.filesPath, "export");
     this.handleOverwrite = options?.handleOverwrite === true;
     this.conn = conn;
     this.commandThis = commandThis;
@@ -433,24 +428,22 @@ export class FilesImporter {
         const contentVersionParams: any = {
           Title: file,
           PathOnClient: file,
-          VersionData: fileData.toString('base64'),
+          VersionData: fileData.toString("base64"),
         };
-        const matchingExistingDocs = existingDocuments.filter(doc => doc.Title === file);
+        const matchingExistingDocs = existingDocuments.filter((doc) => doc.Title === file);
         if (matchingExistingDocs.length > 0) {
           contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
           uxLog(this, c.grey(`Overwriting file ${file} ...`));
-        }
-        else {
+        } else {
           contentVersionParams.FirstPublishLocationId = parentRecordId;
           uxLog(this, c.grey(`Uploading file ${file} ...`));
         }
         try {
-          const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
+          const insertResult = await this.conn.sobject("ContentVersion").create(contentVersionParams);
           if (!insertResult.success) {
             uxLog(this, c.red(`Unable to upload file ${file}`));
             errorNb++;
-          }
-          else {
+          } else {
             successNb++;
           }
         } catch (e) {
@@ -465,7 +458,6 @@ export class FilesImporter {
       uxLog(this, c.yellow(`Errors during the upload of ${successNb} files`));
     }
     return { successNb: successNb, errorNb: errorNb };
-
   }
 
   // Calculate API consumption
@@ -487,7 +479,6 @@ export class FilesImporter {
       }
     }
   }
-
 }
 
 export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please select a files folder to export" }) {

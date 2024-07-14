@@ -60,7 +60,6 @@ See article below
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-
     const template = await this.selectTemplate();
 
     if (template === "blank") {
@@ -145,5 +144,3 @@ You can now call it using ${c.white("sfdx hardis:org:files:export")}
     this.exportConfig = JSON.parse(fs.readFileSync(templateFile, "utf-8"));
   }
 }
-
-
