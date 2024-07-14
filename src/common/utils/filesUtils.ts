@@ -355,6 +355,132 @@ export class FilesExporter {
   }
 }
 
+export class FilesImporter {
+  private filesPath: string;
+  private conn: Connection;
+  private commandThis: any;
+
+  private dtl: any = null; // export config
+  private exportedFilesFolder: string;
+  private handleOverwrite = false;
+
+  constructor(filesPath: string, conn: Connection, options: { exportConfig?: any; handleOverwrite?: boolean }, commandThis: any) {
+    this.filesPath = filesPath;
+    this.exportedFilesFolder = path.join(this.filesPath, "export");
+    this.handleOverwrite = options?.handleOverwrite === true;
+    this.conn = conn;
+    this.commandThis = commandThis;
+    if (options.exportConfig) {
+      this.dtl = options.exportConfig;
+    }
+  }
+
+  async processImport() {
+    // Get config
+    if (this.dtl === null) {
+      this.dtl = await getFilesWorkspaceDetail(this.filesPath);
+    }
+    uxLog(this.commandThis, c.cyan(`Importing files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
+
+    // Get folders and files
+    const allRecordFolders = fs.readdirSync(this.exportedFilesFolder).filter((file) => {
+      return fs.statSync(path.join(this.exportedFilesFolder, file)).isDirectory();
+    });
+    let totalFilesNumber = 0;
+    for (const folder of allRecordFolders) {
+      totalFilesNumber += fs.readdirSync(path.join(this.exportedFilesFolder, folder)).length;
+    }
+
+    await this.calculateApiConsumption(totalFilesNumber);
+
+    // Query parent objects to find Ids corresponding to field value used as folder name
+    const parentObjectsRes = await bulkQuery(this.dtl.soqlQuery, this.conn);
+    const parentObjects = parentObjectsRes.records;
+    let successNb = 0;
+    let errorNb = 0;
+
+    for (const recordFolder of allRecordFolders) {
+      uxLog(this, c.grey(`Processing record ${recordFolder} ...`));
+      const recordFolderPath = path.join(this.exportedFilesFolder, recordFolder);
+      // List files in folder
+      const files = fs.readdirSync(recordFolderPath).filter((file) => {
+        return fs.statSync(path.join(this.exportedFilesFolder, recordFolder, file)).isFile();
+      });
+      // Find Id of parent object using folder name
+      const parentRecordIds = parentObjects.filter((parentObj) => parentObj[this.dtl.outputFolderNameField] === recordFolder);
+      if (parentRecordIds.length === 0) {
+        uxLog(this, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+        continue;
+      }
+      const parentRecordId = parentRecordIds[0].Id;
+
+      let existingDocuments = [];
+      // Collect existing documents if we handle file overwrite
+      if (this.handleOverwrite) {
+        const existingDocsQuery = `SELECT Id, ContentDocumentId, Title FROM ContentVersion WHERE FirstPublishLocationId = '${parentRecordId}'`;
+        const existingDocsQueryRes = await this.conn.query(existingDocsQuery);
+        existingDocuments = existingDocsQueryRes.records;
+      }
+
+      for (const file of files) {
+        const fileData = fs.readFileSync(path.join(recordFolderPath, file));
+        const contentVersionParams: any = {
+          Title: file,
+          PathOnClient: file,
+          VersionData: fileData.toString("base64"),
+        };
+        const matchingExistingDocs = existingDocuments.filter((doc) => doc.Title === file);
+        if (matchingExistingDocs.length > 0) {
+          contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
+          uxLog(this, c.grey(`Overwriting file ${file} ...`));
+        } else {
+          contentVersionParams.FirstPublishLocationId = parentRecordId;
+          uxLog(this, c.grey(`Uploading file ${file} ...`));
+        }
+        try {
+          const insertResult = await this.conn.sobject("ContentVersion").create(contentVersionParams);
+          if (!insertResult.success) {
+            uxLog(this, c.red(`Unable to upload file ${file}`));
+            errorNb++;
+          } else {
+            successNb++;
+          }
+        } catch (e) {
+          uxLog(this, c.red(`Unable to upload file ${file}: ${e.message}`));
+          errorNb++;
+        }
+      }
+    }
+
+    uxLog(this, c.green(`Uploaded ${successNb} files`));
+    if (errorNb > 0) {
+      uxLog(this, c.yellow(`Errors during the upload of ${successNb} files`));
+    }
+    return { successNb: successNb, errorNb: errorNb };
+  }
+
+  // Calculate API consumption
+  private async calculateApiConsumption(totalFilesNumber) {
+    const bulkCallsNb = 1;
+    if (this.handleOverwrite) {
+      totalFilesNumber = totalFilesNumber * 2;
+    }
+    // Check if there are enough API calls available
+    // Request user confirmation
+    if (!isCI) {
+      const warningMessage = c.cyanBright(
+        `Files import consumes one REST API call per uploaded file.
+        (Estimation: ${bulkCallsNb} Bulks calls and ${totalFilesNumber} REST calls) Do you confirm you want to proceed ?`,
+      );
+      const promptRes = await prompts({ type: "confirm", message: warningMessage });
+      if (promptRes.value !== true) {
+        throw new SfdxError("Command cancelled by user");
+      }
+    }
+  }
+}
+
 export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please select a files folder to export" }) {
   if (!fs.existsSync(filesFolderRoot)) {
     throw new SfdxError("There is no files root folder 'scripts/files' in your workspace. Create it and define a files export configuration");

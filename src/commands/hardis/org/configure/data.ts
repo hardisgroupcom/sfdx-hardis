@@ -11,6 +11,7 @@ import { dataFolderRoot } from "../../../../common/utils/dataUtils";
 import { prompts } from "../../../../common/utils/prompts";
 import { WebSocketClient } from "../../../../common/websocketClient";
 import { getConfig, setConfig } from "../../../../config";
+import { PACKAGE_ROOT_DIR } from "../../../../settings";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -56,12 +57,122 @@ See article:
 
   // List required plugins, their presence will be tested before running the command
   protected static requiresSfdxPlugins = ["sfdmu"];
+  additionalFiles: any = [];
+  dataPath: string;
+  sfdmuConfig: any;
+  importInScratchOrgs: boolean;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    // Request info to build sfdmu workspace
-    const resp = await prompts([
+    const template = await this.selectTemplate();
+
+    if (template === "blank") {
+      // Request info to build sfdmu workspace
+      await this.buildExportJsonInfo();
+    } else {
+      await this.buildExportJsonInfoFromTemplate(template);
+    }
+
+    // Check if not already existing
+    const { exportJsonFile, sfdmuProjectFolder } = await this.generateConfigurationFiles();
+
+    await this.promptImportInScratchOrgs(sfdmuProjectFolder);
+
+    // Set bac initial cwd
+    const message = c.cyan(`Successfully initialized sfdmu project ${c.green(sfdmuProjectFolder)}, with ${c.green("export.json")} file.
+You can now configure it using SFDMU documentation: https://help.sfdmu.com/plugin-basics/basic-usage/minimal-configuration
+If you don't have unique field to identify an object, use composite external ids: https://help.sfdmu.com/full-documentation/advanced-features/composite-external-id-keys
+`);
+    uxLog(this, message);
+
+    // Trigger command to open SFDMU config file in VsCode extension
+    WebSocketClient.requestOpenFile(exportJsonFile);
+
+    return { outputString: message };
+  }
+
+  private async generateConfigurationFiles() {
+    const sfdmuProjectFolder = path.join(dataFolderRoot, this.dataPath);
+    if (fs.existsSync(sfdmuProjectFolder)) {
+      throw new SfdxError(`[sfdx-hardis]${c.red(`Folder ${c.bold(sfdmuProjectFolder)} already exists`)}`);
+    }
+
+    // Create folder & export.json
+    await fs.ensureDir(sfdmuProjectFolder);
+    const exportJsonFile = path.join(sfdmuProjectFolder, "export.json");
+    await fs.writeFile(exportJsonFile, JSON.stringify(this.sfdmuConfig, null, 2));
+    uxLog(this, "Generated SFDMU config file " + exportJsonFile);
+
+    for (const additionalFile of this.additionalFiles) {
+      const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
+      await fs.writeFile(additionalFileFull, additionalFile.text);
+      uxLog(this, c.cyan(additionalFile.message + ": ") + c.yellow(additionalFileFull));
+      WebSocketClient.requestOpenFile(additionalFileFull);
+    }
+    return { exportJsonFile, sfdmuProjectFolder };
+  }
+
+  private async buildExportJsonInfo() {
+    const resp = await this.promptExportInfo();
+
+    // Collect / reformat data
+    this.dataPath = pascalcase(resp.dataPath);
+    const sfdxHardisLabel = resp.sfdxHardisLabel;
+    const sfdxHardisDescription = resp.sfdxHardisDescription;
+    const additionalConfig: Array<string> = resp.additional || [];
+
+    this.sfdmuConfig = {
+      sfdxHardisLabel: sfdxHardisLabel,
+      sfdxHardisDescription: sfdxHardisDescription,
+      objects: [
+        {
+          query: "SELECT all FROM Account WHERE Name='sfdx-hardis'",
+          operation: "Upsert",
+          externalId: "Name",
+        },
+      ],
+    };
+
+    // Manage badwords filter option
+    if (additionalConfig.includes("badwordsFilter")) {
+      const badwordsFileName = "badwords.json";
+      this.sfdmuConfig.objects[0] = [
+        {
+          query: "SELECT all FROM Lead",
+          operation: "Readonly",
+          targetRecordsFilter: "core:DetectBadwords",
+          filterRecordsAddons: [
+            {
+              module: "core:RecordsFilter",
+              args: {
+                filterType: "BadWords",
+                settings: {
+                  badwordsFile: badwordsFileName,
+                  detectFields: ["Description"],
+                  highlightWords: true,
+                  outputMatches: false,
+                },
+              },
+            },
+          ],
+        },
+      ];
+      if (!fs.existsSync("badwords.json")) {
+        const badwordsSample = {
+          badwords: ["write", "your", "bad", "words", "and expressions", "here"],
+        };
+        this.additionalFiles.push({
+          path: badwordsFileName,
+          text: JSON.stringify(badwordsSample, null, 2),
+          message: "Sample badwords file has been generated and needs to be updated",
+        });
+      }
+    }
+  }
+
+  private async promptExportInfo() {
+    return await prompts([
       {
         type: "text",
         name: "dataPath",
@@ -91,106 +202,54 @@ See article:
           },
         ],
       },
-      {
-        type: "confirm",
-        name: "importInScratchOrgs",
-        message: c.cyanBright("Do you want this SFDMU config to be used to import data when initializing a new scratch org ?"),
-        default: false,
-      },
     ]);
+  }
 
-    // Collect / reformat data
-    const dataPath = pascalcase(resp.dataPath);
-    const sfdxHardisLabel = resp.sfdxHardisLabel;
-    const sfdxHardisDescription = resp.sfdxHardisDescription;
-    const importInScratchOrgs = resp.importInScratchOrgs;
-    const additionalConfig: Array<string> = resp.additional || [];
-
-    const additionalFiles = [];
-    const sfdmuConfig: any = {
-      sfdxHardisLabel: sfdxHardisLabel,
-      sfdxHardisDescription: sfdxHardisDescription,
-      objects: [
-        {
-          query: "SELECT all FROM Account WHERE Name='sfdx-hardis'",
-          operation: "Upsert",
-          externalId: "Name",
-        },
-      ],
-    };
-
-    // Manage badwords filter option
-    if (additionalConfig.includes("badwordsFilter")) {
-      const badwordsFileName = "badwords.json";
-      sfdmuConfig.objects[0] = [
-        {
-          query: "SELECT all FROM Lead",
-          operation: "Readonly",
-          targetRecordsFilter: "core:DetectBadwords",
-          filterRecordsAddons: [
-            {
-              module: "core:RecordsFilter",
-              args: {
-                filterType: "BadWords",
-                settings: {
-                  badwordsFile: badwordsFileName,
-                  detectFields: ["Description"],
-                  highlightWords: true,
-                  outputMatches: false,
-                },
-              },
-            },
-          ],
-        },
-      ];
-      if (!fs.existsSync("badwords.json")) {
-        const badwordsSample = {
-          badwords: ["write", "your", "bad", "words", "and expressions", "here"],
-        };
-        additionalFiles.push({
-          path: badwordsFileName,
-          text: JSON.stringify(badwordsSample, null, 2),
-          message: "Sample badwords file has been generated and needs to be updated",
-        });
-      }
+  private async selectTemplate() {
+    const templateChoices = [];
+    const templatesFolder = path.join(PACKAGE_ROOT_DIR, "defaults/templates/sfdmu");
+    const templateFiles = fs.readdirSync(templatesFolder);
+    for (const templateFile of templateFiles) {
+      const templateName = path.basename(templateFile).replace(".json", "");
+      templateChoices.push({
+        title: templateName,
+        value: path.join(templatesFolder, templateFile),
+        description: `sfdx-hardis template for ${templateName}`,
+      });
     }
 
-    // Check if not already existing
-    const sfdmuProjectFolder = path.join(dataFolderRoot, dataPath);
-    if (fs.existsSync(sfdmuProjectFolder)) {
-      throw new SfdxError(`[sfdx-hardis]${c.red(`Folder ${c.bold(sfdmuProjectFolder)} already exists`)}`);
-    }
+    const defaultTemplateChoice = { title: "Blank template", value: "blank", description: "Configure your data import/export from scratch :)" };
 
-    // Create folder & export.json
-    await fs.ensureDir(sfdmuProjectFolder);
-    const exportJsonFile = path.join(sfdmuProjectFolder, "export.json");
-    await fs.writeFile(exportJsonFile, JSON.stringify(sfdmuConfig, null, 2));
-    uxLog(this, "Generated SFDMU config file " + exportJsonFile);
+    const templateResp = await prompts({
+      type: "select",
+      name: "template",
+      message: c.cyanBright("Please select a SFDMU template, or the blank one"),
+      choices: [...[defaultTemplateChoice], ...templateChoices],
+    });
+    return templateResp.template;
+  }
 
-    for (const additionalFile of additionalFiles) {
-      const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
-      await fs.writeFile(additionalFileFull, additionalFile.text);
-      uxLog(this, c.cyan(additionalFile.message + ": ") + c.yellow(additionalFileFull));
-      WebSocketClient.requestOpenFile(additionalFileFull);
-    }
+  private async buildExportJsonInfoFromTemplate(templateFile) {
+    const templateName = path.basename(templateFile).replace(".json", "");
+    this.dataPath = pascalcase(templateName);
+    this.sfdmuConfig = JSON.parse(fs.readFileSync(templateFile, "utf-8"));
+  }
 
-    // Trigger command to open SFDMU config file in VsCode extension
-    WebSocketClient.requestOpenFile(exportJsonFile);
+  private async promptImportInScratchOrgs(sfdmuProjectFolder) {
+    const importResp = await prompts({
+      type: "confirm",
+      name: "importInScratchOrgs",
+      message: c.cyanBright("Do you want this SFDMU config to be used to import data when initializing a new scratch org ?"),
+      default: false,
+    });
+    this.importInScratchOrgs = importResp.importInScratchOrgs === true;
 
     // Manage dataPackages if importInScratchOrgs is true
-    if (importInScratchOrgs === true) {
+    if (this.importInScratchOrgs === true) {
       const config = await getConfig("project");
       const dataPackages = config.dataPackages || [];
       dataPackages.push({ dataPath: sfdmuProjectFolder.replace(/\\/g, "/"), importInScratchOrgs: true });
       await setConfig("project", { dataPackages: dataPackages });
     }
-
-    // Set bac initial cwd
-    const message = c.cyan(`Successfully initialized sfdmu project ${c.green(sfdmuProjectFolder)}, with ${c.green("export.json")} file.
-You can now configure it using SFDMU documentation: https://help.sfdmu.com/plugin-basics/basic-usage/minimal-configuration
-If you don't have unique field to identify an object, use composite external ids: https://help.sfdmu.com/full-documentation/advanced-features/composite-external-id-keys
-`);
-    uxLog(this, message);
-    return { outputString: message };
   }
 }

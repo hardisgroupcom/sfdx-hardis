@@ -53,7 +53,8 @@
           "listViewsMine",
           "minimizeProfiles",
           "productrequest",
-          "systemDebug"
+          "systemDebug",
+          "v60"
         ]
       },
       "title": "Auto-Cleaning types",
