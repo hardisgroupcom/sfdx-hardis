@@ -99,13 +99,13 @@ You can now call it using ${c.white("sfdx hardis:org:files:export")}
 
   private async selectTemplate() {
     const templateFileChoices = [];
-    const templatesfilesFolder = path.join(PACKAGE_ROOT_DIR, "defaults/templates/files");
-    const templateFiles = fs.readdirSync(templatesfilesFolder);
+    const templatesFilesFolder = path.join(PACKAGE_ROOT_DIR, "defaults/templates/files");
+    const templateFiles = fs.readdirSync(templatesFilesFolder);
     for (const templateFile of templateFiles) {
       const templateName = path.basename(templateFile).replace(".json", "");
       templateFileChoices.push({
         title: templateName,
-        value: path.join(templatesfilesFolder, templateFile),
+        value: path.join(templatesFilesFolder, templateFile),
         description: `sfdx-hardis template for ${templateName}`,
       });
     }
