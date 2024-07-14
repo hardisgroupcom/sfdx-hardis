@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New command **hardis:org:files:import** to import files exported using **hardis:org:files:export**
 - Update JSON schema to add `v60` in autoCleanTypes
 
 ## [4.44.3] 2024-07-12

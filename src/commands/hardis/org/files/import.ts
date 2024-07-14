@@ -3,8 +3,9 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import { uxLog } from "../../../../common/utils";
+import { isCI, uxLog } from "../../../../common/utils";
 import { FilesImporter, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
+import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -13,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class FilesExport extends SfdxCommand {
+export default class FilesImport extends SfdxCommand {
   public static title = "Import files";
 
   public static description = `Import file attachments into a Salesforce org
@@ -30,20 +31,9 @@ See article below to see how to Export them.
       char: "p",
       description: "Path to the file export project",
     }),
-    chunksize: flags.number({
-      char: "c",
-      description: "Number of records to add in a chunk before it is processed",
-      default: 1000,
-    }),
-    polltimeout: flags.number({
-      char: "t",
-      description: "Timeout in MS for Bulk API calls",
-      default: 300000,
-    }),
-    startchunknumber: flags.number({
-      char: "s",
-      description: "Chunk number to start from",
-      default: 0,
+    overwrite: flags.boolean({
+      char: "o",
+      description: "Override existing files (doubles the number of API calls)",
     }),
     debug: flags.boolean({
       char: "d",
@@ -66,29 +56,31 @@ See article below to see how to Export them.
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
+  protected handleOverwrite;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     let filesPath = this.flags.path || null;
-    const recordsChunkSize = this.flags.chunksize;
-    const pollTimeout = this.flags.polltimeout;
-    const startChunkNumber = this.flags.startchunknumber || 0;
-    //const debugMode = this.flags.debug || false;
-
-    const importOptions: any = {
-      pollTimeout: pollTimeout,
-      recordsChunkSize: recordsChunkSize,
-      startChunkNumber: startChunkNumber,
-    };
+    this.handleOverwrite = this.flags?.overwrite === true;
 
     // Identify files workspace if not defined
     if (filesPath == null) {
       filesPath = await selectFilesWorkspace({ selectFilesLabel: "Please select a files workspace to IMPORT" });
     }
 
-    // Import files into org
+    if (!isCI) {
+      const handleOverwriteRes = await prompts({
+        type: "confirm",
+        name: "value",
+        message: "Do you want to overwrite the existing files with the same name ? (doubles the number of used API calls)",
+      });
+      this.handleOverwrite = handleOverwriteRes.value;
+    }
 
+    const importOptions: any = { handleOverwrite: this.handleOverwrite };
+
+    // Import files into org
     const importResult = await new FilesImporter(filesPath, this.org.getConnection(), importOptions, this).processImport();
 
     // Output message

@@ -362,15 +362,17 @@ export class FilesImporter {
 
   private dtl: any = null; // export config
   private exportedFilesFolder: string;
+  private handleOverwrite = false;
 
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { exportConfig?: any; },
+    options: { exportConfig?: any; handleOverwrite?: boolean },
     commandThis: any,
   ) {
     this.filesPath = filesPath;
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
+    this.handleOverwrite = options?.handleOverwrite === true;
     this.conn = conn;
     this.commandThis = commandThis;
     if (options.exportConfig) {
@@ -387,7 +389,7 @@ export class FilesImporter {
     uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Get folders and files
-    const allRecordFolders = fs.readdirSync(this.exportedFilesFolder).filter(function (file) {
+    const allRecordFolders = fs.readdirSync(this.exportedFilesFolder).filter((file) => {
       return fs.statSync(path.join(this.exportedFilesFolder, file)).isDirectory();
     });
     let totalFilesNumber = 0;
@@ -397,58 +399,81 @@ export class FilesImporter {
 
     await this.calculateApiConsumption(totalFilesNumber);
 
+    // Query parent objects to find Ids corresponding to field value used as folder name
     const parentObjectsRes = await bulkQuery(this.dtl.soqlQuery, this.conn);
     const parentObjects = parentObjectsRes.records;
     let successNb = 0;
-    let errorNb = 0 ;
+    let errorNb = 0;
 
     for (const recordFolder of allRecordFolders) {
       uxLog(this, c.grey(`Processing record ${recordFolder} ...`));
       const recordFolderPath = path.join(this.exportedFilesFolder, recordFolder);
       // List files in folder
-      const files = fs.readdirSync(recordFolderPath).filter(function (file) {
-        return fs.statSync(path.join(this.exportedFilesFolder, file)).isFile();
+      const files = fs.readdirSync(recordFolderPath).filter((file) => {
+        return fs.statSync(path.join(this.exportedFilesFolder, recordFolder, file)).isFile();
       });
       // Find Id of parent object using folder name
       const parentRecordIds = parentObjects.filter((parentObj) => parentObj[this.dtl.outputFolderNameField] === recordFolder);
       if (parentRecordIds.length === 0) {
-        uxLog(this,c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+        uxLog(this, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
         continue;
       }
       const parentRecordId = parentRecordIds[0].Id;
 
+      let existingDocuments = [];
+      // Collect existing documents if we handle file overwrite
+      if (this.handleOverwrite) {
+        const existingDocsQuery = `SELECT Id, ContentDocumentId, Title FROM ContentVersion WHERE FirstPublishLocationId = '${parentRecordId}'`;
+        const existingDocsQueryRes = await this.conn.query(existingDocsQuery);
+        existingDocuments = existingDocsQueryRes.records;
+      }
+
       for (const file of files) {
-        uxLog(this, c.grey(`Uploading attachment ${file} ...`));
-        const fileData = fs.readFileSync(path.join(this.exportedFilesFolder, file));
-        const insertResult = await this.conn.sobject('ContentVersion').create({
+        const fileData = fs.readFileSync(path.join(recordFolderPath, file));
+        const contentVersionParams: any = {
           Title: file,
           PathOnClient: file,
           VersionData: fileData.toString('base64'),
-          FirstPublishLocationId: parentRecordId
-        });
-        if (!insertResult.success) {
-          uxLog(this,c.red(`Unable to upload file ${file}`));
-          errorNb++;
+        };
+        const matchingExistingDocs = existingDocuments.filter(doc => doc.Title === file);
+        if (matchingExistingDocs.length > 0) {
+          contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
+          uxLog(this, c.grey(`Overwriting file ${file} ...`));
         }
         else {
-          successNb++;
+          contentVersionParams.FirstPublishLocationId = parentRecordId;
+          uxLog(this, c.grey(`Uploading file ${file} ...`));
+        }
+        try {
+          const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
+          if (!insertResult.success) {
+            uxLog(this, c.red(`Unable to upload file ${file}`));
+            errorNb++;
+          }
+          else {
+            successNb++;
+          }
+        } catch (e) {
+          uxLog(this, c.red(`Unable to upload file ${file}: ${e.message}`));
+          errorNb++;
         }
       }
     }
 
-    uxLog(this,c.green(`Uploaded ${successNb} files`));
+    uxLog(this, c.green(`Uploaded ${successNb} files`));
     if (errorNb > 0) {
-      uxLog(this,c.yellow(`Errors during the upload of ${successNb} files`));
+      uxLog(this, c.yellow(`Errors during the upload of ${successNb} files`));
     }
-    return {successNb: successNb, errorNb:errorNb};
+    return { successNb: successNb, errorNb: errorNb };
 
   }
 
   // Calculate API consumption
   private async calculateApiConsumption(totalFilesNumber) {
-    const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
-    const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
-    const bulkCallsNb = (countSoqlQueryRes / 1000).toFixed(0);
+    const bulkCallsNb = 1;
+    if (this.handleOverwrite) {
+      totalFilesNumber = totalFilesNumber * 2;
+    }
     // Check if there are enough API calls available
     // Request user confirmation
     if (!isCI) {
