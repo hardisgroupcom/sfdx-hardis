@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.45.0] 2024-07-14
+
 - New command **hardis:org:files:import** to import files exported using **hardis:org:files:export**
 - Template management for SFDMU & files import/export
 - Update JSON schema to add `v60` in autoCleanTypes
