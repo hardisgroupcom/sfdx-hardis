@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Add link to [Conga Article](https://medium.com/@nicolasvuillamy/how-to-deploy-conga-composer-configuration-using-salesforce-cli-plugins-c2899641f36b)
+- Add Conga article in README list of articles
 
 ## [4.45.0] 2024-07-14
 
