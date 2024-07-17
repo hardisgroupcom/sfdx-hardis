@@ -16,6 +16,11 @@ export abstract class GitProviderRoot {
     return null;
   }
 
+  public async getPullRequestDeploymentCheckId(): Promise<string> {
+    uxLog(this, `Method getPullRequestDeploymentCheckId() is not implemented yet on ${this.getLabel()}`);
+    return null;
+  }
+
   public async getCurrentJobUrl(): Promise<string> {
     uxLog(this, `Method getCurrentJobUrl is not implemented yet on ${this.getLabel()}`);
     return null;

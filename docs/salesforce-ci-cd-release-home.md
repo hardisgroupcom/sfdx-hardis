@@ -13,3 +13,8 @@ The release manager(s) responsibilities are:
 - [Validate users merge requests](salesforce-ci-cd-validate-merge-request.md)
 - [Proceed deployments to major branches/org (UAT,Preprod,Production...)](salesforce-ci-cd-deploy-major-branches.md)
 - [Configure CI/CD project](salesforce-ci-cd-config-home.md)
+
+You can also see specific use cases documentation
+
+- [sfdx-hardis for ISV](salesforce-ci-cd-packaging.md)
+- [sfdx-hardis for Conga](salesforce-ci-cd-conga.md)

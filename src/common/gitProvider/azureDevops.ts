@@ -133,24 +133,42 @@ ${this.getPipelineVariablesConfig()}
     if (latestMergedPullRequestOnBranch.length > 0) {
       const latestPullRequest = latestMergedPullRequestOnBranch[0];
       const latestPullRequestId = latestPullRequest.pullRequestId;
-      const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
-      for (const existingThread of existingThreads) {
-        if (existingThread.isDeleted) {
-          continue;
-        }
-        for (const comment of existingThread?.comments || []) {
-          if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
-            const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment.content);
-            if (matches) {
-              deploymentCheckId = matches[1];
-              uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
-            }
-            break;
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, latestPullRequestId, deploymentCheckId, latestPullRequest);
+    }
+    return deploymentCheckId;
+  }
+
+  public async getPullRequestDeploymentCheckId(): Promise<string> {
+    const pullRequestInfo = await this.getPullRequestInfo();
+    if (pullRequestInfo) {
+      const azureGitApi = await this.azureApi.getGitApi();
+      const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+      if (repositoryId == null) {
+        uxLog(this, c.yellow("BUILD_REPOSITORY_ID must be defined"));
+        return null;
+      }
+      return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId,pullRequestInfo.pullRequestId, null,pullRequestInfo);
+    }
+  }
+
+  private async getDeploymentIdFromPullRequest(azureGitApi, repositoryId: string, latestPullRequestId: number, deploymentCheckId: any, latestPullRequest) {
+    const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
+    for (const existingThread of existingThreads) {
+      if (existingThread.isDeleted) {
+        continue;
+      }
+      for (const comment of existingThread?.comments || []) {
+        if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
+          const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment.content);
+          if (matches) {
+            deploymentCheckId = matches[1];
+            uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
           }
-        }
-        if (deploymentCheckId) {
           break;
         }
+      }
+      if (deploymentCheckId) {
+        break;
       }
     }
     return deploymentCheckId;

@@ -109,27 +109,41 @@ export class BitbucketProvider extends GitProviderRoot {
     if (latestMergedPullRequestsOnBranch?.data?.values?.length > 0) {
       const latestPullRequest = latestMergedPullRequestsOnBranch?.data?.values[0];
       const latestPullRequestId = latestPullRequest.id;
-      const comments = await this.bitbucket.repositories.listPullRequestComments({
-        pull_request_id: latestPullRequestId,
-        repo_slug: repoSlug,
-        workspace: workspace,
-      });
-
-      for (const comment of comments?.data?.values || []) {
-        if ((comment?.content?.raw || "").includes(`<!-- sfdx-hardis deployment-id `)) {
-          const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment?.content?.raw);
-          if (matches) {
-            deploymentCheckId = matches[1];
-            uxLog(
-              this,
-              c.gray(`[Bitbucket Integration] Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`),
-            );
-          }
-          break;
-        }
-      }
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, repoSlug, workspace, deploymentCheckId, latestPullRequest);
     }
 
+    return deploymentCheckId;
+  }
+
+  public async getPullRequestDeploymentCheckId(): Promise<string> {
+    const pullRequestInfo = await this.getPullRequestInfo();
+    if (pullRequestInfo) {
+      const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+      const workspace = process.env.BITBUCKET_WORKSPACE || null;
+      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.id, repoSlug, workspace, null, pullRequestInfo);
+    }
+  }
+
+  private async getDeploymentIdFromPullRequest(latestPullRequestId: number, repoSlug: string, workspace: string, deploymentCheckId: any, latestPullRequest: Schema.Pullrequest) {
+    const comments = await this.bitbucket.repositories.listPullRequestComments({
+      pull_request_id: latestPullRequestId,
+      repo_slug: repoSlug,
+      workspace: workspace,
+    });
+
+    for (const comment of comments?.data?.values || []) {
+      if ((comment?.content?.raw || "").includes(`<!-- sfdx-hardis deployment-id `)) {
+        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment?.content?.raw);
+        if (matches) {
+          deploymentCheckId = matches[1];
+          uxLog(
+            this,
+            c.gray(`[Bitbucket Integration] Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`)
+          );
+        }
+        break;
+      }
+    }
     return deploymentCheckId;
   }
 

@@ -6,6 +6,7 @@ import { GitlabProvider } from "./gitlab";
 import { GitProviderRoot } from "./gitProviderRoot";
 import { BitbucketProvider } from "./bitbucket";
 import Debug from "debug";
+import { getEnvVar } from "../../config";
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
@@ -114,6 +115,11 @@ export abstract class GitProvider {
       return null;
     }
     try {
+      // Exotic way: get deployment check Id from current Pull Request: https://github.com/hardisgroupcom/sfdx-hardis/issues/637
+      if (this.isDeployBeforeMerge()) {
+        return gitProvider.getPullRequestDeploymentCheckId();
+      }
+      // Classic way: get deployment check Id from latest merged Pull Request
       const currentGitBranch = await getCurrentGitBranch();
       return gitProvider.getBranchDeploymentCheckId(currentGitBranch);
     } catch (e) {
@@ -147,6 +153,11 @@ export abstract class GitProvider {
     const prInfo = gitProvider.getPullRequestInfo();
     debug("[PR Info] " + JSON.stringify(prInfo, null, 2));
     return prInfo;
+  }
+
+  static isDeployBeforeMerge(): boolean {
+    const deployBeforeMerge = getEnvVar("SFDX_HARDIS_DEPLOY_BEFORE_MERGE") || false ;
+    return [true,"true"].includes(deployBeforeMerge);
   }
 }
 
