@@ -156,8 +156,8 @@ export abstract class GitProvider {
   }
 
   static isDeployBeforeMerge(): boolean {
-    const deployBeforeMerge = getEnvVar("SFDX_HARDIS_DEPLOY_BEFORE_MERGE") || false ;
-    return [true,"true"].includes(deployBeforeMerge);
+    const deployBeforeMerge = getEnvVar("SFDX_HARDIS_DEPLOY_BEFORE_MERGE") || false;
+    return [true, "true"].includes(deployBeforeMerge);
   }
 }
 

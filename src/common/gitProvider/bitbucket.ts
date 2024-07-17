@@ -124,7 +124,13 @@ export class BitbucketProvider extends GitProviderRoot {
     }
   }
 
-  private async getDeploymentIdFromPullRequest(latestPullRequestId: number, repoSlug: string, workspace: string, deploymentCheckId: any, latestPullRequest: Schema.Pullrequest) {
+  private async getDeploymentIdFromPullRequest(
+    latestPullRequestId: number,
+    repoSlug: string,
+    workspace: string,
+    deploymentCheckId: any,
+    latestPullRequest: Schema.Pullrequest,
+  ) {
     const comments = await this.bitbucket.repositories.listPullRequestComments({
       pull_request_id: latestPullRequestId,
       repo_slug: repoSlug,
@@ -138,7 +144,7 @@ export class BitbucketProvider extends GitProviderRoot {
           deploymentCheckId = matches[1];
           uxLog(
             this,
-            c.gray(`[Bitbucket Integration] Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`)
+            c.gray(`[Bitbucket Integration] Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`),
           );
         }
         break;

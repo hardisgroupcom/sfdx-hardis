@@ -55,7 +55,13 @@ export class GithubProvider extends GitProviderRoot {
     return null;
   }
 
-  private async getDeploymentIdFromPullRequest(latestPullRequestId: number, repoOwner: string, repoName: string, deploymentCheckId: any, latestPullRequest: any) {
+  private async getDeploymentIdFromPullRequest(
+    latestPullRequestId: number,
+    repoOwner: string,
+    repoName: string,
+    deploymentCheckId: any,
+    latestPullRequest: any,
+  ) {
     uxLog(this, c.grey(`[GitHub integration] Listing comments for PR ${latestPullRequestId}`));
     const existingComments = await this.octokit.rest.issues.listComments({
       owner: repoOwner,

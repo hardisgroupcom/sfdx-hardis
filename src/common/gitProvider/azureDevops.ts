@@ -133,7 +133,13 @@ ${this.getPipelineVariablesConfig()}
     if (latestMergedPullRequestOnBranch.length > 0) {
       const latestPullRequest = latestMergedPullRequestOnBranch[0];
       const latestPullRequestId = latestPullRequest.pullRequestId;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, latestPullRequestId, deploymentCheckId, latestPullRequest);
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(
+        azureGitApi,
+        repositoryId,
+        latestPullRequestId,
+        deploymentCheckId,
+        latestPullRequest,
+      );
     }
     return deploymentCheckId;
   }
@@ -147,11 +153,17 @@ ${this.getPipelineVariablesConfig()}
         uxLog(this, c.yellow("BUILD_REPOSITORY_ID must be defined"));
         return null;
       }
-      return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId,pullRequestInfo.pullRequestId, null,pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, pullRequestInfo.pullRequestId, null, pullRequestInfo);
     }
   }
 
-  private async getDeploymentIdFromPullRequest(azureGitApi, repositoryId: string, latestPullRequestId: number, deploymentCheckId: any, latestPullRequest) {
+  private async getDeploymentIdFromPullRequest(
+    azureGitApi,
+    repositoryId: string,
+    latestPullRequestId: number,
+    deploymentCheckId: any,
+    latestPullRequest,
+  ) {
     const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
     for (const existingThread of existingThreads) {
       if (existingThread.isDeleted) {
