@@ -37,8 +37,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return { title: branch, value: branch };
-          })
+          return { title: branch, value: branch };
+        })
         : [],
       initial: config.developmentBranch || "developpement",
     },
@@ -87,7 +87,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   uxLog(this, c.cyan("Computing commits summary..."));
   const currentGitBranch = await getCurrentGitBranch();
   let logResults: (DefaultLogFields & ListLogLine)[] = [];
-  if (checkOnly) {
+  if (checkOnly || GitProvider.isDeployBeforeMerge()) {
     const prInfo = await GitProvider.getPullRequestInfo();
     const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
     logResults = [...deltaScope.logResult.all];
