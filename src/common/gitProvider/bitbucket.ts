@@ -147,8 +147,8 @@ export class BitbucketProvider extends GitProviderRoot {
             this,
             c.gray(`[Bitbucket Integration] Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`),
           );
+          break;
         }
-        break;
       }
     }
     return deploymentCheckId;

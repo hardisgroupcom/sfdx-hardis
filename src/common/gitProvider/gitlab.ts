@@ -105,8 +105,8 @@ export class GitlabProvider extends GitProviderRoot {
         if (matches) {
           deploymentCheckId = matches[1];
           uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
+          break;
         }
-        break;
       }
     }
     return deploymentCheckId;

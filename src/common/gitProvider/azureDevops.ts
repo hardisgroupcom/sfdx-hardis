@@ -176,8 +176,8 @@ ${this.getPipelineVariablesConfig()}
           if (matches) {
             deploymentCheckId = matches[1];
             uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
+            break;
           }
-          break;
         }
       }
       if (deploymentCheckId) {
