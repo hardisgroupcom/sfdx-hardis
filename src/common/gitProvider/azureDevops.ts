@@ -155,6 +155,7 @@ ${this.getPipelineVariablesConfig()}
       }
       return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, pullRequestInfo.pullRequestId, null, pullRequestInfo);
     }
+    return null;
   }
 
   private async getDeploymentIdFromPullRequest(

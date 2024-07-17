@@ -122,6 +122,7 @@ export class BitbucketProvider extends GitProviderRoot {
       const workspace = process.env.BITBUCKET_WORKSPACE || null;
       return await this.getDeploymentIdFromPullRequest(pullRequestInfo.id, repoSlug, workspace, null, pullRequestInfo);
     }
+    return null;
   }
 
   private async getDeploymentIdFromPullRequest(
