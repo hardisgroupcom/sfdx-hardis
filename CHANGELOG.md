@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [4.46.0] 2024-07-18
 
-- Allow **hardis:project:deploy:source:dx** notifications to work if the deployment is performed before the Pull Request is merged
+- Allow **hardis:project:deploy:source:dx** notifications to work if the deployment is performed before the Pull Request is merged (see [Exotic Use Case](https://github.com/hardisgroupcom/sfdx-hardis/issues/637#issuecomment-2230798904))
   - Activate such mode with variable **SFDX_HARDIS_DEPLOY_BEFORE_MERGE**
 - Add link to [Conga Article](https://medium.com/@nicolasvuillamy/how-to-deploy-conga-composer-configuration-using-salesforce-cli-plugins-c2899641f36b)
 - Add Conga article in README list of articles
