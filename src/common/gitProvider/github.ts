@@ -40,19 +40,40 @@ export class GithubProvider extends GitProviderRoot {
     if (latestPullRequestsOnBranch.data.length > 0) {
       const latestPullRequest = latestPullRequestsOnBranch.data[0];
       const latestPullRequestId = latestPullRequest.number;
-      uxLog(this, c.grey(`[GitHub integration] Listing comments for PR ${latestPullRequestId}`));
-      const existingComments = await this.octokit.rest.issues.listComments({
-        owner: repoOwner,
-        repo: repoName,
-        issue_number: latestPullRequestId,
-      });
-      for (const existingComment of existingComments.data) {
-        if (existingComment.body.includes("<!-- sfdx-hardis deployment-id ")) {
-          const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body);
-          if (matches) {
-            deploymentCheckId = matches[1];
-            uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
-          }
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, repoOwner, repoName, deploymentCheckId, latestPullRequest);
+    }
+    return deploymentCheckId;
+  }
+
+  public async getPullRequestDeploymentCheckId(): Promise<string> {
+    const pullRequestInfo = await this.getPullRequestInfo();
+    if (pullRequestInfo) {
+      const repoOwner = github?.context?.repo?.owner || null;
+      const repoName = github?.context?.repo?.repo || null;
+      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.number, repoOwner, repoName, null, pullRequestInfo);
+    }
+    return null;
+  }
+
+  private async getDeploymentIdFromPullRequest(
+    latestPullRequestId: number,
+    repoOwner: string,
+    repoName: string,
+    deploymentCheckId: any,
+    latestPullRequest: any,
+  ) {
+    uxLog(this, c.grey(`[GitHub integration] Listing comments for PR ${latestPullRequestId}`));
+    const existingComments = await this.octokit.rest.issues.listComments({
+      owner: repoOwner,
+      repo: repoName,
+      issue_number: latestPullRequestId,
+    });
+    for (const existingComment of existingComments.data) {
+      if (existingComment.body.includes("<!-- sfdx-hardis deployment-id ")) {
+        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body);
+        if (matches) {
+          deploymentCheckId = matches[1];
+          uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
           break;
         }
       }

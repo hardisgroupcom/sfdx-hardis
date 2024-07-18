@@ -83,14 +83,28 @@ export class GitlabProvider extends GitProviderRoot {
     if (latestMergeRequestsOnBranch.length > 0) {
       const latestMergeRequest = latestMergeRequestsOnBranch[0];
       const latestMergeRequestId = latestMergeRequest.iid;
-      const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
-      for (const existingNote of existingNotes) {
-        if (existingNote.body.includes("<!-- sfdx-hardis deployment-id ")) {
-          const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
-          if (matches) {
-            deploymentCheckId = matches[1];
-            uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
-          }
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId, latestMergeRequestId, deploymentCheckId, latestMergeRequest);
+    }
+    return deploymentCheckId;
+  }
+
+  public async getPullRequestDeploymentCheckId(): Promise<string> {
+    const pullRequestInfo = await this.getPullRequestInfo();
+    if (pullRequestInfo) {
+      const projectId = process.env.CI_PROJECT_ID || null;
+      return await this.getDeploymentIdFromPullRequest(projectId, pullRequestInfo.iid, null, pullRequestInfo);
+    }
+    return null;
+  }
+
+  private async getDeploymentIdFromPullRequest(projectId: string, latestMergeRequestId: number, deploymentCheckId: any, latestMergeRequest) {
+    const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
+    for (const existingNote of existingNotes) {
+      if (existingNote.body.includes("<!-- sfdx-hardis deployment-id ")) {
+        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
+        if (matches) {
+          deploymentCheckId = matches[1];
+          uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
           break;
         }
       }
