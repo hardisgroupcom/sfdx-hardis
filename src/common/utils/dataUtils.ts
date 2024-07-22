@@ -101,7 +101,7 @@ export async function selectDataWorkspace(opts = { selectDataLabel: "Please sele
     const dtl = await getDataWorkspaceDetail(sfdmuFolder);
     if (dtl !== null) {
       choices.push({
-        title: dtl.full_label,
+        title: `📁 ${dtl.full_label}`,
         description: dtl.description,
         value: sfdmuFolder,
       });

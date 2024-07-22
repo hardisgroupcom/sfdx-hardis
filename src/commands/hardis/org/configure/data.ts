@@ -212,13 +212,13 @@ If you don't have unique field to identify an object, use composite external ids
     for (const templateFile of templateFiles) {
       const templateName = path.basename(templateFile).replace(".json", "");
       templateChoices.push({
-        title: templateName,
+        title: `📝 ${templateName}`,
         value: path.join(templatesFolder, templateFile),
         description: `sfdx-hardis template for ${templateName}`,
       });
     }
 
-    const defaultTemplateChoice = { title: "Blank template", value: "blank", description: "Configure your data import/export from scratch :)" };
+    const defaultTemplateChoice = { title: "📄 Blank template", value: "blank", description: "Configure your data import/export from scratch :)" };
 
     const templateResp = await prompts({
       type: "select",

@@ -40,10 +40,10 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
             return { title: branch, value: branch };
           })
         : [],
-      initial: config.developmentBranch || "developpement",
+      initial: config.developmentBranch || "integration",
     },
   ]);
-  const targetBranch = response.targetBranch || "developpement";
+  const targetBranch = response.targetBranch || "integration";
   return targetBranch;
 }
 

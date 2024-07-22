@@ -498,7 +498,7 @@ export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please se
     const dtl = await getFilesWorkspaceDetail(filesFolder);
     if (dtl !== null) {
       choices.push({
-        title: dtl.full_label,
+        title: `📁 ${dtl.full_label}`,
         description: dtl.description,
         value: filesFolder,
       });

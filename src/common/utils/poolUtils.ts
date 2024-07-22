@@ -152,7 +152,7 @@ export async function tryFetchScratchOrg(options: any) {
       await setConfig("user", { sfdxAuthUrl: authFileContent });
     }
     // Display org URL
-    const openRes = await execSfdxJson(`sfdx force:org:open --urlonly -u ${scratchOrg.scratchOrgAlias}`, this, { fail: false, output: false });
+    const openRes = await execSfdxJson(`sf org open --url-only -u ${scratchOrg.scratchOrgAlias}`, this, { fail: false, output: false });
     uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     // Return scratch org
     await updateActiveScratchOrg(scratchOrg, { Description: `Authenticated by ${os.userInfo().username} on ${moment().format("YYYYMMDD_hhmm")}` });

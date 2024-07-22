@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.47.0] 2024-07-22
+
+- Update emojis in prompts to make them more visible
+- Replace `sfdx force:org:open` by `sf org open`
+
 ## [4.46.0] 2024-07-18
 
 - Allow **hardis:project:deploy:source:dx** notifications to work if the deployment is performed before the Pull Request is merged (see [Exotic Use Case](https://github.com/hardisgroupcom/sfdx-hardis/issues/637#issuecomment-2230798904))

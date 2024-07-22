@@ -64,7 +64,7 @@ export default class OrgSelect extends SfdxCommand {
         message: "Do you want to open this org in Web Browser ?",
       });
       if (openRes.value === true) {
-        const openCommand = `sfdx force:org:open --targetusername ${org.username}`;
+        const openCommand = `sf org open --target-org ${org.username}`;
         await execCommand(openCommand, this, { fail: true, output: true, debug: this.debugMode });
       }
     }

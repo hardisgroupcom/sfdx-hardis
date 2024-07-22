@@ -254,11 +254,11 @@ async function authOrg(orgAlias: string, options: any) {
         message: "Select a login type (if you don't know, use Web)",
         choices: [
           {
-            title: "Web Login (If VsCode is locally installed on your computer)",
+            title: "🌐 Web Login (If VsCode is locally installed on your computer)",
             value: "web",
           },
           {
-            title: "Device Login (Useful for CodeBuilder / CodeSpaces)",
+            title: "📟 Device Login (Useful for CodeBuilder / CodeSpaces)",
             value: "device",
             description: "Look at the instructions in the console terminal if you select this option",
           },

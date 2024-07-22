@@ -253,7 +253,7 @@ export default class ScratchCreate extends SfdxCommand {
         uxLog(this, "[pool] " + c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
         if (!isCI) {
           uxLog(this, c.cyan("Now opening org...") + " " + c.yellow("(The org is not ready to work in until this script is completed !)"));
-          await execSfdxJson("sfdx force:org:open", this, {
+          await execSfdxJson("sf org open", this, {
             fail: true,
             output: false,
             debug: this.debugMode,
@@ -348,7 +348,7 @@ export default class ScratchCreate extends SfdxCommand {
         this.authFileJson = displayResult;
       }
       // Display org URL
-      const openRes = await execSfdxJson("sfdx force:org:open --urlonly", this, {
+      const openRes = await execSfdxJson("sf org open --url-only", this, {
         fail: true,
         output: false,
         debug: this.debugMode,
@@ -356,7 +356,7 @@ export default class ScratchCreate extends SfdxCommand {
       uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     } else {
       // Open scratch org for user if not in CI
-      await execSfdxJson("sfdx force:org:open", this, {
+      await execSfdxJson("sf org open", this, {
         fail: true,
         output: false,
         debug: this.debugMode,
