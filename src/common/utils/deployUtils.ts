@@ -374,7 +374,7 @@ async function displayDeploymentLink(rawLog: string, options: any) {
       deploymentUrl = "lightning/setup/DeployStatus/page?address=" + encodeURIComponent(detailedDeploymentUrl);
     }
     const openRes = await execSfdxJson(
-      `sfdx force:org:open -p ${deploymentUrl} --urlonly` + (options.targetUsername ? ` --targetusername ${options.targetUsername}` : ""),
+      `sf org open -p ${deploymentUrl} --url-only` + (options.targetUsername ? ` --target-org ${options.targetUsername}` : ""),
       this,
       {
         fail: true,

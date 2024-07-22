@@ -103,13 +103,13 @@ You can now call it using ${c.white("sfdx hardis:org:files:export")}
     for (const templateFile of templateFiles) {
       const templateName = path.basename(templateFile).replace(".json", "");
       templateFileChoices.push({
-        title: templateName,
+        title: `📝 ${templateName}`,
         value: path.join(templatesFilesFolder, templateFile),
         description: `sfdx-hardis template for ${templateName}`,
       });
     }
 
-    const defaultTemplateChoice = { title: "Blank template", value: "blank", description: "Configure your files import/export from scratch :)" };
+    const defaultTemplateChoice = { title: "📄 Blank template", value: "blank", description: "Configure your files import/export from scratch :)" };
 
     const templateResp = await prompts({
       type: "select",

@@ -102,11 +102,11 @@ Under the hood, it can:
 
     const defaultBranchPrefixChoices = [
       {
-        title: "Feature",
+        title: "🏗️ Feature",
         value: "features",
         description: "New feature, evolution of an existing feature... If you don't know, just select Feature",
       },
-      { title: "Debug", value: "fixes", description: "A bug has been identified and you are the right person to solve it !" },
+      { title: "🛠️ Debug", value: "fixes", description: "A bug has been identified and you are the right person to solve it !" },
     ];
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
 
@@ -140,10 +140,10 @@ Under the hood, it can:
         message: c.cyanBright("What type(s) of Salesforce updates will you have to perform for this task ?"),
         initial: 0,
         choices: [
-          { title: "Configuration", value: "config", description: "You will update anything in the setup except apex code :)" },
-          { title: "Development", value: "dev", description: "You are a developer who will do magic with Apex or Javascript !" },
+          { title: "🥸 Configuration", value: "config", description: "You will update anything in the setup except apex code :)" },
+          { title: "🤓 Development", value: "dev", description: "You are a developer who will do magic with Apex or Javascript !" },
           {
-            title: "Configuration + Development",
+            title: "🥸🤓 Configuration + Development",
             value: "dev",
             description: "Like the unicorn you are, you will update configuration but also write code :)",
           },
@@ -195,20 +195,20 @@ Under the hood, it can:
     const orgTypeChoices = [];
     if (allowedOrgTypes.includes("sandbox") || allowedOrgTypes.length === 0) {
       orgTypeChoices.push({
-        title: "Sandbox org with source tracking",
+        title: "🌎 Sandbox org with source tracking",
         value: "sandbox",
         description: "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one",
       });
     }
     if (allowedOrgTypes.includes("scratch") || allowedOrgTypes.length === 0) {
       orgTypeChoices.push({
-        title: "Scratch org",
+        title: "🪐 Scratch org",
         value: "scratch",
         description: "Scratch orgs are configured on my project so I want to create or reuse one",
       });
     }
     orgTypeChoices.push({
-      title: "I'm hardcore, I don't need an org !",
+      title: "🤠 I'm hardcore, I don't need an org !",
       value: "noOrg",
       description: "You just want to play with XML and sfdx-hardis configuration, and you know what you are doing !",
     });
@@ -244,14 +244,14 @@ Under the hood, it can:
     const currentOrg = await MetadataUtils.getCurrentOrg();
     const baseChoices = [
       {
-        title: c.yellow("Create new scratch org"),
+        title: c.yellow("🆕 Create new scratch org"),
         value: "newScratchOrg",
         description: "This will generate a new scratch org, and in a few minutes you'll be ready to work",
       },
     ];
     if (currentOrg) {
       baseChoices.push({
-        title: c.yellow(`Reuse current org`),
+        title: c.yellow(`♻️ Reuse current org`),
         value: currentOrg,
         description: `This will reuse current org ${currentOrg.instanceUrl}. Beware of conflicts if others merged merge requests :)`,
       });
@@ -265,7 +265,7 @@ Under the hood, it can:
         ...baseChoices,
         ...scratchOrgList.map((scratchOrg: any) => {
           return {
-            title: `Reuse scratch org ${c.yellow(scratchOrg.alias)}`,
+            title: `☁️ Reuse scratch org ${c.yellow(scratchOrg.alias)}`,
             description: scratchOrg.instanceUrl,
             value: scratchOrg,
           };
@@ -301,7 +301,7 @@ Under the hood, it can:
         c.cyan(`Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(scratchResponse.value.username)}`),
       );
       // Open selected org
-      await execSfdxJson("sfdx force:org:open", this, {
+      await execSfdxJson("sf org open", this, {
         fail: true,
         output: false,
         debug: this.debugMode,
@@ -327,7 +327,7 @@ Under the hood, it can:
       choices: [
         ...[
           {
-            title: c.yellow("Connect to a sandbox not appearing in this list"),
+            title: c.yellow("🌐 Connect to a sandbox not appearing in this list"),
             description: "Login in web browser to your source-tracked sandbox",
             value: "connectSandbox",
           },
@@ -338,7 +338,7 @@ Under the hood, it can:
         ],
         ...sandboxOrgList.map((sandboxOrg: any) => {
           return {
-            title: `Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
+            title: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
             description: sandboxOrg.instanceUrl,
             value: sandboxOrg,
           };
@@ -383,12 +383,12 @@ Under the hood, it can:
       ),
       choices: [
         {
-          title: "No, continue working on my current sandbox state",
+          title: "🧑‍🤝‍🧑 No, continue working on my current sandbox state",
           value: "no",
           description: "Use if you are multiple users in the same SB, or have have uncommitted changes in your sandbox",
         },
         {
-          title: "Yes, please try to update my sandbox !",
+          title: "☢️ Yes, please try to update my sandbox !",
           value: "init",
           description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task. WARNING: Will overwrite uncommitted changes in your org !`,
         },
@@ -444,7 +444,7 @@ Under the hood, it can:
     }
     // Open of if not already open
     if (openOrg === true) {
-      await execSfdxJson("sfdx force:org:open", this, {
+      await execSfdxJson("sf org open", this, {
         fail: true,
         output: false,
         debug: this.debugMode,

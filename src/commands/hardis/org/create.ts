@@ -170,7 +170,7 @@ export default class SandboxCreate extends SfdxCommand {
     WebSocketClient.sendMessage({ event: "refreshStatus" });
 
     // Open sandbox org for user if not in CI
-    await execSfdxJson("sfdx force:org:open", this, {
+    await execSfdxJson("sf org open", this, {
       fail: true,
       output: false,
       debug: this.debugMode,

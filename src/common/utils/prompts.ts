@@ -31,8 +31,8 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     if (question.type === "confirm") {
       question.type = "select";
       question.choices = [
-        { title: "☑ Yes", value: true },
-        { title: "☓ No", value: false },
+        { title: "✅ Yes", value: true },
+        { title: "❌ No", value: false },
       ];
       question.initial = question.initial === false ? 1 : 0;
     }
@@ -54,7 +54,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   if (WebSocketClient.isAlive()) {
     // Use UI prompt
     for (const question of questionsReformatted) {
-      uxLog(this, c.cyan(question.message) + c.white(" ↑↑ Look up in VsCode ↑↑"));
+      uxLog(this, c.cyan(question.message) + c.white(" Look up in VsCode ⬆️"));
       const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
       answers = Object.assign(answers, questionAnswer);
       if (JSON.stringify(answers).toLowerCase().includes("token")) {
