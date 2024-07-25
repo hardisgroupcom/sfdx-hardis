@@ -81,6 +81,7 @@ You can force the daily run of all commands by defining env var `MONITORING_IGNO
 - [Apex tests](#apex-tests)
 - [Quality Checks with MegaLinter](#quality-checks-with-megalinter)
 - [Detect suspect setup actions in major org](#detect-suspect-setup-actions-in-major-org)
+- [Detect limits issues]()
 - [Detect calls to deprecated API versions](#detect-calls-to-deprecated-api-versions)
 - [Detect custom elements with no access rights defined in permission sets](#detect-custom-elements-with-no-access-rights-defined-in-permission-sets)
 - [Detect unused licenses](#detect-unused-licenses)

@@ -10,4 +10,10 @@ Adds a new commit in the git branch with the newest updates since latest monitor
 
 Sfdx-hardis command: [sfdx hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
 
+### Grafana example
+
+![](assets/images/screenshot-monitoring-backup-grafana.jpg)
+
+### Slack example
+
 ![](assets/images/screenshot-monitoring-backup2.jpg)
