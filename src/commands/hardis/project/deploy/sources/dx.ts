@@ -252,7 +252,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
     if (["RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData"].includes(givenTestlevel)) {
-      const testClassList = await getApexTestClasses(testClasses,givenTestlevel === "RunRepositoryTestsExceptSeeAllData");
+      const testClassList = await getApexTestClasses(testClasses, givenTestlevel === "RunRepositoryTestsExceptSeeAllData");
       if (Array.isArray(testClassList) && testClassList.length) {
         this.flags.testlevel = "RunSpecifiedTests";
         testClasses = testClassList.join();
@@ -364,8 +364,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get preDestructiveChanges.xml and add it in options if existing
     const preDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-        this.configInfo.packageXmlToDeletePreDeploy ||
-        fs.existsSync("./manifest/preDestructiveChanges.xml")
+      this.configInfo.packageXmlToDeletePreDeploy ||
+      fs.existsSync("./manifest/preDestructiveChanges.xml")
         ? "./manifest/preDestructiveChanges.xml"
         : "./config/preDestructiveChanges.xml";
     if (fs.existsSync(preDestructiveChanges)) {

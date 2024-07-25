@@ -37,12 +37,12 @@ export async function getApexTestClasses(classRegexFilter: string | null = null,
     if (isTestClass) {
       const className = entry.fileName.substring(0, entry.fileName.length - 4);
       // Check if need to exclude SeeAllData=true
-      if (excludeSeeAllData === true && await findSubstringInFile(entry.fullPath, "SeeAllData=true")) {
+      if (excludeSeeAllData === true && (await findSubstringInFile(entry.fullPath, "SeeAllData=true"))) {
         uxLog(this, c.grey(`Filtered class ${className} because is contains SeeAllData=true`));
         continue;
       }
       // Check if regex filter
-      if ((await matchRegexFilter(classRegexFilter, className))) {
+      if (await matchRegexFilter(classRegexFilter, className)) {
         testClasses.push(className);
       }
     }
