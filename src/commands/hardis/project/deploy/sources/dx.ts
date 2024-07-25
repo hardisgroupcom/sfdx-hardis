@@ -201,7 +201,7 @@ If you need notifications to be sent using the current Pull Request and not the 
     }),
     testlevel: flags.enum({
       char: "l",
-      options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunLocalTests", "RunAllTestsInOrg"],
+      options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData", "RunLocalTests", "RunAllTestsInOrg"],
       description: messages.getMessage("testLevelExtended"),
     }),
     runtests: flags.string({
@@ -251,8 +251,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     let testClasses = this.flags.runtests || this.configInfo.runtests || "";
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
-    if (givenTestlevel === "RunRepositoryTests") {
-      const testClassList = await getApexTestClasses(testClasses);
+    if (["RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData"].includes(givenTestlevel)) {
+      const testClassList = await getApexTestClasses(testClasses,givenTestlevel === "RunRepositoryTestsExceptSeeAllData");
       if (Array.isArray(testClassList) && testClassList.length) {
         this.flags.testlevel = "RunSpecifiedTests";
         testClasses = testClassList.join();
@@ -364,8 +364,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get preDestructiveChanges.xml and add it in options if existing
     const preDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-      this.configInfo.packageXmlToDeletePreDeploy ||
-      fs.existsSync("./manifest/preDestructiveChanges.xml")
+        this.configInfo.packageXmlToDeletePreDeploy ||
+        fs.existsSync("./manifest/preDestructiveChanges.xml")
         ? "./manifest/preDestructiveChanges.xml"
         : "./config/preDestructiveChanges.xml";
     if (fs.existsSync(preDestructiveChanges)) {

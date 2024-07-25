@@ -11,17 +11,15 @@ function findSubstringInFile(filePath: string, substring: string): Promise<boole
         reject(err);
         return;
       }
-
       const content = data.toLowerCase();
       substring = substring.toLowerCase();
-
       resolve(content.indexOf(substring) !== -1);
     });
   });
 }
 
 // Detect all test classes under the repository
-export async function getApexTestClasses(classRegexFilter: string | null) {
+export async function getApexTestClasses(classRegexFilter: string | null = null, excludeSeeAllData = false) {
   const pathToBrowser = process.cwd();
   uxLog(this, c.grey(`Finding all repository APEX tests in ${c.bold(pathToBrowser)}`));
 
@@ -38,7 +36,13 @@ export async function getApexTestClasses(classRegexFilter: string | null) {
     const isTestClass = await findSubstringInFile(entry.fullPath, "@IsTest");
     if (isTestClass) {
       const className = entry.fileName.substring(0, entry.fileName.length - 4);
-      if (await matchRegexFilter(classRegexFilter, className)) {
+      // Check if need to exclude SeeAllData=true
+      if (excludeSeeAllData === true && await findSubstringInFile(entry.fullPath, "SeeAllData=true")) {
+        uxLog(this, c.grey(`Filtered class ${className} because is contains SeeAllData=true`));
+        continue;
+      }
+      // Check if regex filter
+      if ((await matchRegexFilter(classRegexFilter, className))) {
         testClasses.push(className);
       }
     }
