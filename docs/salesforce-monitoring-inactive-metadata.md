@@ -1,6 +1,6 @@
 ---
 title: Inactive Metadatas (Salesforce monitoring)
-description: Schedule daily checks of inative metadata (Flows, Validation rules...) with sfdx-hardis Monitoring
+description: Schedule daily checks of inactive metadata (Flows, Validation rules...) with sfdx-hardis Monitoring
 ---
 <!-- markdownlint-disable MD013 -->
 

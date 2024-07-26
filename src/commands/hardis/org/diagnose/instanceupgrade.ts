@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import axios from "axios";
 import * as moment from "moment";
 import * as c from "chalk";
-import {  uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
@@ -92,7 +92,7 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
     let notifSeverity: NotifSeverity = "log";
     const notifText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
 
-    // Cange severity according to number of days
+    // Change severity according to number of days
     if (daysBeforeUpgrade <= 15) {
       notifSeverity = "warning";
       uxLog(this, c.yellow(notifText));
