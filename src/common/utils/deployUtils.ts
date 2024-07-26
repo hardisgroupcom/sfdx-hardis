@@ -331,8 +331,12 @@ export async function forceSourceDeploy(
 async function handleDeployError(e: any, check: boolean, branchConfig: any, commandThis: any, options: any, deployment: any) {
   const output: string = e.stdout + e.stderr;
   // Handle coverage error if ignored
-  if (check === true && branchConfig?.testCoverageNotBlocking === true &&
-    output.includes("=== Test Success") && !output.includes("Test Failures") && output.includes("=== Apex Code Coverage")
+  if (
+    check === true &&
+    branchConfig?.testCoverageNotBlocking === true &&
+    output.includes("=== Test Success") &&
+    !output.includes("Test Failures") &&
+    output.includes("=== Apex Code Coverage")
   ) {
     uxLog(commandThis, c.yellow(c.bold("Deployment status: Deploy check success & Ignored test coverage error")));
     return;
@@ -347,7 +351,7 @@ async function handleDeployError(e: any, check: boolean, branchConfig: any, comm
   }
   uxLog(
     commandThis,
-    c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`))
+    c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`)),
   );
   await displayDeploymentLink(output, options);
   elapseEnd(`deploy ${deployment.label}`);
@@ -780,10 +784,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -797,10 +801,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sfdx force:source:manifest:create` +
-      ` --manifestname ${manifestName}` +
-      ` --outputdir ${path.resolve(manifestDir)}` +
-      ` --includepackages managed,unlocked` +
-      ` --fromorg ${targetOrgUsernameAlias}`,
+        ` --manifestname ${manifestName}` +
+        ` --outputdir ${path.resolve(manifestDir)}` +
+        ` --includepackages managed,unlocked` +
+        ` --fromorg ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
