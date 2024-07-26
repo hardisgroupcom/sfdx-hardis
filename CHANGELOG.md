@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.49.0] 2024-07-26
+
+- [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): After a failed Quick Deploy, use run with NoTestRun to improve perfs as we had previously succeeded to simulate the deployment
+
 ## [4.48.1] 2024-07-26
 
 - [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): Fix issue with **testCoverageNotBlocking**
