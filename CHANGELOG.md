@@ -4,7 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Allow new mode for running test during deployments: **RunRepositoryTestsExceptSeeAllData** (⚠️ Use with caution !)
+- New command **hardis:org:diagnose:instanceupgrade** to get information about Org, its Salesforcec instance and its next Platform Upgrade date. Sends notifications to Grafana if activated.
+- Refactor Monitoring checks documentation
 
 ## [4.48.1] 2024-07-26
 

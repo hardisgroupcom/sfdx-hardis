@@ -3,11 +3,12 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import axios from "axios";
+import * as moment from "moment";
 import * as c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils";
+import {  uxLog } from "../../../../common/utils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -60,45 +61,72 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
     // Get instance name
     const orgQuery = "SELECT FIELDS(all) FROM Organization LIMIT 1";
     const orgQueryRes = await soqlQuery(orgQuery, this.org.getConnection());
-    const instanceName = orgQueryRes.records[0].InstanceName;
+    const orgInfo = orgQueryRes.records[0];
+    const instanceName = orgInfo.InstanceName;
 
+    // Get Salesforce instance info
     const instanceStatusUrl = `https://api.status.salesforce.com/v1/instances/${instanceName}/status`
     const axiosResponse = await axios.get(instanceStatusUrl);
     const instanceInfo = axiosResponse.data;
     const maintenances = instanceInfo.Maintenances || [];
-    let maintenanceNextUpgrade;
+    orgInfo.maintenanceNextUpgrade = {};
     for (const maintenance of maintenances) {
       if (maintenance.isCore &&
         maintenance.releaseType === "Major" &&
         maintenance.serviceKeys.includes("coreService")) {
-        maintenanceNextUpgrade = maintenance;
+        orgInfo.maintenanceNextUpgrade = maintenance;
         break;
       }
     }
+
+    // Get number of days before next major upgrade
+    const nextUpgradeDate = moment(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
+    const nextMajorUpgradeDateStr = nextUpgradeDate.format()
+    const today = moment();
+    const daysBeforeUpgrade = nextUpgradeDate.diff(today, "days");
 
 
     // Manage notifications
     const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
-    let notifText = `No suspect Setup Audit Trail records has been found in ${orgMarkdown}`;
-    let notifAttachments = [];
+    const notifText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
+
+    // Cange severity according to number of days
+    if (daysBeforeUpgrade <= 15) {
+      notifSeverity = "warning";
+      uxLog(this, c.yellow(notifText));
+    }
+    else if (daysBeforeUpgrade <= 30) {
+      notifSeverity = "info";
+      uxLog(this, c.green(notifText));
+    }
+    else {
+      uxLog(this, c.green(notifText));
+    }
 
     globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "AUDIT_TRAIL",
+      type: "ORG_INFO",
       text: notifText,
-      attachments: notifAttachments,
+      attachments: [],
       buttons: notifButtons,
       severity: notifSeverity,
-      logElements: this.auditTrailRecords,
-      data: { metric: suspectRecords.length },
+      logElements: [orgInfo],
+      data: {
+        metric: daysBeforeUpgrade
+      },
+      metrics: {
+        DayBeforeUpgrade: daysBeforeUpgrade
+      }
     });
 
     // Return an object to be displayed with --json
     return {
-      message: msg,
-      date: upgradeDate
+      message: notifText,
+      nextUpgradeDate: nextUpgradeDate.format(),
+      orgInfo: orgInfo,
+      instanceInfo: instanceInfo
     };
   }
 }
