@@ -21,4 +21,10 @@ Sfdx-hardis command: [sfdx hardis:org:diagnose:unusedlicenses](https://sfdx-hard
 
 Key: **UNUSED_LICENSES**
 
-![](assets/images/screenshot-monitoring-missing-attributes.jpg)
+### Grafana example
+
+![](assets/images/screenshot-monitoring-unused-licenses-grafana.jpg)
+
+### Slack example
+
+![](assets/images/screenshot-monitoring-unused-licenses.jpg)

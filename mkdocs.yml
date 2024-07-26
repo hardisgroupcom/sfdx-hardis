@@ -243,6 +243,19 @@ nav:
           - First merge request: salesforce-ci-cd-setup-merge-request.md
   - Org Monitoring:
       - Monitoring home: salesforce-monitoring-home.md
+      - Monitoring check: 
+          - Metadata Backup: salesforce-monitoring-metadata-backup.md
+          - Suspect Setup Actions: salesforce-monitoring-suspect-audit-trail.md
+          - Apex tests: salesforce-monitoring-apex-tests.md
+          - Quality Checks with MegaLinter: salesforce-monitoring-quality-checks.md
+          - Limits issues: salesforce-monitoring-org-limits.md
+          - Calls to deprecated API versions: salesforce-monitoring-deprecated-api-calls.md
+          - Inactive users: salesforce-monitoring-inactive-users.md
+          - Unused licenses: salesforce-monitoring-unused-users.md
+          - Metadatas without access: salesforce-monitoring-missing-access.md
+          - Unused Custom Labels: salesforce-monitoring-org-unused-metadata.md
+          - Inactive metadata: salesforce-monitoring-inactive-metadata.md
+          - Missing metadata attributes: salesforce-monitoring-missing-metadata-attributes.md      
       - Configuration:
           - Configuration guide: salesforce-monitoring-config-home.md
           - GitHub: salesforce-monitoring-config-github.md

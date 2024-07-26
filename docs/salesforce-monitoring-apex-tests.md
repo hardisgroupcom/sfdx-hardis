@@ -10,4 +10,13 @@ Runs all local test classes of the org and calculate coverage.
 
 Sfdx-hardis command: [sfdx hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/)
 
+### Grafana example
+
+![](assets/images/screenshot-monitoring-apextests-grafana.jpg)
+
+![](assets/images/screenshot-monitoring-apexcoverage-grafana.jpg)
+
+### Slack example
+
 ![](assets/images/screenshot-monitoring-apextests.jpg)
+

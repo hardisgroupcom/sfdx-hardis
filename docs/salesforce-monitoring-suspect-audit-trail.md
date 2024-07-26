@@ -12,4 +12,10 @@ Sfdx-hardis command: [sfdx hardis:org:diagnose:audittrail](https://sfdx-hardis.c
 
 Key: **AUDIT_TRAIL**
 
+### Grafana example
+
+![](assets/images/screenshot-monitoring-audittrail-grafana.jpg)
+
+### Slack example
+
 ![](assets/images/screenshot-monitoring-audittrail.jpg)

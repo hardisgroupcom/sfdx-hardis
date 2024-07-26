@@ -17,4 +17,10 @@ Sfdx-hardis command: [sfdx hardis:lint:unusedmetadatas](https://sfdx-hardis.clou
 
 Key: **UNUSED_METADATAS**
 
+### Grafana example
+
+![](assets/images/screenshot-monitoring-unused-metadatas-grafana.jpg)
+
+### Slack example
+
 ![](assets/images/screenshot-monitoring-unused-metadatas.jpg)

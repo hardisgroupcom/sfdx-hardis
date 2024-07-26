@@ -12,4 +12,10 @@ Sfdx-hardis command: [sfdx hardis:org:diagnose:legacyapi](https://sfdx-hardis.cl
 
 Key: **LEGACY_API**
 
+### Grafana example
+
+![](assets/images/screenshot-monitoring-legacyapi-grafana.jpg)
+
+### Slack example
+
 ![](assets/images/screenshot-monitoring-legacyapi.jpg)

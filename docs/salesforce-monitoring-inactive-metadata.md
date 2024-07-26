@@ -16,4 +16,10 @@ Sfdx-hardis command: [sfdx hardis:lint:metadatastatus](https://sfdx-hardis.cloud
 
 Key: **METADATA_STATUS**
 
+### Grafana example
+
+![](assets/images/screenshot-monitoring-inactive-metadata-grafana.jpg)
+
+### Slack example
+
 ![](assets/images/screenshot-monitoring-inactive-metadata.jpg)

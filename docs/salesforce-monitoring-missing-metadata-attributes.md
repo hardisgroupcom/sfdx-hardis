@@ -12,5 +12,11 @@ Sfdx-hardis command: [sfdx hardis:lint:missingattributes](https://sfdx-hardis.cl
 
 Key: **MISSING_ATTRIBUTES**
 
+### Grafana example
+
+![](assets/images/screenshot-monitoring-missing-attributes-grafana.jpg)
+
+### Slack example
+
 ![](assets/images/screenshot-monitoring-missing-attributes.jpg)
 

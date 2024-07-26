@@ -12,4 +12,10 @@ Sfdx-hardis command: [sfdx hardis:lint:access](https://sfdx-hardis.cloudity.com/
 
 Key: **LINT_ACCESS**
 
+### Grafana example
+
+![](assets/images/screenshot-monitoring-lintaccess-grafana.jpg)
+
+### Slack example
+
 ![](assets/images/screenshot-monitoring-lintaccess.jpg)

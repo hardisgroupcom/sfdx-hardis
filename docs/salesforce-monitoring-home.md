@@ -77,16 +77,17 @@ In order to avoid to overflow channels of notifications, some commands are run e
 
 You can force the daily run of all commands by defining env var `MONITORING_IGNORE_FREQUENCY=true`.
 
-- [Metadata Backup](#metadata-backup)
-- [Apex tests](#apex-tests)
-- [Quality Checks with MegaLinter](#quality-checks-with-megalinter)
-- [Detect suspect setup actions in major org](#detect-suspect-setup-actions-in-major-org)
-- [Detect limits issues]()
-- [Detect calls to deprecated API versions](#detect-calls-to-deprecated-api-versions)
-- [Detect custom elements with no access rights defined in permission sets](#detect-custom-elements-with-no-access-rights-defined-in-permission-sets)
-- [Detect unused licenses](#detect-unused-licenses)
-- [Detect custom labels and custom permissions that are not in use](#detect-custom-labels-and-custom-permissions-that-are-not-in-use)
-- [Detect inactive metadata](#detect-inactive-metadata)
-- [Detect missing attributes](#detect-missing-attributes)
+- [Metadata Backup](salesforce-monitoring-metadata-backup.md)
+- [Detect suspect setup actions in major org](salesforce-monitoring-suspect-audit-trail.md)
+- [Apex tests](salesforce-monitoring-apex-tests.md)
+- [Quality Checks with MegaLinter](salesforce-monitoring-quality-checks.md)
+- [Detect limits issues](salesforce-monitoring-org-limits.md)
+- [Detect calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md)
+- [Detect inactive users](salesforce-monitoring-inactive-users.md)
+- [Detect unused licenses](salesforce-monitoring-unused-users.md)
+- [Detect custom elements with no access rights defined in permission sets](salesforce-monitoring-missing-access.md)
+- [Detect custom labels and custom permissions that are not in use](salesforce-monitoring-org-unused-metadata.md)
+- [Detect inactive metadata](salesforce-monitoring-inactive-metadata.md)
+- [Detect missing attributes](salesforce-monitoring-missing-metadata-attributes.md)
 
 
