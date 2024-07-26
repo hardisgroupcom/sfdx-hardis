@@ -252,24 +252,7 @@ export async function forceSourceDeploy(
           retry: deployment.retry || null,
         });
       } catch (e) {
-        const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, { check: check });
-        uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
-        if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === "false") {
-          uxLog(this, "\n" + errLog);
-        } else {
-          uxLog(this, c.red("\n" + errLog));
-        }
-        uxLog(
-          commandThis,
-          c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`)),
-        );
-        await displayDeploymentLink(e.stdout + e.stderr, options);
-        elapseEnd(`deploy ${deployment.label}`);
-        if (check) {
-          await GitProvider.managePostPullRequestComment();
-        }
-        await executePrePostCommands("commandsPostDeploy", false);
-        throw new SfdxError("Deployment failure. Check messages above");
+        await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
       }
 
       // Set deployment id
@@ -343,6 +326,40 @@ export async function forceSourceDeploy(
   await executePrePostCommands("commandsPostDeploy", true);
   elapseEnd("all deployments");
   return { messages, quickDeploy, deployXmlCount };
+}
+
+async function handleDeployError(e: any, check: boolean, branchConfig: any, commandThis: any, options: any, deployment: any) {
+  const output: string = e.stdout + e.stderr;
+  // Handle coverage error if ignored
+  if (
+    check === true &&
+    branchConfig?.testCoverageNotBlocking === true &&
+    output.includes("=== Test Success") &&
+    !output.includes("Test Failures") &&
+    output.includes("=== Apex Code Coverage")
+  ) {
+    uxLog(commandThis, c.yellow(c.bold("Deployment status: Deploy check success & Ignored test coverage error")));
+    return;
+  }
+  // Handle Effective error
+  const { tips, errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
+  uxLog(commandThis, c.red(c.bold("Sadly there has been Deployment error(s)")));
+  if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === "false") {
+    uxLog(this, "\n" + errLog);
+  } else {
+    uxLog(this, c.red("\n" + errLog));
+  }
+  uxLog(
+    commandThis,
+    c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the deployment issues :)`)),
+  );
+  await displayDeploymentLink(output, options);
+  elapseEnd(`deploy ${deployment.label}`);
+  if (check) {
+    await GitProvider.managePostPullRequestComment();
+  }
+  await executePrePostCommands("commandsPostDeploy", false);
+  throw new SfdxError("Deployment failure. Check messages above");
 }
 
 export function truncateProgressLogLines(rawLog: string) {

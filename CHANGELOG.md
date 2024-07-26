@@ -6,6 +6,15 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Allow new mode for running test during deployments: **RunRepositoryTestsExceptSeeAllData** (⚠️ Use with caution !)
 
+## [4.48.1] 2024-07-26
+
+- [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): Fix issue with **testCoverageNotBlocking**
+
+## [4.48.0] 2024-07-26
+
+- [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): Allow new mode for running test during deployments: **RunRepositoryTestsExceptSeeAllData** (⚠️ Use with caution !)
+
+
 ## [4.47.0] 2024-07-22
 
 - Update emojis in prompts to make them more visible
