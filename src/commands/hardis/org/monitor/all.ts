@@ -142,6 +142,12 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
         frequency: "weekly",
       },
       {
+        key: "ORG_INFO",
+        title: "Get org info + SF instance info + next major upgrade date",
+        command: "sfdx hardis:org:diagnose:instanceupgrade",
+        frequency: "weekly",
+      },
+      {
         key: "UNUSED_METADATAS",
         title: "Detect custom labels and custom permissions that are not in use",
         command: "sfdx hardis:lint:unusedmetadatas",

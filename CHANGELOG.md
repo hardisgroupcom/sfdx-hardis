@@ -6,6 +6,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [4.49.0] 2024-07-26
 
+- New command **hardis:org:diagnose:instanceupgrade** to get information about Org, its Salesforce instance and its next Platform Upgrade date. Sends notifications to Grafana if activated.
+- Refactor Monitoring checks documentation
 - [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): After a failed Quick Deploy, use run with NoTestRun to improve perfs as we had previously succeeded to simulate the deployment
 
 ## [4.48.1] 2024-07-26
@@ -15,6 +17,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.48.0] 2024-07-26
 
 - [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): Allow new mode for running test during deployments: **RunRepositoryTestsExceptSeeAllData** (⚠️ Use with caution !)
+
 
 ## [4.47.0] 2024-07-22
 
