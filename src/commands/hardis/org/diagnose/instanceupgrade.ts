@@ -23,9 +23,7 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
   public static description = `Get the date when the org instance will be upgraded (to Spring, Summer or Winter)
   `;
 
-  public static examples = [
-    "$ sfdx hardis:org:diagnose:instanceupgrade"
-  ];
+  public static examples = ["$ sfdx hardis:org:diagnose:instanceupgrade"];
 
   protected static flagsConfig = {
     debug: flags.boolean({
@@ -52,7 +50,6 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
 
   protected debugMode = false;
 
-
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
@@ -65,15 +62,13 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
     const instanceName = orgInfo.InstanceName;
 
     // Get Salesforce instance info
-    const instanceStatusUrl = `https://api.status.salesforce.com/v1/instances/${instanceName}/status`
+    const instanceStatusUrl = `https://api.status.salesforce.com/v1/instances/${instanceName}/status`;
     const axiosResponse = await axios.get(instanceStatusUrl);
     const instanceInfo = axiosResponse.data;
     const maintenances = instanceInfo.Maintenances || [];
     orgInfo.maintenanceNextUpgrade = {};
     for (const maintenance of maintenances) {
-      if (maintenance.isCore &&
-        maintenance.releaseType === "Major" &&
-        maintenance.serviceKeys.includes("coreService")) {
+      if (maintenance.isCore && maintenance.releaseType === "Major" && maintenance.serviceKeys.includes("coreService")) {
         orgInfo.maintenanceNextUpgrade = maintenance;
         break;
       }
@@ -81,10 +76,9 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
 
     // Get number of days before next major upgrade
     const nextUpgradeDate = moment(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
-    const nextMajorUpgradeDateStr = nextUpgradeDate.format()
+    const nextMajorUpgradeDateStr = nextUpgradeDate.format();
     const today = moment();
     const daysBeforeUpgrade = nextUpgradeDate.diff(today, "days");
-
 
     // Manage notifications
     const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
@@ -96,12 +90,10 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
     if (daysBeforeUpgrade <= 15) {
       notifSeverity = "warning";
       uxLog(this, c.yellow(notifText));
-    }
-    else if (daysBeforeUpgrade <= 30) {
+    } else if (daysBeforeUpgrade <= 30) {
       notifSeverity = "info";
       uxLog(this, c.green(notifText));
-    }
-    else {
+    } else {
       uxLog(this, c.green(notifText));
     }
 
@@ -114,11 +106,11 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
       severity: notifSeverity,
       logElements: [orgInfo],
       data: {
-        metric: daysBeforeUpgrade
+        metric: daysBeforeUpgrade,
       },
       metrics: {
-        DayBeforeUpgrade: daysBeforeUpgrade
-      }
+        DayBeforeUpgrade: daysBeforeUpgrade,
+      },
     });
 
     // Return an object to be displayed with --json
@@ -126,7 +118,7 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
       message: notifText,
       nextUpgradeDate: nextUpgradeDate.format(),
       orgInfo: orgInfo,
-      instanceInfo: instanceInfo
+      instanceInfo: instanceInfo,
     };
   }
 }

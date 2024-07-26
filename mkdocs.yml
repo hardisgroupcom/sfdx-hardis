@@ -243,7 +243,7 @@ nav:
           - First merge request: salesforce-ci-cd-setup-merge-request.md
   - Org Monitoring:
       - Monitoring home: salesforce-monitoring-home.md
-      - Monitoring check: 
+      - Monitoring check:
           - Metadata Backup: salesforce-monitoring-metadata-backup.md
           - Suspect Setup Actions: salesforce-monitoring-suspect-audit-trail.md
           - Apex tests: salesforce-monitoring-apex-tests.md
@@ -255,7 +255,7 @@ nav:
           - Metadatas without access: salesforce-monitoring-missing-access.md
           - Unused Custom Labels: salesforce-monitoring-org-unused-metadata.md
           - Inactive metadata: salesforce-monitoring-inactive-metadata.md
-          - Missing metadata attributes: salesforce-monitoring-missing-metadata-attributes.md      
+          - Missing metadata attributes: salesforce-monitoring-missing-metadata-attributes.md
       - Configuration:
           - Configuration guide: salesforce-monitoring-config-home.md
           - GitHub: salesforce-monitoring-config-github.md
