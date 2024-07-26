@@ -77,138 +77,17 @@ In order to avoid to overflow channels of notifications, some commands are run e
 
 You can force the daily run of all commands by defining env var `MONITORING_IGNORE_FREQUENCY=true`.
 
-- [Metadata Backup](#metadata-backup)
-- [Apex tests](#apex-tests)
-- [Quality Checks with MegaLinter](#quality-checks-with-megalinter)
-- [Detect suspect setup actions in major org](#detect-suspect-setup-actions-in-major-org)
-- [Detect calls to deprecated API versions](#detect-calls-to-deprecated-api-versions)
-- [Detect custom elements with no access rights defined in permission sets](#detect-custom-elements-with-no-access-rights-defined-in-permission-sets)
-- [Detect unused licenses](#detect-unused-licenses)
-- [Detect custom labels and custom permissions that are not in use](#detect-custom-labels-and-custom-permissions-that-are-not-in-use)
-- [Detect inactive metadata](#detect-inactive-metadata)
-- [Detect missing attributes](#detect-missing-attributes)
+- [Metadata Backup](salesforce-monitoring-metadata-backup.md)
+- [Detect suspect setup actions in major org](salesforce-monitoring-suspect-audit-trail.md)
+- [Apex tests](salesforce-monitoring-apex-tests.md)
+- [Quality Checks with MegaLinter](salesforce-monitoring-quality-checks.md)
+- [Detect limits issues](salesforce-monitoring-org-limits.md)
+- [Detect calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md)
+- [Detect inactive users](salesforce-monitoring-inactive-users.md)
+- [Detect unused licenses](salesforce-monitoring-unused-users.md)
+- [Detect custom elements with no access rights defined in permission sets](salesforce-monitoring-missing-access.md)
+- [Detect custom labels and custom permissions that are not in use](salesforce-monitoring-org-unused-metadata.md)
+- [Detect inactive metadata](salesforce-monitoring-inactive-metadata.md)
+- [Detect missing attributes](salesforce-monitoring-missing-metadata-attributes.md)
 
-### Metadata Backup
-
-Adds a new commit in the git branch with the newest updates since latest monitoring run.
-
-Sfdx-hardis command: [sfdx hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
-
-![](assets/images/screenshot-monitoring-backup2.jpg)
-
-### Apex tests
-
-Runs all local test classes of the org and calculate coverage.
-
-Sfdx-hardis command: [sfdx hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/)
-
-![](assets/images/screenshot-monitoring-apextests.jpg)
-
-___
-
-### Quality Checks with MegaLinter
-
-Will check if best practices are applied for:
-
-- Apex with PMD
-- LWC & Aura with eslint
-- Flows with Lightning Flow Scanner
-- Security with checkov, gitleaks, secretlint, trivy...
-
-Full list in [MegaLinter Documentation](https://megalinter.io/latest/flavors/salesforce/)
-
-![](assets/images/screenshot-monitoring-megalinter.jpg)
-
-___
-
-### Detect suspect setup actions in major org
-
-Will extract from audit trail all actions that are considered as suspect, excepted the ones related to the deployment user and a given list of users, like the release manager.
-
-Sfdx-hardis command: [sfdx hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/)
-
-Key: **AUDIT_TRAIL**
-
-![](assets/images/screenshot-monitoring-audittrail.jpg)
-
-___
-
-### Detect calls to deprecated API versions
-
-Will check if [legacy API versions are called by external tools](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238).
-
-Sfdx-hardis command: [sfdx hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/)
-
-Key: **LEGACY_API**
-
-![](assets/images/screenshot-monitoring-legacyapi.jpg)
-
-___
-
-### Detect custom elements with no access rights defined in permission sets
-
-If there are elements that nobody has access to, maybe they should be removed !
-
-Sfdx-hardis command: [sfdx hardis:lint:access](https://sfdx-hardis.cloudity.com/hardis/lint/access/)
-
-Key: **LINT_ACCESS**
-
-![](assets/images/screenshot-monitoring-lintaccess.jpg)
-
-___
-
-### Detect unused licenses
-
-When you assign a Permission Set to a user, and that this Permission Set is related to a Permission Set License, a Permission Set License Assignment is automatically created for the user.
-
-But when you unassign this Permission Set from the user, **the Permission Set License Assignment is not deleted**.
-
-This leads that you can be **charged for Permission Set Licenses that are not used** !
-
-This command detects such useless Permission Set Licenses Assignments and suggests to delete them.
-
-Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command :)
-
-
-Sfdx-hardis command: [sfdx hardis:org:diagnose:unusedlicenses](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/)
-
-Key: **UNUSED_LICENSES**
-
-![](assets/images/screenshot-monitoring-missing-attributes.jpg)
-
-___
-
-### Detect custom labels and custom permissions that are not in use
-
-If there are elements that are not used by anything, maybe they should be removed !
-
-Sfdx-hardis command: [sfdx hardis:lint:unusedmetadatas](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/)
-
-Key: **UNUSED_METADATAS**
-
-![](assets/images/screenshot-monitoring-unused-metadatas.jpg)
-
-___
-
-### Detect inactive metadata
-
-Are you sure this inactive flow should be inactive ?
-
-Sfdx-hardis command: [sfdx hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
-
-Key: **METADATA_STATUS**
-
-![](assets/images/screenshot-monitoring-inactive-metadata.jpg)
-
-___
-
-### Detect missing attributes
-
-Follow best practices by documenting your data model !
-
-Sfdx-hardis command: [sfdx hardis:lint:missingattributes](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
-
-Key: **MISSING_ATTRIBUTES**
-
-![](assets/images/screenshot-monitoring-missing-attributes.jpg)
 
