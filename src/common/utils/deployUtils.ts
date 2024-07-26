@@ -17,6 +17,7 @@ import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils";
 import { ResetMode } from "simple-git";
+import { isSandbox } from "./orgUtils";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -225,6 +226,11 @@ export async function forceSourceDeploy(
           } else {
             uxLog(commandThis, c.yellow(`Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}.`));
             uxLog(commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok :)"));
+            const isSandboxOrg = await isSandbox(options);
+            if (isSandboxOrg) {
+              testlevel = "NoTestRun";
+              uxLog(commandThis, c.green("Note: run with NoTestRun to improve perfs as we had previously succeeded to simulate the deployment"));
+            }
           }
         }
       }
@@ -235,7 +241,7 @@ export async function forceSourceDeploy(
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
         " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
         ` --testlevel ${testlevel}` +
-        (options.testClasses ? ` --runtests ${options.testClasses}` : "") +
+        (options.testClasses && testlevel !== "NoTestRun" ? ` --runtests ${options.testClasses}` : "") +
         (options.preDestructiveChanges ? ` --predestructivechanges ${options.preDestructiveChanges}` : "") +
         (options.postDestructiveChanges ? ` --postdestructivechanges ${options.postDestructiveChanges}` : "") +
         (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
