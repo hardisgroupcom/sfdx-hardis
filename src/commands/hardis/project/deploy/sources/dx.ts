@@ -191,6 +191,7 @@ If you need notifications to be sent using the current Pull Request and not the 
     "$ sfdx hardis:project:deploy:sources:dx --check",
     "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests",
     "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
+    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTestsExceptSeeAllData",
   ];
 
   protected static flagsConfig = {
@@ -201,7 +202,7 @@ If you need notifications to be sent using the current Pull Request and not the 
     }),
     testlevel: flags.enum({
       char: "l",
-      options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunLocalTests", "RunAllTestsInOrg"],
+      options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData", "RunLocalTests", "RunAllTestsInOrg"],
       description: messages.getMessage("testLevelExtended"),
     }),
     runtests: flags.string({
@@ -251,8 +252,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     let testClasses = this.flags.runtests || this.configInfo.runtests || "";
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
-    if (givenTestlevel === "RunRepositoryTests") {
-      const testClassList = await getApexTestClasses(testClasses);
+    if (["RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData"].includes(givenTestlevel)) {
+      const testClassList = await getApexTestClasses(testClasses, givenTestlevel === "RunRepositoryTestsExceptSeeAllData");
       if (Array.isArray(testClassList) && testClassList.length) {
         this.flags.testlevel = "RunSpecifiedTests";
         testClasses = testClassList.join();

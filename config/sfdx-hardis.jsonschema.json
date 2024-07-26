@@ -1075,7 +1075,7 @@
       "$id": "#/properties/testLevel",
       "description": "WARNING: Use with caution, only in branch scoped config ! You can override default test level for deployments for special use cases, for example when you have SeeAllData=true you can use RunRepositoryTests associated with a regex in runtests option",
       "default": "RunLocalTests",
-      "enum": ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunLocalTests", "RunAllTestsInOrg"],
+      "enum": ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData", "RunLocalTests", "RunAllTestsInOrg"],
       "examples": ["RunRepositoryTests", "RunSpecifiedTests"],
       "title": "Test level for deployments",
       "type": "string"

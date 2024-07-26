@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.48.0] 2024-07-26
+
+- [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): Allow new mode for running test during deployments: **RunRepositoryTestsExceptSeeAllData** (⚠️ Use with caution !)
+
 ## [4.47.0] 2024-07-22
 
 - Update emojis in prompts to make them more visible
