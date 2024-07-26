@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [4.49.0] 2024-07-26
+## [4.49.0] 2024-07-27
 
 - New command **hardis:org:diagnose:instanceupgrade** to get information about Org, its Salesforce instance and its next Platform Upgrade date. Sends notifications to Grafana if activated.
 - Refactor Monitoring checks documentation
