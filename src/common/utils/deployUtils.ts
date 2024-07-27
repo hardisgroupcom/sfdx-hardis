@@ -258,7 +258,7 @@ export async function forceSourceDeploy(
           retry: deployment.retry || null,
         });
       } catch (e) {
-        await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
+        deployRes = await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
       }
 
       // Set deployment id
@@ -345,7 +345,7 @@ async function handleDeployError(e: any, check: boolean, branchConfig: any, comm
     output.includes("=== Apex Code Coverage")
   ) {
     uxLog(commandThis, c.yellow(c.bold("Deployment status: Deploy check success & Ignored test coverage error")));
-    return;
+    return { status: 0, stdout: e.stdout, stderr: e.stderr };
   }
   // Handle Effective error
   const { tips, errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
