@@ -103,7 +103,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
         key: "LEGACY_API",
         title: "Detect calls to deprecated API versions",
         command: "sfdx hardis:org:diagnose:legacyapi",
-        frequency: "weekly",
+        frequency: "daily",
       },
       {
         key: "ORG_LIMITS",
