@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add message in case of deployment check passing thanks to `testCoverageNotBlocking: true`
+
 ## [4.49.1] 2024-07-27
 
 - Fix 4.49.0 (deployment error handler bug)

@@ -305,6 +305,9 @@ export async function forceSourceDeploy(
           `[sfdx-hardis] Successfully ${check ? "checked deployment of" : "deployed"} ${c.bold(deployment.label)} to target Salesforce org - ` +
           extraInfo;
         uxLog(commandThis, c.green(message));
+        if (deployRes?.testCoverageNotBlockingActivated === true) {
+          uxLog(commandThis,c.yellow("There is a code coverage issue, but the check is passing by design because you configured testCoverageNotBlocking: true in your branch .sfdx-hardis.yml") )
+        }
       } else {
         message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org - ` + extraInfo;
         uxLog(commandThis, c.red(c.bold(deployRes.errorMessage)));
@@ -345,7 +348,7 @@ async function handleDeployError(e: any, check: boolean, branchConfig: any, comm
     output.includes("=== Apex Code Coverage")
   ) {
     uxLog(commandThis, c.yellow(c.bold("Deployment status: Deploy check success & Ignored test coverage error")));
-    return { status: 0, stdout: e.stdout, stderr: e.stderr };
+    return { status: 0, stdout: e.stdout, stderr: e.stderr, testCoverageNotBlockingActivated: true };
   }
   // Handle Effective error
   const { tips, errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
