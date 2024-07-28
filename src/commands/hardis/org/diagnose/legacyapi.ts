@@ -86,7 +86,7 @@ See article below
       maxApiVersion: 6.0,
       severity: "ERROR",
       deprecationRelease: "Summer 21 - retirement of 1 to 6  ",
-      errors: []
+      errors: [],
     },
     {
       apiFamily: ["SOAP", "REST", "BULK_API"],
@@ -94,7 +94,7 @@ See article below
       maxApiVersion: 20.0,
       severity: "ERROR",
       deprecationRelease: "Summer 22 - retirement of 7 to 20 ",
-      errors: []
+      errors: [],
     },
     {
       apiFamily: ["SOAP", "REST", "BULK_API"],
@@ -102,7 +102,7 @@ See article below
       maxApiVersion: 30.0,
       severity: "WARNING",
       deprecationRelease: "Summer 25 - retirement of 21 to 30",
-      errors: []
+      errors: [],
     },
   ];
 
@@ -151,28 +151,30 @@ See article below
     for (const eventLogFile of eventLogRes.records) {
       await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
     }
-    this.allErrors = [...this.legacyApiDescriptors[0].errors, ...this.legacyApiDescriptors[1].errors, ...this.legacyApiDescriptors[2].errors]
+    this.allErrors = [...this.legacyApiDescriptors[0].errors, ...this.legacyApiDescriptors[1].errors, ...this.legacyApiDescriptors[2].errors];
 
     // Display summary
     uxLog(this, "");
     uxLog(this, c.cyan("Results:"));
     for (const descriptor of this.legacyApiDescriptors) {
-      const colorMethod = descriptor.severity === "ERROR" && descriptor.errors.length > 0 ? c.red :
-        descriptor.severity === "WARNING" && descriptor.errors.length > 0 ? c.yellow :
-          c.green;
+      const colorMethod =
+        descriptor.severity === "ERROR" && descriptor.errors.length > 0
+          ? c.red
+          : descriptor.severity === "WARNING" && descriptor.errors.length > 0
+            ? c.yellow
+            : c.green;
       uxLog(this, colorMethod(`- ${descriptor} : ${c.bold(descriptor.errors.length)}`));
     }
     uxLog(this, "");
 
-
     // Build command result
     let msg = "No deprecated API call has been found in ApiTotalUsage logs";
     let statusCode = 0;
-    if (this.legacyApiDescriptors.filter(descriptor => descriptor.severity === "ERROR" && descriptor.errors.length > 0).length > 0) {
+    if (this.legacyApiDescriptors.filter((descriptor) => descriptor.severity === "ERROR" && descriptor.errors.length > 0).length > 0) {
       msg = "Found legacy API versions calls in logs";
       statusCode = 1;
       uxLog(this, c.red(c.bold(msg)));
-    } else if (this.legacyApiDescriptors.filter(descriptor => descriptor.severity === "WARNING" && descriptor.errors.length > 0).length > 0) {
+    } else if (this.legacyApiDescriptors.filter((descriptor) => descriptor.severity === "WARNING" && descriptor.errors.length > 0).length > 0) {
       msg = "Found deprecated API versions calls in logs that will not be supported anymore in the future";
       statusCode = 0;
       uxLog(this, c.yellow(c.bold(msg)));
@@ -253,7 +255,7 @@ See article to solve issue before it's too late:
       message: msg,
       csvLogFile: this.outputFile,
       outputFileIps: outputFileIps,
-      legacyApiResults: this.legacyApiDescriptors
+      legacyApiResults: this.legacyApiDescriptors,
     };
   }
 

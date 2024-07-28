@@ -306,7 +306,12 @@ export async function forceSourceDeploy(
           extraInfo;
         uxLog(commandThis, c.green(message));
         if (deployRes?.testCoverageNotBlockingActivated === true) {
-          uxLog(commandThis,c.yellow("There is a code coverage issue, but the check is passing by design because you configured testCoverageNotBlocking: true in your branch .sfdx-hardis.yml") )
+          uxLog(
+            commandThis,
+            c.yellow(
+              "There is a code coverage issue, but the check is passing by design because you configured testCoverageNotBlocking: true in your branch .sfdx-hardis.yml",
+            ),
+          );
         }
       } else {
         message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org - ` + extraInfo;
