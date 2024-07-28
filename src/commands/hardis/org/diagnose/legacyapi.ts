@@ -85,7 +85,7 @@ See article below
       minApiVersion: 1.0,
       maxApiVersion: 6.0,
       severity: "ERROR",
-      deprecationRelease: "Summer 21 - retirement of 1 to 6  ",
+      deprecationRelease: "Summer 21 - retirement of 1 to 6",
       errors: [],
     },
     {
@@ -93,7 +93,7 @@ See article below
       minApiVersion: 7.0,
       maxApiVersion: 20.0,
       severity: "ERROR",
-      deprecationRelease: "Summer 22 - retirement of 7 to 20 ",
+      deprecationRelease: "Summer 22 - retirement of 7 to 20",
       errors: [],
     },
     {
@@ -163,7 +163,7 @@ See article below
           : descriptor.severity === "WARNING" && descriptor.errors.length > 0
             ? c.yellow
             : c.green;
-      uxLog(this, colorMethod(`- ${descriptor} : ${c.bold(descriptor.errors.length)}`));
+      uxLog(this, colorMethod(`- ${descriptor.deprecationRelease} : ${c.bold(descriptor.errors.length)}`));
     }
     uxLog(this, "");
 
@@ -201,7 +201,7 @@ See article below
     // Debug or manage CSV file generation error
     if (this.debugMode || this.outputFile == null) {
       for (const descriptor of this.legacyApiDescriptors) {
-        uxLog(this, c.grey(`- ${descriptor} : ${JSON.stringify(descriptor.errors.length)}`));
+        uxLog(this, c.grey(`- ${descriptor.deprecationRelease} : ${JSON.stringify(descriptor.errors.length)}`));
       }
     }
 
