@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Add message in case of deployment check passing thanks to `testCoverageNotBlocking: true`
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) : Fix display error declared in bug [#652](https://github.com/hardisgroupcom/sfdx-hardis/issues/652)
 
 ## [4.49.1] 2024-07-27
 

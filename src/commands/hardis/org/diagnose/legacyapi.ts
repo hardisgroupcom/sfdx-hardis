@@ -86,6 +86,7 @@ See article below
       maxApiVersion: 6.0,
       severity: "ERROR",
       deprecationRelease: "Summer 21 - retirement of 1 to 6  ",
+      errors: []
     },
     {
       apiFamily: ["SOAP", "REST", "BULK_API"],
@@ -93,6 +94,7 @@ See article below
       maxApiVersion: 20.0,
       severity: "ERROR",
       deprecationRelease: "Summer 22 - retirement of 7 to 20 ",
+      errors: []
     },
     {
       apiFamily: ["SOAP", "REST", "BULK_API"],
@@ -100,6 +102,7 @@ See article below
       maxApiVersion: 30.0,
       severity: "WARNING",
       deprecationRelease: "Summer 25 - retirement of 21 to 30",
+      errors: []
     },
   ];
 
@@ -145,36 +148,31 @@ See article below
 
     // Collect legacy api calls from logs
     uxLog(this, c.grey("Calling org API to get CSV content of each EventLogFile record, then parse and analyze it..."));
-    const allDeadApiCalls = [];
-    const allSoonDeprecatedApiCalls = [];
-    const allEndOfSupportApiCalls = [];
     for (const eventLogFile of eventLogRes.records) {
-      const { deadApiCalls, soonDeprecatedApiCalls, endOfSupportApiCalls } = await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
-      allDeadApiCalls.push(...deadApiCalls);
-      allSoonDeprecatedApiCalls.push(...soonDeprecatedApiCalls);
-      allEndOfSupportApiCalls.push(...endOfSupportApiCalls);
+      await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
     }
-    this.allErrors = allDeadApiCalls.concat(allSoonDeprecatedApiCalls, allEndOfSupportApiCalls);
+    this.allErrors = [...this.legacyApiDescriptors[0].errors, ...this.legacyApiDescriptors[1].errors, ...this.legacyApiDescriptors[2].errors]
 
     // Display summary
-    const deadColor = allDeadApiCalls.length === 0 ? c.green : c.red;
-    const deprecatedColor = allSoonDeprecatedApiCalls.length === 0 ? c.green : c.red;
-    const endOfSupportColor = allEndOfSupportApiCalls.length === 0 ? c.green : c.yellow;
     uxLog(this, "");
     uxLog(this, c.cyan("Results:"));
-    uxLog(this, deadColor(`- ${this.legacyApiDescriptors[0].deprecationRelease} : ${c.bold(allDeadApiCalls.length)}`));
-    uxLog(this, deprecatedColor(`- ${this.legacyApiDescriptors[1].deprecationRelease} : ${c.bold(allSoonDeprecatedApiCalls.length)}`));
-    uxLog(this, endOfSupportColor(`- ${this.legacyApiDescriptors[2].deprecationRelease} : ${c.bold(allEndOfSupportApiCalls.length)}`));
+    for (const descriptor of this.legacyApiDescriptors) {
+      const colorMethod = descriptor.severity === "ERROR" && descriptor.errors.length > 0 ? c.red :
+        descriptor.severity === "WARNING" && descriptor.errors.length > 0 ? c.yellow :
+          c.green;
+      uxLog(this, colorMethod(`- ${descriptor} : ${c.bold(descriptor.errors.length)}`));
+    }
     uxLog(this, "");
+
 
     // Build command result
     let msg = "No deprecated API call has been found in ApiTotalUsage logs";
     let statusCode = 0;
-    if (allDeadApiCalls.length > 0 || allSoonDeprecatedApiCalls.length > 0) {
+    if (this.legacyApiDescriptors.filter(descriptor => descriptor.severity === "ERROR" && descriptor.errors.length > 0).length > 0) {
       msg = "Found legacy API versions calls in logs";
       statusCode = 1;
       uxLog(this, c.red(c.bold(msg)));
-    } else if (allEndOfSupportApiCalls.length > 0) {
+    } else if (this.legacyApiDescriptors.filter(descriptor => descriptor.severity === "WARNING" && descriptor.errors.length > 0).length > 0) {
       msg = "Found deprecated API versions calls in logs that will not be supported anymore in the future";
       statusCode = 0;
       uxLog(this, c.yellow(c.bold(msg)));
@@ -189,8 +187,7 @@ See article below
     // Generate one summary file by severity
     const outputFileIps = [];
     for (const descriptor of this.legacyApiDescriptors) {
-      const errors =
-        descriptor.severity === "ERROR" ? allDeadApiCalls : descriptor.severity === "WARNING" ? allSoonDeprecatedApiCalls : allEndOfSupportApiCalls;
+      const errors = descriptor.errors;
       if (errors.length > 0) {
         const outputFileIp = await this.generateSummaryLog(errors, descriptor.severity);
         outputFileIps.push(outputFileIp);
@@ -201,20 +198,16 @@ See article below
 
     // Debug or manage CSV file generation error
     if (this.debugMode || this.outputFile == null) {
-      uxLog(this, c.grey(c.bold("Dead API version calls:") + JSON.stringify(allDeadApiCalls, null, 2)));
-      uxLog(this, c.grey(c.bold("Dead API version calls:") + JSON.stringify(allSoonDeprecatedApiCalls, null, 2)));
-      uxLog(this, c.grey(c.bold("Deprecated API version calls:") + JSON.stringify(allEndOfSupportApiCalls, null, 2)));
+      for (const descriptor of this.legacyApiDescriptors) {
+        uxLog(this, c.grey(`- ${descriptor} : ${JSON.stringify(descriptor.errors.length)}`));
+      }
     }
 
     let notifDetailText = "";
-    if (allDeadApiCalls.length > 0) {
-      notifDetailText += `• Dead API version calls found in logs: ${allDeadApiCalls.length} (${this.legacyApiDescriptors[0].deprecationRelease})\n`;
-    }
-    if (allSoonDeprecatedApiCalls.length > 0) {
-      notifDetailText += `• Dead API version calls found in logs     : ${allSoonDeprecatedApiCalls.length} (${this.legacyApiDescriptors[1].deprecationRelease})\n`;
-    }
-    if (allEndOfSupportApiCalls.length > 0) {
-      notifDetailText += `• Deprecated API version calls found in logs : ${allEndOfSupportApiCalls.length} (${this.legacyApiDescriptors[2].deprecationRelease})\n`;
+    for (const descriptor of this.legacyApiDescriptors) {
+      if (descriptor.errors.length > 0) {
+        notifDetailText += `• ${descriptor.severity}: API version calls found in logs: ${descriptor.errors.length} (${descriptor.deprecationRelease})\n`;
+      }
     }
 
     notifDetailText += `
@@ -260,18 +253,15 @@ See article to solve issue before it's too late:
       message: msg,
       csvLogFile: this.outputFile,
       outputFileIps: outputFileIps,
-      allDeadApiCalls,
-      allSoonDeprecatedApiCalls,
-      allEndOfSupportApiCalls,
+      legacyApiResults: this.legacyApiDescriptors
     };
   }
 
   // GET csv log file and check for legacy API calls within
   private async collectDeprecatedApiCalls(logFileUrl: string, conn: any) {
-    const deadApiCalls = [];
-    const soonDeprecatedApiCalls = [];
-    const endOfSupportApiCalls = [];
+    uxLog(this, c.grey(`- Request info for ${logFileUrl} ...`));
     const logEntries = await conn.request(logFileUrl);
+    uxLog(this, c.grey(`-- Processing ${logEntries.length} returned entries...`));
     const severityIconError = getSeverityIcon("error");
     const severityIconWarning = getSeverityIcon("warning");
     const severityIconInfo = getSeverityIcon("info");
@@ -291,22 +281,19 @@ See article to solve issue before it's too late:
           if (legacyApiDescriptor.severity === "ERROR") {
             logEntry.severity = "error";
             logEntry.severityIcon = severityIconError;
-            deadApiCalls.push(logEntry);
           } else if (legacyApiDescriptor.severity === "WARNING") {
             logEntry.severity = "warning";
             logEntry.severityIcon = severityIconWarning;
-            soonDeprecatedApiCalls.push(logEntry);
           } else {
             // severity === 'INFO'
             logEntry.severity = "info";
             logEntry.severityIcon = severityIconInfo;
-            endOfSupportApiCalls.push(logEntry);
           }
+          legacyApiDescriptor.errors.push(logEntry);
           break;
         }
       }
     }
-    return { deadApiCalls, soonDeprecatedApiCalls, endOfSupportApiCalls };
   }
 
   private async generateSummaryLog(errors, severity) {
