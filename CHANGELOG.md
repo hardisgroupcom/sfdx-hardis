@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [4.50.1] 2024-07-29
+
 - Fix report file name of [hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/)
+- Fix crash when GitProvider has been wrongly configured, and display information message
 
 ## [4.50.0] 2024-07-29
 
