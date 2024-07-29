@@ -152,7 +152,7 @@ export abstract class GitProvider {
     }
     let prInfo: any;
     try {
-      prInfo = gitProvider.getPullRequestInfo();
+      prInfo = await gitProvider.getPullRequestInfo();
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
     } catch (e) {
       uxLog(this, c.yellow("[GitProvider] Unable to get Pull Request info: " + e.message));
