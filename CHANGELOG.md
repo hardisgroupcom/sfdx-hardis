@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix report file name of [hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/)
+
 ## [4.50.0] 2024-07-29
 
 - Add message in case of deployment check passing thanks to `testCoverageNotBlocking: true`

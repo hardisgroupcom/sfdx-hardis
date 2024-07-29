@@ -20,7 +20,11 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class MonitorBackup extends SfdxCommand {
   public static title = "Check org limits";
 
-  public static description = `Check limits of a SF org and send relatednotifications`;
+  public static description = `Check limits of a SF org and send related notifications
+
+Used in [sfdx-hardis monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-org-limits/) to send messages to Slack, Teams, Email and Grafana. 
+
+`;
 
   public static examples = ["$ sfdx hardis:org:monitor:limits"];
 
@@ -93,7 +97,7 @@ export default class MonitorBackup extends SfdxCommand {
 
     console.table(this.limitEntries);
 
-    this.outputFile = await generateReportPath("lint-unusedmetadatas", this.outputFile);
+    this.outputFile = await generateReportPath("org-limits", this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.limitEntries, this.outputFile);
 
     const limitsError = this.limitEntries.filter((limit) => limit.severity === "error");
