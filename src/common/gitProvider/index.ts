@@ -150,8 +150,16 @@ export abstract class GitProvider {
       debug("[PR Info] No GitProvider instance found");
       return null;
     }
-    const prInfo = gitProvider.getPullRequestInfo();
-    debug("[PR Info] " + JSON.stringify(prInfo, null, 2));
+    let prInfo: any;
+    try {
+      prInfo = await gitProvider.getPullRequestInfo();
+      debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
+    } catch (e) {
+      uxLog(this, c.yellow("[GitProvider] Unable to get Pull Request info: " + e.message));
+      uxLog(this, c.yellow(`[GitProvider] Maybe you misconfigured your ${gitProvider.getLabel()} ?`));
+      uxLog(this, c.yellow(`[GitProvider] See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#git-providers`));
+      prInfo = null;
+    }
     return prInfo;
   }
 
