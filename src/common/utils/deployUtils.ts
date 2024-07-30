@@ -836,6 +836,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   }
   // Add Elements that are not returned by sfdx command
   if (conn) {
+    uxLog(this, c.grey("Looking for package.xml elements that are not returned by manifest create command..."))
     const mdTypes = [{ type: "ListView" }, { type: "CustomLabel" }];
     const mdList = await conn.metadata.list(mdTypes, CONSTANTS.API_VERSION);
     const parsedPackageXml = await parseXmlFile(packageXmlFull);
