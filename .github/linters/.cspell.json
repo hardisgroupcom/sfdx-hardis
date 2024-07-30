@@ -59,6 +59,8 @@
     "Dreamin",
     "EAAU",
     "ECAU",
+    "ECONNABORTED",
+    "ECONNRESET",
     "EDITORCONFIG",
     "Eqoehef",
     "Externe",

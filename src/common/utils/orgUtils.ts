@@ -115,16 +115,16 @@ export async function promptOrg(
     ...sortArray(orgListResult?.scratchOrgs || [], { by: ["devHubUsername", "username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     ...sortArray(orgListResult?.nonScratchOrgs || [], { by: ["username", "alias", "instanceUrl"], order: ["asc", "asc", "asc"] }),
     {
-      username: "Connect to another org",
+      username: "🌍 Connect to another org",
       otherOrg: true,
       descriptionForUi: "Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org",
     },
     {
-      username: "I already authenticated my org but I don't see it !",
+      username: "😱 I already authenticated my org but I don't see it !",
       clearCache: true,
       descriptionForUi: "It might be a sfdx-hardis cache issue, reset it and try again !",
     },
-    { username: "Cancel", cancel: true, descriptionForUi: "Get out of here :)" },
+    { username: "❌ Cancel", cancel: true, descriptionForUi: "Get out of here :)" },
   ];
 
   // Filter if we want to list only the scratch attached to current devhub
@@ -180,7 +180,7 @@ export async function promptOrg(
 
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === "RefreshTokenAuthError") {
-    uxLog(this, c.yellow(`Your authentication is expired. Please login again in the web browser`));
+    uxLog(this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
     const loginCommand = "sfdx auth:web:login" + ` --instanceurl ${org.instanceUrl}`;
     const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: true });
     org = loginResult.result;
