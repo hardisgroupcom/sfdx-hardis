@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Handle bug when a branch .sfdx-hardis.yml config file is empty
 - Upgrade default API version to 61
 - Additional log when generating manifest package.xml from org
+- Add error tip: Network issue (ECONNABORTED, ECONNRESET)
 
 ## [4.50.1] 2024-07-29
 

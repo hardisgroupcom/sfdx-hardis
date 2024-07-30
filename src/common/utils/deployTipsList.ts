@@ -517,6 +517,13 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
 `,
     },
     {
+      name: "network-issue",
+      label: "Network issue",
+      expressionString: ["ECONNABORTED","ECONNRESET"],
+      tip: `The network connection has been aborted, this is a purely technical issue.
+Try again, and if you still see errors, check the status of Salesforce instance on https://status.salesforce.com`,
+    },
+    {
       name: "not-available-for-deploy-for-this-org",
       label: "Not available for deploy for this organization",
       expressionRegex: [/Error (.*) Not available for deploy for this organization/gm],
