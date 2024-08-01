@@ -5851,13 +5851,6 @@ moment@^2.15.1, moment@^2.24.0, moment@^2.29.1:
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.4.tgz#3dbe052889fe7c1b2ed966fcb3a77328964ef108"
   integrity sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==
 
-ms-teams-webhook@^2.0.2:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/ms-teams-webhook/-/ms-teams-webhook-2.0.2.tgz#39173b9ccb125b4a960bde38d449c3e397daf358"
-  integrity sha512-yRIekmDQtxvprfm/PLtKoqDatEhoW70mIh96JmWOBSVyE+Lfr6SPQmWaSHKHy6DVusVm1rYDhXs0rbA5CgvB1w==
-  dependencies:
-    axios "^0.21.1"
-
 ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/ms/-/ms-2.0.0.tgz"
