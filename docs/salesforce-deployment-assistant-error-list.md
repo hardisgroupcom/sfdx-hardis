@@ -341,7 +341,7 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
 ---
 ## Error parsing file
 
-- `Error (.*) Error parsing file: (.*)`
+- `Error (.*) Error parsing file: (.*) `
 
 **Resolution tip**
 
@@ -796,6 +796,19 @@ You can not deploy multiple SharingRules at the same time. You can either:
 ```
 
 ---
+## Network issue
+
+- `ECONNABORTED`
+- `ECONNRESET`
+
+**Resolution tip**
+
+```shell
+The network connection has been aborted, this is a purely technical issue.
+Try again, and if you still see errors, check the status of Salesforce instance on https://status.salesforce.com
+```
+
+---
 ## Not available for deploy for this organization
 
 - `Error (.*) Not available for deploy for this organization`
@@ -999,7 +1012,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 ---
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 
