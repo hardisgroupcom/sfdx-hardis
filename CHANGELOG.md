@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Deprecate Microsoft Teams Web Hooks notifications
+  - Must be replaced by [Email Notifications](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-email/) using the Ms Teams Channel email.
 - Handle bug when a branch .sfdx-hardis.yml config file is empty
 - Upgrade default API version to 61
 - Additional log when generating manifest package.xml from org
