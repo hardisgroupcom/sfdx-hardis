@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
@@ -214,7 +214,7 @@ export default class CleanReferences extends SfdxCommand {
 
     // Clean package.xml file from deleted items
     uxLog(this, c.grey(`Cleaning package.xml files...`));
-    const patternPackageXml = process.cwd() + "/**/manifest/**/package*.xml";
+    const patternPackageXml = "**/manifest/**/package*.xml";
     const packageXmlFiles = await glob(patternPackageXml, {
       cwd: process.cwd(),
     });
@@ -276,19 +276,17 @@ export default class CleanReferences extends SfdxCommand {
   private async manageDeleteRelatedFiles(type) {
     // Custom fields
     if (type === "CustomField") {
-      await Promise.all(
-        Object.keys(this.deleteItems[type]).map(async (field) => {
-          await this.manageDeleteCustomFieldRelatedFiles(field);
-        }),
-      );
+      for (const field of this.deleteItems[type] || []) {
+        await this.manageDeleteCustomFieldRelatedFiles(field);
+      }
     }
   }
 
   private async manageDeleteCustomFieldRelatedFiles(field: string) {
     // Remove custom field and customTranslation
     const [obj, fld] = field.split(".");
-    const patternField = process.cwd() + "/force-app/" + `**/objects/${obj}/fields/${fld}.field-meta.xml`;
-    const patternTranslation = process.cwd() + "/force-app/" + `**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
+    const patternField = `force-app/**/objects/${obj}/fields/${fld}.field-meta.xml`;
+    const patternTranslation = `force-app/**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
     for (const pattern of [patternField, patternTranslation]) {
       const matchFiles = await glob(pattern, { cwd: process.cwd() });
       for (const removeFile of matchFiles) {
@@ -297,7 +295,7 @@ export default class CleanReferences extends SfdxCommand {
       }
     }
     // Remove field in recordTypes
-    const patternRecordType = process.cwd() + "/force-app/" + `**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
+    const patternRecordType = `/force-app/**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
     const matchFilesPattern = await glob(patternRecordType, {
       cwd: process.cwd(),
     });

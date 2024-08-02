@@ -44,7 +44,7 @@ jobs:
       # Setup Node.js
       - task: UseNode@1
         inputs:
-          version: ">=18.0.0"
+          version: ">=20.0.0"
         displayName: "Setup Node.js"
 
       # Install SFDX & Dependencies
@@ -70,7 +70,7 @@ jobs:
           ORG_ALIAS: $(BRANCH_NAME)
           SLACK_TOKEN: $(SLACK_TOKEN)
           SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
-          MS_TEAMS_WEBHOOK_URL: $(MS_TEAMS_WEBHOOK_URL)
+          NOTIF_EMAIL_ADDRESS: $(NOTIF_EMAIL_ADDRESS)
           GENERIC_TICKETING_PROVIDER_REGEX: $(GENERIC_TICKETING_PROVIDER_REGEX)
           GENERIC_TICKETING_PROVIDER_URL_BUILDER: $(GENERIC_TICKETING_PROVIDER_URL_BUILDER)
           JIRA_HOST: $(JIRA_HOST)

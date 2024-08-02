@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 // External Libraries
 import * as c from "chalk";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import * as path from "path";
 import * as sortArray from "sort-array";
 

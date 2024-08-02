@@ -2,7 +2,7 @@
 // External Libraries and Node.js Modules
 import * as fs from "fs-extra";
 import * as xml2js from "xml2js";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import path = require("path");
 
 // Salesforce Specific

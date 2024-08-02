@@ -3,7 +3,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { uxLog } from "../../../../common/utils";

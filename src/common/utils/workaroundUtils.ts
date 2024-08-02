@@ -2,7 +2,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { createTempDir, uxLog } from ".";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import { parseXmlFile, writeXmlFile } from "./xmlUtils";
 import { isScratchOrg } from "./orgUtils";
 

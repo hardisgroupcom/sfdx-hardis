@@ -40,8 +40,7 @@
     "find-package-json": "^1.2.0",
     "fs-extra": "^9.1.0",
     "fs-readdir-recursive": "^1.1.0",
-    "glob": "^7.1.6",
-    "glob-promise": "^4.1.0",
+    "glob": "^11.0.0",
     "he": "^1.2.0",
     "inquirer": "^8.0.0",
     "isomorphic-dompurify": "^2.3.0",
@@ -97,7 +96,7 @@
     "graceful-fs": "^4.2.4"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "files": [
     "/lib",

@@ -306,7 +306,7 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJob
     ORG_ALIAS: $(BRANCH_NAME)
     SLACK_TOKEN: $(SLACK_TOKEN)
     SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
-    MS_TEAMS_WEBHOOK_URL: $(MS_TEAMS_WEBHOOK_URL)
+    NOTIF_EMAIL_ADDRESS: $(NOTIF_EMAIL_ADDRESS)
     CI: "true"
     SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)

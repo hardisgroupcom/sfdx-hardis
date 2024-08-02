@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 // External Libraries
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import * as fs from "fs-extra";
 import * as xml2js from "xml2js";
 import path = require("path");
