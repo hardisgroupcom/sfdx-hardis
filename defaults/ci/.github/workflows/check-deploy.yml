@@ -68,7 +68,7 @@ jobs:
           SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_CHANNEL_ID_INTEGRATION: ${{ secrets.SLACK_CHANNEL_ID_INTEGRATION }}
-          MS_TEAMS_WEBHOOK_URL: ${{ secrets.MS_TEAMS_WEBHOOK_URL }}
+          NOTIF_EMAIL_ADDRESS: ${{ secrets.NOTIF_EMAIL_ADDRESS }}
           JIRA_HOST: ${{ secrets.JIRA_HOST }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}

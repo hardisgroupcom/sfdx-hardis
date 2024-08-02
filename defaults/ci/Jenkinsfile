@@ -17,7 +17,7 @@ pipeline {
         SFDX_CLIENT_KEY_MAIN = credentials('SFDX_CLIENT_KEY_MAIN') //Example
         SLACK_TOKEN = credentials('SLACK_TOKEN') // Remove if not used
         SLACK_CHANNEL_ID = credentials('SLACK_CHANNEL_ID') // Remove if not used
-        MS_TEAMS_WEBHOOK_URL = credentials('MS_TEAMS_WEBHOOK_URL') // Remove if not used
+        NOTIF_EMAIL_ADDRESS = credentials('NOTIF_EMAIL_ADDRESS') // Remove if not used
         JIRA_HOST = credentials('JIRA_HOST') // Remove if not used
         JIRA_EMAIL = credentials('JIRA_EMAIL') // Remove if not used
         JIRA_TOKEN = credentials('JIRA_TOKEN') // Remove if not used

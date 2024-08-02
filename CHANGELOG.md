@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update Pipelines to add NOTIF_EMAIL_ADDRESS where it was missing
+- Remove MS_TEAMS_WEBHOOK_URL from all pipelines as MsTeamsProvider is deprecated (use EmailProvider instead)
+- Remove some useless code in EmailProvider
+
 ## [4.51.0] 2024-08-01
 
 - Deprecate Microsoft Teams Web Hooks notifications

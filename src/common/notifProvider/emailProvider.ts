@@ -27,11 +27,6 @@ export class EmailProvider extends NotifProviderRoot {
       emailAddresses.push(...getEnvVar(customEmailChannelVariable).split(","));
     }
 
-    // Handle specific channel for Warnings and errors
-    const warningsErrorsEmail = getEnvVar("MS_TEAMS_WEBHOOK_URL_ERRORS_WARNINGS");
-    if (warningsErrorsEmail && ["critical", "error", "warning"].includes(notifMessage.severity || null)) {
-      emailAddresses.push(...warningsErrorsEmail.split(","));
-    }
     /* jscpd:ignore-start */
     // Main block
     const firstLineMarkdown = UtilsNotifs.prefixWithSeverityEmoji(
