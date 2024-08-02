@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [4.52.0] 2024-08-02
 
+- **Minimum Node version is now 20**
 - hardis:work:save : Improve performances when cleaning project files
 - Update Pipelines to add NOTIF_EMAIL_ADDRESS where it was missing
 - Remove MS_TEAMS_WEBHOOK_URL from all pipelines as MsTeamsProvider is deprecated (use EmailProvider instead)
