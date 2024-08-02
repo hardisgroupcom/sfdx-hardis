@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 // External Libraries and Node.js Modules
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import * as fs from "fs-extra";
 import path = require("path");
 

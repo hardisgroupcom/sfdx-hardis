@@ -3,7 +3,7 @@ import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as fs from "fs-extra";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import * as psl from "psl";
 import * as sortArray from "sort-array";
 import * as url from "url";

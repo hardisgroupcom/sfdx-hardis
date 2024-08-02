@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "../../../../common/utils";
 import { parseXmlFile } from "../../../../common/utils/xmlUtils";
 import { getConfig } from "../../../../config";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import { basename } from "path";
 import * as c from "chalk";
 

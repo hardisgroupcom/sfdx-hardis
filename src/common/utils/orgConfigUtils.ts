@@ -1,6 +1,6 @@
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import * as puppeteer from "puppeteer";
 import * as yaml from "js-yaml";
 import { uxLog } from ".";

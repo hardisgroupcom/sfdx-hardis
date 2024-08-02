@@ -4,7 +4,7 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils";
 

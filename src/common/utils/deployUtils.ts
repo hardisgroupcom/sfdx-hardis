@@ -1,7 +1,7 @@
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as glob from "glob-promise";
+import { glob } from "glob";
 import * as path from "path";
 import * as sortArray from "sort-array";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, isCI, uxLog } from ".";
