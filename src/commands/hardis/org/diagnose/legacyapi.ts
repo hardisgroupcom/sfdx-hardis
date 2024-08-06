@@ -29,6 +29,7 @@ See article below
 
 [![Handle Salesforce API versions Deprecation like a pro](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deprecated-api.jpg)](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
 
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-deprecated-api-calls/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = [

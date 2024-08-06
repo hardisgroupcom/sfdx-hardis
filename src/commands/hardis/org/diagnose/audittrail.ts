@@ -116,7 +116,9 @@ monitoringAllowedSectionsActions:
   "Some section": [] // Will ignore all actions from such section
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 \`\`\`
-  `;
+
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
+`;
 
   public static examples = [
     "$ sfdx hardis:org:diagnose:audittrail",

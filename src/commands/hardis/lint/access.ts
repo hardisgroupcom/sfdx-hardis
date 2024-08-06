@@ -33,7 +33,10 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class Access extends SfdxCommand {
   public static title = "check permission access";
 
-  public static description = "Check if elements(apex class and field) are at least in one permission set";
+  public static description = `Check if elements(apex class and field) are at least in one permission set
+  
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-missing-access/) and can output Grafana, Slack and MsTeams Notifications.
+`;
 
   public static examples = [
     "$ sfdx hardis:lint:access",

@@ -20,10 +20,9 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class MonitorBackup extends SfdxCommand {
   public static title = "Check org limits";
 
-  public static description = `Check limits of a SF org and send related notifications
+  public static description = `Check limits of a SF org and send notifications about limits are superior to 50%, 75% or 100%.
 
-Used in [sfdx-hardis monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-org-limits/) to send messages to Slack, Teams, Email and Grafana. 
-
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-org-limits/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = ["$ sfdx hardis:org:monitor:limits"];

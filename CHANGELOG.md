@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update monitoring commands documentation
+
 ## [4.52.0] 2024-08-02
 
 - **Minimum Node version is now 20**
