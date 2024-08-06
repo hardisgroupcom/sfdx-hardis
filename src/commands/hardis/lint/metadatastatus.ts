@@ -23,7 +23,10 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 /* jscpd:ignore-end */
 export default class metadatastatus extends SfdxCommand {
   public static title = "check inactive metadatas";
-  public static description = "Check if elements(flows) are inactive in the project";
+  public static description = `Check if elements (flows and validation rules) are inactive in the project
+
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-metadata/) and can output Grafana, Slack and MsTeams Notifications.
+`;
   public static examples = ["$ sfdx hardis:lint:metadatastatus"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {

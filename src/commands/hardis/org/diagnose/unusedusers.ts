@@ -33,6 +33,8 @@ licensetypes values are the following:
 Note: You can see the full list of available license identifiers in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm)
 
 Use --returnactiveusers to revert the command and retrieve active users that has logged in during the period.
+
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-users/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = [
