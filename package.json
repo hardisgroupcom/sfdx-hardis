@@ -90,7 +90,7 @@
     "rimraf": "^3.0.2",
     "ts-node": "^10.7.0",
     "typescript": "^5.5.2",
-    "yarn-audit-fix": "^9.3.7"
+    "yarn-audit-fix": "^10.0.0"
   },
   "resolutions": {
     "graceful-fs": "^4.2.4"
