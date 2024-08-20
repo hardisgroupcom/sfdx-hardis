@@ -29,7 +29,7 @@
     "bitbucket": "^2.11.0",
     "chalk": "^4.1.0",
     "columnify": "^1.5.4",
-    "cosmiconfig": "^7.0.0",
+    "cosmiconfig": "^9.0.0",
     "cross-spawn": "^7.0.3",
     "csv-stringify": "^5.6.1",
     "debug": "^4.3.4",
