@@ -57,7 +57,7 @@
     "openai": "^4.52.0",
     "ora": "5.4.1",
     "papaparse": "^5.3.1",
-    "pascalcase": "^1.0.0",
+    "pascalcase": "^2.0.0",
     "psl": "^1.8.0",
     "puppeteer": "^13.5.2",
     "read-pkg-up": "^7.0.1",
