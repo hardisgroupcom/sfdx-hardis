@@ -83,7 +83,7 @@
     "@types/dompurify": "^3.0.5",
     "@types/jira-client": "^7.1.9",
     "@types/node": "^14.14.32",
-    "chai": "^4",
+    "chai": "^5.0.0",
     "globby": "^11.0.2",
     "mocha": "^8.3.1",
     "nyc": "^15.1.0",
