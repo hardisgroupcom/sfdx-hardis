@@ -195,7 +195,7 @@ jobs:
 
     - name: Upload artifacts
       if:  success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Hardis Apex Tests reports
         path: |
@@ -242,7 +242,7 @@ jobs:
       # Upload Mega-Linter artifacts
       - name: Archive production artifacts
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Mega-Linter reports
           path: |
@@ -322,7 +322,7 @@ jobs:
 
     - name: Upload artifacts
       if:  success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Hardis Monitoring reports
         path: |
