@@ -2900,10 +2900,10 @@ csv-stringify@^1.0.4:
   dependencies:
     lodash.get "~4.4.2"
 
-csv-stringify@^5.6.1:
-  version "5.6.2"
-  resolved "https://registry.npmjs.org/csv-stringify/-/csv-stringify-5.6.2.tgz"
-  integrity sha512-n3rIVbX6ylm1YsX2NEug9IaPV8xRnT+9/NNZbrA/bcHgOSSeqtWla6XnI/xmyu57wIw+ASCAoX1oM6EZtqJV0A==
+csv-stringify@^6.0.0:
+  version "6.5.1"
+  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.5.1.tgz#a31837dd35e34787e3c248159c982a21af964d94"
+  integrity sha512-+9lpZfwpLntpTIEpFbwQyWuW/hmI/eHuJZD1XzeZpfZTqkf1fyvBbBLXTJJMsBuuS11uTShMqPwzx4A6ffXgRQ==
 
 dargs@^6.1.0:
   version "6.1.0"
