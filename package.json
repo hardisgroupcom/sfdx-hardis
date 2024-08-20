@@ -59,7 +59,7 @@
     "papaparse": "^5.3.1",
     "pascalcase": "^1.0.0",
     "psl": "^1.8.0",
-    "puppeteer": "^13.5.2",
+    "puppeteer": "^23.0.0",
     "read-pkg-up": "^7.0.1",
     "semver": "^7.6.0",
     "set-value": "^4.0.0",
