@@ -21,7 +21,7 @@ export class WebSocketClient {
       globalWs = this; // eslint-disable-line
       this.start();
     } catch (err) {
-      uxLog(this, c.yellow("Warning: Unable to start WebSocket client on " + wsHostPort+ "\n"+err.message));
+      uxLog(this, c.yellow("Warning: Unable to start WebSocket client on " + wsHostPort + "\n" + err.message));
     }
   }
 

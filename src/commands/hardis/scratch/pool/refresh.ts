@@ -12,7 +12,6 @@ import { execCommand, stripAnsi, uxLog } from "../../../../common/utils";
 import * as moment from "moment";
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
 
-
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
@@ -160,7 +159,8 @@ export default class ScratchPoolRefresh extends SfdxCommand {
           stdout = stripAnsi(stdout);
           try {
             result = JSON.parse(stdout);
-          } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (e) {
             result = { result: { status: 1, rawLog: stdout } };
             uxLog(this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
           }

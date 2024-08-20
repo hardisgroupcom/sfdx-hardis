@@ -4,7 +4,7 @@ import * as path from "path";
 import * as c from "chalk";
 import * as fetch from "@adobe/node-fetch-retry";
 import * as split from "split";
-import { PromisePool } from '@supercharge/promise-pool'
+import { PromisePool } from "@supercharge/promise-pool";
 
 // Salesforce Specific and Other Specific Libraries
 import { Connection, SfdxError } from "@salesforce/core";

@@ -4,7 +4,7 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as moment from 'moment';
+import * as moment from "moment";
 import * as ora from "ora";
 import * as path from "path";
 import * as readline from "readline";
@@ -575,7 +575,8 @@ export default class Toml2Csv extends SfdxCommand {
       if (checkRes === null) {
         throw Error("Unknown filter type " + JSON.stringify(filter));
       }
-    } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
       this.stats.sections[currentSection].dataFilterErrorsNb++;
       return filter.keepIfFilterCrash === true;
     }

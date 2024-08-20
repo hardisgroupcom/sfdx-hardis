@@ -6,8 +6,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [4.53.0] 2024-08-20
 
-- Upgrade workflows to Node 20 (fixes https://github.com/hardisgroupcom/sfdx-hardis/issues/668)
-- Simplify login prompts messages (fixes https://github.com/hardisgroupcom/sfdx-hardis/issues/667)
+- Upgrade workflows to Node 20 (fixes <https://github.com/hardisgroupcom/sfdx-hardis/issues/668>)
+- Simplify login prompts messages (fixes <https://github.com/hardisgroupcom/sfdx-hardis/issues/667>)
 - Upgrade to MegaLinter v8 (own workflows + template workflows)
 - Update monitoring commands documentation
 - Upgrade npm dependencies
