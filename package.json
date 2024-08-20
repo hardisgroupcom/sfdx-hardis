@@ -84,7 +84,7 @@
     "@types/jira-client": "^7.1.9",
     "@types/node": "^14.14.32",
     "chai": "^4",
-    "globby": "^11.0.2",
+    "globby": "^14.0.0",
     "mocha": "^8.3.1",
     "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
