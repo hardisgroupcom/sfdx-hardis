@@ -2,7 +2,7 @@
 // External Libraries and Node.js Modules
 import { glob } from "glob";
 import * as fs from "fs-extra";
-import path = require("path");
+import * as path from "path";
 
 // Salesforce Specific
 import { flags, SfdxCommand } from "@salesforce/command";

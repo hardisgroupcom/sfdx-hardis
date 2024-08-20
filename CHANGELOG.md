@@ -10,7 +10,14 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Simplify login prompts messages (fixes https://github.com/hardisgroupcom/sfdx-hardis/issues/667)
 - Upgrade to MegaLinter v8 (own workflows + template workflows)
 - Update monitoring commands documentation
-- Upgrade axios npm dependency
+- Upgrade npm dependencies
+  - axios
+  - inquirer
+  - moment
+  - open
+  - ora
+  - @supercharge/promise-pool
+  - remove strip-ansi dependency to build local function
 
 ## [4.52.0] 2024-08-02
 

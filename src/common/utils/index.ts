@@ -6,7 +6,7 @@ import * as csvStringify from "csv-stringify/lib/sync";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
-import stripAnsi = require("strip-ansi");
+
 import * as util from "util";
 import * as which from "which";
 import * as xml2js from "xml2js";
@@ -20,7 +20,7 @@ import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
 import { promptProfiles, promptUserEmail } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
-import moment = require("moment");
+import * as moment from "moment";
 import { writeXmlFile } from "./xmlUtils";
 
 let pluginsStdout = null;
@@ -1210,4 +1210,14 @@ export async function isMonitoringJob() {
 
 export function getNested(nestedObj, pathArr) {
   return pathArr.reduce((obj, key) => (obj && obj[key] !== "undefined" ? obj[key] : undefined), nestedObj);
+}
+
+const ansiPattern = [
+  '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
+  '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))'
+].join('|');
+const ansiRegex = new RegExp(ansiPattern, 'g');
+
+export function stripAnsi(str: string) {
+  return str.replace(ansiRegex, '');
 }

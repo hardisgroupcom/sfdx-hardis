@@ -1,6 +1,6 @@
 import * as c from "chalk";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const inquirer = require("inquirer");
+import inquirer from 'inquirer';
 import { SfdxError } from "@salesforce/core";
 import { isCI, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";

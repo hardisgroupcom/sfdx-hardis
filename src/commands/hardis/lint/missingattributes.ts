@@ -3,7 +3,7 @@
 import * as fs from "fs-extra";
 import * as xml2js from "xml2js";
 import { glob } from "glob";
-import path = require("path");
+import * as path from "path";
 
 // Salesforce Specific
 import { flags, SfdxCommand } from "@salesforce/command";

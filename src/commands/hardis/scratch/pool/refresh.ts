@@ -1,18 +1,17 @@
 /* jscpd:ignore-start */
 import { spawn } from "child_process";
 import * as c from "chalk";
+
 import * as which from "which";
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config";
-import { execCommand, uxLog } from "../../../../common/utils";
-import moment = require("moment");
+import { execCommand, stripAnsi, uxLog } from "../../../../common/utils";
+import * as moment from "moment";
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const stripAnsi2 = require("strip-ansi");
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -158,7 +157,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
             numberCreated++;
           }
           let result: any = {};
-          stdout = stripAnsi2(stdout);
+          stdout = stripAnsi(stdout);
           try {
             result = JSON.parse(stdout);
           } catch (e) {
