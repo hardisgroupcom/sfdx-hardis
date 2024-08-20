@@ -77,7 +77,7 @@
   "devDependencies": {
     "@oclif/dev-cli": "^1.26.0",
     "@oclif/plugin-help": "^3.2.2",
-    "@oclif/test": "^1",
+    "@oclif/test": "^4.0.0",
     "@salesforce/dev-config": "^2.1.0",
     "@types/chai": "^4",
     "@types/dompurify": "^3.0.5",
