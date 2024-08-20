@@ -14,7 +14,7 @@
     "@oclif/config": "^1.18.3",
     "@oclif/errors": "^1",
     "@salesforce/command": "^4.2.1",
-    "@salesforce/core": "^2.33.1",
+    "@salesforce/core": "^8.0.0",
     "@salesforce/ts-sinon": "^1.2.4",
     "@salesforce/ts-types": "^1.5.20",
     "@slack/web-api": "^6.9.0",
