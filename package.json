@@ -46,7 +46,7 @@
     "isomorphic-dompurify": "^2.3.0",
     "jira-client": "^8.2.2",
     "js-yaml": "^4.0.0",
-    "jsforce": "^1.11.0",
+    "jsforce": "^3.0.0",
     "keyv": "^4.0.3",
     "markdown-toc": "^1.2.0",
     "marked": "^12.0.0",
