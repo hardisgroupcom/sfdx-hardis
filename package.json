@@ -27,7 +27,7 @@
     "axios": "^1.7.4",
     "azure-devops-node-api": "^12.0.0",
     "bitbucket": "^2.11.0",
-    "chalk": "^4.1.0",
+    "chalk": "^5.0.0",
     "columnify": "^1.5.4",
     "cosmiconfig": "^7.0.0",
     "cross-spawn": "^7.0.3",
