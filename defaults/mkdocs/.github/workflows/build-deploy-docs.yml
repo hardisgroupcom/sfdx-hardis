@@ -10,11 +10,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # Build doc with sfdx-hardis
       - uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
+          node-version: "20.x"
       - run: yarn
       - run: yarn prepack
       - run: npm i @salesforce/cli -g

@@ -106,6 +106,7 @@ You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
     // Initialize storage
     try {
       await setPoolStorage({}, options);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       uxLog(this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
     }

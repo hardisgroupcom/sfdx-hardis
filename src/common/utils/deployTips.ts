@@ -1,10 +1,10 @@
 // Analyze deployment errors to provide tips to user :)
 import * as c from "chalk";
 import * as format from "string-template";
-import stripAnsi = require("strip-ansi");
+
 import { getAllTips } from "./deployTipsList";
 import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown";
-import { uxLog } from ".";
+import { stripAnsi, uxLog } from ".";
 import { AiProvider, AiResponse } from "../aiProvider";
 
 let logRes = null;

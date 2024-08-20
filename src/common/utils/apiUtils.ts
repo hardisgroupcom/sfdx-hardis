@@ -2,7 +2,7 @@ import { uxLog } from ".";
 import * as c from "chalk";
 import { Connection, SfdxError } from "@salesforce/core";
 import { RestApiOptions, RecordResult } from "jsforce";
-import ora = require("ora");
+import * as ora from "ora";
 
 // Perform simple SOQL query (max results: 10000)
 export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
@@ -147,7 +147,7 @@ export async function bulkDeleteTooling(objectName: string, recordsFull: { Id: s
     try {
       conn.tooling.del(objectName, records, options, handleCallback);
     } catch (error) {
-      const resultObject = createResultObject(records, false, "One or more records failed to delete due to a synchronous error.");
+      const resultObject = createResultObject(records, false, `One or more records failed to delete due to a synchronous error.\n${error.message}`);
       reject(resultObject);
       throw new SfdxError(c.red("Tooling Error:" + resultObject));
     }

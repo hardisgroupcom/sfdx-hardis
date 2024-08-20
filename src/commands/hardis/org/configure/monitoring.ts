@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import open = require("open");
+import * as open from "open";
 import {
   ensureGitBranch,
   ensureGitRepository,

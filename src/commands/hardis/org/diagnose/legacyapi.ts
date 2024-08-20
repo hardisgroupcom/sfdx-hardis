@@ -316,6 +316,7 @@ See article to solve issue before it's too late:
       let hostname;
       try {
         hostname = await dnsPromises.reverse(ip);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         hostname = "unknown";
       }

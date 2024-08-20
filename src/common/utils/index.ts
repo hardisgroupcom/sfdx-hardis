@@ -6,7 +6,7 @@ import * as csvStringify from "csv-stringify/lib/sync";
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
-import stripAnsi = require("strip-ansi");
+
 import * as util from "util";
 import * as which from "which";
 import * as xml2js from "xml2js";
@@ -20,7 +20,7 @@ import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
 import { promptProfiles, promptUserEmail } from "./orgUtils";
 import { WebSocketClient } from "../websocketClient";
-import moment = require("moment");
+import * as moment from "moment";
 import { writeXmlFile } from "./xmlUtils";
 
 let pluginsStdout = null;
@@ -152,10 +152,14 @@ export async function checkAppDependency(appName) {
 }
 
 export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org", defaultOrgChoice: any = null) {
+  const customLoginUrlExample =
+    orgTypes && orgTypes.length === 1 && orgTypes[0] === "login"
+      ? "https://myclient.lightning.force.com/"
+      : "https://myclient--preprod.sandbox.lightning.force.com/";
   const allChoices = [
     {
-      title: "📝 Custom login URL",
-      description: "The best choice :) Example: https://myclient--preprod.sandbox.lightning.force.com/",
+      title: "📝 Custom login URL (Sandbox, DevHub or Production Org)",
+      description: `Recommended option :) Example: ${customLoginUrlExample}`,
       value: "custom",
     },
     {
@@ -1150,6 +1154,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       uxLog(commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
       await fs.remove(tmpDirMd);
       await fs.remove(crtFile);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       uxLog(
         commandThis,
@@ -1208,4 +1213,14 @@ export async function isMonitoringJob() {
 
 export function getNested(nestedObj, pathArr) {
   return pathArr.reduce((obj, key) => (obj && obj[key] !== "undefined" ? obj[key] : undefined), nestedObj);
+}
+
+const ansiPattern = [
+  "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
+  "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
+].join("|");
+const ansiRegex = new RegExp(ansiPattern, "g");
+
+export function stripAnsi(str: string) {
+  return str.replace(ansiRegex, "");
 }

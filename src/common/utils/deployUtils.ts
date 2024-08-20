@@ -280,7 +280,7 @@ export async function forceSourceDeploy(
         const existingPrData = globalThis.pullRequestData || {};
         const prDataCodeCoverage: any = {
           messageKey: existingPrData.messageKey ?? "deployment",
-          title: existingPrData.title ?? check ? "✅ Deployment check success" : "✅ Deployment success",
+          title: (existingPrData.title ?? check) ? "✅ Deployment check success" : "✅ Deployment success",
           codeCoverageMarkdownBody:
             branchConfig?.skipCodeCoverage === true
               ? "✅⚠️ Code coverage has been skipped for this level"
@@ -1012,7 +1012,7 @@ async function updatePullRequestResultCoverage(coverageStatus: string, orgCovera
   const existingPrData = globalThis.pullRequestData || {};
   const prDataCodeCoverage: any = {
     messageKey: existingPrData.messageKey ?? "deployment",
-    title: existingPrData.title ?? options.check ? "✅ Deployment check success" : "✅ Deployment success",
+    title: (existingPrData.title ?? options.check) ? "✅ Deployment check success" : "✅ Deployment success",
     codeCoverageMarkdownBody: "Code coverage is valid",
     deployStatus: existingPrData ?? coverageStatus,
   };

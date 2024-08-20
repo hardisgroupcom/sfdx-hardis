@@ -1,10 +1,10 @@
 // External Libraries and Node.js Modules
 import * as fs from "fs-extra";
-import path = require("path");
+import * as path from "path";
 import * as c from "chalk";
 import * as fetch from "@adobe/node-fetch-retry";
 import * as split from "split";
-import PromisePool = require("@supercharge/promise-pool/dist");
+import { PromisePool } from "@supercharge/promise-pool";
 
 // Salesforce Specific and Other Specific Libraries
 import { Connection, SfdxError } from "@salesforce/core";

@@ -116,6 +116,7 @@ export default class DxSources extends SfdxCommand {
     if (isMonitoring) {
       try {
         return await this.processPostActions(message);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         uxLog(this, c.yellow("Post actions have failed !"));
       }
@@ -185,6 +186,7 @@ export default class DxSources extends SfdxCommand {
       // Check usage of Legacy API versions
       uxLog(this, c.cyan("Running Legacy API Use checks..."));
       legacyApiRes = await new LegacyApi([], this.config)._run();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       uxLog(this, c.yellow("Issues found when running Apex tests or Legacy API, please check messages"));
     }

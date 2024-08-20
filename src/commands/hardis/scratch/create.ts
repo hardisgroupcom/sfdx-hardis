@@ -331,6 +331,7 @@ export default class ScratchCreate extends SfdxCommand {
           await setConfig("user", {
             scratchOrgSfdxAuthUrl: this.scratchOrgSfdxAuthUrl,
           });
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           uxLog(
             this,

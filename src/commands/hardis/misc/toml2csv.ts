@@ -4,12 +4,12 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import moment = require("moment");
-import ora = require("ora");
+import * as moment from "moment";
+import * as ora from "ora";
 import * as path from "path";
 import * as readline from "readline";
-import stripAnsi = require("strip-ansi");
-import { uxLog } from "../../../common/utils";
+
+import { stripAnsi, uxLog } from "../../../common/utils";
 import { countLinesInFile } from "../../../common/utils/filesUtils";
 import { getRecordTypeId } from "../../../common/utils/orgUtils";
 
@@ -575,6 +575,7 @@ export default class Toml2Csv extends SfdxCommand {
       if (checkRes === null) {
         throw Error("Unknown filter type " + JSON.stringify(filter));
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       this.stats.sections[currentSection].dataFilterErrorsNb++;
       return filter.keepIfFilterCrash === true;
