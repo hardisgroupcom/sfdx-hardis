@@ -152,10 +152,12 @@ export async function checkAppDependency(appName) {
 }
 
 export async function promptInstanceUrl(orgTypes = ["login", "test"], alias = "default org", defaultOrgChoice: any = null) {
+  const customLoginUrlExample = orgTypes && orgTypes.length === 1 && orgTypes[0] === "login" ?
+    "https://myclient.lightning.force.com/" : "https://myclient--preprod.sandbox.lightning.force.com/";
   const allChoices = [
     {
-      title: "📝 Custom login URL",
-      description: "The best choice :) Example: https://myclient--preprod.sandbox.lightning.force.com/",
+      title: "📝 Custom login URL (Sandbox, DevHub or Production Org)",
+      description: `Recommended option :) Example: ${customLoginUrlExample}`,
       value: "custom",
     },
     {
@@ -444,11 +446,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n"),
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n"),
         ),
       );
     }
