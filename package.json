@@ -25,7 +25,7 @@
     "@typescript-eslint/parser": "^4.17.0",
     "@xmldom/xmldom": "^0.8.6",
     "axios": "^1.7.4",
-    "azure-devops-node-api": "^12.0.0",
+    "azure-devops-node-api": "^14.0.0",
     "bitbucket": "^2.11.0",
     "chalk": "^4.1.0",
     "columnify": "^1.5.4",
