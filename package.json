@@ -13,7 +13,7 @@
     "@oclif/command": "^1",
     "@oclif/config": "^1.18.3",
     "@oclif/errors": "^1",
-    "@salesforce/command": "^4.2.1",
+    "@salesforce/command": "^5.0.0",
     "@salesforce/core": "^2.33.1",
     "@salesforce/ts-sinon": "^1.2.4",
     "@salesforce/ts-types": "^1.5.20",
