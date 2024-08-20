@@ -1834,7 +1834,7 @@ arr-union@^3.1.0:
 
 array-back@^5.0.0:
   version "5.0.0"
-  resolved "https://registry.npmjs.org/array-back/-/array-back-5.0.0.tgz"
+  resolved "https://registry.yarnpkg.com/array-back/-/array-back-5.0.0.tgz#e196609edcec48376236d163958df76e659a0d36"
   integrity sha512-kgVWwJReZWmVuWOQKEOohXKJX+nD02JAZ54D1RRWlv8L0NebauKAaFxACKzB74RTclt1+WNz5KHaLRDAPZbDEw==
 
 array-differ@^3.0.0:
@@ -7675,9 +7675,9 @@ snapdragon@^0.8.1:
     use "^3.1.0"
 
 sort-array@^4.1.3:
-  version "4.1.4"
-  resolved "https://registry.npmjs.org/sort-array/-/sort-array-4.1.4.tgz"
-  integrity sha512-GVFN6Y1sHKrWaSYOJTk9093ZnrBMc9sP3nuhANU44S4xg3rE6W5Z5WyamuT8VpMBbssnetx5faKCua0LEmUnSw==
+  version "4.1.5"
+  resolved "https://registry.yarnpkg.com/sort-array/-/sort-array-4.1.5.tgz#64b92aaba222aec606786f4df28ae4e3e3e68313"
+  integrity sha512-Ya4peoS1fgFN42RN1REk2FgdNOeLIEMKFGJvs7VTP3OklF8+kl2SkpVliZ4tk/PurWsrWRsdNdU+tgyOBkB9sA==
   dependencies:
     array-back "^5.0.0"
     typical "^6.0.1"
@@ -8415,7 +8415,7 @@ typescript@^5.5.2:
 
 typical@^6.0.1:
   version "6.0.1"
-  resolved "https://registry.npmjs.org/typical/-/typical-6.0.1.tgz"
+  resolved "https://registry.yarnpkg.com/typical/-/typical-6.0.1.tgz#89bd1a6aa5e5e96fa907fb6b7579223bff558a06"
   integrity sha512-+g3NEp7fJLe9DPa1TArHm9QAA7YciZmWnfAqEaFrBihQ7epOv9i99rjtgb6Iz0wh3WuQDjsCTDfgRoGnmHN81A==
 
 unbzip2-stream@1.4.3:
