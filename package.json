@@ -76,7 +76,7 @@
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1.26.0",
-    "@oclif/plugin-help": "^3.2.2",
+    "@oclif/plugin-help": "^6.0.0",
     "@oclif/test": "^1",
     "@salesforce/dev-config": "^2.1.0",
     "@types/chai": "^4",
