@@ -116,7 +116,7 @@ export default class DxSources extends SfdxCommand {
     if (isMonitoring) {
       try {
         return await this.processPostActions(message);
-      } catch (e) {
+      } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
         uxLog(this, c.yellow("Post actions have failed !"));
       }
       uxLog(this, c.yellow(c.bold("This version of sfdx-hardis monitoring is deprecated and will not be maintained anymore")));
@@ -185,7 +185,7 @@ export default class DxSources extends SfdxCommand {
       // Check usage of Legacy API versions
       uxLog(this, c.cyan("Running Legacy API Use checks..."));
       legacyApiRes = await new LegacyApi([], this.config)._run();
-    } catch (e) {
+    } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
       uxLog(this, c.yellow("Issues found when running Apex tests or Legacy API, please check messages"));
     }
     process.exitCode = prevExitCode;

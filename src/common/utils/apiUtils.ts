@@ -147,7 +147,7 @@ export async function bulkDeleteTooling(objectName: string, recordsFull: { Id: s
     try {
       conn.tooling.del(objectName, records, options, handleCallback);
     } catch (error) {
-      const resultObject = createResultObject(records, false, "One or more records failed to delete due to a synchronous error.");
+      const resultObject = createResultObject(records, false, `One or more records failed to delete due to a synchronous error.\n${error.message}`);
       reject(resultObject);
       throw new SfdxError(c.red("Tooling Error:" + resultObject));
     }

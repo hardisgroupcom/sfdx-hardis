@@ -175,7 +175,7 @@ export default class DxSources extends SfdxCommand {
         const projectScratchDef = await fs.readFile(projectScratchDefFile, "utf-8");
         const newShape = Object.assign(projectScratchDef, orgShape);
         await fs.writeFile(projectScratchDefFile, JSON.stringify(newShape, null, 2));
-      } catch (e) {
+      } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
         uxLog(this, c.yellow("[sfdx-hardis][ERROR] Unable to create org shape"));
         uxLog(this, c.yellow("[sfdx-hardis] You need to manually update config/project-scratch-def.json"));
         uxLog(
@@ -191,7 +191,7 @@ export default class DxSources extends SfdxCommand {
     uxLog(this, `Remove temporary folder ${tempFolder} ...`);
     try {
       await fs.rm(tempFolder, { recursive: true });
-    } catch (e) {
+    } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
       uxLog(this, c.yellow(`Unable to remove folder ${tempFolder}, please delete it manually`));
     }
 

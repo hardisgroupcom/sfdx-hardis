@@ -160,7 +160,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
           stdout = stripAnsi(stdout);
           try {
             result = JSON.parse(stdout);
-          } catch (e) {
+          } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
             result = { result: { status: 1, rawLog: stdout } };
             uxLog(this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
           }

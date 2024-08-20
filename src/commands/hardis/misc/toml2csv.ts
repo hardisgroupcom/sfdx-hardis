@@ -575,7 +575,7 @@ export default class Toml2Csv extends SfdxCommand {
       if (checkRes === null) {
         throw Error("Unknown filter type " + JSON.stringify(filter));
       }
-    } catch (e) {
+    } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
       this.stats.sections[currentSection].dataFilterErrorsNb++;
       return filter.keepIfFilterCrash === true;
     }

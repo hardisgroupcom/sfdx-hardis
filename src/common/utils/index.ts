@@ -1152,7 +1152,7 @@ export async function generateSSLCertificate(branchName: string, folder: string,
       uxLog(commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
       await fs.remove(tmpDirMd);
       await fs.remove(crtFile);
-    } catch (e) {
+    } catch (e) { // eslint-disable-line @typescript-eslint/no-unused-vars
       uxLog(
         commandThis,
         c.red("Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name"),

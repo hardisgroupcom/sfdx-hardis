@@ -35,7 +35,6 @@ export async function removeLookupFilters(tempDir: string, commandThis: any, opt
       delete fieldXml.CustomField.lookupFilter;
       await writeXmlFile(fieldFile, fieldXml);
       arrangedFiles.push({ file: fieldFile, backupFile: backupFile });
-      ("");
       uxLog(commandThis, c.grey(`Removed lookup filter from field ${fieldFile}`));
     }
   }
