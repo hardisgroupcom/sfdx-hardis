@@ -27,37 +27,37 @@
     abort-controller "^3.0.0"
     node-fetch "^2.6.1"
 
-"@amplitude/identify@^1.5.0":
-  version "1.5.0"
-  resolved "https://registry.npmjs.org/@amplitude/identify/-/identify-1.5.0.tgz"
-  integrity sha512-GCDxvwZvfFInZQ6m5LYnb9sVmJP+n+Re6vkBdtclp9uTNVPpdsXtdw2ann5Ts5pV10fivDpgdZ3OHehSxe742A==
+"@amplitude/identify@^1.10.2":
+  version "1.10.2"
+  resolved "https://registry.yarnpkg.com/@amplitude/identify/-/identify-1.10.2.tgz#25d88f9e3bedd99701c777b9e44408ac69179aa1"
+  integrity sha512-ywxeabS8ukMdJWNwx3rG/EBngXFg/4NsPhlyAxbBUcI7HzBXEJUKepiZfkz8K6Y7f0mpc23Qz1aBf48ZJDZmkQ==
   dependencies:
-    "@amplitude/types" "^1.5.0"
-    "@amplitude/utils" "^1.5.0"
-    tslib "^1.9.3"
+    "@amplitude/types" "^1.10.2"
+    "@amplitude/utils" "^1.10.2"
+    tslib "^2.0.0"
 
 "@amplitude/node@^1.3.2":
-  version "1.5.0"
-  resolved "https://registry.npmjs.org/@amplitude/node/-/node-1.5.0.tgz"
-  integrity sha512-/jfmYHanhln/OAuL8QG76EjThnaRDnfxLxO4oYstMFZKRktnUahE5i0sH02+tJ7I2nzq+4KTYY2hc8Rvi+Vt4Q==
+  version "1.10.2"
+  resolved "https://registry.yarnpkg.com/@amplitude/node/-/node-1.10.2.tgz#79fb80e7228486521156eae510de998264e6620c"
+  integrity sha512-E3xp8DOpkF5ThjrRlAmSocnrEYsTPpd3Zg4WdBLms0ackQSgQpw6z84+YMcoPerZHJJ/LEqdo4Cg4Z5Za3D+3Q==
   dependencies:
-    "@amplitude/identify" "^1.5.0"
-    "@amplitude/types" "^1.5.0"
-    "@amplitude/utils" "^1.5.0"
-    tslib "^1.9.3"
+    "@amplitude/identify" "^1.10.2"
+    "@amplitude/types" "^1.10.2"
+    "@amplitude/utils" "^1.10.2"
+    tslib "^2.0.0"
 
-"@amplitude/types@^1.5.0":
-  version "1.5.0"
-  resolved "https://registry.npmjs.org/@amplitude/types/-/types-1.5.0.tgz"
-  integrity sha512-XspuOsUzUcxwAptHeGiIn4giuLWs285xTJa7h8kAEEynxtEI3/krWCoDYZSB9PekaPXB6phxiO/tMd9t5V9LgQ==
+"@amplitude/types@^1.10.2":
+  version "1.10.2"
+  resolved "https://registry.yarnpkg.com/@amplitude/types/-/types-1.10.2.tgz#8f3c6c3c9ee24f401ee037b351c3c67eb945eefc"
+  integrity sha512-I8qenRI7uU6wKNb9LiZrAosSHVoNHziXouKY81CrqxH9xhVTEIJFXeuCV0hbtBr0Al/8ejnGjQRx+S2SvU/pPg==
 
-"@amplitude/utils@^1.5.0":
-  version "1.5.0"
-  resolved "https://registry.npmjs.org/@amplitude/utils/-/utils-1.5.0.tgz"
-  integrity sha512-1DrDJkb4dVX+FiBXhGpO2Dn2cRKdP+gtrVR8vZcE8wz/V2XxUI3DDx7uQbIS6WbQf6swv6Uo2eMHYtrwebostw==
+"@amplitude/utils@^1.10.2":
+  version "1.10.2"
+  resolved "https://registry.yarnpkg.com/@amplitude/utils/-/utils-1.10.2.tgz#ce77dc8a54fcd3843511531cc7d56363247c7ad8"
+  integrity sha512-tVsHXu61jITEtRjB7NugQ5cVDd4QDzne8T3ifmZye7TiJeUfVRvqe44gDtf55A+7VqhDhyEIIXTA1iVcDGqlEw==
   dependencies:
-    "@amplitude/types" "^1.5.0"
-    tslib "^1.9.3"
+    "@amplitude/types" "^1.10.2"
+    tslib "^2.0.0"
 
 "@babel/code-frame@7.12.11":
   version "7.12.11"
@@ -8311,7 +8311,12 @@ tslib@^1.10.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz"
   integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
-tslib@^2.0.0, tslib@^2.0.3, tslib@^2.1.0:
+tslib@^2.0.0:
+  version "2.6.3"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.6.3.tgz#0438f810ad7a9edcde7a241c3d80db693c8cbfe0"
+  integrity sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==
+
+tslib@^2.0.3, tslib@^2.1.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/tslib/-/tslib-2.1.0.tgz"
   integrity sha512-hcVC3wYEziELGGmEEXue7D75zbwIIVUMWAVbHItGPx0ziyXxrOMQx4rQEVEV45Ut/1IotuEvwqPopzIOkDMf0A==
