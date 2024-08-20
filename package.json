@@ -17,7 +17,7 @@
     "@salesforce/core": "^2.33.1",
     "@salesforce/ts-sinon": "^1.2.4",
     "@salesforce/ts-types": "^1.5.20",
-    "@slack/web-api": "^6.9.0",
+    "@slack/web-api": "^7.0.0",
     "@supercharge/promise-pool": "^3.2.0",
     "@types/mocha": "^8.2.1",
     "@types/ws": "^7.4.0",
