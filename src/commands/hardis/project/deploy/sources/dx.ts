@@ -6,7 +6,7 @@ Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=x
 
 Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.muuuurf
 
-- Before, you need to make a sfdx alias:set myBranch=myUsername
+- Before, you need to make a sf alias set myBranch=myUsername
 - You can find CI_PROJECT_ID with https://gitlab.com/api/v4/projects?search=YOUR-REPO-NAME
 
 */

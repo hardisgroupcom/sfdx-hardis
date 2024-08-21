@@ -27,7 +27,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx force:data:record:update -> sf data update record
   - sfdx force:data:soql:query -> sf data query
   - sfdx force:data:bulk:delete -> sf data delete bulk
-
+  - sfdx alias:list -> sf alias list
+  - sfdx alias:set -> sf alias set
   - sfdx hardis:* -> sf hardis:*
 - Get rid of sfdx-essentials dependency by internalizing its used commands
   - sf hardis:packagexml:append

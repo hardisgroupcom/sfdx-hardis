@@ -91,7 +91,7 @@ async function authOrg(orgAlias: string, options: any) {
   let doConnect = true;
   if (!options.checkAuth) {
     // Check if we are already authenticated
-    let orgDisplayCommand = "sfdx org display";
+    let orgDisplayCommand = "sf org display";
     let setDefaultUsername = false;
     if (orgAlias !== "MY_ORG" && (isCI || isDevHub) && !orgAlias.includes("force://")) {
       orgDisplayCommand += " --targetusername " + orgAlias;
@@ -237,7 +237,7 @@ async function authOrg(orgAlias: string, options: any) {
         throw new SfdxError(
           `In CI context, you may define:
                 - a .sfdx-hardis.yml file with instanceUrl and targetUsername properties (or INSTANCE_URL and TARGET_USERNAME repo variables)
-                - a repository secret variable SFDX_CLIENT_ID with consumer key of sfdx connected app
+                - a repository secret variable SFDX_CLIENT_ID with consumer key of SF CLI connected app
                 - store server.key file within ssh folder
                 `,
         );
@@ -298,7 +298,7 @@ async function authOrg(orgAlias: string, options: any) {
           if ((e?.message || "").includes("Cannot start the OAuth redirect server on port")) {
             uxLog(
               this,
-              c.yellow(c.bold("You might have a ghost sfdx command. Open Task Manager, search for Node.js processes, kill them, then try again")),
+              c.yellow(c.bold("You might have a ghost SF CLI command. Open Task Manager, search for Node.js processes, kill them, then try again")),
             );
           }
           throw e;
@@ -412,7 +412,7 @@ async function getKey(orgAlias: string, config: any) {
   return null;
 }
 
-// Try to find certificate key file for sfdx connected app in different locations
+// Try to find certificate key file for SF CLI connected app in different locations
 async function getCertificateKeyFile(orgAlias: string, config: any) {
   const filesToTry = [
     `./config/branches/.jwt/${orgAlias}.key`,

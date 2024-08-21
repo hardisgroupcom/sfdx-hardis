@@ -37,7 +37,7 @@ export default class OrgMissingItems extends SfdxCommand {
     }),
     packagexmltargetorg: flags.string({
       char: "t",
-      description: "Target org username or alias to build package.xml (sfdx must be authenticated).\nIf not provided, will be prompted to the user.",
+      description: "Target org username or alias to build package.xml (SF CLI must be authenticated).\nIf not provided, will be prompted to the user.",
     }),
     debug: flags.boolean({
       char: "d",

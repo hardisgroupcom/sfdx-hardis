@@ -104,13 +104,13 @@ export async function gitHasLocalUpdates(options = { show: false }) {
 
 // Install plugin if not present
 export async function checkSfdxPlugin(pluginName: string) {
-  // Manage cache of sfdx plugins result
+  // Manage cache of SF CLI Plugins result
   if (pluginsStdout == null) {
     const config = await getConfig("user");
     if (config.sfdxPluginsStdout) {
       pluginsStdout = config.sfdxPluginsStdout;
     } else {
-      const pluginsRes = await exec("sfdx plugins");
+      const pluginsRes = await exec("sf plugins");
       pluginsStdout = pluginsRes.stdout;
       await setConfig("user", { sfdxPluginsStdout: pluginsStdout });
     }
@@ -119,12 +119,12 @@ export async function checkSfdxPlugin(pluginName: string) {
     uxLog(
       this,
       c.yellow(
-        `[dependencies] Installing sfdx plugin ${c.green(pluginName)}... \nIf is stays stuck for too long, please run ${c.green(
-          `sfdx plugins:install ${pluginName}`,
+        `[dependencies] Installing SF CLI plugin ${c.green(pluginName)}... \nIf is stays stuck for too long, please run ${c.green(
+          `sf plugins install ${pluginName}`,
         )})`,
       ),
     );
-    const installCommand = `echo y|sfdx plugins:install ${pluginName}`;
+    const installCommand = `echo y|sf plugins install ${pluginName}`;
     await execCommand(installCommand, this, { fail: true, output: false });
   }
 }
@@ -1008,7 +1008,7 @@ export async function copyLocalSfdxInfo() {
       dereference: true,
       overwrite: true,
     });
-    // uxLog(this, `[cache] Copied sfdx cache in ${TMP_COPY_FOLDER} for later reuse`);
+    // uxLog(this, `[cache] Copied SF CLI cache in ${TMP_COPY_FOLDER} for later reuse`);
     // const files = fs.readdirSync(TMP_COPY_FOLDER, {withFileTypes: true}).map(item => item.name);
     // uxLog(this, '[cache]' + JSON.stringify(files));
   }
@@ -1178,7 +1178,7 @@ If this is a Test class issue (production env), you may have to create manually 
     }
   } else {
     // Tell infos to install manually
-    uxLog(commandThis, c.yellow("Now you can configure the sfdx connected app"));
+    uxLog(commandThis, c.yellow("Now you can configure the SF CLI connected app"));
     uxLog(
       commandThis,
       `Follow instructions here: ${c.bold(

@@ -67,7 +67,7 @@ export default class ConvertProfilesToPermSets extends SfdxCommand {
         }
         const psName = "PS_" + profileName.split(" ").join("_");
         uxLog(this, c.cyan(`Generating Permission set ${c.green(psName)} from profile ${c.green(profileName)}`));
-        const convertCommand = "sfdx shane:profile:convert" + ` -p "${profileName}"` + ` -n "${psName}"` + " -e";
+        const convertCommand = "sf shane:profile:convert" + ` -p "${profileName}"` + ` -n "${psName}"` + " -e";
         await execCommand(convertCommand, this, { fail: true, output: true });
       }
     }

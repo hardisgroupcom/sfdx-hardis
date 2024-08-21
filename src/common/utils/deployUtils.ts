@@ -112,7 +112,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
     throw new SfdxError("Pull failure. Check messages above");
   }
 
-  // Check if some items has to be forced-retrieved because sfdx does not detect updates
+  // Check if some items has to be forced-retrieved because SF CLI does not detect updates
   const config = await getConfig("project");
   if (config.autoRetrieveWhenPull) {
     uxLog(this, c.cyan("Retrieving additional sources that are usually forgotten by sf project:retrieve:start ..."));
@@ -521,7 +521,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // Retrieve sfdx sources in local git repo
   await execCommand(
-    `sfdx project retrieve start --manifest ${packageDeployOnChangePath}` + (options.targetUsername ? ` -o ${options.targetUsername}` : ""),
+    `sf project retrieve start --manifest ${packageDeployOnChangePath}` + (options.targetUsername ? ` --target-org ${options.targetUsername}` : ""),
     this,
     {
       fail: true,
@@ -537,7 +537,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
     return null;
   }
 
-  // "Temporarily" commit updates so sfdx git delta can build diff package.xml
+  // "Temporarily" commit updates so sfdx-git-delta can build diff package.xml
   await git().addConfig("user.email", "bot@hardis.com", false, "global");
   await git().addConfig("user.name", "Hardis", false, "global");
   await git().add("--all");
@@ -553,7 +553,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
   if (gitDeltaCommandRes?.status !== 0 || !fs.existsSync(diffPackageXml)) {
-    throw new SfdxError("Error while running sfdx git delta:\n" + JSON.stringify(gitDeltaCommandRes));
+    throw new SfdxError("Error while running sfdx-git-delta:\n" + JSON.stringify(gitDeltaCommandRes));
   }
 
   // Remove from original packageDeployOnChange the items that has not been updated
@@ -594,7 +594,7 @@ export async function removePackageXmlContent(
 
 // Deploy destructive changes
 export async function deployDestructiveChanges(packageDeletedXmlFile: string, options: any = { debug: false, check: false }, commandThis: any) {
-  // Create empty deployment file because of sfdx limitation
+  // Create empty deployment file because of SF CLI limitation
   // cf https://gist.github.com/benahm/b590ecf575ff3c42265425233a2d727e
   uxLog(commandThis, c.cyan(`Deploying destructive changes from file ${path.resolve(packageDeletedXmlFile)}`));
   const tmpDir = await createTempDir();
@@ -811,7 +811,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
       c.red("[sfdx-hardis] Unable to generate package.xml. This is probably an auth issue or a Salesforce technical issue, please try again later"),
     );
   }
-  // Add Elements that are not returned by sfdx command
+  // Add Elements that are not returned by SF CLI command
   if (conn) {
     uxLog(this, c.grey("Looking for package.xml elements that are not returned by manifest create command..."));
     const mdTypes = [{ type: "ListView" }, { type: "CustomLabel" }];

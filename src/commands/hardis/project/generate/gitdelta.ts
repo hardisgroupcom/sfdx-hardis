@@ -115,7 +115,7 @@ export default class GenerateGitDelta extends SfdxCommand {
       toCommit = commitToResp.value.hash;
     }
 
-    // Generate package.xml & destructiveChanges.xml using sfdx git delta
+    // Generate package.xml & destructiveChanges.xml using sfdx-git-delta
     const tmpDir = await createTempDir();
     await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
 

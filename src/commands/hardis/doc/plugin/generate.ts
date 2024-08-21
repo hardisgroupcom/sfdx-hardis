@@ -91,12 +91,12 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     // Generate index.md
     await this.generateIndexDoc(config, commandsLinks);
 
-    // Copy default files (mkdocs.yml and other files can be updated by the sfdx plugin developer later)
+    // Copy default files (mkdocs.yml and other files can be updated by the SF Cli plugin developer later)
     const mkdocsYmlFile = path.join(process.cwd(), "mkdocs.yml");
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, "defaults/mkdocs", "."), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
-      uxLog(this, c.blue("Base mkdocs files copied in your sfdx plugin folder"));
+      uxLog(this, c.blue("Base mkdocs files copied in your SF Cli plugin folder"));
       uxLog(this, c.yellow("You should probably manually update mkdocs.yml and build-deploy-docs.yml with your repo & plugin information"));
     }
     // Remove changelog if not existing

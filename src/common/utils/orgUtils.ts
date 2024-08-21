@@ -198,14 +198,14 @@ export async function promptOrg(
     // If devHub , set alias of project devHub from config file
     const config = await getConfig("project");
     if (options.devHub && config.devHubAlias) {
-      const setAliasCommand = `sfdx alias:set ${config.devHubAlias}=${org.username}`;
+      const setAliasCommand = `sf alias set ${config.devHubAlias}=${org.username}`;
       await execSfdxJson(setAliasCommand, commandThis, {
         fail: true,
         output: false,
       });
     } else {
       // If not devHub, set MY_ORG as alias
-      const setAliasCommand = `sfdx alias:set MY_ORG=${org.username}`;
+      const setAliasCommand = `sf alias set MY_ORG=${org.username}`;
       await execSfdxJson(setAliasCommand, commandThis, {
         fail: true,
         output: false,
@@ -387,7 +387,7 @@ export async function initOrgMetadatas(
           output: false,
           debug: debugMode,
         });
-        await execCommand("sfdx texei:sharingcalc:suspend", this, {
+        await execCommand("sf texei:sharingcalc:suspend", this, {
           fail: false,
           output: true,
           debug: debugMode,
@@ -400,7 +400,7 @@ export async function initOrgMetadatas(
     await forceSourcePush(orgAlias, this, debugMode, options);
     // Resume sharing calc if necessary
     if (deferSharingCalc) {
-      await execCommand("sfdx texei:sharingcalc:resume", this, {
+      await execCommand("sf texei:sharingcalc:resume", this, {
         fail: false,
         output: true,
         debug: debugMode,
@@ -471,7 +471,7 @@ export async function initOrgData(initDataFolder: string, orgUsername: string) {
 }
 
 export async function getOrgAliasUsername(alias: string) {
-  const aliasListRes = await execSfdxJson("sfdx alias:list", this, {
+  const aliasListRes = await execSfdxJson("sf alias list", this, {
     output: false,
     fail: false,
   });

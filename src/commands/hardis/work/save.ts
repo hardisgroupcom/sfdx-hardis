@@ -156,7 +156,7 @@ autoRemoveUserPermissions:
     if (orgPullStateRes && orgPullStateRes.outputString) {
       return orgPullStateRes;
     }
-    // Update package.xml files using sfdx git delta
+    // Update package.xml files using sfdx-git-delta
     const gitStatusWithConfig = await this.upgradePackageXmlFilesWithDelta();
     // Apply cleaning on sources
     await this.applyCleaningOnSources();

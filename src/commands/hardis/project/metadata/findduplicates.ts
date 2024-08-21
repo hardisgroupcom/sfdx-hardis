@@ -112,7 +112,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
     if (this.configInfo.metadataDuplicateFindKeys) {
       Find.metadataDuplicateFindKeys = this.configInfo.metadataDuplicateFindKeys;
     }
-    // Gets the root sfdx logger level
+    // Gets the root SF CLI logger level
     this.logLevel = (await Logger.root()).getLevel();
   }
 
