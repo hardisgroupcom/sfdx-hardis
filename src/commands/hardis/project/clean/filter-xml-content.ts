@@ -21,7 +21,7 @@ This script requires a filter-config.json file`;
     'sf hardis:project:clean:filter-xml-content -i "./mdapi_output"',
     'sf hardis:project:clean:filter-xml-content -i "retrieveUnpackaged"',
   ];
-  public static readonly requiresProject = false;
+  public static readonly requiresProject = true;
   public static readonly requiresUsername = false;
   public static readonly flagsConfig: FlagsConfig = {
     configfile: flags.string({
@@ -55,22 +55,21 @@ This script requires a filter-config.json file`;
   public smmryResult = { filterResults: {} };
 
   public async run(): Promise<AnyJson> {
-    this.configFile = this.flags.configFile || "./filter-config.json";
+    this.configFile = this.flags.configfile || "./filter-config.json";
     this.inputFolder = this.flags.inputfolder || ".";
     this.outputFolder =
       this.flags.outputfolder || "./" + path.dirname(this.inputFolder) + "/" + path.basename(this.inputFolder) + "_xml_content_filtered";
     uxLog(this, c.cyan(`Initialize XML content filtering of ${this.inputFolder} ,using ${this.configFile} , into ${this.outputFolder}`));
     // Read json config file
     const filterConfig = fs.readJsonSync(this.configFile);
-    uxLog(this, "Config file content:");
-    uxLog(this, util.inspect(filterConfig, false, null));
+    uxLog(this, c.grey("Filtering config file content:\n" + JSON.stringify(filterConfig, null, 2)));
 
     // Create output folder/empty it if existing
     if (fs.existsSync(this.outputFolder) && this.outputFolder !== this.inputFolder) {
-      uxLog(this, "Empty output folder " + this.outputFolder);
+      uxLog(this, c.grey("Empty output folder " + this.outputFolder));
       fs.emptyDirSync(this.outputFolder);
     } else if (!fs.existsSync(this.outputFolder)) {
-      uxLog(this, "Create output folder " + this.outputFolder);
+      uxLog(this, c.grey("Create output folder " + this.outputFolder));
       fs.mkdirSync(this.outputFolder);
     }
 
@@ -82,7 +81,7 @@ This script requires a filter-config.json file`;
 
     // Browse filters
     filterConfig.filters.forEach((filter) => {
-      uxLog(this, filter.name + " (" + filter.description + ")");
+      uxLog(this, c.grey("Filtering " + filter.name + " (" + filter.description + ")..."));
       // Browse filter folders
       filter.folders.forEach((filterFolder) => {
         // Browse folder files
@@ -98,7 +97,7 @@ This script requires a filter-config.json file`;
             if (browsedFileExtension === filterFileExt) {
               // Found a matching file, process it
               const fullFilePath = this.outputFolder + "/" + filterFolder + "/" + fpath;
-              uxLog(this, "- " + fullFilePath);
+              uxLog(this, c.grey("- " + fullFilePath));
               this.filterXmlFromFile(filter, fullFilePath);
             }
           });
@@ -108,7 +107,7 @@ This script requires a filter-config.json file`;
     this.smmryResult.filterResults = this.smmryUpdatedFiles;
 
     // Display results as JSON
-    uxLog(this, JSON.stringify(this.smmryResult));
+    uxLog(this, c.grey("Filtering results:" + JSON.stringify(this.smmryResult)));
     return {};
   }
 

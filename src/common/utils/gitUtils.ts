@@ -69,11 +69,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
 }
 
 export async function callSfdxGitDelta(from: string, to: string, outputDir: string, options: any = {}) {
-  const sgdHelp = (await execCommand(" sfdx sgd:source:delta --help", this, { fail: false, output: false, debug: options?.debugMode || false }))
-    .stdout;
-  const packageXmlGitDeltaCommand =
-    `sfdx sgd:source:delta --from "${from}" --to "${to}" --output ${outputDir}` +
-    (sgdHelp.includes("--ignore-whitespace") ? " --ignore-whitespace" : "");
+  const packageXmlGitDeltaCommand = `sf sgd:source:delta --from "${from}" --to "${to}" --output ${outputDir} --ignore-whitespace`;
   const gitDeltaCommandRes = await execSfdxJson(packageXmlGitDeltaCommand, this, {
     output: true,
     fail: false,

@@ -64,7 +64,7 @@ export default class CleanReferences extends SfdxCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  protected static requiresProject = true;
   /* jscpd:ignore-end */
 
   protected debugMode = false;
@@ -196,14 +196,14 @@ export default class CleanReferences extends SfdxCommand {
         // Template based cleaning
         uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
-        await FilterXmlContent.run([
-          "-c",
-          filterConfigFile,
-          "--inputfolder",
-          "./force-app/main/default",
-          "--outputfolder",
-          "./force-app/main/default",
-        ]);
+        const packageDirectories = this.project.getPackageDirectories();
+        for (const packageDirectory of packageDirectories) {
+
+          await FilterXmlContent.run(
+            ["-c", filterConfigFile, "--inputfolder", packageDirectory.path, "--outputfolder", packageDirectory.path],
+            this.config
+          );
+        }
       }
     }
 
