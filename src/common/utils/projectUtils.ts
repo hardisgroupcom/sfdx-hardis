@@ -20,7 +20,7 @@ export function isSfdxProject(cwd = process.cwd()) {
 
 export async function createBlankSfdxProject(cwd = process.cwd(), debug = false) {
   uxLog(this, c.cyan("Creating blank SFDX project..."));
-  const projectCreateCommand = 'sfdx force:project:create --projectname "sfdx-hardis-blank-project"';
+  const projectCreateCommand = 'sf project generate --name "sfdx-hardis-blank-project"';
   await execCommand(projectCreateCommand, this, {
     cwd: cwd,
     fail: true,

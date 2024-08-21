@@ -188,7 +188,7 @@ export default class SandboxCreate extends SfdxCommand {
       );
     }
     return c.red(
-      `[sfdx-hardis] Error creating sandbox org. Maybe try ${c.yellow(c.bold("sfdx hardis:sandbox:create --forcenew"))} ?\n${JSON.stringify(
+      `[sfdx-hardis] Error creating sandbox org. Maybe try ${c.yellow(c.bold("sf hardis:sandbox:create --forcenew"))} ?\n${JSON.stringify(
         createResult,
         null,
         2,

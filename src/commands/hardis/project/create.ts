@@ -100,7 +100,7 @@ export default class ProjectCreate extends SfdxCommand {
 
     // Create sfdx project only if not existing
     if (!isSfdxProject()) {
-      const createCommand = "sfdx force:project:create" + ` --projectname "${projectName}"` + " --manifest";
+      const createCommand = "sf project generate" + ` --name "${projectName}"` + " --manifest";
       await execCommand(createCommand, this, {
         output: true,
         fail: true,

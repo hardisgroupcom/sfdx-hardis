@@ -120,7 +120,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
       if (currentOrgId !== org.orgId) {
         const infoMsg = "Default org changed. Please restart the same command if VsCode does not do that automatically for you :)";
         uxLog(this, c.yellow(infoMsg));
-        const currentCommand = "sfdx " + this.id + " " + this.argv.join(" ") + " --orginstanceurl " + org.instanceUrl;
+        const currentCommand = "sf " + this.id + " " + this.argv.join(" ") + " --orginstanceurl " + org.instanceUrl;
         WebSocketClient.sendMessage({
           event: "runSfdxHardisCommand",
           sfdxHardisCommand: currentCommand,
@@ -147,7 +147,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
 
     // Create sfdx project if not existing yet
     if (!fs.existsSync("sfdx-project.json")) {
-      const createCommand = "sfdx force:project:create" + ` --projectname "sfdx-hardis-monitoring"`;
+      const createCommand = "sf project generate" + ` --name "sfdx-hardis-monitoring"`;
       uxLog(this, c.cyan("Creating sfdx-project..."));
       await execCommand(createCommand, this, {
         output: true,

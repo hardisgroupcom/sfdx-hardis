@@ -12,6 +12,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx force:source:pull -> sf project retrieve start
   - sfdx force:source:push -> sf project deploy start
   - sfdx force:source:tracking:clear -> sf project delete tracking
+  - sfdx force:source:manifest:create -> sf project generate manifest
   - sfdx sgd:source:delta -> sf sgd:source:delta
   - sfdx force:org:create -> sf org create sandbox | sf org create scratch
   - sfdx force:org:list -> sf org list
@@ -20,6 +21,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx config:set -> sf config set
   - sfdx auth:web:login -> sf org login web
   - sfdx auth:sfdxurl:store -> sf org login sfdx-url
+  - sfdx org:login:device -> sf org login device
 - Get rid of sfdx-essentials dependency by internalizing its used commands
   - sf hardis:packagexml:append
   - sf hardis:packagexml:remove

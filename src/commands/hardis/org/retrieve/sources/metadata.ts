@@ -145,7 +145,7 @@ export default class DxSources extends SfdxCommand {
     if (fs.existsSync("metadatas")) {
       // Create sfdx project if not existing yet
       if (!fs.existsSync("sfdx-project")) {
-        const createCommand = "sfdx force:project:create" + ` --projectname "sfdx-project"`;
+        const createCommand = "sf project generate" + ` --name "sfdx-project"`;
         uxLog(this, c.cyan("Creating sfdx-project..."));
         await execCommand(createCommand, this, {
           output: true,

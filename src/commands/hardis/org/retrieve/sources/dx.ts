@@ -111,7 +111,7 @@ export default class DxSources extends SfdxCommand {
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
       uxLog(this, c.cyan("Creating SFDX project..."));
-      const projectCreateCommand = 'sfdx force:project:create --projectname "sfdx-project"';
+      const projectCreateCommand = 'sf project generate --name "sfdx-project"';
       uxLog(this, `[command] ${c.bold(c.grey(projectCreateCommand))}`);
       const createProjectRes = await exec(projectCreateCommand, { maxBuffer: 1024 * 2000 });
       if (debug) {

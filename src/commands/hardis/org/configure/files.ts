@@ -77,7 +77,7 @@ See article below
 
     // Set bac initial cwd
     const message = c.cyan(`Successfully initialized files export project ${c.green(filesProjectFolder)}, with ${c.green("export.json")} file.
-You can now call it using ${c.white("sfdx hardis:org:files:export")}
+You can now call it using ${c.white("sf hardis:org:files:export")}
 `);
     uxLog(this, message);
     return { outputString: message };
