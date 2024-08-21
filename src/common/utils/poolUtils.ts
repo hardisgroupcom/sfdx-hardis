@@ -163,7 +163,7 @@ export async function tryFetchScratchOrg(options: any) {
     "[pool]" +
       c.yellow(
         `No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchOrgsNumber")} or schedule call to ${c.white(
-          "sfdx hardis:scratch:pool:refresh",
+          "sf hardis:scratch:pool:refresh",
         )} more often in CI`,
       ),
   );

@@ -549,7 +549,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
               } has been found. You may update installedPackages property in .sfdx-hardis.yml`,
             ),
           );
-          uxLog(this, c.yellow(`You can do that using command ${c.bold("sfdx hardis:org:retrieve:packageconfig")} in a minor git branch`));
+          uxLog(this, c.yellow(`You can do that using command ${c.bold("sf hardis:org:retrieve:packageconfig")} in a minor git branch`));
         }
         elapseEnd(`Install package ${package1.SubscriberPackageName}`);
       } else {

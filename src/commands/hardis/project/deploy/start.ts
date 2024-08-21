@@ -1,9 +1,7 @@
 import { FlagsConfig, flags, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
-import * as c from "chalk";
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils";
-import { uxLog } from "../../../../common/utils";
 
 export default class ProjectDeployStart extends SfdxCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx project deploy start that displays tips to solve deployment errors.
@@ -104,8 +102,6 @@ export default class ProjectDeployStart extends SfdxCommand {
   protected static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
-    uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
-    uxLog(this, c.red("Please migrate to command sf hardis project deploy start"));
     return await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, this.flags.debug);
   }
 }

@@ -73,7 +73,7 @@ export default class CleanReferences extends SfdxCommand {
     {
       value: "checkPermissions",
       title: "Check custom items are existing it at least one Permission Set",
-      command: "sfdx hardis:lint:access",
+      command: "sf hardis:lint:access",
     },
     {
       value: "dashboards",
@@ -86,17 +86,17 @@ export default class CleanReferences extends SfdxCommand {
     {
       value: "flowPositions",
       title: `Flows: Replace all positions in AutoLayout Flows by 0 to simplify conflicts management`,
-      command: "sfdx hardis:project:clean:flowpositions",
+      command: "sf hardis:project:clean:flowpositions",
     },
     {
       value: "listViewsMine",
       title: `ListViews: Convert scope "Everything" into scope "Mine" on ListViews`,
-      command: "sfdx hardis:project:clean:listviews",
+      command: "sf hardis:project:clean:listviews",
     },
     {
       value: "minimizeProfiles",
       title: "Profiles: Remove profile attributes that exists on permission sets",
-      command: "sfdx hardis:project:clean:minimizeprofiles",
+      command: "sf hardis:project:clean:minimizeprofiles",
     },
     {
       value: "caseentitlement",
@@ -121,7 +121,7 @@ export default class CleanReferences extends SfdxCommand {
     {
       value: "systemDebug",
       title: "Remove System.debug from sources",
-      command: "sfdx hardis:project:clean:systemdebug",
+      command: "sf hardis:project:clean:systemdebug",
     },
     {
       value: "v60",

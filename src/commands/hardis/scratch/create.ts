@@ -383,7 +383,7 @@ export default class ScratchCreate extends SfdxCommand {
       );
     }
     return c.red(
-      `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
+      `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sf hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
         createResult,
         null,
         2,

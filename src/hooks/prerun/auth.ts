@@ -132,7 +132,7 @@ async function authOrg(orgAlias: string, options: any) {
           c.yellow(
             c.italic(
               `[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(c.bold("hit CTRL+C"))}, then input ${c.whiteBright(
-                c.bold("sfdx hardis:org:select"),
+                c.bold("sf hardis:org:select"),
               )}`,
             ),
           ),

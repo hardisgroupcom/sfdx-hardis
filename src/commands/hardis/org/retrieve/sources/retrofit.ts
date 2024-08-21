@@ -76,8 +76,8 @@ export default class Retrofit extends SfdxCommand {
 
   public static examples = [
     "$ sfdx hardis:org:retrieve:sources:retrofit",
-    "sfdx hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated",
-    "sfdx hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode updated --push --pushmode mergerequest",
+    "sf hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated",
+    "sf hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode updated --push --pushmode mergerequest",
   ];
 
   protected static flagsConfig = {

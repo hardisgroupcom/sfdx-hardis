@@ -20,7 +20,7 @@ export default class RetrievePackageConfig extends SfdxCommand {
 
   public static description = "Retrieve package configuration from an org";
 
-  public static examples = ["$ sfdx hardis:org:retrieve:packageconfig", "sfdx hardis:org:retrieve:packageconfig -u myOrg"];
+  public static examples = ["$ sf hardis:org:retrieve:packageconfig", "sf hardis:org:retrieve:packageconfig -u myOrg"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

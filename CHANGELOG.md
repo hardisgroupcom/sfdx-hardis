@@ -22,10 +22,17 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx auth:web:login -> sf org login web
   - sfdx auth:sfdxurl:store -> sf org login sfdx-url
   - sfdx org:login:device -> sf org login device
+  - sfdx hardis:* -> sf hardis:*
 - Get rid of sfdx-essentials dependency by internalizing its used commands
   - sf hardis:packagexml:append
   - sf hardis:packagexml:remove
   - sf hardis:project:clean:filter-xml-content
+- Deprecate wrapper commands matching sfdx commands that will be removed. All replaced by sf hardis deploy start (TODO: complete !)
+  - sfdx hardis:source:push
+  - sfdx hardis:source:deploy
+  - sfdx hardis:mdapi:retrieve
+  - sfdx hardis:mdapi:deploy
+- Deprecate hardis:deploy:sources:metadata as nobody used metadata format anymore
 
 ## [4.53.0] 2024-08-20
 
