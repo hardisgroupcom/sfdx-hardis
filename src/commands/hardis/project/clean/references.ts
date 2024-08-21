@@ -11,6 +11,7 @@ import { prompts } from "../../../../common/utils/prompts";
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
 import { getConfig, setConfig } from "../../../../config";
 import { PACKAGE_ROOT_DIR } from "../../../../settings";
+import { FilterXmlContent } from "./filter-xml-content";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -195,17 +196,14 @@ export default class CleanReferences extends SfdxCommand {
         // Template based cleaning
         uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
-        const cleanCommand =
-          "sfdx essentials:metadata:filter-xml-content" +
-          ` -c ${filterConfigFile}` +
-          ` --inputfolder ./force-app/main/default` +
-          ` --outputfolder ./force-app/main/default` +
-          " --noinsight";
-        await execCommand(cleanCommand, this, {
-          fail: true,
-          output: false,
-          debug: this.debugMode,
-        });
+        await FilterXmlContent.run([
+          "-c",
+          filterConfigFile,
+          "--inputfolder",
+          "./force-app/main/default",
+          "--outputfolder",
+          "./force-app/main/default",
+        ]);
       }
     }
 
@@ -230,7 +228,7 @@ export default class CleanReferences extends SfdxCommand {
     await Promise.all(
       Object.keys(this.deleteItems).map(async (type) => {
         await this.manageDeleteRelatedFiles(type);
-      }),
+      })
     );
 
     uxLog(this, c.green(`Cleaning complete`));

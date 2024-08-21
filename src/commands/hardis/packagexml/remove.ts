@@ -3,7 +3,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { removePackageXmlFilesContent } from "../../../common/utils/xmlUtils";
 
 // Wrapper for sfdx force:source:deploy
-export class PackageXmlAppend extends SfdxCommand {
+export class PackageXmlRemove extends SfdxCommand {
   public static readonly description = `Removes the content of a package.xml file matching another package.xml file`;
   public static readonly examples = ["$ sf hardis packagexml:remove -p package.xml -r destructiveChanges.xml -o my-reduced-package.xml"];
   public static readonly requiresProject = false;

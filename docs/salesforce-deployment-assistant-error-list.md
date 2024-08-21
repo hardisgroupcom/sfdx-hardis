@@ -21,7 +21,7 @@ If you see a deployment error which is not here yet, please [add it in this file
 ```shell
 {1} metadata has probably been created/updated in a sandbox already upgraded to next platform version (ex: Sandbox in Summer'23 and Production in Spring'23)
 - First, try to update the api version in the XML of {1} metadata file (decrement the number in <apiVersion>{3}.0</apiVersion>)
-- If it still doesn't work because the metadata structure has changed between version, you may try a force:source:retrieve of the metadata by forcing --apiversion at the end of the command.
+- If it still doesn't work because the metadata structure has changed between version, you may try a sf project:retrieve:start of the metadata by forcing --api-version at the end of the command.
       
 ```
 
@@ -309,7 +309,7 @@ You probably renamed the picklist API name for {2}. Please update manually the p
 
 ```shell
 An email template should be present in the sources. To retrieve it, you can run:
-sfdx force:source:retrieve -m EmailTemplate:{1} -u YOUR_ORG_USERNAME
+sf project retrieve start -m EmailTemplate:{1} -o YOUR_ORG_USERNAME
 ```
 
 ---
@@ -758,7 +758,7 @@ QuickAction {2} referred in {1} is unknown. You can either:
 
 ```shell
 {1} is referring to unknown report {2}. To retrieve it, you can run:
-- sfdx force:source:retrieve -m Report:{2} -u YOUR_ORG_USERNAME
+- sf project retrieve start -m Report:{2} -o YOUR_ORG_USERNAME
 - If it fails, looks for the report folder and add it before report name to the retrieve command (ex: MYFOLDER/MYREPORTNAME)
 
 ```
@@ -857,7 +857,7 @@ Go manually make the change in the target org, so the deployment will pass
 
 ```shell
 Sources have references to value {1} of picklist {2}
-- If picklist {2} is standard, add the picklist to sfdx sources by using "sfdx force:source:retrieve -m StandardValueSet:{2}", then save again
+- If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
 
 ```
@@ -903,7 +903,7 @@ You must have a default application for a profile. You can:
 
 ```shell
 You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
-To retrieve it, run: sfdx force:source:retrieve -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
+To retrieve it, run: sf project retrieve start -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
 You can also retrieve all analytics sources in one shot using sfdx hardis:org:retrieve:source:analytics -u SOURCE_ORG_USERNAME
   - https://salesforce.stackexchange.com/a/365453/33522
   - https://help.salesforce.com/s/articleView?id=000319274&type=1

@@ -12,10 +12,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx force:source:pull -> sf project retrieve start
   - sfdx force:source:push -> sf project deploy start
   - sfdx force:source:tracking:clear -> sf project delete tracking
-- Get rid of sfdx-essentials dependency
-  - Internalize packagexml append and removal with local commands, ISO from sfdx-essential ones
-    - sf hardis:packagexml:append
-    - sf hardis:packagexml:remove
+- Get rid of sfdx-essentials dependency by internalizing its used commands
+  - sf hardis:packagexml:append
+  - sf hardis:packagexml:remove
+  - sf hardis:project:clean:filter-xml-content
 
 ## [4.53.0] 2024-08-20
 
