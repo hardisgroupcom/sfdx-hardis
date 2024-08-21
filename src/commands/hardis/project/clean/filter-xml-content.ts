@@ -81,7 +81,7 @@ This script requires a filter-config.json file`;
 
     // Browse filters
     filterConfig.filters.forEach((filter) => {
-      uxLog(this, c.grey("Filtering " + filter.name + " (" + filter.description + ")..."));
+      uxLog(this, c.grey(filter.name + " (" + filter.description + ")..."));
       // Browse filter folders
       filter.folders.forEach((filterFolder) => {
         // Browse folder files
