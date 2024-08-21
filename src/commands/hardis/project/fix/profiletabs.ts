@@ -20,7 +20,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class FixV53Flexipages extends SfdxCommand {
   public static title = "Fix profiles to add tabs that are not retrieved by SF CLI";
 
-  public static description = `Interactive prompts to add tab visibilities that are not retrieved by force:source:pull`;
+  public static description = `Interactive prompts to add tab visibilities that are not retrieved by project retrieve start`;
 
   public static examples = ["$ sfdx hardis:project:fix:profiletabs"];
 

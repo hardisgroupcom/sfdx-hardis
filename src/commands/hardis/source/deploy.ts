@@ -1,9 +1,11 @@
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
+import * as c from "chalk";
 import { GitProvider } from "../../../common/gitProvider";
 import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
+import { uxLog } from "../../../common/utils";
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfdxCommand {
@@ -152,6 +154,9 @@ Notes:
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
+    uxLog(this,c.red("This command will be deprecated by Salesforce in November 2024."));
+    uxLog(this,c.red("Please migrate to command sf hardis project deploy start"));
+    uxLog(this,c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
     // Run pre deployment commands if defined
     await executePrePostCommands("commandsPreDeploy", true);
     const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, this.flags.debug);

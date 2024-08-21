@@ -81,7 +81,7 @@ export default class DxSources2 extends SfdxCommand {
     // Prompt for package.xml if not sent
     if (packageXml === null) {
       const packageXmlRes = await prompts({
-        message: c.cyanBright("Please input the path to the package.xml file to use force sfdx force:source:retrieve"),
+        message: c.cyanBright("Please input the path to the package.xml file to use force sf project retrieve start"),
         type: "text",
         name: "value",
       });
@@ -102,7 +102,7 @@ export default class DxSources2 extends SfdxCommand {
     }
 
     // Retrieve sources
-    const retrieveCommand = "sfdx force:source:retrieve" + ` -x "${packageXml}"` + ` --targetusername ${targetUsername}`;
+    const retrieveCommand = "sf project retrieve start" + ` -x "${packageXml}"` + ` -o ${targetUsername}`;
     await execCommand(retrieveCommand, this, { fail: false, debug: this.debugMode, output: true });
 
     // Set bac initial cwd

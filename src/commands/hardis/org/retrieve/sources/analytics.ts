@@ -81,7 +81,7 @@ export default class Retrofit extends SfdxCommand {
     uxLog(this, c.cyan(`Filtered and completed analytics metadatas in analytics package XML: ${packageXmlAnalyticsFile}`));
 
     // Retrieve locally Analytics sources
-    const retrieveCommand = `sfdx force:source:retrieve -x "${packageXmlAnalyticsFile}" -u ${orgUsername}`;
+    const retrieveCommand = `sf project retrieve start -x "${packageXmlAnalyticsFile}" -o ${orgUsername}`;
     await execCommand(retrieveCommand, this, { fail: true, debug: this.debugMode, output: true });
     uxLog(this, c.cyan(`Retrieved all analytics source items using package XML: ${packageXmlAnalyticsFile}`));
 

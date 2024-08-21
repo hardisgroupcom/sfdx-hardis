@@ -22,7 +22,7 @@ import { isSandbox } from "./orgUtils";
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false, options: any = {}) {
-  elapseStart("force:source:push");
+  elapseStart("project:deploy:start");
   const config = await getConfig("user");
   const currentBranch = await getCurrentGitBranch();
   let arrangedFiles = [];
@@ -30,8 +30,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     arrangedFiles = await arrangeFilesBefore(commandThis, options);
   }
   try {
-    const sfdxPushCommand = options.sfdxPushCommand || "force:source:push";
-    const pushCommand = `sfdx ${sfdxPushCommand} -g -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
+    const pushCommand = `sf project deploy start --ignore-warnings --ignore-conflicts -o ${scratchOrgAlias} --wait 60`;
     await execCommand(pushCommand, commandThis, {
       fail: true,
       output: !isCI,
@@ -48,22 +47,12 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       configToSet[`tmp_${currentBranch}_pushed`] = true;
       await setConfig("user", configToSet);
     }
-    elapseEnd("force:source:push");
+    elapseEnd("project:deploy:start");
   } catch (e) {
     await restoreArrangedFiles(arrangedFiles, commandThis);
     // Manage beta/legacy boza
     const stdOut = e.stdout + e.stderr;
-    if (stdOut.includes(`'force:source:legacy:push' with your existing tracking files`)) {
-      options.sfdxPushCommand = "force:source:legacy:push";
-      uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:legacy:push"));
-      const pullRes = await forceSourcePush(scratchOrgAlias, commandThis, debug, options);
-      return pullRes;
-    } else if (stdOut.includes(`'force:source:beta:push' with your existing tracking files`)) {
-      options.sfdxPushCommand = "force:source:beta:push";
-      uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:beta:push"));
-      const pullRes = await forceSourcePush(scratchOrgAlias, commandThis, debug, options);
-      return pullRes;
-    } else if (stdOut.includes(`getaddrinfo EAI_AGAIN`)) {
+    if (stdOut.includes(`getaddrinfo EAI_AGAIN`)) {
       uxLog(this, c.red(c.bold("The error has been caused by your unstable internet connection. Please Try again !")));
     }
     // Analyze errors
@@ -74,15 +63,14 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       commandThis,
       c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`)),
     );
-    elapseEnd("force:source:push");
+    elapseEnd("project:deploy:start");
     throw new SfdxError("Deployment failure. Check messages above");
   }
 }
 
 export async function forceSourcePull(scratchOrgAlias: string, debug = false, options: any = {}) {
-  const sfdxPullCommand = options.sfdxPullCommand || "force:source:pull";
   try {
-    const pullCommand = `sfdx ${sfdxPullCommand} -w 60 --forceoverwrite -u ${scratchOrgAlias}`;
+    const pullCommand = `sf project retrieve start --ignore-conflicts -o ${scratchOrgAlias} --wait 60`;
     await execCommand(pullCommand, this, {
       fail: true,
       output: true,
@@ -91,17 +79,6 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false, op
   } catch (e) {
     // Manage beta/legacy boza
     const stdOut = e.stdout + e.stderr;
-    if (stdOut.includes(`'force:source:legacy:pull' with your existing tracking files`)) {
-      options.sfdxPullCommand = "force:source:legacy:pull";
-      uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:legacy:pull"));
-      const pullRes = await forceSourcePull(scratchOrgAlias, debug, options);
-      return pullRes;
-    } else if (stdOut.includes(`'force:source:beta:pull' with your existing tracking files`)) {
-      options.sfdxPullCommand = "force:source:beta:pull";
-      uxLog(this, c.yellow("Salesforce internal mess... trying with force:source:beta:pull"));
-      const pullRes = await forceSourcePull(scratchOrgAlias, debug, options);
-      return pullRes;
-    }
     // Analyze errors
     const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(this, c.red("Sadly there has been pull error(s)"));
@@ -138,9 +115,9 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false, op
   // Check if some items has to be forced-retrieved because sfdx does not detect updates
   const config = await getConfig("project");
   if (config.autoRetrieveWhenPull) {
-    uxLog(this, c.cyan("Retrieving additional sources that are usually forgotten by force:source:pull ..."));
+    uxLog(this, c.cyan("Retrieving additional sources that are usually forgotten by sf project:retrieve:start ..."));
     const metadataConstraint = config.autoRetrieveWhenPull.join(", ");
-    const retrieveCommand = `sfdx force:source:retrieve -w 60 -m "${metadataConstraint}" -u ${scratchOrgAlias}`;
+    const retrieveCommand = `sf project retrieve start -m "${metadataConstraint}" -o ${scratchOrgAlias} --wait 60`;
     await execCommand(retrieveCommand, this, {
       fail: true,
       output: true,
@@ -207,9 +184,9 @@ export async function forceSourceDeploy(
         const deploymentCheckId = await GitProvider.getDeploymentCheckId();
         if (deploymentCheckId) {
           const quickDeployCommand =
-            `sfdx force:source:deploy` +
-            ` --validateddeployrequestid ${deploymentCheckId} ` +
-            (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
+            `sf project deploy quick` +
+            ` --job-id ${deploymentCheckId} ` +
+            (options.targetUsername ? ` -o ${options.targetUsername}` : "") +
             ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
             ` --verbose` +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? " --dev-debug" : "");
@@ -237,17 +214,17 @@ export async function forceSourceDeploy(
       // No QuickDeploy Available, or QuickDeploy failing : try full deploy
       const branchConfig = await getConfig("branch");
       const deployCommand =
-        `sfdx force:source:deploy -x "${deployment.packageXmlFile}"` +
-        ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
-        " --ignorewarnings" + // So it does not fail in for objectTranslations stuff
-        ` --testlevel ${testlevel}` +
-        (options.testClasses && testlevel !== "NoTestRun" ? ` --runtests ${options.testClasses}` : "") +
-        (options.preDestructiveChanges ? ` --predestructivechanges ${options.preDestructiveChanges}` : "") +
-        (options.postDestructiveChanges ? ` --postdestructivechanges ${options.postDestructiveChanges}` : "") +
-        (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
-        (check ? " --checkonly" : "") +
-        " --verbose" +
+        `sf project deploy start --manifest "${deployment.packageXmlFile}"` +
+        " --ignore-warnings" + // So it does not fail in for objectTranslations stuff
+        ` --test_level ${testlevel}` +
+        (options.testClasses && testlevel !== "NoTestRun" ? ` --run-tests ${options.testClasses}` : "") +
+        (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : "") +
+        (options.postDestructiveChanges ? ` --post-destructive-changes ${options.postDestructiveChanges}` : "") +
+        (options.targetUsername ? ` -o ${options.targetUsername}` : "") +
+        (check ? " --check-only" : "") +
         (branchConfig?.skipCodeCoverage === true ? "" : " --coverageformatters json-summary") +
+        " --verbose" +
+        ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? " --dev-debug" : "");
       let deployRes;
       try {
@@ -544,7 +521,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // Retrieve sfdx sources in local git repo
   await execCommand(
-    `sfdx force:source:retrieve -x ${packageDeployOnChangePath}` + (options.targetUsername ? ` -u ${options.targetUsername}` : ""),
+    `sfdx project retrieve start --manifest ${packageDeployOnChangePath}` + (options.targetUsername ? ` -o ${options.targetUsername}` : ""),
     this,
     {
       fail: true,
@@ -632,12 +609,12 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
   );
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, "destructiveChanges.xml"));
   const deployDelete =
-    `sfdx force:mdapi:deploy -d ${tmpDir}` +
+    `sf project deploy start --metadata-dir ${tmpDir}` +
     ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
-    ` --testlevel ${options.testLevel || "NoTestRun"}` +
-    " --ignorewarnings" + // So it does not fail in case metadata is already deleted
-    (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
-    (options.check ? " --checkonly" : "") +
+    ` --test-level ${options.testLevel || "NoTestRun"}` +
+    " --ignore-warnings" + // So it does not fail in case metadata is already deleted
+    (options.targetUsername ? ` --target-org ${options.targetUsername}` : "") +
+    (options.check ? " --check-only" : "") +
     (options.debug ? " --verbose" : "");
   // Deploy destructive changes
   let deployDeleteRes = null;
@@ -685,14 +662,14 @@ export async function deployMetadatas(
 ) {
   // Perform deployment
   const deployCommand =
-    "sfdx force:mdapi:deploy" +
-    ` --deploydir ${options.deployDir || "."}` +
+    "sf project deploy start" +
+    ` --metadata-dir ${options.deployDir || "."}` +
     ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || "60"}` +
-    ` --testlevel ${options.testlevel || "RunLocalTests"}` +
-    ` --apiversion ${options.apiVersion || CONSTANTS.API_VERSION}` +
-    (options.soap ? " --soapdeploy" : "") +
-    (options.check ? " --checkonly" : "") +
-    (options.targetUsername ? ` --targetusername ${options.targetUsername}` : "") +
+    ` --test-level ${options.testlevel || "RunLocalTests"}` +
+    ` --api-version ${options.apiVersion || CONSTANTS.API_VERSION}` +
+    (options.soap ? " --soap-deploy" : "") +
+    (options.check ? " --check-only" : "") +
+    (options.targetUsername ? ` --target-org ${options.targetUsername}` : "") +
     " --verbose";
   let deployRes;
   try {
@@ -797,11 +774,11 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   if (isSfdxProject()) {
     // Use sfdx manifest build in current project
     await execCommand(
-      `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      `sf project generate manifest` +
+        ` --name ${manifestName}` +
+        ` --output-dir ${path.resolve(manifestDir)}` +
+        ` --include-packages managed,unlocked` +
+        ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -814,11 +791,11 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     await createBlankSfdxProject(tmpDirSfdxProject);
     // Use sfdx manifest build in dummy project
     await execCommand(
-      `sfdx force:source:manifest:create` +
-        ` --manifestname ${manifestName}` +
-        ` --outputdir ${path.resolve(manifestDir)}` +
-        ` --includepackages managed,unlocked` +
-        ` --fromorg ${targetOrgUsernameAlias}`,
+      `sf project generate manifest` +
+        ` --name ${manifestName}` +
+        ` --output-dir ${path.resolve(manifestDir)}` +
+        ` --include-packages managed,unlocked` +
+        ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -949,7 +926,7 @@ export async function extractOrgCoverageFromLog(stdout) {
   uxLog(
     this,
     c.italic(
-      c.grey("Unable to get org coverage from results. Maybe try to add --coverageformatters json-summary to your call to force:source:deploy ?"),
+      c.grey("Unable to get org coverage from results. Maybe try to add --coverage-formatters json-summary to your call to sf project deploy start ?"),
     ),
   );
   return null;

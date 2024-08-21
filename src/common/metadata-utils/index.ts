@@ -633,9 +633,9 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
       uxLog(commandThis, c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`));
       const retrieveCommand =
-        "sfdx force:mdapi:retrieve" +
-        ` --retrievetargetdir ${metadataFolder}` +
-        ` --unpackaged ${packageXml}` +
+        "sf project retrieve start" +
+        ` --target-metadata-dir ${metadataFolder}` +
+        ` --manifest ${packageXml}` +
         ` --wait ${process.env.SFDX_RETRIEVE_WAIT_MINUTES || "60"}` +
         (debug ? " --verbose" : "");
       const retrieveRes = await execSfdxJson(retrieveCommand, this, {

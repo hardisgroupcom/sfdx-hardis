@@ -1,8 +1,10 @@
 /* jscpd:ignore-start */
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
+import * as c from "chalk";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
+import { uxLog } from "../../../common/utils";
 
 const xorFlags = ["zipfile", "validateddeployrequestid", "deploydir"];
 export class Deploy extends SfdxCommand {
@@ -86,6 +88,9 @@ export class Deploy extends SfdxCommand {
   };
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
+    uxLog(this,c.red("This command will be deprecated by Salesforce in November 2024."));
+    uxLog(this,c.red("Please migrate to command sf hardis project deploy start"));
+    uxLog(this,c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
     return await wrapSfdxCoreCommand("sfdx force:mdapi:deploy", this.argv, this, this.flags.debug);
   }
 }

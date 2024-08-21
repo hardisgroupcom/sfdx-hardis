@@ -16,7 +16,7 @@ export default class SourcePush extends SfdxCommand {
 
   public static description = `Push local files to scratch org
 
-Calls \`sfdx force:source:push\` under the hood
+Calls \`sf project deploy start\` under the hood
 `;
 
   public static examples = ["$ sfdx hardis:scratch:push"];

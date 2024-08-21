@@ -358,7 +358,7 @@ export async function initOrgMetadatas(
 ) {
   // Push or deploy according to config (default: push)
   if ((isCI && process.env.CI_SCRATCH_MODE === "deploy") || process.env.DEBUG_DEPLOY === "true") {
-    // if CI, use force:source:deploy to make sure package.xml is consistent
+    // if CI, use sf project deploy start to make sure package.xml is consistent
     uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(orgAlias)}...`));
     const packageXmlFile =
       process.env.PACKAGE_XML_TO_DEPLOY || configInfo.packageXmlToDeploy || fs.existsSync("./manifest/package.xml")

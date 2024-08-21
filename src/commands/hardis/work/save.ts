@@ -227,10 +227,10 @@ autoRemoveUserPermissions:
   }
 
   private async ensureCommitIsReady() {
-    // Manage force:source:pull from scratch org
+    // Manage project deploy start from scratch org
     if (this.noPull || this.auto) {
       // Skip pull
-      uxLog(this, c.cyan(`Skipped force:source:pull from scratch org`));
+      uxLog(this, c.cyan(`Skipped sf project:retrieve:start from scratch org`));
       return;
     }
     // Request user if commit is ready
@@ -258,7 +258,7 @@ autoRemoveUserPermissions:
       ],
     });
     if (commitReadyRes.value === "pleasePull") {
-      // Process force:source:pull
+      // Process sf project retrieve start
       uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
       await forceSourcePull(this.org.getUsername(), this.debugMode);
       uxLog(this, c.cyan(`Sources has been pulled from ${this.org.getUsername()}, now you can stage and commit your updates !`));

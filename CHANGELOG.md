@@ -4,6 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- sfdx to SF Cli commands replacement
+  - sfdx force:mdapi:convert -> sf project convert mdapi
+  - sfdx force:mdapi:deploy -> sf project deploy start --metadata-dir
+  - sfdx force:source:retrieve -> sf project retrieve start
+  - sfdx force:source:deploy -> sf project deploy start
+  - sfdx force:source:pull -> sf project retrieve start
+  - sfdx force:source:push -> sf project deploy start
+  - sfdx force:source:tracking:clear -> sf project delete tracking
+
 ## [4.53.0] 2024-08-20
 
 - Upgrade workflows to Node 20 (fixes <https://github.com/hardisgroupcom/sfdx-hardis/issues/668>)

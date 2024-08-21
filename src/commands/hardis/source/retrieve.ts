@@ -2,7 +2,7 @@ import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
 import { SfdxError } from "@salesforce/core";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils";
-import { isCI } from "../../../common/utils";
+import { isCI, uxLog } from "../../../common/utils";
 import { promptOrgUsernameDefault } from "../../../common/utils/orgUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
@@ -76,6 +76,9 @@ export class SourceRetrieve extends SfdxCommand {
   };
 
   public async run(): Promise<any> {
+    uxLog(this,c.red("This command will be deprecated by Salesforce in November 2024."));
+    uxLog(this,c.red("Please migrate to command sf hardis project retrieve start"));
+    uxLog(this,c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
     const args = this.argv;
     // Manage user selection for metadatas
     if (!isCI && !this.flags.sourcepath && !this.flags.manifest && !this.flags.metadata && !this.flags.packagenames) {

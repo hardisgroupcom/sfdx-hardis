@@ -81,7 +81,7 @@ export default class CleanRetrieveFolders extends SfdxCommand {
       const subFolderFull = folderDir + "/" + subFolder;
       if (fs.lstatSync(subFolderFull).isDirectory()) {
         // Retrieve sub folder DX source
-        await execCommand(`sfdx force:source:retrieve -m ${folderType.mdType}:${subFolder}`, this, {
+        await execCommand(`sf project retrieve start -m ${folderType.mdType}:${subFolder}`, this, {
           fail: true,
           output: true,
           debug: this.debugMode,

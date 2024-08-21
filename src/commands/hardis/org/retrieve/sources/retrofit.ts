@@ -262,7 +262,7 @@ export default class Retrofit extends SfdxCommand {
     uxLog(this, c.cyan(`Retrieving sources from ${c.green(this.org.getUsername())} ...`));
     const RETROFIT_MDT: Array<string> =
       process.env.CI_SOURCES_TO_RETROFIT || this.configInfo.sourcesToRetrofit || Retrofit.DEFAULT_SOURCES_TO_RETROFIT;
-    const retrieveCommand = `sfdx force:source:retrieve -m "${RETROFIT_MDT.join(",")}" -u ${this.org.getUsername()}`;
+    const retrieveCommand = `sf project retrieve start -m "${RETROFIT_MDT.join(",")}" -o ${this.org.getUsername()}`;
     await execCommand(retrieveCommand, this, { fail: true, debug: this.debugMode, output: true });
 
     // Discard ignored changes

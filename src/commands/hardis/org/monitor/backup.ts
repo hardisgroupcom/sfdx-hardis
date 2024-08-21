@@ -140,7 +140,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     // Retrieve sfdx sources in local git repo
     uxLog(this, c.cyan(`Run the retrieve command for retrieving filtered metadatas ...`));
     try {
-      await execCommand(`sfdx force:source:retrieve -x ${packageXmlBackUpItemsFile} -u ${this.org.getUsername()} --wait 120`, this, {
+      await execCommand(`sf project retrieve start -x ${packageXmlBackUpItemsFile} -o ${this.org.getUsername()} --wait 120`, this, {
         fail: true,
         output: true,
         debug: this.debugMode,

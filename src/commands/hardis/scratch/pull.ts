@@ -20,9 +20,9 @@ Then, you probably want to stage and commit the files containing the updates you
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-- Calls sfdx force:source:pull under the hood
+- Calls sf project retrieve start under the hood
 - If there are errors, proposes to automatically add erroneous item in \`.forceignore\`, then pull again
-- If you want to always retrieve sources like CustomApplication that are not always detected as updates by force:source:pull , you can define property **autoRetrieveWhenPull** in .sfdx-hardis.yml
+- If you want to always retrieve sources like CustomApplication that are not always detected as updates by project:retrieve:start , you can define property **autoRetrieveWhenPull** in .sfdx-hardis.yml
 
 Example:
 \`\`\`yaml
