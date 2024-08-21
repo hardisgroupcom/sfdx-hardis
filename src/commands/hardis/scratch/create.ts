@@ -135,7 +135,7 @@ export default class ScratchCreate extends SfdxCommand {
         uxLog(this, "[pool] " + c.yellow("Put back scratch org in the scratch orgs pool. ") + c.grey({ result: this.scratchOrgFromPool }));
         await addScratchOrgToPool(this.scratchOrgFromPool, { position: "first" });
       } else if (isCI && this.scratchOrgUsername) {
-        await execCommand(`sfdx force:org:delete --noprompt --targetusername ${this.scratchOrgUsername}`, this, {
+        await execCommand(`sf org delete scratch --no-prompt --target-org ${this.scratchOrgUsername}`, this, {
           fail: false,
           output: true,
         });
@@ -228,7 +228,7 @@ export default class ScratchCreate extends SfdxCommand {
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
     // Check current scratch org
-    const orgListResult = await execSfdxJson("sfdx force:org:list", this);
+    const orgListResult = await execSfdxJson("sf org list", this);
     const hubOrgUsername = this.hubOrg.getUsername();
     const matchingScratchOrgs =
       orgListResult?.result?.scratchOrgs?.filter((org: any) => {
@@ -276,18 +276,18 @@ export default class ScratchCreate extends SfdxCommand {
     uxLog(this, c.cyan("Creating new scratch org..."));
     const waitTime = process.env.SCRATCH_ORG_WAIT || "15";
     const createCommand =
-      "sfdx force:org:create --setdefaultusername " +
-      `--definitionfile ${projectScratchDefLocal} ` +
-      `--setalias ${this.scratchOrgAlias} ` +
+      "sf org create scratch --set-default " +
+      `--definition-file ${projectScratchDefLocal} ` +
+      `--set-alias ${this.scratchOrgAlias} ` +
       `--wait ${waitTime} ` +
-      `--targetdevhubusername ${this.devHubAlias} ` +
-      `-d ${this.scratchOrgDuration}`;
+      `--target-org ${this.devHubAlias} ` +
+      `--duration-days ${this.scratchOrgDuration}`;
     const createResult = await execSfdxJson(createCommand, this, {
       fail: false,
       output: false,
       debug: this.debugMode,
     });
-    await clearCache("force:org:list");
+    await clearCache("sf org list");
     assert(createResult.status === 0 && createResult.result, this.buildScratchCreateErrorMessage(createResult));
     this.scratchOrgInfo = createResult.result;
     this.scratchOrgUsername = this.scratchOrgInfo.username;
@@ -311,7 +311,7 @@ export default class ScratchCreate extends SfdxCommand {
 
     if (isCI || this.pool === true) {
       // Try to store sfdxAuthUrl for scratch org reuse during CI
-      const displayOrgCommand = `sfdx force:org:display -u ${this.scratchOrgAlias} --verbose`;
+      const displayOrgCommand = `sf org display -o ${this.scratchOrgAlias} --verbose`;
       const displayResult = await execSfdxJson(displayOrgCommand, this, {
         fail: true,
         output: false,

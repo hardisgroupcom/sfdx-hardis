@@ -151,18 +151,17 @@ export default class SandboxCreate extends SfdxCommand {
     uxLog(this, c.cyan("Creating new sandbox org..."));
     const waitTime = process.env.SANDBOX_ORG_WAIT || "60";
     const createCommand =
-      "sfdx force:org:create --setdefaultusername " +
-      "--type sandbox " +
-      `--definitionfile ${projectSandboxDefLocal} ` +
-      `--setalias ${this.sandboxOrgAlias} ` +
+      "sf org create sandbox --set-default " +
+      `--definition-file ${projectSandboxDefLocal} ` +
+      `--set-alias ${this.sandboxOrgAlias} ` +
       `--wait ${waitTime} ` +
-      `--targetusername ${this.devHubAlias} `;
+      `--target-org ${this.devHubAlias} `;
     const createResult = await execSfdxJson(createCommand, this, {
       fail: false,
       output: false,
       debug: this.debugMode,
     });
-    await clearCache("force:org:list");
+    await clearCache("sf org list");
     assert(createResult.status === 0 && createResult.result, this.buildSandboxCreateErrorMessage(createResult));
     this.sandboxOrgInfo = createResult.result;
     this.sandboxOrgUsername = this.sandboxOrgInfo.username;

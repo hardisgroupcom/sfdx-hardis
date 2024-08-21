@@ -10,7 +10,7 @@ import * as util from "util";
 const exec = util.promisify(child.exec);
 
 import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { createTempDir, uxLog } from "../../../../../common/utils";
+import { uxLog } from "../../../../../common/utils";
 import { WebSocketClient } from "../../../../../common/websocketClient";
 import { setConfig } from "../../../../../config";
 
@@ -162,27 +162,6 @@ export default class DxSources extends SfdxCommand {
       await setConfig("project", {
         installedPackages,
       });
-      // Try to get org shape
-      const projectScratchDefFile = "./config/project-scratch-def.json";
-      uxLog(this, `[sfdx-hardis] Getting org shape in ${c.green(path.resolve(projectScratchDefFile))}...`);
-      const shapeFile = path.join(await createTempDir(), "project-scratch-def.json");
-      try {
-        await exec(`sfdx force:org:shape:create -f "${shapeFile} -u `);
-        const orgShape = await fs.readFile(shapeFile, "utf-8");
-        const projectScratchDef = await fs.readFile(projectScratchDefFile, "utf-8");
-        const newShape = Object.assign(projectScratchDef, orgShape);
-        await fs.writeFile(projectScratchDefFile, JSON.stringify(newShape, null, 2));
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (e) {
-        uxLog(this, c.yellow("[sfdx-hardis][ERROR] Unable to create org shape"));
-        uxLog(this, c.yellow("[sfdx-hardis] You need to manually update config/project-scratch-def.json"));
-        uxLog(
-          this,
-          c.yellow(
-            "[sfdx-hardis] See documentation at https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file.htm",
-          ),
-        );
-      }
     }
 
     // Remove temporary files

@@ -13,6 +13,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx force:source:push -> sf project deploy start
   - sfdx force:source:tracking:clear -> sf project delete tracking
   - sfdx sgd:source:delta -> sf sgd:source:delta
+  - sfdx force:org:create -> sf org create sandbox | sf org create scratch
+  - sfdx force:org:list -> sf org list
+  - sfdx force:org:delete -> sf org delete scratch
 - Get rid of sfdx-essentials dependency by internalizing its used commands
   - sf hardis:packagexml:append
   - sf hardis:packagexml:remove

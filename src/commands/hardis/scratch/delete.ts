@@ -49,7 +49,7 @@ export default class ScratchDelete extends SfdxCommand {
     const debugMode = this.flags.debug || false;
 
     // List all scratch orgs referenced on local computer
-    const orgListRequest = "sfdx force:org:list";
+    const orgListRequest = "sf org list";
     const hubOrgUsername = this.hubOrg.getUsername();
     const orgListResult = await execSfdxJson(orgListRequest, this, { fail: true, output: false, debug: debugMode });
     const scratchOrgsSorted = sortArray(orgListResult?.result?.scratchOrgs || [], {
@@ -78,7 +78,7 @@ export default class ScratchDelete extends SfdxCommand {
 
     // Delete scratch orgs
     for (const scratchOrgToDelete of scratchToDeleteRes.value) {
-      const deleteCommand = `sfdx force:org:delete --noprompt --targetusername ${scratchOrgToDelete.username}`;
+      const deleteCommand = `sf org delete scratch --no-prompt --target-org ${scratchOrgToDelete.username}`;
       await execCommand(deleteCommand, this, { fail: false, debug: debugMode, output: true });
       uxLog(this, c.cyan(`Scratch org ${c.green(scratchOrgToDelete.username)} at ${scratchOrgToDelete.instanceUrl} has been deleted`));
     }

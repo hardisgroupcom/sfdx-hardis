@@ -117,7 +117,7 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
         c.yellow(
           `You'll probably need to define CI masked variable ${c.green(
             "SFDX_AUTH_URL_DEV_HUB",
-          )} with content of sfdxAuthUrl that you can retrieve with ${c.white("sfdx force:org:display -u YOURDEVHUBUSERNAME --verbose --json")}`,
+          )} with content of sfdxAuthUrl that you can retrieve with ${c.white("sf org display -o YOURDEVHUBUSERNAME --verbose --json")}`,
         ),
       );
     }

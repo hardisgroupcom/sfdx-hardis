@@ -395,7 +395,7 @@ class MetadataUtils {
 
   // Get default org that is currently selected for user
   public static async getCurrentOrg() {
-    const displayOrgCommand = "sfdx force:org:display";
+    const displayOrgCommand = "sf org display";
     const displayResult = await execSfdxJson(displayOrgCommand, this, {
       fail: false,
       output: false,
@@ -408,10 +408,10 @@ class MetadataUtils {
 
   // List local orgs for user
   public static async listLocalOrgs(type = "any", options: any = {}) {
-    let orgListResult = await getCache("force:org:list", null);
+    let orgListResult = await getCache("sf org list", null);
     if (orgListResult == null) {
-      orgListResult = await execSfdxJson("sfdx force:org:list", this);
-      await setCache("force:org:list", orgListResult);
+      orgListResult = await execSfdxJson("sf org list", this);
+      await setCache("sf org list", orgListResult);
     }
     // All orgs
     if (type === "any") {

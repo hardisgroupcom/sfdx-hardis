@@ -106,7 +106,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
         // Authenticate to scratch org to delete
         await authenticateWithSfdxUrlStore(scratchOrgToDelete);
         // Delete scratch org
-        const deleteCommand = `sfdx force:org:delete --noprompt --targetusername ${scratchOrgToDelete.scratchOrgUsername}`;
+        const deleteCommand = `sf org delete scratch --no-prompt --target-org ${scratchOrgToDelete.scratchOrgUsername}`;
         await execCommand(deleteCommand, this, { fail: false, debug: this.debugMode, output: true });
         uxLog(
           this,

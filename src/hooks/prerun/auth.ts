@@ -91,7 +91,7 @@ async function authOrg(orgAlias: string, options: any) {
   let doConnect = true;
   if (!options.checkAuth) {
     // Check if we are already authenticated
-    let orgDisplayCommand = "sfdx force:org:display";
+    let orgDisplayCommand = "sfdx org display";
     let setDefaultUsername = false;
     if (orgAlias !== "MY_ORG" && (isCI || isDevHub) && !orgAlias.includes("force://")) {
       orgDisplayCommand += " --targetusername " + orgAlias;
@@ -304,7 +304,7 @@ async function authOrg(orgAlias: string, options: any) {
           throw e;
         }
       }
-      await clearCache("force:org:list");
+      await clearCache("sf org list");
       uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
       username = loginResult?.username || "err";
