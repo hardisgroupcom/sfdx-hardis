@@ -20,6 +20,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx config:get -> sf config get
   - sfdx config:set -> sf config set
   - sfdx auth:web:login -> sf org login web
+  - sfdx auth:jwt:grant -> sf org login jwt
   - sfdx auth:sfdxurl:store -> sf org login sfdx-url
   - sfdx org:login:device -> sf org login device
   - sfdx force:data:record:get -> sf data get record

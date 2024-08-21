@@ -209,13 +209,13 @@ async function authOrg(orgAlias: string, options: any) {
     if (crtKeyfile && sfdxClientId && username) {
       // Login with JWT
       const loginCommand =
-        "sfdx auth:jwt:grant" +
+        "sf org login jwt" +
         ` ${usernameArg}` +
-        ` --clientid ${sfdxClientId}` +
-        ` --jwtkeyfile ${crtKeyfile}` +
+        ` --client-id ${sfdxClientId}` +
+        ` --jwt-key-file ${crtKeyfile}` +
         ` --username ${username}` +
-        ` --instanceurl ${instanceUrl}` +
-        (orgAlias !== "MY_ORG" ? ` --setalias ${orgAlias}` : "");
+        ` --instance-url ${instanceUrl}` +
+        (orgAlias !== "MY_ORG" ? ` --set-alias ${orgAlias}` : "");
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
       });
