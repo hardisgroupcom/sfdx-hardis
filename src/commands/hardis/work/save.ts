@@ -11,7 +11,7 @@ import { exportData } from "../../../common/utils/dataUtils";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
 import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from "../../../common/utils/gitUtils";
 import { prompts } from "../../../common/utils/prompts";
-import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
+import { appendPackageXmlFilesContent, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "../../../common/utils/xmlUtils";
 import { WebSocketClient } from "../../../common/websocketClient";
 import { CONSTANTS, getConfig, setConfig } from "../../../config";
 import CleanReferences from "../project/clean/references";
@@ -111,7 +111,7 @@ autoRemoveUserPermissions:
   protected static requiresProject = true;
 
   // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ["sfdx-essentials", "sfdx-git-delta"];
+  protected static requiresSfdxPlugins = ["sfdx-git-delta"];
 
   protected debugMode = false;
   protected noPull = false;
@@ -147,7 +147,7 @@ autoRemoveUserPermissions:
     // User log info
     uxLog(
       this,
-      c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(this.targetBranch)}`),
+      c.cyan(`This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(this.targetBranch)}`)
     );
     // Make sure git is clean before starting operations
     await this.cleanGitStatus();
@@ -170,7 +170,7 @@ autoRemoveUserPermissions:
     uxLog(this, c.cyan(`If your work is ${c.bold("completed")}, you can create a ${c.bold("merge request")}:`));
     uxLog(
       this,
-      c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + this.currentBranch + ", visit")}`),
+      c.cyan(`- click on the link in the upper text, below ${c.italic("To create a merge request for " + this.currentBranch + ", visit")}`)
     );
     uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`));
     // const remote = await git().listRemote();
@@ -182,9 +182,9 @@ autoRemoveUserPermissions:
         c.bold(
           `${c.yellow("When your Merge Request will have been merged:")}
   - ${c.yellow("DO NOT REUSE THE SAME BRANCH")}
-  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`,
-        ),
-      ),
+  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`
+        )
+      )
     );
     uxLog(
       this,
@@ -192,16 +192,16 @@ autoRemoveUserPermissions:
         `If you are working with a ticketing system like JIRA, try to add the FULL URL of the tickets in the MR/PR description
 - Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
 - Less good example but will work anyway on most cases: CLOUDITY-4
-`,
-      ),
+`
+      )
     );
     uxLog(
       this,
       c.cyan(
         `Merge request documentation is available here -> ${c.bold(
-          "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request",
-        )}`,
-      ),
+          "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request"
+        )}`
+      )
     );
     // Return an object to be displayed with --json
     return { outputString: "Saved the task" };
@@ -303,13 +303,13 @@ autoRemoveUserPermissions:
     const toCommitMessage = gitDeltaScope.toCommit ? gitDeltaScope.toCommit.message : "";
     uxLog(
       this,
-      c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`),
+      c.cyan(`Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(this.currentBranch)} - ${c.green(toCommitMessage)}]`)
     );
     const tmpDir = await createTempDir();
     const packageXmlResult = await callSfdxGitDelta(
       gitDeltaScope.fromCommit,
       gitDeltaScope.toCommit ? gitDeltaScope.toCommit.hash : gitDeltaScope.fromCommit,
-      tmpDir,
+      tmpDir
     );
     if (packageXmlResult.status === 0) {
       // Upgrade local destructivePackage.xml
@@ -328,16 +328,9 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr),
+          c.red(destructivePackageXmlDiffStr)
       );
-      const appendDestructivePackageXmlCommand =
-        "sfdx essentials:packagexml:append" +
-        ` --packagexmls ${localDestructiveChangesXml},${diffDestructivePackageXml}` +
-        ` --outputfile ${localDestructiveChangesXml}`;
-      await execCommand(appendDestructivePackageXmlCommand, this, {
-        fail: true,
-        debug: this.debugMode,
-      });
+      await appendPackageXmlFilesContent([localDestructiveChangesXml, diffDestructivePackageXml], localDestructiveChangesXml);
       if ((await gitHasLocalUpdates()) && !this.noGit) {
         await git().add(localDestructiveChangesXml);
       }
@@ -346,21 +339,8 @@ autoRemoveUserPermissions:
       const diffPackageXml = path.join(tmpDir, "package", "package.xml");
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, "utf8");
       uxLog(this, c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) + c.green(packageXmlDiffStr));
-      const appendPackageXmlCommand =
-        "sfdx essentials:packagexml:append" + ` --packagexmls ${localPackageXml},${diffPackageXml}` + ` --outputfile ${localPackageXml}`;
-      await execCommand(appendPackageXmlCommand, this, {
-        fail: true,
-        debug: this.debugMode,
-      });
-      const removePackageXmlCommand =
-        "sfdx essentials:packagexml:remove" +
-        ` --packagexml ${localPackageXml}` +
-        ` --removepackagexml ${localDestructiveChangesXml}` +
-        ` --outputfile ${localPackageXml}`;
-      await execCommand(removePackageXmlCommand, this, {
-        fail: true,
-        debug: this.debugMode,
-      });
+      await appendPackageXmlFilesContent([localPackageXml, diffPackageXml], localPackageXml);
+      await removePackageXmlFilesContent(localPackageXml, localDestructiveChangesXml, { outputXmlFile: localPackageXml });
       if ((await gitHasLocalUpdates()) && !this.noGit) {
         await git().add(localPackageXml);
       }

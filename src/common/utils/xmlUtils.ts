@@ -62,7 +62,7 @@ export async function writePackageXmlFile(packageXmlFile: string, packageXmlObje
 // Check if a package.xml is empty
 export async function isPackageXmlEmpty(
   packageXmlFile: string,
-  options: { ignoreStandaloneParentItems: boolean } = { ignoreStandaloneParentItems: false },
+  options: { ignoreStandaloneParentItems: boolean } = { ignoreStandaloneParentItems: false }
 ) {
   const packageXmlContent = await parseXmlFile(packageXmlFile);
   if (packageXmlContent && packageXmlContent.Package && packageXmlContent.Package.types && packageXmlContent.Package.types.length > 0) {
@@ -82,11 +82,53 @@ export async function isPackageXmlEmpty(
   return true;
 }
 
+// Read package.xml files and build concatenated list of items
+export async function appendPackageXmlFilesContent(packageXmlFileList: string[], outputXmlFile: string) {
+  uxLog(this, c.cyan(`Appending ${packageXmlFileList.join(",")} into ${outputXmlFile}...`));
+  let firstPackageXmlContent: any = null;
+  let allPackageXmlFilesTypes = {};
+  // loop on packageXml files
+  for (const packageXmlFile of packageXmlFileList) {
+    const result: any = await parseXmlFile(packageXmlFile);
+    if (firstPackageXmlContent == null) {
+      firstPackageXmlContent = result;
+    }
+    let packageXmlMetadatasTypeLs: any[];
+    // Get metadata types in current loop packageXml
+    try {
+      packageXmlMetadatasTypeLs = result.Package.types || [];
+    } catch {
+      throw new SfdxError("Unable to find Package XML element in " + packageXmlFile);
+    }
+    // Add metadata members in concatenation list of items & store doublings
+    for (const typePkg of packageXmlMetadatasTypeLs) {
+      if (typePkg.name == null) {
+        continue;
+      }
+      const nameKey = typePkg.name[0];
+      if (allPackageXmlFilesTypes[nameKey] != null && typePkg.members != null) {
+        allPackageXmlFilesTypes[nameKey] = Array.from(new Set(allPackageXmlFilesTypes[nameKey].concat(typePkg.members))).sort();
+      } else if (typePkg.members != null) {
+        allPackageXmlFilesTypes[nameKey] = Array.from(new Set(typePkg.members)).sort();
+      }
+    }
+  }
+  // Sort result 
+  allPackageXmlFilesTypes = sortObject(allPackageXmlFilesTypes);
+  // Write output file
+  const appendTypesXml = [];
+  for (const packageXmlType of Object.keys(allPackageXmlFilesTypes)) {
+    appendTypesXml.push({ members: allPackageXmlFilesTypes[packageXmlType], name: packageXmlType });
+  }
+  firstPackageXmlContent.Package.types = appendTypesXml;
+  await writeXmlFile(outputXmlFile, firstPackageXmlContent);
+}
+
 // Read package.xml files and remove the content of the
 export async function removePackageXmlFilesContent(
   packageXmlFile: string,
   removePackageXmlFile: string,
-  { outputXmlFile = null, logFlag = false, removedOnly = false, keepEmptyTypes = false },
+  { outputXmlFile = null, logFlag = false, removedOnly = false, keepEmptyTypes = false }
 ) {
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
@@ -180,6 +222,12 @@ export async function removePackageXmlFilesContent(
     }
   }
   return packageXmlMetadatasTypeLs;
+}
+
+export function sortObject(o) {
+  return Object.keys(o)
+    .sort()
+    .reduce((r, k) => ((r[k] = o[k]), r), {});
 }
 
 function checkRemove(boolRes, removedOnly = false) {

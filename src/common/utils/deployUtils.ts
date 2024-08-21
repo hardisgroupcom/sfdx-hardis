@@ -68,7 +68,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
   }
 }
 
-export async function forceSourcePull(scratchOrgAlias: string, debug = false, options: any = {}) {
+export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
   try {
     const pullCommand = `sf project retrieve start --ignore-conflicts -o ${scratchOrgAlias} --wait 60`;
     await execCommand(pullCommand, this, {

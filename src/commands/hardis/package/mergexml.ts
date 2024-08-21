@@ -6,9 +6,10 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as path from "path";
-import { execCommand, uxLog } from "../../../common/utils";
+import { uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
 import { WebSocketClient } from "../../../common/websocketClient";
+import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -64,9 +65,6 @@ export default class MergePackageXml extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-  // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ["sfdx-essentials"];
-
   protected folder: string;
   protected pattern: string;
   protected packageXmlFiles = [];
@@ -100,12 +98,7 @@ export default class MergePackageXml extends SfdxCommand {
     }
 
     // Process merge of package.xml files
-    const appendPackageXmlCommand =
-      "sfdx essentials:packagexml:append" + ` --packagexmls "${this.packageXmlFiles.join(",")}"` + ` --outputfile "${this.resultFileName}"`;
-    await execCommand(appendPackageXmlCommand, this, {
-      fail: true,
-      debug: this.debugMode,
-    });
+    await appendPackageXmlFilesContent(this.packageXmlFiles,this.resultFileName);
 
     // Summary
     const msg = `Merged ${c.green(c.bold(this.packageXmlFiles.length))} files into ${c.green(this.resultFileName)}`;

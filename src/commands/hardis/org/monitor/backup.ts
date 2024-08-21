@@ -67,9 +67,6 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = true;
 
-  // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ["sfdx-essentials"];
-
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
 

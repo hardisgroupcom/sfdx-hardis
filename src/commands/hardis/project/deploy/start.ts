@@ -104,7 +104,7 @@ export default class ProjectDeployStart extends SfdxCommand {
   protected static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
-    uxLog(this, c.red("This command will be deprecated by Salesforce in November 2024."));
+    uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
     uxLog(this, c.red("Please migrate to command sf hardis project deploy start"));
     return await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, this.flags.debug);
   }

@@ -71,9 +71,6 @@ export default class DxSources extends SfdxCommand {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   protected static requiresProject = false;
 
-  // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ["sfdx-essentials"];
-
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
 

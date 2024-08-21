@@ -66,9 +66,6 @@ export default class CleanReferences extends SfdxCommand {
   protected static requiresProject = false;
   /* jscpd:ignore-end */
 
-  // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ["sfdx-essentials"];
-
   protected debugMode = false;
   protected cleaningTypes = [];
   protected allCleaningTypes = [

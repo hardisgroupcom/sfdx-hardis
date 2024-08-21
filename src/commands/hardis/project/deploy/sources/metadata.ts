@@ -83,6 +83,10 @@ export default class DxSources extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    uxLog(this,c.red("This command is deprecated and will be removed in January 2025"));
+    uxLog(this,c.red("Nobody used Metadata format anymore :)"));
+    uxLog(this,c.red("If you think it should be kept and maintained, please post an issue on sfdx-hardis GitHub repository"));
+
     const check = this.flags.check || false;
     const packageXml = this.flags.packagexml || null;
     const filter = this.flags.filter || false;
