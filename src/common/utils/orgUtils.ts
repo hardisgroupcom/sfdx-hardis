@@ -181,7 +181,7 @@ export async function promptOrg(
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === "RefreshTokenAuthError") {
     uxLog(this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
-    const loginCommand = "sfdx auth:web:login" + ` --instanceurl ${org.instanceUrl}`;
+    const loginCommand = "sf org login web" + ` --instance-url ${org.instanceUrl}`;
     const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: true });
     org = loginResult.result;
   }
@@ -269,7 +269,7 @@ export async function authenticateWithSfdxUrlStore(org: any) {
   const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
   const authFileContent = org.scratchOrgSfdxAuthUrl || (org.authFileJson ? JSON.stringify(org.authFileJson) : null);
   await fs.writeFile(authFile, authFileContent, "utf8");
-  const authCommand = `sfdx auth:sfdxurl:store -f ${authFile}`;
+  const authCommand = `sf org login sfdx-url --sfdx-url-file ${authFile}`;
   await execCommand(authCommand, this, { fail: true, output: false });
 }
 

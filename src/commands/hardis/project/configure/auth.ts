@@ -63,7 +63,7 @@ export default class ConfigureAuth extends SfdxCommand {
 
     // Ask user to login to org
     const prevUserName = devHub ? this.hubOrg?.getUsername() : this.org?.getUsername();
-    /*uxLog(this, c.cyan("Please select org login into the org you want to configure the SFDX Authentication"));
+    /*uxLog(this, c.cyan("Please select org login into the org you want to configure the SF CLI Authentication"));
      await this.config.runHook("auth", {
       checkAuth: true,
       Command: this,
@@ -73,7 +73,7 @@ export default class ConfigureAuth extends SfdxCommand {
     await promptOrg(this, {
       setDefault: true,
       devHub: devHub,
-      promptMessage: "Please select org login into the org you want to configure the SFDX Authentication",
+      promptMessage: "Please select org login into the org you want to configure the SF CLI Authentication",
     });
     await checkConfig(this);
 

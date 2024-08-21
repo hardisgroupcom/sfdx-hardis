@@ -28,8 +28,8 @@ export default class ScratchPoolCreate extends SfdxCommand {
   - Call the following lines in the CI job:
 
 \`\`\`shell
-  sfdx hardis:auth:login --devhub
-  sfdx hardis:scratch:pool:refresh
+  sf hardis:auth:login --devhub
+  sf hardis:scratch:pool:refresh
 \`\`\`
   `;
 

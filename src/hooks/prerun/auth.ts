@@ -163,9 +163,9 @@ async function authOrg(orgAlias: string, options: any) {
       const authFile = path.join(await createTempDir(), "sfdxScratchAuth.txt");
       await fs.writeFile(authFile, authUrl, "utf8");
       const authCommand =
-        `sfdx auth:sfdxurl:store -f ${authFile}` +
-        (isDevHub ? ` --setdefaultdevhubusername` : ` --setdefaultusername`) +
-        (!orgAlias.includes("force://") ? ` --setalias ${orgAlias}` : "");
+        `sf org login sfdx-url -f ${authFile}` +
+        (isDevHub ? ` --set-default-dev-hub` : ` --set-default`) +
+        (!orgAlias.includes("force://") ? ` --set-alias ${orgAlias}` : "");
       await execCommand(authCommand, this, { fail: true, output: false });
       uxLog(this, c.cyan("Successfully logged using sfdxAuthUrl"));
       await fs.remove(authFile);
@@ -205,7 +205,7 @@ async function authOrg(orgAlias: string, options: any) {
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
-    const usernameArg = options.setDefault === false ? "" : isDevHub ? "--setdefaultdevhubusername" : "--setdefaultusername";
+    const usernameArg = options.setDefault === false ? "" : isDevHub ? "--set-default-dev-hub" : "--set-default";
     if (crtKeyfile && sfdxClientId && username) {
       // Login with JWT
       const loginCommand =
@@ -270,26 +270,26 @@ async function authOrg(orgAlias: string, options: any) {
       let loginResult: any = null;
       // Manage device login
       if (loginTypeRes.loginType === "device") {
-        const loginCommandArgs = ["org:login:device", "--instanceurl", instanceUrl];
+        const loginCommandArgs = ["org login device", "--instance-url", instanceUrl];
         if (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias) {
           loginCommandArgs.push(...["--alias", orgAlias]);
         }
         if (options.setDefault === true && isDevHub) {
-          loginCommandArgs.push("--setdefaultdevhubusername");
+          loginCommandArgs.push("--set-default-dev-hub");
         }
         if (options.setDefault === true && !isDevHub) {
           loginCommandArgs.push("--set-default");
         }
-        const commandStr = "sfdx " + loginCommandArgs.join(" ");
+        const commandStr = "sf " + loginCommandArgs.join(" ");
         uxLog(this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(commandStr)))}`);
         loginResult = crossSpawn.sync("sfdx", loginCommandArgs, { stdio: "inherit" });
       }
       // Web Login if device login not used
       if (loginResult == null) {
         const loginCommand =
-          "sfdx auth:web:login" +
-          (options.setDefault === false ? "" : isDevHub ? " --setdefaultdevhubusername" : " --setdefaultusername") +
-          ` --instanceurl ${instanceUrl}` +
+          "sf org login web" +
+          (options.setDefault === false ? "" : isDevHub ? " --set-default-dev-hub" : " --set-default") +
+          ` --instance-url ${instanceUrl}` +
           (orgAlias !== "MY_ORG" && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : "");
         try {
           loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
