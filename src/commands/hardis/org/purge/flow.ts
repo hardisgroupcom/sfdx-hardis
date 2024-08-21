@@ -115,10 +115,10 @@ export default class OrgPurgeFlow extends SfdxCommand {
     } else {
       // Query all flows definitions
       const allFlowQueryCommand =
-        "sfdx force:data:soql:query " +
-        ` -q "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
-        ` --targetusername ${username}` +
-        " --usetoolingapi";
+        "sf data query " +
+        ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
+        ` --target-org ${username}` +
+        " --use-tooling-api";
       const allFlowQueryRes = await execSfdxJson(allFlowQueryCommand, this, {
         output: false,
         debug: debugMode,
@@ -168,7 +168,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }
     query += " ORDER BY Definition.DeveloperName,VersionNumber";
 
-    const flowQueryCommand = "sfdx force:data:soql:query " + ` -q "${query}"` + ` --targetusername ${username}` + " --usetoolingapi";
+    const flowQueryCommand = "sf data query " + ` --query "${query}"` + ` --target-org ${username}` + " --use-tooling-api";
     const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
       output: false,
       debug: debugMode,

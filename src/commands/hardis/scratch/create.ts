@@ -396,7 +396,7 @@ export default class ScratchCreate extends SfdxCommand {
     const config = await getConfig("user");
     // Update scratch org main user
     uxLog(this, c.cyan("Update / fix scratch org user " + this.scratchOrgUsername));
-    const userQueryCommand = `sfdx force:data:record:get -s User -w "Username=${this.scratchOrgUsername}" -u ${this.scratchOrgAlias}`;
+    const userQueryCommand = `sf data get record --sobject User --where "Username=${this.scratchOrgUsername}" --target-org ${this.scratchOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, { fail: true, output: false, debug: this.debugMode });
     let updatedUserValues = `LastName='SFDX-HARDIS' FirstName='Scratch Org'`;
     if (config.userEmail !== userQueryRes.result.CountryCode) {
@@ -410,7 +410,7 @@ export default class ScratchCreate extends SfdxCommand {
       // Make sure MarketingUser is checked on scratch org user if it is supposed to be
       updatedUserValues += " UserPermissionsMarketingUser=true";
     }
-    const userUpdateCommand = `sfdx force:data:record:update -s User -i ${userQueryRes.result.Id} -v "${updatedUserValues}" -u ${this.scratchOrgAlias}`;
+    const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.scratchOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
   }
 }

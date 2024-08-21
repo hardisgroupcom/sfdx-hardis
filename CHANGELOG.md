@@ -22,6 +22,11 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx auth:web:login -> sf org login web
   - sfdx auth:sfdxurl:store -> sf org login sfdx-url
   - sfdx org:login:device -> sf org login device
+  - sfdx force:data:record:get -> sf data get record
+  - sfdx force:data:record:update -> sf data update record
+  - sfdx force:data:soql:query -> sf data query
+  - sfdx force:data:bulk:delete -> sf data delete bulk
+
   - sfdx hardis:* -> sf hardis:*
 - Get rid of sfdx-essentials dependency by internalizing its used commands
   - sf hardis:packagexml:append

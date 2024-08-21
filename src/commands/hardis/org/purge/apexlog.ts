@@ -64,7 +64,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     const tempDir = "./tmp";
     await fs.ensureDir(tempDir);
     const apexLogsToDeleteCsv = path.join(tempDir, "ApexLogsToDelete_" + Math.random() + ".csv");
-    const queryCommand = `sfdx force:data:soql:query -q "SELECT Id FROM ApexLog" -t -r "csv" > "${apexLogsToDeleteCsv}"`;
+    const queryCommand = `sf data query --query "SELECT Id FROM ApexLog LIMIT 50000" -t -r "csv" > "${apexLogsToDeleteCsv}"`;
     await execCommand(queryCommand, this, {
       output: true,
       debug: debugMode,
@@ -92,7 +92,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
     }
 
     // Perform delete
-    const deleteCommand = `sfdx force:data:bulk:delete -s ApexLog -f ${apexLogsToDeleteCsv}`;
+    const deleteCommand = `sf data delete bulk --sobject ApexLog --file ${apexLogsToDeleteCsv}`;
     await execCommand(deleteCommand, this, {
       output: true,
       debug: debugMode,

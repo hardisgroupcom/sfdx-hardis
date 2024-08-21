@@ -201,7 +201,7 @@ export default class SandboxCreate extends SfdxCommand {
     const config = await getConfig("user");
     // Update sandbox org main user
     uxLog(this, c.cyan("Update / fix sandbox org user " + this.sandboxOrgUsername));
-    const userQueryCommand = `sfdx force:data:record:get -s User -w "Username=${this.sandboxOrgUsername}" -u ${this.sandboxOrgAlias}`;
+    const userQueryCommand = `sf data get record --sobject User --where "Username=${this.sandboxOrgUsername}" --target-org ${this.sandboxOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, { fail: true, output: false, debug: this.debugMode });
     let updatedUserValues = `LastName='SFDX-HARDIS' FirstName='Sandbox Org'`;
     // Fix country value is State & Country picklist activated
@@ -212,7 +212,7 @@ export default class SandboxCreate extends SfdxCommand {
       // Make sure MarketingUser is checked on sandbox org user if it is supposed to be
       updatedUserValues += " UserPermissionsMarketingUser=true";
     }
-    const userUpdateCommand = `sfdx force:data:record:update -s User -i ${userQueryRes.result.Id} -v "${updatedUserValues}" -u ${this.sandboxOrgAlias}`;
+    const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.sandboxOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
   }
 }
