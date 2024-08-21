@@ -14,7 +14,7 @@ export abstract class AiProviderRoot {
     throw new SfdxError("promptAi should be implemented on this call");
   }
 
-  // Get user defined maximum number of calls during an sfdx hardis command
+  // Get user defined maximum number of calls during an sfdx-hardis command
   getAiMaxCallsNumber() {
     return parseInt(getEnvVar("AI_MAXIMUM_CALL_NUMBER") || "10");
   }

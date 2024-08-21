@@ -135,7 +135,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
   // Generate index file
   private async generateIndexDoc(config: any, commandsLinks: any) {
     const lines = [
-      "<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->",
+      "<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->",
     ];
     const readme = await fs.readFile(path.join(process.cwd(), "README.md"), "utf8");
     let reusableReadmePartFound = false;
@@ -187,7 +187,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
   // Generate markdown doc for a single command
   private async generateCommandDoc(command: any) {
     const lines = [
-      "<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->",
+      "<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->",
     ];
     // Title
     const titleLines = [`# ${command.id}`, ""];

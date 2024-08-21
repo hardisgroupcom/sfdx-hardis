@@ -64,7 +64,7 @@ export default class ProjectCreate extends SfdxCommand {
       if (isCI) {
         throw new SfdxError(
           c.red(
-            "[sfdx-hardis] You must run sfdx hardis:project:lint locally to install Mega-Linter configuration before being able to run it from CI",
+            "[sfdx-hardis] You must run sf hardis:project:lint locally to install Mega-Linter configuration before being able to run it from CI",
           ),
         );
       } else {

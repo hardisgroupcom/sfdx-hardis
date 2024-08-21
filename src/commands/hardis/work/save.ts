@@ -182,7 +182,7 @@ autoRemoveUserPermissions:
         c.bold(
           `${c.yellow("When your Merge Request will have been merged:")}
   - ${c.yellow("DO NOT REUSE THE SAME BRANCH")}
-  - Use New task menu (sfdx hardis:work:new), even if you work in the same sandbox or scratch org :)`
+  - Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`
         )
       )
     );

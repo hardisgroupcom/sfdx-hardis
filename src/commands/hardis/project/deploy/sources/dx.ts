@@ -2,9 +2,9 @@
 /*
 To test locally, you can call the command like that:
 
-Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
+Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
 
-Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sfdx hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.muuuurf
+Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.muuuurf
 
 - Before, you need to make a sfdx alias:set myBranch=myUsername
 - You can find CI_PROJECT_ID with https://gitlab.com/api/v4/projects?search=YOUR-REPO-NAME
@@ -101,7 +101,7 @@ deploymentPlan:
 You can define a list of package to install during deployments using property \`installedPackages\`
 
 - If \`INSTALL_PACKAGES_DURING_CHECK_DEPLOY\` is defined as \`true\` (or \`installPackagesDuringCheckDeploy: true\` in \`.sfdx-hardis.yml\`), packages will be installed even if the command is called with \`--check\` mode
-- You can automatically update this property by listing all packages installed on an org using command \`sfdx hardis:org:retrieve:packageconfig\`
+- You can automatically update this property by listing all packages installed on an org using command \`sf hardis:org:retrieve:packageconfig\`
 
 Example:
 
@@ -115,7 +115,7 @@ installedPackages:
     SubscriberPackageVersionName: Marketing Cloud
     SubscriberPackageVersionNumber: 236.0.0.2
     installOnScratchOrgs: true                  // true or false depending you want to install this package when creating a new scratch org
-    installDuringDeployments: true              // set as true to install package during a deployment using sfdx hardis:project:deploy:sources:dx
+    installDuringDeployments: true              // set as true to install package during a deployment using sf hardis:project:deploy:sources:dx
     installationkey: xxxxxxxxxxxxxxxxxxxx       // if the package has a password, write it in this property
     - Id: 0A35r0000009F9CCAU
     SubscriberPackageId: 033b0000000Pf2AAAS
