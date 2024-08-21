@@ -78,7 +78,7 @@ export default class ConfigureAuth extends SfdxCommand {
     await checkConfig(this);
 
     // Check if the user has changed. If yes, ask to run the command again
-    const configGetRes = await execSfdxJson("sfdx config:get " + (devHub ? "defaultdevhubusername" : "defaultusername"), this, {
+    const configGetRes = await execSfdxJson("sf config get " + (devHub ? "target-dev-hub" : "target-org"), this, {
       output: false,
       fail: false,
     });

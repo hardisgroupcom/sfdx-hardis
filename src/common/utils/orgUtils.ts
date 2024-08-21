@@ -129,7 +129,7 @@ export async function promptOrg(
 
   // Filter if we want to list only the scratch attached to current devhub
   if (options.scratch === true) {
-    const configGetRes = await execSfdxJson("sfdx config:get defaultdevhubusername", this, {
+    const configGetRes = await execSfdxJson("sf config get target-dev-hub", this, {
       output: false,
       fail: true,
     });
@@ -189,7 +189,7 @@ export async function promptOrg(
   if (options.setDefault === true) {
     // Set default username
     const setDefaultUsernameCommand =
-      `sfdx config:set ` + `${options.devHub ? "defaultdevhubusername" : "defaultusername"}=${org.username}` + (!isSfdxProject() ? " --global" : "");
+      `sf config set ` + `${options.devHub ? "target-dev-hub" : "target-org"}=${org.username}` + (!isSfdxProject() ? " --global" : "");
     await execSfdxJson(setDefaultUsernameCommand, commandThis, {
       fail: true,
       output: false,

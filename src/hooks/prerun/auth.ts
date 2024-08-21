@@ -139,7 +139,7 @@ async function authOrg(orgAlias: string, options: any) {
         );
       }
       if (setDefaultUsername) {
-        const setDefaultUsernameCommand = `sfdx config:set ${isDevHub ? "defaultdevhubusername" : "defaultusername"}=${
+        const setDefaultUsernameCommand = `sf config set ${isDevHub ? "target-dev-hub" : "target-org"}=${
           orgInfoResult.result.username
         }`;
         await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
@@ -315,7 +315,7 @@ async function authOrg(orgAlias: string, options: any) {
     if (logged) {
       // Retrieve default username or dev hub username if not returned by command
       if (username === "err") {
-        const configGetRes = await execSfdxJson("sfdx config:get " + (isDevHub ? "defaultdevhubusername" : "defaultusername"), this, {
+        const configGetRes = await execSfdxJson("sf config get " + (isDevHub ? "target-dev-hub" : "target-org"), this, {
           output: false,
           fail: false,
         });

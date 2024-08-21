@@ -292,7 +292,7 @@ Under the hood, it can:
       }
     } else {
       // Set selected org as default org
-      await execCommand(`sfdx config:set defaultusername=${scratchResponse.value.username}`, this, {
+      await execCommand(`sf config set target-org=${scratchResponse.value.username}`, this, {
         output: true,
         fail: true,
       });
@@ -367,7 +367,7 @@ Under the hood, it can:
     }
     // Selected sandbox from list
     else {
-      await execCommand(`sfdx config:set defaultusername=${sandboxResponse.value.username}`, this, {
+      await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
         output: true,
         fail: true,
       });
