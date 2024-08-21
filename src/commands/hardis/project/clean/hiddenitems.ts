@@ -20,7 +20,7 @@ export default class CleanHiddenItems extends SfdxCommand {
 
   public static description = "Remove unwanted hidden items within sfdx project sources";
 
-  public static examples = ["$ sfdx hardis:project:clean:hiddenitems"];
+  public static examples = ["$ sf hardis:project:clean:hiddenitems"];
 
   protected static flagsConfig = {
     folder: flags.string({

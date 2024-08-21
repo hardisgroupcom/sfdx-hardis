@@ -20,7 +20,7 @@ export default class ScratchPoolReset extends SfdxCommand {
 
   public static description = "Reset scratch org pool (delete all scratches in the pool)";
 
-  public static examples = ["$ sfdx hardis:scratch:pool:refresh"];
+  public static examples = ["$ sf hardis:scratch:pool:refresh"];
 
   // public static args = [{name: 'file'}];
 

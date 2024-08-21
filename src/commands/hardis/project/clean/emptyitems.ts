@@ -21,7 +21,7 @@ export default class CleanEmptyItems extends SfdxCommand {
 
   public static description = "Remove unwanted empty items within sfdx project sources";
 
-  public static examples = ["$ sfdx hardis:project:clean:emptyitems"];
+  public static examples = ["$ sf hardis:project:clean:emptyitems"];
 
   protected static flagsConfig = {
     folder: flags.string({

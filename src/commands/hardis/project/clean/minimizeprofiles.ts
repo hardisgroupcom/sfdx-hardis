@@ -50,7 +50,7 @@ skipMinimizeProfiles
 \`\`\`
 `;
 
-  public static examples = ["$ sfdx hardis:project:clean:minimizeprofiles"];
+  public static examples = ["$ sf hardis:project:clean:minimizeprofiles"];
 
   protected static flagsConfig = {
     folder: flags.string({

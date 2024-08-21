@@ -23,7 +23,7 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
   public static description = `Get the date when the org instance will be upgraded (to Spring, Summer or Winter)
   `;
 
-  public static examples = ["$ sfdx hardis:org:diagnose:instanceupgrade"];
+  public static examples = ["$ sf hardis:org:diagnose:instanceupgrade"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

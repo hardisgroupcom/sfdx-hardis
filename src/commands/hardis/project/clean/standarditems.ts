@@ -20,7 +20,7 @@ export default class CleanStandardItems extends SfdxCommand {
 
   public static description = "Remove unwanted standard items within sfdx project sources";
 
-  public static examples = ["$ sfdx hardis:project:clean:standarditems"];
+  public static examples = ["$ sf hardis:project:clean:standarditems"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

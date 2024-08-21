@@ -19,7 +19,7 @@ export default class ProjectCreate extends SfdxCommand {
 
   public static description = "Apply syntactic analysis (linters) on the repository sources, using Mega-Linter";
 
-  public static examples = ["$ sfdx hardis:project:lint", "$ sfdx hardis:project:lint --fix"];
+  public static examples = ["$ sf hardis:project:lint", "$ sf hardis:project:lint --fix"];
 
   protected static flagsConfig = {
     fix: flags.boolean({

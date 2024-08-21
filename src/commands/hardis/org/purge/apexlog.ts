@@ -20,7 +20,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
 
   public static description = "Purge apex logs in selected org";
 
-  public static examples = [`$ sfdx hardis:org:purge:apexlog`, `$ sfdx hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com`];
+  public static examples = [`$ sf hardis:org:purge:apexlog`, `$ sf hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com`];
 
   // public static args = [{name: 'file'}];
 

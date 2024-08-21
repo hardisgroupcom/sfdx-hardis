@@ -121,10 +121,10 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 `;
 
   public static examples = [
-    "$ sfdx hardis:org:diagnose:audittrail",
-    "$ sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com",
-    "$ sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com",
-    "$ sfdx hardis:org:diagnose:audittrail --lastndays 5",
+    "$ sf hardis:org:diagnose:audittrail",
+    "$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com",
+    "$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com",
+    "$ sf hardis:org:diagnose:audittrail --lastndays 5",
   ];
 
   protected static flagsConfig = {

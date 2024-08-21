@@ -35,7 +35,7 @@ Then, activate Github pages, with "gh_pages" as target branch
 At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages
 `;
 
-  public static examples = ["$ sfdx hardis:doc:plugin:generate"];
+  public static examples = ["$ sf hardis:doc:plugin:generate"];
 
   // public static args = [{name: 'file'}];
 

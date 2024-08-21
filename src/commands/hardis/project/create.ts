@@ -24,7 +24,7 @@ export default class ProjectCreate extends SfdxCommand {
 
   public static description = "Create a new SFDX Project";
 
-  public static examples = ["$ sfdx hardis:project:create"];
+  public static examples = ["$ sf hardis:project:create"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

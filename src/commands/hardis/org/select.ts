@@ -16,7 +16,7 @@ export default class OrgSelect extends SfdxCommand {
 
   public static description = messages.getMessage("selectOrg");
 
-  public static examples = ["$ sfdx hardis:org:select"];
+  public static examples = ["$ sf hardis:org:select"];
 
   // public static args = [{name: 'file'}];
 

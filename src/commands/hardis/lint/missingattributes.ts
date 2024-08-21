@@ -25,7 +25,7 @@ const messages = Messages.loadMessages("sfdx-hardis", "org");
 export default class metadatastatus extends SfdxCommand {
   public static title = "check missing description on custom fields";
   public static description = "Check if elements(custom fields) aren't description";
-  public static examples = ["$ sfdx hardis:lint:missingattributes"];
+  public static examples = ["$ sf hardis:lint:missingattributes"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {
     debug: flags.boolean({

@@ -46,7 +46,7 @@ export default class ScratchCreate extends SfdxCommand {
   - Use property \`dataPackages\`
   `;
 
-  public static examples = ["$ sfdx hardis:scratch:create"];
+  public static examples = ["$ sf hardis:scratch:create"];
 
   // public static args = [{name: 'file'}];
 

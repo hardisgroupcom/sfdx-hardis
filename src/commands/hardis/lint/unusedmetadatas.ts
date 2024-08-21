@@ -29,7 +29,7 @@ export default class UnusedMetadatas extends SfdxCommand {
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-metadata/) and can output Grafana, Slack and MsTeams Notifications.
   `;
-  public static examples = ["$ sfdx hardis:lint:unusedmetadatas"];
+  public static examples = ["$ sf hardis:lint:unusedmetadatas"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {
     debug: flags.boolean({

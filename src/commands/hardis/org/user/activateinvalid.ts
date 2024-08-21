@@ -30,9 +30,9 @@ See article below
 `;
 
   public static examples = [
-    `$ sfdx hardis:org:user:activateinvalid`,
-    `$ sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com`,
-    `$ sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername myuser@myorg.com`,
+    `$ sf hardis:org:user:activateinvalid`,
+    `$ sf hardis:org:user:activateinvalid --targetusername myuser@myorg.com`,
+    `$ sf hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername myuser@myorg.com`,
   ];
 
   // public static args = [{name: 'file'}];

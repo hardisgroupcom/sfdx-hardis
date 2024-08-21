@@ -20,7 +20,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
 
   public static description = `Mostly used for monitoring (Grafana) but you can also use it manually :)`;
 
-  public static examples = ["$ sfdx hardis:org:diagnose:licenses"];
+  public static examples = ["$ sf hardis:org:diagnose:licenses"];
 
   //Comment default values to test the prompts
   protected static flagsConfig = {

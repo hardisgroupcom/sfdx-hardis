@@ -19,7 +19,7 @@ export default class AuditDuplicateFiles extends SfdxCommand {
 
   public static description = "Find duplicate files in sfdx folder (often from past @salesforce/cli bugs)";
 
-  public static examples = ["$ sfdx hardis:project:audit:duplicatefiles"];
+  public static examples = ["$ sf hardis:project:audit:duplicatefiles"];
 
   protected static flagsConfig = {
     path: flags.string({

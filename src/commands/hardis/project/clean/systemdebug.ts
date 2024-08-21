@@ -20,7 +20,7 @@ export default class CleanSystemDebug extends SfdxCommand {
 
   public static description = "Clean System.debug() lines in APEX Code (classes and triggers)";
 
-  public static examples = ["$ sfdx hardis:project:clean:systemdebug"];
+  public static examples = ["$ sf hardis:project:clean:systemdebug"];
 
   protected static flagsConfig = {
     folder: flags.string({

@@ -38,7 +38,7 @@ You can remove more metadata types from backup, especially in case you have too 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
-  public static examples = ["$ sfdx hardis:org:monitor:backup"];
+  public static examples = ["$ sf hardis:org:monitor:backup"];
 
   protected static flagsConfig = {
     outputfile: flags.string({

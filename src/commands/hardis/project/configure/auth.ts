@@ -21,7 +21,7 @@ export default class ConfigureAuth extends SfdxCommand {
 
   public static description = "Configure authentication from git branch to target org";
 
-  public static examples = ["$ sfdx hardis:project:configure:auth"];
+  public static examples = ["$ sf hardis:project:configure:auth"];
 
   // public static args = [{name: 'file'}];
 

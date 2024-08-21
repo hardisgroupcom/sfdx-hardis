@@ -33,7 +33,7 @@ autoRetrieveWhenPull:
 \`\`\`
 `;
 
-  public static examples = ["$ sfdx hardis:scratch:pull"];
+  public static examples = ["$ sf hardis:scratch:pull"];
 
   // public static args = [{name: 'file'}];
 

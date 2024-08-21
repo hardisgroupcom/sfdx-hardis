@@ -20,7 +20,7 @@ export default class PackageVersionCreate extends SfdxCommand {
 
   public static description = messages.getMessage("packageVersionCreate");
 
-  public static examples = ["$ sfdx hardis:package:version:create"];
+  public static examples = ["$ sf hardis:package:version:create"];
 
   // public static args = [{name: 'file'}];
 

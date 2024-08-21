@@ -47,7 +47,7 @@ autoCleanTypes:
 \`\`\`
 `;
 
-  public static examples = ["$ sfdx hardis:project:clean:flowpositions"];
+  public static examples = ["$ sf hardis:project:clean:flowpositions"];
 
   protected static flagsConfig = {
     folder: flags.string({

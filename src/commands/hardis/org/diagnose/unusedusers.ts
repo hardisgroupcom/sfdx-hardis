@@ -38,11 +38,11 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 `;
 
   public static examples = [
-    "$ sfdx hardis:org:diagnose:unusedusers",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 365",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers",
+    "$ sf hardis:org:diagnose:unusedusers",
+    "$ sf hardis:org:diagnose:unusedusers --days 365",
+    "$ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm",
+    "$ sf hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1",
+    "$ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers",
   ];
 
   //Comment default values to test the prompts

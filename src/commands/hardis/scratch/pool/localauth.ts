@@ -21,7 +21,7 @@ export default class ScratchPoolLocalAuth extends SfdxCommand {
   public static description =
     "Calls the related storage service to request api keys and secrets that allows a local user to fetch a scratch org from scratch org pool";
 
-  public static examples = ["$ sfdx hardis:scratch:pool:localauth"];
+  public static examples = ["$ sf hardis:scratch:pool:localauth"];
 
   // public static args = [{name: 'file'}];
 

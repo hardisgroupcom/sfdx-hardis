@@ -19,7 +19,7 @@ export default class SourcePush extends SfdxCommand {
 Calls \`sf project deploy start\` under the hood
 `;
 
-  public static examples = ["$ sfdx hardis:scratch:push"];
+  public static examples = ["$ sf hardis:scratch:push"];
 
   // public static args = [{name: 'file'}];
 

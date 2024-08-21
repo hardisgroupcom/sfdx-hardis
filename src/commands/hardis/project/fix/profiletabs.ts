@@ -22,7 +22,7 @@ export default class FixV53Flexipages extends SfdxCommand {
 
   public static description = `Interactive prompts to add tab visibilities that are not retrieved by project retrieve start`;
 
-  public static examples = ["$ sfdx hardis:project:fix:profiletabs"];
+  public static examples = ["$ sf hardis:project:fix:profiletabs"];
 
   protected static flagsConfig = {
     path: flags.string({

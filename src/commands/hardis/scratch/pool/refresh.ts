@@ -24,7 +24,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
 
   public static description = "Create enough scratch orgs to fill the pool";
 
-  public static examples = ["$ sfdx hardis:scratch:pool:refresh"];
+  public static examples = ["$ sf hardis:scratch:pool:refresh"];
 
   // public static args = [{name: 'file'}];
 

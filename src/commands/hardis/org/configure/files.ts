@@ -30,7 +30,7 @@ See article below
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
 `;
 
-  public static examples = ["$ sfdx hardis:org:configure:files"];
+  public static examples = ["$ sf hardis:org:configure:files"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

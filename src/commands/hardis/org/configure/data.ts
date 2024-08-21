@@ -30,7 +30,7 @@ See article:
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
 `;
 
-  public static examples = ["$ sfdx hardis:org:configure:data"];
+  public static examples = ["$ sf hardis:org:configure:data"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

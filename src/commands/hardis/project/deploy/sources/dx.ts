@@ -187,11 +187,11 @@ If you need notifications to be sent using the current Pull Request and not the 
 `;
 
   public static examples = [
-    "$ sfdx hardis:project:deploy:sources:dx",
-    "$ sfdx hardis:project:deploy:sources:dx --check",
-    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests",
-    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
-    "$ sfdx hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTestsExceptSeeAllData",
+    "$ sf hardis:project:deploy:sources:dx",
+    "$ sf hardis:project:deploy:sources:dx --check",
+    "$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests",
+    "$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
+    "$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTestsExceptSeeAllData",
   ];
 
   protected static flagsConfig = {

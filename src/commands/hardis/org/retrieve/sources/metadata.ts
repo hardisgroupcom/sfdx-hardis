@@ -27,7 +27,7 @@ export default class DxSources extends SfdxCommand {
   public static description = messages.getMessage("retrieveDx");
 
   public static examples = [
-    "$ sfdx hardis:org:retrieve:sources:metadata",
+    "$ sf hardis:org:retrieve:sources:metadata",
     "$ SFDX_RETRIEVE_WAIT_MINUTES=200 sfdx hardis:org:retrieve:sources:metadata",
   ];
 

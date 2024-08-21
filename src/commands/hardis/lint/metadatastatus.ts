@@ -27,7 +27,7 @@ export default class metadatastatus extends SfdxCommand {
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 `;
-  public static examples = ["$ sfdx hardis:lint:metadatastatus"];
+  public static examples = ["$ sf hardis:lint:metadatastatus"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {
     debug: flags.boolean({

@@ -20,7 +20,7 @@ export default class CleanManagedItems extends SfdxCommand {
 
   public static description = "Remove unwanted managed items within sfdx project sources";
 
-  public static examples = ["$ sfdx hardis:project:clean:manageditems --namespace crta"];
+  public static examples = ["$ sf hardis:project:clean:manageditems --namespace crta"];
 
   protected static flagsConfig = {
     namespace: flags.string({

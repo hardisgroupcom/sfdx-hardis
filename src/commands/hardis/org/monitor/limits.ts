@@ -25,7 +25,7 @@ export default class MonitorBackup extends SfdxCommand {
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-org-limits/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
-  public static examples = ["$ sfdx hardis:org:monitor:limits"];
+  public static examples = ["$ sf hardis:org:monitor:limits"];
 
   protected static flagsConfig = {
     outputfile: flags.string({

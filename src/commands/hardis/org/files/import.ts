@@ -24,7 +24,7 @@ See article below to see how to Export them.
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
 `;
 
-  public static examples = ["$ sfdx hardis:org:files:import"];
+  public static examples = ["$ sf hardis:org:files:import"];
 
   protected static flagsConfig = {
     path: flags.string({

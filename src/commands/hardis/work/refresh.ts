@@ -20,7 +20,7 @@ export default class RefreshTask extends SfdxCommand {
 
   public static description = messages.getMessage("refreshWorkTask");
 
-  public static examples = ["$ sfdx hardis:work:refresh"];
+  public static examples = ["$ sf hardis:work:refresh"];
 
   // public static args = [{name: 'file'}];
 

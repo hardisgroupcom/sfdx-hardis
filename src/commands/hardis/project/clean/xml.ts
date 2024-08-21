@@ -39,8 +39,8 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   `;
 
   public static examples = [
-    "$ sfdx hardis:project:clean:xml",
-    `$ sfdx hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"`,
+    "$ sf hardis:project:clean:xml",
+    `$ sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"`,
   ];
 
   protected static flagsConfig = {

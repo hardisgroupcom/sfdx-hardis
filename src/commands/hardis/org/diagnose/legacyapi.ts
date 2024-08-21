@@ -33,10 +33,10 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 `;
 
   public static examples = [
-    "$ sfdx hardis:org:diagnose:legacyapi",
-    "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com",
-    "$ sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'",
-    "$ sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv",
+    "$ sf hardis:org:diagnose:legacyapi",
+    "$ sf hardis:org:diagnose:legacyapi -u hardis@myclient.com",
+    "$ sf hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'",
+    "$ sf hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv",
   ];
 
   // public static args = [{name: 'file'}];

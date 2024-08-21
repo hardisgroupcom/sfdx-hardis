@@ -24,7 +24,7 @@ export default class DocGenerate extends SfdxCommand {
 
   public static description = `Generate markdown files with project documentation`;
 
-  public static examples = ["$ sfdx hardis:doc:extract:permsetgroups"];
+  public static examples = ["$ sf hardis:doc:extract:permsetgroups"];
 
   protected static flagsConfig = {
     outputfile: flags.string({

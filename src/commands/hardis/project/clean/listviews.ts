@@ -21,7 +21,7 @@ export default class CleanListViews extends SfdxCommand {
 
   public static description = "Replace Mine by Everything in ListView, and log the replacements in sfdx-hardis.yml";
 
-  public static examples = ["$ sfdx hardis:project:clean:listviews"];
+  public static examples = ["$ sf hardis:project:clean:listviews"];
 
   protected static flagsConfig = {
     folder: flags.string({

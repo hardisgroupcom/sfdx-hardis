@@ -19,7 +19,7 @@ export default class DataExport extends SfdxCommand {
 
   public static description = messages.getMessage("orgDataDelete");
 
-  public static examples = ["$ sfdx hardis:org:data:delete"];
+  public static examples = ["$ sf hardis:org:data:delete"];
 
   protected static flagsConfig = {
     path: flags.string({

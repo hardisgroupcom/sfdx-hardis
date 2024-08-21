@@ -22,7 +22,7 @@ export default class OrgMissingItems extends SfdxCommand {
 
   public static description = "Clean SFDX sources from items present neither in target org nor local package.xml";
 
-  public static examples = ["$ sfdx hardis:project:clean:orgmissingitems"];
+  public static examples = ["$ sf hardis:project:clean:orgmissingitems"];
 
   protected static flagsConfig = {
     folder: flags.string({

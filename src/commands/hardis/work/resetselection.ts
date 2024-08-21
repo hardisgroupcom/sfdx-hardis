@@ -23,7 +23,7 @@ export default class RebuildSelection extends SfdxCommand {
 Calls a soft git reset behind the hood  
 `;
 
-  public static examples = ["$ sfdx hardis:work:resetsave"];
+  public static examples = ["$ sf hardis:work:resetsave"];
 
   // public static args = [{name: 'file'}];
 

@@ -61,7 +61,7 @@ autoRemoveUserPermissions:
 - Push commit to server
   `;
 
-  public static examples = ["$ sfdx hardis:work:task:save", "$ sfdx hardis:work:task:save --nopull --nogit --noclean"];
+  public static examples = ["$ sf hardis:work:task:save", "$ sf hardis:work:task:save --nopull --nogit --noclean"];
 
   // public static args = [{name: 'file'}];
 

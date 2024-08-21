@@ -31,7 +31,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes.
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
-  public static examples = ["$ sfdx hardis:org:test:apex"];
+  public static examples = ["$ sf hardis:org:test:apex"];
 
   protected static flagsConfig = {
     testlevel: flags.enum({

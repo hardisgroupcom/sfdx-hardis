@@ -69,8 +69,8 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 `;
 
   public static examples = [
-    "$ sfdx hardis:org:fix:listviewmine",
-    "$ sfdx hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners",
+    "$ sf hardis:org:fix:listviewmine",
+    "$ sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners",
   ];
 
   // public static args = [{name: 'file'}];

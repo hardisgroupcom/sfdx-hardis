@@ -16,7 +16,7 @@ export default class WebSocketAction extends SfdxCommand {
 
   public static description = "Technical calls to WebSocket functions";
 
-  public static examples = ["$ sfdx hardis:work:ws --event refreshStatus"];
+  public static examples = ["$ sf hardis:work:ws --event refreshStatus"];
 
   // public static args = [{name: 'file'}];
 

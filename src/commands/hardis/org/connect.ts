@@ -19,7 +19,7 @@ export default class OrgSelect extends SfdxCommand {
   public static description = `Connect to an org without setting it as default username, then proposes to open the org in web browser
   `;
 
-  public static examples = ["$ sfdx hardis:org:connect"];
+  public static examples = ["$ sf hardis:org:connect"];
 
   // public static args = [{name: 'file'}];
 

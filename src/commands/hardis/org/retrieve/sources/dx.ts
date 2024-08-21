@@ -26,7 +26,7 @@ export default class DxSources extends SfdxCommand {
 
   public static description = messages.getMessage("retrieveDx");
 
-  public static examples = ["$ sfdx hardis:org:retrieve:sources:dx"];
+  public static examples = ["$ sf hardis:org:retrieve:sources:dx"];
 
   protected static flagsConfig = {
     folder: flags.string({

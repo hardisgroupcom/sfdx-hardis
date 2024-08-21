@@ -34,7 +34,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
 
   public static description = "Configure monitoring of an org";
 
-  public static examples = ["$ sfdx hardis:org:configure:monitoring"];
+  public static examples = ["$ sf hardis:org:configure:monitoring"];
 
   protected static flagsConfig = {
     orginstanceurl: flags.string({

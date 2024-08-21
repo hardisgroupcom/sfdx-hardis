@@ -26,10 +26,10 @@ export default class CleanReferences extends SfdxCommand {
   public static description = "Remove unwanted references within sfdx project sources";
 
   public static examples = [
-    "$ sfdx hardis:project:clean:references",
-    "$ sfdx hardis:project:clean:references --type all",
-    "$ sfdx hardis:project:clean:references --config ./cleaning/myconfig.json",
-    "$ sfdx hardis:project:clean:references --config ./somefolder/myDestructivePackage.xml",
+    "$ sf hardis:project:clean:references",
+    "$ sf hardis:project:clean:references --type all",
+    "$ sf hardis:project:clean:references --config ./cleaning/myconfig.json",
+    "$ sf hardis:project:clean:references --config ./somefolder/myDestructivePackage.xml",
   ];
 
   // public static args = [{name: 'file'}];

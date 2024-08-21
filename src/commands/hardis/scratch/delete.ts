@@ -19,7 +19,7 @@ export default class ScratchDelete extends SfdxCommand {
 
   public static description = "Assisted menu to delete scratch orgs associated to a DevHub";
 
-  public static examples = ["$ sfdx hardis:scratch:delete"];
+  public static examples = ["$ sf hardis:scratch:delete"];
 
   // public static args = [{name: 'file'}];
 

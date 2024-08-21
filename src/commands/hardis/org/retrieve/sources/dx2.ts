@@ -23,7 +23,7 @@ export default class DxSources2 extends SfdxCommand {
 
   public static description = messages.getMessage("retrieveDx");
 
-  public static examples = ["$ sfdx hardis:org:retrieve:sources:dx2"];
+  public static examples = ["$ sf hardis:org:retrieve:sources:dx2"];
 
   protected static flagsConfig = {
     packagexml: flags.string({

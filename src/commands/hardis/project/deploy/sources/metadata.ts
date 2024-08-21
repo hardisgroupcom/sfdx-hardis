@@ -23,7 +23,7 @@ export default class DxSources extends SfdxCommand {
 
   public static description = messages.getMessage("deployMetadatas");
 
-  public static examples = ["$ sfdx hardis:project:deploy:sources:metadata"];
+  public static examples = ["$ sf hardis:project:deploy:sources:metadata"];
 
   protected static flagsConfig = {
     check: flags.boolean({

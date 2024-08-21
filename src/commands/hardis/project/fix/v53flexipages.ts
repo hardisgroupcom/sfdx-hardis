@@ -21,7 +21,7 @@ export default class FixV53Flexipages extends SfdxCommand {
 
 Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
 
-  public static examples = ["$ sfdx hardis:project:fix:v53flexipages"];
+  public static examples = ["$ sf hardis:project:fix:v53flexipages"];
 
   protected static flagsConfig = {
     path: flags.string({

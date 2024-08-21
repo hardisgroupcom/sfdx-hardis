@@ -26,7 +26,7 @@ export default class SandboxCreate extends SfdxCommand {
 
   public static description = "Create and initialize sandbox org";
 
-  public static examples = ["$ sfdx hardis:org:create"];
+  public static examples = ["$ sf hardis:org:create"];
 
   // public static args = [{name: 'file'}];
 

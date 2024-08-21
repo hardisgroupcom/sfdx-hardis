@@ -30,7 +30,7 @@ export default class PackageVersionInstall extends SfdxCommand {
 Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-hardis.yml\`
 `;
 
-  public static examples = ["$ sfdx hardis:package:install"];
+  public static examples = ["$ sf hardis:package:install"];
 
   // public static args = [{name: 'file'}];
 

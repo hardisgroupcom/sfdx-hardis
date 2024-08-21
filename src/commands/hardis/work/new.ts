@@ -54,7 +54,7 @@ Under the hood, it can:
       - Use property \`dataPackages\`
 `;
 
-  public static examples = ["$ sfdx hardis:work:task:new"];
+  public static examples = ["$ sf hardis:work:task:new"];
 
   // public static args = [{name: 'file'}];
 

@@ -33,7 +33,7 @@ Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for th
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
-  public static examples = ["$ sfdx hardis:org:diagnose:unusedlicenses", "$ sfdx hardis:org:diagnose:unusedlicenses --fix"];
+  public static examples = ["$ sf hardis:org:diagnose:unusedlicenses", "$ sf hardis:org:diagnose:unusedlicenses --fix"];
 
   protected static flagsConfig = {
     outputfile: flags.string({

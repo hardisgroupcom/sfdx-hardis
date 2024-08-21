@@ -18,7 +18,7 @@ export default class PackageVersionPromote extends SfdxCommand {
 
   public static description = "Promote package(s) version(s): convert it from beta to released";
 
-  public static examples = ["$ sfdx hardis:package:version:promote", "$ sfdx hardis:package:version:promote --auto"];
+  public static examples = ["$ sf hardis:package:version:promote", "$ sf hardis:package:version:promote --auto"];
 
   // public static args = [{name: 'file'}];
 

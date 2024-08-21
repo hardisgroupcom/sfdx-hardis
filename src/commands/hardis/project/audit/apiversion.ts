@@ -20,7 +20,7 @@ export default class CallInCallOut extends SfdxCommand {
 
   public static description = messages.getMessage("auditApiVersion");
 
-  public static examples = ["$ sfdx hardis:project:audit:apiversion"];
+  public static examples = ["$ sf hardis:project:audit:apiversion"];
 
   // public static args = [{name: 'file'}];
 

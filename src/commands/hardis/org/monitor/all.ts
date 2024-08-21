@@ -51,7 +51,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
 
 `;
 
-  public static examples = ["$ sfdx hardis:org:monitor:all"];
+  public static examples = ["$ sf hardis:org:monitor:all"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

@@ -39,9 +39,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 `;
 
   public static examples = [
-    "$ sfdx hardis:lint:access",
-    '$ sfdx hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"',
-    '$ sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
+    "$ sf hardis:lint:access",
+    '$ sf hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"',
+    '$ sf hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
   ];
 
   protected static flagsConfig = {

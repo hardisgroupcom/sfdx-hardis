@@ -20,7 +20,7 @@ export default class ConvertProfilesToPermSets extends SfdxCommand {
 
   public static description = "Creates permission sets from existing profiles, with id PS_PROFILENAME";
 
-  public static examples = ["$ sfdx hardis:project:convert:profilestopermsets"];
+  public static examples = ["$ sf hardis:project:convert:profilestopermsets"];
 
   protected static flagsConfig = {
     except: flags.array({

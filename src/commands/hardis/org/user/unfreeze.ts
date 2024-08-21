@@ -23,10 +23,10 @@ export default class OrgUnfreezeUser extends SfdxCommand {
   public static description = messages.getMessage("orgUnfreezeUser");
 
   public static examples = [
-    `$ sfdx hardis:org:user:unfreeze`,
-    `$ sfdx hardis:org:user:unfreeze --targetusername myuser@myorg.com`,
-    `$ sfdx hardis:org:user:unfreeze --includeprofiles 'Standard'`,
-    `$ sfdx hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'`,
+    `$ sf hardis:org:user:unfreeze`,
+    `$ sf hardis:org:user:unfreeze --targetusername myuser@myorg.com`,
+    `$ sf hardis:org:user:unfreeze --includeprofiles 'Standard'`,
+    `$ sf hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'`,
   ];
 
   // public static args = [{name: 'file'}];

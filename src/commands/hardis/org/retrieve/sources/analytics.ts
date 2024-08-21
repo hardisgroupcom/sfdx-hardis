@@ -23,7 +23,7 @@ export default class Retrofit extends SfdxCommand {
 
   public static description = `Retrieve all CRM Analytics sources from an org, with workarounds for SFDX bugs`;
 
-  public static examples = ["$ sfdx hardis:org:retrieve:sources:analytics"];
+  public static examples = ["$ sf hardis:org:retrieve:sources:analytics"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

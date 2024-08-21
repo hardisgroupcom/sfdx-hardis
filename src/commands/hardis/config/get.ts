@@ -18,7 +18,7 @@ export default class DxSources extends SfdxCommand {
 
   public static description = "Returns sfdx-hardis project config for a given level";
 
-  public static examples = ["$ sfdx hardis:project:deploy:sources:metadata"];
+  public static examples = ["$ sf hardis:project:deploy:sources:metadata"];
 
   protected static flagsConfig = {
     level: flags.string({

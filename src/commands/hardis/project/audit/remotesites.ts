@@ -21,7 +21,7 @@ export default class RemoteSites extends SfdxCommand {
 
   public static description = messages.getMessage("auditRemoteSites");
 
-  public static examples = ["$ sfdx hardis:project:audit:remotesites"];
+  public static examples = ["$ sf hardis:project:audit:remotesites"];
 
   // public static args = [{name: 'file'}];
 

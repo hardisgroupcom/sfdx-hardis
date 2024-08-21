@@ -19,7 +19,7 @@ export default class CleanRetrieveFolders extends SfdxCommand {
 
   public static description = "Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS";
 
-  public static examples = ["$ sfdx hardis:project:clean:retrievefolders"];
+  public static examples = ["$ sf hardis:project:clean:retrievefolders"];
 
   protected static flagsConfig = {
     debug: flags.boolean({

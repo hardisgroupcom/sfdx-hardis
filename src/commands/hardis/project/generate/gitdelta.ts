@@ -20,7 +20,7 @@ export default class GenerateGitDelta extends SfdxCommand {
 
   public static description = "Generate package.xml git delta between 2 commits";
 
-  public static examples = ["$ sfdx hardis:project:generate:gitdelta"];
+  public static examples = ["$ sf hardis:project:generate:gitdelta"];
 
   protected static flagsConfig = {
     branch: flags.string({

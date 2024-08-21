@@ -19,7 +19,7 @@ export default class ScratchPoolView extends SfdxCommand {
 
   public static description = "Displays all stored content of project scratch org pool if defined";
 
-  public static examples = ["$ sfdx hardis:scratch:pool:view"];
+  public static examples = ["$ sf hardis:scratch:pool:view"];
 
   // public static args = [{name: 'file'}];
 

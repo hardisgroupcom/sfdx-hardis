@@ -33,7 +33,7 @@ export default class ScratchPoolCreate extends SfdxCommand {
 \`\`\`
   `;
 
-  public static examples = ["$ sfdx hardis:scratch:pool:configure"];
+  public static examples = ["$ sf hardis:scratch:pool:configure"];
 
   // public static args = [{name: 'file'}];
 
