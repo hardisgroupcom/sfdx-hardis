@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
 export default class DocPluginGenerate extends SfdxCommand {
-  public static title = "Generate SFDX Plugin Documentation";
+  public static title = "Generate SF Cli Plugin Documentation";
 
   public static description = `Generate Markdown documentation ready for HTML conversion with mkdocs
 

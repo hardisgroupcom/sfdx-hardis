@@ -437,7 +437,7 @@ export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: 
   });
   // Process apex scripts
   for (const apexScript of initApexScripts) {
-    const apexScriptCommand = `sfdx force:apex:execute -f "${apexScript}" -u ${orgAlias}`;
+    const apexScriptCommand = `sf apex run --file "${apexScript}" --target-org ${orgAlias}`;
     await execCommand(apexScriptCommand, this, {
       fail: true,
       output: true,

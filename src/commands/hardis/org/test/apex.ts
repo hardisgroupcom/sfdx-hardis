@@ -78,7 +78,6 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   /* jscpd:ignore-start */
   public async run(): Promise<AnyJson> {
-    const check = this.flags.check || false;
     const testlevel = this.flags.testlevel || "RunLocalTests";
     const debugMode = this.flags.debug || false;
 
@@ -86,7 +85,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
-    await this.runApexTests(testlevel, check, debugMode);
+    await this.runApexTests(testlevel, debugMode);
     // No Apex
     if (this.testRunOutcome === "NoApex") {
       this.notifSeverity = "log";
@@ -134,17 +133,16 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     return { orgId: this.org.getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
   }
 
-  private async runApexTests(testlevel: any, check: any, debugMode: any) {
+  private async runApexTests(testlevel: any, debugMode: any) {
     // Run tests with SFDX commands
     const reportDir = await getReportDirectory();
     const testCommand =
-      "sfdx force:apex:test:run" +
-      " --codecoverage" +
-      " --resultformat human" +
-      ` --outputdir ${reportDir}` +
+      "sf apex run test" +
+      " --code-coverage" +
+      " --result-format human" +
+      ` --output-dir ${reportDir}` +
       ` --wait ${process.env.SFDX_TEST_WAIT_MINUTES || "60"}` +
-      ` --testlevel ${testlevel}` +
-      (check ? " --checkonly" : "") +
+      ` --test-level ${testlevel}` +
       (debugMode ? " --verbose" : "");
     try {
       const execCommandRes = await execCommand(testCommand, this, {
