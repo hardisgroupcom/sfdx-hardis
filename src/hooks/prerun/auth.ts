@@ -282,7 +282,7 @@ async function authOrg(orgAlias: string, options: any) {
         }
         const commandStr = "sf " + loginCommandArgs.join(" ");
         uxLog(this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(commandStr)))}`);
-        loginResult = crossSpawn.sync("sfdx", loginCommandArgs, { stdio: "inherit" });
+        loginResult = crossSpawn.sync("sf", loginCommandArgs, { stdio: "inherit" });
       }
       // Web Login if device login not used
       if (loginResult == null) {

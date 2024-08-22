@@ -130,8 +130,8 @@ export default class ScratchPoolRefresh extends SfdxCommand {
       const spawnPromise = new Promise(async (resolve) => {
         // Run scratch:create command asynchronously
         const commandArgs = ["hardis:scratch:create", "--pool", "--json"];
-        const sfdxPath = await which("sfdx");
-        const child = spawn(sfdxPath || "sfdx", commandArgs, { cwd: process.cwd(), env: process.env });
+        const sfdxPath = await which("sf");
+        const child = spawn(sfdxPath || "sf", commandArgs, { cwd: process.cwd(), env: process.env });
         uxLog(this, "[pool] " + c.grey(`hardis:scratch:create (${i}) started`));
         // handle errors
         child.on("error", (err) => {

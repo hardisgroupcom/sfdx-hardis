@@ -109,6 +109,7 @@ create_scratch_org:
     paths:
       - .cache/sfdx-hardis/.sfdx
       - .sfdx
+      - .sf
       - config/user
 
 # Refresh scratch org pool: IF you use scratch orgs, job to schedule with variable SCRATCH_ORG_POOL: true
