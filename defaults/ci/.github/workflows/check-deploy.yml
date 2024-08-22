@@ -45,7 +45,6 @@ jobs:
           npm install --no-cache @salesforce/cli --global
           sf plugins install @salesforce/plugin-packaging
           echo 'y' | sf plugins install sfdx-hardis
-          echo 'y' | sf plugins install sfdx-essentials
           echo 'y' | sf plugins install sfdx-git-delta
           sf version --verbose --json
       # Login & check deploy with test classes & code coverage

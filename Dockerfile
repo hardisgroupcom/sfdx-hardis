@@ -30,7 +30,6 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sf plugins install sfdmu && \
     echo 'y' | sf plugins install sfdx-git-delta && \
-    echo 'y' | sf plugins install sfdx-essentials && \
     echo 'y' | sf plugins install texei-sfdx-plugin && \
     sf version --verbose --json && \
     rm -rf /root/.npm/_cacache
