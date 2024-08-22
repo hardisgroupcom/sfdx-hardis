@@ -35,6 +35,11 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx force:package:version:create -> sf package version create
   - sfdx force:package:version:delete -> sf package version delete
   - sfdx force:package:version:list -> sf package version list
+  - sfdx force:package:version:promote -> sf package version promote
+  - sfdx force:package:installed:list -> sf package installed list
+  - sfdx force:package:install -> sf package install
+  - sfdx force:user:password:generate -> sf org generate password
+  - sfdx force:user:permset:assign -> sf org assign permset
   - sfdx hardis:* -> sf hardis:*
 - Get rid of sfdx-essentials dependency by internalizing its used commands
   - sf hardis:packagexml:append

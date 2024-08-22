@@ -296,7 +296,7 @@ export default class ScratchCreate extends SfdxCommand {
       scratchOrgUsername: this.scratchOrgUsername,
     });
     // Generate password
-    const passwordCommand = `sfdx force:user:password:generate --targetusername ${this.scratchOrgUsername}`;
+    const passwordCommand = `sf org generate password --target-org ${this.scratchOrgUsername}`;
     const passwordResult = await execSfdxJson(passwordCommand, this, {
       fail: true,
       output: false,

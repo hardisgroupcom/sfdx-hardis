@@ -381,7 +381,7 @@ export async function initOrgMetadatas(
       });
       // Assign to permission set allowing to update SharingCalc
       try {
-        const assignCommand = `sfdx force:user:permset:assign -n SfdxHardisDeferSharingRecalc -u ${orgUsername}`;
+        const assignCommand = `sf org assign permset --name SfdxHardisDeferSharingRecalc --target-org ${orgUsername}`;
         await execSfdxJson(assignCommand, this, {
           fail: false, // Do not fail in case permission set already exists
           output: false,
@@ -414,7 +414,7 @@ export async function initPermissionSetAssignments(permSets: Array<any>, orgUser
   uxLog(this, c.cyan("Assigning Permission Sets..."));
   for (const permSet of permSets) {
     uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to sandbox org user`));
-    const assignCommand = `sfdx force:user:permset:assign -n ${permSet.name || permSet} -u ${orgUsername}`;
+    const assignCommand = `sf org assign permset --name ${permSet.name || permSet} --target-org ${orgUsername}`;
     const assignResult = await execSfdxJson(assignCommand, this, {
       fail: false,
       output: false,
