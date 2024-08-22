@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:legacyapi
 
 ## Description
@@ -30,19 +30,19 @@ See article below
 ## Examples
 
 ```shell
-sfdx hardis:org:diagnose:legacyapi
+sf hardis:org:diagnose:legacyapi
 ```
 
 ```shell
-sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com
+sf hardis:org:diagnose:legacyapi -u hardis@myclient.com
 ```
 
 ```shell
-sfdx hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'
+sf hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'
 ```
 
 ```shell
-sfdx hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv
+sf hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv
 ```
 
 

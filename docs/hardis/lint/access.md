@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:access
 
 ## Description
@@ -24,15 +24,15 @@ Check if elements(apex class and field) are at least in one permission set
 ## Examples
 
 ```shell
-sfdx hardis:lint:access
+sf hardis:lint:access
 ```
 
 ```shell
-sfdx hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"
+sf hardis:lint:access -e "ApexClass:ClassA, CustomField:Account.CustomField"
 ```
 
 ```shell
-sfdx hardis:lint:access -i "PermissionSet:permissionSetA, Profile"
+sf hardis:lint:access -i "PermissionSet:permissionSetA, Profile"
 ```
 
 

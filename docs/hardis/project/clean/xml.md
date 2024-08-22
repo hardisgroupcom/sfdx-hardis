@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:xml
 
 ## Description
@@ -34,11 +34,11 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:xml
+sf hardis:project:clean:xml
 ```
 
 ```shell
-sfdx hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
+sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
 ```
 
 

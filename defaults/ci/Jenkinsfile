@@ -59,8 +59,8 @@ pipeline {
                 //Validation on the appropriate org
                 steps {
                     script {
-                        sh 'sfdx hardis:auth:login'
-                        sh 'sfdx hardis:project:deploy:sources:dx --check'
+                        sh 'sf hardis:auth:login'
+                        sh 'sf hardis:project:deploy:sources:dx --check'
                     }
                 }
                 post {
@@ -90,8 +90,8 @@ pipeline {
                 //deploy on the appropriate org
                 steps {
                     script {
-                        sh 'sfdx hardis:auth:login'
-                        sh 'sfdx hardis:project:deploy:sources:dx'
+                        sh 'sf hardis:auth:login'
+                        sh 'sf hardis:project:deploy:sources:dx'
                     }
                 }
                 post {

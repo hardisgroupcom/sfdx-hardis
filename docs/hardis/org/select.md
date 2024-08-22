@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:select
 
 ## Description
@@ -20,7 +20,7 @@ Interactive org selection for user
 ## Examples
 
 ```shell
-sfdx hardis:org:select
+sf hardis:org:select
 ```
 
 

@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:refresh
 
 ## Description
@@ -21,7 +21,7 @@ Make my local branch and my scratch org up to date with the most recent sources
 ## Examples
 
 ```shell
-sfdx hardis:work:refresh
+sf hardis:work:refresh
 ```
 
 

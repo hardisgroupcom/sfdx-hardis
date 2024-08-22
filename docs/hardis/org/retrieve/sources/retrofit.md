@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:retrofit
 
 ## Description
@@ -77,15 +77,15 @@ Can be defined in retrofitBranch property in .sfdx-hardis.yml||||
 ## Examples
 
 ```shell
-sfdx hardis:org:retrieve:sources:retrofit
+sf hardis:org:retrieve:sources:retrofit
 ```
 
 ```shell
-sfdx hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated
+sf hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated
 ```
 
 ```shell
-sfdx hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode updated --push --pushmode mergerequest
+sf hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode updated --push --pushmode mergerequest
 ```
 
 

@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:connect
 
 ## Description
@@ -19,7 +19,7 @@ Connect to an org without setting it as default username, then proposes to open 
 ## Examples
 
 ```shell
-sfdx hardis:org:connect
+sf hardis:org:connect
 ```
 
 

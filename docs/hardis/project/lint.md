@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:lint
 
 ## Description
@@ -21,11 +21,11 @@ Apply syntactic analysis (linters) on the repository sources, using Mega-Linter
 ## Examples
 
 ```shell
-sfdx hardis:project:lint
+sf hardis:project:lint
 ```
 
 ```shell
-sfdx hardis:project:lint --fix
+sf hardis:project:lint --fix
 ```
 
 

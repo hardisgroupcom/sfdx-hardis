@@ -60,8 +60,8 @@ jobs:
 
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
-          sfdx hardis:auth:login
-          sfdx hardis:project:deploy:sources:dx
+          sf hardis:auth:login
+          sf hardis:project:deploy:sources:dx
         env:
           SFDX_CLIENT_ID_INTEGRATION: $(SFDX_CLIENT_ID_INTEGRATION)
           SFDX_CLIENT_KEY_INTEGRATION: $(SFDX_CLIENT_KEY_INTEGRATION)

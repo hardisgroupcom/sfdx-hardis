@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:configure:auth
 
 ## Description
@@ -22,7 +22,7 @@ Configure authentication from git branch to target org
 ## Examples
 
 ```shell
-sfdx hardis:project:configure:auth
+sf hardis:project:configure:auth
 ```
 
 

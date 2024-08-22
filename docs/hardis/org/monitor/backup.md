@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:monitor:backup
 
 ## Description
@@ -28,7 +28,7 @@ You can remove more metadata types from backup, especially in case you have too 
 ## Examples
 
 ```shell
-sfdx hardis:org:monitor:backup
+sf hardis:org:monitor:backup
 ```
 
 

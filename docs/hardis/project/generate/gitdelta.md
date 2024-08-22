@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:generate:gitdelta
 
 ## Description
@@ -21,7 +21,7 @@ Generate package.xml git delta between 2 commits
 ## Examples
 
 ```shell
-sfdx hardis:project:generate:gitdelta
+sf hardis:project:generate:gitdelta
 ```
 
 

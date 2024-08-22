@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:misc:toml2csv
 
 ## Description
@@ -25,19 +25,19 @@ Split TOML file into distinct CSV files
 ## Examples
 
 ```shell
-sfdx hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' 
+sf hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' 
 ```
 
 ```shell
-sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' 
+sf hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' 
 ```
 
 ```shell
-sfdx hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'
+sf hardis:misc:toml2csv --skiptransfo --tomlfile 'D:/clients/toto/V1_full.txt' --outputdir 'C:/tmp/rrrr'
 ```
 
 ```shell
-NODE_OPTIONS=--max_old_space_size=9096 sfdx hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' --outputdir './output' --filtersections 'COMPTES,SOUS'
+NODE_OPTIONS=--max_old_space_size=9096 sf hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' --outputdir './output' --filtersections 'COMPTES,SOUS'
 ```
 
 

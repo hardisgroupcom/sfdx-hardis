@@ -8,7 +8,7 @@ description: Schedule daily checks of inactive users (not connected for 6 months
 
 Detect if you are paying licenses for users that did not login for more than 6 months !
 
-Sfdx-hardis command: [sfdx hardis:org:diagnose:unusedusers](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/)
+Sfdx-hardis command: [sf hardis:org:diagnose:unusedusers](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/)
 
 Key: **UNUSED_USERS**
 

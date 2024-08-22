@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:manageditems
 
 ## Description
@@ -20,7 +20,7 @@ Remove unwanted managed items within sfdx project sources
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:manageditems --namespace crta
+sf hardis:project:clean:manageditems --namespace crta
 ```
 
 

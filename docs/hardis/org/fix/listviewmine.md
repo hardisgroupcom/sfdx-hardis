@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:fix:listviewmine
 
 ## Description
@@ -71,11 +71,11 @@ Example: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportu
 ## Examples
 
 ```shell
-sfdx hardis:org:fix:listviewmine
+sf hardis:org:fix:listviewmine
 ```
 
 ```shell
-sfdx hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
+sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
 ```
 
 

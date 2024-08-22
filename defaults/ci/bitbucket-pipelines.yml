@@ -33,8 +33,8 @@ pipelines:
               - export ORG_ALIAS=$BRANCH_NAME
               - export CONFIG_BRANCH=$BRANCH_NAME
               - export FORCE_COLOR=1
-              - sfdx hardis:auth:login
-              - sfdx hardis:project:deploy:sources:dx --check
+              - sf hardis:auth:login
+              - sf hardis:project:deploy:sources:dx --check
 
   branches:
     # Add all your major branches here
@@ -53,5 +53,5 @@ pipelines:
               - export CONFIG_BRANCH=$BRANCH_NAME
               - export ORG_ALIAS=$BRANCH_NAME
               - export FORCE_COLOR=1
-              - sfdx hardis:auth:login
-              - sfdx hardis:project:deploy:sources:dx
+              - sf hardis:auth:login
+              - sf hardis:project:deploy:sources:dx

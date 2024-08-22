@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:convert:profilestopermsets
 
 ## Description
@@ -19,7 +19,7 @@ Creates permission sets from existing profiles, with id PS_PROFILENAME
 ## Examples
 
 ```shell
-sfdx hardis:project:convert:profilestopermsets
+sf hardis:project:convert:profilestopermsets
 ```
 
 

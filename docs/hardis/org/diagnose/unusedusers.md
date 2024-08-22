@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unusedusers
 
 ## Description
@@ -38,23 +38,23 @@ Use --returnactiveusers to revert the command and retrieve active users that has
 ## Examples
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers
+sf hardis:org:diagnose:unusedusers
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers --days 365
+sf hardis:org:diagnose:unusedusers --days 365
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm
+sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1
+sf hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers
+sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers
 ```
 
 

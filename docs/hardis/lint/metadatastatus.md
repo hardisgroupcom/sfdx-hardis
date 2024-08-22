@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:metadatastatus
 
 ## Description
@@ -21,7 +21,7 @@ Check if elements(flows) are inactive in the project
 ## Examples
 
 ```shell
-sfdx hardis:lint:metadatastatus
+sf hardis:lint:metadatastatus
 ```
 
 

@@ -30,9 +30,9 @@ pipelines:
           - export ORG_ALIAS=$BRANCH_NAME
           - export FORCE_COLOR=1
           # Login
-          - sfdx hardis:auth:login
+          - sf hardis:auth:login
           # Backup
-          - sfdx hardis:org:monitor:backup
+          - sf hardis:org:monitor:backup
           # Commit & push
           - git status
           - git add --all
@@ -63,9 +63,9 @@ pipelines:
               # Get latest commit of the branch
               - git pull origin "${BRANCH_NAME}"
               # Login
-              - sfdx hardis:auth:login
+              - sf hardis:auth:login
               # Apex tests
-              - sfdx hardis:org:test:apex
+              - sf hardis:org:test:apex
             artifacts:
               - hardis-report/**
 
@@ -103,8 +103,8 @@ pipelines:
               # Get latest commit of the branch
               - git pull origin "${BRANCH_NAME}"
               # Login
-              - sfdx hardis:auth:login
+              - sf hardis:auth:login
               # Other monitoring tools
-              - sfdx hardis:org:monitor:all
+              - sf hardis:org:monitor:all
             artifacts:
               - hardis-report/**

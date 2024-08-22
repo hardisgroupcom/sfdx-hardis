@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:remotesites
 
 ## Description
@@ -18,7 +18,7 @@ Generate list of remote sites
 ## Examples
 
 ```shell
-sfdx hardis:project:audit:remotesites
+sf hardis:project:audit:remotesites
 ```
 
 

@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:listviews
 
 ## Description
@@ -19,7 +19,7 @@ Replace Mine by Everything in ListView, and log the replacements in sfdx-hardis.
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:listviews
+sf hardis:project:clean:listviews
 ```
 
 

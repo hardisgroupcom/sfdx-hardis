@@ -62,8 +62,8 @@ jobs:
       CI: "true"
 
   - script: |
-      sfdx hardis:auth:login
-      sfdx hardis:org:monitor:backup
+      sf hardis:auth:login
+      sf hardis:org:monitor:backup
     displayName: sfdx-hardis login & Backup
     env:
       # MANUAL: Add your branch related variables here
@@ -143,8 +143,8 @@ jobs:
       CI: "true"
 
   - script: |
-      sfdx hardis:auth:login
-      sfdx hardis:org:test:apex
+      sf hardis:auth:login
+      sf hardis:org:test:apex
     continueOnError: "true"
     displayName: sfdx-hardis login & Apex tests
     env:
@@ -263,8 +263,8 @@ jobs:
       CI: "true"
 
   - script: |
-      sfdx hardis:auth:login
-      sfdx hardis:org:monitor:all
+      sf hardis:auth:login
+      sf hardis:org:monitor:all
     displayName: sfdx-hardis login & other checks
     continueOnError: "true"
     env:

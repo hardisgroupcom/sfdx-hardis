@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:test:apex
 
 ## Description
@@ -29,7 +29,7 @@ You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes
 ## Examples
 
 ```shell
-sfdx hardis:org:test:apex
+sf hardis:org:test:apex
 ```
 
 

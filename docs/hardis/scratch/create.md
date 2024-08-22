@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:create
 
 ## Description
@@ -33,7 +33,7 @@ Create and initialize a scratch org or a source-tracked sandbox (config can be d
 ## Examples
 
 ```shell
-sfdx hardis:scratch:create
+sf hardis:scratch:create
 ```
 
 

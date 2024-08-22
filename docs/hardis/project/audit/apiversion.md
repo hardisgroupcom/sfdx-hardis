@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:apiversion
 
 ## Description
@@ -20,7 +20,7 @@ Audit API version
 ## Examples
 
 ```shell
-sfdx hardis:project:audit:apiversion
+sf hardis:project:audit:apiversion
 ```
 
 

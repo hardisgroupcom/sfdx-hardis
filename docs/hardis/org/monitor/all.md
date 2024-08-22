@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:monitor:all
 
 ## Description
@@ -53,7 +53,7 @@ You can force the daily run of all commands by defining env var `MONITORING_IGNO
 ## Examples
 
 ```shell
-sfdx hardis:org:monitor:all
+sf hardis:org:monitor:all
 ```
 
 

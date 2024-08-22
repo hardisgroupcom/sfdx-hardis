@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:create
 
 ## Description
@@ -20,7 +20,7 @@ Create and initialize sandbox org
 ## Examples
 
 ```shell
-sfdx hardis:org:create
+sf hardis:org:create
 ```
 
 

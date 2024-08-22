@@ -102,8 +102,8 @@ jobs:
 
       run: |
         echo "Monitoring sfdx-hardis: Metadata Backup for \"$CONFIG_BRANCH\""
-        sfdx hardis:auth:login
-        sfdx hardis:org:monitor:backup
+        sf hardis:auth:login
+        sf hardis:org:monitor:backup
 
     # Push new commit if applicable
     # (for now works only on PR from same repository, not from forks)
@@ -190,8 +190,8 @@ jobs:
       run: |
         echo "Run apex tests against \"$CONFIG_BRANCH\""
         git pull origin ${{ matrix.branch }}
-        sfdx hardis:auth:login
-        sfdx hardis:org:test:apex
+        sf hardis:auth:login
+        sf hardis:org:test:apex
 
     - name: Upload artifacts
       if:  success() || failure()
@@ -317,8 +317,8 @@ jobs:
       run: |
         echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
         git pull origin ${{ matrix.branch }}
-        sfdx hardis:auth:login
-        sfdx hardis:org:monitor:all
+        sf hardis:th:login
+        sf hardis:org:monitor:all
 
     - name: Upload artifacts
       if:  success() || failure()

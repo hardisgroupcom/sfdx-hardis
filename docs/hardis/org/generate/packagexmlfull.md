@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:generate:packagexmlfull
 
 ## Description
@@ -21,15 +21,15 @@ Generates full org package.xml, including managed items
 ## Examples
 
 ```shell
-sfdx hardis:org:generate:packagexmlfull
+sf hardis:org:generate:packagexmlfull
 ```
 
 ```shell
-sfdx hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml
+sf hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml
 ```
 
 ```shell
-sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com
+sf hardis:org:generate:packagexmlfull --targetusername nico@example.com
 ```
 
 

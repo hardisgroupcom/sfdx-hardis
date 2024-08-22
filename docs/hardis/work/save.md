@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:work:save
 
 ## Description
@@ -57,11 +57,11 @@ autoRemoveUserPermissions:
 ## Examples
 
 ```shell
-sfdx hardis:work:task:save
+sf hardis:work:task:save
 ```
 
 ```shell
-sfdx hardis:work:task:save --nopull --nogit --noclean
+sf hardis:work:task:save --nopull --nogit --noclean
 ```
 
 

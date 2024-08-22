@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:duplicatefiles
 
 ## Description
@@ -19,7 +19,7 @@ Find duplicate files in sfdx folder (often from past @salesforce/cli bugs)
 ## Examples
 
 ```shell
-sfdx hardis:project:audit:duplicatefiles
+sf hardis:project:audit:duplicatefiles
 ```
 
 

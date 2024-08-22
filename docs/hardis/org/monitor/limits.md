@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:monitor:limits
 
 ## Description
@@ -21,7 +21,7 @@ Check limits of a SF org and send relatednotifications
 ## Examples
 
 ```shell
-sfdx hardis:org:monitor:limits
+sf hardis:org:monitor:limits
 ```
 
 

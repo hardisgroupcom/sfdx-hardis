@@ -30,8 +30,8 @@ backup:
     - git config --global user.email "${GITLAB_USER_EMAIL}"
   script:
     # Extract metadata folders (+other checks ^^)
-    - sfdx hardis:auth:login
-    - sfdx hardis:org:monitor:backup
+    - sf hardis:auth:login
+    - sf hardis:org:monitor:backup
     # Commit and push new state
     - git status
     - git add --all
@@ -58,8 +58,8 @@ apex_tests:
     - git pull origin "${CI_COMMIT_REF_NAME}"
   script:
     # Login & run apex tests
-    - sfdx hardis:auth:login
-    - sfdx hardis:org:test:apex
+    - sf hardis:auth:login
+    - sf hardis:org:test:apex
   artifacts:
     when: always
     paths:
@@ -79,8 +79,8 @@ monitoring_tools:
     - git pull origin "${CI_COMMIT_REF_NAME}"
   script:
     # Login & run apex tests
-    - sfdx hardis:auth:login
-    - sfdx hardis:org:monitor:all
+    - sf hardis:auth:login
+    - sf hardis:org:monitor:all
   artifacts:
     when: always
     paths:

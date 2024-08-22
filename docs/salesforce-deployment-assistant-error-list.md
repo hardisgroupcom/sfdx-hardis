@@ -116,7 +116,7 @@ You need to manually delete record type {1} in target org
 ```shell
 Folder {2} is missing.
 - If folder {2} is existing in sources, add it in related package.xml
-- If folder {2} is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders to retrieve it
+- If folder {2} is not existing in DX sources, please use sf hardis:oject:clean:retrievefolders to retrieve it
 - If both previous solutions did not work, go create manually folder {2} in target org
 
 ```
@@ -197,7 +197,7 @@ A reference to a custom object {2} is not found in {1}:
 - If you renamed the custom object, do a search/replace in sources with previous object name and new object name
 - If you deleted the custom object, or if you don't want to deploy it, do a search on the custom object name, and remove XML elements referencing it
 - If the object should exist, make sure it is in force-app/main/default/objects and that the object name is in manifest/package.xml in CustomObject section
-You may also have a look to command sfdx hardis:project:clean:references
+You may also have a look to command sf hardis:project:clean:references
 
 ```
 
@@ -214,7 +214,7 @@ A reference to a custom field {3}.{4} is not found in {1}:
 - If you deleted {3}.{4}, or if you don't want to deploy it, do a search on {4} in all sources, and remove all XML elements referring to {3}.{4} (except in destructiveChanges.xml)
 - If {3}.{4} should exist, make sure it is in force-app/main/default/objects/{3}/fields and that {3}.{4} is in manifest/package.xml in CustomField section
 - If {3}.{4} is standard, the error is because {3}.{4} is not available in the org you are trying to deploy to. You can:
-  - Remove the reference to {4} in the XML of {1} ( maybe sfdx hardis:project:clean:references can clean automatically for you ! )
+  - Remove the reference to {4} in the XML of {1} ( maybe sf hardis:oject:clean:references can clean automatically for you ! )
   - Activate the required features/license in the target org
 
 ```
@@ -646,7 +646,7 @@ Live Agent must be activated in the target org.
 ```shell
 ProductRequest object is not available in the target org.
 Maybe you would like to clean its references within Profiles / PS using the following command ?
-sfdx hardis:project:clean:references , then select "ProductRequest references"
+sf hardis:project:clean:references , then select "ProductRequest references"
 ```
 
 ---
@@ -790,7 +790,7 @@ Account Teams must be activated in the target org.
 ```shell
 You can not deploy multiple SharingRules at the same time. You can either:
 - Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
-- Use sfdx hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json,
+- Use sf hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json,
 - If you are trying to create a scratch org, add DeferSharingCalc in features in project-scratch-def.json
 
 ```
@@ -904,7 +904,7 @@ You must have a default application for a profile. You can:
 ```shell
 You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
 To retrieve it, run: sf project retrieve start -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
-You can also retrieve all analytics sources in one shot using sfdx hardis:org:retrieve:source:analytics -u SOURCE_ORG_USERNAME
+You can also retrieve all analytics sources in one shot using sf hardis:org:retrieve:source:analytics -u SOURCE_ORG_USERNAME
   - https://salesforce.stackexchange.com/a/365453/33522
   - https://help.salesforce.com/s/articleView?id=000319274&type=1
 ```

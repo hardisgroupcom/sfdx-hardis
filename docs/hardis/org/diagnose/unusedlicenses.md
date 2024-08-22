@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unusedlicenses
 
 ## Description
@@ -30,11 +30,11 @@ When you assign a Permission Set to a user, and that this Permission Set is rela
 ## Examples
 
 ```shell
-sfdx hardis:org:diagnose:unusedlicenses
+sf hardis:org:diagnose:unusedlicenses
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedlicenses --fix
+sf hardis:org:diagnose:unusedlicenses --fix
 ```
 
 

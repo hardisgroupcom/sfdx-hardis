@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:licenses
 
 ## Description
@@ -22,7 +22,7 @@ Mostly used for monitoring (Grafana) but you can also use it manually :)
 ## Examples
 
 ```shell
-sfdx hardis:org:diagnose:licenses
+sf hardis:org:diagnose:licenses
 ```
 
 

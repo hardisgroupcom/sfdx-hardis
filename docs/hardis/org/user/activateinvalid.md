@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:activateinvalid
 
 ## Description
@@ -28,15 +28,15 @@ See article below
 ## Examples
 
 ```shell
-sfdx hardis:org:user:activateinvalid
+sf hardis:org:user:activateinvalid
 ```
 
 ```shell
-sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com
+sf hardis:org:user:activateinvalid --targetusername myuser@myorg.com
 ```
 
 ```shell
-sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername myuser@myorg.com
+sf hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername myuser@myorg.com
 ```
 
 

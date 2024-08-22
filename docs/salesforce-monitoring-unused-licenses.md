@@ -17,7 +17,7 @@ This command detects such useless Permission Set Licenses Assignments and sugges
 Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command :)
 
 
-Sfdx-hardis command: [sfdx hardis:org:diagnose:unusedlicenses](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/)
+Sfdx-hardis command: [sf hardis:org:diagnose:unusedlicenses](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/)
 
 Key: **UNUSED_LICENSES**
 

@@ -74,5 +74,5 @@ jobs:
           FORCE_COLOR: "1"
         run: |
           echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
-          sfdx hardis:auth:login
-          sfdx hardis:project:deploy:sources:dx
+          sf hardis:auth:login
+          sf hardis:project:deploy:sources:dx

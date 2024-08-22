@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:retrievefolders
 
 ## Description
@@ -20,7 +20,7 @@ Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:retrievefolders
+sf hardis:project:clean:retrievefolders
 ```
 
 

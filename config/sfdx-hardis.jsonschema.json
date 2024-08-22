@@ -788,7 +788,7 @@
           {
             "title": "Detect calls to deprecated API versions",
             "key": "LEGACYAPI",
-            "command": "sfdx hardis:org:diagnose:legacyapi",
+            "command": "sf hardis:org:diagnose:legacyapi",
             "frequency": "weekly"
           },
           {

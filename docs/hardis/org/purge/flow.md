@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:purge:flow
 
 ## Description
@@ -25,11 +25,11 @@ Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Stat
 ## Examples
 
 ```shell
-sfdx hardis:org:purge:flow --no-prompt
+sf hardis:org:purge:flow --no-prompt
 ```
 
 ```shell
-$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
+$ sf hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
   Found 1 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -42,7 +42,7 @@ $ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
 ```
 
 ```shell
-$ sfdx hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
+$ sf hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
   Found 4 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete

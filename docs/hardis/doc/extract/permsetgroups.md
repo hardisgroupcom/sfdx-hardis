@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:doc:extract:permsetgroups
 
 ## Description
@@ -19,7 +19,7 @@ Generate markdown files with project documentation
 ## Examples
 
 ```shell
-sfdx hardis:doc:extract:permsetgroups
+sf hardis:doc:extract:permsetgroups
 ```
 
 

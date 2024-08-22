@@ -16,7 +16,7 @@ sfdx-hardis menus allow to create new packages and new package versions, but to 
 
   - Instructions in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_dev2gp_create_namespace.htm)
 
-- Then you need a sfdx-hardis flavored sfdx project, that you can create with `sfdx hardis:project:create`, using scratch orgs only option.
+- Then you need a sfdx-hardis flavored sfdx project, that you can create with `sf hardis:project:create`, using scratch orgs only option.
 
 - Last, create your package folder (ex: `my-package`) at the root of the repository, following the same structure than `force-app`: it will contain your package content.
 

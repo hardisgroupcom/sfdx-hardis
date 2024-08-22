@@ -8,7 +8,7 @@ description: Schedule daily apex test runs with sfdx-hardis monitoring
 
 Runs all local test classes of the org and calculate coverage.
 
-Sfdx-hardis command: [sfdx hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/)
+Sfdx-hardis command: [sf hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/)
 
 ### Grafana example
 

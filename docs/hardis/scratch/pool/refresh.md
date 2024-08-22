@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:pool:refresh
 
 ## Description
@@ -20,7 +20,7 @@ Create enough scratch orgs to fill the pool
 ## Examples
 
 ```shell
-sfdx hardis:scratch:pool:refresh
+sf hardis:scratch:pool:refresh
 ```
 
 

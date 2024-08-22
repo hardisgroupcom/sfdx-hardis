@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:lint:unusedmetadatas
 
 ## Description
@@ -21,7 +21,7 @@ Check if elements (custom labels and custom permissions) are used in the project
 ## Examples
 
 ```shell
-sfdx hardis:lint:unusedmetadatas
+sf hardis:lint:unusedmetadatas
 ```
 
 

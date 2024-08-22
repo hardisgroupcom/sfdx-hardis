@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:minimizeprofiles
 
 ## Description
@@ -48,7 +48,7 @@ skipMinimizeProfiles
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:minimizeprofiles
+sf hardis:project:clean:minimizeprofiles
 ```
 
 

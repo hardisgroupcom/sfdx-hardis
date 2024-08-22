@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:analytics
 
 ## Description
@@ -20,7 +20,7 @@ Retrieve all CRM Analytics sources from an org, with workarounds for SFDX bugs
 ## Examples
 
 ```shell
-sfdx hardis:org:retrieve:sources:analytics
+sf hardis:org:retrieve:sources:analytics
 ```
 
 

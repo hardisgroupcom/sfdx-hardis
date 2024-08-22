@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:package:mergexml
 
 ## Description
@@ -21,15 +21,15 @@ Select and merge package.xml files
 ## Examples
 
 ```shell
-sfdx hardis:package:mergexml
+sf hardis:package:mergexml
 ```
 
 ```shell
-sfdx hardis:package:mergexml --folder packages --pattern /**/*.xml --result myMergedPackage.xml
+sf hardis:package:mergexml --folder packages --pattern /**/*.xml --result myMergedPackage.xml
 ```
 
 ```shell
-sfdx hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml" --result myMergedPackage.xml
+sf hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml" --result myMergedPackage.xml
 ```
 
 

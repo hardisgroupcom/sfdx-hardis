@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:delete
 
 ## Description
@@ -20,7 +20,7 @@ Assisted menu to delete scratch orgs associated to a DevHub
 ## Examples
 
 ```shell
-sfdx hardis:scratch:delete
+sf hardis:scratch:delete
 ```
 
 

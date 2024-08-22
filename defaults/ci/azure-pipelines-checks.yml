@@ -66,8 +66,8 @@ jobs:
       
       # Login & check deployment to PR target branch related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
-          sfdx hardis:auth:login
-          sfdx hardis:project:deploy:sources:dx --check
+          sf hardis:auth:login
+          sf hardis:project:deploy:sources:dx --check
         env:
           SFDX_CLIENT_ID_INTEGRATION: $(SFDX_CLIENT_ID_INTEGRATION)
           SFDX_CLIENT_KEY_INTEGRATION: $(SFDX_CLIENT_KEY_INTEGRATION)

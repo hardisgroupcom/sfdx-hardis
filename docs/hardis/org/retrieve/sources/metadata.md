@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:metadata
 
 ## Description
@@ -24,11 +24,11 @@ Retrieve Salesforce DX project from org
 ## Examples
 
 ```shell
-sfdx hardis:org:retrieve:sources:metadata
+sf hardis:org:retrieve:sources:metadata
 ```
 
 ```shell
-SFDX_RETRIEVE_WAIT_MINUTES=200 sfdx hardis:org:retrieve:sources:metadata
+SFDX_RETRIEVE_WAIT_MINUTES=200 sf hardis:org:retrieve:sources:metadata
 ```
 
 

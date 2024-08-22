@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:audit:callincallout
 
 ## Description
@@ -18,7 +18,7 @@ Generate list of callIn and callouts from sfdx project
 ## Examples
 
 ```shell
-sfdx hardis:project:audit:callouts
+sf hardis:project:audit:callouts
 ```
 
 

@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:config:get
 
 ## Description
@@ -19,7 +19,7 @@ Returns sfdx-hardis project config for a given level
 ## Examples
 
 ```shell
-sfdx hardis:project:deploy:sources:metadata
+sf hardis:project:deploy:sources:metadata
 ```
 
 

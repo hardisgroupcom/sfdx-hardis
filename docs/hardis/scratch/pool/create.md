@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:scratch:pool:create
 
 ## Description
@@ -12,8 +12,8 @@ Select a data storage service and configure information to build a scratch org p
 - Call the following lines in the CI job:
 
 ```shell
-  sfdx hardis:auth:login --devhub
-  sfdx hardis:scratch:pool:refresh
+  sf hardis:auth:login --devhub
+  sf hardis:scratch:pool:refresh
 ```
   
 
@@ -32,7 +32,7 @@ Select a data storage service and configure information to build a scratch org p
 ## Examples
 
 ```shell
-sfdx hardis:scratch:pool:configure
+sf hardis:scratch:pool:configure
 ```
 
 

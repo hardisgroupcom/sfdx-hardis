@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:project:clean:orgmissingitems
 
 ## Description
@@ -24,7 +24,7 @@ If not provided, will be prompted to the user.||||
 ## Examples
 
 ```shell
-sfdx hardis:project:clean:orgmissingitems
+sf hardis:project:clean:orgmissingitems
 ```
 
 

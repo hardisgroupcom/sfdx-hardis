@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:unfreeze
 
 ## Description
@@ -30,19 +30,19 @@ See user guide in the following article
 ## Examples
 
 ```shell
-sfdx hardis:org:user:unfreeze
+sf hardis:org:user:unfreeze
 ```
 
 ```shell
-sfdx hardis:org:user:unfreeze --targetusername myuser@myorg.com
+sf hardis:org:user:unfreeze --targetusername myuser@myorg.com
 ```
 
 ```shell
-sfdx hardis:org:user:unfreeze --includeprofiles 'Standard'
+sf hardis:org:user:unfreeze --includeprofiles 'Standard'
 ```
 
 ```shell
-sfdx hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'
+sf hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'
 ```
 
 

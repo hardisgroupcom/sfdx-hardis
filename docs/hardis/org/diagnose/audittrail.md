@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:audittrail
 
 ## Description
@@ -118,19 +118,19 @@ monitoringAllowedSectionsActions:
 ## Examples
 
 ```shell
-sfdx hardis:org:diagnose:audittrail
+sf hardis:org:diagnose:audittrail
 ```
 
 ```shell
-sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com
+sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com
 ```
 
 ```shell
-sfdx hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com
+sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com
 ```
 
 ```shell
-sfdx hardis:org:diagnose:audittrail --lastndays 5
+sf hardis:org:diagnose:audittrail --lastndays 5
 ```
 
 

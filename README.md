@@ -88,7 +88,7 @@ _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Docker
 ## Usage
 
 ```sh-session
-sfdx hardis:<COMMAND> <OPTIONS>
+sf hardis:<COMMAND> <OPTIONS>
 ```
 
 ## Articles
@@ -127,7 +127,7 @@ Anyone is welcome to contribute to this sfdx-hardis
   - Run `yarn` to install dependencies
   - Run `sf plugins link` to link the local sfdx-hardis to SFDX CLI
   - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
-- Debug commands using `NODE_OPTIONS=--inspect-brk sfdx hardis:somecommand -someparameter somevalue`
+- Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand -someparameter somevalue`
 
 ## Dependencies
 
