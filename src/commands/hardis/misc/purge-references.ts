@@ -4,15 +4,14 @@ import { Messages, SfdxError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import * as moment from "moment";
 import * as ora from "ora";
 import * as path from "path";
-import * as readline from "readline";
 
-import { stripAnsi, uxLog } from "../../../common/utils";
-import { countLinesInFile } from "../../../common/utils/filesUtils";
-import { getRecordTypeId } from "../../../common/utils/orgUtils";
+import { execCommand, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
+import { MetadataUtils } from "../../../common/metadata-utils";
+import { glob } from "glob";
+import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -38,7 +37,6 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
     references: flags.string({
       char: "r",
       description: "Comma-separated list of references to find in metadatas",
-      required: true,
     }),
     debug: flags.boolean({
       char: "d",
@@ -63,30 +61,121 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
   protected static requiresProject = true;
 
   /* jscpd:ignore-end */
+  private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
   protected referenceStrings: string[] = [];
+  protected referenceStringsLabel: string;
+  protected allMatchingSourceFiles: string[] = [];
+  protected spinner: ora.Ora;
 
   public async run(): Promise<AnyJson> {
     uxLog(this, c.yellow(c.bold(PurgeRef.description)));
+
     // Collect input parameters
-    this.referenceStrings = (this.flags.references || "").split(",");
-    if (this.referenceStrings.length === 0) {
+    this.referenceStrings = (this.flags?.references || "").split(",");
+    if (this.referenceStrings.length == 1 && this.referenceStrings[0] === '') {
       const refPromptResult = await prompts({
         type: "text",
         message: "Please input a comma-separated list of strings that you want to purge (example: Affaire__c)",
       });
       this.referenceStrings = refPromptResult.value.split(",");
     }
-    if (this.referenceStrings.length === 0) {
+    if (this.referenceStrings.length == 1 && this.referenceStrings[0] === '') {
       throw new SfdxError("You must input at least one string to check for references");
     }
+    this.referenceStringsLabel = this.referenceStrings.join(',');
 
     // Retrieve metadatas if necessary
     const retrieveNeedRes = await prompts({
-      type: "confirm",
+      type: "select",
       message: `Are your local sources up to date with target org ${this.org.getUsername()}, or do you need to retrieve some of them ?`,
+      choices: [
+        { value: true, title: "My local sfdx sources are up to date with the target org" },
+        { value: false, title: "I need to retrieve metadatas :)" }
+      ]
     });
-    this.referenceStrings = refPromptResult.value.split(",");    
+    if (retrieveNeedRes.value === false) {
+      const metadatas = await MetadataUtils.promptMetadataTypes();
+      const metadataArg = metadatas.map((metadataType: any) => metadataType.xmlName).join(" ");
+      await execCommand(`sf project retrieve start --ignore-conflicts --metadata ${metadataArg}`, this, { fail: true });
+    }
 
-    return {};
+    // Find sources that contain references
+    this.spinner = ora({ text: `Browsing sources to find references to ${this.referenceStringsLabel}...`, spinner: "moon" }).start();
+    const packageDirectories = this.project.getPackageDirectories();
+    this.allMatchingSourceFiles = [];
+    for (const packageDirectory of packageDirectories) {
+      const sourceFiles = await glob("*/**/*.{cls,trigger,xml}", { ignore: this.ignorePatterns, cwd: packageDirectory.fullPath });
+      const matchingSourceFiles = sourceFiles.filter((sourceFile) => {
+        sourceFile = path.join(packageDirectory.path, sourceFile);
+        const fileContent = fs.readFileSync(sourceFile, "utf8");
+        return this.referenceStrings.some(refString => fileContent.includes(refString));
+      }).map(sourceFile => path.join(packageDirectory.path, sourceFile));
+      this.allMatchingSourceFiles.push(...matchingSourceFiles);
+    }
+    this.spinner.succeed(`Found ${this.allMatchingSourceFiles.length} sources with references`);
+    this.allMatchingSourceFiles.sort();
+    uxLog(this, "Matching files:\n" + c.grey(this.allMatchingSourceFiles.join("\n")));
+
+    // Handling Apex classes
+    await this.updateApex();
+
+    return { message: "Command completed" };
+  }
+
+  private async updateApex() {
+    uxLog(this, c.cyan(`Commenting lines with ${this.referenceStringsLabel} in Apex Classes & Triggers...`));
+    const replacementRegexes = [];
+    for (const ref of this.referenceStrings) {
+      const refRegexes = [
+        // , REF ,
+        { regex: `,${ref},`, replace: "," },
+        { regex: `, ${ref},`, replace: "," },
+        { regex: `,${ref} ,`, replace: "," },
+        { regex: `, ${ref} ,`, replace: "," },
+        // , REF = xxx ,
+        { regex: `,${ref}[ |=].+\\,`, replace: "," },
+        { regex: `, ${ref}[ |=].+\\,`, replace: "," },
+        { regex: `,${ref}[ |=].+\\, `, replace: "," },
+        { regex: `, ${ref}[ |=].+\\ ,`, replace: "," },
+        // , REF = xxx )
+        { regex: `,${ref}[ |=].+\\)`, replace: ")" },
+        { regex: `, ${ref}[ |=].+\\)`, replace: ")" },
+        // REF = xxx ,
+        { regex: `${ref}[ |=].+\\)`, replace: ")" },
+      ];
+      replacementRegexes.push(...refRegexes);
+    }
+    for (const apexClassFile of this.allMatchingSourceFiles.filter(file => file.endsWith(".cls") || file.endsWith(".trigger"))) {
+      const fileText = await fs.readFile(apexClassFile, "utf8");
+      const fileLines = fileText.split("\n");
+      let updated = false;
+      const updatedFileLines = fileLines.map(line => {
+        const trimLine = line.trim();
+        if (trimLine.startsWith("/")) {
+          return line;
+        }
+        if (this.referenceStrings.some(ref => line.includes(ref))) {
+          updated = true;
+          let regexReplaced = false;
+          for (const regexReplace of replacementRegexes) {
+            const updatedLine = line.replace(new RegExp(regexReplace.regex, "gm"), regexReplace.replace);
+            if (updatedLine !== line) {
+              line = updatedLine;
+              regexReplaced = true;
+              break;
+            }
+          }
+          if (regexReplaced) {
+            return line + "// Updated by sfdx-hardis purge-references";
+          }
+          return "// " + line + " // Commented by sfdx-hardis purge-references";
+        }
+        return line;
+      });
+      if (updated) {
+        const updatedFileText = updatedFileLines.join("\n");
+        await fs.writeFile(apexClassFile, updatedFileText);
+      }
+    }
   }
 }
