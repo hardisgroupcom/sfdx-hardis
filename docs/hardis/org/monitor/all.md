@@ -29,9 +29,9 @@ Example:
 ```yaml
 monitoringCommands:
   - title: My Custom command
-    command: sfdx my:custom:command
+    command: sf my:custom:command
   - title: My Custom command 2
-    command: sfdx my:other:custom:command
+    command: sf my:other:custom:command
 ```
 
 You can force the daily run of all commands by defining env var `MONITORING_IGNORE_FREQUENCY=true`

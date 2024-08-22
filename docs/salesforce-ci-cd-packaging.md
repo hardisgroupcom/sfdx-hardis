@@ -120,9 +120,9 @@ Once you merged your PR in packaging branch (after checking the control jobs are
 
 To promote a package version, run the following command
 
-`sfdx force:package:version:promote -p PACKAGE_VERSION_ID`
+`sf hardis:package:version:promote`
 
-Example: `sfdx force:package:version:promote -p 04t7S000000gYp7QAG`
+Example: `sf hardis:package:version:promote`
 
 Note: When later you will **create a new scratch org** in a new development branch, if you have issues, just increment again the `versionNumber` in `sfdx-project.json`
 

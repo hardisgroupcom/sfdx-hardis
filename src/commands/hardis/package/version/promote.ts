@@ -100,7 +100,7 @@ export default class PackageVersionPromote extends SfdxCommand {
     // Promote packages
     for (const packageToPromote of packagesToPromote) {
       uxLog(this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
-      const promoteCommand = "sf package installed list" + ` --package "${packageToPromote}"` + " --no-prompt";
+      const promoteCommand = "sf package version promote" + ` --package "${packageToPromote}"` + " --no-prompt";
       const promoteResult = await execSfdxJson(promoteCommand, this, {
         fail: false,
         output: false,

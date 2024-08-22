@@ -190,7 +190,7 @@ clean:
   script:
     - sf hardis:auth:login --devhub
     - sf hardis:auth:login --scratchorg || true
-    - sfdx force:org:delete --noprompt || true
+    - sf org delete scratch --no-prompt || true
 
 # Simulate deployment to related org
 # Is triggered only when scheduled, or via manual launch

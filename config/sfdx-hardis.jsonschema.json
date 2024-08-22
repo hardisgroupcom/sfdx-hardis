@@ -301,14 +301,14 @@
                 "label": "Generate manifest",
                 "icon": "file.svg",
                 "tooltip": "Generates a manifest package.xml using local sfdx source files",
-                "command": "sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest"
+                "command": "sf project generate manifest --source-path force-app --name myNewManifest"
               },
               {
                 "id": "list-all-orgs",
                 "label": "List all orgs",
                 "icon": "salesforce.svg",
                 "tooltip": "List all orgs that has already been authenticated using sfdx",
-                "command": "sfdx force:org:list --all"
+                "command": "sf org list --all"
               }
             ]
           },
@@ -794,7 +794,7 @@
           {
             "title": "My custom command",
             "key": "MY_CUSTOM_KEY",
-            "command": "sfdx my:custom:command",
+            "command": "sf my:custom:command",
             "frequency": "daily"
           }
         ]
