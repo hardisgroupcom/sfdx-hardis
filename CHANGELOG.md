@@ -31,6 +31,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx alias:set -> sf alias set
   - sfdx force:apex:test:run -> sf apex run test
   - sfdx force:apex:execute -> sf apex run
+  - sfdx force:package:create -> sf package create
+  - sfdx force:package:version:create -> sf package version create
+  - sfdx force:package:version:delete -> sf package version delete
+  - sfdx force:package:version:list -> sf package version list
   - sfdx hardis:* -> sf hardis:*
 - Get rid of sfdx-essentials dependency by internalizing its used commands
   - sf hardis:packagexml:append

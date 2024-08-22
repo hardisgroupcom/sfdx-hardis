@@ -69,7 +69,7 @@ export default class PackageVersionPromote extends SfdxCommand {
     const packagesToPromote = [];
     if (auto) {
       // Promote only packages not promoted yet
-      const packageListRes = await execSfdxJson("sfdx force:package:version:list --released", this, { output: true, fail: true });
+      const packageListRes = await execSfdxJson("sf package version list --released", this, { output: true, fail: true });
       const filteredPackagesToPromote = Object.values(availablePackageAliases).filter((packageAlias) => {
         return (
           packageListRes.result.filter((releasedPackage) => {
@@ -100,7 +100,7 @@ export default class PackageVersionPromote extends SfdxCommand {
     // Promote packages
     for (const packageToPromote of packagesToPromote) {
       uxLog(this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
-      const promoteCommand = "sfdx force:package:version:promote" + ` --package "${packageToPromote}"` + " --noprompt";
+      const promoteCommand = "sf package installed list" + ` --package "${packageToPromote}"` + " --no-prompt";
       const promoteResult = await execSfdxJson(promoteCommand, this, {
         fail: false,
         output: false,

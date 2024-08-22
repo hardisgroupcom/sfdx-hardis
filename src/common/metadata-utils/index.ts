@@ -456,9 +456,9 @@ class MetadataUtils {
 
   // List installed packages on a org
   public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
-    let listCommand = "sfdx force:package:installed:list";
+    let listCommand = "sf package installed list";
     if (orgAlias != null) {
-      listCommand += ` -u ${orgAlias}`;
+      listCommand += ` --target-org ${orgAlias}`;
     }
     try {
       const alreadyInstalled = await execSfdxJson(listCommand, commandThis, {
@@ -519,11 +519,11 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
         }
         const securityType = package1.SecurityType || "AdminsOnly";
         let packageInstallCommand =
-          "sfdx force:package:install" +
+          "sf package install" +
           ` --package ${package1.SubscriberPackageVersionId}` +
-          " --noprompt" +
-          ` --securitytype ${securityType}` +
-          " -w 60" +
+          " --no-prompt" +
+          ` --security-type ${securityType}` +
+          " --wait 60" +
           " --json " +
           (package1.installationkey != null && package1.installationkey != "" ? ` --installationkey ${package1.installationkey}` : "");
         if (orgAlias != null) {

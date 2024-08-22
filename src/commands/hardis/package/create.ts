@@ -84,9 +84,9 @@ export default class PackageCreate extends SfdxCommand {
 
     // Create package
     const packageCreateCommand =
-      "sfdx force:package:create" +
+      "sf package create" +
       ` --name "${packageResponse.packageName}"` +
-      ` --packagetype ${packageResponse.packageType}` +
+      ` --package-type ${packageResponse.packageType}` +
       ` --path "${packageResponse.packagePath}"`;
     const packageCreateResult = await execSfdxJson(packageCreateCommand, this, {
       output: true,
