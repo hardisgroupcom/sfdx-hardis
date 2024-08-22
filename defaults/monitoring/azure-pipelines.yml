@@ -49,8 +49,8 @@ jobs:
   - script: |
       npm install @salesforce/cli -g
       sf plugins install @salesforce/plugin-packaging
-      echo y | sfdx plugins:install sfdx-hardis
-      echo y | sfdx plugins:install sfdx-essentials
+      echo y | sf plugins install sfdx-hardis
+      echo y | sf plugins install sfdx-essentials
       sf version --verbose --json
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: Install @salesforce/cli & sfdx-hardis
@@ -130,8 +130,8 @@ jobs:
   - script: |
       npm install @salesforce/cli -g
       sf plugins install @salesforce/plugin-packaging
-      echo y | sfdx plugins:install sfdx-hardis
-      echo y | sfdx plugins:install sfdx-essentials
+      echo y | sf plugins install sfdx-hardis
+      echo y | sf plugins install sfdx-essentials
       sf version --verbose --json
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: Install @salesforce/cli & sfdx-hardis
@@ -248,8 +248,8 @@ jobs:
   - script: |
       npm install @salesforce/cli -g
       sf plugins install @salesforce/plugin-packaging
-      echo y | sfdx plugins:install sfdx-hardis
-      echo y | sfdx plugins:install sfdx-essentials
+      echo y | sf plugins install sfdx-hardis
+      echo y | sf plugins install sfdx-essentials
       sf version --verbose --json
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: Install @salesforce/cli & sfdx-hardis

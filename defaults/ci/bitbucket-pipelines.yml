@@ -24,9 +24,9 @@ pipelines:
             script:
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
-              - echo 'y' | sfdx plugins:install sfdx-hardis
-              - echo 'y' | sfdx plugins:install sfdx-essentials
-              - echo 'y' | sfdx plugins:install sfdx-git-delta
+              - echo 'y' | sf plugins install sfdx-hardis
+              - echo 'y' | sf plugins install sfdx-essentials
+              - echo 'y' | sf plugins install sfdx-git-delta
               - sf version --verbose --json
               - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" | sed 's/refs\/heads\///')
               - export CI_COMMIT_REF_NAME=$BRANCH_NAME
@@ -44,9 +44,9 @@ pipelines:
           script:
               - npm install --no-cache @salesforce/cli --global
               - sf plugins install @salesforce/plugin-packaging
-              - echo 'y' | sfdx plugins:install sfdx-hardis
-              - echo 'y' | sfdx plugins:install sfdx-essentials
-              - echo 'y' | sfdx plugins:install sfdx-git-delta
+              - echo 'y' | sf plugins install sfdx-hardis
+              - echo 'y' | sf plugins install sfdx-essentials
+              - echo 'y' | sf plugins install sfdx-git-delta
               - sf version --verbose --json
               - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
               - export CI_COMMIT_REF_NAME=$BRANCH_NAME

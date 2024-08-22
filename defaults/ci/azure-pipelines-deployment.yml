@@ -51,10 +51,10 @@ jobs:
       - script: |
           npm install @salesforce/cli --global
           sf plugins install @salesforce/plugin-packaging
-          echo 'y' | sfdx plugins:install sfdx-hardis
-          echo 'y' | sfdx plugins:install sfdx-essentials
-          echo 'y' | sfdx plugins:install sfdmu
-          echo 'y' | sfdx plugins:install sfdx-git-delta
+          echo 'y' | sf plugins install sfdx-hardis
+          echo 'y' | sf plugins install sfdx-essentials
+          echo 'y' | sf plugins install sfdmu
+          echo 'y' | sf plugins install sfdx-git-delta
           sf version --verbose --json
         displayName: "Install SFDX & plugins"
 

@@ -69,9 +69,9 @@ jobs:
       run: |
         npm install --no-cache @salesforce/cli --global
         sf plugins install --force @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install --force sfdx-hardis
-        echo 'y' | sfdx plugins:install --force sfdx-essentials
-        echo 'y' | sfdx plugins:install --force sfdx-git-delta
+        echo 'y' | sf plugins install --force sfdx-hardis
+        echo 'y' | sf plugins install --force sfdx-essentials
+        echo 'y' | sf plugins install --force sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Retrieve Metadata
@@ -157,9 +157,9 @@ jobs:
       run: |
         npm install --no-cache @salesforce/cli --global
         sf plugins install --force @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install --force sfdx-hardis
-        echo 'y' | sfdx plugins:install --force sfdx-essentials
-        echo 'y' | sfdx plugins:install --force sfdx-git-delta
+        echo 'y' | sf plugins install --force sfdx-hardis
+        echo 'y' | sf plugins install --force sfdx-essentials
+        echo 'y' | sf plugins install --force sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Run apex tests
@@ -283,9 +283,9 @@ jobs:
       run: |
         npm install --no-cache @salesforce/cli --global
         sf plugins install --force @salesforce/plugin-packaging
-        echo 'y' | sfdx plugins:install --force sfdx-hardis
-        echo 'y' | sfdx plugins:install --force sfdx-essentials
-        echo 'y' | sfdx plugins:install --force sfdx-git-delta
+        echo 'y' | sf plugins install --force sfdx-hardis
+        echo 'y' | sf plugins install --force sfdx-essentials
+        echo 'y' | sf plugins install --force sfdx-git-delta
         sf version --verbose --json
     # Login & check deploy with test classes & code coverage
     - name: Login & Run monitoring checks

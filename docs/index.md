@@ -57,20 +57,20 @@ Once installed, click on ![Hardis Group button](https://github.com/hardisgroupco
 #### Plugin installation
 
 ```sh-session
-sfdx plugins:install sfdx-hardis
+sf plugins install sfdx-hardis
 ```
 
 For advanced use, please also install dependencies
 
 ```sh-session
 sf plugins install @salesforce/plugin-packaging
-sfdx plugins:install sfdmu
-sfdx plugins:install sfdx-git-delta
-sfdx plugins:install sfdx-essentials
-sfdx plugins:install texei-sfdx-plugin
+sf plugins install sfdmu
+sf plugins install sfdx-git-delta
+sf plugins install sfdx-essentials
+sf plugins install texei-sfdx-plugin
 ```
 
-If you are using CI/CD scripts, use `echo y | sfdx plugins:install ...` to bypass prompt.
+If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
 
 ### Docker
 
