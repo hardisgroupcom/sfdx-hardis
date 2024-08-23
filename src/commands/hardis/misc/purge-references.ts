@@ -81,6 +81,11 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
     if (this.referenceStrings.length == 1 && this.referenceStrings[0] === "") {
       throw new SfdxError("You must input at least one string to check for references");
     }
+    for (const refString of this.referenceStrings) {
+      if (refString.endsWith("__c") && !this.referenceStrings.includes(refString.replace("__c", "__r"))) {
+        this.referenceStrings.push(refString.replace("__c", "__r"));
+      }
+    }
     this.referenceStringsLabel = this.referenceStrings.join(",");
 
     // Retrieve metadatas if necessary
@@ -175,6 +180,30 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
           {
             regex: `<itemInstances>[\\s\\S]*?<.*>.*\\.{{REF}}<\\/.*?>[\\s\\S]*?<\\/itemInstances>`,
             replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
+          },
+        ],
+      },
+      // Permission sets, Profiles
+      {
+        extensions: [".permissionset-meta.xml", ".profile-meta.xml"],
+        label: "Permission Sets, Profiles",
+        type: "xml",
+        replaceMode: ["all", "line"],
+        refRegexes: [
+          // <fieldPermissions><field>REF</field></fieldPermissions>
+          {
+            regex: `<fieldPermissions>[\\s\\S]*<field>{{REF}}<\\/field>[\\s\\S]*<\\/fieldPermissions>`,
+            replace: "<!-- fieldPermissions removed by sfdx-hardis purge-references -->",
+          },
+          // <fieldPermissions><field>xxx.REF</field></fieldPermissions>
+          {
+            regex: `<fieldPermissions>[\\s\\S]*<field>.*\\.{{REF}}<\\/field>[\\s\\S]*<\\/fieldPermissions>`,
+            replace: "<!-- fieldPermissions removed by sfdx-hardis purge-references -->",
+          },
+          // <fieldPermissions><field>REF.xxx</field></fieldPermissions>
+          {
+            regex: `<fieldPermissions>[\\s\\S]*<field>{{REF}}\\..*<\\/field>[\\s\\S]*<\\/fieldPermissions>`,
+            replace: "<!-- fieldPermissions removed by sfdx-hardis purge-references -->",
           },
         ],
       },
