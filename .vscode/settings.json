@@ -10,5 +10,6 @@
     "**/lib": true,
     "**/bin": true
   },
-  "sarif-viewer.connectToGithubCodeScanning": "off"
+  "sarif-viewer.connectToGithubCodeScanning": "off",
+  "workbench.colorCustomizations": {}
 }
