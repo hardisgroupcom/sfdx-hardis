@@ -12,6 +12,7 @@ import { prompts } from "../../../common/utils/prompts";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { glob } from "glob";
 import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
+import { applyAllReplacementsDefinitions } from "../../../common/utils/xmlUtils";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -117,66 +118,66 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
     uxLog(this, "Matching files:\n" + c.grey(this.allMatchingSourceFiles.join("\n")));
 
     // Handling Apex classes
-    await this.updateApex();
+    await applyAllReplacementsDefinitions(this.allMatchingSourceFiles, this.referenceStrings, this.getAllReplacements());
 
     return { message: "Command completed" };
   }
 
-  private async updateApex() {
-    uxLog(this, c.cyan(`Commenting lines with ${this.referenceStringsLabel} in Apex Classes & Triggers...`));
-    const replacementRegexes = [];
-    for (const ref of this.referenceStrings) {
-      const refRegexes = [
-        // , REF ,
-        { regex: `,${ref},`, replace: "," },
-        { regex: `, ${ref},`, replace: "," },
-        { regex: `,${ref} ,`, replace: "," },
-        { regex: `, ${ref} ,`, replace: "," },
-        // , REF = xxx ,
-        { regex: `,${ref}[ |=].+\\,`, replace: "," },
-        { regex: `, ${ref}[ |=].+\\,`, replace: "," },
-        { regex: `,${ref}[ |=].+\\, `, replace: "," },
-        { regex: `, ${ref}[ |=].+\\ ,`, replace: "," },
-        // , REF = xxx )
-        { regex: `,${ref}[ |=].+\\)`, replace: ")" },
-        { regex: `, ${ref}[ |=].+\\)`, replace: ")" },
-        // REF = xxx ,
-        { regex: `${ref}[ |=].+\\)`, replace: ")" },
-      ];
-      replacementRegexes.push(...refRegexes);
-    }
-    for (const apexClassFile of this.allMatchingSourceFiles.filter((file) => file.endsWith(".cls") || file.endsWith(".trigger"))) {
-      const fileText = await fs.readFile(apexClassFile, "utf8");
-      const fileLines = fileText.split(/\r?\n/);
-      let updated = false;
-      const updatedFileLines = fileLines.map((line) => {
-        const trimLine = line.trim();
-        if (trimLine.startsWith("/")) {
-          return line;
-        }
-        if (this.referenceStrings.some((ref) => line.includes(ref))) {
-          updated = true;
-          let regexReplaced = false;
-          for (const regexReplace of replacementRegexes) {
-            const updatedLine = line.replace(new RegExp(regexReplace.regex, "gm"), regexReplace.replace);
-            if (updatedLine !== line) {
-              line = updatedLine;
-              regexReplaced = true;
-              break;
-            }
-          }
-          if (regexReplaced) {
-            return line + " // Updated by sfdx-hardis purge-references";
-          }
-          return "// " + line + " // Commented by sfdx-hardis purge-references";
-        }
-        return line;
-      });
-      if (updated) {
-        const updatedFileText = updatedFileLines.join("\n");
-        await fs.writeFile(apexClassFile, updatedFileText);
-        uxLog(this, c.grey(`- updated Apex: ${apexClassFile}`));
-      }
-    }
+  private getAllReplacements() {
+    return [
+      // Apex
+      {
+        extensions: [".cls", ".trigger"],
+        label: "Apex",
+        type: "code",
+        replaceMode: ["line"],
+        refRegexes: [
+          // , REF ,
+          { regex: `,{{REF}},`, replace: "," },
+          { regex: `, {{REF}},`, replace: "," },
+          { regex: `,{{REF}} ,`, replace: "," },
+          { regex: `, {{REF}} ,`, replace: "," },
+          // , REF = xxx ,
+          { regex: `,{{REF}}[ |=].+\\,`, replace: "," },
+          { regex: `, {{REF}}[ |=].+\\,`, replace: "," },
+          { regex: `,{{REF}}[ |=].+\\, `, replace: "," },
+          { regex: `, {{REF}}[ |=].+\\ ,`, replace: "," },
+          // , REF = xxx )
+          { regex: `,{{REF}}[ |=].+\\)`, replace: ")" },
+          { regex: `, {{REF}}[ |=].+\\)`, replace: ")" },
+          // REF = xxx ,
+          { regex: `{{REF}}[ |=].+\\)`, replace: ")" },
+        ],
+      },
+      // Flexipages
+      {
+        extensions: [".flexipage-meta.xml"],
+        label: "Flexipage",
+        type: "xml",
+        replaceMode: ["all", "line"],
+        refRegexes: [
+          // <valueListItems><value>REF</value></valueListItems>
+          {
+            regex: `<valueListItems>\\s*<value>{{REF}}<\\/value>\\s*<\\/valueListItems>`,
+            replace: "<!-- valueListItems removed by sfdx-hardis purge-references -->",
+          },
+          // <itemInstances><xxx>REF</xxx></itemInstances>
+          {
+            regex: `<itemInstances>[\\s\\S]*<.*>{{REF}}<\\/.*?>[\\s\\S]*?<\\/itemInstances>`,
+            replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
+          },
+          // <itemInstances><xxx>REF.zzz</xxx></itemInstances>
+          {
+            regex: `<itemInstances>[\\s\\S]*<.*>{{REF}}\\..*<\\/.*?>[\\s\\S]*?<\\/itemInstances>`,
+            replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
+          },
+          // <itemInstances><xxx>zzz.REF</xxx></itemInstances>
+          {
+            regex: `<itemInstances>[\\s\\S]*?<.*>.*\\.{{REF}}<\\/.*?>[\\s\\S]*?<\\/itemInstances>`,
+            replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
+          },
+        ],
+      },
+    ];
   }
 }

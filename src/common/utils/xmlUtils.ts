@@ -113,7 +113,7 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
       }
     }
   }
-  // Sort result 
+  // Sort result
   allPackageXmlFilesTypes = sortObject(allPackageXmlFilesTypes);
   // Write output file
   const appendTypesXml = [];
@@ -235,4 +235,76 @@ function checkRemove(boolRes, removedOnly = false) {
     return !boolRes;
   }
   return boolRes;
+}
+
+export async function applyAllReplacementsDefinitions(allMatchingSourceFiles: string[], referenceStrings: string[], replacementDefinitions: any[]) {
+  uxLog(this, c.cyan(`Initializing replacements in files for ${referenceStrings.join(",")}...`));
+  for (const ref of referenceStrings) {
+    for (const replacementDefinition of replacementDefinitions) {
+      replacementDefinition.refRegexes = replacementDefinition.refRegexes.map((refRegex) => {
+        refRegex.regex = refRegex.regex.replace("{{REF}}", ref);
+        return refRegex;
+      });
+      await applyReplacementDefinition(replacementDefinition, allMatchingSourceFiles, ref);
+    }
+  }
+}
+
+export async function applyReplacementDefinition(replacementDefinition: any, allMatchingSourceFiles: string[], ref: string) {
+  for (const sourceFile of allMatchingSourceFiles.filter((file) => replacementDefinition.extensions.some((ext) => file.endsWith(ext)))) {
+    let fileText = await fs.readFile(sourceFile, "utf8");
+    let updated = false;
+    // Replacement in all text
+    if (replacementDefinition.replaceMode.includes("all")) {
+      for (const regexReplace of replacementDefinition.refRegexes) {
+        const updatedfileText = fileText.replace(new RegExp(regexReplace.regex, "gm"), regexReplace.replace);
+        if (updatedfileText !== fileText) {
+          updated = true ;
+          fileText = updatedfileText;
+        }
+      }      
+    }
+    // Replacement by line
+    let fileLines = fileText.split(/\r?\n/);
+    if (replacementDefinition.replaceMode.includes("line")) {
+      const updatedFileLines = fileLines.map((line) => {
+        const trimLine = line.trim();
+        if (trimLine.startsWith("/") || trimLine.startsWith("<!--")) {
+          return line;
+        }
+        if (
+          (replacementDefinition.type === "code" && line.includes(ref)) ||
+          (replacementDefinition.type === "xml" &&
+            (line.includes(">" + ref + "<") || line.includes("." + ref + "<") || line.includes(">" + ref + ".")))
+        ) {
+          updated = true;
+          let regexReplaced = false;
+          for (const regexReplace of replacementDefinition.refRegexes) {
+            const updatedLine = line.replace(new RegExp(regexReplace.regex, "gm"), regexReplace.replace);
+            if (updatedLine !== line) {
+              line = updatedLine;
+              regexReplaced = true;
+              break;
+            }
+          }
+          if (regexReplaced) {
+            return replacementDefinition.type === "code" ? line + " // Updated by sfdx-hardis purge-references" : line;
+          }
+          return replacementDefinition.type === "code"
+            ? "// " + line + " // Commented by sfdx-hardis purge-references"
+            : replacementDefinition.type === "xml"
+            ? "<!-- " + line + " Commented by sfdx-hardis purge-references --> "
+            : line;
+        }
+        return line;
+      });
+      fileLines = updatedFileLines;
+    }
+    // Apply updates on file
+    if (updated) {
+      const updatedFileText = fileLines.join("\n");
+      await fs.writeFile(sourceFile, updatedFileText);
+      uxLog(this, c.grey(`- updated ${replacementDefinition.label}: ${sourceFile}`));
+    }
+  }
 }
