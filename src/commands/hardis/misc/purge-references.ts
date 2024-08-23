@@ -29,9 +29,7 @@ For example, this can be handy if you need to change the type of a custom field 
 
 USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
 
-  public static examples = [
-    "$ sf hardis:misc:purge-references",
-  ];
+  public static examples = ["$ sf hardis:misc:purge-references"];
 
   protected static flagsConfig = {
     references: flags.string({
@@ -72,17 +70,17 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
 
     // Collect input parameters
     this.referenceStrings = (this.flags?.references || "").split(",");
-    if (this.referenceStrings.length == 1 && this.referenceStrings[0] === '') {
+    if (this.referenceStrings.length == 1 && this.referenceStrings[0] === "") {
       const refPromptResult = await prompts({
         type: "text",
         message: "Please input a comma-separated list of strings that you want to purge (example: Affaire__c)",
       });
       this.referenceStrings = refPromptResult.value.split(",");
     }
-    if (this.referenceStrings.length == 1 && this.referenceStrings[0] === '') {
+    if (this.referenceStrings.length == 1 && this.referenceStrings[0] === "") {
       throw new SfdxError("You must input at least one string to check for references");
     }
-    this.referenceStringsLabel = this.referenceStrings.join(',');
+    this.referenceStringsLabel = this.referenceStrings.join(",");
 
     // Retrieve metadatas if necessary
     const retrieveNeedRes = await prompts({
@@ -90,8 +88,8 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
       message: `Are your local sources up to date with target org ${this.org.getUsername()}, or do you need to retrieve some of them ?`,
       choices: [
         { value: true, title: "My local sfdx sources are up to date with the target org" },
-        { value: false, title: "I need to retrieve metadatas :)" }
-      ]
+        { value: false, title: "I need to retrieve metadatas :)" },
+      ],
     });
     if (retrieveNeedRes.value === false) {
       const metadatas = await MetadataUtils.promptMetadataTypes();
@@ -105,11 +103,13 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
     this.allMatchingSourceFiles = [];
     for (const packageDirectory of packageDirectories) {
       const sourceFiles = await glob("*/**/*.{cls,trigger,xml}", { ignore: this.ignorePatterns, cwd: packageDirectory.fullPath });
-      const matchingSourceFiles = sourceFiles.filter((sourceFile) => {
-        sourceFile = path.join(packageDirectory.path, sourceFile);
-        const fileContent = fs.readFileSync(sourceFile, "utf8");
-        return this.referenceStrings.some(refString => fileContent.includes(refString));
-      }).map(sourceFile => path.join(packageDirectory.path, sourceFile));
+      const matchingSourceFiles = sourceFiles
+        .filter((sourceFile) => {
+          sourceFile = path.join(packageDirectory.path, sourceFile);
+          const fileContent = fs.readFileSync(sourceFile, "utf8");
+          return this.referenceStrings.some((refString) => fileContent.includes(refString));
+        })
+        .map((sourceFile) => path.join(packageDirectory.path, sourceFile));
       this.allMatchingSourceFiles.push(...matchingSourceFiles);
     }
     this.spinner.succeed(`Found ${this.allMatchingSourceFiles.length} sources with references`);
@@ -145,16 +145,16 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
       ];
       replacementRegexes.push(...refRegexes);
     }
-    for (const apexClassFile of this.allMatchingSourceFiles.filter(file => file.endsWith(".cls") || file.endsWith(".trigger"))) {
+    for (const apexClassFile of this.allMatchingSourceFiles.filter((file) => file.endsWith(".cls") || file.endsWith(".trigger"))) {
       const fileText = await fs.readFile(apexClassFile, "utf8");
-      const fileLines = fileText.split("\n");
+      const fileLines = fileText.split(/\r?\n/);
       let updated = false;
-      const updatedFileLines = fileLines.map(line => {
+      const updatedFileLines = fileLines.map((line) => {
         const trimLine = line.trim();
         if (trimLine.startsWith("/")) {
           return line;
         }
-        if (this.referenceStrings.some(ref => line.includes(ref))) {
+        if (this.referenceStrings.some((ref) => line.includes(ref))) {
           updated = true;
           let regexReplaced = false;
           for (const regexReplace of replacementRegexes) {
@@ -166,7 +166,7 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
             }
           }
           if (regexReplaced) {
-            return line + "// Updated by sfdx-hardis purge-references";
+            return line + " // Updated by sfdx-hardis purge-references";
           }
           return "// " + line + " // Commented by sfdx-hardis purge-references";
         }
@@ -175,6 +175,7 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
       if (updated) {
         const updatedFileText = updatedFileLines.join("\n");
         await fs.writeFile(apexClassFile, updatedFileText);
+        uxLog(this, c.grey(`- updated Apex: ${apexClassFile}`));
       }
     }
   }
