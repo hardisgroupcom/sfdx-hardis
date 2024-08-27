@@ -14,8 +14,10 @@
     "inquirer": "^10.1.8",
     "markdown-toc": "^1.2.0",
     "moment": "^2.30.1",
+    "ora": "^8.1.0",
     "puppeteer": "^23.2.0",
     "read-package-up": "^11.0.0",
+    "simple-git": "^3.25.0",
     "sort-array": "^4.1.5",
     "update-notifier": "^7.3.0",
     "ws": "^8.18.0"

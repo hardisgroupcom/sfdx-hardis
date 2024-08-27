@@ -7,7 +7,7 @@ import { getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils";
 import { Connection } from "jsforce";
-import { GitProvider } from "../gitProvider";
+import { GitProvider } from "../gitProvider/index.js";
 import axios, { AxiosRequestConfig } from "axios";
 
 const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);

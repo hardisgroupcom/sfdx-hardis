@@ -4,6 +4,7 @@ import { glob } from "glob";
 import * as puppeteer from "puppeteer";
 import * as yaml from "js-yaml";
 import { uxLog } from "./index.js";
+import { SfError } from "@salesforce/core";
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 
@@ -68,25 +69,52 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
 
       // Open ListView settings
       const filterButton = await page.waitForSelector(".filterButton");
-      await filterButton.click();
+      if (filterButton) {
+        await filterButton.click();
+      }
+      else {
+        throw new SfError("Puppeteer: .filterButton not found")
+      }
+
 
       // Open Filter by owner popup
-      const filterByOwnerButtons = await page.waitForXPath("//div[contains(text(), 'Filter by Owner')]");
-      await filterByOwnerButtons.click();
+      const filterByOwnerButtons = await page.waitForSelector("xpath///div[contains(text(), 'Filter by Owner')]");
+      if (filterByOwnerButtons) {
+        await filterByOwnerButtons.click();
+      }
+      else {
+        throw new SfError("Puppeteer: .filterByOwnerButtons not found")
+      }
+
 
       // Select Mine value
       const mineValue = await page.waitForSelector('input[value="mine"]');
-      const mineValueClickableLabel = await mineValue.$x("following-sibling::*");
-      await mineValueClickableLabel[0].click();
+      if (mineValue) {
+        const mineValueClickableLabel = await mineValue.$x("following-sibling::*");
+        await mineValueClickableLabel[0].click();
+      }
+      else {
+        throw new SfError("Puppeteer: input[value=\"mine\"] not found");
+      }
 
       // Click done
-      const doneButtons = await page.waitForXPath("//span[contains(text(), 'Done')]");
-      await doneButtons.click();
+      const doneButtons = await page.waitForSelector("xpath///span[contains(text(), 'Done')]");
+      if (doneButtons) {
+        await doneButtons.click();
+      }
+      else {
+        throw new SfError("Puppeteer: Done button not found")
+      }
 
       // Save
       try {
         const saveButton = await page.waitForSelector(".saveButton", { timeout: 3000 });
-        await saveButton.click();
+        if (saveButton) {
+          await saveButton.click();
+        }
+        else {
+          throw new SfError("Puppeteer: .saveButton not found")
+        }
       } catch {
         unnecessary.push(`${objectName}:${listViewName}`);
         uxLog(this, c.yellow(`Unable to hit save button, but it's probably because ${objectName}.${listViewName} was already set to "Mine"`));
@@ -94,7 +122,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       }
 
       // Confirmed saved toast
-      await page.waitForXPath("//span[contains(text(), 'List view updated.')]");
+      await page.waitForSelector("xpath///span[contains(text(), 'List view updated.')]");
       success.push(`${objectName}:${listViewName}`);
       uxLog(this, c.green(`Successfully set ${objectName}.${listViewName} as "Mine"`));
     } catch (e) {

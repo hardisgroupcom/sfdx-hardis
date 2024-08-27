@@ -13,7 +13,7 @@ import {
   git,
   uxLog,
 } from "./index.js";
-import { GitProvider } from "../gitProvider";
+import { GitProvider } from "../gitProvider/index.js";
 import { Ticket, TicketProvider } from "../ticketProvider";
 import { DefaultLogFields, ListLogLine } from "simple-git";
 

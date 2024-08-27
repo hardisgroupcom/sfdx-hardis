@@ -4,8 +4,8 @@ This class is deprecated and kept for backward compatibility
 Use NotifProvider class instead :)
 */
 import { getCurrentGitBranch } from "./index.js";
-import { GitProvider } from "../gitProvider";
-import { NotifSeverity, UtilsNotifs } from "../notifProvider";
+import { GitProvider } from "../gitProvider/index.js";
+import { NotifSeverity, UtilsNotifs } from "../notifProvider/index.js";
 
 /**
  * @description This function retrieves the job URL from the GitProvider and creates a notification button if the job URL exists.

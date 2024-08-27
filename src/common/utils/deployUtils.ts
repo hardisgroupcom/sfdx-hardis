@@ -6,7 +6,7 @@ import * as path from "path";
 import sortArray from "sort-array";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, isCI, uxLog } from "./index.js";
 import { CONSTANTS, getConfig, setConfig } from "../../config/index.js";
-import { GitProvider } from "../gitProvider";
+import { GitProvider } from "../gitProvider/index.js";
 import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
 import { MetadataUtils } from "../metadata-utils/index.js";
 import { importData } from "./dataUtils.js";

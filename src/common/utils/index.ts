@@ -2,7 +2,7 @@ import c from "chalk";
 import * as child from "child_process";
 import * as crossSpawn from "cross-spawn";
 import * as crypto from "crypto";
-import * as csvStringify from "csv-stringify/lib/sync";
+import { stringify as csvStringify } from 'csv-stringify/sync';
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
@@ -12,18 +12,18 @@ import * as which from "which";
 import * as xml2js from "xml2js";
 const exec = util.promisify(child.exec);
 import { SfError } from "@salesforce/core";
-import * as ora from "ora";
-import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
+import ora from "ora";
+import { simpleGit, FileStatusResult, SimpleGit } from "simple-git";
 import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../config/index.js";
 import { prompts } from "./prompts.js";
-import { encryptFile } from "../cryptoUtils";
+import { encryptFile } from "../cryptoUtils.js";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils.js";
 import { promptProfiles, promptUserEmail } from "./orgUtils.js";
 import { WebSocketClient } from "../websocketClient.js";
 import moment from "moment";
 import { writeXmlFile } from "./xmlUtils.js";
 
-let pluginsStdout = null;
+let pluginsStdout: string | null = null;
 
 export const isCI = process.env.CI != null;
 
@@ -77,7 +77,7 @@ export async function getGitRepoName() {
   }
   const origin = await git().getConfig("remote.origin.url");
   if (origin.value && origin.value.includes("/")) {
-    return /[^/]*$/.exec(origin.value)[0];
+    return (/[^/]*$/.exec(origin.value) || "")[0];
   }
   return null;
 }
@@ -115,7 +115,7 @@ export async function checkSfdxPlugin(pluginName: string) {
       await setConfig("user", { sfdxPluginsStdout: pluginsStdout });
     }
   }
-  if (!pluginsStdout.includes(pluginName)) {
+  if (!(pluginsStdout || "").includes(pluginName)) {
     uxLog(
       this,
       c.yellow(
@@ -399,7 +399,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     ];
   }
   // Ask user what he/she wants to git add/rm
-  const result = { added: [], removed: [] };
+  const result: any = { added: [], removed: [] };
   if (filesFiltered.length > 0) {
     for (const group of groups) {
       // Extract files matching group regex
@@ -580,7 +580,7 @@ export async function execCommand(
       commandLog += c.grey(` ${c.italic("in directory")} ${execOptions.cwd}`);
     }
   }
-  let commandResult = null;
+  let commandResult: any = {};
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = "0";
@@ -603,7 +603,7 @@ export async function execCommand(
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes("--json") || options.fail) {
-      const strErr = truncateProgressLogLines(`${e.stdout}\n${e.stderr}`);
+      const strErr = truncateProgressLogLines(`${(e as any).stdout}\n${(e as any).stderr}`);
       console.error(c.red(strErr));
       (e as Error).message = (e as Error).message += "\n" + strErr;
       // Manage retry if requested
@@ -611,7 +611,7 @@ export async function execCommand(
         options.retry.tryCount = (options.retry.tryCount || 0) + 1;
         if (
           options.retry.tryCount <= (options.retry.retryMaxAttempts || 1) &&
-          (options.retry.retryStringConstraint == null || (e.stdout + e.stderr).includes(options.retry.retryStringConstraint))
+          (options.retry.retryStringConstraint == null || ((e as any).stdout + (e as any).stderr).includes(options.retry.retryStringConstraint))
         ) {
           uxLog(commandThis, c.yellow(`Retry command: ${options.retry.tryCount} on ${options.retry.retryMaxAttempts || 1}`));
           if (options.retry.retryDelay) {
@@ -626,7 +626,7 @@ export async function execCommand(
     // if --json, we should not have a crash, so return status 1 + output log
     return {
       status: 1,
-      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`,
+      errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${(e as any).stdout}\n${(e as any).stderr}`,
       error: e,
     };
   }
