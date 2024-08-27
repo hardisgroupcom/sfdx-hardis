@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -8,12 +8,12 @@ import * as path from "path";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
 import { execCommand, filterPackageXml, uxLog } from "../../../../common/utils";
 import { MetadataUtils } from "../../../../common/metadata-utils";
-import { CONSTANTS } from "../../../../config";
+import { CONSTANTS } from "../../../../config/index.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { MessageAttachment } from "@slack/web-api";
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { parsePackageXmlFile, writePackageXmlFile } from "../../../../common/utils/xmlUtils";
+import { parsePackageXmlFile, writePackageXmlFile } from "../../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -22,7 +22,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class MonitorBackup extends SfdxCommand {
+export default class MonitorBackup extends SfCommand {
   public static title = "Backup DX sources";
 
   public static description = `Retrieve sfdx sources in the context of a monitoring backup
@@ -41,19 +41,19 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   public static examples = ["$ sf hardis:org:monitor:backup"];
 
   protected static flagsConfig = {
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgUserActiveInvalid extends SfdxCommand {
+export default class OrgUserActiveInvalid extends SfCommand {
   public static title = "Reactivate sandbox invalid users";
 
   public static description = `Update sandbox users so their email is valid
@@ -38,19 +38,19 @@ See article below
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    profiles: flags.string({
+    profiles: Flags.string({
       char: "p",
       description: "Comma-separated list of profiles names that you want to reactive users assigned to and with a .invalid email",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

@@ -2,8 +2,8 @@ import * as c from "chalk";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import inquirer from "inquirer";
 import { SfError } from "@salesforce/core";
-import { isCI, uxLog } from ".";
-import { WebSocketClient } from "../websocketClient";
+import { isCI, uxLog } from "./index.js";
+import { WebSocketClient } from "../websocketClient.js";
 
 export interface PromptsQuestion {
   message: string;
@@ -22,7 +22,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     throw new SfError("Nothing should be prompted during CI !");
   }
   const questionsRaw = Array.isArray(options) ? options : [options];
-  const questionsReformatted = [];
+  const questionsReformatted: any = [];
   for (const question of questionsRaw) {
     if (!question.message.startsWith("🦙")) {
       question.message = "🦙 " + question.message;
@@ -42,6 +42,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     }
     // Add exit option when possible
     if (question.type === "select") {
+      question.choices = question.choices || [];
       question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });
     }
     if (["select", "multiselect"].includes(question.type) && question.optionsPerPage == null) {
@@ -78,7 +79,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
 }
 
 async function terminalPrompts(questions: PromptsQuestion[]) {
-  const inquirerQuestions = [];
+  const inquirerQuestions: any = [];
   for (const question of questions) {
     const inquirerQuestion: any = {
       name: question.name,

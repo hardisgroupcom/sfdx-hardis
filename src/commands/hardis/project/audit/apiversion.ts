@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CallInCallOut extends SfdxCommand {
+export default class CallInCallOut extends SfCommand {
   public static title = "Audit Metadatas API Version";
 
   public static description = messages.getMessage("auditApiVersion");
@@ -30,20 +30,20 @@ export default class CallInCallOut extends SfdxCommand {
       default: 20.0,
       description: messages.getMessage("minimumApiVersion"),
     }),
-    failiferror: flags.boolean({
+    failiferror: Flags.boolean({
       char: "f",
       default: false,
       description: messages.getMessage("failIfError"),
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class GenerateGitDelta extends SfdxCommand {
+export default class GenerateGitDelta extends SfCommand {
   public static title = "Generate Git Delta";
 
   public static description = "Generate package.xml git delta between 2 commits";
@@ -23,24 +23,24 @@ export default class GenerateGitDelta extends SfdxCommand {
   public static examples = ["$ sf hardis:project:generate:gitdelta"];
 
   protected static flagsConfig = {
-    branch: flags.string({
+    branch: Flags.string({
       description: "Git branch to use to generate delta",
     }),
-    fromcommit: flags.string({
+    fromcommit: Flags.string({
       description: "Hash of commit to start from",
     }),
-    tocommit: flags.string({
+    tocommit: Flags.string({
       description: "Hash of commit to stop at",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

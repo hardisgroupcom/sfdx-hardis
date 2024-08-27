@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -18,7 +18,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DxSources2 extends SfdxCommand {
+export default class DxSources2 extends SfCommand {
   public static title = "Retrieve sfdx sources from org (2)";
 
   public static description = messages.getMessage("retrieveDx");
@@ -26,23 +26,23 @@ export default class DxSources2 extends SfdxCommand {
   public static examples = ["$ sf hardis:org:retrieve:sources:dx2"];
 
   protected static flagsConfig = {
-    packagexml: flags.string({
+    packagexml: Flags.string({
       char: "x",
       description: "Path to package.xml file",
     }),
-    template: flags.string({
+    template: Flags.string({
       char: "t",
       description: "sfdx-hardis package.xml Template name. ex: wave",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

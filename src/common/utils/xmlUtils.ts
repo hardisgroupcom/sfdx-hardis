@@ -5,7 +5,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as util from "util";
 import * as xml2js from "xml2js";
-import { uxLog } from ".";
+import { uxLog } from "./index.js";
 import { CONSTANTS } from "../../config/index.js";
 
 export async function parseXmlFile(xmlFile: string) {
@@ -45,7 +45,7 @@ export async function parsePackageXmlFile(packageXmlFile: string) {
 }
 
 export async function writePackageXmlFile(packageXmlFile: string, packageXmlObject: any) {
-  let packageXmlContent = { Package: { types: [], version: [CONSTANTS.API_VERSION] } };
+  let packageXmlContent: any = { Package: { types: [], version: [CONSTANTS.API_VERSION] } };
   if (fs.existsSync(packageXmlFile)) {
     packageXmlContent = await parseXmlFile(packageXmlFile);
   }
@@ -116,7 +116,7 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
   // Sort result
   allPackageXmlFilesTypes = sortObject(allPackageXmlFilesTypes);
   // Write output file
-  const appendTypesXml = [];
+  const appendTypesXml: any[] = [];
   for (const packageXmlType of Object.keys(allPackageXmlFilesTypes)) {
     appendTypesXml.push({ members: allPackageXmlFilesTypes[packageXmlType], name: packageXmlType });
   }
@@ -157,7 +157,7 @@ export async function removePackageXmlFilesContent(
   }
 
   // Filter main package.xml file
-  const processedTypes = [];
+  const processedTypes: any[] = [];
   for (const removeType of packageXmlRemoveMetadatasTypeLs) {
     const removeTypeName = removeType.name[0] || null;
     if (removeTypeName) {

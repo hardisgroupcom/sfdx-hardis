@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
 import { selectTargetBranch } from "../../../common/utils/gitUtils";
-import { setConfig } from "../../../config";
+import { setConfig } from "../../../config/index.js";
 import { prompts } from "../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class RebuildSelection extends SfdxCommand {
+export default class RebuildSelection extends SfCommand {
   public static title = "Select again";
 
   public static description = `Resets the selection that we want to add in the merge request
@@ -28,15 +28,15 @@ Calls a soft git reset behind the hood
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

@@ -1,10 +1,10 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../../common/metadata-utils";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import { managePackageConfig, promptOrg } from "../../../../common/utils/orgUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class RetrievePackageConfig extends SfdxCommand {
+export default class RetrievePackageConfig extends SfCommand {
   public static title = "Retrieve package configuration from an org";
 
   public static description = "Retrieve package configuration from an org";
@@ -23,15 +23,15 @@ export default class RetrievePackageConfig extends SfdxCommand {
   public static examples = ["$ sf hardis:org:retrieve:packageconfig", "sf hardis:org:retrieve:packageconfig -u myOrg"];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

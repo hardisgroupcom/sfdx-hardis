@@ -3,11 +3,11 @@ import { spawn } from "child_process";
 import * as c from "chalk";
 
 import * as which from "which";
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
-import { getConfig } from "../../../../config";
+import { getConfig } from "../../../../config/index.js";
 import { execCommand, stripAnsi, uxLog } from "../../../../common/utils";
 import * as moment from "moment";
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
@@ -19,7 +19,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ScratchPoolRefresh extends SfdxCommand {
+export default class ScratchPoolRefresh extends SfCommand {
   public static title = "Refresh scratch org pool";
 
   public static description = "Create enough scratch orgs to fill the pool";
@@ -29,15 +29,15 @@ export default class ScratchPoolRefresh extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };
@@ -111,8 +111,7 @@ export default class ScratchPoolRefresh extends SfdxCommand {
         uxLog(
           this,
           c.cyan(
-            `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${
-              scratchOrgToDelete?.authFileJson?.result?.instanceUrl
+            `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
             } has been deleted because only ${scratchOrgToDelete.daysBeforeExpiration} days were remaining.`,
           ),
         );

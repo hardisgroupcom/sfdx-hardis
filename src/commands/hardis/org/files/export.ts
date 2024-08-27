@@ -1,9 +1,9 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import { FilesExporter, getFilesWorkspaceDetail, promptFilesExportConfiguration, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class FilesExport extends SfdxCommand {
+export default class FilesExport extends SfCommand {
   public static title = "Export files";
 
   public static description = `Export file attachments from a Salesforce org
@@ -27,7 +27,7 @@ See article below
   public static examples = ["$ sf hardis:org:files:export"];
 
   protected static flagsConfig = {
-    path: flags.string({
+    path: Flags.string({
       char: "p",
       description: "Path to the file export project",
     }),
@@ -46,15 +46,15 @@ See article below
       description: "Chunk number to start from",
       default: 0,
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -12,7 +12,7 @@ import { prompts } from "../../../common/utils/prompts";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { glob } from "glob";
 import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
-import { applyAllReplacementsDefinitions } from "../../../common/utils/xmlUtils";
+import { applyAllReplacementsDefinitions } from "../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -21,7 +21,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class PurgeRef extends SfdxCommand {
+export default class PurgeRef extends SfCommand {
   public static title = "Purge References";
 
   public static description = `Purge references to any string in org metadatas before a deployment.
@@ -33,19 +33,19 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
   public static examples = ["$ sf hardis:misc:purge-references"];
 
   protected static flagsConfig = {
-    references: flags.string({
+    references: Flags.string({
       char: "r",
       description: "Comma-separated list of references to find in metadatas",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

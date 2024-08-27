@@ -2,7 +2,7 @@ import { uxLog } from "../utils";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { SlackProvider } from "./slackProvider";
-import { UtilsNotifs as utilsNotifs } from "./utils";
+import { UtilsNotifs as utilsNotifs } from "./utils/index.js";
 import { TeamsProvider } from "./teamsProvider";
 import { getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider";

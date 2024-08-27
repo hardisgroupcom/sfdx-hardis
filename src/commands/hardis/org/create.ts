@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -11,8 +11,8 @@ import * as path from "path";
 import { clearCache } from "../../../common/cache";
 import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from "../../../common/utils";
 import { initApexScripts, initOrgData, initPermissionSetAssignments, promptUserEmail } from "../../../common/utils/orgUtils";
-import { WebSocketClient } from "../../../common/websocketClient";
-import { getConfig } from "../../../config";
+import { WebSocketClient } from "../../../common/websocketClient.js";
+import { getConfig } from "../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -21,7 +21,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class SandboxCreate extends SfdxCommand {
+export default class SandboxCreate extends SfCommand {
   public static title = "Create sandbox org";
 
   public static description = "Create and initialize sandbox org";
@@ -31,15 +31,15 @@ export default class SandboxCreate extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

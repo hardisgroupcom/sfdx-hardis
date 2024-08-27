@@ -1,14 +1,14 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as sortArray from "sort-array";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import * as dns from "dns";
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
-import { WebSocketClient } from "../../../../common/websocketClient";
+import { WebSocketClient } from "../../../../common/websocketClient.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 const dnsPromises = dns.promises;
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class LegacyApi extends SfdxCommand {
+export default class LegacyApi extends SfCommand {
   public static title = "Check for legacy API use";
 
   public static description = `Checks if an org uses retired or someday retired API version\n
@@ -42,7 +42,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    eventtype: flags.string({
+    eventtype: Flags.string({
       char: "e",
       default: "ApiTotalUsage",
       description: "Type of EventLogFile event to analyze",
@@ -52,19 +52,19 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       default: 999,
       description: "Number of latest EventLogFile events to analyze",
     }),
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

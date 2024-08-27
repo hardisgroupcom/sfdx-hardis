@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgUnfreezeUser extends SfdxCommand {
+export default class OrgUnfreezeUser extends SfCommand {
   public static title = "Unfreeze user logins";
 
   public static description = messages.getMessage("orgUnfreezeUser");
@@ -33,15 +33,15 @@ export default class OrgUnfreezeUser extends SfdxCommand {
 
   protected static flagsConfig = {
     // flag with a value (-n, --name=VALUE)
-    name: flags.string({
+    name: Flags.string({
       char: "n",
       description: messages.getMessage("nameFilter"),
     }),
-    includeprofiles: flags.string({
+    includeprofiles: Flags.string({
       char: "p",
       description: "List of profiles that you want to unfreeze, separated by commas",
     }),
-    excludeprofiles: flags.string({
+    excludeprofiles: Flags.string({
       char: "e",
       description: "List of profiles that you want to NOT unfreeze, separated by commas",
     }),
@@ -50,15 +50,15 @@ export default class OrgUnfreezeUser extends SfdxCommand {
       default: 100,
       description: "Maximum users to display in logs",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

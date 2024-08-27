@@ -12,7 +12,7 @@ import {
   getGitRepoRoot,
   git,
   uxLog,
-} from ".";
+} from "./index.js";
 import { GitProvider } from "../gitProvider";
 import { Ticket, TicketProvider } from "../ticketProvider";
 import { DefaultLogFields, ListLogLine } from "simple-git";

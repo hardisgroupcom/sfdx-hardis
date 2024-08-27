@@ -5,7 +5,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 
 // Salesforce Specific
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 
@@ -21,7 +21,7 @@ import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 /* jscpd:ignore-end */
-export default class metadatastatus extends SfdxCommand {
+export default class metadatastatus extends SfCommand {
   public static title = "check inactive metadatas";
   public static description = `Check if elements (flows and validation rules) are inactive in the project
 
@@ -30,19 +30,19 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   public static examples = ["$ sf hardis:lint:metadatastatus"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

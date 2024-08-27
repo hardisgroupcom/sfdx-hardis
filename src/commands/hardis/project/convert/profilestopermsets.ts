@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ConvertProfilesToPermSets extends SfdxCommand {
+export default class ConvertProfilesToPermSets extends SfCommand {
   public static title = "Convert Profiles into Permission Sets";
 
   public static description = "Creates permission sets from existing profiles, with id PS_PROFILENAME";
@@ -28,15 +28,15 @@ export default class ConvertProfilesToPermSets extends SfdxCommand {
       default: [],
       description: "List of filters",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

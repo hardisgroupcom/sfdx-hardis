@@ -12,11 +12,11 @@ import * as Papa from "papaparse";
 import * as ExcelJS from "exceljs";
 
 // Project Specific Utilities
-import { getCurrentGitBranch, isCI, uxLog } from ".";
+import { getCurrentGitBranch, isCI, uxLog } from "./index.js";
 import { bulkQuery, soqlQuery } from "./apiUtils";
 import { prompts } from "./prompts";
 import { CONSTANTS, getReportDirectory } from "../../config/index.js";
-import { WebSocketClient } from "../websocketClient";
+import { WebSocketClient } from "../websocketClient.js";
 
 export const filesFolderRoot = path.join(".", "scripts", "files");
 

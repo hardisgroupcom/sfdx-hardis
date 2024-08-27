@@ -18,10 +18,10 @@ import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../confi
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
-import { promptProfiles, promptUserEmail } from "./orgUtils";
-import { WebSocketClient } from "../websocketClient";
+import { promptProfiles, promptUserEmail } from "./orgUtils.js";
+import { WebSocketClient } from "../websocketClient.js";
 import * as moment from "moment";
-import { writeXmlFile } from "./xmlUtils";
+import { writeXmlFile } from "./xmlUtils.js";
 
 let pluginsStdout = null;
 

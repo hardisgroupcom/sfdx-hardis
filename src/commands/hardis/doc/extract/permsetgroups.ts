@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -7,10 +7,10 @@ import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as path from "path";
 import * as toc from "markdown-toc";
-import { uxLog } from "../../../../common/utils";
-import { parseXmlFile } from "../../../../common/utils/xmlUtils";
-import { getReportDirectory } from "../../../../config";
-import { WebSocketClient } from "../../../../common/websocketClient";
+import { uxLog } from "../../../../common/utils/index.js";
+import { parseXmlFile } from "../../../../common/utils/xmlUtils.js";
+import { getReportDirectory } from "../../../../config/index.js";
+import { WebSocketClient } from "../../../../common/websocketClient.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -19,7 +19,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DocGenerate extends SfdxCommand {
+export default class DocGenerate extends SfCommand {
   public static title = "Generate project documentation";
 
   public static description = `Generate markdown files with project documentation`;
@@ -27,19 +27,19 @@ export default class DocGenerate extends SfdxCommand {
   public static examples = ["$ sf hardis:doc:extract:permsetgroups"];
 
   protected static flagsConfig = {
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

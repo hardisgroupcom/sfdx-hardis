@@ -1,4 +1,4 @@
-import { countRegexMatches, uxLog } from ".";
+import { countRegexMatches, uxLog } from "./index.js";
 import * as c from "chalk";
 import * as readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";

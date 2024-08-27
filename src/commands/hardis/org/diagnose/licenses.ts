@@ -1,9 +1,9 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
 import { NotifProvider } from "../../../../common/notifProvider";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DiagnoseUnusedUsers extends SfdxCommand {
+export default class DiagnoseUnusedUsers extends SfCommand {
   public static title = "List licenses subscribed and used in a Salesforce org";
 
   public static description = `Mostly used for monitoring (Grafana) but you can also use it manually :)`;
@@ -24,24 +24,24 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
 
   //Comment default values to test the prompts
   protected static flagsConfig = {
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    usedonly: flags.boolean({
+    usedonly: Flags.boolean({
       char: "u",
       default: false,
       description: "Filter to have only used licenses",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

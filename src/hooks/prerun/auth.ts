@@ -322,13 +322,13 @@ async function authOrg(orgAlias: string, options: any) {
       }
       uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
       WebSocketClient.sendMessage({ event: "refreshStatus" });
-      // Assign org to SfdxCommands
+      // Assign org to SfCommands
       if (isDevHub) {
         options.Command.flags.targetdevhubusername = username;
-        // options.Command.assignHubOrg(); // seems to be automatically done by SfdxCommand under the hook
+        // options.Command.assignHubOrg(); // seems to be automatically done by SfCommand under the hook
       } else {
         options.Command.flags.targetusername = username;
-        // options.Command.assignOrg(); // seems to be automatically done by SfdxCommand under the hook
+        // options.Command.assignOrg(); // seems to be automatically done by SfCommand under the hook
       }
       // Display warning message in case of local usage (not CI), and not login command
       // if (!(options?.Command?.id || "").startsWith("hardis:auth:login")) {

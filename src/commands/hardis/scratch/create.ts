@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AuthInfo, Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -20,8 +20,8 @@ import {
 } from "../../../common/utils/orgUtils";
 import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
 import { prompts } from "../../../common/utils/prompts";
-import { WebSocketClient } from "../../../common/websocketClient";
-import { getConfig, setConfig } from "../../../config";
+import { WebSocketClient } from "../../../common/websocketClient.js";
+import { getConfig, setConfig } from "../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -30,7 +30,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ScratchCreate extends SfdxCommand {
+export default class ScratchCreate extends SfCommand {
   public static title = "Create and initialize scratch org";
 
   public static description = `Create and initialize a scratch org or a source-tracked sandbox (config can be defined using \`config/.sfdx-hardis.yml\`):
@@ -51,25 +51,25 @@ export default class ScratchCreate extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    forcenew: flags.boolean({
+    forcenew: Flags.boolean({
       char: "n",
       default: false,
       description: messages.getMessage("forceNewScratch"),
     }),
-    pool: flags.boolean({
+    pool: Flags.boolean({
       char: "d",
       default: false,
       description: "Creates the scratch org for a scratch org pool",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

@@ -1,15 +1,15 @@
-import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
+import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as util from "util";
 import * as xml2js from "xml2js";
 import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../../common/utils";
-import { writeXmlFile } from "../../../../common/utils/xmlUtils";
+import { uxLog } from "../../../../common/utils/index.js";
+import { writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 
 // The code of this method is awful... it's migrated from sfdx-essentials, written when async / await were not existing ^^
-export class FilterXmlContent extends SfdxCommand {
+export class FilterXmlContent extends SfCommand {
   public static readonly description = `Filter content of metadatas (XML) in order to be able to deploy only part of them on an org (See [Example configuration](https://github.com/nvuillam/sfdx-essentials/blob/master/examples/filter-xml-content-config.json))
 
 When you perform deployments from one org to another, the features activated in the target org may not fit the content of the sfdx/metadata files extracted from the source org.
@@ -24,23 +24,23 @@ This script requires a filter-config.json file`;
   public static readonly requiresProject = true;
   public static readonly requiresUsername = false;
   public static readonly flagsConfig: FlagsConfig = {
-    configfile: flags.string({
+    configfile: Flags.string({
       char: "c",
       description: "Config JSON file path",
     }),
-    inputfolder: flags.string({
+    inputfolder: Flags.string({
       char: "i",
       description: 'Input folder (default: "." )',
     }),
-    outputfolder: flags.string({
+    outputfolder: Flags.string({
       char: "o",
       description: "Output folder (default: parentFolder + _xml_content_filtered)",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       default: false,
       description: "debug",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: "websocket",
     }),
   };

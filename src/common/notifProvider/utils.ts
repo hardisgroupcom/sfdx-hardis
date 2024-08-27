@@ -1,4 +1,4 @@
-import { NotifSeverity } from ".";
+import { NotifSeverity } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 
 export class UtilsNotifs {

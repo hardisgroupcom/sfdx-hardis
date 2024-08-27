@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -8,8 +8,8 @@ import * as path from "path";
 import { glob } from "glob";
 import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
-import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
-import { getConfig, setConfig } from "../../../../config";
+import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
+import { getConfig, setConfig } from "../../../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings";
 import { FilterXmlContent } from "./filter-xml-content";
 
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanReferences extends SfdxCommand {
+export default class CleanReferences extends SfCommand {
   public static title = "Clean references in dx sources";
 
   public static description = "Remove unwanted references within sfdx project sources";
@@ -35,24 +35,24 @@ export default class CleanReferences extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    type: flags.string({
+    type: Flags.string({
       char: "t",
       description: "Cleaning type",
       options: ["all", "caseentitlement", "dashboards", "datadotcom", "destructivechanges", "localfields", "productrequest", "entitlement"],
     }),
-    config: flags.string({
+    config: Flags.string({
       char: "c",
       description: "Path to a JSON config file or a destructiveChanges.xml file",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

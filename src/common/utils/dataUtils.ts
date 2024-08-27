@@ -2,7 +2,7 @@ import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { elapseEnd, elapseStart, execCommand, uxLog } from ".";
+import { elapseEnd, elapseStart, execCommand, uxLog } from "./index.js";
 import { getConfig } from "../../config/index.js";
 import { prompts } from "./prompts";
 

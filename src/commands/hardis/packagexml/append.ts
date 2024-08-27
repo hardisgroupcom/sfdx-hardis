@@ -1,26 +1,26 @@
-import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
+import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
 import { AnyJson } from "@salesforce/ts-types";
-import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils";
+import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils.js";
 
-export class PackageXmlAppend extends SfdxCommand {
+export class PackageXmlAppend extends SfCommand {
   public static readonly description = `Append one or multiple package.xml files into a single one`;
   public static readonly examples = ["$ sf hardis packagexml append -p package1.xml,package2.xml -o package3.xml"];
   public static readonly requiresProject = false;
   public static readonly requiresUsername = false;
   public static readonly flagsConfig: FlagsConfig = {
-    packagexmls: flags.string({
+    packagexmls: Flags.string({
       char: "p",
       description: "package.xml files path (separated by commas)",
     }),
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "package.xml output file",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       default: false,
       description: "debug",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: "websocket",
     }),
   };

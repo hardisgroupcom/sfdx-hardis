@@ -1,5 +1,5 @@
 import { SfError } from "@salesforce/core";
-import { AiResponse } from ".";
+import { AiResponse } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 
 export abstract class AiProviderRoot {

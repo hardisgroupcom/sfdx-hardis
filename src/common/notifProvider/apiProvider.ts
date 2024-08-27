@@ -2,7 +2,7 @@ import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils";
-import { NotifMessage, NotifSeverity, UtilsNotifs } from ".";
+import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils";

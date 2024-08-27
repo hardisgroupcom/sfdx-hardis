@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -11,8 +11,8 @@ const exec = util.promisify(child.exec);
 
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { uxLog } from "../../../../../common/utils";
-import { WebSocketClient } from "../../../../../common/websocketClient";
-import { setConfig } from "../../../../../config";
+import { WebSocketClient } from "../../../../../common/websocketClient.js";
+import { setConfig } from "../../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -21,7 +21,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DxSources extends SfdxCommand {
+export default class DxSources extends SfCommand {
   public static title = "Retrieve sfdx sources from org";
 
   public static description = messages.getMessage("retrieveDx");
@@ -29,42 +29,42 @@ export default class DxSources extends SfdxCommand {
   public static examples = ["$ sf hardis:org:retrieve:sources:dx"];
 
   protected static flagsConfig = {
-    folder: flags.string({
+    folder: Flags.string({
       char: "f",
       default: ".",
       description: messages.getMessage("folder"),
     }),
-    tempfolder: flags.string({
+    tempfolder: Flags.string({
       char: "t",
       default: "./tmp",
       description: messages.getMessage("tempFolder"),
     }),
-    keepmetadatatypes: flags.string({
+    keepmetadatatypes: Flags.string({
       char: "k",
       description: "Comma separated list of metadatas types that will be the only ones to be retrieved",
     }),
-    filteredmetadatas: flags.string({
+    filteredmetadatas: Flags.string({
       char: "m",
       description: messages.getMessage("filteredMetadatas"),
     }),
-    shape: flags.boolean({
+    shape: Flags.boolean({
       char: "o",
       default: false,
       description: messages.getMessage("createOrgShape"),
     }),
-    instanceurl: flags.string({
+    instanceurl: Flags.string({
       char: "r",
       description: messages.getMessage("instanceUrl"),
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

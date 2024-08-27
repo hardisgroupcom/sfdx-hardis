@@ -1,7 +1,7 @@
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execCommand, uxLog } from ".";
+import { execCommand, uxLog } from "./index.js";
 
 export const GLOB_IGNORE_PATTERNS = [
   "**/node_modules/**",

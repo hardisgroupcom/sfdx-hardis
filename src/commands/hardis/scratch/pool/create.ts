@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import * as c from "chalk";
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AuthInfo, Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { getConfig, setConfig } from "../../../../config";
+import { getConfig, setConfig } from "../../../../config/index.js";
 import { prompts } from "../../../../common/utils/prompts";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import { instantiateProvider, listKeyValueProviders } from "../../../../common/utils/poolUtils";
 import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils";
 
@@ -16,7 +16,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ScratchPoolCreate extends SfdxCommand {
+export default class ScratchPoolCreate extends SfCommand {
   public static title = "Create and configure scratch org pool";
 
   public static description = `Select a data storage service and configure information to build a scratch org pool
@@ -38,15 +38,15 @@ export default class ScratchPoolCreate extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

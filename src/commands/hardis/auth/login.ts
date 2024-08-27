@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 
@@ -10,7 +10,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Login extends SfdxCommand {
+export default class Login extends SfCommand {
   public static title = "Login";
 
   public static description = messages.getMessage("loginToOrg");
@@ -20,29 +20,29 @@ export default class Login extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    instanceurl: flags.string({
+    instanceurl: Flags.string({
       char: "r",
       description: messages.getMessage("instanceUrl"),
     }),
-    devhub: flags.boolean({
+    devhub: Flags.boolean({
       char: "h",
       default: false,
       description: messages.getMessage("withDevHub"),
     }),
-    scratchorg: flags.boolean({
+    scratchorg: Flags.boolean({
       char: "s",
       default: false,
       description: messages.getMessage("scratch"),
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

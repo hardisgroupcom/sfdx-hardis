@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class FixV53Flexipages extends SfdxCommand {
+export default class FixV53Flexipages extends SfCommand {
   public static title = "Fix flexipages for v53";
 
   public static description = `Fix flexipages for apiVersion v53 (Winter22).
@@ -24,20 +24,20 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
   public static examples = ["$ sf hardis:project:fix:v53flexipages"];
 
   protected static flagsConfig = {
-    path: flags.string({
+    path: Flags.string({
       char: "p",
       default: process.cwd(),
       description: "Root folder",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

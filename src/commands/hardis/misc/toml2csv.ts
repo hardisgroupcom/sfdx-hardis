@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Toml2Csv extends SfdxCommand {
+export default class Toml2Csv extends SfCommand {
   public static title = "TOML to CSV";
 
   public static description = "Split TOML file into distinct CSV files";
@@ -33,12 +33,12 @@ export default class Toml2Csv extends SfdxCommand {
   ];
 
   protected static flagsConfig = {
-    tomlfile: flags.string({
+    tomlfile: Flags.string({
       char: "f",
       description: "Input TOML file path",
       required: true,
     }),
-    transfoconfig: flags.string({
+    transfoconfig: Flags.string({
       char: "t",
       description: "Path to JSON config file for mapping and transformation",
     }),
@@ -47,24 +47,24 @@ export default class Toml2Csv extends SfdxCommand {
       description: "List of sections to process (if not set, all sections will be processed)",
       default: [],
     }),
-    skiptransfo: flags.boolean({
+    skiptransfo: Flags.boolean({
       char: "s",
       default: false,
       description: "Do not apply transformation to input data",
     }),
-    outputdir: flags.string({
+    outputdir: Flags.string({
       char: "o",
       description: "Output directory",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

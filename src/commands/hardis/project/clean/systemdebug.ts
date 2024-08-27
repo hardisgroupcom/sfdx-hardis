@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { glob } from "glob";
 import * as path from "path";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import * as fs from "fs-extra";
 
 // Initialize Messages with the current plugin directory
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanSystemDebug extends SfdxCommand {
+export default class CleanSystemDebug extends SfCommand {
   public static title = "Clean System debug";
 
   public static description = "Clean System.debug() lines in APEX Code (classes and triggers)";
@@ -23,18 +23,18 @@ export default class CleanSystemDebug extends SfdxCommand {
   public static examples = ["$ sf hardis:project:clean:systemdebug"];
 
   protected static flagsConfig = {
-    folder: flags.string({
+    folder: Flags.string({
       char: "f",
       default: "force-app",
       description: "Root folder",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
-    delete: flags.boolean({
+    delete: Flags.boolean({
       char: "d",
       default: false,
       description: "Delete lines with System.debug",

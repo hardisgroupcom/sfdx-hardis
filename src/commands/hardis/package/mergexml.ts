@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -8,8 +8,8 @@ import { glob } from "glob";
 import * as path from "path";
 import { uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
-import { WebSocketClient } from "../../../common/websocketClient";
-import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils";
+import { WebSocketClient } from "../../../common/websocketClient.js";
+import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -18,7 +18,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class MergePackageXml extends SfdxCommand {
+export default class MergePackageXml extends SfCommand {
   public static title = "Merge package.xml files";
 
   public static description = "Select and merge package.xml files";
@@ -30,28 +30,28 @@ export default class MergePackageXml extends SfdxCommand {
   ];
 
   protected static flagsConfig = {
-    folder: flags.string({
+    folder: Flags.string({
       char: "f",
       default: "manifest",
       description: "Root folder",
     }),
-    packagexmls: flags.string({
+    packagexmls: Flags.string({
       char: "p",
       description: "Comma separated list of package.xml files to merge. Will be prompted to user if not provided",
     }),
-    pattern: flags.string({
+    pattern: Flags.string({
       char: "x",
       default: "/**/*package*.xml",
       description: "Name criteria to list package.xml files",
     }),
-    result: flags.string({
+    result: Flags.string({
       char: "r",
       description: "Result package.xml file name",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };
@@ -98,7 +98,7 @@ export default class MergePackageXml extends SfdxCommand {
     }
 
     // Process merge of package.xml files
-    await appendPackageXmlFilesContent(this.packageXmlFiles,this.resultFileName);
+    await appendPackageXmlFilesContent(this.packageXmlFiles, this.resultFileName);
 
     // Summary
     const msg = `Merged ${c.green(c.bold(this.packageXmlFiles.length))} files into ${c.green(this.resultFileName)}`;

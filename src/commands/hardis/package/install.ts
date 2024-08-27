@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as axios1 from "axios";
@@ -22,7 +22,7 @@ const axios = axios1.default;
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class PackageVersionInstall extends SfdxCommand {
+export default class PackageVersionInstall extends SfCommand {
   public static title = "Install packages in an org";
 
   public static description = `Install a package in an org using its id (starting with **04t**)
@@ -35,24 +35,24 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    package: flags.string({
+    package: Flags.string({
       char: "p",
       description: "Package Version Id to install (04t...)",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    installationkey: flags.string({
+    installationkey: Flags.string({
       char: "k",
       default: null,
       description: messages.getMessage("packageInstallationKey"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };
@@ -97,7 +97,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
             name: "value",
             message: c.cyanBright(
               "What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request " +
-                c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage"),
+              c.bold("Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage"),
             ),
           },
           {

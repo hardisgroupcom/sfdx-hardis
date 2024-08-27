@@ -3,7 +3,7 @@ import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as puppeteer from "puppeteer";
 import * as yaml from "js-yaml";
-import { uxLog } from ".";
+import { uxLog } from "./index.js";
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 

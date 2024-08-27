@@ -3,7 +3,7 @@ import * as DOMPurify from "isomorphic-dompurify";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, uxLog } from "../utils";
-import { NotifMessage, UtilsNotifs } from ".";
+import { NotifMessage, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 import { marked } from "marked";
 import { EmailMessage, sendEmail } from "../utils/emailUtils";

@@ -1,4 +1,4 @@
-import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
+import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
 import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils";
@@ -6,7 +6,7 @@ import { isCI, uxLog } from "../../../common/utils";
 import { promptOrgUsernameDefault } from "../../../common/utils/orgUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
-export class SourceRetrieve extends SfdxCommand {
+export class SourceRetrieve extends SfCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:retrieve
 
 - If no retrieve constraint is sent, as assisted menu will request the list of metadatas to retrieve
@@ -50,11 +50,11 @@ export class SourceRetrieve extends SfdxCommand {
       char: "n",
       description: "packagenames",
     }),
-    tracksource: flags.boolean({
+    tracksource: Flags.boolean({
       char: "t",
       description: "tracksource",
     }),
-    forceoverwrite: flags.boolean({
+    forceoverwrite: Flags.boolean({
       char: "f",
       description: "forceoverwrite",
       dependsOn: ["tracksource"],
@@ -62,15 +62,15 @@ export class SourceRetrieve extends SfdxCommand {
     verbose: flags.builtin({
       description: "verbose",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: "debugMode",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: "websocket",
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

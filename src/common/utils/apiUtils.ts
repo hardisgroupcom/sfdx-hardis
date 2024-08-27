@@ -1,4 +1,4 @@
-import { uxLog } from ".";
+import { uxLog } from "./index.js";
 import * as c from "chalk";
 import { Connection, SfError } from "@salesforce/core";
 import { RestApiOptions, RecordResult } from "jsforce";

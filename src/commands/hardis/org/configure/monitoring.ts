@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -17,10 +17,10 @@ import {
   uxLog,
 } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
-import { setInConfigFile } from "../../../../config";
+import { setInConfigFile } from "../../../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings";
 import { promptOrg } from "../../../../common/utils/orgUtils";
-import { WebSocketClient } from "../../../../common/websocketClient";
+import { WebSocketClient } from "../../../../common/websocketClient.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -29,7 +29,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgConfigureMonitoring extends SfdxCommand {
+export default class OrgConfigureMonitoring extends SfCommand {
   public static title = "Configure org monitoring";
 
   public static description = "Configure monitoring of an org";
@@ -37,18 +37,18 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
   public static examples = ["$ sf hardis:org:configure:monitoring"];
 
   protected static flagsConfig = {
-    orginstanceurl: flags.string({
+    orginstanceurl: Flags.string({
       description: "Org instance url (technical param, do not use manually)",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

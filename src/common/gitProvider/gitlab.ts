@@ -1,6 +1,6 @@
 import { Gitlab } from "@gitbeaker/node";
 import * as c from "chalk";
-import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
+import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils";
 import { GitProviderRoot } from "./gitProviderRoot";
 

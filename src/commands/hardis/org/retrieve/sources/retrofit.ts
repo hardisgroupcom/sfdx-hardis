@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { getConfig } from "../../../../../config";
+import { getConfig } from "../../../../../config/index.js";
 import * as c from "chalk";
 // import * as path from "path";
 import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog, isCI } from "../../../../../common/utils";
@@ -18,7 +18,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Retrofit extends SfdxCommand {
+export default class Retrofit extends SfCommand {
   public static DEFAULT_SOURCES_TO_RETROFIT = [
     "CompactLayout",
     "CustomApplication",
@@ -81,7 +81,7 @@ export default class Retrofit extends SfdxCommand {
   ];
 
   protected static flagsConfig = {
-    commit: flags.boolean({
+    commit: Flags.boolean({
       default: false,
       description: "If true, a commit will be performed after the retrofit",
     }),
@@ -90,7 +90,7 @@ export default class Retrofit extends SfdxCommand {
       options: ["updated", "all"],
       description: "Defines if we commit all retrieved updates, or all updates including creations",
     }),
-    push: flags.boolean({
+    push: Flags.boolean({
       default: false,
       description: "If true, a push will be performed after the retrofit",
     }),
@@ -99,22 +99,22 @@ export default class Retrofit extends SfdxCommand {
       options: ["default", "mergerequest"],
       description: "Defines if we send merge request options to git push arguments",
     }),
-    productionbranch: flags.string({
+    productionbranch: Flags.string({
       description:
         "Name of the git branch corresponding to the org we want to perform the retrofit on.\nCan be defined in productionBranch property in .sfdx-hardis.yml",
     }),
-    retrofittargetbranch: flags.string({
+    retrofittargetbranch: Flags.string({
       description: "Name of branch the merge request will have as target\nCan be defined in retrofitBranch property in .sfdx-hardis.yml",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

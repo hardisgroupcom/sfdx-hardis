@@ -95,9 +95,9 @@ async function loadFromRemoteConfigFile(url) {
 }
 
 // Update configuration file
-export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = null) {
-  let explorer = null;
-  if (configFile == null) {
+export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = "") {
+  let explorer;
+  if (configFile === "") {
     explorer = cosmiconfig(moduleName, { searchPlaces });
     const configExplorer = await explorer.search();
     configFile = configExplorer != null ? configExplorer.filepath : searchPlaces.slice(-1)[0];
@@ -109,7 +109,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   doc = Object.assign(doc, propValues);
   await fs.ensureDir(path.dirname(configFile));
   await fs.writeFile(configFile, yaml.dump(doc));
-  if (explorer != null) {
+  if (explorer) {
     explorer.clearCaches();
   }
   if (!isCI) {

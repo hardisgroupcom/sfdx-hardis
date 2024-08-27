@@ -1,13 +1,13 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils";
 import { getOrgAliasUsername, promptOrg } from "../../../../common/utils/orgUtils";
 import { prompts } from "../../../../common/utils/prompts";
-import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config";
-import { WebSocketClient } from "../../../../common/websocketClient";
+import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config/index.js";
+import { WebSocketClient } from "../../../../common/websocketClient.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -16,7 +16,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ConfigureAuth extends SfdxCommand {
+export default class ConfigureAuth extends SfCommand {
   public static title = "Configure authentication";
 
   public static description = "Configure authentication from git branch to target org";
@@ -26,20 +26,20 @@ export default class ConfigureAuth extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    devhub: flags.boolean({
+    devhub: Flags.boolean({
       char: "b",
       default: false,
       description: "Configure project DevHub",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

@@ -2,7 +2,7 @@ import * as github from "@actions/github";
 import * as c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot";
 import { getCurrentGitBranch, git, uxLog } from "../utils";
-import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
+import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils";
 
 export class GithubProvider extends GitProviderRoot {

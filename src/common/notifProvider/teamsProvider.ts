@@ -1,7 +1,7 @@
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { uxLog } from "../utils";
-import { NotifMessage } from ".";
+import { NotifMessage } from "./index.js";
 
 export class TeamsProvider extends NotifProviderRoot {
   public getLabel(): string {

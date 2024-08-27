@@ -3,7 +3,7 @@ import * as azdev from "azure-devops-node-api";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import * as c from "chalk";
 import * as sortArray from "sort-array";
-import { Ticket } from ".";
+import { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { extractRegexMatches, uxLog } from "../utils";
 import { SfError } from "@salesforce/core";

@@ -3,7 +3,7 @@ import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils";
-import { NotifMessage, UtilsNotifs } from ".";
+import { NotifMessage, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 
 export class SlackProvider extends NotifProviderRoot {

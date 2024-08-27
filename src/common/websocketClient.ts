@@ -1,7 +1,8 @@
 import * as c from "chalk";
 import * as util from "util";
 import * as WebSocket from "ws";
-import { isCI, uxLog } from "./utils";
+import { isCI, uxLog } from "./utils/index.js";
+import { SfError } from "@salesforce/core";
 
 let globalWs: WebSocketClient | null;
 let isWsOpen = false;
@@ -21,7 +22,7 @@ export class WebSocketClient {
       globalWs = this; // eslint-disable-line
       this.start();
     } catch (err) {
-      uxLog(this, c.yellow("Warning: Unable to start WebSocket client on " + wsHostPort + "\n" + err.message));
+      uxLog(this, c.yellow("Warning: Unable to start WebSocket client on " + wsHostPort + "\n" + (err as Error).message));
     }
   }
 
@@ -41,7 +42,10 @@ export class WebSocketClient {
   }
 
   static sendPrompts(prompts: any): Promise<any> {
-    return globalWs.promptServer(prompts);
+    if (globalWs) {
+      return globalWs.promptServer(prompts);
+    }
+    throw new SfError("globalWs should be set in sendPrompts");
   }
 
   start() {
@@ -88,8 +92,8 @@ export class WebSocketClient {
     this.promptResponse = null;
     let ok = false;
     return new Promise((resolve, reject) => {
-      let interval = null;
-      let timeout = null;
+      let interval;
+      let timeout;
       interval = setInterval(() => {
         if (this.promptResponse != null) {
           clearInterval(interval);

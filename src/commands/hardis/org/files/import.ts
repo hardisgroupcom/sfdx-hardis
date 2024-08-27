@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class FilesImport extends SfdxCommand {
+export default class FilesImport extends SfCommand {
   public static title = "Import files";
 
   public static description = `Import file attachments into a Salesforce org
@@ -27,23 +27,23 @@ See article below to see how to Export them.
   public static examples = ["$ sf hardis:org:files:import"];
 
   protected static flagsConfig = {
-    path: flags.string({
+    path: Flags.string({
       char: "p",
       description: "Path to the file export project",
     }),
-    overwrite: flags.boolean({
+    overwrite: Flags.boolean({
       char: "o",
       description: "Override existing files (doubles the number of API calls)",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

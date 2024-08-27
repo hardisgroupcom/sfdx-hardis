@@ -1,9 +1,9 @@
-import { FlagsConfig, flags, SfdxCommand } from "@salesforce/command";
+import { FlagsConfig, flags, SfCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils";
 
-export default class ProjectDeployStart extends SfdxCommand {
+export default class ProjectDeployStart extends SfCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx project deploy start that displays tips to solve deployment errors.
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
@@ -16,57 +16,57 @@ export default class ProjectDeployStart extends SfdxCommand {
       char: "a",
       description: "api-version",
     }),
-    async: flags.boolean({
+    async: Flags.boolean({
       description: "async",
       exclusive: ["wait"],
     }),
-    "dry-run": flags.boolean({
+    "dry-run": Flags.boolean({
       description: "dry-run",
       default: false,
     }),
-    "ignore-conflicts": flags.boolean({
+    "ignore-conflicts": Flags.boolean({
       char: "c",
       description: "ignore-conflicts",
       default: false,
     }),
-    "ignore-errors": flags.boolean({
+    "ignore-errors": Flags.boolean({
       char: "r",
       description: "ignore-errors",
       default: false,
     }),
-    "ignore-warnings": flags.boolean({
+    "ignore-warnings": Flags.boolean({
       char: "g",
       description: "ignore-warnings",
       default: false,
     }),
-    manifest: flags.string({
+    manifest: Flags.string({
       char: "x",
       description: "manifest",
     }),
-    metadata: flags.string({
+    metadata: Flags.string({
       char: "m",
       description: "metadata",
       multiple: true,
     }),
-    "metadata-dir": flags.string({
+    "metadata-dir": Flags.string({
       description: "metadata-dir",
     }),
-    "single-package": flags.boolean({
+    "single-package": Flags.boolean({
       dependsOn: ["metadata-dir"],
       description: "single-package",
     }),
-    "source-dir": flags.string({
+    "source-dir": Flags.string({
       char: "d",
       description: "source-dir",
       multiple: true,
     }),
-    "target-org": flags.string({
+    "target-org": Flags.string({
       description: "target-org",
     }),
-    tests: flags.string({
+    tests: Flags.string({
       description: "tests",
     }),
-    "test-level": flags.string({
+    "test-level": Flags.string({
       description: "test-level",
     }),
     wait: flags.minutes({
@@ -76,25 +76,25 @@ export default class ProjectDeployStart extends SfdxCommand {
       description: "wait",
       exclusive: ["async"],
     }),
-    "purge-on-delete": flags.boolean({
-        description: "purge-on-delete",
+    "purge-on-delete": Flags.boolean({
+      description: "purge-on-delete",
     }),
-    "pre-destructive-changes": flags.string({
+    "pre-destructive-changes": Flags.string({
       dependsOn: ["manifest"],
       description: "pre-destructive-changes",
     }),
-    "post-destructive-changes": flags.string({
+    "post-destructive-changes": Flags.string({
       dependsOn: ["manifest"],
       description: "post-destructive-changes",
     }),
-    "coverage-formatters": flags.string({
-        description: "coverage-formatters",
-      }),
-    junit: flags.boolean({
-        description: "junit",
+    "coverage-formatters": Flags.string({
+      description: "coverage-formatters",
     }),
-    "results-dir": flags.string({
-        description: "results-dir",
+    junit: Flags.boolean({
+      description: "junit",
+    }),
+    "results-dir": Flags.string({
+      description: "results-dir",
     }),
   };
 

@@ -1,4 +1,4 @@
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -6,7 +6,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from "../../../../common/utils";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
-import { getConfig, getReportDirectory } from "../../../../config";
+import { getConfig, getReportDirectory } from "../../../../config/index.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 
 // Initialize Messages with the current plugin directory
@@ -16,7 +16,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgTestApex extends SfdxCommand {
+export default class OrgTestApex extends SfCommand {
   public static title = "Run apex tests";
 
   public static description = `Run apex tests in Salesforce org
@@ -40,15 +40,15 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
       description: messages.getMessage("testLevel"),
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

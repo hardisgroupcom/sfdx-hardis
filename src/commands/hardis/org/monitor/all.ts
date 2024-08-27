@@ -1,10 +1,10 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execCommand, uxLog } from "../../../../common/utils";
-import { getConfig, getEnvVar } from "../../../../config";
+import { getConfig, getEnvVar } from "../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -13,7 +13,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class MonitorAll extends SfdxCommand {
+export default class MonitorAll extends SfCommand {
   public static title = "Monitor org";
 
   public static description = `Monitor org, generate reports and sends notifications
@@ -54,15 +54,15 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
   public static examples = ["$ sf hardis:org:monitor:all"];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

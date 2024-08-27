@@ -12,7 +12,7 @@ import { buildOrgManifest } from "../utils/deployUtils";
 import { listMajorOrgs } from "../utils/orgConfigUtils";
 import { isSfdxProject } from "../utils/projectUtils";
 import { prompts } from "../utils/prompts";
-import { parsePackageXmlFile } from "../utils/xmlUtils";
+import { parsePackageXmlFile } from "../utils/xmlUtils.js";
 import { listMetadataTypes } from "./metadataList";
 import { FileStatusResult } from "simple-git";
 

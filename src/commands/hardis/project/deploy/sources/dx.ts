@@ -11,7 +11,7 @@ Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com
 
 */
 
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -19,7 +19,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { createTempDir, getCurrentGitBranch, getLatestGitCommit, isCI, uxLog } from "../../../../../common/utils";
-import { getConfig } from "../../../../../config";
+import { getConfig } from "../../../../../config/index.js";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
@@ -38,7 +38,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DxSources extends SfdxCommand {
+export default class DxSources extends SfCommand {
   public static title = "Deploy sfdx sources to org";
 
   public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
@@ -195,7 +195,7 @@ If you need notifications to be sent using the current Pull Request and not the 
   ];
 
   protected static flagsConfig = {
-    check: flags.boolean({
+    check: Flags.boolean({
       char: "c",
       default: false,
       description: messages.getMessage("checkOnly"),
@@ -205,28 +205,28 @@ If you need notifications to be sent using the current Pull Request and not the 
       options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData", "RunLocalTests", "RunAllTestsInOrg"],
       description: messages.getMessage("testLevelExtended"),
     }),
-    runtests: flags.string({
+    runtests: Flags.string({
       char: "r",
       description: `If testlevel=RunSpecifiedTests, please provide a list of classes.
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.`,
     }),
-    packagexml: flags.string({
+    packagexml: Flags.string({
       char: "p",
       description: "Path to package.xml containing what you want to deploy in target org",
     }),
-    delta: flags.boolean({
+    delta: Flags.boolean({
       default: false,
       description: "Applies sfdx-git-delta to package.xml before other deployment processes",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };
@@ -365,8 +365,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get preDestructiveChanges.xml and add it in options if existing
     const preDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-      this.configInfo.packageXmlToDeletePreDeploy ||
-      fs.existsSync("./manifest/preDestructiveChanges.xml")
+        this.configInfo.packageXmlToDeletePreDeploy ||
+        fs.existsSync("./manifest/preDestructiveChanges.xml")
         ? "./manifest/preDestructiveChanges.xml"
         : "./config/preDestructiveChanges.xml";
     if (fs.existsSync(preDestructiveChanges)) {

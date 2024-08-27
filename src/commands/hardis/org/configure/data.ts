@@ -1,16 +1,16 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as pascalcase from "pascalcase";
 import * as path from "path";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import { dataFolderRoot } from "../../../../common/utils/dataUtils";
 import { prompts } from "../../../../common/utils/prompts";
-import { WebSocketClient } from "../../../../common/websocketClient";
-import { getConfig, setConfig } from "../../../../config";
+import { WebSocketClient } from "../../../../common/websocketClient.js";
+import { getConfig, setConfig } from "../../../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings";
 
 // Initialize Messages with the current plugin directory
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ConfigureData extends SfdxCommand {
+export default class ConfigureData extends SfCommand {
   public static title = "Configure Data project";
 
   public static description = `Configure Data Export/Import with a [SFDX Data Loader](https://help.sfdmu.com/) Project
@@ -33,15 +33,15 @@ See article:
   public static examples = ["$ sf hardis:org:configure:data"];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

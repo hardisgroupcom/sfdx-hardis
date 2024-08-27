@@ -4,7 +4,7 @@ import * as format from "string-template";
 
 import { getAllTips } from "./deployTipsList";
 import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown";
-import { stripAnsi, uxLog } from ".";
+import { stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider";
 
 let logRes = null;

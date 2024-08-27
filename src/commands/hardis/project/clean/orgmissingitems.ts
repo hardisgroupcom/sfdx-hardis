@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -8,7 +8,7 @@ import { glob } from "glob";
 import { mergeObjectPropertyLists, uxLog } from "../../../../common/utils";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../common/utils/orgUtils";
-import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils";
+import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgMissingItems extends SfdxCommand {
+export default class OrgMissingItems extends SfCommand {
   public static title = "Clean SFDX items using target org definition";
 
   public static description = "Clean SFDX sources from items present neither in target org nor local package.xml";
@@ -25,29 +25,29 @@ export default class OrgMissingItems extends SfdxCommand {
   public static examples = ["$ sf hardis:project:clean:orgmissingitems"];
 
   protected static flagsConfig = {
-    folder: flags.string({
+    folder: Flags.string({
       char: "f",
       default: "force-app",
       description: "Root folder",
     }),
-    packagexmlfull: flags.string({
+    packagexmlfull: Flags.string({
       char: "p",
       description:
         "Path to packagexml used for cleaning.\nMust contain also standard CustomObject and CustomField elements.\nIf not provided, it will be generated from a remote org",
     }),
-    packagexmltargetorg: flags.string({
+    packagexmltargetorg: Flags.string({
       char: "t",
       description: "Target org username or alias to build package.xml (SF CLI must be authenticated).\nIf not provided, will be prompted to the user.",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

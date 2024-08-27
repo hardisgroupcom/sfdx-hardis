@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import * as c from "chalk";
-import { Ticket } from ".";
+import { Ticket } from "./index.js";
 import { getCurrentGitBranch, uxLog } from "../utils";
 
 export abstract class TicketProviderRoot {

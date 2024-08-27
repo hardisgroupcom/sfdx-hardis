@@ -4,7 +4,7 @@ import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { getConfig, setConfig } from "../../config/index.js";
-import { createTempDir, execSfdxJson, isCI, uxLog } from ".";
+import { createTempDir, execSfdxJson, isCI, uxLog } from "./index.js";
 import { KeyValueProviderInterface } from "./keyValueUtils";
 import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz";
 import { KvdbIoProvider } from "../keyValueProviders/kvdbIo";

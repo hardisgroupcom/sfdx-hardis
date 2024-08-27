@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import axios from "axios";
 import * as moment from "moment";
 import * as c from "chalk";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DiagnoseInstanceUpgrade extends SfdxCommand {
+export default class DiagnoseInstanceUpgrade extends SfCommand {
   public static title = "Get Instance Upgrade date";
 
   public static description = `Get the date when the org instance will be upgraded (to Spring, Summer or Winter)
@@ -26,15 +26,15 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
   public static examples = ["$ sf hardis:org:diagnose:instanceupgrade"];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

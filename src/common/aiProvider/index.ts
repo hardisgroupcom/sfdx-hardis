@@ -1,4 +1,4 @@
-import { UtilsAi } from "./utils";
+import { UtilsAi } from "./utils/index.js";
 import { AiProviderRoot } from "./aiProviderRoot";
 import { OpenApiProvider } from "./openapiProvider";
 

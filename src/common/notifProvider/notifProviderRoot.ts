@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import { uxLog } from "../utils";
-import { NotifMessage } from ".";
+import { NotifMessage } from "./index.js";
 
 export abstract class NotifProviderRoot {
   protected token: string;

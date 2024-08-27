@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -9,7 +9,7 @@ import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
 import { createTempDir, execCommand, uxLog } from "../../../../../common/utils";
 import { deployDestructiveChanges, deployMetadatas } from "../../../../../common/utils/deployUtils";
-import { getConfig } from "../../../../../config";
+import { getConfig } from "../../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -18,7 +18,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DxSources extends SfdxCommand {
+export default class DxSources extends SfCommand {
   public static title = "Deploy metadata sources to org";
 
   public static description = messages.getMessage("deployMetadatas");
@@ -26,26 +26,26 @@ export default class DxSources extends SfdxCommand {
   public static examples = ["$ sf hardis:project:deploy:sources:metadata"];
 
   protected static flagsConfig = {
-    check: flags.boolean({
+    check: Flags.boolean({
       char: "c",
       default: false,
       description: messages.getMessage("checkOnly"),
     }),
-    deploydir: flags.string({
+    deploydir: Flags.string({
       char: "x",
       default: ".",
       description: "Deploy directory",
     }),
-    packagexml: flags.string({
+    packagexml: Flags.string({
       char: "p",
       description: "Path to package.xml file to deploy",
     }),
-    filter: flags.boolean({
+    filter: Flags.boolean({
       char: "f",
       default: false,
       description: "Filter metadatas before deploying",
     }),
-    destructivepackagexml: flags.string({
+    destructivepackagexml: Flags.string({
       char: "k",
       description: "Path to destructiveChanges.xml file to deploy",
     }),
@@ -55,15 +55,15 @@ export default class DxSources extends SfdxCommand {
       options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
       description: messages.getMessage("testLevel"),
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };
@@ -83,9 +83,9 @@ export default class DxSources extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    uxLog(this,c.red("This command is deprecated and will be removed in January 2025"));
-    uxLog(this,c.red("Nobody used Metadata format anymore :)"));
-    uxLog(this,c.red("If you think it should be kept and maintained, please post an issue on sfdx-hardis GitHub repository"));
+    uxLog(this, c.red("This command is deprecated and will be removed in January 2025"));
+    uxLog(this, c.red("Nobody used Metadata format anymore :)"));
+    uxLog(this, c.red("If you think it should be kept and maintained, please post an issue on sfdx-hardis GitHub repository"));
 
     const check = this.flags.check || false;
     const packageXml = this.flags.packagexml || null;
@@ -152,9 +152,9 @@ export default class DxSources extends SfdxCommand {
     // Deploy destructive changes
     const packageDeletedXmlFile =
       destructivePackageXml ||
-      process.env.PACKAGE_XML_TO_DELETE ||
-      this.configInfo.packageXmlToDelete ||
-      fs.existsSync("./manifest/destructiveChanges.xml")
+        process.env.PACKAGE_XML_TO_DELETE ||
+        this.configInfo.packageXmlToDelete ||
+        fs.existsSync("./manifest/destructiveChanges.xml")
         ? "./manifest/destructiveChanges.xml"
         : fs.existsSync("./destructiveChanges.xml")
           ? "./destructiveChanges.xml"

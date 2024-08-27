@@ -3,7 +3,7 @@
 This class is deprecated and kept for backward compatibility
 Use NotifProvider class instead :)
 */
-import { getCurrentGitBranch } from ".";
+import { getCurrentGitBranch } from "./index.js";
 import { GitProvider } from "../gitProvider";
 import { NotifSeverity, UtilsNotifs } from "../notifProvider";
 

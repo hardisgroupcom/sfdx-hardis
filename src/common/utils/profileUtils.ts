@@ -1,8 +1,8 @@
 import * as c from "chalk";
 import * as path from "path";
-import { uxLog } from ".";
+import { uxLog } from "./index.js";
 import { getConfig } from "../../config/index.js";
-import { parseXmlFile, writeXmlFile } from "./xmlUtils";
+import { parseXmlFile, writeXmlFile } from "./xmlUtils.js";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push

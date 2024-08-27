@@ -1,10 +1,10 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Logger, LoggerLevel, Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../../common/utils";
-import { parseXmlFile } from "../../../../common/utils/xmlUtils";
-import { getConfig } from "../../../../config";
+import { uxLog } from "../../../../common/utils/index.js";
+import { parseXmlFile } from "../../../../common/utils/xmlUtils.js";
+import { getConfig } from "../../../../config/index.js";
 import { glob } from "glob";
 import { basename } from "path";
 import * as c from "chalk";
@@ -22,7 +22,7 @@ function getCommonPermissionPatterns(rootTagName: "Profile" | "PermissionSet") {
   return [`${rootTagName}.fieldPermissions.field`, `${rootTagName}.objectPermissions.object`, `${rootTagName}.classAccesses.apexClass`];
 }
 
-export default class Find extends SfdxCommand {
+export default class Find extends SfCommand {
   protected static metadataDuplicateFindKeys = {
     layout: ["Layout.layoutSections.layoutColumns.layoutItems.field", "Layout.quickActionListItems.quickActionName"],
     profile: getCommonPermissionPatterns("Profile"),
@@ -85,10 +85,10 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
       char: "f",
       description: "XML metadata files path",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

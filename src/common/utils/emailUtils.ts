@@ -1,5 +1,5 @@
 import { Connection } from "jsforce";
-import { getNested, uxLog } from ".";
+import { getNested, uxLog } from "./index.js";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";

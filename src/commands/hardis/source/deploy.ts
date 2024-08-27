@@ -1,4 +1,4 @@
-import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
+import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -8,7 +8,7 @@ import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 import { uxLog } from "../../../common/utils";
 
 // Wrapper for sfdx force:source:deploy
-export class Deploy extends SfdxCommand {
+export class Deploy extends SfCommand {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors.
 
 Additional to the base command wrapper: If using **--checkonly**, add options **--checkcoverage** and **--coverageformatters json-summary** to check that org coverage is > 75% (or value defined in .sfdx-hardis.yml property **apexTestsMinCoverageOrgWide**)
@@ -61,11 +61,11 @@ Notes:
   public static readonly requiresProject = true;
   public static readonly requiresUsername = true;
   public static readonly flagsConfig: FlagsConfig = {
-    checkonly: flags.boolean({
+    checkonly: Flags.boolean({
       char: "c",
       description: "checkonly",
     }),
-    soapdeploy: flags.boolean({
+    soapdeploy: Flags.boolean({
       default: false,
       description: "soapDeploy",
     }),
@@ -86,11 +86,11 @@ Notes:
       description: "runTests",
       default: [],
     }),
-    ignoreerrors: flags.boolean({
+    ignoreerrors: Flags.boolean({
       char: "o",
       description: "ignoreErrors",
     }),
-    ignorewarnings: flags.boolean({
+    ignorewarnings: Flags.boolean({
       char: "g",
       description: "ignoreWarnings",
     }),
@@ -125,12 +125,12 @@ Notes:
       description: "postdestructivechanges",
       dependsOn: ["manifest"],
     }),
-    tracksource: flags.boolean({
+    tracksource: Flags.boolean({
       char: "t",
       description: "tracksource",
       exclusive: ["checkonly", "validateddeployrequestid"],
     }),
-    forceoverwrite: flags.boolean({
+    forceoverwrite: Flags.boolean({
       char: "f",
       description: "forceoverwrite",
       dependsOn: ["tracksource"],
@@ -141,22 +141,22 @@ Notes:
     coverageformatters: flags.array({
       description: "coverageformatters",
     }),
-    junit: flags.boolean({ description: "junit" }),
-    checkcoverage: flags.boolean({ description: "Check Apex org coverage" }),
-    debug: flags.boolean({
+    junit: Flags.boolean({ description: "junit" }),
+    checkcoverage: Flags.boolean({ description: "Check Apex org coverage" }),
+    debug: Flags.boolean({
       default: false,
       description: "debug",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: "websocket",
     }),
   };
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
-    uxLog(this,c.red("This command will be removed by Salesforce in November 2024."));
-    uxLog(this,c.red("Please migrate to command sf hardis project deploy start"));
-    uxLog(this,c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
+    uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
+    uxLog(this, c.red("Please migrate to command sf hardis project deploy start"));
+    uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
     // Run pre deployment commands if defined
     await executePrePostCommands("commandsPreDeploy", true);
     const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, this.flags.debug);

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { ensureGitRepository, execCommand, uxLog } from "../../../common/utils";
@@ -7,8 +7,8 @@ import { prompts } from "../../../common/utils/prompts";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { getConfig, setConfig } from "../../../config";
-import { WebSocketClient } from "../../../common/websocketClient";
+import { getConfig, setConfig } from "../../../config/index.js";
+import { WebSocketClient } from "../../../common/websocketClient.js";
 import { isSfdxProject } from "../../../common/utils/projectUtils";
 import { PACKAGE_ROOT_DIR } from "../../../settings";
 
@@ -19,7 +19,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ProjectCreate extends SfdxCommand {
+export default class ProjectCreate extends SfCommand {
   public static title = "Login";
 
   public static description = "Create a new SFDX Project";
@@ -27,15 +27,15 @@ export default class ProjectCreate extends SfdxCommand {
   public static examples = ["$ sf hardis:project:create"];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { AiResponse } from ".";
+import { AiResponse } from "./index.js";
 import { AiProviderRoot } from "./aiProviderRoot";
 import * as c from "chalk";
 import { uxLog } from "../utils";

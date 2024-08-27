@@ -6,7 +6,7 @@ import * as xml2js from "xml2js";
 import * as path from "path";
 
 // Salesforce Specific
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 
@@ -23,7 +23,7 @@ Messages.importMessagesDirectory(__dirname);
 // Load Messages
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 /* jscpd:ignore-end */
-export default class UnusedMetadatas extends SfdxCommand {
+export default class UnusedMetadatas extends SfCommand {
   public static title = "check unused labels and custom permissions";
   public static description = `Check if elements (custom labels and custom permissions) are used in the project
 
@@ -32,19 +32,19 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   public static examples = ["$ sf hardis:lint:unusedmetadatas"];
   /* jscpd:ignore-start */
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

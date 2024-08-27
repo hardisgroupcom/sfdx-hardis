@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import * as c from "chalk";
-import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
+import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils";
 
 export abstract class GitProviderRoot {

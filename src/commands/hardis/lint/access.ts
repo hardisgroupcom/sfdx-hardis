@@ -6,7 +6,7 @@ import * as path from "path";
 import * as sortArray from "sort-array";
 
 // Salesforce Specific
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import * as fs from "fs-extra";
 import { AnyJson } from "@salesforce/ts-types";
@@ -14,13 +14,13 @@ import { AnyJson } from "@salesforce/ts-types";
 // Common Utilities
 import { isCI, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
-import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils";
+import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils.js";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
 import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
 import { Parser } from "xml2js";
 
 // Config
-import { getConfig } from "../../../config";
+import { getConfig } from "../../../config/index.js";
 import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils";
 
 // Initialize Messages with the current plugin directory
@@ -30,7 +30,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Access extends SfdxCommand {
+export default class Access extends SfCommand {
   public static title = "check permission access";
 
   public static description = `Check if elements(apex class and field) are at least in one permission set
@@ -45,34 +45,34 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   ];
 
   protected static flagsConfig = {
-    elementsignored: flags.string({
+    elementsignored: Flags.string({
       char: "e",
       default: "",
       description: "Ignore specific elements separated by commas",
     }),
-    ignorerights: flags.string({
+    ignorerights: Flags.string({
       char: "i",
       default: "",
       description: "Ignore permission sets or profiles",
     }),
-    folder: flags.string({
+    folder: Flags.string({
       char: "f",
       default: "force-app",
       description: "Root folder",
     }),
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

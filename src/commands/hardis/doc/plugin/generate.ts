@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import * as Config from "@oclif/config";
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -9,7 +9,7 @@ import * as path from "path";
 import * as sortArray from "sort-array";
 import * as set from "set-value";
 import * as yaml from "js-yaml";
-import { uxLog } from "../../../../common/utils";
+import { uxLog } from "../../../../common/utils/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings";
 
 // Initialize Messages with the current plugin directory
@@ -19,7 +19,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DocPluginGenerate extends SfdxCommand {
+export default class DocPluginGenerate extends SfCommand {
   public static title = "Generate SF Cli Plugin Documentation";
 
   public static description = `Generate Markdown documentation ready for HTML conversion with mkdocs
@@ -40,15 +40,15 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };
@@ -211,9 +211,8 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
               optionsUnique.push(option);
             }
           }
-          return `|${flag.name + (flag.char ? `<br/>-${flag.char}` : "")}|${flag.type}|${flag.description}|${flag.default || ""}|${
-            flag.required ? "" : ""
-          }|${optionsUnique.join("<br/>")}|`;
+          return `|${flag.name + (flag.char ? `<br/>-${flag.char}` : "")}|${flag.type}|${flag.description}|${flag.default || ""}|${flag.required ? "" : ""
+            }|${optionsUnique.join("<br/>")}|`;
         }),
       "",
     ];

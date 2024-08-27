@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -11,9 +11,9 @@ import { exportData } from "../../../common/utils/dataUtils";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
 import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from "../../../common/utils/gitUtils";
 import { prompts } from "../../../common/utils/prompts";
-import { appendPackageXmlFilesContent, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "../../../common/utils/xmlUtils";
-import { WebSocketClient } from "../../../common/websocketClient";
-import { CONSTANTS, getConfig, setConfig } from "../../../config";
+import { appendPackageXmlFilesContent, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "../../../common/utils/xmlUtils.js";
+import { WebSocketClient } from "../../../common/websocketClient.js";
+import { CONSTANTS, getConfig, setConfig } from "../../../config/index.js";
 import CleanReferences from "../project/clean/references";
 import CleanXml from "../project/clean/xml";
 
@@ -24,7 +24,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class SaveTask extends SfdxCommand {
+export default class SaveTask extends SfCommand {
   public static title = "Save work task";
 
   public static description = `When a work task is completed, guide user to create a merge request
@@ -66,37 +66,37 @@ autoRemoveUserPermissions:
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    nopull: flags.boolean({
+    nopull: Flags.boolean({
       char: "n",
       default: false,
       description: "No scratch pull before save",
     }),
-    nogit: flags.boolean({
+    nogit: Flags.boolean({
       char: "g",
       default: false,
       description: "No automated git operations",
     }),
-    noclean: flags.boolean({
+    noclean: Flags.boolean({
       char: "c",
       default: false,
       description: "No cleaning of local sources",
     }),
-    auto: flags.boolean({
+    auto: Flags.boolean({
       default: false,
       description: "No user prompts (when called from CI for example)",
     }),
-    targetbranch: flags.string({
+    targetbranch: Flags.string({
       description: "Name of the Merge Request target branch. Will be guessed or prompted if not provided.",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };
@@ -487,7 +487,7 @@ autoRemoveUserPermissions:
     deploymentPlan.packages = packages.sort((a, b) => (a.order > b.order ? 1 : -1));
     await setConfig("project", { deploymentPlan: deploymentPlan });
     if (!this.noGit) {
-      await git({ output: true }).add(["./config"]);
+      await git({ output: true }).add(["./config/index.js"]);
       await git({ output: true }).add(["./manifest"]);
     }
     let gitStatusAfterDeployPlan = await git().status();

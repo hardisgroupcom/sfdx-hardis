@@ -1,6 +1,6 @@
 import * as c from "chalk";
-import * as readPkgUp from "read-pkg-up";
-import * as updateNotifier from "update-notifier";
+import { readPackageUp } from 'read-package-up';
+import updateNotifier from 'update-notifier';
 import * as semver from "semver";
 
 export const hook = async (options: any) => {
@@ -12,9 +12,9 @@ export const hook = async (options: any) => {
 
   // Check if an upgrade of sfdx-hardis is required
   // Use promise + then to not block plugin execution during that
-  const pkg = await readPkgUp({ cwd: __dirname });
+  const pkg = await readPackageUp({ cwd: __dirname });
   const notifier = updateNotifier({
-    pkg: pkg.packageJson,
+    pkg: pkg?.packageJson,
     updateCheckInterval: 900, // check every 15 mn
   });
   if (

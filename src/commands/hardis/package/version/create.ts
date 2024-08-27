@@ -1,12 +1,12 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../../common/metadata-utils";
 import { execSfdxJson, isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
-import { getConfig, setConfig } from "../../../../config";
+import { getConfig, setConfig } from "../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class PackageVersionCreate extends SfdxCommand {
+export default class PackageVersionCreate extends SfCommand {
   public static title = "Create a new version of a package";
 
   public static description = messages.getMessage("packageVersionCreate");
@@ -25,34 +25,34 @@ export default class PackageVersionCreate extends SfdxCommand {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    package: flags.string({
+    package: Flags.string({
       char: "p",
       default: null,
       description: "Package identifier that you want to use to generate a new package version",
     }),
-    installkey: flags.string({
+    installkey: Flags.string({
       char: "k",
       default: null,
       description: "Package installation key",
     }),
-    deleteafter: flags.boolean({
+    deleteafter: Flags.boolean({
       default: false,
       description: "Delete package version after creating it",
     }),
-    install: flags.boolean({
+    install: Flags.boolean({
       char: "i",
       default: false,
       description: "Install package version on default org after generation",
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

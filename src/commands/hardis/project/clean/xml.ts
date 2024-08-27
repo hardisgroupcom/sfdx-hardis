@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
@@ -11,8 +11,8 @@ import * as xmldom from "@xmldom/xmldom";
 import * as xpath from "xpath";
 import { isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
-import { writeXmlFileFormatted } from "../../../../common/utils/xmlUtils";
-import { getConfig, setConfig } from "../../../../config";
+import { writeXmlFileFormatted } from "../../../../common/utils/xmlUtils.js";
+import { getConfig, setConfig } from "../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -21,7 +21,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanXml extends SfdxCommand {
+export default class CleanXml extends SfCommand {
   public static title = "Clean retrieved empty items in dx sources";
 
   public static description = `Remove XML elements using Glob patterns and XPath expressions
@@ -44,35 +44,35 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   ];
 
   protected static flagsConfig = {
-    folder: flags.string({
+    folder: Flags.string({
       char: "f",
       default: "force-app",
       description: "Root folder",
     }),
-    globpattern: flags.string({
+    globpattern: Flags.string({
       char: "p",
       description: "Glob pattern to find files to clean. Ex: /**/*.flexipage-meta.xml",
       dependsOn: ["xpath"],
     }),
-    xpath: flags.string({
+    xpath: Flags.string({
       char: "x",
       description: "XPath to use to detect the elements to remove. Ex: //ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]",
       dependsOn: ["globpattern"],
     }),
-    namespace: flags.string({
+    namespace: Flags.string({
       char: "n",
       default: "http://soap.sforce.com/2006/04/metadata",
       description: "XML Namespace to use",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };

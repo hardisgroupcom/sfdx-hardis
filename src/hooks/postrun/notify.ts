@@ -25,7 +25,7 @@ export const hook = async (options: any) => {
       globalThis.webSocketClient.dispose();
     } catch (e) {
       if (options.debug) {
-        uxLog(this, c.yellow("Unable to close webSocketClient") + "\n" + (e as Error).message);
+        uxLog(this, c.yellow("Unable to close websocketClient.js") + "\n" + (e as Error).message);
       }
     }
     globalThis.webSocketClient = null;

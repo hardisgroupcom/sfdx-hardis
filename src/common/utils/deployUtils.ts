@@ -4,20 +4,20 @@ import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, isCI, uxLog } from ".";
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, isCI, uxLog } from "./index.js";
 import { CONSTANTS, getConfig, setConfig } from "../../config/index.js";
 import { GitProvider } from "../gitProvider";
 import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
 import { MetadataUtils } from "../metadata-utils";
 import { importData } from "./dataUtils";
-import { analyzeDeployErrorLogs } from "./deployTips";
+import { analyzeDeployErrorLogs } from "./deployTips.js";
 import { callSfdxGitDelta } from "./gitUtils";
 import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
 import { prompts } from "./prompts";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
-import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils";
+import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils.js";
 import { ResetMode } from "simple-git";
-import { isSandbox } from "./orgUtils";
+import { isSandbox } from "./orgUtils.js";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push

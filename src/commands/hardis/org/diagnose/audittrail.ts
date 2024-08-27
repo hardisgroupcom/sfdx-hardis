@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
 import { bulkQuery } from "../../../../common/utils/apiUtils";
-import { getConfig } from "../../../../config";
+import { getConfig } from "../../../../config/index.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
 import { prompts } from "../../../../common/utils/prompts";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
@@ -18,7 +18,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DiagnoseAuditTrail extends SfdxCommand {
+export default class DiagnoseAuditTrail extends SfCommand {
   public static title = "Diagnose content of Setup Audit Trail";
 
   public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
@@ -128,7 +128,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   ];
 
   protected static flagsConfig = {
-    excludeusers: flags.string({
+    excludeusers: Flags.string({
       char: "e",
       description: "Comma-separated list of usernames to exclude",
     }),
@@ -136,19 +136,19 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       char: "t",
       description: "Number of days to extract from today (included)",
     }),
-    outputfile: flags.string({
+    outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    debug: flags.boolean({
+    debug: Flags.boolean({
       char: "d",
       default: false,
       description: messages.getMessage("debugMode"),
     }),
-    websocket: flags.string({
+    websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
-    skipauth: flags.boolean({
+    skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
   };
