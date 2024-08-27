@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "problemMatcher": "$tsc",
+  "tasks": [
+    {
+      "label": "Compile tests",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "command": "yarn",
+      "type": "shell",
+      "presentation": {
+        "focus": false,
+        "panel": "dedicated"
+      },
+      "args": ["run", "pretest"],
+      "isBackground": false
+    }
+  ]
+}
