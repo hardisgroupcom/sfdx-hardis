@@ -17,7 +17,7 @@ import {
   initPermissionSetAssignments,
   installPackages,
   promptUserEmail,
-} from "../../../common/utils/orgUtils";
+} from "../../../common/utils/orgUtils.js";
 import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
 import { prompts } from "../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";

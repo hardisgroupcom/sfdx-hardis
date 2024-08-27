@@ -1,10 +1,10 @@
 import c from "chalk";
 import sortArray from "sort-array";
-import { JiraProvider } from "./jiraProvider";
-import { TicketProviderRoot } from "./ticketProviderRoot";
-import { uxLog } from "../utils";
-import { GenericTicketingProvider } from "./genericProvider";
-import { AzureBoardsProvider } from "./azureBoardsProvider";
+import { JiraProvider } from "./jiraProvider.js";
+import { TicketProviderRoot } from "./ticketProviderRoot.js";
+import { uxLog } from "../utils/index.js";
+import { GenericTicketingProvider } from "./genericProvider.js";
+import { AzureBoardsProvider } from "./azureBoardsProvider.js";
 
 export const allTicketProviders = [JiraProvider, GenericTicketingProvider, AzureBoardsProvider];
 

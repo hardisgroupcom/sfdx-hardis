@@ -19,7 +19,7 @@ import {
 import { prompts } from "../../../../common/utils/prompts.js";
 import { setInConfigFile } from "../../../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
-import { promptOrg } from "../../../../common/utils/orgUtils";
+import { promptOrg } from "../../../../common/utils/orgUtils.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 
 // Initialize Messages with the current plugin directory
@@ -66,11 +66,12 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
   protected static requiresDependencies = ["openssl"];
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(OrgConfigureMonitoring);
     // Make sure that we are located in a git repository
     await ensureGitRepository();
 
     // Check git repo name is valid (contains monitoring)
-    const repoName = await getGitRepoName();
+    const repoName = await getGitRepoName() || "";
     if (!repoName.includes("monitoring")) {
       const confirmMix = await prompts({
         type: "select",

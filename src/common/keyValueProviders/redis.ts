@@ -2,7 +2,7 @@ import { SfError } from "@salesforce/core";
 import * as Keyv from "keyv";
 import c from "chalk";
 import { getConfig, setConfig } from "../../config/index.js";
-import { uxLog } from "../utils";
+import { uxLog } from "../utils/index.js";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { setPoolStorage } from "../utils/poolUtils";
 import { prompts } from "../utils/prompts.js";

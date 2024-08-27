@@ -8,7 +8,7 @@ import sortArray from "sort-array";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 import { bulkQuery, bulkUpdate, soqlQuery } from "../../../../common/utils/apiUtils";
-import { promptProfiles } from "../../../../common/utils/orgUtils";
+import { promptProfiles } from "../../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

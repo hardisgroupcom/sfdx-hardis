@@ -7,7 +7,7 @@ import * as fs from "fs-extra";
 import { glob } from "glob";
 import { mergeObjectPropertyLists, uxLog } from "../../../../common/utils/index.js";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
-import { promptOrg } from "../../../../common/utils/orgUtils";
+import { promptOrg } from "../../../../common/utils/orgUtils.js";
 import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory

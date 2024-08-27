@@ -4,7 +4,7 @@ import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
-import * as ora from "ora";
+import ora from "ora";
 import * as path from "path";
 
 import { execCommand, uxLog } from "../../../common/utils/index.js";
@@ -68,9 +68,9 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
 
   public async run(): Promise<AnyJson> {
     uxLog(this, c.yellow(c.bold(PurgeRef.description)));
-
+    const { flags } = await this.parse(PurgeRef);
     // Collect input parameters
-    this.referenceStrings = (this.flags?.references || "").split(",");
+    this.referenceStrings = (flags?.references || "").split(",");
     if (this.referenceStrings.length == 1 && this.referenceStrings[0] === "") {
       const refPromptResult = await prompts({
         type: "text",

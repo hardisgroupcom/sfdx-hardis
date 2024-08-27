@@ -6,7 +6,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config/index.js";
 import { execCommand, uxLog } from "../../../../common/utils/index.js";
-import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
+import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

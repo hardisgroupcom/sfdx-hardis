@@ -1,7 +1,7 @@
 import { Gitlab } from "@gitbeaker/node";
 import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { getCurrentGitBranch, git, uxLog } from "../utils";
+import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot";
 
 export class GitlabProvider extends GitProviderRoot {

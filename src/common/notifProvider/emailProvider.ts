@@ -1,12 +1,12 @@
 import { SfError } from "@salesforce/core";
 import * as DOMPurify from "isomorphic-dompurify";
 import c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot";
-import { getCurrentGitBranch, uxLog } from "../utils";
+import { NotifProviderRoot } from "./notifProviderRoot.js";
+import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { NotifMessage, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 import { marked } from "marked";
-import { EmailMessage, sendEmail } from "../utils/emailUtils";
+import { EmailMessage, sendEmail } from "../utils/emailUtils.js";
 import { removeMarkdown } from "../utils/notifUtils.js";
 
 export class EmailProvider extends NotifProviderRoot {
@@ -22,9 +22,9 @@ export class EmailProvider extends NotifProviderRoot {
     }
     const emailAddresses = mainEmailAddress.split(",");
     // Add branch custom Teams channel if defined
-    const customEmailChannelVariable = `NOTIF_EMAIL_ADDRESS_${(await getCurrentGitBranch()).toUpperCase()}`;
+    const customEmailChannelVariable = `NOTIF_EMAIL_ADDRESS_${(await getCurrentGitBranch() || "").toUpperCase()}`;
     if (getEnvVar(customEmailChannelVariable)) {
-      emailAddresses.push(...getEnvVar(customEmailChannelVariable).split(","));
+      emailAddresses.push(...(getEnvVar(customEmailChannelVariable) || "").split(","));
     }
 
     /* jscpd:ignore-start */
@@ -37,7 +37,7 @@ export class EmailProvider extends NotifProviderRoot {
     let emailBody = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
 
     // Add text details
-    if (notifMessage?.attachments?.length > 0) {
+    if (notifMessage?.attachments?.length && notifMessage?.attachments?.length > 0) {
       let text = "\n\n";
       for (const attachment of notifMessage.attachments) {
         if (attachment.text) {
@@ -51,7 +51,7 @@ export class EmailProvider extends NotifProviderRoot {
     /* jscpd:ignore-end */
 
     // Add action blocks
-    if (notifMessage.buttons?.length > 0) {
+    if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
       emailBody += "**Links:**\n\n";
       for (const button of notifMessage.buttons) {
         // Url button

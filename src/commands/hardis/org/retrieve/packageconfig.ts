@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
 import { uxLog } from "../../../../common/utils/index.js";
-import { managePackageConfig, promptOrg } from "../../../../common/utils/orgUtils";
+import { managePackageConfig, promptOrg } from "../../../../common/utils/orgUtils.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory

@@ -1,5 +1,5 @@
 import c from "chalk";
-import { getCurrentGitBranch, isCI, uxLog } from "../utils";
+import { getCurrentGitBranch, isCI, uxLog } from "../utils/index.js";
 import { AzureDevopsProvider } from "./azureDevops";
 import { GithubProvider } from "./github";
 import { GitlabProvider } from "./gitlab";

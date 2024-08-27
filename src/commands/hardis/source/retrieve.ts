@@ -3,7 +3,7 @@ import { SfError } from "@salesforce/core";
 import c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils/index.js";
 import { isCI, uxLog } from "../../../common/utils/index.js";
-import { promptOrgUsernameDefault } from "../../../common/utils/orgUtils";
+import { promptOrgUsernameDefault } from "../../../common/utils/orgUtils.js";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils.js";
 
 export class SourceRetrieve extends SfCommand<any> {

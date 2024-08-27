@@ -1,7 +1,7 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot";
-import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils";
+import { NotifProviderRoot } from "./notifProviderRoot.js";
+import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
 import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 
@@ -14,11 +14,11 @@ const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
 const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
 
 export class ApiProvider extends NotifProviderRoot {
-  protected apiUrl: string;
+  protected apiUrl: string | null;
   public payload: ApiNotifMessage;
   public payloadFormatted: any;
 
-  protected metricsApiUrl: string;
+  protected metricsApiUrl: string | null;
   public metricsPayload: string;
 
   public getLabel(): string {
@@ -70,7 +70,7 @@ export class ApiProvider extends NotifProviderRoot {
     let logBodyText = UtilsNotifs.prefixWithSeverityEmoji(UtilsNotifs.slackToTeamsMarkdown(notifMessage.text), notifMessage.severity);
 
     // Add text details
-    if (notifMessage?.attachments?.length > 0) {
+    if (notifMessage?.attachments?.length && notifMessage?.attachments?.length > 0) {
       let text = "\n\n";
       for (const attachment of notifMessage.attachments) {
         if (attachment.text) {
@@ -83,7 +83,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
 
     // Add action blocks
-    if (notifMessage.buttons?.length > 0) {
+    if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
       logBodyText += "Links:\n\n";
       for (const button of notifMessage.buttons) {
         // Url button

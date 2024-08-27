@@ -3,7 +3,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as os from "os";
 import { getConfig } from "../../config/index.js";
-import { uxLog } from "../utils";
+import { uxLog } from "../utils/index.js";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 
 export class LocalTestProvider implements KeyValueProviderInterface {

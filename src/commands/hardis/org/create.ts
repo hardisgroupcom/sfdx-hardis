@@ -10,7 +10,7 @@ import * as os from "os";
 import * as path from "path";
 import { clearCache } from "../../../common/cache";
 import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from "../../../common/utils/index.js";
-import { initApexScripts, initOrgData, initPermissionSetAssignments, promptUserEmail } from "../../../common/utils/orgUtils";
+import { initApexScripts, initOrgData, initPermissionSetAssignments, promptUserEmail } from "../../../common/utils/orgUtils.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { getConfig } from "../../../config/index.js";
 

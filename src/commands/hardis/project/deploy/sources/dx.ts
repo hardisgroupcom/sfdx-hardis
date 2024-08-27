@@ -21,7 +21,7 @@ import { MetadataUtils } from "../../../../../common/metadata-utils/index.js";
 import { createTempDir, getCurrentGitBranch, getLatestGitCommit, isCI, uxLog } from "../../../../../common/utils/index.js";
 import { getConfig } from "../../../../../config/index.js";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
-import { promptOrg } from "../../../../../common/utils/orgUtils";
+import { promptOrg } from "../../../../../common/utils/orgUtils.js";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
 import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider/index.js";

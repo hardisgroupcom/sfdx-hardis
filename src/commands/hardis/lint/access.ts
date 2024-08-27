@@ -94,7 +94,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected outputFile;
   protected outputFilesRes: any = {};
 
-  protected static sourceElements = [
+  protected static sourceElements: any[] = [
     {
       regex: `/**/*.cls`,
       type: "ApexClass",
@@ -152,7 +152,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.hasToDisplayJsonOnly = process.argv.includes("--json");
 
     this.ignoreSourceElementsIfDefined();
-    this.ignoreRightElementsIfDefined(config);
+    this.ignoreRightElementsIfDefined(config, flags);
 
     this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
@@ -160,7 +160,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
 
-    const elementsToCheckByType = { apexClass: [], field: [] };
+    const elementsToCheckByType: any = { apexClass: [], field: [] };
 
     /* ELEMENTS TO CHECK */
     for (const sourceElement of LintAccess.sourceElements) {
@@ -207,7 +207,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const ignoreElements = flags.elementsignored;
 
     for (const ignoredElement of ignoreElements.split(",")) {
-      const elementTrimmed = ignoredElement.trim();
+      const elementTrimmed: string = ignoredElement.trim();
 
       //check if all elements of a type are ignored
       if (elementTrimmed === "ApexClass") {
@@ -224,7 +224,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
   }
 
-  private ignoreRightElementsIfDefined(projectConfig) {
+  private ignoreRightElementsIfDefined(projectConfig, flags) {
     const ignoreElements = flags.ignorerights ? flags.ignorerights : projectConfig.linterIgnoreRightMetadataFile;
     if (!ignoreElements) {
       return;

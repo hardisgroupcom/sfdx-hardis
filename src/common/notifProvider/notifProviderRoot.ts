@@ -1,5 +1,5 @@
 import { SfError } from "@salesforce/core";
-import { uxLog } from "../utils";
+import { uxLog } from "../utils/index.js";
 import { NotifMessage } from "./index.js";
 
 export abstract class NotifProviderRoot {

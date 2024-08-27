@@ -7,7 +7,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 
 import { execCommand, uxLog } from "../../../../../common/utils/index.js";
-import { promptOrg } from "../../../../../common/utils/orgUtils";
+import { promptOrg } from "../../../../../common/utils/orgUtils.js";
 import { prompts } from "../../../../../common/utils/prompts.js";
 import { PACKAGE_ROOT_DIR } from "../../../../../settings.js";
 

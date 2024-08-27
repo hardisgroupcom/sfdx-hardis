@@ -1,7 +1,7 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
 import { Ticket } from "./index.js";
-import { getCurrentGitBranch, uxLog } from "../utils";
+import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 
 export abstract class TicketProviderRoot {
   public isActive = false;
@@ -23,7 +23,7 @@ export abstract class TicketProviderRoot {
   }
 
   public async getDeploymentTag(): Promise<string> {
-    const currentGitBranch = await getCurrentGitBranch();
+    const currentGitBranch = await getCurrentGitBranch() || "";
     let tag = currentGitBranch.toUpperCase() + "_DEPLOYED";
     if (process.env?.DEPLOYED_TAG_TEMPLATE && !(process.env?.DEPLOYED_TAG_TEMPLATE || "").includes("$(")) {
       tag = process.env?.DEPLOYED_TAG_TEMPLATE.replace("{BRANCH}", currentGitBranch.toUpperCase());

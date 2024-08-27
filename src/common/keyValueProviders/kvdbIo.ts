@@ -3,7 +3,7 @@ import axios from "axios";
 import c from "chalk";
 import * as crypto from "crypto";
 import { getConfig, setConfig } from "../../config/index.js";
-import { uxLog } from "../utils";
+import { uxLog } from "../utils/index.js";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { setPoolStorage } from "../utils/poolUtils";
 import { prompts } from "../utils/prompts.js";

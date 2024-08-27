@@ -1,7 +1,7 @@
 import { GitProviderRoot } from "./gitProviderRoot";
 import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { git, uxLog } from "../utils";
+import { git, uxLog } from "../utils/index.js";
 import { Bitbucket, Schema } from "bitbucket";
 
 export class BitbucketProvider extends GitProviderRoot {

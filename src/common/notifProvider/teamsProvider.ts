@@ -1,6 +1,6 @@
 import c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot";
-import { uxLog } from "../utils";
+import { NotifProviderRoot } from "./notifProviderRoot.js";
+import { uxLog } from "../utils/index.js";
 import { NotifMessage } from "./index.js";
 
 export class TeamsProvider extends NotifProviderRoot {

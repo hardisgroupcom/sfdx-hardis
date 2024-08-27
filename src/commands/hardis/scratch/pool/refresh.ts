@@ -10,7 +10,7 @@ import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../..
 import { getConfig } from "../../../../config/index.js";
 import { execCommand, stripAnsi, uxLog } from "../../../../common/utils/index.js";
 import moment from "moment";
-import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
+import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

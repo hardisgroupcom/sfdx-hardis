@@ -5,13 +5,13 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import moment from "moment";
-import * as ora from "ora";
+import ora from "ora";
 import * as path from "path";
 import * as readline from "readline";
 
 import { stripAnsi, uxLog } from "../../../common/utils/index.js";
 import { countLinesInFile } from "../../../common/utils/filesUtils.js";
-import { getRecordTypeId } from "../../../common/utils/orgUtils";
+import { getRecordTypeId } from "../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -118,6 +118,7 @@ export default class Toml2Csv extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     // Collect input parameters
+    const { flags } = await this.parse(Toml2Csv);
     const tomlFile = flags.tomlfile;
     const tomlFileEncoding = flags.tomlfileencoding || "utf8";
     this.transfoConfigFile = flags.transfoconfig || path.join(process.cwd(), "transfoConfig.json");

@@ -1,7 +1,7 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { uxLog } from "../utils";
+import { uxLog } from "../utils/index.js";
 
 export abstract class GitProviderRoot {
   protected serverUrl: string;

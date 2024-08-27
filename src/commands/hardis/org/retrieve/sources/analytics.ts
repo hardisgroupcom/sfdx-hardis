@@ -7,7 +7,7 @@ import * as path from "path";
 // import * as path from "path";
 import { uxLog, isCI, createTempDir, execCommand } from "../../../../../common/utils/index.js";
 
-import { promptOrgUsernameDefault } from "../../../../../common/utils/orgUtils";
+import { promptOrgUsernameDefault } from "../../../../../common/utils/orgUtils.js";
 import { buildOrgManifest } from "../../../../../common/utils/deployUtils";
 import { parsePackageXmlFile, writePackageXmlFile } from "../../../../../common/utils/xmlUtils.js";
 

@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { importData, selectDataWorkspace } from "../../../../common/utils/dataUtils";
-import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils";
+import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import * as azdev from "azure-devops-node-api";
-import { TicketProviderRoot } from "./ticketProviderRoot";
+import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from "sort-array";
 import { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
-import { extractRegexMatches, uxLog } from "../utils";
+import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces";
@@ -174,7 +174,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${(e6 as any).message}\n${c.grey((e6 as any).stack)}`));
         }
 
         // Add tag
@@ -193,7 +193,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("tag workItem: " + workItem);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${(e6 as any).message} \n${c.grey((e6 as any).stack)} `));
         }
       }
     }

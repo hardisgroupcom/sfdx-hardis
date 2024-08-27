@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { AiResponse } from "./index.js";
 import { AiProviderRoot } from "./aiProviderRoot";
 import c from "chalk";
-import { uxLog } from "../utils";
+import { uxLog } from "../utils/index.js";
 
 export class OpenApiProvider extends AiProviderRoot {
   protected openai: OpenAI;

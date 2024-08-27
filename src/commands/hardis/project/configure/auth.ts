@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils/index.js";
-import { getOrgAliasUsername, promptOrg } from "../../../../common/utils/orgUtils";
+import { getOrgAliasUsername, promptOrg } from "../../../../common/utils/orgUtils.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config/index.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";

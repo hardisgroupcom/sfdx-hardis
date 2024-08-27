@@ -14,7 +14,7 @@ import {
   initPermissionSetAssignments,
   installPackages,
   promptOrg,
-} from "../../../common/utils/orgUtils";
+} from "../../../common/utils/orgUtils.js";
 import { prompts } from "../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { getConfig, setConfig } from "../../../config/index.js";

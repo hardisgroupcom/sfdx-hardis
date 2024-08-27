@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as columnify from "columnify";
 import { generateReports, isCI, uxLog } from "../../../../common/utils/index.js";
-import { promptProfiles } from "../../../../common/utils/orgUtils";
+import { promptProfiles } from "../../../../common/utils/orgUtils.js";
 //import { executeApex } from "../../../../common/utils/deployUtils";
 import { prompts } from "../../../../common/utils/prompts.js";
 import { soqlQuery, bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils";

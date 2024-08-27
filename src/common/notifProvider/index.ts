@@ -1,6 +1,6 @@
-import { uxLog } from "../utils";
+import { uxLog } from "../utils/index.js";
 import c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot";
+import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider";
 import { UtilsNotifs as utilsNotifs } from "./utils/index.js";
 import { TeamsProvider } from "./teamsProvider";

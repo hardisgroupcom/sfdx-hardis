@@ -1,8 +1,8 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot";
+import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
-import { getCurrentGitBranch, uxLog } from "../utils";
+import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { NotifMessage, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 
@@ -11,7 +11,7 @@ export class SlackProvider extends NotifProviderRoot {
 
   constructor() {
     super();
-    this.token = process.env.SLACK_TOKEN;
+    this.token = process.env.SLACK_TOKEN || "";
     this.slackClient = new WebClient(this.token);
   }
 
@@ -29,9 +29,9 @@ export class SlackProvider extends NotifProviderRoot {
     }
     const slackChannelsIds = mainNotifsChannelId.split(",");
     // Add branch custom slack channel if defined
-    const customSlackChannelVariable = `SLACK_CHANNEL_ID_${(await getCurrentGitBranch()).toUpperCase()}`;
+    const customSlackChannelVariable = `SLACK_CHANNEL_ID_${(await getCurrentGitBranch() || "").toUpperCase()}`;
     if (getEnvVar(customSlackChannelVariable)) {
-      slackChannelsIds.push(...getEnvVar(customSlackChannelVariable).split(","));
+      slackChannelsIds.push(...(getEnvVar(customSlackChannelVariable) || "").split(","));
     }
     // Handle specific channel for Warnings and errors
     const warningsErrorsChannelId = getEnvVar("SLACK_CHANNEL_ID_ERRORS_WARNINGS");
@@ -58,7 +58,7 @@ export class SlackProvider extends NotifProviderRoot {
     } */
     blocks.push(block);
     // Add action blocks
-    if (notifMessage.buttons?.length > 0) {
+    if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
       const actionElements: any[] = [];
       for (const button of notifMessage.buttons) {
         // Url button

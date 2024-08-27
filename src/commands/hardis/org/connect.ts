@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { execCommand, isCI } from "../../../common/utils/index.js";
-import { promptOrg } from "../../../common/utils/orgUtils";
+import { promptOrg } from "../../../common/utils/orgUtils.js";
 import { prompts } from "../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory

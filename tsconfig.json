@@ -4,7 +4,8 @@
     "outDir": "lib",
     "rootDir": "src",
     "noImplicitAny": false,
-    "noImplicitThis": false
+    "noImplicitThis": false,
+    "strictPropertyInitialization": false
   },
   "include": [
     "./src/**/*.ts"
