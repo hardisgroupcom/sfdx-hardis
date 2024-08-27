@@ -59,13 +59,14 @@ export default class unlockedpackages extends SfdxCommand {
     /* jscpd:ignore-end */
 
     // List available unlocked packages in org
-    const pkgsRequest = "SELECT SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name FROM InstalledSubscriberPackage ORDER BY SubscriberPackage.NamespacePrefix";
+    const pkgsRequest = "SELECT SubscriberPackageId, SubscriberPackage.NamespacePrefix, SubscriberPackage.Name, SubscriberPackageVersionId FROM InstalledSubscriberPackage ORDER BY SubscriberPackage.NamespacePrefix";
     const pkgsResult = await soqlQueryTooling(pkgsRequest, this.org.getConnection());
     const choices = pkgsResult.records
       .filter(pkg => pkg.SubscriberPackage.NamespacePrefix == null)
       .map((pkg) => ({
           title: pkg.SubscriberPackage.Name,
-          value: pkg.SubscriberPackageId
+          value: pkg.SubscriberPackageId,
+          version: pkg.SubscriberPackageVersionId
       })
     );
 
@@ -91,6 +92,8 @@ export default class unlockedpackages extends SfdxCommand {
     // Tooling query specific package
     const ulpkgQuery = `SELECT SubjectID, SubjectKeyPrefix FROM Package2Member WHERE SubscriberPackageId='${promptUlpkgToClean.packageId}'`
     const ulpkgQueryResult = await soqlQueryTooling(ulpkgQuery, this.org.getConnection());
+
+
     
     //create array of package members, looking up object name from orgPrefixKey
     const ulpkgMembers = ulpkgQueryResult.records.map(member => ({
