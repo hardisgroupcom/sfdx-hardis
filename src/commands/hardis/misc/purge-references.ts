@@ -153,60 +153,7 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
           // REF = xxx ,
           { regex: `{{REF}}[ |=].+\\)`, replace: ")" },
         ],
-      },
-      // Flexipages
-      {
-        extensions: [".flexipage-meta.xml"],
-        label: "Flexipage",
-        type: "xml",
-        replaceMode: ["all", "line"],
-        refRegexes: [
-          // <valueListItems><value>REF</value></valueListItems>
-          {
-            regex: `<valueListItems>\\s*<value>{{REF}}<\\/value>\\s*<\\/valueListItems>`,
-            replace: "<!-- valueListItems removed by sfdx-hardis purge-references -->",
-          },
-          // <itemInstances><xxx>REF</xxx></itemInstances>
-          {
-            regex: `<itemInstances>(?![\\s\\S]*<itemInstances>[\\s\\S]*{{REF}}[\\s\\S]*<\\/itemInstances>)[\\s\\S]*?{{REF}}[\\s\\S]*?<\\/itemInstances>`,
-            replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
-          },
-          // <itemInstances><xxx>REF.zzz</xxx></itemInstances>
-          {
-            regex: `<itemInstances>(?![\\s\\S]*<itemInstances>[\\s\\S]*{{REF}}\\..*[\\s\\S]*<\\/itemInstances>)[\\s\\S]*?{{REF}}\\..*[\\s\\S]*?<\\/itemInstances>`,
-            replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
-          },
-          // <itemInstances><xxx>zzz.REF</xxx></itemInstances>
-          {
-            regex: `<itemInstances>(?![\\s\\S]*<itemInstances>[\\s\\S]*.*\\.{{REF}}\\..*[\\s\\S]*<\\/itemInstances>)[\\s\\S]*?.*\\.{{REF}}\\..*[\\s\\S]*?<\\/itemInstances>`,
-            replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
-          },
-        ],
-      },
-      // Permission sets, Profiles
-      {
-        extensions: [".permissionset-meta.xml", ".profile-meta.xml"],
-        label: "Permission Sets, Profiles",
-        type: "xml",
-        replaceMode: ["all", "line"],
-        refRegexes: [
-          // <fieldPermissions><field>REF</field></fieldPermissions>
-          {
-            regex: `<fieldPermissions>[\\s\\S]*<field>{{REF}}<\\/field>[\\s\\S]*<\\/fieldPermissions>`,
-            replace: "<!-- fieldPermissions removed by sfdx-hardis purge-references -->",
-          },
-          // <fieldPermissions><field>xxx.REF</field></fieldPermissions>
-          {
-            regex: `<fieldPermissions>[\\s\\S]*<field>.*\\.{{REF}}<\\/field>[\\s\\S]*<\\/fieldPermissions>`,
-            replace: "<!-- fieldPermissions removed by sfdx-hardis purge-references -->",
-          },
-          // <fieldPermissions><field>REF.xxx</field></fieldPermissions>
-          {
-            regex: `<fieldPermissions>[\\s\\S]*<field>{{REF}}\\..*<\\/field>[\\s\\S]*<\\/fieldPermissions>`,
-            replace: "<!-- fieldPermissions removed by sfdx-hardis purge-references -->",
-          },
-        ],
-      },
+      }
     ];
   }
 }
