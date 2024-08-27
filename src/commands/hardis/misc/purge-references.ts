@@ -168,17 +168,17 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
           },
           // <itemInstances><xxx>REF</xxx></itemInstances>
           {
-            regex: `<itemInstances>[\\s\\S]*<.*>{{REF}}<\\/.*?>[\\s\\S]*?<\\/itemInstances>`,
+            regex: `<itemInstances>(?![\\s\\S]*<itemInstances>[\\s\\S]*{{REF}}[\\s\\S]*<\\/itemInstances>)[\\s\\S]*?{{REF}}[\\s\\S]*?<\\/itemInstances>`,
             replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
           },
           // <itemInstances><xxx>REF.zzz</xxx></itemInstances>
           {
-            regex: `<itemInstances>[\\s\\S]*<.*>{{REF}}\\..*<\\/.*?>[\\s\\S]*?<\\/itemInstances>`,
+            regex: `<itemInstances>(?![\\s\\S]*<itemInstances>[\\s\\S]*{{REF}}\\..*[\\s\\S]*<\\/itemInstances>)[\\s\\S]*?{{REF}}\\..*[\\s\\S]*?<\\/itemInstances>`,
             replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
           },
           // <itemInstances><xxx>zzz.REF</xxx></itemInstances>
           {
-            regex: `<itemInstances>[\\s\\S]*?<.*>.*\\.{{REF}}<\\/.*?>[\\s\\S]*?<\\/itemInstances>`,
+            regex: `<itemInstances>(?![\\s\\S]*<itemInstances>[\\s\\S]*.*\\.{{REF}}\\..*[\\s\\S]*<\\/itemInstances>)[\\s\\S]*?.*\\.{{REF}}\\..*[\\s\\S]*?<\\/itemInstances>`,
             replace: "<!-- itemInstances removed by sfdx-hardis purge-references -->",
           },
         ],

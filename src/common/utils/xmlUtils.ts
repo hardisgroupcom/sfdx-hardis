@@ -242,7 +242,7 @@ export async function applyAllReplacementsDefinitions(allMatchingSourceFiles: st
   for (const ref of referenceStrings) {
     for (const replacementDefinition of replacementDefinitions) {
       replacementDefinition.refRegexes = replacementDefinition.refRegexes.map((refRegex) => {
-        refRegex.regex = refRegex.regex.replace("{{REF}}", ref);
+        refRegex.regex = refRegex.regex.replace(new RegExp(`{{REF}}`), ref);
         return refRegex;
       });
       await applyReplacementDefinition(replacementDefinition, allMatchingSourceFiles, ref);
