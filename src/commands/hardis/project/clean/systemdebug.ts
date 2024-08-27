@@ -48,6 +48,7 @@ export default class CleanSystemDebug extends SfCommand<any> {
   protected del = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanSystemDebug);
     this.folder = flags.folder || "./force-app";
     this.del = flags.delete || false;
 

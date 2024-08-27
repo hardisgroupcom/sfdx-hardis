@@ -8,7 +8,7 @@ import * as path from "path";
 import { uxLog, isCI, createTempDir, execCommand } from "../../../../../common/utils/index.js";
 
 import { promptOrgUsernameDefault } from "../../../../../common/utils/orgUtils.js";
-import { buildOrgManifest } from "../../../../../common/utils/deployUtils";
+import { buildOrgManifest } from "../../../../../common/utils/deployUtils.js";
 import { parsePackageXmlFile, writePackageXmlFile } from "../../../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory

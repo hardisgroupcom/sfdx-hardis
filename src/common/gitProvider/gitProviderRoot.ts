@@ -47,7 +47,7 @@ export abstract class GitProviderRoot {
     try {
       prResult = await this.postPullRequestMessage(prMessage);
     } catch (e) {
-      uxLog(this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${e.stack}`));
+      uxLog(this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${(e as Error).stack}`));
       prResult = { posted: false, providerResult: { error: e } };
     }
     return prResult;

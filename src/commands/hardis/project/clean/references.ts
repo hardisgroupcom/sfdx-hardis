@@ -11,7 +11,7 @@ import { prompts } from "../../../../common/utils/prompts.js";
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 import { getConfig, setConfig } from "../../../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
-import { FilterXmlContent } from "./filter-xml-content";
+import { FilterXmlContent } from "./filter-xml-content.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -123,10 +123,11 @@ export default class CleanReferences extends SfCommand<any> {
     },
   ];
 
-  protected configFile: string;
+  protected configFile: string | null;
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanReferences);
     this.debugMode = flags.debug || false;
     this.cleaningTypes = flags.type ? [flags.type] : [];
     this.configFile = flags.config || null;
@@ -190,7 +191,7 @@ export default class CleanReferences extends SfCommand<any> {
         // Template based cleaning
         uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
-        const packageDirectories = this.project.getPackageDirectories();
+        const packageDirectories = this.project?.getPackageDirectories() || [];
         for (const packageDirectory of packageDirectories) {
 
           await FilterXmlContent.run(

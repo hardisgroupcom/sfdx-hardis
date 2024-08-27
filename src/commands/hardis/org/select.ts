@@ -52,6 +52,7 @@ export default class OrgSelect extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(OrgSelect);
     const devHub = flags.devhub || false;
     const scratch = flags.scratch;
     this.debugMode = flags.debug || false;

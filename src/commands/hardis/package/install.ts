@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as axios1 from "axios";
@@ -56,8 +56,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
       description: "Skip authentication check when a default username is required",
     }),
     'target-org': requiredOrgFlagWithDeprecations,
-  };  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  public static requiresProject = false;
+  };
 
   /* jscpd:ignore-end */
 
@@ -65,6 +64,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
   protected sfdxProjectJsonFileName = path.join(process.cwd(), "sfdx-project.json");
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(PackageVersionInstall);
     const packagesRaw = await fs.readFile(this.allPackagesFileName, "utf8");
     const packages = JSON.parse(packagesRaw);
     const packageId = flags.package || null;

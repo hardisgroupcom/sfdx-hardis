@@ -1,5 +1,3 @@
-"use strict";
-
 import * as crypto from "crypto";
 import * as fs from "fs-extra";
 

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -69,6 +69,7 @@ See article below
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(FilesExport);
     let filesPath = flags.path || null;
     const recordsChunkSize = flags.chunksize;
     const pollTimeout = flags.polltimeout;
@@ -84,7 +85,7 @@ See article below
     // Identify files workspace if not defined
     if (filesPath == null) {
       filesPath = await selectFilesWorkspace({ selectFilesLabel: "Please select a files workspace to EXPORT" });
-      const exportConfigInitial = await getFilesWorkspaceDetail(filesPath);
+      const exportConfigInitial: any = await getFilesWorkspaceDetail(filesPath || "") || {};
       // Request to use defaut config or to override it for this run
       const defaultConfigRes = await prompts({
         type: "confirm",
@@ -98,7 +99,7 @@ See article below
 
     // Export files from org
 
-    const exportResult = await new FilesExporter(filesPath, flags['target-org'].getConnection(), exportOptions, this).processExport();
+    const exportResult = await new FilesExporter(filesPath || "", flags['target-org'].getConnection(), exportOptions, this).processExport();
 
     // Output message
     const message = `Successfully exported files from project ${c.green(filesPath)} from org ${c.green(flags['target-org'].getUsername())}`;

@@ -8,7 +8,7 @@ import open from "open";
 import * as path from "path";
 import { createTempDir, execCommand, getCurrentGitBranch, git, gitHasLocalUpdates, normalizeFileStatusPath, uxLog } from "../../../common/utils/index.js";
 import { exportData } from "../../../common/utils/dataUtils.js";
-import { forceSourcePull } from "../../../common/utils/deployUtils";
+import { forceSourcePull } from "../../../common/utils/deployUtils.js";
 import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from "../../../common/utils/gitUtils.js";
 import { prompts } from "../../../common/utils/prompts.js";
 import { appendPackageXmlFilesContent, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "../../../common/utils/xmlUtils.js";

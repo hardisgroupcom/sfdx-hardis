@@ -6,7 +6,7 @@ import c from "chalk";
 import * as path from "path";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { getReportDirectory } from "../../../../config/index.js";
-import { buildOrgManifest } from "../../../../common/utils/deployUtils";
+import { buildOrgManifest } from "../../../../common/utils/deployUtils.js";
 import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory

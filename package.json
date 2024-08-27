@@ -10,9 +10,11 @@
     "@slack/types": "^2.12.0",
     "@slack/web-api": "^7.3.4",
     "@supercharge/promise-pool": "^3.2.0",
+    "@xmldom/xmldom": "^0.8.10",
     "axios": "^1.7.5",
     "azure-devops-node-api": "^14.0.2",
     "chalk": "^5.3.0",
+    "columnify": "^1.6.0",
     "cosmiconfig": "^9.0.0",
     "email-validator": "^2.0.4",
     "exceljs": "^4.4.0",
@@ -34,7 +36,8 @@
     "split": "^1.0.1",
     "string-template": "^1.0.0",
     "update-notifier": "^7.3.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "xpath": "^0.0.34"
   },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.1.9",

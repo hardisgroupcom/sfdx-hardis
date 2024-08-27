@@ -69,6 +69,7 @@ export default class SandboxCreate extends SfCommand<any> {
   protected sandboxOrgFromPool: any;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(SandboxCreate);
     this.debugMode = flags.debug || false;
     elapseStart(`Create and initialize sandbox org`);
     await this.initConfig();
@@ -80,7 +81,7 @@ export default class SandboxCreate extends SfCommand<any> {
       await initOrgData(path.join(".", "scripts", "data", "SandboxInit"), this.sandboxOrgUsername);
     } catch (e) {
       elapseEnd(`Create and initialize sandbox org`);
-      uxLog(this, c.grey("Error: " + (e as Error).message + "\n" + e.stack));
+      uxLog(this, c.grey("Error: " + (e as Error).message + "\n" + (e as Error).stack));
       throw e;
     }
     elapseEnd(`Create and initialize sandbox org`);
@@ -99,8 +100,8 @@ export default class SandboxCreate extends SfCommand<any> {
   // Initialize configuration from .sfdx-hardis.yml + .gitbranch.sfdx-hardis.yml + .username.sfdx-hardis.yml
   public async initConfig() {
     this.configInfo = await getConfig("user");
-    this.gitBranch = await getCurrentGitBranch({ formatted: true });
-    const newSandboxName = os.userInfo().username + "-" + this.gitBranch.split("/").pop().slice(0, 15) + "_" + moment().format("YYYYMMDD_hhmm");
+    this.gitBranch = await getCurrentGitBranch({ formatted: true }) || "";
+    const newSandboxName = os.userInfo().username + "-" + (this.gitBranch.split("/").pop() || "").slice(0, 15) + "_" + moment().format("YYYYMMDD_hhmm");
     this.sandboxOrgAlias = process.env.SANDBOX_ORG_ALIAS || newSandboxName;
 
     this.projectName = process.env.PROJECT_NAME || this.configInfo.projectName;

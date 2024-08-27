@@ -81,12 +81,13 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   public static requiresProject = true;
 
   protected folder: string;
-  protected globPattern: string;
+  protected globPattern: string | undefined;
   protected namespace: string;
-  protected xpath: string;
+  protected xpath: string | undefined;
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanXml);
     this.folder = flags.folder || "./force-app";
     this.globPattern = flags.globpattern;
     this.xpath = flags.xpath;
@@ -112,7 +113,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
         // Iterate on xpaths
         for (const xpathItem of cleanXmlPattern.xpaths) {
           const nodes = xpathSelect(xpathItem, doc);
-          for (const node of nodes) {
+          for (const node of nodes as Node[]) {
             await this.removeXPath(xpathItem, doc, node);
             uxLog(this, c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
             updated = true;

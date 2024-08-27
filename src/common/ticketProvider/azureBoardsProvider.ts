@@ -15,7 +15,7 @@ import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSIn
 export class AzureBoardsProvider extends TicketProviderRoot {
   protected serverUrl: string | null;
   protected azureApi: InstanceType<typeof azdev.WebApi>;
-  protected teamProject: string;
+  protected teamProject: string | null;
 
   constructor() {
     super();
@@ -28,8 +28,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       this.isActive = true;
     }
     if (this.isActive) {
-      const authHandler = azdev.getHandlerFromToken(this.token);
-      this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
+      const authHandler = azdev.getHandlerFromToken(this.token || "");
+      this.azureApi = new azdev.WebApi(this.serverUrl || "", authHandler);
     }
   }
 
@@ -76,7 +76,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       const azureBoardsProvider = new AzureBoardsProvider();
       const azureApi = azureBoardsProvider.azureApi;
       const azureGitApi = await azureApi.getGitApi();
-      const repositoryId = getEnvVar("BUILD_REPOSITORY_ID");
+      const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
       const commitIds = options.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
       const azureCommits: GitCommitRef[] = [];
       for (const commitId of commitIds) {
@@ -88,8 +88,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           if (!tickets.some((ticket) => ticket.id === workItem.id)) {
             tickets.push({
               provider: "AZURE",
-              url: workItem.url,
-              id: workItem.id,
+              url: workItem.url || "",
+              id: workItem.id || "",
             });
           }
         }
@@ -125,7 +125,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         ),
       );
     }
-    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     for (const ticket of tickets) {
       if (ticket.provider === "AZURE") {
         const ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
@@ -153,7 +153,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
-    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
         let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
@@ -167,8 +167,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
         // Post comment
         try {
-          const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, this.teamProject, Number(ticket.id));
-          if (commentPostRes && commentPostRes?.id > 0) {
+          const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, this.teamProject || "", Number(ticket.id));
+          if (commentPostRes?.id && commentPostRes?.id > 0) {
             commentedTickets.push(ticket);
           } else {
             throw new SfError("commentPostRes: " + commentPostRes);
@@ -186,8 +186,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
               value: tag,
             },
           ];
-          const workItem = await azureWorkItemApi.updateWorkItem({}, patchDocument, Number(ticket.id), this.teamProject);
-          if (workItem && workItem?.id > 0) {
+          const workItem = await azureWorkItemApi.updateWorkItem({}, patchDocument, Number(ticket.id), this.teamProject || "");
+          if (workItem?.id && workItem?.id > 0) {
             taggedTickets.push(ticket);
           } else {
             throw new SfError("tag workItem: " + workItem);

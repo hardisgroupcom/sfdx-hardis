@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -42,6 +42,7 @@ export default class CleanRetrieveFolders extends SfCommand<any> {
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanRetrieveFolders);
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary

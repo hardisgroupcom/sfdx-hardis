@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -39,8 +39,8 @@ export default class PackageVersionPromote extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
-  protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
@@ -48,10 +48,11 @@ export default class PackageVersionPromote extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(PackageVersionPromote);
     const debugMode = flags.debug || false;
     const auto = flags.auto || false;
     // List project packages
-    const sfdxProjectJson = await this.project.retrieveSfdxProjectJson(false);
+    const sfdxProjectJson: any = this.project?.getSfProjectJson(false) || {};
     const packageAliases = sfdxProjectJson.get("packageAliases") || [];
     const availablePackageAliases = {};
     for (const packageAlias of Object.keys(packageAliases)

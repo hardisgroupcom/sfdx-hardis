@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { AuthInfo, Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -72,8 +72,8 @@ export default class ScratchCreate extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
-  protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
@@ -104,6 +104,7 @@ export default class ScratchCreate extends SfCommand<any> {
   protected scratchOrgFromPool: any;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(ScratchCreate);
     this.pool = flags.pool || false;
     this.debugMode = flags.debug || false;
     this.forceNew = flags.forcenew || false;
@@ -123,7 +124,7 @@ export default class ScratchCreate extends SfCommand<any> {
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      uxLog(this, c.grey("Error: " + (e as Error).message + "\n" + e.stack));
+      uxLog(this, c.grey("Error: " + (e as Error).message + "\n" + (e as Error).stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
@@ -224,7 +225,7 @@ export default class ScratchCreate extends SfCommand<any> {
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
     // Check current scratch org
     const orgListResult = await execSfdxJson("sf org list", this);
-    const hubOrgUsername = this.hubOrg.getUsername();
+    const hubOrgUsername = flags['target-dev-hub'].getUsername();
     const matchingScratchOrgs =
       orgListResult?.result?.scratchOrgs?.filter((org: any) => {
         return org.alias === this.scratchOrgAlias && org.status === "Active" && org.devHubUsername === hubOrgUsername;
@@ -238,7 +239,7 @@ export default class ScratchCreate extends SfCommand<any> {
     }
     // Try to fetch a scratch org from the pool
     if (this.pool === false && this.configInfo.poolConfig) {
-      this.scratchOrgFromPool = await fetchScratchOrg({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+      this.scratchOrgFromPool = await fetchScratchOrg({ devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
       if (this.scratchOrgFromPool) {
         this.scratchOrgAlias = this.scratchOrgFromPool.scratchOrgAlias;
         this.scratchOrgInfo = this.scratchOrgFromPool.scratchOrgInfo;

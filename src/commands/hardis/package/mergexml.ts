@@ -48,6 +48,10 @@ export default class MergePackageXml extends SfCommand<any> {
       char: "r",
       description: "Result package.xml file name",
     }),
+    debug: Flags.boolean({
+      default: false,
+      description: "debug",
+    }),
     websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
@@ -66,6 +70,7 @@ export default class MergePackageXml extends SfCommand<any> {
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(MergePackageXml);
     this.folder = flags.folder || "./manifest";
     this.pattern = flags.pattern || "/**/*package*.xml";
     this.packageXmlFiles = flags.packagexmls ? flags.packagexmls.split(",") : [];

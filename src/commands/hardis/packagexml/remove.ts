@@ -22,7 +22,8 @@ export class PackageXmlRemove extends SfCommand<any> {
     }),
     outputfile: Flags.string({
       char: 'o',
-      description: 'package.xml output file'
+      description: 'package.xml output file',
+      required: true
     }),
     debug: Flags.boolean({
       default: false,

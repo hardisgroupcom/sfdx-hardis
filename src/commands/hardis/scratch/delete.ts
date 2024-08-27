@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { execCommand, execSfdxJson, uxLog } from "../../../common/utils/index.js";
@@ -35,17 +35,18 @@ export default class ScratchDelete extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
-  protected static requiresDevhubUsername = true;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(ScratchDelete);
     const debugMode = flags.debug || false;
 
     // List all scratch orgs referenced on local computer
     const orgListRequest = "sf org list";
-    const hubOrgUsername = this.hubOrg.getUsername();
+    const hubOrgUsername = flags['target-dev-hub'].getUsername();
     const orgListResult = await execSfdxJson(orgListRequest, this, { fail: true, output: false, debug: debugMode });
     const scratchOrgsSorted = sortArray(orgListResult?.result?.scratchOrgs || [], {
       by: ["username", "alias", "instanceUrl"],

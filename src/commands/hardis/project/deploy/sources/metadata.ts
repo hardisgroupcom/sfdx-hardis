@@ -8,7 +8,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils/index.js";
 import { createTempDir, execCommand, uxLog } from "../../../../../common/utils/index.js";
-import { deployDestructiveChanges, deployMetadatas } from "../../../../../common/utils/deployUtils";
+import { deployDestructiveChanges, deployMetadatas } from "../../../../../common/utils/deployUtils.js";
 import { getConfig } from "../../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory

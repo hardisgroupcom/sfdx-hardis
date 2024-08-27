@@ -13,7 +13,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgSelect extends SfCommand<any> {
+export default class OrgConnect extends SfCommand<any> {
   public static title = "Connect to an org";
 
   public static description = `Connect to an org without setting it as default username, then proposes to open the org in web browser
@@ -45,6 +45,7 @@ export default class OrgSelect extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(OrgConnect);
     this.debugMode = flags.debug || false;
 
     // Prompt org to connect to

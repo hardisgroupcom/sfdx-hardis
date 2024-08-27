@@ -118,7 +118,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     },
   ];
 
-  private permissionSet = {
+  private permissionSet: any = {
     regex: `/**/permissionsets/*.permissionset-meta.xml`,
     type: "Permission sets",
     name: "PermissionSet",
@@ -126,7 +126,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     elementsIgnored: [],
   };
 
-  private profiles = {
+  private profiles: any = {
     regex: `/**/profiles/*.profile-meta.xml`,
     type: "Profiles",
     name: "Profile",
@@ -191,7 +191,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     // Write report
     await this.writeOutputFile();
     // Send notification
-    await this.manageNotification();
+    await this.manageNotification(flags);
     // Prompt user if he/she wants to update a Permission set with missing elements
     await this.handleFixIssues();
     // Handle output status & exitCode
@@ -230,7 +230,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
 
     for (const ignoredElement of ignoreElements.split(",")) {
-      const elementTrimmed = ignoredElement.trim();
+      const elementTrimmed: string = ignoredElement.trim();
 
       if (elementTrimmed === this.profiles.name) {
         this.profiles.isIgnoredAll = true;
@@ -435,7 +435,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.outputFilesRes = await generateCsvFile(this.missingElements, this.outputFile);
   }
 
-  private async manageNotification() {
+  private async manageNotification(flags) {
     const branchMd = await getBranchMarkdown();
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";

@@ -32,7 +32,7 @@ export async function getNotificationButtons(): Promise<{ text: string; url: str
  * @returns {Promise<string>} - A Promise that resolves to a markdown string for the current Git branch.
  */
 export async function getBranchMarkdown(type = "slack"): Promise<string> {
-  const currentGitBranch = await getCurrentGitBranch();
+  const currentGitBranch = await getCurrentGitBranch() || "";
   let branchMd =
     type === "jira"
       ? `{ "label": "${currentGitBranch}"}`

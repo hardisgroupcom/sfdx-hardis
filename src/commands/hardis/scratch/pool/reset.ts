@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import c from "chalk";
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
@@ -36,8 +36,8 @@ export default class ScratchPoolReset extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
-  protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
@@ -54,11 +54,11 @@ export default class ScratchPoolReset extends SfCommand<any> {
       uxLog(this, c.yellow("Configuration file must contain a poolConfig property") + "\n" + c.grey(JSON.stringify(config, null, 2)));
       return { outputString: "Configuration file must contain a poolConfig property" };
     }
-    uxLog(this, c.cyan(`Reseting scratch org pool on org ${c.green(this.hubOrg.getUsername())}...`));
+    uxLog(this, c.cyan(`Reseting scratch org pool on org ${c.green(flags['target-dev-hub'].getUsername())}...`));
     uxLog(this, c.grey("Pool config: " + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
-    const poolStorage = await getPoolStorage({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+    const poolStorage = await getPoolStorage({ devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
     let scratchOrgs = poolStorage.scratchOrgs || [];
 
     // Delete existing scratch orgs
@@ -66,7 +66,7 @@ export default class ScratchPoolReset extends SfCommand<any> {
     const scratchOrgsToDelete = [...scratchOrgs];
     scratchOrgs = [];
     poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage, { devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+    await setPoolStorage(poolStorage, { devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
     for (const scratchOrgToDelete of scratchOrgsToDelete) {
       // Authenticate to scratch org to delete
       await authenticateWithSfdxUrlStore(scratchOrgToDelete);

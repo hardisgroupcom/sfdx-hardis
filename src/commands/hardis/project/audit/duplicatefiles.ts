@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import * as readFilesRecursive from "fs-readdir-recursive";
+import readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils/index.js";
 
@@ -47,8 +47,8 @@ export default class AuditDuplicateFiles extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(AuditDuplicateFiles);
     const pathToBrowser = flags.path || process.cwd();
-    this.debug = flags.debug || false;
 
     // List all files
     const allFiles = readFilesRecursive(pathToBrowser)

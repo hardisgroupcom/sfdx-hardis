@@ -1,4 +1,4 @@
-import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils.js";
 
@@ -9,10 +9,12 @@ export class PackageXmlAppend extends SfCommand<any> {
     packagexmls: Flags.string({
       char: "p",
       description: "package.xml files path (separated by commas)",
+      required: true
     }),
     outputfile: Flags.string({
       char: "o",
       description: "package.xml output file",
+      required: true
     }),
     debug: Flags.boolean({
       default: false,
@@ -28,7 +30,7 @@ export class PackageXmlAppend extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageXmlAppend);
-    this.packageXmlFiles = flags.packagexmls.split(",");
+    this.packageXmlFiles = (flags.packagexmls || "").split(",");
     this.outputFile = flags.outputfile;
     await appendPackageXmlFilesContent(this.packageXmlFiles, this.outputFile);
     return { outputPackageXmlFile: this.outputFile };

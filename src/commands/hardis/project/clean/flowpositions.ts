@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanListViews extends SfCommand<any> {
+export default class CleanFlowPositions extends SfCommand<any> {
   public static title = "Clean Flow Positions";
 
   public static description = `Replace all positions in Auto-Layout Flows by 0 to simplify conflicts management
@@ -75,6 +75,7 @@ autoCleanTypes:
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanFlowPositions);
     this.folder = flags.folder || "./force-app";
     this.debugMode = flags.debug || false;
 

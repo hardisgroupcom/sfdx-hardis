@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { buildOrgManifest } from "../../../../common/utils/deployUtils";
+import { buildOrgManifest } from "../../../../common/utils/deployUtils.js";
 import { execCommand, filterPackageXml, uxLog } from "../../../../common/utils/index.js";
 import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
 import { CONSTANTS } from "../../../../config/index.js";

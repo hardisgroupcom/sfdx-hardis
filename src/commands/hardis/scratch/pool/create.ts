@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import c from "chalk";
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { AuthInfo, Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getConfig, setConfig } from "../../../../config/index.js";
@@ -49,8 +49,8 @@ export default class ScratchPoolCreate extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
-  protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
@@ -100,9 +100,9 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
 
     // Request additional setup to the user
     const provider = await instantiateProvider(response.storageService);
-    await provider.userSetup({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+    await provider.userSetup({ devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
 
-    const authInfo = await AuthInfo.create({ username: this.hubOrg.getUsername() });
+    const authInfo = await AuthInfo.create({ username: flags['target-dev-hub'].getUsername() });
     const sfdxAuthUrl = authInfo.getSfdxAuthUrl();
     if (sfdxAuthUrl) {
       uxLog(this, c.cyan(`You need to define CI masked variable ${c.green("SFDX_AUTH_URL_DEV_HUB")} = ${c.green(sfdxAuthUrl)}`));

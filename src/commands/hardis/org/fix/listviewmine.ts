@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "../../../../common/utils/index.js";
-import { restoreListViewMine } from "../../../../common/utils/orgConfigUtils";
+import { restoreListViewMine } from "../../../../common/utils/orgConfigUtils.js";
 import { getConfig } from "../../../../config/index.js";
 import c from "chalk";
 

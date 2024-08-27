@@ -54,6 +54,7 @@ export default class CleanManagedItems extends SfCommand<any> {
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanManagedItems);
     this.namespace = flags.namespace || "";
     this.folder = flags.folder || "./force-app";
     this.debugMode = flags.debug || false;

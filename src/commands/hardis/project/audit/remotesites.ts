@@ -49,7 +49,6 @@ export default class RemoteSites extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
-    this.debug = flags.debug || false;
 
     const pattern = "**/*.{remoteSite-meta.xml,remoteSite}";
     const catchers = [

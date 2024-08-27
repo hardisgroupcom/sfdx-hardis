@@ -57,7 +57,7 @@ export default class CallInCallOut extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
-    this.debug = flags.debug || false;
+    const { flags } = await this.parse(CallInCallOut);
     const minimumApiVersion = flags.minimumapiversion || false;
     const failIfError = flags.failiferror || false;
 
@@ -92,7 +92,7 @@ export default class CallInCallOut extends SfCommand<any> {
         fileName: item.fileName,
         nameSpace: item.fileName.includes("__") ? item.fileName.split("__")[0] : "Custom",
         apiVersion: parseFloat(item.detail["apiVersion"]),
-        valid: parseFloat(item.detail["apiVersion"]) > minimumApiVersion ? "yes" : "no",
+        valid: parseFloat(item.detail["apiVersion"]) > (minimumApiVersion || 100) ? "yes" : "no",
       };
     });
 

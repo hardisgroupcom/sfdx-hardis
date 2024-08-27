@@ -1,12 +1,12 @@
 import { uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
-import { SlackProvider } from "./slackProvider";
-import { UtilsNotifs as utilsNotifs } from "./utils/index.js";
-import { TeamsProvider } from "./teamsProvider";
+import { SlackProvider } from "./slackProvider.js";
+import { UtilsNotifs as utilsNotifs } from "./utils.js";
+import { TeamsProvider } from "./teamsProvider.js";
 import { getConfig } from "../../config/index.js";
-import { EmailProvider } from "./emailProvider";
-import { ApiProvider } from "./apiProvider";
+import { EmailProvider } from "./emailProvider.js";
+import { ApiProvider } from "./apiProvider.js";
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {

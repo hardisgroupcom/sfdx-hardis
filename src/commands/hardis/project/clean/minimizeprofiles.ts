@@ -6,7 +6,7 @@ import c from "chalk";
 import { glob } from "glob";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils/index.js";
-import { minimizeProfile } from "../../../../common/utils/profileUtils";
+import { minimizeProfile } from "../../../../common/utils/profileUtils.js";
 import { getConfig } from "../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
@@ -78,6 +78,7 @@ skipMinimizeProfiles
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanMinimizeProfiles);
     this.folder = flags.folder || "./force-app";
     this.debugMode = flags.debug || false;
 

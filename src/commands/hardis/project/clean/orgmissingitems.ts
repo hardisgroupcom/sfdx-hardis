@@ -6,7 +6,7 @@ import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import { mergeObjectPropertyLists, uxLog } from "../../../../common/utils/index.js";
-import { buildOrgManifest } from "../../../../common/utils/deployUtils";
+import { buildOrgManifest } from "../../../../common/utils/deployUtils.js";
 import { promptOrg } from "../../../../common/utils/orgUtils.js";
 import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 
@@ -56,8 +56,8 @@ export default class OrgMissingItems extends SfCommand<any> {
   public static requiresProject = true;
   /* jscpd:ignore-end */
   protected folder: string;
-  protected targetOrgUsernameAlias: string;
-  protected packageXmlFull: string;
+  protected targetOrgUsernameAlias: string | null;
+  protected packageXmlFull: string | null;
   protected debugMode = false;
 
   protected standardFields = [
@@ -78,6 +78,7 @@ export default class OrgMissingItems extends SfCommand<any> {
   protected standardSuffixes = ["Street", "City", "State", "PostalCode", "Country", "Latitude", "Longitude", "GeocodeAccuracy"];
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(OrgMissingItems);
     this.folder = flags.folder || "./force-app";
     this.debugMode = flags.debug || false;
     this.targetOrgUsernameAlias = flags.packagexmltargetorg || null;

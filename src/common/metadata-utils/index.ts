@@ -8,12 +8,12 @@ import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, gi
 import { CONSTANTS } from "../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { getCache, setCache } from "../cache/index.js";
-import { buildOrgManifest } from "../utils/deployUtils";
-import { listMajorOrgs } from "../utils/orgConfigUtils";
+import { buildOrgManifest } from "../utils/deployUtils.js";
+import { listMajorOrgs } from "../utils/orgConfigUtils.js";
 import { isSfdxProject } from "../utils/projectUtils.js";
 import { prompts } from "../utils/prompts.js";
 import { parsePackageXmlFile } from "../utils/xmlUtils.js";
-import { listMetadataTypes } from "./metadataList";
+import { listMetadataTypes } from "./metadataList.js";
 import { FileStatusResult } from "simple-git";
 
 class MetadataUtils {
@@ -455,7 +455,7 @@ class MetadataUtils {
   }
 
   // List installed packages on a org
-  public static async listInstalledPackages(orgAlias: string = null, commandThis: any): Promise<any[]> {
+  public static async listInstalledPackages(orgAlias: string | null = null, commandThis: any): Promise<any[]> {
     let listCommand = "sf package installed list";
     if (orgAlias != null) {
       listCommand += ` --target-org ${orgAlias}`;
@@ -467,14 +467,14 @@ class MetadataUtils {
       });
       return alreadyInstalled?.result || [];
     } catch (e) {
-      uxLog(this, c.yellow(`Unable to list installed packages: This is probably a @salesforce/cli bug !\n${(e as Error).message}\n${e.stack}`));
+      uxLog(this, c.yellow(`Unable to list installed packages: This is probably a @salesforce/cli bug !\n${(e as Error).message}\n${(e as Error).stack}`));
       globalThis.workaroundCliPackages = true;
       return [];
     }
   }
 
   // Install package on existing org
-  public static async installPackagesOnOrg(packages: any[], orgAlias: string = null, commandThis: any = null, context = "none") {
+  public static async installPackagesOnOrg(packages: any[], orgAlias: string | null = null, commandThis: any = null, context = "none") {
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(orgAlias, this);
     if (globalThis?.workaroundCliPackages === true) {
       uxLog(

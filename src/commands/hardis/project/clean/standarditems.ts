@@ -43,6 +43,7 @@ export default class CleanStandardItems extends SfCommand<any> {
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanStandardItems);
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary

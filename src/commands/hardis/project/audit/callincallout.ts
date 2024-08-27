@@ -47,8 +47,6 @@ export default class CallInCallOut extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
-    this.debug = flags.debug || false;
-
     const pattern = "**/*.{cls,trigger}";
     const catchers = [
       {

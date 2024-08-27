@@ -44,14 +44,14 @@ export class UtilsNotifs {
   }
 
   public static prefixWithSeverityEmoji(text: string, severity: NotifSeverity | null) {
-    const emojis = {
+    const emojis: any = {
       critical: "💥",
       error: "❌",
       warning: "⚠️",
       info: "ℹ️",
       success: "✅",
     };
-    const emoji = emojis[severity] || emojis["info"];
+    const emoji = emojis[severity || ""] || emojis["info"];
     return `${emoji} ${text}`;
   }
 

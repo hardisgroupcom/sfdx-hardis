@@ -49,6 +49,7 @@ export default class CleanListViews extends SfCommand<any> {
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(CleanListViews);
     this.folder = flags.folder || "./force-app";
     this.debugMode = flags.debug || false;
 

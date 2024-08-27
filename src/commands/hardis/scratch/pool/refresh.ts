@@ -40,8 +40,8 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
-  protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
@@ -63,7 +63,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
     uxLog(this, c.grey("Pool config: " + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
-    const poolStorage = await getPoolStorage({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+    const poolStorage = await getPoolStorage({ devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
     let scratchOrgs = poolStorage.scratchOrgs || [];
 
     /* jscpd:ignore-end */
@@ -96,7 +96,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
     // Delete expired orgs and update pool if found
     if (scratchOrgsToDelete.length > 0) {
       poolStorage.scratchOrgs = scratchOrgs;
-      await setPoolStorage(poolStorage, { devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+      await setPoolStorage(poolStorage, { devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
       for (const scratchOrgToDelete of scratchOrgsToDelete) {
         // Authenticate to scratch org to delete
         await authenticateWithSfdxUrlStore(scratchOrgToDelete);
