@@ -193,10 +193,10 @@ export class GithubProvider extends GitProviderRoot {
     const githubWorkflowName = github.context.workflow;
     const githubJobUrl = `${github.context.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${github.context.runId}`;
     // Build note message
-    const messageKey = prMessag(e as Error).messageKey + "-" + githubWorkflowName + "-" + pullRequestId;
+    const messageKey = prMessage.messageKey + "-" + githubWorkflowName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
 
-${prMessag(e as Error).message}
+${prMessage.message}
 
 _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubWorkflowName}](${githubJobUrl})_
 <!-- sfdx-hardis message-key ${messageKey} -->

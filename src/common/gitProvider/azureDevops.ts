@@ -209,10 +209,10 @@ ${this.getPipelineVariablesConfig()}
     const SYSTEM_TEAMPROJECT = process.env.SYSTEM_TEAMPROJECT.replace(/ /g, "%20");
     const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
-    const messageKey = prMessag(e as Error).messageKey + "-" + azureJobName + "-" + pullRequestId;
+    const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
     let messageBody = `**${prMessage.title || ""}**
 
-${prMessag(e as Error).message}
+${prMessage.message}
 
 <br/>
 

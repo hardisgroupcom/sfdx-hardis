@@ -107,7 +107,7 @@ If you don't have unique field to identify an object, use composite external ids
     for (const additionalFile of this.additionalFiles) {
       const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
       await fs.writeFile(additionalFileFull, additionalFile.text);
-      uxLog(this, c.cyan(additionalFil(e as Error).message + ": ") + c.yellow(additionalFileFull));
+      uxLog(this, c.cyan(additionalFile.message + ": ") + c.yellow(additionalFileFull));
       WebSocketClient.requestOpenFile(additionalFileFull);
     }
     return { exportJsonFile, sfdmuProjectFolder };
