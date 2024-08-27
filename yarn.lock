@@ -1470,6 +1470,13 @@
     strip-ansi "^6.0.0"
     xml2js "^0.6.2"
 
+"@keyv/serialize@*":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@keyv/serialize/-/serialize-1.0.1.tgz#8dae240d5fe11c589e38b73a2db238dcf26a33cf"
+  integrity sha512-kKXeynfORDGPUEEl2PvTExM2zs+IldC6ZD8jPcfvI351MDNtfMlw9V9s4XZXuJNDK2qR5gbEKxRyoYx3quHUVQ==
+  dependencies:
+    buffer "^6.0.3"
+
 "@kwsites/file-exists@^1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@kwsites/file-exists/-/file-exists-1.1.1.tgz#ad1efcac13e1987d8dbaf235ef3be5b0d96faa99"
@@ -2453,6 +2460,13 @@
   dependencies:
     "@types/trusted-types" "*"
 
+"@types/extract-zip@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@types/extract-zip/-/extract-zip-2.0.1.tgz#50a44968d8cfd683da47aeafd83899f252c9099b"
+  integrity sha512-Rvy84OCUrbGquSMH2a2ifbHB3CEu95LguiihLf0gc4uFaZ7psB6Khq+s8a7rsPGztSlxihu1om7+ZVxBh8iJcg==
+  dependencies:
+    extract-zip "*"
+
 "@types/fs-readdir-recursive@^1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@types/fs-readdir-recursive/-/fs-readdir-recursive-1.1.3.tgz#a77009e049060b4c399d2bc7d5d41097d8d1c617"
@@ -3287,6 +3301,11 @@ bcrypt-pbkdf@^1.0.0:
   dependencies:
     tweetnacl "^0.14.3"
 
+before-after-hook@^2.1.0:
+  version "2.2.3"
+  resolved "https://registry.yarnpkg.com/before-after-hook/-/before-after-hook-2.2.3.tgz#c51e809c81a4e354084422b9b26bad88249c517c"
+  integrity sha512-NzUnlZexiaH/46WDhANlyR2bXRopNg4F/zuSA3OpZnllCUgRaOF2znDioDWrmbNVsuZk6l9pMquQB38cfBZwkQ==
+
 big-integer@^1.6.17:
   version "1.6.52"
   resolved "https://registry.yarnpkg.com/big-integer/-/big-integer-1.6.52.tgz#60a887f3047614a8e1bffe5d7173490a97dc8c85"
@@ -3304,6 +3323,17 @@ binary@~0.3.0:
   dependencies:
     buffers "~0.1.1"
     chainsaw "~0.1.0"
+
+bitbucket@^2.12.0:
+  version "2.12.0"
+  resolved "https://registry.yarnpkg.com/bitbucket/-/bitbucket-2.12.0.tgz#bb13796502c1d3ace0143fc01777140e7e18e78b"
+  integrity sha512-YqaiTPEmn5mkwdU2gGcJZcQ6B8/DhCHhc3SSYqSpnef6nSTTSa/2GSBoLEgPLqAuqrQITGKq8MgYkfDMtnJPuw==
+  dependencies:
+    before-after-hook "^2.1.0"
+    deepmerge "^4.2.2"
+    is-plain-object "^3.0.0"
+    node-fetch "^2.6.0"
+    url-template "^2.0.8"
 
 bl@^4.0.3, bl@^4.1.0:
   version "4.1.0"
@@ -4165,6 +4195,11 @@ deep-is@^0.1.3:
   resolved "https://registry.yarnpkg.com/deep-is/-/deep-is-0.1.4.tgz#a6f2dce612fadd2ef1f519b73551f17e85199831"
   integrity sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==
 
+deepmerge@^4.2.2:
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/deepmerge/-/deepmerge-4.3.1.tgz#44b5f2147cd3b00d4b56137685966f26fd25dd4a"
+  integrity sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==
+
 default-require-extensions@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/default-require-extensions/-/default-require-extensions-3.0.0.tgz#e03f93aac9b2b6443fc52e5e4a37b3ad9ad8df96"
@@ -4860,7 +4895,7 @@ external-editor@^3.0.3, external-editor@^3.1.0:
     iconv-lite "^0.4.24"
     tmp "^0.0.33"
 
-extract-zip@^2.0.1:
+extract-zip@*, extract-zip@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/extract-zip/-/extract-zip-2.0.1.tgz#663dca56fe46df890d5f131ef4a06d22bb8ba13a"
   integrity sha512-GDhU9ntwuKyGXdZBUgTIe+vXnWj0fppUEtMDL0+idd5Sta8TGpHssn/eusA9mrPr9qNDym6SxAYZjNvCn/9RBg==
@@ -6103,6 +6138,11 @@ is-plain-object@^2.0.4:
   dependencies:
     isobject "^3.0.1"
 
+is-plain-object@^3.0.0:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/is-plain-object/-/is-plain-object-3.0.1.tgz#662d92d24c0aa4302407b0d45d21f2251c85f85b"
+  integrity sha512-Xnpx182SBMrr/aBik8y+GuR4U1L9FqMSojwDQwPMmxyC6bvEqly9UBCxhauBF5vNh2gwWJNX6oDV7O+OM4z34g==
+
 is-potential-custom-element-name@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/is-potential-custom-element-name/-/is-potential-custom-element-name-1.0.1.tgz#171ed6f19e3ac554394edf78caa05784a45bebb5"
@@ -6612,6 +6652,13 @@ keyv@^4.5.3:
   integrity sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==
   dependencies:
     json-buffer "3.0.1"
+
+keyv@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/keyv/-/keyv-5.0.1.tgz#4c7918f33cb7fc6403a6d8efa4edf854ee2574b1"
+  integrity sha512-NH+3ditq1O5uTSQiiHrGOTkwUniRox/lZ8tHARdsu5Skyv0AhZca0OCycWfR1fTECvSRftMQnXqx7cBpxo8G1g==
+  dependencies:
+    "@keyv/serialize" "*"
 
 kind-of@^3.0.2:
   version "3.2.2"
@@ -7295,7 +7342,7 @@ no-case@^3.0.4:
     lower-case "^2.0.2"
     tslib "^2.0.3"
 
-node-fetch@^2.6.1, node-fetch@^2.6.7, node-fetch@^2.6.9:
+node-fetch@^2.6.0, node-fetch@^2.6.1, node-fetch@^2.6.7, node-fetch@^2.6.9:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.7.0.tgz#d0f0fa6e3e2dc1d27efcd8ad99d550bda94d187d"
   integrity sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==
@@ -9693,6 +9740,11 @@ url-parse@^1.5.3:
   dependencies:
     querystringify "^2.1.1"
     requires-port "^1.0.0"
+
+url-template@^2.0.8:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/url-template/-/url-template-2.0.8.tgz#fc565a3cccbff7730c775f5641f9555791439f21"
+  integrity sha512-XdVKMF4SJ0nP/O7XIPB0JwAEuT9lDIYnNsK8yGVe43y0AWoKeJNdv3ZNWh7ksJ6KqQFjOO6ox/VEitLnaVNufw==
 
 urlpattern-polyfill@10.0.0:
   version "10.0.0"

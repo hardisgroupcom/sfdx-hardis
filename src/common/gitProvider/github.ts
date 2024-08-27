@@ -1,6 +1,6 @@
 import * as github from "@actions/github";
 import c from "chalk";
-import { GitProviderRoot } from "./gitProviderRoot";
+import { GitProviderRoot } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils";
@@ -9,6 +9,8 @@ export class GithubProvider extends GitProviderRoot {
   private octokit: InstanceType<typeof GitHub>;
   private repoOwner: string;
   private repoName: string;
+  public serverUrl: string;
+  public token: string;
 
   constructor() {
     super();

@@ -1,4 +1,4 @@
-import { GitProviderRoot } from "./gitProviderRoot";
+import { GitProviderRoot } from "./gitProviderRoot.js";
 import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { git, uxLog } from "../utils/index.js";
@@ -6,11 +6,13 @@ import { Bitbucket, Schema } from "bitbucket";
 
 export class BitbucketProvider extends GitProviderRoot {
   private bitbucket: InstanceType<typeof Bitbucket>;
+  public serverUrl: string = "";
+  public token: string;
 
   constructor() {
     super();
-    const token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN;
-    const clientOptions = { auth: { token: token } };
+    this.token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || "";
+    const clientOptions = { auth: { token: this.token } };
     this.bitbucket = new Bitbucket(clientOptions);
   }
 
@@ -18,7 +20,7 @@ export class BitbucketProvider extends GitProviderRoot {
     return "sfdx-hardis Bitbucket connector";
   }
 
-  public async getCurrentJobUrl(): Promise<string> {
+  public async getCurrentJobUrl(): Promise<string | null> {
     if (process.env.BITBUCKET_WORKSPACE && process.env.BITBUCKET_REPO_SLUG && process.env.BITBUCKET_BUILD_NUMBER) {
       const jobUrl = `https://bitbucket.org/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/pipelines/results/${process.env.BITBUCKET_BUILD_NUMBER}`;
       return jobUrl;
@@ -34,7 +36,7 @@ export class BitbucketProvider extends GitProviderRoot {
     return null;
   }
 
-  public async getCurrentBranchUrl(): Promise<string> {
+  public async getCurrentBranchUrl(): Promise<string | null> {
     if (process.env.BITBUCKET_WORKSPACE && process.env.BITBUCKET_REPO_SLUG && process.env.BITBUCKET_BRANCH) {
       const currentBranchUrl = `https://bitbucket.org/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/branch/${process.env.BITBUCKET_BRANCH}`;
       return currentBranchUrl;
@@ -61,8 +63,8 @@ export class BitbucketProvider extends GitProviderRoot {
       const pullRequestId = Number(pullRequestIdStr);
       const pullRequest = await this.bitbucket.repositories.getPullRequest({
         pull_request_id: pullRequestId,
-        repo_slug: repoSlug,
-        workspace: workspace,
+        repo_slug: repoSlug || "",
+        workspace: workspace || "",
       });
 
       if (pullRequest?.data.destination) {
@@ -79,13 +81,13 @@ export class BitbucketProvider extends GitProviderRoot {
     const latestPullRequestsOnBranch = await this.bitbucket.repositories.listPullrequestsForCommit({
       // cspell:disable-line
       commit: sha,
-      repo_slug: repoSlug,
-      workspace: workspace,
+      repo_slug: repoSlug || "",
+      workspace: workspace || "",
     });
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch?.data?.values?.filter(
       (pr) => pr.state === "MERGED" && pr.merge_commit?.hash === sha,
     );
-    if (latestMergedPullRequestOnBranch?.length > 0) {
+    if (latestMergedPullRequestOnBranch?.length && latestMergedPullRequestOnBranch?.length > 0) {
       const pullRequest = latestMergedPullRequestOnBranch[0];
       // Add cross git provider properties used by sfdx-hardis
       return this.completePullRequestInfo(pullRequest);
@@ -95,32 +97,32 @@ export class BitbucketProvider extends GitProviderRoot {
     return null;
   }
 
-  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
+  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId = null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const latestMergedPullRequestsOnBranch = await this.bitbucket.repositories.listPullRequests({
-      repo_slug: repoSlug,
-      workspace: workspace,
+      repo_slug: repoSlug || "",
+      workspace: workspace || "",
       state: "MERGED",
       q: `destination.branch.name = "${gitBranch}"`,
       sort: "-updated_on",
     });
-    if (latestMergedPullRequestsOnBranch?.data?.values?.length > 0) {
+    if (latestMergedPullRequestsOnBranch?.data?.values?.length && latestMergedPullRequestsOnBranch?.data?.values?.length > 0) {
       const latestPullRequest = latestMergedPullRequestsOnBranch?.data?.values[0];
       const latestPullRequestId = latestPullRequest.id;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, repoSlug, workspace, deploymentCheckId, latestPullRequest);
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId || 0, repoSlug || "", workspace || "", deploymentCheckId, latestPullRequest);
     }
 
     return deploymentCheckId;
   }
 
-  public async getPullRequestDeploymentCheckId(): Promise<string> {
+  public async getPullRequestDeploymentCheckId(): Promise<string | null> {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
       const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
       const workspace = process.env.BITBUCKET_WORKSPACE || null;
-      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.id, repoSlug, workspace, null, pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.id, repoSlug || "", workspace || "", null, pullRequestInfo);
     }
     return null;
   }
@@ -140,7 +142,7 @@ export class BitbucketProvider extends GitProviderRoot {
 
     for (const comment of comments?.data?.values || []) {
       if ((comment?.content?.raw || "").includes(`<!-- sfdx-hardis deployment-id `)) {
-        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment?.content?.raw);
+        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment?.content?.raw || "");
         if (matches) {
           deploymentCheckId = matches[1];
           uxLog(
@@ -192,12 +194,12 @@ export class BitbucketProvider extends GitProviderRoot {
     const existingComments = await this.bitbucket.repositories.listPullRequestComments({
       pull_request_id: pullRequestId,
       repo_slug: repoSlug,
-      workspace: workspace,
+      workspace: workspace || "",
     });
-    let existingCommentId = null;
+    let existingCommentId: number | null = null;
     for (const existingComment of existingComments?.data?.values || []) {
-      if (existingComment?.content.raw?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
-        existingCommentId = existingComment.id;
+      if (existingComment?.content?.raw && existingComment?.content.raw?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+        existingCommentId = existingComment.id || null;
       }
     }
 
@@ -206,7 +208,7 @@ export class BitbucketProvider extends GitProviderRoot {
       // Update existing comment
       uxLog(this, c.grey("[Bitbucket integration] Updating Pull Request Comment on Bitbucket..."));
       const pullRequestComment = await this.bitbucket.repositories.updatePullRequestComment({
-        workspace: workspace,
+        workspace: workspace || "",
         repo_slug: repoSlug,
         pull_request_id: pullRequestId,
         comment_id: existingCommentId,
@@ -214,7 +216,7 @@ export class BitbucketProvider extends GitProviderRoot {
       });
 
       const prResult: PullRequestMessageResult = {
-        posted: pullRequestComment?.data?.id > 0,
+        posted: (pullRequestComment?.data?.id || -1) > 0,
         providerResult: pullRequestComment,
       };
       return prResult;
@@ -223,14 +225,14 @@ export class BitbucketProvider extends GitProviderRoot {
       uxLog(this, c.grey("[Bitbucket integration] Adding Pull Request Comment on Bitbucket..."));
 
       const pullRequestComment = await this.bitbucket.repositories.createPullRequestComment({
-        workspace: workspace,
+        workspace: workspace || "",
         repo_slug: repoSlug,
         pull_request_id: pullRequestId,
         _body: commentBody,
       });
 
       const prResult: PullRequestMessageResult = {
-        posted: pullRequestComment?.data?.id > 0,
+        posted: (pullRequestComment?.data?.id || -1) > 0,
         providerResult: pullRequestComment,
       };
       return prResult;

@@ -4,12 +4,12 @@ import * as path from "path";
 import * as os from "os";
 import { getConfig } from "../../config/index.js";
 import { uxLog } from "../utils/index.js";
-import { KeyValueProviderInterface } from "../utils/keyValueUtils";
+import { KeyValueProviderInterface } from "../utils/keyValueUtils.js";
 
 export class LocalTestProvider implements KeyValueProviderInterface {
   name = "localtest";
   description = "Writes in a local file (just for tests, can not work in CI)";
-  poolStorageLocalFileName = null;
+  poolStorageLocalFileName: string | null = null;
 
   async initialize() {
     await this.managePoolStorageLocalFileName();

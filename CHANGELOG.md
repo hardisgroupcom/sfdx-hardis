@@ -52,7 +52,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx hardis:mdapi:deploy
 - Deprecate hardis:deploy:sources:metadata as nobody used metadata format anymore
 - hardis:work:new: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
-
+- Convert plugin from SFDX plugin core to SF Cli Plugin core
+- Remove not used keyValueStores
 ## [4.53.0] 2024-08-20
 
 - Upgrade workflows to Node 20 (fixes <https://github.com/hardisgroupcom/sfdx-hardis/issues/668>)

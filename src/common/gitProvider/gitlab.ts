@@ -2,10 +2,12 @@ import { Gitlab } from "@gitbeaker/node";
 import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { GitProviderRoot } from "./gitProviderRoot";
+import { GitProviderRoot } from "./gitProviderRoot.js";
 
 export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
+  public serverUrl: string;
+  public token: string;
 
   constructor() {
     super();

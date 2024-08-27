@@ -6,12 +6,9 @@ import * as path from "path";
 import { getConfig, setConfig } from "../../config/index.js";
 import { createTempDir, execSfdxJson, isCI, uxLog } from "./index.js";
 import { KeyValueProviderInterface } from "./keyValueUtils.js";
-import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz.js";
-import { KvdbIoProvider } from "../keyValueProviders/kvdbIo.js";
 import { LocalTestProvider } from "../keyValueProviders/localtest.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "./prompts.js";
-import { RedisProvider } from "../keyValueProviders/redis.js";
 import { SalesforceProvider } from "../keyValueProviders/salesforce.js";
 
 let keyValueProvider: KeyValueProviderInterface;
@@ -171,7 +168,7 @@ export async function tryFetchScratchOrg(options: any) {
 }
 
 export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInterface>> {
-  return [SalesforceProvider, RedisProvider, KvdbIoProvider, KeyValueXyzProvider, LocalTestProvider].map((cls) => new cls());
+  return [SalesforceProvider, LocalTestProvider].map((cls) => new cls());
 }
 
 async function initializeProvider(options: any) {

@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import * as extractZip from "extract-zip";
+import extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
 import sortArray from "sort-array";
@@ -535,7 +535,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
             fail: true,
             output: true,
           });
-        } catch (ex) {
+        } catch (ex: any) {
           const ignoredErrors = ["Une version plus récente de ce package est installée.", "A newer version of this package is currently installed."];
           // If ex.message contains at least one of the ignoredError, don't rethrow exception
           if (!ignoredErrors.some((msg) => ex.message && ex.message.includes(msg))) {

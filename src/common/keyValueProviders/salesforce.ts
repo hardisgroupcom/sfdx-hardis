@@ -7,15 +7,15 @@ import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { uxLog } from "../utils/index.js";
 import { soqlQuery } from "../utils/apiUtils.js";
 import { deployMetadatas } from "../utils/deployUtils.js";
-import { KeyValueProviderInterface } from "../utils/keyValueUtils";
-import { setPoolStorage } from "../utils/poolUtils";
+import { KeyValueProviderInterface } from "../utils/keyValueUtils.js";
+import { setPoolStorage } from "../utils/poolUtils.js";
 
 export class SalesforceProvider implements KeyValueProviderInterface {
   name = "salesforce";
   description = "Use a custom object on a Salesforce org (usually DevHub) to store scratch org pool tech info";
 
-  conn: Connection = null;
-  recordName = null;
+  conn: Connection | null = null;
+  recordName: string | null = null;
 
   async initialize(options) {
     await this.manageSfdcOrgAuth(options);
@@ -24,6 +24,9 @@ export class SalesforceProvider implements KeyValueProviderInterface {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getValue(_key: string | null = null) {
+    if (!this.conn) {
+      return "ERROR";
+    }
     await this.manageSfdcOrgAuth();
     // Single record upsert
     const queryRes = await soqlQuery(
@@ -40,6 +43,9 @@ export class SalesforceProvider implements KeyValueProviderInterface {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async setValue(_key: string | null = null, value: any) {
     await this.manageSfdcOrgAuth();
+    if (!this.conn) {
+      return false;
+    }
     // Single record upsert
     const queryRes = await soqlQuery(
       `SELECT Id,Name,ValueText__c FROM SfdxHardisKeyValueStore__c WHERE Name='${this.recordName}' LIMIT 1`,
@@ -63,6 +69,9 @@ export class SalesforceProvider implements KeyValueProviderInterface {
   }
 
   async updateActiveScratchOrg(scratchOrg: any, keyValues: any) {
+    if (!this.conn) {
+      return;
+    }
     const orgId = scratchOrg?.scratchOrgInfo?.orgId ? scratchOrg.scratchOrgInfo.orgId.slice(0, 15) : scratchOrg.Id.slice(0, 15);
     const activeScratchOrg: any = await this.conn.sobject("ActiveScratchOrg").findOne({ ScratchOrg: orgId }, { Id: true, Description: true });
     keyValues.Id = activeScratchOrg.Id;

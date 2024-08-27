@@ -1,16 +1,16 @@
 import c from "chalk";
 import { getCurrentGitBranch, isCI, uxLog } from "../utils/index.js";
-import { AzureDevopsProvider } from "./azureDevops";
-import { GithubProvider } from "./github";
-import { GitlabProvider } from "./gitlab";
-import { GitProviderRoot } from "./gitProviderRoot";
-import { BitbucketProvider } from "./bitbucket";
+import { AzureDevopsProvider } from "./azureDevops.js";
+import { GithubProvider } from "./github.js";
+import { GitlabProvider } from "./gitlab.js";
+import { GitProviderRoot } from "./gitProviderRoot.js";
+import { BitbucketProvider } from "./bitbucket.js";
 import Debug from "debug";
 import { getEnvVar } from "../../config/index.js";
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
-  static getInstance(): GitProviderRoot {
+  static getInstance(): GitProviderRoot | null {
     // Azure
     if (process.env.SYSTEM_ACCESSTOKEN) {
       const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
@@ -109,7 +109,7 @@ export abstract class GitProvider {
     }
   }
 
-  static async getDeploymentCheckId(): Promise<string> {
+  static async getDeploymentCheckId(): Promise<string | null> {
     const gitProvider = GitProvider.getInstance();
     if (gitProvider == null) {
       return null;
@@ -120,7 +120,7 @@ export abstract class GitProvider {
         return gitProvider.getPullRequestDeploymentCheckId();
       }
       // Classic way: get deployment check Id from latest merged Pull Request
-      const currentGitBranch = await getCurrentGitBranch();
+      const currentGitBranch = await getCurrentGitBranch() || "";
       return gitProvider.getBranchDeploymentCheckId(currentGitBranch);
     } catch (e) {
       uxLog(this, c.yellow(`Error while trying to retrieve deployment check id:\n${(e as Error).message}`));
@@ -128,7 +128,7 @@ export abstract class GitProvider {
     }
   }
 
-  static async getCurrentBranchUrl(): Promise<string> {
+  static async getCurrentBranchUrl(): Promise<string | null> {
     const gitProvider = GitProvider.getInstance();
     if (gitProvider == null) {
       return null;
@@ -136,7 +136,7 @@ export abstract class GitProvider {
     return gitProvider.getCurrentBranchUrl();
   }
 
-  static async getJobUrl(): Promise<string> {
+  static async getJobUrl(): Promise<string | null> {
     const gitProvider = GitProvider.getInstance();
     if (gitProvider == null) {
       return null;
