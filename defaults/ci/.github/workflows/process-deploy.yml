@@ -1,3 +1,4 @@
+---
 # Manual updates in in job step "Login & Process Deployment" below:
 # - variables for additional branches: add SFDX_CLIENT_ID / KEY variables
 # - To use slack notifications, you can also define SLACK_TOKEN and SLACK_CHANNEL_ID
@@ -45,7 +46,7 @@ jobs:
             sf version --verbose --json
       # Set env branch variable (github.ref_name seems to not work)
       - name: Set env.BRANCH
-        run: echo "BRANCH=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
+        run: echo "BRANCH=$(echo "$GITHUB_REF" | cut -d'/' -f 3)" >> "$GITHUB_ENV"
       # Login & check deploy with test classes & code coverage
       - name: Login & Process Deployment
         env:
