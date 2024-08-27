@@ -32,12 +32,12 @@ export default class PackageVersionCreate extends SfCommand<any> {
     }),
     package: Flags.string({
       char: "p",
-      default: null,
+      default: "",
       description: "Package identifier that you want to use to generate a new package version",
     }),
     installkey: Flags.string({
       char: "k",
-      default: null,
+      default: "",
       description: "Package installation key",
     }),
     deleteafter: Flags.boolean({
@@ -61,10 +61,10 @@ export default class PackageVersionCreate extends SfCommand<any> {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
 
-  protected package: string;
+  protected package: string | null;
   protected deleteAfter = false;
   protected install = false;
-  protected installKey = null;
+  protected installKey: string | null = null;
   protected promote = false;
 
   /* jscpd:ignore-end */
@@ -75,11 +75,11 @@ export default class PackageVersionCreate extends SfCommand<any> {
     this.install = flags.install || false;
     this.installKey = flags.installkey || null;
     this.deleteAfter = flags.deleteafter || false;
-    this.promote = flags.promote || false;
+    //this.promote = flags.promote || false;
     const debugMode = flags.debug || false;
     const config = await getConfig("project");
     // List project packages
-    const packageDirectories = this.project.getUniquePackageDirectories();
+    const packageDirectories = this.project?.getUniquePackageDirectories() || [];
     // Ask user to select package and input install key if not sent as command arguments
     if (this.package == null) {
       if (isCI) {

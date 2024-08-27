@@ -3,7 +3,7 @@ import c from "chalk";
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
+import { getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils.js";
 import { getConfig } from "../../../../config/index.js";
 import { execCommand, uxLog } from "../../../../common/utils/index.js";
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils.js";
@@ -46,6 +46,7 @@ export default class ScratchPoolReset extends SfCommand<any> {
   private debugMode = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(ScratchPoolReset);
     this.debugMode = flags.debug || false;
 
     // Check pool configuration is defined on project

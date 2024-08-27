@@ -70,8 +70,8 @@ Notes:
     }),
     wait: Flags.integer({
       char: "w",
-      default: Duration.minutes(60),
-      min: Duration.minutes(0), // wait=0 means deploy is asynchronous
+      default: 60,
+      min: 0, // wait=0 means deploy is asynchronous
       description: "wait",
     }),
     testlevel: Flags.enum({

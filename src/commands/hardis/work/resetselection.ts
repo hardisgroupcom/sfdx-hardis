@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -48,6 +48,7 @@ Calls a soft git reset behind the hood
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(RebuildSelection);
     this.debugMode = flags.debug || false;
 
     const targetBranch = await selectTargetBranch({ message: "Please select the target branch of your current or future merge request" });

@@ -5,7 +5,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getConfig } from "../../../../config/index.js";
 import { uxLog } from "../../../../common/utils/index.js";
-import { getPoolStorage } from "../../../../common/utils/poolUtils";
+import { getPoolStorage } from "../../../../common/utils/poolUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -44,6 +44,7 @@ export default class ScratchPoolView extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(ScratchPoolView);
     // Get pool configuration
     const config = await getConfig("project");
     const poolConfig = config.poolConfig || {};
@@ -61,7 +62,7 @@ export default class ScratchPoolView extends SfCommand<any> {
     }
 
     // Query pool storage
-    const poolStorage = await getPoolStorage({ devHubConn: this?.hubOrg?.getConnection(), devHubUsername: this?.hubOrg?.getUsername() });
+    const poolStorage = await getPoolStorage({ devHubConn: flags["target-dev-hub"]?.getConnection(), devHubUsername: flags["target-dev-hub"]?.getUsername() });
     uxLog(this, "Pool storage: " + c.grey(JSON.stringify(poolStorage, null, 2)));
 
     const scratchOrgs = poolStorage.scratchOrgs || [];

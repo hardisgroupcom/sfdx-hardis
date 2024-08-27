@@ -12,22 +12,22 @@ export default class Push extends SfCommand<any> {
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)
 `;
-  protected static readonly flagsConfig: FlagsConfig = {
+  protected static readonly flags = {
     forceoverwrite: Flags.boolean({
       char: "f",
       description: "forceoverwrite",
     }),
     wait: Flags.integer({
       char: "w",
-      default: Duration.minutes(60),
-      min: Duration.minutes(1),
+      default: 60,
+      min: 1,
       description: "wait",
     }),
     ignorewarnings: Flags.boolean({
       char: "g",
       description: "ignorewarnings",
     }),
-    quiet: flags.builtin({
+    quiet: Flags.builtin({
       description: "quiet",
     }),
     debug: Flags.boolean({

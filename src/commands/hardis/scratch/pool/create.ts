@@ -6,8 +6,8 @@ import { AnyJson } from "@salesforce/ts-types";
 import { getConfig, setConfig } from "../../../../config/index.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 import { uxLog } from "../../../../common/utils/index.js";
-import { instantiateProvider, listKeyValueProviders } from "../../../../common/utils/poolUtils";
-import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils";
+import { instantiateProvider, listKeyValueProviders } from "../../../../common/utils/poolUtils.js";
+import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -59,6 +59,7 @@ export default class ScratchPoolCreate extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     // Get pool configuration
+    const { flags } = await this.parse(ScratchPoolCreate);
     const config = await getConfig("project");
     const poolConfig = config.poolConfig || {};
 

@@ -5,8 +5,8 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getConfig } from "../../../../config/index.js";
 import { uxLog } from "../../../../common/utils/index.js";
-import { instantiateProvider } from "../../../../common/utils/poolUtils";
-import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils";
+import { instantiateProvider } from "../../../../common/utils/poolUtils.js";
+import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

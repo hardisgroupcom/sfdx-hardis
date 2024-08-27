@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -14,8 +14,8 @@ import { prompts } from "../../../common/utils/prompts.js";
 import { appendPackageXmlFilesContent, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "../../../common/utils/xmlUtils.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { CONSTANTS, getConfig, setConfig } from "../../../config/index.js";
-import CleanReferences from "../project/clean/references";
-import CleanXml from "../project/clean/xml";
+import CleanReferences from "../project/clean/references.js";
+import CleanXml from "../project/clean/xml.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -113,21 +113,22 @@ autoRemoveUserPermissions:
   protected auto = false;
   protected gitUrl: string;
   protected currentBranch: string;
-  protected targetBranch: string;
+  protected targetBranch: string | null;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(SaveTask);
     this.noPull = flags.nopull || false;
     this.noGit = flags.nogit || false;
     this.noClean = flags.noclean || false;
     this.auto = flags.auto || false;
     this.targetBranch = flags.targetbranch || null;
     this.debugMode = flags.debug || false;
-    const localBranch = await getCurrentGitBranch();
+    const localBranch = await getCurrentGitBranch() || "";
 
     // Define current and target branches
     this.gitUrl = await git().listRemote(["--get-url"]);
-    this.currentBranch = await getCurrentGitBranch();
+    this.currentBranch = await getCurrentGitBranch() || "";
     if (this.targetBranch == null) {
       const userConfig = await getConfig("user");
       if (userConfig?.localStorageBranchTargets && userConfig?.localStorageBranchTargets[localBranch]) {
@@ -145,7 +146,7 @@ autoRemoveUserPermissions:
     // Make sure git is clean before starting operations
     await this.cleanGitStatus();
     // Make sure commit is ready before starting operations
-    const orgPullStateRes = await this.ensureCommitIsReady();
+    const orgPullStateRes = await this.ensureCommitIsReady(flags);
     if (orgPullStateRes && orgPullStateRes.outputString) {
       return orgPullStateRes;
     }
@@ -219,7 +220,7 @@ autoRemoveUserPermissions:
     }
   }
 
-  private async ensureCommitIsReady() {
+  private async ensureCommitIsReady(flags) {
     // Manage project deploy start from scratch org
     if (this.noPull || this.auto) {
       // Skip pull
@@ -289,7 +290,7 @@ autoRemoveUserPermissions:
 
   private async upgradePackageXmlFilesWithDelta() {
     // Retrieving info about current branch latest commit and master branch latest commit
-    const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch);
+    const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || "");
 
     // Build package.xml delta between most recent commit and developpement
     const localPackageXml = path.join("manifest", "package.xml");

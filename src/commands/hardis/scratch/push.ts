@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { forceSourcePush } from "../../../common/utils/deployUtils.js";
@@ -38,17 +38,15 @@ Calls \`sf project deploy start\` under the hood
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
-
-
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(SourcePush);
     const debugMode = flags.debug || false;
-    await forceSourcePush(flags['target-org'].getUsername(), this, debugMode, { conn: flags['target-org'].getConnection() });
+    await forceSourcePush(flags['target-org'].getUsername() || "", this, debugMode, { conn: flags['target-org'].getConnection() });
     // Return an object to be displayed with --json
     return { outputString: "Pushed local git branch in scratch org" };
   }

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -18,8 +18,8 @@ import {
 import { prompts } from "../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { getConfig, setConfig } from "../../../config/index.js";
-import SandboxCreate from "../org/create";
-import ScratchCreate from "../scratch/create";
+import SandboxCreate from "../org/create.js";
+import ScratchCreate from "../scratch/create.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -70,8 +70,8 @@ Under the hood, it can:
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-dev-hub': optionalHubFlagWithDeprecations,
   };
-  protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
@@ -82,6 +82,7 @@ Under the hood, it can:
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(NewTask);
     this.debugMode = flags.debug || false;
 
     uxLog(this, c.cyan("This tool will assist you to create a new task (dev or config) with Hardis CI/CD"));
@@ -218,10 +219,10 @@ Under the hood, it can:
     // Select or create org that user will work in
     if (selectedOrgType === "scratch") {
       // scratch org
-      await this.selectOrCreateScratchOrg(branchName);
+      await this.selectOrCreateScratchOrg(branchName, flags);
     } else if (selectedOrgType === "sandbox") {
       // source tracked sandbox
-      await this.selectOrCreateSandbox(branchName, config);
+      await this.selectOrCreateSandbox(branchName, config, flags);
     } else {
       uxLog(this, c.yellow(`No org selected... I hope you know what you are doing, don't break anything :)`));
     }
@@ -232,8 +233,8 @@ Under the hood, it can:
   }
 
   // Select/Create scratch org
-  async selectOrCreateScratchOrg(branchName) {
-    const hubOrgUsername = this?.hubOrg?.getUsername();
+  async selectOrCreateScratchOrg(branchName, flags) {
+    const hubOrgUsername = flags["target-dev-hub"].getUsername();
     const scratchOrgList = await MetadataUtils.listLocalOrgs("scratch", { devHubUsername: hubOrgUsername });
     const currentOrg = await MetadataUtils.getCurrentOrg();
     const baseChoices = [
@@ -306,8 +307,8 @@ Under the hood, it can:
   }
 
   // Select or create sandbox
-  async selectOrCreateSandbox(branchName, config) {
-    const hubOrgUsername = this?.hubOrg?.getUsername();
+  async selectOrCreateSandbox(branchName, config, flags) {
+    const hubOrgUsername = flags['target-dev-hub']?.getUsername();
     const sandboxOrgList = await MetadataUtils.listLocalOrgs("devSandbox", { devHubUsername: hubOrgUsername });
     const sandboxResponse = await prompts({
       type: "select",
@@ -357,7 +358,7 @@ Under the hood, it can:
       if (createResult == null) {
         throw new SfError("Unable to create sandbox org");
       }
-      orgUsername = createResult.username;
+      orgUsername = (createResult as any).username;
     }
     // Selected sandbox from list
     else {

@@ -18,7 +18,7 @@ import {
   installPackages,
   promptUserEmail,
 } from "../../../common/utils/orgUtils.js";
-import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
+import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils.js";
 import { prompts } from "../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { getConfig, setConfig } from "../../../config/index.js";
@@ -98,7 +98,7 @@ export default class ScratchCreate extends SfCommand<any> {
   protected scratchOrgInfo: any;
   protected scratchOrgUsername: string;
   protected scratchOrgPassword: string;
-  protected scratchOrgSfdxAuthUrl: string;
+  protected scratchOrgSfdxAuthUrl: string | null;
   protected authFileJson: any;
   protected projectName: string;
   protected scratchOrgFromPool: any;
@@ -110,7 +110,7 @@ export default class ScratchCreate extends SfCommand<any> {
     this.forceNew = flags.forcenew || false;
     elapseStart(`Create and initialize scratch org`);
     await this.initConfig();
-    await this.createScratchOrg();
+    await this.createScratchOrg(flags);
     try {
       await this.updateScratchOrgUser();
       await installPackages(this.configInfo.installedPackages || [], this.scratchOrgAlias);
@@ -164,8 +164,8 @@ export default class ScratchCreate extends SfCommand<any> {
   // Initialize configuration from .sfdx-hardis.yml + .gitbranch.sfdx-hardis.yml + .username.sfdx-hardis.yml
   public async initConfig() {
     this.configInfo = await getConfig("user");
-    this.gitBranch = await getCurrentGitBranch({ formatted: true });
-    const newScratchName = os.userInfo().username + "-" + this.gitBranch.split("/").pop().slice(0, 15) + "_" + moment().format("YYYYMMDD_hhmm");
+    this.gitBranch = await getCurrentGitBranch({ formatted: true }) || "";
+    const newScratchName = os.userInfo().username + "-" + (this.gitBranch.split("/").pop() || "").slice(0, 15) + "_" + moment().format("YYYYMMDD_hhmm");
     this.scratchOrgAlias =
       process.env.SCRATCH_ORG_ALIAS || (!this.forceNew && this.pool === false ? this.configInfo.scratchOrgAlias : null) || newScratchName;
     if (isCI && !this.scratchOrgAlias.startsWith("CI-")) {
@@ -213,7 +213,7 @@ export default class ScratchCreate extends SfCommand<any> {
   }
 
   // Create a new scratch org or reuse existing one
-  public async createScratchOrg() {
+  public async createScratchOrg(flags) {
     // Build project-scratch-def-branch-user.json
     uxLog(this, c.cyan("Building custom project-scratch-def.json..."));
     this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json", "utf-8"));

@@ -3,10 +3,10 @@ import { spawn } from "child_process";
 import c from "chalk";
 
 import * as which from "which";
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
+import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils.js";
 import { getConfig } from "../../../../config/index.js";
 import { execCommand, stripAnsi, uxLog } from "../../../../common/utils/index.js";
 import moment from "moment";
@@ -49,6 +49,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
   private debugMode = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(ScratchPoolRefresh);
     this.debugMode = flags.debug || false;
 
     // Check pool configuration is defined on project

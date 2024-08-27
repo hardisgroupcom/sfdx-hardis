@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { forceSourcePull } from "../../../common/utils/deployUtils.js";
@@ -61,8 +61,9 @@ autoRetrieveWhenPull:
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(SourcePull);
     const debugMode = flags.debug || false;
-    const targetUsername = flags['target-org'].getUsername();
+    const targetUsername = flags['target-org'].getUsername() || "";
     await forceSourcePull(targetUsername, debugMode);
 
     // Return an object to be displayed with --json

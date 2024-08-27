@@ -7,9 +7,9 @@ import c from "chalk";
 // import * as path from "path";
 import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog, isCI } from "../../../../../common/utils/index.js";
 import { CleanOptions } from "simple-git";
-import CleanReferences from "../../../project/clean/references";
+import CleanReferences from "../../../project/clean/references.js";
 import SaveTask from "../../../work/save";
-import CleanXml from "../../../project/clean/xml";
+import CleanXml from "../../../project/clean/xml.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
