@@ -6,7 +6,7 @@ import { GitlabProvider } from "./gitlab";
 import { GitProviderRoot } from "./gitProviderRoot";
 import { BitbucketProvider } from "./bitbucket";
 import Debug from "debug";
-import { getEnvVar } from "../../config";
+import { getEnvVar } from "../../config/index.js";
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
@@ -123,7 +123,7 @@ export abstract class GitProvider {
       const currentGitBranch = await getCurrentGitBranch();
       return gitProvider.getBranchDeploymentCheckId(currentGitBranch);
     } catch (e) {
-      uxLog(this, c.yellow(`Error while trying to retrieve deployment check id:\n${e.message}`));
+      uxLog(this, c.yellow(`Error while trying to retrieve deployment check id:\n${(e as Error).message}`));
       return null;
     }
   }
@@ -155,7 +155,7 @@ export abstract class GitProvider {
       prInfo = await gitProvider.getPullRequestInfo();
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
     } catch (e) {
-      uxLog(this, c.yellow("[GitProvider] Unable to get Pull Request info: " + e.message));
+      uxLog(this, c.yellow("[GitProvider] Unable to get Pull Request info: " + (e as Error).message));
       uxLog(this, c.yellow(`[GitProvider] Maybe you misconfigured your ${gitProvider.getLabel()} ?`));
       uxLog(this, c.yellow(`[GitProvider] See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#git-providers`));
       prInfo = null;

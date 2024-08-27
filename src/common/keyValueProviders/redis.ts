@@ -1,7 +1,7 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as Keyv from "keyv";
 import * as c from "chalk";
-import { getConfig, setConfig } from "../../config";
+import { getConfig, setConfig } from "../../config/index.js";
 import { uxLog } from "../utils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { setPoolStorage } from "../utils/poolUtils";
@@ -46,7 +46,7 @@ export class RedisProvider implements KeyValueProviderInterface {
       const config = await getConfig("user");
       const redisAuthUrl = config.redisAuthUrl || process.env.REDIS_AUTH_URL;
       if (redisAuthUrl == null) {
-        throw new SfdxError(c.red("You need to define an redis auth URL config.redisAuthUrl or CI env var REDIS_AUTH_URL"));
+        throw new SfError(c.red("You need to define an redis auth URL config.redisAuthUrl or CI env var REDIS_AUTH_URL"));
       }
       if (this.redisKey == null) {
         const projectName = config.projectName || "default";

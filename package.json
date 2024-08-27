@@ -5,7 +5,8 @@
   "dependencies": {
     "@oclif/core": "^4",
     "@salesforce/core": "^7.2.0",
-    "@salesforce/sf-plugins-core": "^10.0.0"
+    "@salesforce/sf-plugins-core": "^10.0.0",
+    "axios": "^1.7.5"
   },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.1.9",

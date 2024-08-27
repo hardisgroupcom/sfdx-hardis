@@ -1,11 +1,11 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as sortArray from "sort-array";
-import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, git, isGitRepo, uxLog } from "../../common/utils";
-import { CONSTANTS } from "../../config";
+import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, git, isGitRepo, uxLog } from "../../common/utils/index.js";
+import { CONSTANTS } from "../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../settings";
 import { getCache, setCache } from "../cache";
 import { buildOrgManifest } from "../utils/deployUtils";
@@ -467,7 +467,7 @@ class MetadataUtils {
       });
       return alreadyInstalled?.result || [];
     } catch (e) {
-      uxLog(this, c.yellow(`Unable to list installed packages: This is probably a @salesforce/cli bug !\n${e.message}\n${e.stack}`));
+      uxLog(this, c.yellow(`Unable to list installed packages: This is probably a @salesforce/cli bug !\n${(e as Error).message}\n${e.stack}`));
       globalThis.workaroundCliPackages = true;
       return [];
     }
@@ -513,7 +513,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
           ),
         );
         if (package1.SubscriberPackageVersionId == null) {
-          throw new SfdxError(
+          throw new SfError(
             c.red(`[sfdx-hardis] You must define ${c.bold("SubscriberPackageVersionId")} in .sfdx-hardis.yml (in installedPackages property)`),
           );
         }
@@ -544,8 +544,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
           uxLog(
             this,
             c.yellow(
-              `${c.bold("This is not a real error")}: A newer version of ${
-                package1.SubscriberPackageName
+              `${c.bold("This is not a real error")}: A newer version of ${package1.SubscriberPackageName
               } has been found. You may update installedPackages property in .sfdx-hardis.yml`,
             ),
           );

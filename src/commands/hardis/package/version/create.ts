@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../../common/metadata-utils";
@@ -87,7 +87,7 @@ export default class PackageVersionCreate extends SfdxCommand {
     // Ask user to select package and input install key if not sent as command arguments
     if (this.package == null) {
       if (isCI) {
-        throw new SfdxError("You need to send argument 'package'");
+        throw new SfError("You need to send argument 'package'");
       }
       const packageResponse = await prompts([
         {
@@ -146,7 +146,7 @@ export default class PackageVersionCreate extends SfdxCommand {
         debug: debugMode,
       });
       if (!(deleteVersionResult.result.success === true)) {
-        throw new SfdxError(`Unable to delete package version ${latestVersion}`);
+        throw new SfError(`Unable to delete package version ${latestVersion}`);
       }
     }
     // Install package on org just after is has been generated

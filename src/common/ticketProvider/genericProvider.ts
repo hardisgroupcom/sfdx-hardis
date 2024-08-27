@@ -2,7 +2,7 @@ import { Ticket } from ".";
 import * as sortArray from "sort-array";
 import { extractRegexMatches } from "../utils";
 import { TicketProviderRoot } from "./ticketProviderRoot";
-import { getEnvVar } from "../../config";
+import { getEnvVar } from "../../config/index.js";
 
 export class GenericTicketingProvider extends TicketProviderRoot {
   private ticketRefRegex: string;

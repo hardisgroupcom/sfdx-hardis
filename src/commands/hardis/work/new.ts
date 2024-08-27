@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as path from "path";
@@ -288,7 +288,7 @@ Under the hood, it can:
       const config = await getConfig();
       const createResult = await ScratchCreate.run(["--forcenew", "--targetdevhubusername", config.devHubAlias]);
       if (createResult == null) {
-        throw new SfdxError("Unable to create scratch org");
+        throw new SfError("Unable to create scratch org");
       }
     } else {
       // Set selected org as default org
@@ -361,7 +361,7 @@ Under the hood, it can:
     else if (sandboxResponse.value === "newSandbox") {
       const createResult = await SandboxCreate.run();
       if (createResult == null) {
-        throw new SfdxError("Unable to create sandbox org");
+        throw new SfError("Unable to create sandbox org");
       }
       orgUsername = createResult.username;
     }

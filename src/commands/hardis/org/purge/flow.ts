@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as columnify from "columnify";
@@ -156,7 +156,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
 
     // Check we don't delete active Flows
     if (statusFilter.includes("Active")) {
-      throw new SfdxError("You can not delete active records");
+      throw new SfError("You can not delete active records");
     }
 
     // Build query with name filter if sent
@@ -229,7 +229,7 @@ export default class OrgPurgeFlow extends SfdxCommand {
       if (allowPurgeFailure) {
         uxLog(this, c.yellow(errMsg));
       } else {
-        throw new SfdxError(c.yellow(`There have been errors while deleting ${deleteErrors.length} record(s): \n${JSON.stringify(deleteErrors)}`));
+        throw new SfError(c.yellow(`There have been errors while deleting ${deleteErrors.length} record(s): \n${JSON.stringify(deleteErrors)}`));
       }
     }
 

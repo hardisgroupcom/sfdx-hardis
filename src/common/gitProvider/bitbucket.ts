@@ -167,10 +167,10 @@ export class BitbucketProvider extends GitProviderRoot {
     const bitbucketBuildNumber = process.env.BITBUCKET_BUILD_NUMBER || null;
     const bitbucketJobUrl = await this.getCurrentJobUrl();
 
-    const messageKey = `${prMessage.messageKey}-${bitbucketBuildNumber}-${pullRequestId}`;
+    const messageKey = `${prMessag(e as Error).messageKey}-${bitbucketBuildNumber}-${pullRequestId}`;
     let messageBody = `**${prMessage.title || ""}**
 
-        ${prMessage.message}
+        ${prMessag(e as Error).message}
         
         \n_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
         \n<!-- sfdx-hardis message-key ${messageKey} -->

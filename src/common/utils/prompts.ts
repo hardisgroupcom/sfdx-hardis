@@ -1,7 +1,7 @@
 import * as c from "chalk";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import inquirer from "inquirer";
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import { isCI, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
 
@@ -19,7 +19,7 @@ export interface PromptsQuestion {
 // Centralized prompts function
 export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   if (isCI) {
-    throw new SfdxError("Nothing should be prompted during CI !");
+    throw new SfError("Nothing should be prompted during CI !");
   }
   const questionsRaw = Array.isArray(options) ? options : [options];
   const questionsReformatted = [];
@@ -107,6 +107,6 @@ async function terminalPrompts(questions: PromptsQuestion[]) {
     const answers = await inquirer.prompt(inquirerQuestions);
     return answers;
   } catch (e) {
-    throw new SfdxError("Error while prompting: " + e.message);
+    throw new SfError("Error while prompting: " + (e as Error).message);
   }
 }

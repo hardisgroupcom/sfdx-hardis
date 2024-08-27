@@ -1,9 +1,9 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils";
 import { NotifMessage, NotifSeverity, UtilsNotifs } from ".";
-import { getEnvVar } from "../../config";
+import { getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils";
 import { Connection } from "jsforce";
@@ -40,7 +40,7 @@ export class ApiProvider extends NotifProviderRoot {
     const apiPromises: Promise<void>[] = []; // Use Promises to optimize performances with api calls
     this.apiUrl = getEnvVar("NOTIF_API_URL");
     if (this.apiUrl == null) {
-      throw new SfdxError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");
+      throw new SfError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");
     }
     // Build initial payload data from notifMessage
     await this.buildPayload(notifMessage);
@@ -200,7 +200,7 @@ export class ApiProvider extends NotifProviderRoot {
         }
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${e.message}`));
+      uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${(e as Error).message}`));
       uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
       uxLog(this, c.grey("Response body: \n" + JSON.stringify(e?.response?.data || {})));
     }
@@ -270,7 +270,7 @@ export class ApiProvider extends NotifProviderRoot {
         }
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.metricsApiUrl}: ${e.message}`));
+      uxLog(this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.metricsApiUrl}: ${(e as Error).message}`));
       uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.metricsPayload)));
       uxLog(this, c.grey("Response body: \n" + JSON.stringify(e?.response?.data || {})));
     }

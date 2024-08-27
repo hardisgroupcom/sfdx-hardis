@@ -109,7 +109,7 @@ export default class ConfigureAuth extends SfdxCommand {
       });
       branchName = branchResponse.value.replace(/\s/g, "-");
       /* if (["main", "master"].includes(branchName)) {
-        throw new SfdxError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
+        throw new SfError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
       } */
       instanceUrl = await promptInstanceUrl(["login", "test"], `${branchName} related org`, {
         instanceUrl: devHub ? this.hubOrg.getConnection().instanceUrl : this.org.getConnection().instanceUrl,
@@ -121,8 +121,7 @@ export default class ConfigureAuth extends SfdxCommand {
       name: "value",
       initial: (devHub ? this.hubOrg.getUsername() : this.org.getUsername()) || "",
       message: c.cyanBright(
-        `What is the Salesforce username that will be ${
-          devHub ? "used as Dev Hub" : "used for deployments by CI server"
+        `What is the Salesforce username that will be ${devHub ? "used as Dev Hub" : "used for deployments by CI server"
         } ? Example: admin.sfdx@myclient.com`,
       ),
     });

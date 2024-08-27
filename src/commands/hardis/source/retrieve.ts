@@ -1,5 +1,5 @@
 import { flags, FlagsConfig, SfdxCommand } from "@salesforce/command";
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { isCI, uxLog } from "../../../common/utils";
@@ -76,9 +76,9 @@ export class SourceRetrieve extends SfdxCommand {
   };
 
   public async run(): Promise<any> {
-    uxLog(this,c.red("This command will be removed by Salesforce in November 2024."));
-    uxLog(this,c.red("Please migrate to command sf hardis project retrieve start"));
-    uxLog(this,c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
+    uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
+    uxLog(this, c.red("Please migrate to command sf hardis project retrieve start"));
+    uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
     const args = this.argv;
     // Manage user selection for metadatas
     if (!isCI && !this.flags.sourcepath && !this.flags.manifest && !this.flags.metadata && !this.flags.packagenames) {
@@ -93,7 +93,7 @@ export class SourceRetrieve extends SfdxCommand {
       if (orgUsername) {
         args.push(...["--targetusername", `"${orgUsername}"`]);
       } else {
-        throw new SfdxError(c.yellow("For technical reasons, run again this command and select your org in the list :)"));
+        throw new SfError(c.yellow("For technical reasons, run again this command and select your org in the list :)"));
       }
     }
     return await wrapSfdxCoreCommand("sfdx force:source:retrieve", args, this, this.flags.debug);

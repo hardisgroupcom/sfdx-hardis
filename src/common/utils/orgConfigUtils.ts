@@ -100,7 +100,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
     } catch (e) {
       // Unexpected puppeteer error
       failed.push(`${objectName}:${listViewName}`);
-      uxLog(this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${e.message}`));
+      uxLog(this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${(e as Error).message}`));
     }
   }
   // Close puppeteer browser

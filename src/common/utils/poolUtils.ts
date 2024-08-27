@@ -3,13 +3,13 @@ import * as fs from "fs-extra";
 import * as moment from "moment";
 import * as os from "os";
 import * as path from "path";
-import { getConfig, setConfig } from "../../config";
+import { getConfig, setConfig } from "../../config/index.js";
 import { createTempDir, execSfdxJson, isCI, uxLog } from ".";
 import { KeyValueProviderInterface } from "./keyValueUtils";
 import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz";
 import { KvdbIoProvider } from "../keyValueProviders/kvdbIo";
 import { LocalTestProvider } from "../keyValueProviders/localtest";
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import { prompts } from "./prompts";
 import { RedisProvider } from "../keyValueProviders/redis";
 import { SalesforceProvider } from "../keyValueProviders/salesforce";
@@ -102,7 +102,7 @@ export async function fetchScratchOrg(options: any) {
     const scratchOrg = await tryFetchScratchOrg(options);
     return scratchOrg;
   } catch (e) {
-    uxLog(this, c.yellow(`[pool] Unable to fetch scratch org from pool. That's sad because it's faster !\nError: ${e.message}`));
+    uxLog(this, c.yellow(`[pool] Unable to fetch scratch org from pool. That's sad because it's faster !\nError: ${(e as Error).message}`));
     return null;
   }
 }
@@ -161,11 +161,11 @@ export async function tryFetchScratchOrg(options: any) {
   uxLog(
     this,
     "[pool]" +
-      c.yellow(
-        `No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchOrgsNumber")} or schedule call to ${c.white(
-          "sf hardis:scratch:pool:refresh",
-        )} more often in CI`,
-      ),
+    c.yellow(
+      `No scratch org available in scratch org pool. You may increase ${c.white("poolConfig.maxScratchOrgsNumber")} or schedule call to ${c.white(
+        "sf hardis:scratch:pool:refresh",
+      )} more often in CI`,
+    ),
   );
   return null;
 }
@@ -189,7 +189,7 @@ async function initializeProvider(options: any) {
       if (isCI) {
         throw e;
       }
-      uxLog(this, "[pool] " + c.grey("Provider initialization error: " + e.message));
+      uxLog(this, "[pool] " + c.grey("Provider initialization error: " + (e as Error).message));
       // If manual, let's ask the user if he/she has credentials to input
       const resp = await prompts({
         type: "confirm",
@@ -209,7 +209,7 @@ export async function instantiateProvider(storageService: string) {
   const providerClasses = await listKeyValueProviders();
   const providerClassRes = providerClasses.filter((cls) => cls.name === storageService);
   if (providerClassRes.length === 0) {
-    throw new SfdxError(c.red("Unable to find class for storage provider " + storageService));
+    throw new SfError(c.red("Unable to find class for storage provider " + storageService));
   }
   return providerClassRes[0];
 }

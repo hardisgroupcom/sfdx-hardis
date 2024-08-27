@@ -5,10 +5,10 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from ".";
 import { WebSocketClient } from "../websocketClient";
-import { getConfig, setConfig } from "../../config";
+import { getConfig, setConfig } from "../../config/index.js";
 import * as EmailValidator from "email-validator";
 import * as sortArray from "sort-array";
-import { Connection, SfdxError } from "@salesforce/core";
+import { Connection, SfError } from "@salesforce/core";
 import { importData } from "./dataUtils";
 import { soqlQuery } from "./apiUtils";
 import { isSfdxProject } from "./projectUtils";
@@ -33,8 +33,8 @@ export async function getRecordTypeId(recordTypeInfo: { sObjectType: string; dev
   }
   const recordTypeQueryRes = await soqlQuery(
     `SELECT Id FROM RecordType WHERE SobjectType='${recordTypeInfo.sObjectType}' AND` +
-      ` DeveloperName='${recordTypeInfo.developerName}'` +
-      ` LIMIT 1`,
+    ` DeveloperName='${recordTypeInfo.developerName}'` +
+    ` LIMIT 1`,
     conn,
   );
   if (recordTypeQueryRes.records[0].Id) {
@@ -79,17 +79,17 @@ export async function promptProfiles(
     });
     // Verify that all profiles are not selected if allowSelectAll === false
     if (options.allowSelectAll === false && profilesSelection.value.length === profiles.length) {
-      throw new SfdxError(options.allowSelectAllErrorMessage);
+      throw new SfError(options.allowSelectAllErrorMessage);
     }
     // Verify that current user profile is not selected
     if (options.allowSelectMine === false) {
       if (!["record", "Id"].includes(options.returnField)) {
-        throw new SfdxError("You can not use option allowSelectMine:false if you don't use record or Id as return value");
+        throw new SfError("You can not use option allowSelectMine:false if you don't use record or Id as return value");
       }
       const userRes = await soqlQuery(`SELECT ProfileId FROM User WHERE Id='${(await conn.identity()).user_id}' LIMIT 1`, conn);
       const profileId = userRes.records[0]["ProfileId"];
       if (profilesSelection.value.filter((profileSelected) => profileSelected === profileId || profileSelected?.Id === profileId).length > 0) {
-        throw new SfdxError(options.allowSelectMineErrorMessage);
+        throw new SfError(options.allowSelectMineErrorMessage);
       }
     }
     return profilesSelection.value || null;
@@ -394,7 +394,7 @@ export async function initOrgMetadatas(
         });
       } catch (e) {
         uxLog(self, c.yellow("Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"));
-        uxLog(self, c.grey(e.message));
+        uxLog(self, c.grey((e as Error).message));
       }
     }
     await forceSourcePush(orgAlias, this, debugMode, options);
@@ -431,7 +431,7 @@ export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: 
   // Build list of apex scripts and check their existence
   const initApexScripts = orgInitApexScripts.map((scriptName: string) => {
     if (!fs.existsSync(scriptName)) {
-      throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}`));
+      throw new SfError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}`));
     }
     return scriptName;
   });

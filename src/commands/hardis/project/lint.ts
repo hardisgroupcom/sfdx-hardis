@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { isCI, uxLog } from "../../../common/utils";
 import * as c from "chalk";
@@ -62,7 +62,7 @@ export default class ProjectCreate extends SfdxCommand {
     // Check if Mega-Linter is configured
     if (!fs.existsSync(".mega-linter.yml")) {
       if (isCI) {
-        throw new SfdxError(
+        throw new SfError(
           c.red(
             "[sfdx-hardis] You must run sf hardis:project:lint locally to install Mega-Linter configuration before being able to run it from CI",
           ),

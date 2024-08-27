@@ -1,7 +1,7 @@
 import * as c from "chalk";
 import * as path from "path";
 import { uxLog } from ".";
-import { getConfig } from "../../config";
+import { getConfig } from "../../config/index.js";
 import { parseXmlFile, writeXmlFile } from "./xmlUtils";
 
 // Push sources to org

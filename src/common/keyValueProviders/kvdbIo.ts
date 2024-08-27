@@ -1,8 +1,8 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import axios from "axios";
 import * as c from "chalk";
 import * as crypto from "crypto";
-import { getConfig, setConfig } from "../../config";
+import { getConfig, setConfig } from "../../config/index.js";
 import { uxLog } from "../utils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { setPoolStorage } from "../utils/poolUtils";
@@ -56,11 +56,11 @@ export class KvdbIoProvider implements KeyValueProviderInterface {
       const config = await getConfig("user");
       const kvdbIoBucketId = config.kvdbIoBucketId || process.env.KVDB_IO_BUCKET_ID;
       if (kvdbIoBucketId == null) {
-        throw new SfdxError(c.red("You need to define an kvdb.io apiKey in config.kvdbIoBucketId or CI env var KVDB_IO_BUCKET_ID"));
+        throw new SfError(c.red("You need to define an kvdb.io apiKey in config.kvdbIoBucketId or CI env var KVDB_IO_BUCKET_ID"));
       }
       const kvdbIoSecretKey = config.kvdbIoSecretKey || process.env.KVDB_IO_SECRET_KEY;
       if (kvdbIoSecretKey == null) {
-        throw new SfdxError(c.red("You need to define an kvdb.io secretKey in config.kvdbIoSecretKey or CI env var KVDB_IO_SECRET_KEY"));
+        throw new SfError(c.red("You need to define an kvdb.io secretKey in config.kvdbIoSecretKey or CI env var KVDB_IO_SECRET_KEY"));
       }
       if (key == null) {
         const projectName = config.projectName || "default";

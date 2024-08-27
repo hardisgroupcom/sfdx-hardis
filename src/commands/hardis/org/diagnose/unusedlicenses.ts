@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
@@ -395,6 +395,6 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     if (pslList.length === 1) {
       return pslList[0];
     }
-    throw new SfdxError(`Unable to find Permission Set License with MasterLabel ${masterLabel}`);
+    throw new SfError(`Unable to find Permission Set License with MasterLabel ${masterLabel}`);
   }
 }

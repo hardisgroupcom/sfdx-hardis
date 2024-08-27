@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -86,7 +86,7 @@ You can now call it using ${c.white("sf hardis:org:files:export")}
   private async createConfigFiles() {
     const filesProjectFolder = path.join(filesFolderRoot, this.filesExportPath);
     if (fs.existsSync(filesProjectFolder)) {
-      throw new SfdxError(`[sfdx-hardis]${c.red(`Folder ${c.bold(filesProjectFolder)} already exists`)}`);
+      throw new SfError(`[sfdx-hardis]${c.red(`Folder ${c.bold(filesProjectFolder)} already exists`)}`);
     }
 
     // Create folder & export.json

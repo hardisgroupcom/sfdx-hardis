@@ -1,5 +1,5 @@
 import * as c from "chalk";
-import { elapseEnd, uxLog } from "../../common/utils";
+import { elapseEnd, uxLog } from "../../common/utils/index.js";
 
 // The use of this method is deprecated: use NotifProvider.sendNotification :)
 
@@ -25,7 +25,7 @@ export const hook = async (options: any) => {
       globalThis.webSocketClient.dispose();
     } catch (e) {
       if (options.debug) {
-        uxLog(this, c.yellow("Unable to close webSocketClient") + "\n" + e.message);
+        uxLog(this, c.yellow("Unable to close webSocketClient") + "\n" + (e as Error).message);
       }
     }
     globalThis.webSocketClient = null;

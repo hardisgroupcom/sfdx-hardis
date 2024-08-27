@@ -1,5 +1,5 @@
 import { NotifSeverity } from ".";
-import { getEnvVar } from "../../config";
+import { getEnvVar } from "../../config/index.js";
 
 export class UtilsNotifs {
   public static isSlackAvailable() {

@@ -1,7 +1,7 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import axios from "axios";
 import * as c from "chalk";
-import { getConfig, setConfig } from "../../config";
+import { getConfig, setConfig } from "../../config/index.js";
 import { uxLog } from "../utils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { prompts } from "../utils/prompts";
@@ -47,7 +47,7 @@ export class KeyValueXyzProvider implements KeyValueProviderInterface {
       const config = await getConfig("user");
       const apiKey = config.keyValueXyzApiKey || process.env.KEY_VALUE_XYZ_API_KEY;
       if (apiKey === null) {
-        throw new SfdxError(c.red("You need to define a keyvalue.xyz apiKey in config.keyValueXyzApiKey or env var KEY_VALUE_XYZ_API_KEY"));
+        throw new SfError(c.red("You need to define a keyvalue.xyz apiKey in config.keyValueXyzApiKey or env var KEY_VALUE_XYZ_API_KEY"));
       }
       if (key === null) {
         const projectName = config.projectName || "default";

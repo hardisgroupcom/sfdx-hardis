@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { AuthInfo, Messages, SfdxError } from "@salesforce/core";
+import { AuthInfo, Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { assert } from "console";
@@ -128,7 +128,7 @@ export default class ScratchCreate extends SfdxCommand {
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      uxLog(this, c.grey("Error: " + e.message + "\n" + e.stack));
+      uxLog(this, c.grey("Error: " + (e as Error).message + "\n" + e.stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
@@ -210,7 +210,7 @@ export default class ScratchCreate extends SfdxCommand {
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
       if (this.pool === true) {
-        throw new SfdxError(c.red("You need to define userEmail property in .sfdx-hardis.yml"));
+        throw new SfError(c.red("You need to define userEmail property in .sfdx-hardis.yml"));
       }
       this.userEmail = await promptUserEmail();
     }

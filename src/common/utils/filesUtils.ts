@@ -7,7 +7,7 @@ import * as split from "split";
 import { PromisePool } from "@supercharge/promise-pool";
 
 // Salesforce Specific and Other Specific Libraries
-import { Connection, SfdxError } from "@salesforce/core";
+import { Connection, SfError } from "@salesforce/core";
 import * as Papa from "papaparse";
 import * as ExcelJS from "exceljs";
 
@@ -15,7 +15,7 @@ import * as ExcelJS from "exceljs";
 import { getCurrentGitBranch, isCI, uxLog } from ".";
 import { bulkQuery, soqlQuery } from "./apiUtils";
 import { prompts } from "./prompts";
-import { CONSTANTS, getReportDirectory } from "../../config";
+import { CONSTANTS, getReportDirectory } from "../../config/index.js";
 import { WebSocketClient } from "../websocketClient";
 
 export const filesFolderRoot = path.join(".", "scripts", "files");
@@ -106,7 +106,7 @@ export class FilesExporter {
     this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
     // Check if there are enough API calls available
     if (this.apiLimit - this.apiUsedBefore < estimatedApiCalls + 1000) {
-      throw new SfdxError(
+      throw new SfError(
         `You don't have enough API calls available (${c.bold(this.apiLimit - this.apiUsedBefore)}) to perform this export that could consume ${c.bold(
           estimatedApiCalls,
         )} API calls`,
@@ -123,7 +123,7 @@ export class FilesExporter {
       );
       const promptRes = await prompts({ type: "confirm", message: warningMessage });
       if (promptRes.value !== true) {
-        throw new SfdxError("Command cancelled by user");
+        throw new SfError("Command cancelled by user");
       }
       if (this.startChunkNumber === 0) {
         uxLog(this, c.yellow(c.italic("Use --startchunknumber command line argument if you do not want to start from first chunk")));
@@ -189,7 +189,7 @@ export class FilesExporter {
         await this.addToRecordsChunk(record);
       })
       .on("error", (err) => {
-        throw new SfdxError(c.red("Bulk query error:" + err));
+        throw new SfError(c.red("Bulk query error:" + err));
       })
       .on("end", () => {
         this.bulkApiRecordsEnded = true;
@@ -270,13 +270,13 @@ export class FilesExporter {
       this.dtl?.outputFileNameFormat === "id"
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
-          this.dtl?.outputFileNameFormat === "title_id"
+        this.dtl?.outputFileNameFormat === "title_id"
           ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
           : // Id + Title
-            this.dtl?.outputFileNameFormat === "id_title"
+          this.dtl?.outputFileNameFormat === "id_title"
             ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
             : // Title
-              path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
@@ -300,7 +300,7 @@ export class FilesExporter {
     try {
       const fetchRes = await fetch(fetchUrl, this.fetchOptions);
       if (fetchRes.ok !== true) {
-        throw new SfdxError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
+        throw new SfError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
       }
       // Wait for file to be written
       const stream = fs.createWriteStream(outputFile);
@@ -447,7 +447,7 @@ export class FilesImporter {
             successNb++;
           }
         } catch (e) {
-          uxLog(this, c.red(`Unable to upload file ${file}: ${e.message}`));
+          uxLog(this, c.red(`Unable to upload file ${file}: ${(e as Error).message}`));
           errorNb++;
         }
       }
@@ -475,7 +475,7 @@ export class FilesImporter {
       );
       const promptRes = await prompts({ type: "confirm", message: warningMessage });
       if (promptRes.value !== true) {
-        throw new SfdxError("Command cancelled by user");
+        throw new SfError("Command cancelled by user");
       }
     }
   }
@@ -483,7 +483,7 @@ export class FilesImporter {
 
 export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please select a files folder to export" }) {
   if (!fs.existsSync(filesFolderRoot)) {
-    throw new SfdxError("There is no files root folder 'scripts/files' in your workspace. Create it and define a files export configuration");
+    throw new SfError("There is no files root folder 'scripts/files' in your workspace. Create it and define a files export configuration");
   }
 
   const filesFolders = fs
@@ -491,7 +491,7 @@ export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please se
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => path.join(".", "scripts", "files", dirent.name));
   if (filesFolders.length === 0) {
-    throw new SfdxError("There is no file exports folder in your workspace");
+    throw new SfError("There is no file exports folder in your workspace");
   }
   const choices: any = [];
   for (const filesFolder of filesFolders) {
@@ -699,7 +699,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
       uxLog(this, c.grey(`No XLS file generated as ${outputPath} is empty`));
     }
   } catch (e) {
-    uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
+    uxLog(this, c.yellow("Error while generating CSV log file:\n" + (e as Error).message + "\n" + e.stack));
   }
   return result;
 }

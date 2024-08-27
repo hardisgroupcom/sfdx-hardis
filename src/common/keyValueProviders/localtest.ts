@@ -2,7 +2,7 @@ import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as os from "os";
-import { getConfig } from "../../config";
+import { getConfig } from "../../config/index.js";
 import { uxLog } from "../utils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 

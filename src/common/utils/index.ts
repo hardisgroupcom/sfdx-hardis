@@ -11,10 +11,10 @@ import * as util from "util";
 import * as which from "which";
 import * as xml2js from "xml2js";
 const exec = util.promisify(child.exec);
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as ora from "ora";
 import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
-import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../config";
+import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../config/index.js";
 import { prompts } from "./prompts";
 import { encryptFile } from "../cryptoUtils";
 import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
@@ -241,14 +241,14 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
       uxLog(this, `Git repository cloned. ${c.yellow("Please run again the same command :)")}`);
       process.exit(0);
     } else {
-      throw new SfdxError("You need to be at the root of a git repository to run this command");
+      throw new SfError("You need to be at the root of a git repository to run this command");
     }
   }
   // Check if root
   else if (options.mustBeRoot) {
     const gitRepoRoot = await getGitRepoRoot();
     if (path.resolve(gitRepoRoot) !== path.resolve(process.cwd())) {
-      throw new SfdxError(`You must be at the root of the git repository (${path.resolve(gitRepoRoot)})`);
+      throw new SfError(`You must be at the root of the git repository (${path.resolve(gitRepoRoot)})`);
     }
   }
 }
@@ -348,7 +348,7 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
 // Checks that current git status is clean.
 export async function checkGitClean(options: any) {
   if (git == null) {
-    throw new SfdxError("[sfdx-hardis] You must be within a git repository");
+    throw new SfError("[sfdx-hardis] You must be within a git repository");
   }
   const gitStatus = await git({ output: true }).status();
   if (gitStatus.files.length > 0) {
@@ -361,7 +361,7 @@ export async function checkGitClean(options: any) {
       await execCommand("git add --all", this, { output: true, fail: true });
       await execCommand("git stash", this, { output: true, fail: true });
     } else {
-      throw new SfdxError(
+      throw new SfError(
         `[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold(
           "commit or reset",
         )} the following local updates:\n${c.yellow(localUpdates)}`,
@@ -373,7 +373,7 @@ export async function checkGitClean(options: any) {
 // Interactive git add
 export async function interactiveGitAdd(options: any = { filter: [], groups: [] }) {
   if (git == null) {
-    throw new SfdxError("[sfdx-hardis] You must be within a git repository");
+    throw new SfError("[sfdx-hardis] You must be within a git repository");
   }
   // List all files and arrange their format
   const config = await getConfig("project");
@@ -448,11 +448,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           "The following list of files has not been proposed for selection\n" +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join("\n"),
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join("\n"),
         ),
       );
     }
@@ -605,7 +605,7 @@ export async function execCommand(
     if (!command.includes("--json") || options.fail) {
       const strErr = truncateProgressLogLines(`${e.stdout}\n${e.stderr}`);
       console.error(c.red(strErr));
-      e.message = e.message += "\n" + strErr;
+      (e as Error).message = (e as Error).message += "\n" + strErr;
       // Manage retry if requested
       if (options.retry != null) {
         options.retry.tryCount = (options.retry.tryCount || 0) + 1;
@@ -647,7 +647,7 @@ export async function execCommand(
   try {
     const parsedResult = JSON.parse(commandResult.stdout);
     if (options.fail && parsedResult.status && parsedResult.status > 0) {
-      throw new SfdxError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
+      throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
     }
     if (commandResult.stderr && commandResult.stderr.length > 2) {
       uxLog(this, "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr));
@@ -658,7 +658,7 @@ export async function execCommand(
     return {
       status: 1,
       errorMessage: c.red(
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`,
+        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${(e as Error).message}\n${commandResult.stdout}\n${commandResult.stderr})`,
       ),
     };
   }

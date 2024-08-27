@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getConfig } from "../../../../../config";
 import * as c from "chalk";
@@ -170,7 +170,7 @@ export default class Retrofit extends SfdxCommand {
     if (branches.all.find((branch) => branch.includes(retrofitWorkBranch))) {
       // If manual command (not CI), force user to remove previous retrofit branches
       if (!isCI) {
-        throw new SfdxError(`You must delete local and remote branch ${c.yellow(retrofitWorkBranch)} before running this command`);
+        throw new SfError(`You must delete local and remote branch ${c.yellow(retrofitWorkBranch)} before running this command`);
       }
       uxLog(this, c.cyan(`Checkout to existing branch ${retrofitWorkBranch}`));
       await git().checkout(retrofitWorkBranch, ["--force"]);

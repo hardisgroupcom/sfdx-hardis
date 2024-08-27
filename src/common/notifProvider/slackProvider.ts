@@ -1,10 +1,10 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils";
 import { NotifMessage, UtilsNotifs } from ".";
-import { getEnvVar } from "../../config";
+import { getEnvVar } from "../../config/index.js";
 
 export class SlackProvider extends NotifProviderRoot {
   private slackClient: InstanceType<typeof WebClient>;
@@ -23,7 +23,7 @@ export class SlackProvider extends NotifProviderRoot {
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const mainNotifsChannelId = getEnvVar("SLACK_CHANNEL_ID");
     if (mainNotifsChannelId == null) {
-      throw new SfdxError(
+      throw new SfError(
         "[SlackProvider] You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN",
       );
     }

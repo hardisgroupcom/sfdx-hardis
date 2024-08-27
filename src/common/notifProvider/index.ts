@@ -4,7 +4,7 @@ import { NotifProviderRoot } from "./notifProviderRoot";
 import { SlackProvider } from "./slackProvider";
 import { UtilsNotifs as utilsNotifs } from "./utils";
 import { TeamsProvider } from "./teamsProvider";
-import { getConfig } from "../../config";
+import { getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider";
 import { ApiProvider } from "./apiProvider";
 
@@ -82,21 +82,21 @@ export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success
 export interface NotifMessage {
   text: string;
   type:
-    | "ACTIVE_USERS"
-    | "AUDIT_TRAIL"
-    | "APEX_TESTS"
-    | "BACKUP"
-    | "DEPLOYMENT"
-    | "LEGACY_API"
-    | "LICENSES"
-    | "LINT_ACCESS"
-    | "UNUSED_METADATAS"
-    | "METADATA_STATUS"
-    | "MISSING_ATTRIBUTES"
-    | "UNUSED_LICENSES"
-    | "UNUSED_USERS"
-    | "ORG_INFO"
-    | "ORG_LIMITS";
+  | "ACTIVE_USERS"
+  | "AUDIT_TRAIL"
+  | "APEX_TESTS"
+  | "BACKUP"
+  | "DEPLOYMENT"
+  | "LEGACY_API"
+  | "LICENSES"
+  | "LINT_ACCESS"
+  | "UNUSED_METADATAS"
+  | "METADATA_STATUS"
+  | "MISSING_ATTRIBUTES"
+  | "UNUSED_LICENSES"
+  | "UNUSED_USERS"
+  | "ORG_INFO"
+  | "ORG_LIMITS";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;

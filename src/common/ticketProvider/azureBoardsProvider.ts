@@ -6,10 +6,10 @@ import * as sortArray from "sort-array";
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { extractRegexMatches, uxLog } from "../utils";
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces";
-import { getEnvVar } from "../../config";
+import { getEnvVar } from "../../config/index.js";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
@@ -120,8 +120,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         this,
         c.cyan(
           `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` +
-            process.env.SYSTEM_COLLECTIONURI +
-            " ...",
+          process.env.SYSTEM_COLLECTIONURI +
+          " ...",
         ),
       );
     }
@@ -171,7 +171,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           if (commentPostRes && commentPostRes?.id > 0) {
             commentedTickets.push(ticket);
           } else {
-            throw new SfdxError("commentPostRes: " + commentPostRes);
+            throw new SfError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
           uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
@@ -190,7 +190,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           if (workItem && workItem?.id > 0) {
             taggedTickets.push(ticket);
           } else {
-            throw new SfdxError("tag workItem: " + workItem);
+            throw new SfError("tag workItem: " + workItem);
           }
         } catch (e6) {
           uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));

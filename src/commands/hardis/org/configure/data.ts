@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -95,7 +95,7 @@ If you don't have unique field to identify an object, use composite external ids
   private async generateConfigurationFiles() {
     const sfdmuProjectFolder = path.join(dataFolderRoot, this.dataPath);
     if (fs.existsSync(sfdmuProjectFolder)) {
-      throw new SfdxError(`[sfdx-hardis]${c.red(`Folder ${c.bold(sfdmuProjectFolder)} already exists`)}`);
+      throw new SfError(`[sfdx-hardis]${c.red(`Folder ${c.bold(sfdmuProjectFolder)} already exists`)}`);
     }
 
     // Create folder & export.json
@@ -107,7 +107,7 @@ If you don't have unique field to identify an object, use composite external ids
     for (const additionalFile of this.additionalFiles) {
       const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
       await fs.writeFile(additionalFileFull, additionalFile.text);
-      uxLog(this, c.cyan(additionalFile.message + ": ") + c.yellow(additionalFileFull));
+      uxLog(this, c.cyan(additionalFil(e as Error).message + ": ") + c.yellow(additionalFileFull));
       WebSocketClient.requestOpenFile(additionalFileFull);
     }
     return { exportJsonFile, sfdmuProjectFolder };

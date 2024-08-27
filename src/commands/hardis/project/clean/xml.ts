@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -173,12 +173,12 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     if (splits[0]) {
       return splits[0];
     }
-    throw new SfdxError(`[sfdx-hardis] xpath should start with //ns:PARENT-TAG-NAME//ns:`);
+    throw new SfError(`[sfdx-hardis] xpath should start with //ns:PARENT-TAG-NAME//ns:`);
   }
 
   public findParentNode(node: any, parentNodeName: string) {
     if (node == null) {
-      throw new SfdxError(`[sfdx-hardis] Parent node named ${parentNodeName} not found`);
+      throw new SfError(`[sfdx-hardis] Parent node named ${parentNodeName} not found`);
     }
     if (node.localName === parentNodeName) {
       return node;

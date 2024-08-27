@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -90,7 +90,7 @@ export default class DxSources2 extends SfdxCommand {
 
     // Check package.xml file exists
     if (!fs.existsSync(packageXml)) {
-      throw new SfdxError(c.red("Package.xml file not found at " + packageXml));
+      throw new SfError(c.red("Package.xml file not found at " + packageXml));
     }
     // Copy package.xml in /tmp if provided value is not within project
     if (!path.resolve(packageXml).includes(path.resolve(process.cwd()))) {

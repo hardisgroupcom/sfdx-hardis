@@ -156,13 +156,13 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     } catch (e) {
       // No Apex in the org
       if (
-        e.message.includes("Toujours fournir une propriété classes, suites, tests ou testLevel") ||
-        e.message.includes("Always provide a classes, suites, tests, or testLevel property")
+        (e as Error).message.includes("Toujours fournir une propriété classes, suites, tests ou testLevel") ||
+        (e as Error).message.includes("Always provide a classes, suites, tests, or testLevel property")
       ) {
         this.testRunOutcome = "NoApex";
       } else {
         // Failing Apex tests
-        this.testRunOutputString = e.message;
+        this.testRunOutputString = (e as Error).message;
         this.testRunOutcome = "Failed";
       }
     }
@@ -201,10 +201,10 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
-        process.env.APEX_TESTS_MIN_COVERAGE ||
-        this.configInfo.apexTestsMinCoverageOrgWide ||
-        this.configInfo.apexTestsMinCoverage ||
-        75.0,
+      process.env.APEX_TESTS_MIN_COVERAGE ||
+      this.configInfo.apexTestsMinCoverageOrgWide ||
+      this.configInfo.apexTestsMinCoverage ||
+      75.0,
     );
     this.coverageTarget = minCoverageOrgWide;
     this.coverageValue = coverageOrgWide;
@@ -238,9 +238,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
-          process.env.APEX_TESTS_MIN_COVERAGE ||
-          this.configInfo.apexTestsMinCoverage ||
-          this.coverageTarget,
+        process.env.APEX_TESTS_MIN_COVERAGE ||
+        this.configInfo.apexTestsMinCoverage ||
+        this.coverageTarget,
       );
       this.coverageTarget = minCoverageTestRun;
       this.coverageValue = coverageTestRun;

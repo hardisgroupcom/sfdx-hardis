@@ -328,7 +328,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr)
+        c.red(destructivePackageXmlDiffStr)
       );
       await appendPackageXmlFilesContent([localDestructiveChangesXml, diffDestructivePackageXml], localDestructiveChangesXml);
       if ((await gitHasLocalUpdates()) && !this.noGit) {
@@ -356,7 +356,7 @@ autoRemoveUserPermissions:
       try {
         await git({ output: true }).commit("[sfdx-hardis] Update package content");
       } catch (e) {
-        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey(e.message)}`));
+        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey((e as Error).message)}`));
         gitStatusWithConfig = await git().status();
       }
     }
@@ -392,7 +392,7 @@ autoRemoveUserPermissions:
             await git().add(cleanedFiles);
             await git({ output: true }).commit("[sfdx-hardis] Clean sfdx project");
           } catch (e) {
-            uxLog(this, c.yellow(`There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(e.message)}`));
+            uxLog(this, c.yellow(`There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey((e as Error).message)}`));
           }
         }
       }
@@ -495,7 +495,7 @@ autoRemoveUserPermissions:
       try {
         await git({ output: true }).commit("[sfdx-hardis] Update deployment plan");
       } catch (e) {
-        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey(e.message)}`));
+        uxLog(this, c.yellow(`There may be an issue while committing files but it can be ok to ignore it\n${c.grey((e as Error).message)}`));
         gitStatusAfterDeployPlan = await git().status();
       }
     }

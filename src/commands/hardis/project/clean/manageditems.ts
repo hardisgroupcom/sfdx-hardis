@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -65,7 +65,7 @@ export default class CleanManagedItems extends SfdxCommand {
     this.debugMode = this.flags.debug || false;
 
     if (this.namespace === "") {
-      throw new SfdxError("namespace argument is mandatory");
+      throw new SfError("namespace argument is mandatory");
     }
 
     // Delete standard files when necessary

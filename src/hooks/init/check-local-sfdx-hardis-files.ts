@@ -1,8 +1,8 @@
 import * as c from "chalk";
 import * as fs from "fs-extra";
-import { isCI, isMonitoringJob, uxLog } from "../../common/utils";
-import { prompts } from "../../common/utils/prompts";
-import { getConfig, setConfig } from "../../config";
+import { isCI, isMonitoringJob, uxLog } from "../../common/utils/index.js";
+import { prompts } from "../../common/utils/prompts.js";
+import { getConfig, setConfig } from "../../config/index.js";
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis:scratch commands

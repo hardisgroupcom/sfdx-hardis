@@ -1,11 +1,11 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as path from "path";
 import * as sortArray from "sort-array";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, isCI, uxLog } from ".";
-import { CONSTANTS, getConfig, setConfig } from "../../config";
+import { CONSTANTS, getConfig, setConfig } from "../../config/index.js";
 import { GitProvider } from "../gitProvider";
 import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
 import { MetadataUtils } from "../metadata-utils";
@@ -64,7 +64,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the push issues :)`)),
     );
     elapseEnd("project:deploy:start");
-    throw new SfdxError("Deployment failure. Check messages above");
+    throw new SfError("Deployment failure. Check messages above");
   }
 }
 
@@ -109,7 +109,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       }
     }
     uxLog(this, c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the pull issues :)`)));
-    throw new SfdxError("Pull failure. Check messages above");
+    throw new SfError("Pull failure. Check messages above");
   }
 
   // Check if some items has to be forced-retrieved because SF CLI does not detect updates
@@ -350,7 +350,7 @@ async function handleDeployError(e: any, check: boolean, branchConfig: any, comm
     await GitProvider.managePostPullRequestComment();
   }
   await executePrePostCommands("commandsPostDeploy", false);
-  throw new SfdxError("Deployment failure. Check messages above");
+  throw new SfError("Deployment failure. Check messages above");
 }
 
 export function truncateProgressLogLines(rawLog: string) {
@@ -553,7 +553,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   // Check git delta is ok
   const diffPackageXml = path.join(tmpDir, "package", "package.xml");
   if (gitDeltaCommandRes?.status !== 0 || !fs.existsSync(diffPackageXml)) {
-    throw new SfdxError("Error while running sfdx-git-delta:\n" + JSON.stringify(gitDeltaCommandRes));
+    throw new SfError("Error while running sfdx-git-delta:\n" + JSON.stringify(gitDeltaCommandRes));
   }
 
   // Remove from original packageDeployOnChange the items that has not been updated
@@ -636,7 +636,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
         ),
       ),
     );
-    throw new SfdxError("Error while deploying destructive changes");
+    throw new SfError("Error while deploying destructive changes");
   }
   await fs.remove(tmpDir);
   let deleteMsg = "";
@@ -767,7 +767,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   if (targetOrgUsernameAlias == null || targetOrgUsernameAlias == "") {
     const currentOrg = await MetadataUtils.getCurrentOrg();
     if (currentOrg == null) {
-      throw new SfdxError("You should call buildOrgManifest while having a default org set !");
+      throw new SfError("You should call buildOrgManifest while having a default org set !");
     }
     targetOrgUsernameAlias = currentOrg.username;
   }
@@ -775,10 +775,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in current project
     await execCommand(
       `sf project generate manifest` +
-        ` --name ${manifestName}` +
-        ` --output-dir ${path.resolve(manifestDir)}` +
-        ` --include-packages managed,unlocked` +
-        ` --from-org ${targetOrgUsernameAlias}`,
+      ` --name ${manifestName}` +
+      ` --output-dir ${path.resolve(manifestDir)}` +
+      ` --include-packages managed,unlocked` +
+      ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -792,10 +792,10 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sf project generate manifest` +
-        ` --name ${manifestName}` +
-        ` --output-dir ${path.resolve(manifestDir)}` +
-        ` --include-packages managed,unlocked` +
-        ` --from-org ${targetOrgUsernameAlias}`,
+      ` --name ${manifestName}` +
+      ` --output-dir ${path.resolve(manifestDir)}` +
+      ` --include-packages managed,unlocked` +
+      ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -807,7 +807,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
   }
   const packageXmlFull = packageXmlOutputFile;
   if (!fs.existsSync(packageXmlFull)) {
-    throw new SfdxError(
+    throw new SfError(
       c.red("[sfdx-hardis] Unable to generate package.xml. This is probably an auth issue or a Salesforce technical issue, please try again later"),
     );
   }
@@ -901,7 +901,7 @@ export async function extractOrgCoverageFromLog(stdout) {
     }
   } catch (e) {
     uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
-    uxLog(this, c.gray(e.message));
+    uxLog(this, c.gray((e as Error).message));
   }
   /* jscpd:ignore-end */
   // Get from output file
@@ -919,7 +919,7 @@ export async function extractOrgCoverageFromLog(stdout) {
         }
       } catch (e) {
         uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
-        uxLog(this, c.gray(e.message));
+        uxLog(this, c.gray((e as Error).message));
       }
     }
   }
@@ -948,11 +948,11 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
     "75.00";
   const minCoverage = parseFloat(minCoverageConf);
   if (isNaN(minCoverage)) {
-    throw new SfdxError(`[sfdx-hardis] Invalid minimum coverage configuration: ${minCoverageConf}`);
+    throw new SfError(`[sfdx-hardis] Invalid minimum coverage configuration: ${minCoverageConf}`);
   }
 
   if (minCoverage < 75.0) {
-    throw new SfdxError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% :)`);
+    throw new SfError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% :)`);
   }
 
   if (orgCoverage < minCoverage) {
@@ -960,7 +960,7 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
       await updatePullRequestResultCoverage("invalid_ignored", orgCoverage, minCoverage, options);
     } else {
       await updatePullRequestResultCoverage("invalid", orgCoverage, minCoverage, options);
-      throw new SfdxError(`[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverage}%`);
+      throw new SfError(`[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverage}%`);
     }
   } else {
     await updatePullRequestResultCoverage("valid", orgCoverage, minCoverage, options);
@@ -981,7 +981,7 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
   if (options.check) {
     await GitProvider.managePostPullRequestComment();
   }
-  throw new SfdxError("Metadata deployment failure. Check messages above");
+  throw new SfError("Metadata deployment failure. Check messages above");
 }
 
 // This data will be caught later to build a pull request message

@@ -1,10 +1,10 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as DOMPurify from "isomorphic-dompurify";
 import * as c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, uxLog } from "../utils";
 import { NotifMessage, UtilsNotifs } from ".";
-import { getEnvVar } from "../../config";
+import { getEnvVar } from "../../config/index.js";
 import { marked } from "marked";
 import { EmailMessage, sendEmail } from "../utils/emailUtils";
 import { removeMarkdown } from "../utils/notifUtils";
@@ -18,7 +18,7 @@ export class EmailProvider extends NotifProviderRoot {
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const mainEmailAddress = getEnvVar("NOTIF_EMAIL_ADDRESS");
     if (mainEmailAddress == null) {
-      throw new SfdxError("[EmailProvider] You need to define a variable NOTIF_EMAIL_ADDRESS to use sfdx-hardis Email notifications");
+      throw new SfError("[EmailProvider] You need to define a variable NOTIF_EMAIL_ADDRESS to use sfdx-hardis Email notifications");
     }
     const emailAddresses = mainEmailAddress.split(",");
     // Add branch custom Teams channel if defined

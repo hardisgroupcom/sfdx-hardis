@@ -106,7 +106,7 @@ export default class DocGenerate extends SfdxCommand {
       // Trigger command to open CSV file in VsCode extension
       WebSocketClient.requestOpenFile(this.outputFile);
     } catch (e) {
-      uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
+      uxLog(this, c.yellow("Error while generating CSV log file:\n" + (e as Error).message + "\n" + e.stack));
       this.outputFile = null;
     }
 

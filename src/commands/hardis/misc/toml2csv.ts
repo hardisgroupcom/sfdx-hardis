@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -251,16 +251,16 @@ export default class Toml2Csv extends SfdxCommand {
                 .map((val) => (this.inputFileSeparator !== this.outputFileSeparator ? this.formatCsvCell(val) : val)) // Add quotes if value contains a separator
                 .join(this.outputFileSeparator) +
               this.outputFileSeparator +
-              stripAnsi(`"${e.message.replace(/"/g, "'")}"`);
+              stripAnsi(`"${(e as Error).message.replace(/"/g, "'")}"`);
             if (this.checkNotDuplicate(this.currentSection, lineError)) {
               await this.writeLine(lineError, this.tomlSectionsErrorsFileWriters[this.currentSection]);
               this.addLineInCache(this.currentSection, lineSplit, lineError, false);
             }
-            if (this.lineErrorMessages[e.message]) {
-              this.lineErrorMessages[e.message]++;
+            if (this.lineErrorMessages[(e as Error).message]) {
+              this.lineErrorMessages[(e as Error).message]++;
             } else {
-              this.lineErrorMessages[e.message] = 1;
-              uxLog(this, c.red(e.message));
+              this.lineErrorMessages[(e as Error).message] = 1;
+              uxLog(this, c.red((e as Error).message));
             }
           }
         }
@@ -645,7 +645,7 @@ export default class Toml2Csv extends SfdxCommand {
       clearInterval(this.spinnerInterval);
       this.spinner.fail(errorMsg);
     }
-    throw new SfdxError(errorMsg);
+    throw new SfError(errorMsg);
   }
 
   formatCsvCell(cellVal: string) {

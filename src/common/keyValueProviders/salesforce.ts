@@ -2,7 +2,7 @@ import { Connection } from "@salesforce/core";
 import * as c from "chalk";
 import * as he from "he";
 import * as path from "path";
-import { getConfig } from "../../config";
+import { getConfig } from "../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../settings";
 import { uxLog } from "../utils";
 import { soqlQuery } from "../utils/apiUtils";

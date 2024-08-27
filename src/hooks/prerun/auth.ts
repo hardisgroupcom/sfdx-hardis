@@ -1,10 +1,10 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import * as crossSpawn from "cross-spawn";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { clearCache } from "../../common/cache";
-import { decryptFile } from "../../common/cryptoUtils";
+import { clearCache } from "../../common/cache/index.js";
+import { decryptFile } from "../../common/cryptoUtils.js";
 import {
   createTempDir,
   elapseStart,
@@ -15,10 +15,10 @@ import {
   promptInstanceUrl,
   restoreLocalSfdxInfo,
   uxLog,
-} from "../../common/utils";
-import { WebSocketClient } from "../../common/websocketClient";
-import { checkConfig, getConfig } from "../../config";
-import { prompts } from "../../common/utils/prompts";
+} from "../../common/utils/index.js";
+import { WebSocketClient } from "../../common/websocketClient.js";
+import { checkConfig, getConfig } from "../../config/index.js";
+import { prompts } from "../../common/utils/prompts.js";
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
@@ -139,9 +139,8 @@ async function authOrg(orgAlias: string, options: any) {
         );
       }
       if (setDefaultUsername) {
-        const setDefaultUsernameCommand = `sf config set ${isDevHub ? "target-dev-hub" : "target-org"}=${
-          orgInfoResult.result.username
-        }`;
+        const setDefaultUsernameCommand = `sf config set ${isDevHub ? "target-dev-hub" : "target-org"}=${orgInfoResult.result.username
+          }`;
         await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
       }
       doConnect = false;
@@ -234,7 +233,7 @@ async function authOrg(orgAlias: string, options: any) {
 
       if (isCI) {
         console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
-        throw new SfdxError(
+        throw new SfError(
           `In CI context, you may define:
                 - a .sfdx-hardis.yml file with instanceUrl and targetUsername properties (or INSTANCE_URL and TARGET_USERNAME repo variables)
                 - a repository secret variable SFDX_CLIENT_ID with consumer key of SF CLI connected app
@@ -295,7 +294,7 @@ async function authOrg(orgAlias: string, options: any) {
           loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
         } catch (e) {
           // Give instructions if server is unavailable
-          if ((e?.message || "").includes("Cannot start the OAuth redirect server on port")) {
+          if (((e as Error).message || "").includes("Cannot start the OAuth redirect server on port")) {
             uxLog(
               this,
               c.yellow(c.bold("You might have a ghost SF CLI command. Open Task Manager, search for Node.js processes, kill them, then try again")),

@@ -1,7 +1,7 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as os from "os";
-import { isCI } from "../../common/utils";
+import { isCI } from "../../common/utils/index.js";
 
 export const hook = async (options: any) => {
   // Set argv as global as sf arch messes with it !

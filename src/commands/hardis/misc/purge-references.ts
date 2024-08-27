@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -79,7 +79,7 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
       this.referenceStrings = refPromptResult.value.split(",");
     }
     if (this.referenceStrings.length == 1 && this.referenceStrings[0] === "") {
-      throw new SfdxError("You must input at least one string to check for references");
+      throw new SfError("You must input at least one string to check for references");
     }
     for (const refString of this.referenceStrings) {
       if (refString.endsWith("__c") && !this.referenceStrings.includes(refString.replace("__c", "__r"))) {

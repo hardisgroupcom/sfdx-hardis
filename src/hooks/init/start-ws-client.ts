@@ -1,5 +1,5 @@
-import { isCI } from "../../common/utils";
-import { WebSocketClient } from "../../common/websocketClient";
+import { isCI } from "../../common/utils/index.js";
+import { WebSocketClient } from "../../common/websocketClient.js";
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands

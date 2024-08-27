@@ -10,7 +10,7 @@ getConfig(layer) returns:
 - project if layer is project
 */
 
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import axios from "axios";
 import * as c from "chalk";
 import { cosmiconfig } from "cosmiconfig";
@@ -18,8 +18,8 @@ import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as os from "os";
 import * as path from "path";
-import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from "../common/utils";
-import { prompts } from "../common/utils/prompts";
+import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from "../common/utils/index.js";
+import { prompts } from "../common/utils/prompts.js";
 
 const moduleName = "sfdx-hardis";
 const projectConfigFiles = ["package.json", `.${moduleName}.yaml`, `.${moduleName}.yml`, `config/.${moduleName}.yaml`, `config/.${moduleName}.yml`];
@@ -87,7 +87,7 @@ async function loadFromRemoteConfigFile(url) {
   }
   const remoteConfigResp = await axios.get(url);
   if (remoteConfigResp.status !== 200) {
-    throw new SfdxError("[sfdx-hardis] Unable to read remote configuration file at " + url + "\n" + JSON.stringify(remoteConfigResp));
+    throw new SfError("[sfdx-hardis] Unable to read remote configuration file at " + url + "\n" + JSON.stringify(remoteConfigResp));
   }
   const remoteConfig = yaml.load(remoteConfigResp.data);
   REMOTE_CONFIGS[url] = remoteConfig;

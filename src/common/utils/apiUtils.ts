@@ -1,6 +1,6 @@
 import { uxLog } from ".";
 import * as c from "chalk";
-import { Connection, SfdxError } from "@salesforce/core";
+import { Connection, SfError } from "@salesforce/core";
 import { RestApiOptions, RecordResult } from "jsforce";
 import * as ora from "ora";
 
@@ -96,7 +96,7 @@ export async function bulkUpdate(objectName: string, action: string, records: Ar
       spinner.fail(`Bulk Load on ${objectName} (${action}) failed.`);
       uxLog(this, c.red("Bulk query error:" + batchInfo));
       reject(batchInfo);
-      throw new SfdxError(c.red("Bulk query error:" + batchInfo));
+      throw new SfError(c.red("Bulk query error:" + batchInfo));
     });
     batch.on("response", (results) => {
       job.close();
@@ -120,7 +120,7 @@ export async function bulkDeleteTooling(objectName: string, recordsFull: { Id: s
         const resultObject = createResultObject(records, false, `One or more ${objectName} records failed to delete.`);
         uxLog(this, c.red(`Error deleting ${objectName} records:` + resultObject));
         reject(err);
-        throw new SfdxError(c.red(`Error deleting ${objectName} records:` + resultObject));
+        throw new SfError(c.red(`Error deleting ${objectName} records:` + resultObject));
       } else {
         const resultsArray = Array.isArray(result) ? result : [result];
         const anyFailure = resultsArray.some((result) => !result.success);
@@ -149,7 +149,7 @@ export async function bulkDeleteTooling(objectName: string, recordsFull: { Id: s
     } catch (error) {
       const resultObject = createResultObject(records, false, `One or more records failed to delete due to a synchronous error.\n${error.message}`);
       reject(resultObject);
-      throw new SfdxError(c.red("Tooling Error:" + resultObject));
+      throw new SfError(c.red("Tooling Error:" + resultObject));
     }
   });
 }

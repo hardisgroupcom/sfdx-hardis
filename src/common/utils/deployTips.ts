@@ -248,7 +248,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
       const aiResponse = await AiProvider.promptAi(prompt);
       return aiResponse;
     } catch (e) {
-      uxLog(this, c.yellow("[AI] Error while calling OpenAI: " + e.message));
+      uxLog(this, c.yellow("[AI] Error while calling OpenAI: " + (e as Error).message));
     }
   }
   return null;

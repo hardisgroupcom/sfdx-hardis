@@ -1,12 +1,12 @@
 // XML Utils functions
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as util from "util";
 import * as xml2js from "xml2js";
 import { uxLog } from ".";
-import { CONSTANTS } from "../../config";
+import { CONSTANTS } from "../../config/index.js";
 
 export async function parseXmlFile(xmlFile: string) {
   const packageXmlString = await fs.readFile(xmlFile, "utf8");
@@ -98,7 +98,7 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
     try {
       packageXmlMetadatasTypeLs = result.Package.types || [];
     } catch {
-      throw new SfdxError("Unable to find Package XML element in " + packageXmlFile);
+      throw new SfError("Unable to find Package XML element in " + packageXmlFile);
     }
     // Add metadata members in concatenation list of items & store doublings
     for (const typePkg of packageXmlMetadatasTypeLs) {
@@ -140,7 +140,7 @@ export async function removePackageXmlFilesContent(
   try {
     packageXmlMetadatasTypeLs = parsedPackageXml.Package.types || [];
   } catch {
-    throw new SfdxError("Unable to parse package Xml file " + packageXmlFile);
+    throw new SfError("Unable to parse package Xml file " + packageXmlFile);
   }
 
   // Read package.xml file to use for filtering first file
@@ -153,7 +153,7 @@ export async function removePackageXmlFilesContent(
   try {
     packageXmlRemoveMetadatasTypeLs = parsedPackageXmlRemove.Package.types || [];
   } catch {
-    throw new SfdxError("Unable to parse package Xml file " + removePackageXmlFile);
+    throw new SfError("Unable to parse package Xml file " + removePackageXmlFile);
   }
 
   // Filter main package.xml file
@@ -259,10 +259,10 @@ export async function applyReplacementDefinition(replacementDefinition: any, all
       for (const regexReplace of replacementDefinition.refRegexes) {
         const updatedfileText = fileText.replace(new RegExp(regexReplace.regex, "gm"), regexReplace.replace);
         if (updatedfileText !== fileText) {
-          updated = true ;
+          updated = true;
           fileText = updatedfileText;
         }
-      }      
+      }
     }
     // Replacement by line
     let fileLines = fileText.split(/\r?\n/);
@@ -293,8 +293,8 @@ export async function applyReplacementDefinition(replacementDefinition: any, all
           return replacementDefinition.type === "code"
             ? "// " + line + " // Commented by sfdx-hardis purge-references"
             : replacementDefinition.type === "xml"
-            ? "<!-- " + line + " Commented by sfdx-hardis purge-references --> "
-            : line;
+              ? "<!-- " + line + " Commented by sfdx-hardis purge-references --> "
+              : line;
         }
         return line;
       });

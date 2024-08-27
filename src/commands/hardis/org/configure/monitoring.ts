@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as fs from "fs-extra";
@@ -82,7 +82,7 @@ export default class OrgConfigureMonitoring extends SfdxCommand {
         message: c.cyanBright("It's safer to have monitoring in a separate repo. Are you sure you want to mix monitoring and deployment sources ?"),
       });
       if (confirmMix.value === "no") {
-        throw new SfdxError('Your git repository name must contain the expression "monitoring"');
+        throw new SfError('Your git repository name must contain the expression "monitoring"');
       }
     }
     const preRequisitesUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions";

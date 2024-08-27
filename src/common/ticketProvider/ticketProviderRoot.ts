@@ -1,4 +1,4 @@
-import { SfdxError } from "@salesforce/core";
+import { SfError } from "@salesforce/core";
 import * as c from "chalk";
 import { Ticket } from ".";
 import { getCurrentGitBranch, uxLog } from "../utils";
@@ -8,7 +8,7 @@ export abstract class TicketProviderRoot {
   protected token: string;
 
   public getLabel(): string {
-    throw new SfdxError("getLabel should be implemented on this call");
+    throw new SfError("getLabel should be implemented on this call");
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {

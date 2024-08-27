@@ -86,7 +86,7 @@ export default class SandboxCreate extends SfdxCommand {
       await initOrgData(path.join(".", "scripts", "data", "SandboxInit"), this.sandboxOrgUsername);
     } catch (e) {
       elapseEnd(`Create and initialize sandbox org`);
-      uxLog(this, c.grey("Error: " + e.message + "\n" + e.stack));
+      uxLog(this, c.grey("Error: " + (e as Error).message + "\n" + e.stack));
       throw e;
     }
     elapseEnd(`Create and initialize sandbox org`);

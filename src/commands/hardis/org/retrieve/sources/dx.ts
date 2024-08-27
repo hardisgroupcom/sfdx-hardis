@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import * as child from "child_process";
@@ -132,7 +132,7 @@ export default class DxSources extends SfdxCommand {
         uxLog(this, convertRes.stdout + convertRes.stderr);
       }
     } catch (e) {
-      throw new SfdxError(JSON.stringify(e, null, 2));
+      throw new SfError(JSON.stringify(e, null, 2));
     }
 
     // Move sfdx sources in main folder

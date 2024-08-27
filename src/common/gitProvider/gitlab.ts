@@ -124,10 +124,10 @@ export class GitlabProvider extends GitProviderRoot {
     const gitlabCiJobName = process.env.CI_JOB_NAME;
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
-    const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
+    const messageKey = prMessag(e as Error).messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
     let messageBody = `**${prMessage.title || ""}**
 
-${prMessage.message}
+${prMessag(e as Error).message}
 
 _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
 <!-- sfdx-hardis message-key ${messageKey} -->

@@ -196,7 +196,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
       } catch (e) {
         // Handle unexpected failure
         success = false;
-        uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed !\n${e.message}`));
+        uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed !\n${(e as Error).message}`));
         commandsSummary.push({
           title: command.title,
           status: "error",

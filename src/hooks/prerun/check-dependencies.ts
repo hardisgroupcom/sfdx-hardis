@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
 
 import * as os from "os";
-import { checkSfdxPlugin, git, uxLog, isCI, checkAppDependency, isGitRepo } from "../../common/utils";
-import { getConfig } from "../../config";
+import { checkSfdxPlugin, git, uxLog, isCI, checkAppDependency, isGitRepo } from "../../common/utils/index.js";
+import { getConfig } from "../../config/index.js";
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands

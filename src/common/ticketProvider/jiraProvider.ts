@@ -5,8 +5,8 @@ import * as sortArray from "sort-array";
 import { Ticket } from ".";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { extractRegexMatches, uxLog } from "../utils";
-import { SfdxError } from "@salesforce/core";
-import { getEnvVar } from "../../config";
+import { SfError } from "@salesforce/core";
+import { getEnvVar } from "../../config/index.js";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof JiraApi>;
@@ -113,7 +113,7 @@ export class JiraProvider extends TicketProviderRoot {
         try {
           ticketInfo = await this.jiraClient.getIssue(ticket.id);
         } catch (e) {
-          uxLog(this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${e.message}`));
+          uxLog(this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${(e as Error).message}`));
         }
         if (ticketInfo) {
           const body =
@@ -178,7 +178,7 @@ export class JiraProvider extends TicketProviderRoot {
         try {
           const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
           if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
-            throw new SfdxError(genericHtmlResponseError);
+            throw new SfError(genericHtmlResponseError);
           }
           commentedTickets.push(ticket);
         } catch (e6) {

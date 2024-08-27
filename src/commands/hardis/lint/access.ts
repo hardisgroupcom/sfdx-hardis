@@ -7,7 +7,7 @@ import * as sortArray from "sort-array";
 
 // Salesforce Specific
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import * as fs from "fs-extra";
 import { AnyJson } from "@salesforce/ts-types";
 
@@ -600,7 +600,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       }
       await writeXmlFile(permissionSetFile, psFileXml);
     }
-    throw new SfdxError(c.red("Your permission sets has been updated: please CHECK THE UPDATES then commit and push !"));
+    throw new SfError(c.red("Your permission sets has been updated: please CHECK THE UPDATES then commit and push !"));
   }
 
   private async readFile(filePath: string): Promise<string> {

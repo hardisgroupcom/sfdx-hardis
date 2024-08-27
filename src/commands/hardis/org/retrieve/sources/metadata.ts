@@ -167,7 +167,7 @@ export default class DxSources extends SfdxCommand {
           uxLog(this, convertRes.stdout + convertRes.stderr);
         }
       } catch (e) {
-        uxLog(this, c.yellow("Error while converting metadatas to sources:\n" + e.message));
+        uxLog(this, c.yellow("Error while converting metadatas to sources:\n" + (e as Error).message));
       }
       process.chdir(prevCwd);
     }

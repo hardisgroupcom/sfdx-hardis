@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
@@ -63,7 +63,7 @@ Calls a soft git reset behind the hood
 
     const currentGitBranch = await getCurrentGitBranch();
     if (currentGitBranch === targetBranch) {
-      throw new SfdxError(c.red("[sfdx-hardis] You can not revert commits of a protected branch !"));
+      throw new SfError(c.red("[sfdx-hardis] You can not revert commits of a protected branch !"));
     }
 
     // Ask user to confirm
@@ -72,7 +72,7 @@ Calls a soft git reset behind the hood
       message: `This command will git reset (soft) your branch ${currentGitBranch}. You will need to select and commit again your files. Are you sure ?`,
     });
     if (confirm.value === false) {
-      throw new SfdxError(c.red("[sfdx-hardis] Cancelled by user"));
+      throw new SfError(c.red("[sfdx-hardis] Cancelled by user"));
     }
 
     // List all commits since the branch creation

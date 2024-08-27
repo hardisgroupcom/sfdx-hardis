@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages, SfdxError } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
@@ -127,7 +127,7 @@ export default class RefreshTask extends SfdxCommand {
     );
 
     if (localBranch === this.mergeBranch) {
-      throw new SfdxError("[sfdx-hardis] You can not refresh from the same branch");
+      throw new SfError("[sfdx-hardis] You can not refresh from the same branch");
     }
 
     // Pull from scratch org
