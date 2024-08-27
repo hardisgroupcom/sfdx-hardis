@@ -300,7 +300,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     uxLog(this, c.grey("Query: " + c.italic(auditTrailQuery)));
     const queryRes = await bulkQuery(auditTrailQuery, conn);
     const suspectRecords: any[] = [];
-    let suspectUsers = [];
+    let suspectUsers: any[] = [];
     const suspectActions: any[] = [];
     const severityIconLog = getSeverityIcon("log");
     const severityIconWarning = getSeverityIcon("warning");
@@ -369,7 +369,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     let notifText = `No suspect Setup Audit Trail records has been found in ${orgMarkdown}`;
-    let notifAttachments = [];
+    let notifAttachments: any[] = [];
     if (suspectRecords.length > 0) {
       notifSeverity = "warning";
       notifText = `${suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`;

@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as path from "path";
 import { createTempDir, ensureGitRepository, git, gitCheckOutRemote, selectGitBranch, uxLog } from "../../../../common/utils";
-import { callSfdxGitDelta } from "../../../../common/utils/gitUtils";
+import { callSfdxGitDelta } from "../../../../common/utils/gitUtils.js";
 import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory

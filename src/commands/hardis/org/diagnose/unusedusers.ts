@@ -260,7 +260,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     let notifSeverity: NotifSeverity = "log";
     let notifText = this.returnActiveUsers ? `No active user has logged in in ${orgMarkdown}` : `No inactive user has been found in ${orgMarkdown}`;
     const notifDetailText = ``;
-    let attachments = [];
+    let attachments: any[] = [];
     if (users.length > 0) {
       notifSeverity = this.returnActiveUsers ? "log" : "warning";
       notifText = this.returnActiveUsers

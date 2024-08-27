@@ -7,14 +7,14 @@ import sortArray from "sort-array";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, isCI, uxLog } from "./index.js";
 import { CONSTANTS, getConfig, setConfig } from "../../config/index.js";
 import { GitProvider } from "../gitProvider/index.js";
-import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
+import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown.js";
 import { MetadataUtils } from "../metadata-utils/index.js";
 import { importData } from "./dataUtils.js";
 import { analyzeDeployErrorLogs } from "./deployTips.js";
-import { callSfdxGitDelta } from "./gitUtils";
+import { callSfdxGitDelta } from "./gitUtils.js";
 import { createBlankSfdxProject, isSfdxProject } from "./projectUtils.js";
 import { prompts } from "./prompts.js";
-import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
+import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils.js";
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils.js";
 import { ResetMode } from "simple-git";
 import { isSandbox } from "./orgUtils.js";
@@ -25,7 +25,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
   elapseStart("project:deploy:start");
   const config = await getConfig("user");
   const currentBranch = await getCurrentGitBranch();
-  let arrangedFiles = [];
+  let arrangedFiles: any[] = [];
   if (!(config[`tmp_${currentBranch}_pushed`] === true)) {
     arrangedFiles = await arrangeFilesBefore(commandThis, options);
   }
@@ -51,7 +51,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
   } catch (e) {
     await restoreArrangedFiles(arrangedFiles, commandThis);
     // Manage beta/legacy boza
-    const stdOut = e.stdout + e.stderr;
+    const stdOut = (e as any).stdout + (e as any).stderr;
     if (stdOut.includes(`getaddrinfo EAI_AGAIN`)) {
       uxLog(this, c.red(c.bold("The error has been caused by your unstable internet connection. Please Try again !")));
     }
@@ -78,7 +78,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
     });
   } catch (e) {
     // Manage beta/legacy boza
-    const stdOut = e.stdout + e.stderr;
+    const stdOut = (e as any).stdout + (e as any).stderr;
     // Analyze errors
     const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(this, c.red("Sadly there has been pull error(s)"));
@@ -245,7 +245,7 @@ export async function forceSourceDeploy(
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || "");
       if (orgCoveragePercent) {
         try {
-          await checkDeploymentOrgCoverage(orgCoveragePercent, { check: check, testlevel: testlevel });
+          await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel });
         } catch (errCoverage) {
           if (check) {
             await GitProvider.managePostPullRequestComment();
@@ -320,7 +320,7 @@ export async function forceSourceDeploy(
 }
 
 async function handleDeployError(e: any, check: boolean, branchConfig: any, commandThis: any, options: any, deployment: any) {
-  const output: string = e.stdout + e.stderr;
+  const output: string = (e as any).stdout + (e as any).stderr;
   // Handle coverage error if ignored
   if (
     check === true &&
@@ -330,7 +330,7 @@ async function handleDeployError(e: any, check: boolean, branchConfig: any, comm
     output.includes("=== Apex Code Coverage")
   ) {
     uxLog(commandThis, c.yellow(c.bold("Deployment status: Deploy check success & Ignored test coverage error")));
-    return { status: 0, stdout: e.stdout, stderr: e.stderr, testCoverageNotBlockingActivated: true };
+    return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
   }
   // Handle Effective error
   const { tips, errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
@@ -364,7 +364,7 @@ export function truncateProgressLogLines(rawLog: string) {
 async function getDeploymentId(rawLog: string) {
   const regex = /Deploy ID: (.*)/gm;
   if (rawLog && rawLog.match(regex)) {
-    const deploymentId = regex.exec(rawLog)[1];
+    const deploymentId = (regex.exec(rawLog) || [])[1];
     globalThis.pullRequestDeploymentId = deploymentId;
     return deploymentId;
   }
@@ -617,7 +617,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
     (options.check ? " --check-only" : "") +
     (options.debug ? " --verbose" : "");
   // Deploy destructive changes
-  let deployDeleteRes = null;
+  let deployDeleteRes: any = {};
   try {
     deployDeleteRes = await execCommand(deployDelete, commandThis, {
       output: true,
@@ -625,7 +625,7 @@ export async function deployDestructiveChanges(packageDeletedXmlFile: string, op
       fail: true,
     });
   } catch (e) {
-    const { errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, {});
+    const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, {});
     uxLog(this, c.red("Sadly there has been destruction error(s)"));
     uxLog(this, c.red("\n" + errLog));
     uxLog(
@@ -754,7 +754,7 @@ async function restoreQuickActions() {
 }
 
 // Build target org package.xml manifest
-export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputFile = null, conn = null) {
+export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputFile: string | null = null, conn: any | null = null) {
   // Manage file name
   if (packageXmlOutputFile === null) {
     const tmpDir = await createTempDir();
@@ -841,7 +841,7 @@ export async function buildOrgManifest(targetOrgUsernameAlias, packageXmlOutputF
       const waveRecipeType = waveRecipeTypeList[0];
       const waveRecipeTypeMembers = waveRecipeType.members || [];
       const waveDataFlowTypeList = parsedPackageXml.Package.types.filter((type) => type.name[0] === "WaveDataflow");
-      let waveDataFlowType = { name: ["WaveDataflow"], members: [] };
+      let waveDataFlowType: any = { name: ["WaveDataflow"], members: [] };
       if (waveDataFlowTypeList.length === 1) {
         waveDataFlowType = waveDataFlowTypeList[0];
       }
@@ -888,7 +888,7 @@ export async function executePrePostCommands(property: "commandsPreDeploy" | "co
 }
 
 export async function extractOrgCoverageFromLog(stdout) {
-  let orgCoverage = null;
+  let orgCoverage: number | null = null;
   // Get from output text
   const fromTest = /Org Wide Coverage *(.*)/.exec(stdout);
   if (fromTest && fromTest[1]) {
@@ -914,7 +914,7 @@ export async function extractOrgCoverageFromLog(stdout) {
       const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, "utf-8"));
       orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
       try {
-        if (orgCoverage && orgCoverage.toFixed(2) > 0.0) {
+        if (orgCoverage && Number(orgCoverage.toFixed(2)) > 0.0) {
           return orgCoverage.toFixed(2);
         }
       } catch (e) {
@@ -969,14 +969,14 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { tips, errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, options);
+  const { tips, errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, options);
   uxLog(commandThis, c.red(c.bold("Sadly there has been Metadata deployment error(s)...")));
   uxLog(this, c.red("\n" + errLog));
   uxLog(
     commandThis,
     c.yellow(c.bold(`You may${tips.length > 0 ? " also" : ""} copy-paste errors on google to find how to solve the metadata deployment issues :)`)),
   );
-  await displayDeploymentLink(e.stdout + e.stderr, options);
+  await displayDeploymentLink((e as any).stdout + (e as any).stderr, options);
   // Post pull requests comments if necessary
   if (options.check) {
     await GitProvider.managePostPullRequestComment();

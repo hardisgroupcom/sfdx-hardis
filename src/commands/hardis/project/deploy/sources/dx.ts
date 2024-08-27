@@ -26,7 +26,7 @@ import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
 import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider";
 import { GitProvider } from "../../../../../common/gitProvider";
-import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from "../../../../../common/utils/gitUtils";
+import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from "../../../../../common/utils/gitUtils.js";
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from "../../../../../common/utils/notifUtils";
 import { MessageAttachment } from "@slack/web-api";
 import { TicketProvider } from "../../../../../common/ticketProvider";

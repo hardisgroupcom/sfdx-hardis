@@ -14,7 +14,7 @@ import {
   uxLog,
 } from "./index.js";
 import { GitProvider } from "../gitProvider/index.js";
-import { Ticket, TicketProvider } from "../ticketProvider";
+import { Ticket, TicketProvider } from "../ticketProvider/index.js";
 import { DefaultLogFields, ListLogLine } from "simple-git";
 
 export async function selectTargetBranch(options: { message?: string } = {}) {

@@ -329,7 +329,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     let notifSeverity: NotifSeverity = "log";
     let notifText = `No unused Permission Set Licenses Assignments has been found in ${orgMarkdown}`;
     let notifDetailText = ``;
-    let attachments = [];
+    let attachments: any[] = [];
     if (unusedPermissionSetLicenseAssignments.length > 0) {
       notifSeverity = "warning";
       notifText = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`;

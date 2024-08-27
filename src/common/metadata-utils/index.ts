@@ -577,7 +577,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`),
     if (options.filterManagedItems) {
       uxLog(commandThis, c.cyan("Filtering managed items from package.Xml manifest..."));
       // List installed packages & collect managed namespaces
-      let namespaces = [];
+      let namespaces: any[] = [];
       if (isSfdxProject()) {
         // Use sfdx command if possible
         const installedPackages = await this.listInstalledPackages(null, commandThis);

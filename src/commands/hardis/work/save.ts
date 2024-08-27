@@ -9,7 +9,7 @@ import * as path from "path";
 import { createTempDir, execCommand, getCurrentGitBranch, git, gitHasLocalUpdates, normalizeFileStatusPath, uxLog } from "../../../common/utils";
 import { exportData } from "../../../common/utils/dataUtils";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
-import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from "../../../common/utils/gitUtils";
+import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from "../../../common/utils/gitUtils.js";
 import { prompts } from "../../../common/utils/prompts";
 import { appendPackageXmlFilesContent, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "../../../common/utils/xmlUtils.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";

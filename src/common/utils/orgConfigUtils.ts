@@ -90,8 +90,10 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       // Select Mine value
       const mineValue = await page.waitForSelector('input[value="mine"]');
       if (mineValue) {
-        const mineValueClickableLabel = await mineValue.$x("following-sibling::*");
-        await mineValueClickableLabel[0].click();
+        const mineValueClickableLabel = await mineValue.$("following-sibling::*");
+        if (mineValueClickableLabel) {
+          await mineValueClickableLabel[0].click();
+        }
       }
       else {
         throw new SfError("Puppeteer: input[value=\"mine\"] not found");

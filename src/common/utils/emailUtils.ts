@@ -33,17 +33,17 @@ export async function sendEmail(emailMessage: EmailMessage) {
     soapBody += `           <urn:htmlBody>${sanitizeForXml(emailMessage.body_html || "")}</urn:htmlBody>\n`;
   }
   // Addresses
-  if (emailMessage?.to?.length > 0) {
+  if (emailMessage?.to?.length && emailMessage?.to?.length > 0) {
     soapBody += buildArrayOfStrings(emailMessage.to, "             <urn:toAddresses>", "</urn:toAddresses>");
   }
-  if (emailMessage?.cc?.length > 0) {
+  if (emailMessage?.cc?.length && emailMessage?.cc?.length > 0) {
     soapBody += buildArrayOfStrings(emailMessage.cc, "             <urn:ccAddresses>", "</urn:ccAddresses>");
   }
-  if (emailMessage?.cci?.length > 0) {
+  if (emailMessage?.cci?.length && emailMessage?.cci?.length > 0) {
     soapBody += buildArrayOfStrings(emailMessage.cci, "             <urn:bccAddresses>", "</urn:bccAddresses>");
   }
   // Attachments
-  if (emailMessage?.attachments?.length > 0) {
+  if (emailMessage?.attachments?.length && emailMessage?.attachments?.length > 0) {
     let totalSize = 0;
     for (const attachment of emailMessage?.attachments || []) {
       if (fs.existsSync(attachment)) {

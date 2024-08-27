@@ -261,7 +261,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   }
 
   private async retrieveElementToCheck(elements, xmlField, excludedElements): Promise<Array<string>> {
-    let fieldsToSearch = [];
+    let fieldsToSearch: any[] = [];
 
     for (const element of elements) {
       // Exclude mandatory fields
@@ -440,7 +440,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     let notifText = `No custom elements have no access defined in any Profile or Permission set in ${branchMd}`;
-    let attachments = [];
+    let attachments: any[] = [];
     // Manage detail in case there are issues
     if (this.missingElements.length > 0) {
       notifSeverity = "warning";

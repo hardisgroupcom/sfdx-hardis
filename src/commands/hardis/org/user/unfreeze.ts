@@ -86,8 +86,8 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
     const conn = this.org.getConnection();
 
     // Select profiles that we want users to be unfrozen
-    let profileIds = [];
-    let profileNames = [];
+    let profileIds: any[] = [];
+    let profileNames: any[] = [];
     if (includeProfileNames.length === 0 && excludeProfileNames.length === 0) {
       // Manual user selection
       const profilesRes = await promptProfiles(conn, {

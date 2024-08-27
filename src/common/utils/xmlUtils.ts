@@ -128,7 +128,7 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
 export async function removePackageXmlFilesContent(
   packageXmlFile: string,
   removePackageXmlFile: string,
-  { outputXmlFile = null, logFlag = false, removedOnly = false, keepEmptyTypes = false }
+  { outputXmlFile = "", logFlag = false, removedOnly = false, keepEmptyTypes = false }
 ) {
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);

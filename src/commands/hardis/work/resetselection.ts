@@ -4,7 +4,7 @@ import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
-import { selectTargetBranch } from "../../../common/utils/gitUtils";
+import { selectTargetBranch } from "../../../common/utils/gitUtils.js";
 import { setConfig } from "../../../config/index.js";
 import { prompts } from "../../../common/utils/prompts";
 

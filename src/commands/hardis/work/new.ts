@@ -6,7 +6,7 @@ import c from "chalk";
 import * as path from "path";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { checkGitClean, ensureGitBranch, execCommand, execSfdxJson, git, gitCheckOutRemote, uxLog } from "../../../common/utils";
-import { selectTargetBranch } from "../../../common/utils/gitUtils";
+import { selectTargetBranch } from "../../../common/utils/gitUtils.js";
 import {
   initApexScripts,
   initOrgData,

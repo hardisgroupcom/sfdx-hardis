@@ -2,14 +2,14 @@
 import c from "chalk";
 import * as format from "string-template";
 
-import { getAllTips } from "./deployTipsList";
-import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown";
+import { getAllTips } from "./deployTipsList.js";
+import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown.js";
 import { stripAnsi, uxLog } from "./index.js";
-import { AiProvider, AiResponse } from "../aiProvider";
+import { AiProvider, AiResponse } from "../aiProvider/index.js";
 
-let logRes = null;
-let errorsAndTips = [];
-let alreadyProcessedErrors = [];
+let logRes: string | null = null;
+let errorsAndTips: any[] = [];
+let alreadyProcessedErrors: any[] = [];
 const firstYellowChar = c.yellow("*")[0];
 
 // Checks for deploy tips in a log string
@@ -69,11 +69,11 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   const logRaw = stripAnsi(log);
   const regexFailedTests = /Test Failures([\S\s]*?)Test Success/gm;
   if (logRaw.match(regexFailedTests)) {
-    const failedTestsLines = regexFailedTests
-      .exec(logRaw)[1]
+    const failedTestsLines = (regexFailedTests
+      .exec(logRaw) || [])[1]
       .split("\n")
       .map((s) => s.trim());
-    let failedTest = null;
+    let failedTest: any = null;
     // Parse strings to extract main error line then stack
     for (const line of failedTestsLines) {
       const regex = /^(\w+[\d_]*)\s+(\w+[\d_]*)\s*(.*)$/;
@@ -87,7 +87,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
         failedTest = {
           class: match[1],
           method: match[2],
-          error: errSplit.shift().trim(),
+          error: (errSplit.shift() || "").trim(),
         };
         if (errSplit.length > 0) {
           failedTest.stack = "Class." + errSplit.join("\nClass.");
@@ -108,7 +108,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
   if (
     tipDefinition.expressionString &&
     tipDefinition.expressionString.filter((expressionString: any) => {
-      return logRes.includes(expressionString);
+      return (logRes || "").includes(expressionString);
     }).length > 0
   ) {
     if (includeInLog) {

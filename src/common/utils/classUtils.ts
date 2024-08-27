@@ -1,6 +1,6 @@
 import { countRegexMatches, uxLog } from "./index.js";
 import c from "chalk";
-import * as readFilesRecursive from "fs-readdir-recursive";
+import readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -19,7 +19,7 @@ function findSubstringInFile(filePath: string, substring: string): Promise<boole
 }
 
 // Detect all test classes under the repository
-export async function getApexTestClasses(classRegexFilter: string | null = null, excludeSeeAllData = false) {
+export async function getApexTestClasses(classRegexFilter: string = "", excludeSeeAllData = false) {
   const pathToBrowser = process.cwd();
   uxLog(this, c.grey(`Finding all repository APEX tests in ${c.bold(pathToBrowser)}`));
 

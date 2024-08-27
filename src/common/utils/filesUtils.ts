@@ -30,7 +30,7 @@ export class FilesExporter {
 
   private fetchOptions: any;
   private dtl: any = null; // export config
-  private exportedFilesFolder: string;
+  private exportedFilesFolder: string = "";
   private recordsChunk: any[] = [];
   private chunksNumber = 1;
 
@@ -49,8 +49,8 @@ export class FilesExporter {
   private filesErrors = 0;
   private filesIgnoredType = 0;
   private filesIgnoredExisting = 0;
-  private apiUsedBefore = null;
-  private apiLimit = null;
+  private apiUsedBefore: number = 0;
+  private apiLimit: number = 0;
 
   constructor(
     filesPath: string,
@@ -361,7 +361,7 @@ export class FilesImporter {
   private commandThis: any;
 
   private dtl: any = null; // export config
-  private exportedFilesFolder: string;
+  private exportedFilesFolder: string = "";
   private handleOverwrite = false;
 
   constructor(filesPath: string, conn: Connection, options: { exportConfig?: any; handleOverwrite?: boolean }, commandThis: any) {
@@ -415,7 +415,7 @@ export class FilesImporter {
       }
       const parentRecordId = parentRecordIds[0].Id;
 
-      let existingDocuments = [];
+      let existingDocuments: any[] = [];
       // Collect existing documents if we handle file overwrite
       if (this.handleOverwrite) {
         const existingDocsQuery = `SELECT Id, ContentDocumentId, Title FROM ContentVersion WHERE FirstPublishLocationId = '${parentRecordId}'`;
@@ -520,7 +520,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
     return null;
   }
   const exportFileJson = JSON.parse(await fs.readFile(exportFile, "utf8"));
-  const folderName = filesWorkspace.replace(/\\/g, "/").match(/([^/]*)\/*$/)[1];
+  const folderName = (filesWorkspace.replace(/\\/g, "/").match(/([^/]*)\/*$/) || "")[1];
   const hardisLabel = exportFileJson.sfdxHardisLabel || folderName;
   const hardisDescription = exportFileJson.sfdxHardisDescription || filesWorkspace;
   const soqlQuery = exportFileJson.soqlQuery || "";
@@ -693,13 +693,13 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
         uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
         result.xlsxFile = xslxFile;
       } catch (e2) {
-        uxLog(this, c.yellow("Error while generating XSLX log file:\n" + e2.message + "\n" + e2.stack));
+        uxLog(this, c.yellow("Error while generating XSLX log file:\n" + (e2 as Error).message + "\n" + (e2 as Error).stack));
       }
     } else {
       uxLog(this, c.grey(`No XLS file generated as ${outputPath} is empty`));
     }
   } catch (e) {
-    uxLog(this, c.yellow("Error while generating CSV log file:\n" + (e as Error).message + "\n" + e.stack));
+    uxLog(this, c.yellow("Error while generating CSV log file:\n" + (e as Error).message + "\n" + (e as Error).stack));
   }
   return result;
 }
@@ -712,7 +712,7 @@ async function csvToXls(csvFile: string, xslxFile: string) {
   // Adjust column size (only if the file is not too big, to avoid performances issues)
   if (worksheet.rowCount < 5000) {
     worksheet.columns.forEach((column) => {
-      const lengths = column.values.map((v) => v.toString().length);
+      const lengths = (column.values || []).map((v) => (v || "").toString().length);
       const maxLength = Math.max(...lengths.filter((v) => typeof v === "number"));
       column.width = maxLength;
     });
