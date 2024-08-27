@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -42,15 +42,9 @@ export default class ConfigureAuth extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
-
-  // Comment this out if your command does not require an org username
-  protected static supportsUsername = true;
-  protected static requiresUsername = false;
-
-  // Comment this out if your command does not support a hub org username
-  protected static supportsDevhubUsername = true;
-  protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
@@ -59,6 +53,7 @@ export default class ConfigureAuth extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(ConfigureAuth);
     const devHub = flags.devhub || false;
 
     // Ask user to login to org

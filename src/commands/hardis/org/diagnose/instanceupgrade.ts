@@ -1,12 +1,12 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import axios from "axios";
 import moment from "moment";
 import c from "chalk";
 import { uxLog } from "../../../../common/utils/index.js";
-import { soqlQuery } from "../../../../common/utils/apiUtils";
+import { soqlQuery } from "../../../../common/utils/apiUtils.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils.js";
 
@@ -37,15 +37,9 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
-  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
   protected debugMode = false;
@@ -53,6 +47,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(DiagnoseInstanceUpgrade);
     this.debugMode = flags.debug || false;
 
     // Get instance name

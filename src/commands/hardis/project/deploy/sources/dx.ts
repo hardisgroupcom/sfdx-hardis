@@ -229,10 +229,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
-
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;

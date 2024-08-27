@@ -1,4 +1,4 @@
-import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { removePackageXmlFilesContent } from "../../../common/utils/xmlUtils.js";
 
@@ -6,8 +6,7 @@ export class PackageXmlRemove extends SfCommand<any> {
   public static readonly description = `Removes the content of a package.xml file matching another package.xml file`;
   public static readonly examples = ["$ sf hardis packagexml:remove -p package.xml -r destructiveChanges.xml -o my-reduced-package.xml"];
   public static readonly requiresProject = false;
-  public static readonly requiresUsername = false;
-  public static readonly flagsConfig: FlagsConfig = {
+  public static readonly flags = {
     packagexml: Flags.string({
       char: 'p',
       description: 'package.xml file to reduce'
@@ -40,6 +39,7 @@ export class PackageXmlRemove extends SfCommand<any> {
   protected outputFile: string;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(PackageXmlRemove);
     this.packageXmlFile = flags.packagexml || 'package.xml';
     this.removePackageXmlFile = flags.removepackagexml || 'destructiveChanges.xml';
     this.removedOnly = flags.removedonly || false;

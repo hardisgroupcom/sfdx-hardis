@@ -40,8 +40,7 @@ export default class AuditDuplicateFiles extends SfCommand<any> {
     }),
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
+
   public static requiresProject = false;
   /* jscpd:ignore-end */
 

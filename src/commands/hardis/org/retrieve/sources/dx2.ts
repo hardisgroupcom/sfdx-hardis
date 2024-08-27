@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -45,14 +45,8 @@ export default class DxSources2 extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
-
-  // Comment this out if your command does not require an org username
-  protected static supportsUsername = true;
-  protected static requiresUsername = false;
-
-  // Comment this out if your command does not support a hub org username
-  // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
@@ -62,6 +56,7 @@ export default class DxSources2 extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(DxSources2);
     let packageXml = flags.packagexml || null;
     let targetUsername = flags.targetusername || null;
     const template = flags.template || null;

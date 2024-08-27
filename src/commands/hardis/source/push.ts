@@ -1,4 +1,4 @@
-import { FlagsConfig, flags, SfCommand } from "@salesforce/command";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Duration } from "@salesforce/kit";
 import c from "chalk";
 import { AnyJson } from "@salesforce/ts-types";
@@ -37,8 +37,9 @@ export default class Push extends SfCommand<any> {
     websocket: Flags.string({
       description: "websocket",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
-  protected static requiresUsername = true;
+
   public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {

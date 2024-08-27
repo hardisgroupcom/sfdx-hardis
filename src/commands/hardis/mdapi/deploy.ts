@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { Flags, SfCommand } from '@salesforce/sf-plugins-core';
+import { Flags, requiredOrgFlagWithDeprecations, SfCommand } from '@salesforce/sf-plugins-core';
 import c from "chalk";
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils.js";
@@ -14,7 +14,6 @@ export class Deploy extends SfCommand<any> {
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_deploy)
 `;
   public static readonly examples = [];
-  public static readonly requiresUsername = true;
   public static readonly flagsConfig = {
     checkonly: Flags.boolean({
       char: "c",
@@ -84,6 +83,7 @@ export class Deploy extends SfCommand<any> {
     websocket: Flags.string({
       description: "websocket",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {

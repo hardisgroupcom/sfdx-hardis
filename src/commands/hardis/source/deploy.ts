@@ -1,9 +1,9 @@
-import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { GitProvider } from "../../../common/gitProvider";
-import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
+import { GitProvider } from "../../../common/gitProvider/index.js";
+import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils.js";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils.js";
 import { uxLog } from "../../../common/utils/index.js";
 
@@ -59,8 +59,7 @@ Notes:
     "$ sf hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary",
   ];
   public static readonly requiresProject = true;
-  public static readonly requiresUsername = true;
-  public static readonly flagsConfig: FlagsConfig = {
+  public static readonly flags = {
     checkonly: Flags.boolean({
       char: "c",
       description: "checkonly",
@@ -150,6 +149,7 @@ Notes:
     websocket: Flags.string({
       description: "websocket",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 

@@ -38,12 +38,7 @@ export default class ConfigGet extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
-  };
-
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
-
-  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
+  };  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
   protected configInfo: any = {};

@@ -48,10 +48,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   };
   /* jscpd:ignore-end */
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
+
   protected static supportsUsername = true;
-  // Comment this out if your command does not support a hub org username
+
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;

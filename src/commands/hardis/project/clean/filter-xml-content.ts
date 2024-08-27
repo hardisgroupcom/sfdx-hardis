@@ -1,4 +1,4 @@
-import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -22,8 +22,7 @@ This script requires a filter-config.json file`;
     'sf hardis:project:clean:filter-xml-content -i "retrieveUnpackaged"',
   ];
   public static readonly requiresProject = true;
-  public static readonly requiresUsername = false;
-  public static readonly flagsConfig: FlagsConfig = {
+  public static readonly flags = {
     configfile: Flags.string({
       char: "c",
       description: "Config JSON file path",
@@ -55,6 +54,7 @@ This script requires a filter-config.json file`;
   public smmryResult = { filterResults: {} };
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(FilterXmlContent);
     this.configFile = flags.configfile || "./filter-config.json";
     this.inputFolder = flags.inputfolder || ".";
     this.outputFolder =

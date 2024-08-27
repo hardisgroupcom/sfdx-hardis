@@ -1,4 +1,4 @@
-import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { SfError } from "@salesforce/core";
 import c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils/index.js";
@@ -16,7 +16,6 @@ export class SourceRetrieve extends SfCommand<any> {
 `;
   public static readonly examples = [];
   public static readonly requiresProject = true;
-  public static readonly requiresUsername = true;
   public static readonly flagsConfig: FlagsConfig = {
     apiversion: flags.builtin({
       /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
@@ -73,6 +72,7 @@ export class SourceRetrieve extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
   public async run(): Promise<any> {

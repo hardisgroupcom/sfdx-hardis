@@ -1,17 +1,17 @@
-import { FlagsConfig, flags, SfCommand } from "@salesforce/command";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
 
 export default class ProjectDeployStart extends SfCommand<any> {
-  public static readonly description = `sfdx-hardis wrapper for sfdx project deploy start that displays tips to solve deployment errors.
+  public static description = `sfdx-hardis wrapper for sfdx project deploy start that displays tips to solve deployment errors.
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)
 `;
 
-  public static readonly flagsConfig: FlagsConfig = {
+  public static flags = {
     "api-version": Flags.integer({
       char: "a",
       description: "api-version",
@@ -98,10 +98,10 @@ export default class ProjectDeployStart extends SfCommand<any> {
     }),
   };
 
-  protected static requiresUsername = true;
   public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(ProjectDeployStart);
     return await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
   }
 }

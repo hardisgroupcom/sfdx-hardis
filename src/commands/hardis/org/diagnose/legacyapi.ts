@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -67,15 +67,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
-  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
   protected debugMode = false;
@@ -115,12 +109,13 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(LegacyApi);
     this.debugMode = flags.debug || false;
-    return await this.runJsForce();
+    return await this.runJsForce(flags);
   }
 
   // Refactoring of Philippe Ozil's apex script with JsForce queries
-  private async runJsForce() {
+  private async runJsForce(flags) {
     const eventType = flags.eventtype || "ApiTotalUsage";
     const limit = flags.limit || 999;
     this.outputFile = flags.outputfile || null;
