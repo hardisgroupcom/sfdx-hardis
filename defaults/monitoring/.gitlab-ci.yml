@@ -1,0 +1,122 @@
+#######################################
+### sfdx-hardis monitoring pipeline ###
+#######################################
+
+# Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
+
+# PLEASE DO NOT UPDATE THIS FILE EXCEPT TO ADD TAGS TO YOUR STEPS
+
+variables:
+  FORCE_COLOR: "1"
+
+# Pipeline stages
+stages:
+  - backup
+  - monitor
+
+# Use sfdx-hardis docker image to always be up to date with latest version
+image: hardisgroupcom/sfdx-hardis:latest # test with alpha
+
+##############################################
+### Sfdx Sources Backup + Push new commit ####
+##############################################
+backup:
+  stage: backup
+  interruptible: true
+  #tags:
+  #  - ubuntu
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+  script:
+    # Extract metadata folders (+other checks ^^)
+    - sf hardis:auth:login
+    - sf hardis:org:monitor:backup
+    # Commit and push new state
+    - git status
+    - git add --all
+    - git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $CI_COMMIT_REF_NAME [skip ci]" || echo "No changes to commit"
+    - git push -o ci-skip https://root:$ACCESS_TOKEN@$CI_SERVER_HOST/$CI_PROJECT_PATH.git HEAD:$CI_COMMIT_REF_NAME
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 6 month
+
+######################
+### Run Apex Tests ###
+######################
+apex_tests:
+  stage: monitor
+  interruptible: true
+  allow_failure: true
+  #tags:
+  #  - ubuntu
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
+  script:
+    # Login & run apex tests
+    - sf hardis:auth:login
+    - sf hardis:org:test:apex
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 6 month
+
+# Monitoring tools
+monitoring_tools:
+  stage: monitor
+  interruptible: true
+  allow_failure: true
+  #tags:
+  #  - ubuntu
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
+  script:
+    # Login & run apex tests
+    - sf hardis:auth:login
+    - sf hardis:org:monitor:all
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 6 month
+
+############################################################
+### Run MegaLinter to detect quality and security issues ###
+############################################################
+megalinter:
+  stage: monitor
+  interruptible: true
+  allow_failure: true
+  #tags:
+  #  - ubuntu
+  image: oxsecurity/megalinter-salesforce:latest
+  script: ["true"]
+  before_script:
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - git pull origin "${CI_COMMIT_REF_NAME}"
+  variables:
+    # All available variables are described in documentation
+    # https://megalinter.io/latest/config-file/
+    DEFAULT_WORKSPACE: $CI_PROJECT_DIR
+    DEFAULT_BRANCH: master
+    API_REPORTER: "true"
+    NOTIF_API_URL: "${NOTIF_API_URL}"
+    NOTIF_API_BASIC_AUTH_USERNAME: "${NOTIF_API_BASIC_AUTH_USERNAME}"
+    NOTIF_API_BASIC_AUTH_PASSWORD: "${NOTIF_API_BASIC_AUTH_PASSWORD}"
+    NOTIF_API_METRICS_URL: "${NOTIF_API_METRICS_URL}"
+    NOTIF_API_METRICS_BASIC_AUTH_USERNAME: "${NOTIF_API_METRICS_BASIC_AUTH_USERNAME}"
+    NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: "${NOTIF_API_METRICS_BASIC_AUTH_PASSWORD}"
+    # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
+  artifacts:
+    when: always
+    paths:
+      - megalinter-reports
+    expire_in: 6 month

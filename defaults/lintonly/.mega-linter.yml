@@ -1,0 +1,14 @@
+# Full doc here --> https://megalinter.io/latest/
+# Extend from shared sfdx-hardis Mega-Linter configuration :)
+EXTENDS:
+  - https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.mega-linter-config.yml
+SALESFORCE_DIRECTORY: src
+
+COPYPASTE_JSCPD_DISABLE_ERRORS_IF_LESS_THAN: 0
+# COPYPASTE_JSCPD_DISABLE_ERRORS: true # si souhaité, à décommenter une fois que les copier coller ne sont plus la ;)
+CSS_STYLELINT_DISABLE_ERRORS_IF_LESS_THAN: 0
+# CSS_STYLELINT_DISABLE_ERRORS: true # si souhaité, à décommenter une fois que les erreurs CSS sont corrigées ;)
+SALESFORCE_SFDX_SCANNER_APEX_DISABLE_ERRORS_IF_LESS_THAN: 0
+SALESFORCE_SFDX_SCANNER_AURA_DISABLE_ERRORS: true
+SALESFORCE_SFDX_SCANNER_LWC_DISABLE_ERRORS: true
+

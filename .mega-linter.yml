@@ -1,0 +1,38 @@
+# Configuration file for Mega-Linter
+# See all available variables at https://megalinter.io/latest/config-file/ and in linters documentation
+
+APPLY_FIXES: all # all, none, or list of linter keys
+DEFAULT_BRANCH: main # Usually master or main
+# ENABLE: # If you use ENABLE variable, all other languages/formats/tooling-formats will be disabled by default
+# ENABLE_LINTERS: # If you use ENABLE_LINTERS variable, all other linters will be disabled by default
+DISABLE:
+  - CSS
+  - EDITORCONFIG
+  - HTML
+  - JAVASCRIPT
+DISABLE_LINTERS:
+  - JSON_JSONLINT
+  - MARKDOWN_MARKDOWN_LINK_CHECK
+  - SPELL_PROSELINT
+  - REPOSITORY_GIT_DIFF
+  - REPOSITORY_SEMGREP
+  - REPOSITORY_SECRETLINT
+  - TYPESCRIPT_STANDARD
+DISABLE_ERRORS_LINTERS:
+  - MARKDOWN_MARKDOWN_LINK_CHECK
+  - REPOSITORY_GRYPE
+  - SPELL_LYCHEE
+GITHUB_STATUS_REPORTER: false
+MARKDOWN_MARKDOWN_LINK_CHECK_FILTER_REGEX_EXCLUDE: (README\.md)
+YAML_V8R_DISABLE_ERRORS: true
+FILTER_REGEX_EXCLUDE: "(vscode|defaults|workarounds)"
+TYPESCRIPT_DEFAULT_STYLE: prettier
+DOCKERFILE_HADOLINT_ARGUMENTS: "--ignore DL3007 --ignore DL3016 --ignore DL3018 --ignore DL4006"
+REPOSITORY_GITLEAKS_DISABLE_ERRORS_IF_LESS_THAN: 11
+SHOW_ELAPSED_TIME: true
+FILEIO_REPORTER: false
+SPELL_LYCHEE_ARGUMENTS:
+  - --accept
+  - "429"
+SPELL_LYCHEE_UNSECURED_ENV_VARIABLES:
+  - GITHUB_TOKEN

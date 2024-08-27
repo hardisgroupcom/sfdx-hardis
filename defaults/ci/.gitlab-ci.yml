@@ -1,0 +1,229 @@
+---
+##################################################################
+# Test and deployment pipeline for a Salesforce CI/CD Project    #
+#         Update it only if you know what you are doing :)       #
+##################################################################
+
+# More info at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/
+
+# To add custom behaviors, please use side config file .gitlab-ci-config.yml
+include:
+  - local: ".gitlab-ci-config.yml"
+
+# Pipeline stages
+stages:
+  - build           # Check code quality (+ create testing scratch org if necessary)
+  - test            # Apex unit tests on testing scratch org (if used)
+  - clean           # Delete testing scratch org (if used)
+  - check_deploy    # Simulate deployment to target branch
+  - deploy          # After a merge, automatically deploys the new commit state into the related Salesforce org
+
+# Jobs are run on sfdx-hardis image, that includes all required dependencies.
+# You can use latest, beta or latest-recommended
+image: hardisgroupcom/sfdx-hardis:latest
+
+# Force color for output logs for better readability
+variables:
+  FORCE_COLOR: "1"
+
+# Uncomment to test your sfdx-hardis fork
+#  before_script:
+#    - apk add tree
+#    - npm install -g typescript
+#    - git clone --branch NOM_DE_LA_BRANCHE_GIT https://github.com/hardisgroupcom/sfdx-hardis.git
+#    - cd sfdx-hardis
+#    - yarn
+#    - tsc
+#    - sf plugins link
+#    - cd ..
+
+# Code quality and security controls using MegaLinter Salesforce flavor
+# https://megalinter.io/latest/flavors/salesforce/
+check_quality:
+  stage: build
+  tags: # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    - merge_requests
+    - web
+  except:
+    variables:
+      - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
+  image: oxsecurity/megalinter-salesforce:latest
+  script: ["true"]
+  variables:
+    # All available variables are described in documentation
+    # https://megalinter.io/latest/config-file/
+    DEFAULT_WORKSPACE: $CI_PROJECT_DIR
+    DEFAULT_BRANCH: master
+    # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
+  artifacts:
+    when: always
+    paths:
+      - megalinter-reports
+    expire_in: 1 week
+
+# Check deployment in target branch org.
+# If auth not configure yet, check this doc: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/
+check_deploy_to_target_branch_org:
+  stage: build
+  tags: # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    refs:
+      - merge_requests
+      - web
+  except:
+    variables:
+      - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
+  variables:
+    CONFIG_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+  script:
+    - '[ -z "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ] && exit 0;' # Skip this job if it is launched from web UI and we are not in merge request context
+    - sf hardis:auth:login
+    - sf hardis:project:deploy:sources:dx --check
+
+# Create scratch org to check the sources push & the unit tests
+create_scratch_org:
+  stage: build
+  tags: # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    - merge_requests
+    - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
+      - $USE_SCRATCH_ORGS == "false"
+  interruptible: true
+  script:
+    - sf hardis:auth:login --devhub
+    - sf hardis:scratch:create
+  artifacts:
+    when: always
+    expire_in: 60 minutes
+    paths:
+      - .cache/sfdx-hardis/.sfdx
+      - .sfdx
+      - .sf
+      - config/user
+
+# Refresh scratch org pool: IF you use scratch orgs, job to schedule with variable SCRATCH_ORG_POOL: true
+refresh_scratch_org_pool:
+  stage: build
+  tags: # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    variables:
+      - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
+  script:
+    - sf hardis:auth:login --devhub
+    - sf hardis:scratch:pool:refresh
+  artifacts:
+    when: always
+
+# Run apex unit tests in testing scratch org
+test_apex:
+  stage: test
+  tags: # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    - merge_requests
+    - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
+      - $USE_SCRATCH_ORGS == "false"
+  interruptible: true
+  needs:
+    - job: create_scratch_org
+      artifacts: true
+  script:
+    - sleep 120 # Orgs just created can be not ready yet, let's wait a while before running tests
+    - sf hardis:auth:login --scratchorg || true
+    - sf hardis:org:test:apex
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week
+
+# Automated tests
+#test_automation:
+#  stage: test
+#  tags:
+#    - ubuntu
+#  only:
+#    - merge_requests
+#    - web
+#  needs:
+#    - job: create_scratch_org
+#      artifacts: true
+#  script:
+#    - sf hardis:auth:login --scratchorg
+#    - echo "Automated tests not implemented yet"
+
+# Delete testing scratch org
+clean:
+  stage: clean
+  tags: # Change or even remove tags if standard runners
+    - ubuntu
+  when: on_success
+  only:
+    - merge_requests
+    - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME =~ $DEPLOY_BRANCHES
+      - $CI_DELETE_SCRATCH_ORG == "false"
+      - $SCRATCH_ORG_POOL == "true"
+      - $USE_SCRATCH_ORGS == "false"
+  needs:
+    - job: create_scratch_org
+    - job: test_apex
+  script:
+    - sf hardis:auth:login --devhub
+    - sf hardis:auth:login --scratchorg || true
+    - sf org delete scratch --no-prompt || true
+
+# Simulate deployment to related org
+# Is triggered only when scheduled, or via manual launch
+check_deploy_to_current_branch_org:
+  stage: check_deploy
+  tags: # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    - schedules
+    - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
+  script:
+    - sf hardis:auth:login
+    - sf hardis:project:deploy:sources:dx --check
+
+# Deploy to branch related org when detecting new commit (after a merged merge request)
+# Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
+deploy_to_org:
+  stage: deploy
+  tags: # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    - pushes
+    - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
+  interruptible: true
+  script:
+    - sf hardis:auth:login
+    - sf hardis:project:deploy:sources:dx

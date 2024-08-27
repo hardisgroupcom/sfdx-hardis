@@ -1,0 +1,157 @@
+---
+#
+# Documentation:
+# https://help.github.com/en/articles/workflow-syntax-for-github-actions
+#
+
+#######################################
+# Start the job on all push to master #
+#######################################
+name: "Build & Deploy - RELEASE"
+on:
+  release:
+    # Want to run the automation when a release is created
+    types: ["created"]
+
+###############
+# Set the Job #
+###############
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions: read-all
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+          # Defaults to the user or organization that owns the workflow file
+          scope: "nvuillam"
+      - run: yarn
+      - run: yarn config set network-timeout 300000 && yarn publish || echo "Unable to publish package version. Or published in background because of NPM bug ?"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: release
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker Image (Latest)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            docker.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+            docker.io/hardisgroupcom/sfdx-hardis:latest
+            ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+            ghcr.io/hardisgroupcom/sfdx-hardis:latest
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:latest"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          security-checks: vuln
+          severity: "CRITICAL,HIGH"
+
+  push_to_registry_sfdx_recommended:
+    name: Push Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+    permissions:
+      packages: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker Image (Latest)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
+            ghcr.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          security-checks: vuln
+          severity: "CRITICAL,HIGH"

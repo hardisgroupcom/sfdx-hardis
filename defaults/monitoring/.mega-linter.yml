@@ -1,0 +1,11 @@
+# Configuration file for Mega-Linter
+# See all available variables at https://megalinter.io/latest/config-file/ and in linters documentation
+EXTENDS:
+  - https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.mega-linter-config.yml
+
+DISABLE_ERRORS_LINTERS:
+  - CSS_STYLELINT
+  - COPYPASTE_JSCPD
+  - SALESFORCE_SFDX_SCANNER_APEX
+  - SALESFORCE_SFDX_SCANNER_AURA
+  - SALESFORCE_SFDX_SCANNER_LWC

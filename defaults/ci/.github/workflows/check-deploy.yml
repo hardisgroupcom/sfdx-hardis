@@ -1,0 +1,82 @@
+---
+# Manual updates in in job step "Login & Process Deployment" below:
+# - variables for additional branches: add SFDX_CLIENT_ID / KEY variables
+# - To use slack notifications, you can also define SLACK_TOKEN and SLACK_CHANNEL_ID
+#   - For branch scoped messages, add SLACK_CHANNEL_ID_ + branch name (ex: SLACK_CHANNEL_ID_INTEGRATION, SLACK_CHANNEL_ID_UAT)
+
+on:
+  pull_request:
+    # Add your major branches names here
+    branches:
+      - main
+      - preprod
+      - uat
+      - integration
+permissions: read-all
+name: Simulate Deployment (sfdx-hardis)
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  check_deployment:
+    runs-on: ubuntu-latest
+    name: Simulate Deployment to Major Org
+    permissions:
+      pull-requests: write
+      contents: write
+      issues: write
+    steps:
+      # Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # Fetch all branches
+      # Setup node
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+      # SFDX & plugins
+      - name: Install SFDX and plugins
+        run: |
+          npm install --no-cache @salesforce/cli --global
+          sf plugins install @salesforce/plugin-packaging
+          echo 'y' | sf plugins install sfdx-hardis
+          echo 'y' | sf plugins install sfdx-git-delta
+          sf version --verbose --json
+      # Login & check deploy with test classes & code coverage
+      - name: Login & Simulate deployment
+        env:
+          SFDX_CLIENT_ID_INTEGRATION: ${{ secrets.SFDX_CLIENT_ID_INTEGRATION}}
+          SFDX_CLIENT_KEY_INTEGRATION: ${{ secrets.SFDX_CLIENT_KEY_INTEGRATION}}
+          SFDX_CLIENT_ID_UAT: ${{ secrets.SFDX_CLIENT_ID_UAT}}
+          SFDX_CLIENT_KEY_UAT: ${{ secrets.SFDX_CLIENT_KEY_UAT}}
+          SFDX_CLIENT_ID_PREPROD: ${{ secrets.SFDX_CLIENT_ID_PREPROD}}
+          SFDX_CLIENT_KEY_PREPROD: ${{ secrets.SFDX_CLIENT_KEY_PREPROD}}
+          SFDX_CLIENT_ID_MAIN: ${{ secrets.SFDX_CLIENT_ID_MAIN}}
+          SFDX_CLIENT_KEY_MAIN: ${{ secrets.SFDX_CLIENT_KEY_MAIN}}
+          SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+          SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+          CI_COMMIT_REF_NAME: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
+          ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
+          CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_CHANNEL_ID_INTEGRATION: ${{ secrets.SLACK_CHANNEL_ID_INTEGRATION }}
+          NOTIF_EMAIL_ADDRESS: ${{ secrets.NOTIF_EMAIL_ADDRESS }}
+          JIRA_HOST: ${{ secrets.JIRA_HOST }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_PAT: ${{ secrets.JIRA_HOST }}
+          JIRA_TICKET_REGEX: ${{ secrets.JIRA_TICKET_REGEX }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FORCE_COLOR: "1"
+        run: |
+          echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
+          sf hardis:auth:login
+          sf hardis:project:deploy:sources:dx --check

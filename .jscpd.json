@@ -1,0 +1,31 @@
+{
+  "threshold": 0,
+  "reporters": ["html", "markdown"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/.rbenv/**",
+    "**/.venv'/**",
+    "**/*cache*/**",
+    "**/.github/**",
+    "**/.idea/**",
+    "**/docs/**",
+    "**/mkdocs/**",
+    "**/report/**",
+    "**/org/data/import.ts",
+    "**/org/configure/files.ts",
+    "**/README.md",
+    "**/commands/hardis/work/**",
+    "**/apex.ts",
+    "**/access.ts",
+    "**/audittrail.ts",
+    "**/freeze.ts",
+    "**/legacyapi.ts",
+    "**/unfreeze.ts",
+    "**/redis.ts",
+    "**/*.json",
+    "**/*.svg",
+    "**/*.yml",
+    "**/*.xml"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "threshold": 0,
+  "reporters": ["html", "markdown"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/.rbenv/**",
+    "**/.venv'/**",
+    "**/*cache*/**",
+    "**/.github/**",
+    "**/.idea/**",
+    "**/report/**",
+    "**/README.md",
+    "**/*.json",
+    "**/*.svg",
+    "**/*.xml",
+    "**/bitbucket-pipelines.yml"
+  ]
+}

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!-- All items matching this file will not be retrieved during the sfdx-hardis backup step -->
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+
+    <!-- Auth provider can contain tokens -->
+    <types>
+        <members>*</members>
+        <name>AuthProvider</name>
+    </types>
+
+    <!-- Certificates are sensitive data -->
+    <types>
+        <members>*</members>
+        <name>Certificate</name>
+    </types>
+
+    <types>
+        <members>*</members>    
+        <name>ConnectedApp</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>    
+        <name>ContentAsset</name>
+    </types>
+    -->
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>CustomMetadata</name>
+    </types>
+    -->
+
+    <types>
+        <members>*</members>
+        <name>CustomObjectTranslation</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>Dashboard</name>
+    </types>
+    -->
+
+    <types>
+        <members>*</members>
+        <name>Document</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>EmailTemplate</name>
+    </types>
+    -->
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>GlobalValueSetTranslation</name>
+    </types>
+    -->
+
+    <types>
+        <members>*</members>
+        <name>ListView</name>
+    </types>
+
+    <types>
+        <members>*</members>
+        <name>LightningMessageChannel</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>Report</name>
+    </types>
+    -->
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>ReportType</name>
+    </types>
+    -->
+
+    <!-- SSO Config contain certificates -->
+    <types>
+      <members>*</members>
+      <name>SamlSsoConfig</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>StandardValueSetTranslation</name>
+    </types>
+    -->
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>StaticResource</name>
+    </types>
+    -->
+
+    <types>
+        <members>*</members>
+        <name>UiViewDefinition</name>
+    </types>
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>Translation</name>
+    </types>
+    -->
+
+    <!-- Uncomment if you have too many metadatas
+    <types>
+        <members>*</members>
+        <name>WorkflowFieldUpdate</name>
+    </types>
+    -->
+    
+    <version>59.0</version>
+</Package>

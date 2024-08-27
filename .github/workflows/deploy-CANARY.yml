@@ -1,0 +1,100 @@
+---
+#
+# Documentation:
+# https://help.github.com/en/articles/workflow-syntax-for-github-actions
+#
+
+#######################################
+# Start the job on all push to master #
+#######################################
+name: "Build & Deploy - CANARY"
+on:
+  push:
+    branches:
+      - "canary"
+
+###############
+# Set the Job #
+###############
+jobs:
+  deploy:
+    name: Deploy canary
+    runs-on: ubuntu-latest
+    permissions: read-all
+    environment:
+      name: canary
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+          always-auth: true
+          # Defaults to the user or organization that owns the workflow file
+          scope: "hardisgroupcom"
+      - run: yarn
+      - run: yarn config set version-git-tag false && tsc -b
+      - run: CANARYID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="canary$CANARYID"
+      - run: yarn config set network-timeout 300000 && yarn publish --tag canary
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  push_canary_to_registry:
+    name: Push canary Docker image to Docker Hub
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    environment:
+      name: canary
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker Image (Canary)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=canary
+            SFDX_CLI_VERSION=latest
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            docker.io/hardisgroupcom/sfdx-hardis:canary
+            ghcr.io/hardisgroupcom/sfdx-hardis:canary
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:canary"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          security-checks: vuln
+          severity: "CRITICAL,HIGH"

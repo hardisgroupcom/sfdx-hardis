@@ -1,0 +1,303 @@
+# Pipeline for Salesforce monitoring using sfdx-hardis
+#
+# You need to (do a CTRL+F on "MANUAL")
+# - manually add environment secret variables in step "sfdx-hardis login" (they are used for authentication). Ex: SFDX_CLIENT_ID_INTEG / SFDX_CLIENT_KEY_INTEG
+# - configure the bypass in Azure settings -> https://www.programmingwithwolfgang.com/create-git-commits-in-azure-devops-yaml-pipeline/#configure-the-pipeline-to-bypass-pull-request-policies
+# - add branches to monitor in schedules:branches:include
+#
+# You may also:
+# - Update manifest/package-skip-items.xml to filter elements to retrieve
+#
+# Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
+
+schedules:
+- cron: "0 4 * * *" # Cron format -> https://crontab.cronhub.io/
+  always: "true"
+  branches:
+    # MANUAL: Add your monitored branches here
+    include:
+    - monitoring_my_client__integ_sandbox
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - name: FORCE_COLOR
+    value: "1"
+  - name: BRANCH_NAME
+    value: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
+
+jobs:
+##############################################
+### Sfdx Sources Backup + Push new commit ####
+##############################################
+- job: BackupSfdxHardis
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    persistCredentials: "true"
+    displayName: Git checkout
+
+  - script: |
+      git config --global user.email "contact@cloudity.com"
+      git config --global user.name "sfdx-hardis monitoring"
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Git config
+
+  - script: |
+      npm install @salesforce/cli -g
+      sf plugins install @salesforce/plugin-packaging
+      echo y | sf plugins install sfdx-hardis
+      sf version --verbose --json
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Install @salesforce/cli & sfdx-hardis
+
+  - script: |
+      git checkout -b "$BRANCH_NAME"
+    displayName: Checkout git branch latest commit
+    env:
+      CI: "true"
+
+  - script: |
+      sf hardis:auth:login
+      sf hardis:org:monitor:backup
+    displayName: sfdx-hardis login & Backup
+    env:
+      # MANUAL: Add your branch related variables here
+      SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+      CONFIG_BRANCH: $(BRANCH_NAME)
+      ORG_ALIAS: $(BRANCH_NAME)
+      SLACK_TOKEN: $(SLACK_TOKEN)
+      SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+      NOTIF_EMAIL_ADDRESS: $(NOTIF_EMAIL_ADDRESS)
+      CI: "true"
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      SYSTEM_TEAMPROJECT: $(System.TeamProject)
+      SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+      SYSTEM_JOB_ID: $(System.JobId)
+      SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+      BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+      BUILD_BUILD_ID: $(Build.BuildId)
+      MONITORING_BACKUP_SKIP_METADATA_TYPES: $(MONITORING_BACKUP_SKIP_METADATA_TYPES)
+      NOTIFICATIONS_DISABLE: $(NOTIFICATIONS_DISABLE)
+      MONITORING_DISABLE: $(MONITORING_DISABLE)
+      NOTIF_API_URL: $(NOTIF_API_URL)
+      NOTIF_API_BASIC_AUTH_USERNAME: $(NOTIF_API_BASIC_AUTH_USERNAME)
+      NOTIF_API_BASIC_AUTH_PASSWORD: $(NOTIF_API_BASIC_AUTH_PASSWORD)
+      NOTIF_API_METRICS_URL: $(NOTIF_API_METRICS_URL)
+      NOTIF_API_METRICS_BASIC_AUTH_USERNAME: $(NOTIF_API_METRICS_BASIC_AUTH_USERNAME)
+      NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: $(NOTIF_API_METRICS_BASIC_AUTH_PASSWORD)
+
+  - script: |
+      git status
+      git add --all
+      git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
+      git push --set-upstream origin "$BRANCH_NAME"
+    displayName: Add new commit to Monitoring Repo
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    env:
+      CI: "true"
+
+  - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+    artifact: hardis-report-backup
+    condition: succeededOrFailed()
+    continueOnError: "true"
+    displayName: Publish logs as artifacts
+
+######################
+### Run Apex Tests ###
+######################
+- job: ApexTestsSfdxHardis
+  dependsOn: BackupSfdxHardis
+  pool:
+    vmImage: 'ubuntu-latest'
+  timeoutInMinutes: "120"
+
+  steps:
+  - checkout: self
+    persistCredentials: "true"
+    displayName: Git checkout
+
+  - script: |
+      npm install @salesforce/cli -g
+      sf plugins install @salesforce/plugin-packaging
+      echo y | sf plugins install sfdx-hardis
+      sf version --verbose --json
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Install @salesforce/cli & sfdx-hardis
+
+  - script: |
+      git pull origin "${BRANCH_NAME}"
+    displayName: Pull git branch latest commit
+    env:
+      CI: "true"
+
+  - script: |
+      sf hardis:auth:login
+      sf hardis:org:test:apex
+    continueOnError: "true"
+    displayName: sfdx-hardis login & Apex tests
+    env:
+      # MANUAL: Add your branch related variables here
+      SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+      CONFIG_BRANCH: $(BRANCH_NAME)
+      ORG_ALIAS: $(BRANCH_NAME)
+      SLACK_TOKEN: $(SLACK_TOKEN)
+      SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+      NOTIF_EMAIL_ADDRESS: $(NOTIF_EMAIL_ADDRESS)
+      CI: "true"
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      SYSTEM_TEAMPROJECT: $(System.TeamProject)
+      SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+      SYSTEM_JOB_ID: $(System.JobId)
+      SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+      BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+      BUILD_BUILD_ID: $(Build.BuildId)
+      MONITORING_BACKUP_SKIP_METADATA_TYPES: $(MONITORING_BACKUP_SKIP_METADATA_TYPES)
+      NOTIFICATIONS_DISABLE: $(NOTIFICATIONS_DISABLE)
+      MONITORING_DISABLE: $(MONITORING_DISABLE)
+      NOTIF_API_URL: $(NOTIF_API_URL)
+      NOTIF_API_BASIC_AUTH_USERNAME: $(NOTIF_API_BASIC_AUTH_USERNAME)
+      NOTIF_API_BASIC_AUTH_PASSWORD: $(NOTIF_API_BASIC_AUTH_PASSWORD)
+      NOTIF_API_METRICS_URL: $(NOTIF_API_METRICS_URL)
+      NOTIF_API_METRICS_BASIC_AUTH_USERNAME: $(NOTIF_API_METRICS_BASIC_AUTH_USERNAME)
+      NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: $(NOTIF_API_METRICS_BASIC_AUTH_PASSWORD)
+
+  - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+    condition: succeededOrFailed()
+    continueOnError: "true"
+    artifact: hardis-report-apex-tests
+    displayName: Publish logs as artifacts
+
+############################################################
+### Run MegaLinter to detect quality and security issues ###
+############################################################
+- job: MegaLinter
+  dependsOn: BackupSfdxHardis
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - checkout: self
+    persistCredentials: "true"
+    displayName: Git checkout
+
+  - script: |
+      git config --global user.email "contact@cloudity.com"
+      git config --global user.name "sfdx-hardis monitoring"
+      git pull origin "${BRANCH_NAME}"
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Git config & pull latest commit
+
+  # Pull MegaLinter docker image
+  - script: docker pull oxsecurity/megalinter-salesforce:latest
+    displayName: Pull MegaLinter
+  # Run MegaLinter
+  - script: |
+      docker run -v $(System.DefaultWorkingDirectory):/tmp/lint \
+        --env-file <(env | grep -e SYSTEM_ -e BUILD_ -e TF_ -e AGENT_) \
+        -e CI=true \
+        -e SYSTEM_ACCESSTOKEN=$(System.AccessToken) \
+        -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
+        -e API_REPORTER=true \
+        -e NOTIF_API_URL=$(NOTIF_API_URL) \
+        -e NOTIF_API_BASIC_AUTH_USERNAME=$(NOTIF_API_BASIC_AUTH_USERNAME) \
+        -e NOTIF_API_BASIC_AUTH_PASSWORD=$(NOTIF_API_BASIC_AUTH_PASSWORD) \
+        -e NOTIF_API_METRICS_URL=$(NOTIF_API_METRICS_URL) \
+        -e NOTIF_API_METRICS_BASIC_AUTH_USERNAME=$(NOTIF_API_METRICS_BASIC_AUTH_USERNAME) \
+        -e NOTIF_API_METRICS_BASIC_AUTH_PASSWORD=$(NOTIF_API_METRICS_BASIC_AUTH_PASSWORD) \
+        oxsecurity/megalinter-salesforce:latest
+    continueOnError: "true"
+    displayName: Run MegaLinter
+
+  # Publish Megalinter reports
+  - publish: $(System.DefaultWorkingDirectory)/megalinter-reports/
+    condition: succeededOrFailed()
+    continueOnError: "true"
+    artifact: megalinter-reports
+    displayName: Publish reports
+
+###################################
+### Run other monitoring checks ###
+###################################
+- job: MonitoringChecksSfdxHardis
+  dependsOn: BackupSfdxHardis
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    persistCredentials: "true"
+    displayName: Git checkout
+
+  - script: |
+      npm install @salesforce/cli -g
+      sf plugins install @salesforce/plugin-packaging
+      echo y | sf plugins install sfdx-hardis
+      sf version --verbose --json
+    workingDirectory: $(System.DefaultWorkingDirectory)
+    displayName: Install @salesforce/cli & sfdx-hardis
+
+  - script: |
+      git config --global user.email "contact@cloudity.com"
+      git config --global user.name "sfdx-hardis monitoring"
+      git pull origin "${BRANCH_NAME}"
+    displayName: Pull git branch latest commit
+    env:
+      CI: "true"
+
+  - script: |
+      sf hardis:auth:login
+      sf hardis:org:monitor:all
+    displayName: sfdx-hardis login & other checks
+    continueOnError: "true"
+    env:
+      # MANUAL: Add your branch related variables here
+      SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_ID_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX: $(SFDX_CLIENT_KEY_MONITORING_MY_CLIENT__INTEG_SANDBOX)
+      CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+      CONFIG_BRANCH: $(BRANCH_NAME)
+      ORG_ALIAS: $(BRANCH_NAME)
+      SLACK_TOKEN: $(SLACK_TOKEN)
+      SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+      NOTIF_EMAIL_ADDRESS: $(NOTIF_EMAIL_ADDRESS)
+      CI: "true"
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      SYSTEM_TEAMPROJECT: $(System.TeamProject)
+      SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+      SYSTEM_JOB_ID: $(System.JobId)
+      SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+      BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+      BUILD_BUILD_ID: $(Build.BuildId)
+      MONITORING_BACKUP_SKIP_METADATA_TYPES: $(MONITORING_BACKUP_SKIP_METADATA_TYPES)
+      NOTIFICATIONS_DISABLE: $(NOTIFICATIONS_DISABLE)
+      MONITORING_DISABLE: $(MONITORING_DISABLE)
+      NOTIF_API_URL: $(NOTIF_API_URL)
+      NOTIF_API_BASIC_AUTH_USERNAME: $(NOTIF_API_BASIC_AUTH_USERNAME)
+      NOTIF_API_BASIC_AUTH_PASSWORD: $(NOTIF_API_BASIC_AUTH_PASSWORD)
+      NOTIF_API_METRICS_URL: $(NOTIF_API_METRICS_URL)
+      NOTIF_API_METRICS_BASIC_AUTH_USERNAME: $(NOTIF_API_METRICS_BASIC_AUTH_USERNAME)
+      NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: $(NOTIF_API_METRICS_BASIC_AUTH_PASSWORD)
+
+  - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+    artifact: hardis-report-monitoring
+    condition: succeededOrFailed()
+    continueOnError: "true"
+    displayName: Publish logs as artifacts

@@ -1,0 +1,326 @@
+# Pipeline for Salesforce monitoring using sfdx-hardis
+#
+# WARNING: Scheduling can be run only on main branch on GitHub Actions, so there is a specific config.
+# - Configure all your monitored org using VsCode SFDX Hardis command "Configure Org Monitoring" (jobs will fail but that's ok)
+#   - Reply questions, configure variables, let sfdx-hardis upload connected apps...
+#   - This will create one git branch per monitored org
+#
+# THEN
+# - Checkout your "main" branch, copy manually this file in .github/workflows/org-monitoring.yml
+# - Do a CTRL+F and look for "MANUAL"
+# - Add your monitored git branches here where asked to replace
+# - Add your authentication variable names where asked to replace
+# - Commit & push: there should be a SINGLE GitHub Actions job (using matrix) that will run the monitoring on all orgs 
+
+# You may also:
+# - Update manifest/package-skip-items.xml to filter elements to retrieve (must be done directly in monitored branches)
+#
+# Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
+
+on:
+  push:
+  # Automatically run every day at midnight
+  schedule:
+    - cron: '0 0 * * *' # Cron format -> https://crontab.cronhub.io/
+  workflow_dispatch:
+
+
+name: Org Monitoring sfdx-hardis
+
+# concurrency:
+#   group: ${{ matrix.branch }}-${{ github.workflow }}
+#   cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  ##############################################
+  ### Sfdx Sources Backup + Push new commit ####
+  ##############################################
+  backup:
+    runs-on: ubuntu-latest
+    name: Backup metadatas
+    permissions: write-all
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        # MANUAL: Add your monitored git branches here
+        branch:
+          - monitoring_myclient
+          - monitoring_myclient__integ_sandbox
+          - monitoring_myclient__recette_sandbox
+          - monitoring_myclient__preprod_sandbox
+    steps:
+    # Checkout repo
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Faster code checkout fetching only latest commit
+        ref: ${{ matrix.branch }}
+        persist-credentials: true
+    # Setup node
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: "20"
+    # SFDX & plugins
+    - name: Install SFDX and plugins
+      run: |
+        npm install --no-cache @salesforce/cli --global
+        sf plugins install --force @salesforce/plugin-packaging
+        echo 'y' | sf plugins install --force sfdx-hardis
+        echo 'y' | sf plugins install --force sfdx-git-delta
+        sf version --verbose --json
+    # Login & check deploy with test classes & code coverage
+    - name: Login & Retrieve Metadata
+      env:
+        # MANUAL: Update variables below to add authentication variables you need 
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT}}
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT__RECETTE_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT__RECETTE_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT__RECETTE_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT__RECETTE_SANDBOX}}
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT__PREPROD_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT__PREPROD_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT__PREPROD_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT__PREPROD_SANDBOX}}
+        SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+        SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+        CI_COMMIT_REF_NAME: ${{ matrix.branch }}
+        ORG_ALIAS: ${{ matrix.branch }}
+        CONFIG_BRANCH: ${{ matrix.branch }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        NOTIF_EMAIL_ADDRESS: ${{ secrets.NOTIF_EMAIL_ADDRESS }}
+        FORCE_COLOR: "1"
+        NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
+        NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+        NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+        NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
+        NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+        NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
+
+      run: |
+        echo "Monitoring sfdx-hardis: Metadata Backup for \"$CONFIG_BRANCH\""
+        sf hardis:auth:login
+        sf hardis:org:monitor:backup
+
+    # Push new commit if applicable
+    # (for now works only on PR from same repository, not from forks)
+    - name: Prepare commit
+      run: chown -Rc $UID .git/
+
+    - name: Get current date
+      run: echo "BUILD_DATE=$(date -u +'%Y-%m-%d %H:%M')" >> ${GITHUB_ENV}
+
+    - name: Commit and push
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        branch: ${{ matrix.branch }}
+        commit_message: "Org state on ${{ env.BUILD_DATE }} for ${{ matrix.branch }} [skip ci]"
+        commit_user_name: sfdx-hardis-bot
+        commit_user_email: contact@cloudity.com
+
+  ######################
+  ### Run Apex Tests ###
+  ######################
+  apex_tests:
+    runs-on: ubuntu-latest
+    name: Apex tests
+    needs: backup
+    permissions: write-all
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        # MANUAL: Add your monitored git branches here
+        branch:
+          - monitoring_myclient
+          - monitoring_myclient__integ_sandbox
+          - monitoring_myclient__recette_sandbox
+          - monitoring_myclient__preprod_sandbox
+    steps:
+    # Checkout repo
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Faster code checkout fetching only latest commit
+        ref: ${{ matrix.branch }}
+        persist-credentials: true
+    # Setup node
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: "20"
+    # SFDX & plugins
+    - name: Install SFDX and plugins
+      run: |
+        npm install --no-cache @salesforce/cli --global
+        sf plugins install --force @salesforce/plugin-packaging
+        echo 'y' | sf plugins install --force sfdx-hardis
+        echo 'y' | sf plugins install --force sfdx-git-delta
+        sf version --verbose --json
+    # Login & check deploy with test classes & code coverage
+    - name: Login & Run apex tests
+      env:
+        # MANUAL: Update variables below to add authentication variables you need 
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT}}
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT__RECETTE_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT__RECETTE_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT__RECETTE_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT__RECETTE_SANDBOX}}
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT__PREPROD_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT__PREPROD_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT__PREPROD_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT__PREPROD_SANDBOX}}
+        SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+        SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+        CI_COMMIT_REF_NAME: ${{ matrix.branch }}
+        ORG_ALIAS: ${{ matrix.branch }}
+        CONFIG_BRANCH: ${{ matrix.branch }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        NOTIF_EMAIL_ADDRESS: ${{ secrets.NOTIF_EMAIL_ADDRESS }}
+        FORCE_COLOR: "1"
+        NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
+        NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+        NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+        NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
+        NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+        NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
+      run: |
+        echo "Run apex tests against \"$CONFIG_BRANCH\""
+        git pull origin ${{ matrix.branch }}
+        sf hardis:auth:login
+        sf hardis:org:test:apex
+
+    - name: Upload artifacts
+      if:  success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Hardis Apex Tests reports
+        path: |
+          hardis-report
+
+  ###########################################################
+  ## Run MegaLinter to detect quality and security issues ###
+  ###########################################################
+  megalinter:
+    name: Mega-Linter
+    runs-on: ubuntu-latest
+    needs: backup
+    permissions: read-all
+    steps:
+      # Git Checkout
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Git pull
+        run:  git pull origin ${{ matrix.branch }}
+
+      # Mega-Linter
+      - name: Mega-Linter
+        id: ml
+        # You can override Mega-Linter flavor used to have faster performances
+        # More info at https://megalinter.io/latest/flavors/
+        uses: oxsecurity/megalinter/flavors/salesforce@latest
+        env:
+          # All available variables are described in documentation
+          # https://megalinter.io/latest/config-file/
+          VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/master&#39; }} to validate only diff with master branch
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
+          NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+          NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+          NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
+          NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+          NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
+          # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
+
+      # Upload Mega-Linter artifacts
+      - name: Archive production artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Mega-Linter reports
+          path: |
+            megalinter-reports
+            mega-linter.log
+
+  # Monitoring additional checks job
+  monitoring:
+    runs-on: ubuntu-latest
+    name: Monitoring
+    needs: backup
+    permissions: read-all
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        # MANUAL: Add your monitored git branches here
+        branch:
+          - monitoring_myclient
+          - monitoring_myclient__integ_sandbox
+          - monitoring_myclient__recette_sandbox
+          - monitoring_myclient__preprod_sandbox
+    steps:
+    # Checkout repo
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Faster code checkout fetching only latest commit
+        ref: ${{ matrix.branch }}
+        persist-credentials: true
+    # Setup node
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: "20"
+    # SFDX & plugins
+    - name: Install SFDX and plugins
+      run: |
+        npm install --no-cache @salesforce/cli --global
+        sf plugins install --force @salesforce/plugin-packaging
+        echo 'y' | sf plugins install --force sfdx-hardis
+        echo 'y' | sf plugins install --force sfdx-git-delta
+        sf version --verbose --json
+    # Login & check deploy with test classes & code coverage
+    - name: Login & Run monitoring checks
+      env:
+        # MANUAL: Update variables below to add authentication variables you need
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT}}
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT__RECETTE_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT__RECETTE_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT__RECETTE_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT__RECETTE_SANDBOX}}
+        SFDX_CLIENT_ID_MONITORING_MYCLIENT__PREPROD_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT__PREPROD_SANDBOX}}
+        SFDX_CLIENT_KEY_MONITORING_MYCLIENT__PREPROD_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT__PREPROD_SANDBOX}}
+        SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
+        SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+        CI_COMMIT_REF_NAME: ${{ matrix.branch }}
+        ORG_ALIAS: ${{ matrix.branch }}
+        CONFIG_BRANCH: ${{ matrix.branch }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        NOTIF_EMAIL_ADDRESS: ${{ secrets.NOTIF_EMAIL_ADDRESS }}
+        FORCE_COLOR: "1"
+        NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
+        NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+        NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+        NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
+        NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+        NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
+
+      run: |
+        echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
+        git pull origin ${{ matrix.branch }}
+        sf hardis:th:login
+        sf hardis:org:monitor:all
+
+    - name: Upload artifacts
+      if:  success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Hardis Monitoring reports
+        path: |
+          hardis-report  
