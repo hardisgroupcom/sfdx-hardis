@@ -31,7 +31,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     // flag with a value (-n, --name=VALUE)
     name: Flags.string({
       char: "n",

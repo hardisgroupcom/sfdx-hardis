@@ -29,7 +29,7 @@ export default class MergePackageXml extends SfCommand<any> {
     '$ sf hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml" --result myMergedPackage.xml',
   ];
 
-  protected static flagsConfig = {
+  public static flags = {
     folder: Flags.string({
       char: "f",
       default: "manifest",

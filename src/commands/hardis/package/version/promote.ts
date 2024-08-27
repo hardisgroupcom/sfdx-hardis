@@ -22,7 +22,7 @@ export default class PackageVersionPromote extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     auto: Flags.boolean({
       char: "d",
       default: false,

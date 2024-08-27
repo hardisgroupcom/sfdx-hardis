@@ -99,7 +99,7 @@ export class ApiProvider extends NotifProviderRoot {
     logBodyText = removeMarkdown(logBodyText);
 
     // Build payload
-    const repoName = (await getGitRepoName()).replace(".git", "");
+    const repoName = (await getGitRepoName() || "").replace(".git", "");
     const currentGitBranch = await getCurrentGitBranch();
     const conn: Connection = globalThis.jsForceConn;
     const orgIdentifier = conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__");
@@ -129,7 +129,7 @@ export class ApiProvider extends NotifProviderRoot {
   }
 
   private async formatPayload() {
-    if (this.apiUrl.includes("loki/api/v1/push")) {
+    if ((this.apiUrl || "").includes("loki/api/v1/push")) {
       await this.formatPayloadLoki();
       return;
     }
@@ -181,8 +181,8 @@ export class ApiProvider extends NotifProviderRoot {
     // Basic Auth
     if (getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME") != null) {
       axiosConfig.auth = {
-        username: getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME"),
-        password: getEnvVar("NOTIF_API_BASIC_AUTH_PASSWORD"),
+        username: getEnvVar("NOTIF_API_BASIC_AUTH_USERNAME") || "",
+        password: getEnvVar("NOTIF_API_BASIC_AUTH_PASSWORD") || "",
       };
     }
     // Bearer token
@@ -191,7 +191,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // POST message
     try {
-      const axiosResponse = await axios.post(this.apiUrl, this.payloadFormatted, axiosConfig);
+      const axiosResponse = await axios.post(this.apiUrl || "", this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
         uxLog(this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
@@ -202,7 +202,7 @@ export class ApiProvider extends NotifProviderRoot {
     } catch (e) {
       uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${(e as Error).message}`));
       uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
-      uxLog(this, c.grey("Response body: \n" + JSON.stringify(e?.response?.data || {})));
+      uxLog(this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 
@@ -251,8 +251,8 @@ export class ApiProvider extends NotifProviderRoot {
     // Basic Auth
     if (getEnvVar("NOTIF_API_METRICS_BASIC_AUTH_USERNAME") != null) {
       axiosConfig.auth = {
-        username: getEnvVar("NOTIF_API_METRICS_BASIC_AUTH_USERNAME"),
-        password: getEnvVar("NOTIF_API_METRICS_BASIC_AUTH_PASSWORD"),
+        username: getEnvVar("NOTIF_API_METRICS_BASIC_AUTH_USERNAME") || "",
+        password: getEnvVar("NOTIF_API_METRICS_BASIC_AUTH_PASSWORD") || "",
       };
     }
     // Bearer token
@@ -261,7 +261,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // POST message
     try {
-      const axiosResponse = await axios.post(this.metricsApiUrl, this.metricsPayload, axiosConfig);
+      const axiosResponse = await axios.post(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
         uxLog(this, c.cyan(`[ApiMetricProvider] Posted message to API ${this.metricsApiUrl} (${httpStatus})`));
@@ -272,7 +272,7 @@ export class ApiProvider extends NotifProviderRoot {
     } catch (e) {
       uxLog(this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.metricsApiUrl}: ${(e as Error).message}`));
       uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.metricsPayload)));
-      uxLog(this, c.grey("Response body: \n" + JSON.stringify(e?.response?.data || {})));
+      uxLog(this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 }

@@ -75,7 +75,7 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     listviews: Flags.string({
       char: "l",
       description: `Comma-separated list of listviews following format Object:ListViewName\nExample: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportunities`,

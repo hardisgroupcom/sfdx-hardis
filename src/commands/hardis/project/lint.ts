@@ -21,7 +21,7 @@ export default class ProjectCreate extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:lint", "$ sf hardis:project:lint --fix"];
 
-  protected static flagsConfig = {
+  public static flags = {
     fix: Flags.boolean({
       char: "f",
       default: false,

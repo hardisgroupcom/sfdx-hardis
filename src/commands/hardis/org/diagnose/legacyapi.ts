@@ -41,7 +41,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     eventtype: Flags.string({
       char: "e",
       default: "ApiTotalUsage",

@@ -26,7 +26,7 @@ export default class ExtractPermSetGroups extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:doc:extract:permsetgroups"];
 
-  protected static flagsConfig = {
+  public static flags = {
     outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",

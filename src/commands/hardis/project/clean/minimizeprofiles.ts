@@ -52,7 +52,7 @@ skipMinimizeProfiles
 
   public static examples = ["$ sf hardis:project:clean:minimizeprofiles"];
 
-  protected static flagsConfig = {
+  public static flags = {
     folder: Flags.string({
       char: "f",
       default: "force-app",

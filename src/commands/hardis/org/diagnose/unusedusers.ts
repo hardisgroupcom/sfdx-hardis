@@ -46,7 +46,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   ];
 
   //Comment default values to test the prompts
-  protected static flagsConfig = {
+  public static flags = {
     outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",

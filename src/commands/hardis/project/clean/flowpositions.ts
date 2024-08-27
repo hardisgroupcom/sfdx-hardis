@@ -49,7 +49,7 @@ autoCleanTypes:
 
   public static examples = ["$ sf hardis:project:clean:flowpositions"];
 
-  protected static flagsConfig = {
+  public static flags = {
     folder: Flags.string({
       char: "f",
       default: "force-app",

@@ -32,7 +32,7 @@ See article below
 
   public static examples = ["$ sf hardis:org:configure:files"];
 
-  protected static flagsConfig = {
+  public static flags = {
     debug: Flags.boolean({
       char: "d",
       default: false,

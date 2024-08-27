@@ -3,7 +3,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { clearCache } from "../../../common/cache";
+import { clearCache } from "../../../common/cache/index.js";
 import { uxLog } from "../../../common/utils/index.js";
 
 // Initialize Messages with the current plugin directory
@@ -20,7 +20,7 @@ export default class DxSources extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:cache:clear"];
 
-  protected static flagsConfig = {
+  public static flags = {
     debug: Flags.boolean({
       char: "d",
       default: false,

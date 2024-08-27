@@ -22,7 +22,7 @@ export default class CleanStandardItems extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:clean:standarditems"];
 
-  protected static flagsConfig = {
+  public static flags = {
     debug: Flags.boolean({
       char: "d",
       default: false,

@@ -20,7 +20,7 @@ export default class WebSocketAction extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     event: Flags.string({
       char: "e",
       description: "WebSocket event",

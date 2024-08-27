@@ -26,7 +26,7 @@ See article:
 
   public static examples = ["$ sf hardis:org:data:import"];
 
-  protected static flagsConfig = {
+  public static flags = {
     path: Flags.string({
       char: "p",
       description: "Path to the sfdmu workspace folder",

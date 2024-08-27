@@ -32,7 +32,7 @@ export default class Toml2Csv extends SfCommand<any> {
     "$ NODE_OPTIONS=--max_old_space_size=9096 sf hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' --outputdir './output' --filtersections 'COMPTES,SOUS'",
   ];
 
-  protected static flagsConfig = {
+  public static flags = {
     tomlfile: Flags.string({
       char: "f",
       description: "Input TOML file path",

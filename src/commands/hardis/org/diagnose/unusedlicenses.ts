@@ -35,7 +35,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   public static examples = ["$ sf hardis:org:diagnose:unusedlicenses", "$ sf hardis:org:diagnose:unusedlicenses --fix"];
 
-  protected static flagsConfig = {
+  public static flags = {
     outputfile: Flags.string({
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",

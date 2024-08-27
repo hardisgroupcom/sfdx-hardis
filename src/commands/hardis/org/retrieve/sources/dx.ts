@@ -28,7 +28,7 @@ export default class DxSources extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:org:retrieve:sources:dx"];
 
-  protected static flagsConfig = {
+  public static flags = {
     folder: Flags.string({
       char: "f",
       default: ".",

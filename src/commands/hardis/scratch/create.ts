@@ -8,7 +8,7 @@ import * as fs from "fs-extra";
 import moment from "moment";
 import * as os from "os";
 import * as path from "path";
-import { clearCache } from "../../../common/cache";
+import { clearCache } from "../../../common/cache/index.js";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils/index.js";
 import {
   initApexScripts,
@@ -50,7 +50,7 @@ export default class ScratchCreate extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     forcenew: Flags.boolean({
       char: "n",
       default: false,

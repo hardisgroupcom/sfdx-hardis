@@ -23,7 +23,7 @@ export default class CleanListViews extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:clean:listviews"];
 
-  protected static flagsConfig = {
+  public static flags = {
     folder: Flags.string({
       char: "f",
       default: "force-app",

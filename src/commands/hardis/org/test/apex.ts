@@ -33,7 +33,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   public static examples = ["$ sf hardis:org:test:apex"];
 
-  protected static flagsConfig = {
+  public static flags = {
     testlevel: Flags.enum({
       char: "l",
       default: "RunLocalTests",

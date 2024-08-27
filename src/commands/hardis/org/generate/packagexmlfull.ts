@@ -27,7 +27,7 @@ export default class GeneratePackageXmlFull extends SfCommand<any> {
     "$ sf hardis:org:generate:packagexmlfull --targetusername nico@example.com",
   ];
 
-  protected static flagsConfig = {
+  public static flags = {
     outputfile: Flags.string({
       description: "Output package.xml file",
     }),

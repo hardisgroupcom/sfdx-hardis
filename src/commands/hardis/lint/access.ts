@@ -44,7 +44,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     '$ sf hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
   ];
 
-  protected static flagsConfig = {
+  public static flags = {
     elementsignored: Flags.string({
       char: "e",
       default: "",

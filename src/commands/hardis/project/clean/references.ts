@@ -34,7 +34,7 @@ export default class CleanReferences extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     type: Flags.string({
       char: "t",
       description: "Cleaning type",

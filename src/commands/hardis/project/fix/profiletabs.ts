@@ -24,7 +24,7 @@ export default class FixV53Flexipages extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:fix:profiletabs"];
 
-  protected static flagsConfig = {
+  public static flags = {
     path: Flags.string({
       char: "p",
       default: process.cwd(),

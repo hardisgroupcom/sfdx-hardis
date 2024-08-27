@@ -21,7 +21,7 @@ export default class AuditDuplicateFiles extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:audit:duplicatefiles"];
 
-  protected static flagsConfig = {
+  public static flags = {
     path: Flags.string({
       char: "p",
       default: process.cwd(),

@@ -127,7 +127,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     "$ sf hardis:org:diagnose:audittrail --lastndays 5",
   ];
 
-  protected static flagsConfig = {
+  public static flags = {
     excludeusers: Flags.string({
       char: "e",
       description: "Comma-separated list of usernames to exclude",

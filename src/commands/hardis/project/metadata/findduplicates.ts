@@ -80,7 +80,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
   protected configInfo: any;
   protected logLevel: LoggerLevel;
 
-  protected static flagsConfig = {
+  public static flags = {
     files: flags.array({
       char: "f",
       description: "XML metadata files path",

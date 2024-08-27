@@ -36,7 +36,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:org:configure:monitoring"];
 
-  protected static flagsConfig = {
+  public static flags = {
     orginstanceurl: Flags.string({
       description: "Org instance url (technical param, do not use manually)",
     }),

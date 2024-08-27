@@ -22,7 +22,7 @@ export default class CleanManagedItems extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:clean:manageditems --namespace crta"];
 
-  protected static flagsConfig = {
+  public static flags = {
     namespace: Flags.string({
       char: "n",
       default: "",

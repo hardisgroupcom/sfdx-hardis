@@ -27,7 +27,7 @@ export default class metadatastatus extends SfCommand<any> {
   public static description = "Check if elements(custom fields) aren't description";
   public static examples = ["$ sf hardis:lint:missingattributes"];
   /* jscpd:ignore-start */
-  protected static flagsConfig = {
+  public static flags = {
     debug: Flags.boolean({
       char: "d",
       default: false,

@@ -37,7 +37,7 @@ See article below
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     profiles: Flags.string({
       char: "p",
       description: "Comma-separated list of profiles names that you want to reactive users assigned to and with a .invalid email",

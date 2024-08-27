@@ -53,7 +53,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
 
   public static examples = ["$ sf hardis:org:monitor:all"];
 
-  protected static flagsConfig = {
+  public static flags = {
     debug: Flags.boolean({
       char: "d",
       default: false,

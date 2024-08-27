@@ -24,7 +24,7 @@ export default class CallInCallOut extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     minimumapiversion: Flags.integer({
       char: "m",
       default: 20.0,

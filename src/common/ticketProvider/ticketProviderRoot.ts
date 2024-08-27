@@ -5,7 +5,7 @@ import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 
 export abstract class TicketProviderRoot {
   public isActive = false;
-  protected token: string;
+  protected token: string | null;
 
   public getLabel(): string {
     throw new SfError("getLabel should be implemented on this call");

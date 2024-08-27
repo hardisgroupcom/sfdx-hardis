@@ -23,7 +23,7 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
 
   public static examples = ["$ sf hardis:project:fix:v53flexipages"];
 
-  protected static flagsConfig = {
+  public static flags = {
     path: Flags.string({
       char: "p",
       default: process.cwd(),

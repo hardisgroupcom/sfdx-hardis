@@ -22,7 +22,7 @@ export default class ConvertProfilesToPermSets extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:convert:profilestopermsets"];
 
-  protected static flagsConfig = {
+  public static flags = {
     except: flags.array({
       char: "e",
       default: [],

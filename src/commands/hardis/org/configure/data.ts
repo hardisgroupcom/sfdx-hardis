@@ -32,7 +32,7 @@ See article:
 
   public static examples = ["$ sf hardis:org:configure:data"];
 
-  protected static flagsConfig = {
+  public static flags = {
     debug: Flags.boolean({
       char: "d",
       default: false,

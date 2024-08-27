@@ -76,11 +76,11 @@ export class EmailProvider extends NotifProviderRoot {
       attachments: notifMessage?.attachedFiles || [],
     };
     const emailRes = await sendEmail(emailMessage);
-    if (emailRes.success) {
+    if (emailRes?.success) {
       uxLog(this, c.cyan(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
     } else {
       uxLog(this, c.yellow(`[EmailProvider] Error while sending email to ${emailAddresses.join(",")}`));
-      uxLog(this, c.grey(JSON.stringify(emailRes.detail, null, 2)));
+      uxLog(this, c.grey(JSON.stringify(emailRes?.detail, null, 2)));
     }
     return;
   }

@@ -25,7 +25,7 @@ export default class ConfigureAuth extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     devhub: Flags.boolean({
       char: "b",
       default: false,

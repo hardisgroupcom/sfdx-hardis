@@ -20,7 +20,7 @@ export default class ConfigGet extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:deploy:sources:metadata"];
 
-  protected static flagsConfig = {
+  public static flags = {
     level: Flags.string({
       char: "l",
       default: "project",

@@ -25,7 +25,7 @@ export default class DxSources2 extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:org:retrieve:sources:dx2"];
 
-  protected static flagsConfig = {
+  public static flags = {
     packagexml: Flags.string({
       char: "x",
       description: "Path to package.xml file",

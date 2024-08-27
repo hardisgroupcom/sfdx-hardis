@@ -32,7 +32,7 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
 
   public static examples = ["$ sf hardis:misc:purge-references"];
 
-  protected static flagsConfig = {
+  public static flags = {
     references: Flags.string({
       char: "r",
       description: "Comma-separated list of references to find in metadatas",

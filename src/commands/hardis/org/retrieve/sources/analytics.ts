@@ -25,7 +25,7 @@ export default class Retrofit extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:org:retrieve:sources:analytics"];
 
-  protected static flagsConfig = {
+  public static flags = {
     debug: Flags.boolean({
       char: "d",
       default: false,

@@ -7,13 +7,13 @@ import { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
-import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
-import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces";
 import { getEnvVar } from "../../config/index.js";
+import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
+import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces.js";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
-  protected serverUrl: string;
+  protected serverUrl: string | null;
   protected azureApi: InstanceType<typeof azdev.WebApi>;
   protected teamProject: string;
 

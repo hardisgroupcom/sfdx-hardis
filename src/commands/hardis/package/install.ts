@@ -34,7 +34,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
+  public static flags = {
     package: Flags.string({
       char: "p",
       description: "Package Version Id to install (04t...)",

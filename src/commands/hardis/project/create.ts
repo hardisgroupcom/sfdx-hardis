@@ -26,7 +26,7 @@ export default class ProjectCreate extends SfCommand<any> {
 
   public static examples = ["$ sf hardis:project:create"];
 
-  protected static flagsConfig = {
+  public static flags = {
     debug: Flags.boolean({
       char: "d",
       default: false,
