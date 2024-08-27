@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as open from "open";
+import open from "open";
 import {
   ensureGitBranch,
   ensureGitRepository,
@@ -51,10 +51,10 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
   // Comment this out if your command does not require an org username
-  protected static supportsUsername = true;  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
   /* jscpd:ignore-end */
 
@@ -100,9 +100,9 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
     }
 
     // Get current default org
-    const currentOrgId = this.org?.getOrgId() || "";
-    if (flags.orginstanceurl && this.org?.getConnection()?.instanceUrl === flags.orginstanceurl) {
-      uxLog(this, c.cyan(`Default org ${this.org.getConnection()?.instanceUrl} is selected, let's configure its monitoring !`));
+    const currentOrgId = flags['target-org']?.getOrgId() || "";
+    if (flags.orginstanceurl && flags['target-org']?.getConnection()?.instanceUrl === flags.orginstanceurl) {
+      uxLog(this, c.cyan(`Default org ${flags['target-org'].getConnection()?.instanceUrl} is selected, let's configure its monitoring !`));
     } else {
       // Select the org that must be monitored
       const org = await promptOrg(this, {
@@ -128,7 +128,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
     // Build monitoring branch name
     const branchName =
       "monitoring_" +
-      this.org
+      flags['target-org']
         ?.getConnection()
         .instanceUrl.replace("https://", "")
         .replace(".my.salesforce.com", "")
@@ -166,14 +166,14 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
     await setInConfigFile(
       [],
       {
-        targetUsername: this.org.getUsername(),
-        instanceUrl: this.org.getConnection().instanceUrl,
+        targetUsername: flags['target-org'].getUsername(),
+        instanceUrl: flags['target-org'].getConnection().instanceUrl,
       },
       "./.sfdx-hardis.yml",
     );
 
     // Generate SSL certificate (requires openssl to be installed on computer)
-    await generateSSLCertificate(branchName, "./.ssh", this, this.org.getConnection(), {});
+    await generateSSLCertificate(branchName, "./.ssh", this, flags['target-org'].getConnection(), {});
 
     // Confirm & push on server
     const confirmPush = await prompts({

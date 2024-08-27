@@ -73,7 +73,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     const apexLogsNumber = extractFile.split("\n").filter((line) => line.length > 0).length;
 
     if (apexLogsNumber === 0) {
-      uxLog(this, c.cyan(`There are no Apex Logs to delete in org ${c.green(this.org.getUsername())}`));
+      uxLog(this, c.cyan(`There are no Apex Logs to delete in org ${c.green(flags['target-org'].getUsername())}`));
       return {};
     }
 
@@ -82,7 +82,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       const confirmRes = await prompts({
         type: "confirm",
         name: "value",
-        message: `Do you want to delete ${c.bold(apexLogsNumber)} Apex Logs of org ${c.green(this.org.getUsername())} ?`,
+        message: `Do you want to delete ${c.bold(apexLogsNumber)} Apex Logs of org ${c.green(flags['target-org'].getUsername())} ?`,
       });
       if (confirmRes.value === false) {
         return {};
@@ -97,9 +97,9 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       fail: true,
     });
 
-    uxLog(this, c.green(`Successfully deleted ${c.bold(apexLogsNumber)} Apex Logs in org ${c.bold(this.org.getUsername())}`));
+    uxLog(this, c.green(`Successfully deleted ${c.bold(apexLogsNumber)} Apex Logs in org ${c.bold(flags['target-org'].getUsername())}`));
 
     // Return an object to be displayed with --json
-    return { orgId: this.org.getOrgId() };
+    return { orgId: flags['target-org'].getOrgId() };
   }
 }

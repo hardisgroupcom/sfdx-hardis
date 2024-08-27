@@ -47,8 +47,8 @@ export async function getRecordTypeId(recordTypeInfo: { sObjectType: string; dev
 // Prompt profile(s) for selection
 /*
 Example calls from command class:
-const profiles = await promptProfiles(this.org.getConnection(),{multiselect: true, initialSelection: ["System Administrator","Administrateur Système"]});
-const profile = await promptProfiles(this.org.getConnection(),{multiselect: false, initialSelection: ["System Administrator","Administrateur Système"]});
+const profiles = await promptProfiles(flags['target-org'].getConnection(),{multiselect: true, initialSelection: ["System Administrator","Administrateur Système"]});
+const profile = await promptProfiles(flags['target-org'].getConnection(),{multiselect: false, initialSelection: ["System Administrator","Administrateur Système"]});
 */
 export async function promptProfiles(
   conn: Connection,

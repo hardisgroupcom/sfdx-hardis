@@ -7,7 +7,7 @@ import * as columnify from "columnify";
 import sortArray from "sort-array";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { prompts } from "../../../../common/utils/prompts.js";
-import { bulkQuery, bulkUpdate, soqlQuery } from "../../../../common/utils/apiUtils";
+import { bulkQuery, bulkUpdate, soqlQuery } from "../../../../common/utils/apiUtils.js";
 import { promptProfiles } from "../../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory
@@ -73,7 +73,7 @@ See article below
     const hasProfileConstraint = this.profiles !== null;
     this.debugMode = flags.debug || false;
 
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
 
     // Query users that we want to freeze
     uxLog(this, c.cyan(`Querying User records with email ending with .invalid...`));
@@ -103,7 +103,7 @@ See article below
         initial: true,
         message: c.cyanBright(
           `Do you want to replace invalid mails by valid mails for all ${c.bold(usersToActivate.length)} found users in org ${c.green(
-            this.org.getUsername(),
+            flags['target-org'].getUsername(),
           )} ?`,
         ),
         choices: [
@@ -114,7 +114,7 @@ See article below
       });
       // Let users select profiles to reactivate users
       if (confirmSelect.value === "selectProfiles") {
-        const selectedProfileIds = await promptProfiles(this.org.getConnection(), {
+        const selectedProfileIds = await promptProfiles(flags['target-org'].getConnection(), {
           multiselect: true,
           returnField: "Id",
           message: "Please select profiles that you want to reactivate users with .invalid emails",
@@ -163,7 +163,7 @@ See article below
 
     // Return an object to be displayed with --json
     return {
-      orgId: this.org.getOrgId(),
+      orgId: flags['target-org'].getOrgId(),
       activateSuccessNb: activateSuccessNb,
       activateErrorNb: activateErrorNb,
       outputString: `${activateSuccessNb} sandbox users has been be reactivated by removing the .invalid of their email`,

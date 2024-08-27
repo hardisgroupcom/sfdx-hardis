@@ -274,7 +274,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     const currentGitBranch = await getCurrentGitBranch();
 
     // Get target org
-    let targetUsername = this.org.getUsername();
+    let targetUsername = flags['target-org'].getUsername();
     if (!isCI) {
       const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, scratch: false });
       targetUsername = targetOrg.username;
@@ -348,7 +348,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         : "./config/package.xml";
     const forceSourceDeployOptions: any = {
       targetUsername: targetUsername,
-      conn: this.org?.getConnection(),
+      conn: flags['target-org']?.getConnection(),
       testClasses: testClasses,
     };
     // Get destructiveChanges.xml and add it in options if existing
@@ -433,7 +433,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
     if (this.configInfo.listViewsToSetToMine && deployExecuted) {
-      await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.org.getConnection(), { debug: this.debugMode });
+      await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), { debug: this.debugMode });
     }
 
     // Send notification of deployment success
@@ -443,12 +443,12 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       try {
         // Build notification attachments & handle ticketing systems comments
         const commitsSummary = await this.collectNotifAttachments(attachments, pullRequestInfo);
-        await TicketProvider.postDeploymentActions(commitsSummary.tickets, this.org?.getConnection()?.instanceUrl || targetUsername, pullRequestInfo);
+        await TicketProvider.postDeploymentActions(commitsSummary.tickets, flags['target-org']?.getConnection()?.instanceUrl || targetUsername, pullRequestInfo);
       } catch (e4) {
         uxLog(this, c.yellow("Unable to handle commit info on TicketProvider post deployment actions:\n" + e4.message) + "\n" + c.gray(e4.stack));
       }
 
-      const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl || targetUsername);
+      const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl || targetUsername);
       const branchMarkdown = await getBranchMarkdown();
       let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
       notifMessage += quickDeploy ? " (🚀 quick deployment)" : delta ? " (🌙 delta deployment)" : " (🌕 full deployment)";
@@ -466,7 +466,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       } else {
         uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
       }
-      globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+      globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
         type: "DEPLOYMENT",
         text: notifMessage,
@@ -480,7 +480,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         },
       });
     }
-    return { orgId: this.org.getOrgId(), outputString: messages.join("\n") };
+    return { orgId: flags['target-org'].getOrgId(), outputString: messages.join("\n") };
   }
 
   private async collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: any) {

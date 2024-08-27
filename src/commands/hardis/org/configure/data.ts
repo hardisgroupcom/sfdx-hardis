@@ -4,10 +4,10 @@ import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
-import * as pascalcase from "pascalcase";
+import pascalcase from "pascalcase";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils/index.js";
-import { dataFolderRoot } from "../../../../common/utils/dataUtils";
+import { dataFolderRoot } from "../../../../common/utils/dataUtils.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 import { getConfig, setConfig } from "../../../../config/index.js";
@@ -44,7 +44,7 @@ See article:
     skipauth: Flags.boolean({
       description: "Skip authentication check when a default username is required",
     }),
-  };  
+  };
 
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default

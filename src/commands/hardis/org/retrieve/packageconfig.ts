@@ -67,6 +67,6 @@ export default class RetrievePackageConfig extends SfCommand<any> {
 
     const message = `[sfdx-hardis] Successfully retrieved package config`;
     uxLog(this, c.green(message));
-    return { orgId: this.org.getOrgId(), outputString: message };
+    return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 }

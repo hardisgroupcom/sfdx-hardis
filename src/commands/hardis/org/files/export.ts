@@ -98,10 +98,10 @@ See article below
 
     // Export files from org
 
-    const exportResult = await new FilesExporter(filesPath, this.org.getConnection(), exportOptions, this).processExport();
+    const exportResult = await new FilesExporter(filesPath, flags['target-org'].getConnection(), exportOptions, this).processExport();
 
     // Output message
-    const message = `Successfully exported files from project ${c.green(filesPath)} from org ${c.green(this.org.getUsername())}`;
+    const message = `Successfully exported files from project ${c.green(filesPath)} from org ${c.green(flags['target-org'].getUsername())}`;
     uxLog(this, c.cyan(message));
 
     return { outputString: message, exportResult: exportResult };

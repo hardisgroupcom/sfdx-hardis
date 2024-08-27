@@ -114,7 +114,7 @@ export default class RefreshTask extends SfCommand<any> {
       this,
       c.cyan(
         `sfdx-hardis will refresh your local branch ${c.green(localBranch)} and your local scratch org ${c.green(
-          this.org.getUsername(),
+          flags['target-org'].getUsername(),
         )} with the latest state of ${c.green(this.mergeBranch)}`,
       ),
     );
@@ -127,8 +127,8 @@ export default class RefreshTask extends SfCommand<any> {
     if (this.noPull) {
       uxLog(this, c.cyan(`Skipped pull from scratch org`));
     } else {
-      uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
-      await forceSourcePull(this.org.getUsername(), this.debugMode);
+      uxLog(this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
+      await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
     }
 
     // Stash
@@ -192,7 +192,7 @@ export default class RefreshTask extends SfCommand<any> {
     }
 
     // Push new branch state to scratch org
-    await forceSourcePush(this.org.getUsername(), this, this.debugMode, { conn: this.org.getConnection() });
+    await forceSourcePush(flags['target-org'].getUsername(), this, this.debugMode, { conn: flags['target-org'].getConnection() });
 
     // Return an object to be displayed with --json
     return { outputString: "Refreshed the task & org" };

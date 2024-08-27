@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { bulkQuery } from "../../../../common/utils/apiUtils";
+import { bulkQuery } from "../../../../common/utils/apiUtils.js";
 import { getConfig } from "../../../../config/index.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
 import { prompts } from "../../../../common/utils/prompts.js";
@@ -157,7 +157,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   public static requiresProject = false;
 
   protected excludeUsers: any[] = [];
-  protected lastNdays: number;
+  protected lastNdays: number | undefined;
   protected allowedSectionsActions = {};
   protected debugMode = false;
 
@@ -266,7 +266,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       this.allowedSectionsActions = Object.assign(this.allowedSectionsActions, config.monitoringAllowedSectionsActions);
     }
 
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
     uxLog(this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`));
 
     // Manage exclude users list
@@ -360,7 +360,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.outputFilesRes = await generateCsvFile(this.auditTrailRecords, this.outputFile);
 
     // Manage notifications
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     let notifText = `No suspect Setup Audit Trail records has been found in ${orgMarkdown}`;
@@ -381,7 +381,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       notifAttachments = [{ text: notifDetailText }];
     }
 
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "AUDIT_TRAIL",
       text: notifText,

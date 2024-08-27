@@ -85,7 +85,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
     this.debugMode = flags.debug || false;
 
     // Build target org full manifest
-    uxLog(this, c.cyan("Running monitoring scripts for org " + c.bold(this.org.getConnection().instanceUrl)) + " ...");
+    uxLog(this, c.cyan("Running monitoring scripts for org " + c.bold(flags['target-org'].getConnection().instanceUrl)) + " ...");
 
     const monitoringCommandsDefault = [
       {
@@ -213,6 +213,6 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
     if (success === false) {
       process.exitCode = 1;
     }
-    return { outputString: "Monitoring processed on org " + this.org.getConnection().instanceUrl };
+    return { outputString: "Monitoring processed on org " + flags['target-org'].getConnection().instanceUrl };
   }
 }

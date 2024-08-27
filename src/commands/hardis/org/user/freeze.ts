@@ -8,7 +8,7 @@ import { generateReports, isCI, uxLog } from "../../../../common/utils/index.js"
 import { promptProfiles } from "../../../../common/utils/orgUtils.js";
 //import { executeApex } from "../../../../common/utils/deployUtils";
 import { prompts } from "../../../../common/utils/prompts.js";
-import { soqlQuery, bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils";
+import { soqlQuery, bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -81,7 +81,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
     this.maxUsersDisplay = flags.maxuserdisplay || 100;
     this.debugMode = flags.debug || false;
 
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
 
     // Select profiles that we want users to be frozen
     let profileIds: any[] = [];
@@ -177,7 +177,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
         name: "value",
         initial: true,
         message: c.cyanBright(
-          `Are you sure you want to freeze these ${c.bold(userLoginsToFreeze.length)} users in org ${c.green(this.org.getUsername())} (y/n)?`,
+          `Are you sure you want to freeze these ${c.bold(userLoginsToFreeze.length)} users in org ${c.green(flags['target-org'].getUsername())} (y/n)?`,
         ),
       });
       if (confirmfreeze.value !== true) {
@@ -204,7 +204,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
 
     // Return an object to be displayed with --json
     return {
-      orgId: this.org.getOrgId(),
+      orgId: flags['target-org'].getOrgId(),
       freezeSuccess: freezeSuccessNb,
       freezeErrors: freezeErrorsNb,
       outputString: `${freezeSuccessNb} users has been be frozen`,

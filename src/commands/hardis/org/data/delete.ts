@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { deleteData, selectDataWorkspace } from "../../../../common/utils/dataUtils";
+import { deleteData, selectDataWorkspace } from "../../../../common/utils/dataUtils.js";
 import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory
@@ -57,7 +57,7 @@ export default class DataExport extends SfCommand<any> {
     }
 
     // Select org that where records will be imported
-    let orgUsername = this.org.getUsername();
+    let orgUsername = flags['target-org'].getUsername();
     if (!isCI) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
     }

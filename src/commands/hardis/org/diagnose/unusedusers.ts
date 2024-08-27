@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { bulkQuery } from "../../../../common/utils/apiUtils";
+import { bulkQuery } from "../../../../common/utils/apiUtils.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
 import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils.js";
@@ -118,7 +118,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     await this.defineLicenseIdentifiers();
 
     // Retrieve the list of users who haven't logged in for a while
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
     uxLog(
       this,
       c.cyan(
@@ -252,7 +252,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   private async manageNotifications(users: any[]) {
     // Build notification
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     let notifText = this.returnActiveUsers ? `No active user has logged in in ${orgMarkdown}` : `No inactive user has been found in ${orgMarkdown}`;
@@ -268,7 +268,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const metrics = this.returnActiveUsers ? { ActiveUsers: this.users.length } : { UnusedUsers: this.users.length };
     /* jscpd:ignore-start */
     // Send notifications
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: this.returnActiveUsers ? "ACTIVE_USERS" : "UNUSED_USERS",
       text: notifText,

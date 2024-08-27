@@ -4,7 +4,7 @@ import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
-import * as pascalcase from "pascalcase";
+import pascalcase from "pascalcase";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils/index.js";
 import { filesFolderRoot } from "../../../../common/utils/filesUtils.js";

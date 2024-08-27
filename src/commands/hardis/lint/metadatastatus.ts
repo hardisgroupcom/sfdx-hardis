@@ -90,7 +90,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       uxLog(this, "No draft flow or validation rule files detected.");
     }
     // Post notifications
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "METADATA_STATUS",
       text: notifText,

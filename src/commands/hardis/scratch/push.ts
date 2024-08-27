@@ -48,7 +48,7 @@ Calls \`sf project deploy start\` under the hood
 
   public async run(): Promise<AnyJson> {
     const debugMode = flags.debug || false;
-    await forceSourcePush(this.org.getUsername(), this, debugMode, { conn: this.org.getConnection() });
+    await forceSourcePush(flags['target-org'].getUsername(), this, debugMode, { conn: flags['target-org'].getConnection() });
     // Return an object to be displayed with --json
     return { outputString: "Pushed local git branch in scratch org" };
   }

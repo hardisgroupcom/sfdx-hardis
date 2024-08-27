@@ -86,7 +86,7 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
     // Retrieve metadatas if necessary
     const retrieveNeedRes = await prompts({
       type: "select",
-      message: `Are your local sources up to date with target org ${this.org.getUsername()}, or do you need to retrieve some of them ?`,
+      message: `Are your local sources up to date with target org ${flags['target-org'].getUsername()}, or do you need to retrieve some of them ?`,
       choices: [
         { value: true, title: "My local sfdx sources are up to date with the target org" },
         { value: false, title: "I need to retrieve metadatas :)" },

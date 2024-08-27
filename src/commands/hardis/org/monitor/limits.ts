@@ -103,7 +103,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const numberLimitsWarning = limitsWarning.length;
 
     // Build notifications
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     let notifText = `No limit issues detected in ${orgMarkdown}`;
@@ -153,7 +153,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
 
     // Post notifications
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "ORG_LIMITS",
       text: notifText,
@@ -166,6 +166,6 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       metrics: limitMetricsMap,
     });
 
-    return { outputString: "Limits check on org " + this.org.getConnection().instanceUrl, limitEntries: this.limitEntries };
+    return { outputString: "Limits check on org " + flags['target-org'].getConnection().instanceUrl, limitEntries: this.limitEntries };
   }
 }

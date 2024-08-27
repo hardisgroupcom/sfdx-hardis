@@ -177,6 +177,6 @@ export default class DxSources extends SfCommand<any> {
     // Set bac initial cwd
     const message = `[sfdx-hardis] Successfully retrieved sfdx project in ${folder}`;
     uxLog(this, c.green(message));
-    return { orgId: this.org.getOrgId(), outputString: message };
+    return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 }

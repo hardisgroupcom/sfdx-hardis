@@ -456,7 +456,7 @@ export default class Toml2Csv extends SfCommand<any> {
       }
       // Get record type Id
       else if (colDefinition.recordType) {
-        const recordTypeId = await getRecordTypeId(colDefinition.recordType, this.org.getConnection());
+        const recordTypeId = await getRecordTypeId(colDefinition.recordType, flags['target-org'].getConnection());
         if (recordTypeId === null) {
           this.triggerError(`No RecordTypeId found for ${JSON.stringify(colDefinition.recordType)}`, true);
         }

@@ -4,7 +4,7 @@ import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from "../../../../common/utils/apiUtils";
+import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from "../../../../common/utils/apiUtils.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
@@ -82,7 +82,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
 
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
 
     // List Permission Set Licenses Assignments
     this.permissionSetLicenseAssignmentsActive = await this.listAllPermissionSetLicenseAssignments(conn);
@@ -317,7 +317,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   private async manageNotifications(unusedPermissionSetLicenseAssignments: any[], summary: any) {
     // Build notification
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     let notifText = `No unused Permission Set Licenses Assignments has been found in ${orgMarkdown}`;
@@ -333,7 +333,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       attachments = [{ text: notifDetailText }];
     }
     // Send notifications
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "UNUSED_LICENSES",
       text: notifText,

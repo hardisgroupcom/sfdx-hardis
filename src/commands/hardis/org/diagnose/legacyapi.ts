@@ -7,7 +7,7 @@ import sortArray from "sort-array";
 import { uxLog } from "../../../../common/utils/index.js";
 import * as dns from "dns";
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
-import { soqlQuery } from "../../../../common/utils/apiUtils";
+import { soqlQuery } from "../../../../common/utils/apiUtils.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
@@ -121,7 +121,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.outputFile = flags.outputfile || null;
 
     const limitConstraint = limit ? ` LIMIT ${limit}` : "";
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
     const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
@@ -214,7 +214,7 @@ See article to solve issue before it's too late:
 • FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
 
     // Build notifications
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     let notifText = `No deprecated Salesforce API versions are used in ${orgMarkdown}`;
@@ -223,7 +223,7 @@ See article to solve issue before it's too late:
       notifText = `${this.allErrors.length} deprecated Salesforce API versions are used in ${orgMarkdown}`;
     }
     // Post notifications
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "LEGACY_API",
       text: notifText,

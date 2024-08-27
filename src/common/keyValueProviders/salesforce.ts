@@ -5,7 +5,7 @@ import * as path from "path";
 import { getConfig } from "../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { uxLog } from "../utils/index.js";
-import { soqlQuery } from "../utils/apiUtils";
+import { soqlQuery } from "../utils/apiUtils.js";
 import { deployMetadatas } from "../utils/deployUtils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { setPoolStorage } from "../utils/poolUtils";

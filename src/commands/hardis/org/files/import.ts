@@ -79,10 +79,10 @@ See article below to see how to Export them.
     const importOptions: any = { handleOverwrite: this.handleOverwrite };
 
     // Import files into org
-    const importResult = await new FilesImporter(filesPath, this.org.getConnection(), importOptions, this).processImport();
+    const importResult = await new FilesImporter(filesPath, flags['target-org'].getConnection(), importOptions, this).processImport();
 
     // Output message
-    const message = `Successfully imported files from project ${c.green(filesPath)} from org ${c.green(this.org.getUsername())}`;
+    const message = `Successfully imported files from project ${c.green(filesPath)} from org ${c.green(flags['target-org'].getUsername())}`;
     uxLog(this, c.cyan(message));
 
     return { outputString: message, importResult: importResult };

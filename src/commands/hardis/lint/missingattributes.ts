@@ -82,7 +82,7 @@ export default class metadatastatus extends SfCommand<any> {
       uxLog(this, "No missing descriptions on fields have been found");
     }
     // Post notifications
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "MISSING_ATTRIBUTES",
       text: notifText,

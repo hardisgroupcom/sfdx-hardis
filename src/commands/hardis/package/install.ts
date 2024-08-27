@@ -79,7 +79,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
       const packageResponse = await prompts({
         type: "select",
         name: "value",
-        message: c.cyanBright(`Please select the package you want to install on org  ${c.green(this.org.getUsername())}`),
+        message: c.cyanBright(`Please select the package you want to install on org  ${c.green(flags['target-org'].getUsername())}`),
         choices: allPackages,
         initial: 0,
       });

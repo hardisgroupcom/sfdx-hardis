@@ -6,7 +6,7 @@ import c from "chalk";
 import { glob } from "glob";
 import sortArray from "sort-array";
 import { uxLog } from "../../../../common/utils/index.js";
-import { soqlQueryTooling } from "../../../../common/utils/apiUtils";
+import { soqlQueryTooling } from "../../../../common/utils/apiUtils.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 import { parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 
@@ -56,7 +56,7 @@ export default class FixV53Flexipages extends SfCommand<any> {
 
     // List available tabs in org
     const tabsRequest = "SELECT Label,DurableId,Name,SobjectName FROM TabDefinition ORDER BY Label";
-    const tabsResult = await soqlQueryTooling(tabsRequest, this.org.getConnection());
+    const tabsResult = await soqlQueryTooling(tabsRequest, flags['target-org'].getConnection());
     const choices = tabsResult.records.map((tab) => {
       return {
         title: `${tab.Label} (${tab.Name} on SObject ${tab.SobjectName})}`,

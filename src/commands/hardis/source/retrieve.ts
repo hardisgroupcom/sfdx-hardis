@@ -88,7 +88,7 @@ export class SourceRetrieve extends SfCommand<any> {
     }
     // Manage user selection for org
     if (!isCI && !flags.targetusername) {
-      let orgUsername = this.org.getUsername();
+      let orgUsername = flags['target-org'].getUsername();
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
       if (orgUsername) {
         args.push(...["--targetusername", `"${orgUsername}"`]);

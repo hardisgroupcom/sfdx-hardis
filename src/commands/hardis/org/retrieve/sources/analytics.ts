@@ -50,7 +50,7 @@ export default class Retrofit extends SfCommand<any> {
   // Retrieves locally all items corresponding to CRM Analytics configuration
   public async run(): Promise<AnyJson> {
     // Manage user selection for org if we are not in CI
-    let orgUsername = this.org.getUsername();
+    let orgUsername = flags['target-org'].getUsername();
     if (!isCI && !flags.targetusername) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
     }
@@ -58,7 +58,7 @@ export default class Retrofit extends SfCommand<any> {
     // List all metadatas of target org
     const tmpDir = await createTempDir();
     const packageXmlAllFile = path.join(tmpDir, "packageXmlAll.xml");
-    await buildOrgManifest(orgUsername, packageXmlAllFile, this.org.getConnection());
+    await buildOrgManifest(orgUsername, packageXmlAllFile, flags['target-org'].getConnection());
     uxLog(this, c.cyan(`Retrieved full package XML from org ${orgUsername}: ${packageXmlAllFile}`));
 
     // Filter to keep only analytics metadatas

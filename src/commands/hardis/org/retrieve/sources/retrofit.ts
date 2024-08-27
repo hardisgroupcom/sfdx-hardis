@@ -214,7 +214,7 @@ export default class Retrofit extends SfCommand<any> {
   }
 
   async doCommit() {
-    await git().commit(`[sfdx-hardis] Changes retrofited from ${this.org.getUsername()}`);
+    await git().commit(`[sfdx-hardis] Changes retrofited from ${flags['target-org'].getUsername()}`);
   }
 
   // Push changes and add merge request options if requested
@@ -252,10 +252,10 @@ export default class Retrofit extends SfCommand<any> {
   }
 
   async retrieveSources() {
-    uxLog(this, c.cyan(`Retrieving sources from ${c.green(this.org.getUsername())} ...`));
+    uxLog(this, c.cyan(`Retrieving sources from ${c.green(flags['target-org'].getUsername())} ...`));
     const RETROFIT_MDT: Array<string> =
       process.env.CI_SOURCES_TO_RETROFIT || this.configInfo.sourcesToRetrofit || Retrofit.DEFAULT_SOURCES_TO_RETROFIT;
-    const retrieveCommand = `sf project retrieve start -m "${RETROFIT_MDT.join(",")}" -o ${this.org.getUsername()}`;
+    const retrieveCommand = `sf project retrieve start -m "${RETROFIT_MDT.join(",")}" -o ${flags['target-org'].getUsername()}`;
     await execCommand(retrieveCommand, this, { fail: true, debug: this.debugMode, output: true });
 
     // Discard ignored changes

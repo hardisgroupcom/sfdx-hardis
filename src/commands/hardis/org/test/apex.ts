@@ -80,7 +80,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const debugMode = flags.debug || false;
 
     this.configInfo = await getConfig("branch");
-    this.orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    this.orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
     await this.runApexTests(testlevel, debugMode);
@@ -100,7 +100,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     uxLog(this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
 
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "APEX_TESTS",
       text: this.notifText,
@@ -128,7 +128,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       uxLog(this, c.green(this.statusMessage));
     }
 
-    return { orgId: this.org.getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
+    return { orgId: flags['target-org'].getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
   }
 
   private async runApexTests(testlevel: any, debugMode: any) {

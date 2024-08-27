@@ -6,7 +6,7 @@ import c from "chalk";
 import * as columnify from "columnify";
 import { execSfdxJson, isCI, uxLog } from "../../../../common/utils/index.js";
 import { prompts } from "../../../../common/utils/prompts.js";
-import { bulkDeleteTooling } from "../../../../common/utils/apiUtils";
+import { bulkDeleteTooling } from "../../../../common/utils/apiUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -100,7 +100,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     let nameFilter = flags.name || null;
     const allowPurgeFailure = flags.allowpurgefailure === false ? false : true;
     const debugMode = flags.debug || false;
-    const username = this.org.getUsername();
+    const username = flags['target-org'].getUsername();
 
     let statusFilter;
     const manageableConstraint = "ManageableState IN ('deprecatedEditable','installedEditable','unmanaged')";
@@ -212,7 +212,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     // Perform deletion
     const deleted: any[] = [];
     const deleteErrors: any[] = [];
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
     const deleteResults = await bulkDeleteTooling("Flow", records, conn);
     for (const deleteRes of deleteResults.results) {
       if (deleteRes.success) {
@@ -235,6 +235,6 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       deleted.length > 0 ? `[sfdx-hardis] Deleted the following list of record(s):\n${columnify(deleted)}` : "[sfdx-hardis] No record(s) to delete";
     uxLog(this, c.green(summary));
     // Return an object to be displayed with --json
-    return { orgId: this.org.getOrgId(), outputString: summary };
+    return { orgId: flags['target-org'].getOrgId(), outputString: summary };
   }
 }

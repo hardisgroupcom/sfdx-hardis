@@ -4,10 +4,10 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
-import * as open from "open";
+import open from "open";
 import * as path from "path";
 import { createTempDir, execCommand, getCurrentGitBranch, git, gitHasLocalUpdates, normalizeFileStatusPath, uxLog } from "../../../common/utils/index.js";
-import { exportData } from "../../../common/utils/dataUtils";
+import { exportData } from "../../../common/utils/dataUtils.js";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
 import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from "../../../common/utils/gitUtils.js";
 import { prompts } from "../../../common/utils/prompts.js";
@@ -252,9 +252,9 @@ autoRemoveUserPermissions:
     });
     if (commitReadyRes.value === "pleasePull") {
       // Process sf project retrieve start
-      uxLog(this, c.cyan(`Pulling sources from scratch org ${this.org.getUsername()}...`));
-      await forceSourcePull(this.org.getUsername(), this.debugMode);
-      uxLog(this, c.cyan(`Sources has been pulled from ${this.org.getUsername()}, now you can stage and commit your updates !`));
+      uxLog(this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
+      await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
+      uxLog(this, c.cyan(`Sources has been pulled from ${flags['target-org'].getUsername()}, now you can stage and commit your updates !`));
       return { outputString: "Pull performed" };
     } else if (commitReadyRes.value === "help") {
       // Show pull commit stage help
@@ -280,7 +280,7 @@ autoRemoveUserPermissions:
         });
         if (exportDataRes.value === true) {
           await exportData(dataSource.dataPath, this, {
-            sourceUsername: this.org.getUsername(),
+            sourceUsername: flags['target-org'].getUsername(),
           });
         }
       }

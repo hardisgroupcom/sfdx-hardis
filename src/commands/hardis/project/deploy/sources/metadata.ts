@@ -166,7 +166,7 @@ export default class DxSources extends SfCommand<any> {
     }
 
     return {
-      orgId: this.org.getOrgId(),
+      orgId: flags['target-org'].getOrgId(),
       deployProcessed,
       destructiveProcessed,
       outputString: "",

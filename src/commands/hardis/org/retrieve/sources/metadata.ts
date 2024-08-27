@@ -120,7 +120,7 @@ export default class DxSources extends SfCommand<any> {
       uxLog(this, c.yellow(c.bold("Info: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/")));
     }
 
-    return { orgId: this.org.getOrgId(), outputString: message };
+    return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 
   private async processPostActions(message) {
@@ -190,6 +190,6 @@ export default class DxSources extends SfCommand<any> {
     // Delete report files
     //const reportFiles = await glob("**/hardis-report/**", { cwd: process.cwd() });
     //reportFiles.map(async (file) => await fs.remove(file));
-    return { orgId: this.org.getOrgId(), outputString: message, orgTestRes, legacyApiRes };
+    return { orgId: flags['target-org'].getOrgId(), outputString: message, orgTestRes, legacyApiRes };
   }
 }

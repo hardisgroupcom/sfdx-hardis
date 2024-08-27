@@ -57,12 +57,12 @@ export default class GeneratePackageXmlFull extends SfCommand<any> {
 
     // Select org that will be used to export records
     let conn = null;
-    let orgUsername = this.org.getUsername();
+    let orgUsername = flags['target-org'].getUsername();
     if (!isCI) {
       const prevOrgUsername = orgUsername;
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
       if (prevOrgUsername === orgUsername) {
-        conn = this.org.getConnection();
+        conn = flags['target-org'].getConnection();
       }
     }
     uxLog(this, c.cyan(`Generating full package xml for ${orgUsername}`));

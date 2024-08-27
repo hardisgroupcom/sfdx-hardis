@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { exportData, selectDataWorkspace } from "../../../../common/utils/dataUtils";
+import { exportData, selectDataWorkspace } from "../../../../common/utils/dataUtils.js";
 import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils.js";
 
 // Initialize Messages with the current plugin directory
@@ -64,7 +64,7 @@ See article:
     }
 
     // Select org that will be used to export records
-    let orgUsername = this.org.getUsername();
+    let orgUsername = flags['target-org'].getUsername();
     if (!isCI) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
     }

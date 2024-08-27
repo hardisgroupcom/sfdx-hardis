@@ -62,7 +62,7 @@ autoRetrieveWhenPull:
 
   public async run(): Promise<AnyJson> {
     const debugMode = flags.debug || false;
-    const targetUsername = this.org.getUsername();
+    const targetUsername = flags['target-org'].getUsername();
     await forceSourcePull(targetUsername, debugMode);
 
     // Return an object to be displayed with --json

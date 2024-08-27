@@ -150,7 +150,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.folder = flags.folder || "./force-app";
     this.hasToDisplayJsonOnly = process.argv.includes("--json");
 
-    this.ignoreSourceElementsIfDefined();
+    this.ignoreSourceElementsIfDefined(flags);
     this.ignoreRightElementsIfDefined(config, flags);
 
     this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
@@ -202,7 +202,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     return { statusCode: statusCode, outputString: remainingElements };
   }
 
-  private ignoreSourceElementsIfDefined() {
+  private ignoreSourceElementsIfDefined(flags) {
     const ignoreElements = flags.elementsignored;
 
     for (const ignoredElement of ignoreElements.split(",")) {
@@ -457,7 +457,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       attachments = [{ text: notifDetailText }];
     }
 
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "LINT_ACCESS",
       text: notifText,

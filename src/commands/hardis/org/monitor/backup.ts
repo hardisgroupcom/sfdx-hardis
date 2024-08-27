@@ -81,9 +81,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.debugMode = flags.debug || false;
 
     // Build target org full manifest
-    uxLog(this, c.cyan("Building full manifest for org " + c.bold(this.org.getConnection().instanceUrl)) + " ...");
+    uxLog(this, c.cyan("Building full manifest for org " + c.bold(flags['target-org'].getConnection().instanceUrl)) + " ...");
     const packageXmlFullFile = "manifest/package-all-org-items.xml";
-    await buildOrgManifest("", packageXmlFullFile, this.org.getConnection());
+    await buildOrgManifest("", packageXmlFullFile, flags['target-org'].getConnection());
 
     // Check if we have package-skip_items.xml
     const packageXmlBackUpItemsFile = "manifest/package-backup-items.xml";
@@ -135,7 +135,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     // Retrieve sfdx sources in local git repo
     uxLog(this, c.cyan(`Run the retrieve command for retrieving filtered metadatas ...`));
     try {
-      await execCommand(`sf project retrieve start -x ${packageXmlBackUpItemsFile} -o ${this.org.getUsername()} --wait 120`, this, {
+      await execCommand(`sf project retrieve start -x ${packageXmlBackUpItemsFile} -o ${flags['target-org'].getUsername()} --wait 120`, this, {
         fail: true,
         output: true,
         debug: this.debugMode,
@@ -195,7 +195,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
 
     // Build notifications
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     let notifText = `No updates detected in ${orgMarkdown}`;
@@ -222,7 +222,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
 
     // Post notifications
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "BACKUP",
       text: notifText,
@@ -241,6 +241,6 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       },
     });
 
-    return { outputString: "BackUp processed on org " + this.org.getConnection().instanceUrl };
+    return { outputString: "BackUp processed on org " + flags['target-org'].getConnection().instanceUrl };
   }
 }

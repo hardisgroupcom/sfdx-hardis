@@ -57,7 +57,7 @@ export default class ConfigureAuth extends SfCommand<any> {
     const devHub = flags.devhub || false;
 
     // Ask user to login to org
-    const prevUserName = devHub ? this.hubOrg?.getUsername() : this.org?.getUsername();
+    const prevUserName = devHub ? this.hubOrg?.getUsername() : flags['target-org']?.getUsername();
     /*uxLog(this, c.cyan("Please select org login into the org you want to configure the SF CLI Authentication"));
      await this.config.runHook("auth", {
       checkAuth: true,
@@ -107,14 +107,14 @@ export default class ConfigureAuth extends SfCommand<any> {
         throw new SfError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
       } */
       instanceUrl = await promptInstanceUrl(["login", "test"], `${branchName} related org`, {
-        instanceUrl: devHub ? this.hubOrg.getConnection().instanceUrl : this.org.getConnection().instanceUrl,
+        instanceUrl: devHub ? this.hubOrg.getConnection().instanceUrl : flags['target-org'].getConnection().instanceUrl,
       });
     }
     // Request username
     const usernameResponse = await prompts({
       type: "text",
       name: "value",
-      initial: (devHub ? this.hubOrg.getUsername() : this.org.getUsername()) || "",
+      initial: (devHub ? this.hubOrg.getUsername() : flags['target-org'].getUsername()) || "",
       message: c.cyanBright(
         `What is the Salesforce username that will be ${devHub ? "used as Dev Hub" : "used for deployments by CI server"
         } ? Example: admin.sfdx@myclient.com`,
@@ -139,9 +139,9 @@ export default class ConfigureAuth extends SfCommand<any> {
     // Generate SSL certificate (requires openssl to be installed on computer)
     const certFolder = devHub ? "./config/.jwt" : "./config/branches/.jwt";
     const certName = devHub ? config.devHubAlias : branchName;
-    const orgConn = devHub ? this.hubOrg?.getConnection() : this.org?.getConnection();
+    const orgConn = devHub ? this.hubOrg?.getConnection() : flags['target-org']?.getConnection();
     const sslGenOptions = {
-      targetUsername: devHub ? this.hubOrg?.getUsername() : this.org?.getUsername(),
+      targetUsername: devHub ? this.hubOrg?.getUsername() : flags['target-org']?.getUsername(),
     };
     await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
     // Return an object to be displayed with --json

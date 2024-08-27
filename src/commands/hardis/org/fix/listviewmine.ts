@@ -115,7 +115,7 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
       this.listViewsStrings = config.listViewsToSetToMine || [];
     }
 
-    const result = await restoreListViewMine(this.listViewsStrings, this.org.getConnection(), { debug: this.debugMode });
+    const result = await restoreListViewMine(this.listViewsStrings, flags['target-org'].getConnection(), { debug: this.debugMode });
     return result;
   }
 }

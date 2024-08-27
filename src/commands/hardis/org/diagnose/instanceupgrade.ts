@@ -52,7 +52,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
 
     // Get instance name
     const orgQuery = "SELECT FIELDS(all) FROM Organization LIMIT 1";
-    const orgQueryRes = await soqlQuery(orgQuery, this.org.getConnection());
+    const orgQueryRes = await soqlQuery(orgQuery, flags['target-org'].getConnection());
     const orgInfo = orgQueryRes.records[0];
     const instanceName = orgInfo.InstanceName;
 
@@ -76,7 +76,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
     const daysBeforeUpgrade = nextUpgradeDate.diff(today, "days");
 
     // Manage notifications
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = "log";
     const notifText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
@@ -92,7 +92,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
       uxLog(this, c.green(notifText));
     }
 
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "ORG_INFO",
       text: notifText,

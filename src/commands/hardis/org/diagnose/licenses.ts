@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { uxLog } from "../../../../common/utils/index.js";
-import { soqlQuery } from "../../../../common/utils/apiUtils";
+import { soqlQuery } from "../../../../common/utils/apiUtils.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 import { NotifProvider } from "../../../../common/notifProvider/index.js";
 
@@ -65,7 +65,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
     this.outputFile = flags.outputfile || null;
 
     // Retrieve the list of users who haven't logged in for a while
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
     uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? "(used only)" : ""));
 
     const licensesByKey = {};
@@ -124,7 +124,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
     this.outputFile = await generateReportPath("licenses", this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.licenses, this.outputFile);
 
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
       type: "LICENSES",
       text: "",
