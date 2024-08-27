@@ -1,10 +1,10 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
+import { Connection, Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { uxLog } from "../../../../common/utils";
-import { soqlQueryTooling, describeGlobalTooling } from "../../../../common/utils/apiUtils";
+import { soqlQueryTooling, describeGlobalTooling, toolingRequest } from "../../../../common/utils/apiUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
@@ -80,41 +80,47 @@ export default class unlockedpackages extends SfdxCommand {
     const promptUlpkgToClean = await prompts([
       {
         type: "select",
-        name: "ulpkg",
+        name: "packageId",
         message: "Please select the package to clean out",
         choices: choices
       }
     ])
 
-    const ulpkgToClean = promptUlpkgToClean.ulpkg;
+    const chosenPackage = choices.filter(id => id.value == promptUlpkgToClean.packageId)[0]
 
     // Tooling query specific package
-    const ulpkgRequest = `SELECT SubjectID, SubjectKeyPrefix FROM Package2Member WHERE SubscriberPackageId='${ulpkgToClean}'`
-    const ulpkgQueryResult = await soqlQueryTooling(ulpkgRequest, this.org.getConnection());
-    const memberExceptions =[];
+    const ulpkgQuery = `SELECT SubjectID, SubjectKeyPrefix FROM Package2Member WHERE SubscriberPackageId='${promptUlpkgToClean.packageId}'`
+    const ulpkgQueryResult = await soqlQueryTooling(ulpkgQuery, this.org.getConnection());
+    
+    //create array of package members, looking up object name from orgPrefixKey
     const ulpkgMembers = ulpkgQueryResult.records.map(member => ({
       SubjectId: member.SubjectId,
       SubjectKeyPrefix: member.SubjectKeyPrefix,
       ObjectName: orgPrefixKey[member.SubjectKeyPrefix]
-    })).reduce((acc, { ObjectName, SubjectId }) => {
-      if (ObjectName) {
-        acc[ObjectName] = acc[ObjectName] || [];
-        acc[ObjectName].push(SubjectId);
-      } else {
-        memberExceptions.push(SubjectId);
-      }
-      return acc;
-    }, {});
+    })).filter(member => member.ObjectName !== undefined);
 
-    console.log(ulpkgMembers);
-    console.log(memberExceptions);
+    //fetch metadata for package members
+    const ulpkgMeta = await Promise.all(ulpkgMembers.map(async (member) => {
+        const toolingQuery: [string, Connection, Record<string, unknown>] = [
+          `sobjects/${member.ObjectName}/${member.SubjectId}`,
+          this.org.getConnection(),
+          {}
+        ]
+        const returnResponse: Record<string, unknown> = await toolingRequest(...toolingQuery)
+        return {
+          name: returnResponse.Name || returnResponse.DeveloperName,
+          fullName: returnResponse.FullName
+        }
+    }));
+
+    console.log(ulpkgMeta)
+
     // Create json file
 
     // Do Clean
 
-
     // Summary
-    const msg = `Cleaned ${c.green(c.bold(promptUlpkgToClean.ulpkg[0].title))}.`;
+    const msg = `Cleaned ${c.green(c.bold(chosenPackage.title))}.`;
     uxLog(this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
