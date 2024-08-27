@@ -1,9 +1,11 @@
 /* jscpd:ignore-start */
 import { flags, SfdxCommand } from "@salesforce/command";
 import { Connection, Messages } from "@salesforce/core";
+import { Connection, Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as c from "chalk";
 import { uxLog } from "../../../../common/utils";
+import { soqlQueryTooling, describeGlobalTooling, toolingRequest } from "../../../../common/utils/apiUtils";
 import { soqlQueryTooling, describeGlobalTooling, toolingRequest } from "../../../../common/utils/apiUtils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -82,18 +84,18 @@ export default class unlockedpackages extends SfdxCommand {
       {
         type: "select",
         name: "packageId",
+        name: "packageId",
         message: "Please select the package to clean out",
         choices: choices
       }
     ])
 
     const chosenPackage = choices.filter(id => id.value == promptUlpkgToClean.packageId)[0]
+    const chosenPackage = choices.filter(id => id.value == promptUlpkgToClean.packageId)[0]
 
     // Tooling query specific package
     const ulpkgQuery = `SELECT SubjectID, SubjectKeyPrefix FROM Package2Member WHERE SubscriberPackageId='${promptUlpkgToClean.packageId}'`
     const ulpkgQueryResult = await soqlQueryTooling(ulpkgQuery, this.org.getConnection());
-
-
     
     //create array of package members, looking up object name from orgPrefixKey
     const ulpkgMembers = ulpkgQueryResult.records.map(member => ({
@@ -118,11 +120,30 @@ export default class unlockedpackages extends SfdxCommand {
 
     console.log(ulpkgMeta)
 
+    })).filter(member => member.ObjectName !== undefined);
+
+    //fetch metadata for package members
+    const ulpkgMeta = await Promise.all(ulpkgMembers.map(async (member) => {
+        const toolingQuery: [string, Connection, Record<string, unknown>] = [
+          `sobjects/${member.ObjectName}/${member.SubjectId}`,
+          this.org.getConnection(),
+          {}
+        ]
+        const returnResponse: Record<string, unknown> = await toolingRequest(...toolingQuery)
+        return {
+          name: returnResponse.Name || returnResponse.DeveloperName,
+          fullName: returnResponse.FullName
+        }
+    }));
+
+    console.log(ulpkgMeta)
+
     // Create json file
 
     // Do Clean
 
     // Summary
+    const msg = `Cleaned ${c.green(c.bold(chosenPackage.title))}.`;
     const msg = `Cleaned ${c.green(c.bold(chosenPackage.title))}.`;
     uxLog(this, c.cyan(msg));
     // Return an object to be displayed with --json
