@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
@@ -22,7 +22,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class MonitorBackup extends SfCommand {
+export default class MonitorBackup extends SfCommand<any> {
   public static title = "Backup DX sources";
 
   public static description = `Retrieve sfdx sources in the context of a monitoring backup
@@ -65,7 +65,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
@@ -117,7 +117,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
 
     // List namespaces used in the org
-    const namespaces = [];
+    const namespaces: any[] = [];
     const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
     for (const installedPackage of installedPackages) {
       if (installedPackage?.SubscriberPackageNamespace !== "" && installedPackage?.SubscriberPackageNamespace != null) {
@@ -159,7 +159,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     // Write installed packages
     uxLog(this, c.cyan(`Write installed packages ...`));
-    const installedPackagesLog = [];
+    const installedPackagesLog: any[] = [];
     const packageFolder = path.join(process.cwd(), "installedPackages");
     await fs.ensureDir(packageFolder);
     for (const installedPackage of installedPackages) {

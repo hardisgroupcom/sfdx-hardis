@@ -13,7 +13,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DxSources extends SfCommand {
+export default class DxSources extends SfCommand<any> {
   public static title = "Deploy metadata sources to org";
 
   public static description = "Returns sfdx-hardis project config for a given level";
@@ -44,7 +44,7 @@ export default class DxSources extends SfCommand {
   protected static requiresUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected configInfo: any = {};
 

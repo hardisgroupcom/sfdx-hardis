@@ -1,5 +1,5 @@
 import { countRegexMatches, uxLog } from "./index.js";
-import * as c from "chalk";
+import c from "chalk";
 import * as readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import * as fs from "fs";
@@ -24,7 +24,7 @@ export async function getApexTestClasses(classRegexFilter: string | null = null,
   uxLog(this, c.grey(`Finding all repository APEX tests in ${c.bold(pathToBrowser)}`));
 
   // Find all APEX classes
-  const testClasses = [];
+  const testClasses: any[] = [];
   const allFiles = await readFilesRecursive(pathToBrowser)
     .filter((file) => !file.includes("node_modules") && file.includes("classes") && file.endsWith(".cls"))
     .map((file) => {

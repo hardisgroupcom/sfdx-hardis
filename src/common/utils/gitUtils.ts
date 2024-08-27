@@ -1,7 +1,7 @@
 import { getConfig } from "../../config/index.js";
-import { prompts } from "./prompts";
-import * as c from "chalk";
-import * as sortArray from "sort-array";
+import { prompts } from "./prompts.js";
+import c from "chalk";
+import sortArray from "sort-array";
 import {
   arrayUniqueByKey,
   arrayUniqueByKeys,
@@ -96,7 +96,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   }
   logResults = arrayUniqueByKeys(logResults, ["message", "body"]).reverse();
   let commitsSummary = "## Commits summary\n\n";
-  const manualActions = [];
+  const manualActions: any[] = [];
   const tickets: Ticket[] = [];
   for (const logResult of logResults) {
     commitsSummary += "**" + logResult.message + "**, by " + logResult.author_name;

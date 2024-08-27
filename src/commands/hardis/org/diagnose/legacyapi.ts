@@ -2,8 +2,8 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import * as sortArray from "sort-array";
+import c from "chalk";
+import sortArray from "sort-array";
 import { uxLog } from "../../../../common/utils/index.js";
 import * as dns from "dns";
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class LegacyApi extends SfCommand {
+export default class LegacyApi extends SfCommand<any> {
   public static title = "Check for legacy API use";
 
   public static description = `Checks if an org uses retired or someday retired API version\n
@@ -76,7 +76,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected debugMode = false;
   protected apexSCannerCodeUrl = "https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex";
@@ -188,7 +188,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.outputFilesRes = await generateCsvFile(this.allErrors, this.outputFile);
 
     // Generate one summary file by severity
-    const outputFileIps = [];
+    const outputFileIps: any[] = [];
     for (const descriptor of this.legacyApiDescriptors) {
       const errors = descriptor.errors;
       if (errors.length > 0) {
@@ -310,7 +310,7 @@ See article to solve issue before it's too late:
       }
     }
     // Try to get hostname for ips
-    const ipResults = [];
+    const ipResults: any[] = [];
     for (const ip of Object.keys(ipList)) {
       const ipInfo = ipList[ip];
       let hostname;

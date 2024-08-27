@@ -1,14 +1,14 @@
 import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { GitProvider } from "../../../common/gitProvider";
 import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 import { uxLog } from "../../../common/utils";
 
 // Wrapper for sfdx force:source:deploy
-export class Deploy extends SfCommand {
+export class Deploy extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors.
 
 Additional to the base command wrapper: If using **--checkonly**, add options **--checkcoverage** and **--coverageformatters json-summary** to check that org coverage is > 75% (or value defined in .sfdx-hardis.yml property **apexTestsMinCoverageOrgWide**)

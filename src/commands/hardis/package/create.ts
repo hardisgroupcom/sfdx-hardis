@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { execSfdxJson, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
 
@@ -13,7 +13,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class PackageCreate extends SfCommand {
+export default class PackageCreate extends SfCommand<any> {
   public static title = "Create a new package";
 
   public static description = messages.getMessage("packageCreate");
@@ -43,7 +43,7 @@ export default class PackageCreate extends SfCommand {
   protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
 

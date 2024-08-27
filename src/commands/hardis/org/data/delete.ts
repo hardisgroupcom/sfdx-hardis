@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
 import { deleteData, selectDataWorkspace } from "../../../../common/utils/dataUtils";
 import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils";
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DataExport extends SfCommand {
+export default class DataExport extends SfCommand<any> {
   public static title = "Delete data";
 
   public static description = messages.getMessage("orgDataDelete");
@@ -46,7 +46,7 @@ export default class DataExport extends SfCommand {
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   // List required plugins, their presence will be tested before running the command
   protected static requiresSfdxPlugins = ["sfdmu"];

@@ -3,8 +3,8 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import axios from "axios";
-import * as moment from "moment";
-import * as c from "chalk";
+import moment from "moment";
+import c from "chalk";
 import { uxLog } from "../../../../common/utils/index.js";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DiagnoseInstanceUpgrade extends SfCommand {
+export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
   public static title = "Get Instance Upgrade date";
 
   public static description = `Get the date when the org instance will be upgraded (to Spring, Summer or Winter)
@@ -46,7 +46,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected debugMode = false;
 

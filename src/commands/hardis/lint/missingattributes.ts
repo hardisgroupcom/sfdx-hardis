@@ -22,7 +22,7 @@ import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 /* jscpd:ignore-end */
-export default class metadatastatus extends SfCommand {
+export default class metadatastatus extends SfCommand<any> {
   public static title = "check missing description on custom fields";
   public static description = "Check if elements(custom fields) aren't description";
   public static examples = ["$ sf hardis:lint:missingattributes"];
@@ -52,7 +52,7 @@ export default class metadatastatus extends SfCommand {
   // Comment this out if your command does not support a hub org username
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
   private objectFileDirectory = "**/objects/**/fields/*.*";
   protected fieldsWithoutDescription = [];
   protected outputFile: string;

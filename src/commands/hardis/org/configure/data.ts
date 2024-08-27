@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as pascalcase from "pascalcase";
 import * as path from "path";
@@ -11,7 +11,7 @@ import { dataFolderRoot } from "../../../../common/utils/dataUtils";
 import { prompts } from "../../../../common/utils/prompts";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 import { getConfig, setConfig } from "../../../../config/index.js";
-import { PACKAGE_ROOT_DIR } from "../../../../settings";
+import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ConfigureData extends SfCommand {
+export default class ConfigureData extends SfCommand<any> {
   public static title = "Configure Data project";
 
   public static description = `Configure Data Export/Import with a [SFDX Data Loader](https://help.sfdmu.com/) Project
@@ -53,7 +53,7 @@ See article:
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   // List required plugins, their presence will be tested before running the command
   protected static requiresSfdxPlugins = ["sfdmu"];
@@ -206,7 +206,7 @@ If you don't have unique field to identify an object, use composite external ids
   }
 
   private async selectTemplate() {
-    const templateChoices = [];
+    const templateChoices: any[] = [];
     const templatesFolder = path.join(PACKAGE_ROOT_DIR, "defaults/templates/sfdmu");
     const templateFiles = fs.readdirSync(templatesFolder);
     for (const templateFile of templateFiles) {

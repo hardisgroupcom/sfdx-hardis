@@ -3,7 +3,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { execCommand, uxLog } from "../../../../common/utils";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ConvertProfilesToPermSets extends SfCommand {
+export default class ConvertProfilesToPermSets extends SfCommand<any> {
   public static title = "Convert Profiles into Permission Sets";
 
   public static description = "Creates permission sets from existing profiles, with id PS_PROFILENAME";
@@ -45,7 +45,7 @@ export default class ConvertProfilesToPermSets extends SfCommand {
   protected static requiresUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
   // List required plugins, their presence will be tested before running the command

@@ -15,7 +15,7 @@ import { NotifSeverity, UtilsNotifs } from "../notifProvider";
  * @returns {Promise<{ text: string; url: string }[]>} - A Promise that resolves to an array of notification buttons.
  */
 export async function getNotificationButtons(): Promise<{ text: string; url: string }[]> {
-  const notifButtons = [];
+  const notifButtons: any[] = [];
   const jobUrl = await GitProvider.getJobUrl();
   if (jobUrl) {
     notifButtons.push({ text: "View Job", url: jobUrl });

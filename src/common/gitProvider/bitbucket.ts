@@ -1,5 +1,5 @@
 import { GitProviderRoot } from "./gitProviderRoot";
-import * as c from "chalk";
+import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { git, uxLog } from "../utils";
 import { Bitbucket, Schema } from "bitbucket";

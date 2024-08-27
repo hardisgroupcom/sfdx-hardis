@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import * as child from "child_process";
 import * as crossSpawn from "cross-spawn";
 import * as crypto from "crypto";
@@ -15,12 +15,12 @@ import { SfError } from "@salesforce/core";
 import * as ora from "ora";
 import simpleGit, { FileStatusResult, SimpleGit } from "simple-git";
 import { CONSTANTS, getConfig, getReportDirectory, setConfig } from "../../config/index.js";
-import { prompts } from "./prompts";
+import { prompts } from "./prompts.js";
 import { encryptFile } from "../cryptoUtils";
-import { deployMetadatas, truncateProgressLogLines } from "./deployUtils";
+import { deployMetadatas, truncateProgressLogLines } from "./deployUtils.js";
 import { promptProfiles, promptUserEmail } from "./orgUtils.js";
 import { WebSocketClient } from "../websocketClient.js";
-import * as moment from "moment";
+import moment from "moment";
 import { writeXmlFile } from "./xmlUtils.js";
 
 let pluginsStdout = null;
@@ -847,7 +847,7 @@ export async function filterPackageXml(
 
 // Catch matches in files according to criteria
 export async function catchMatches(catcher: any, file: string, fileText: string, commandThis: any) {
-  const matchResults = [];
+  const matchResults: any[] = [];
   if (catcher.regex) {
     // Check if there are matches
     const matches = await countRegexMatches(catcher.regex, fileText);
@@ -893,7 +893,7 @@ export async function extractRegexGroups(regex: RegExp, text: string): Promise<s
 
 export async function extractRegexMatches(regex: RegExp, text: string): Promise<string[]> {
   let m;
-  const matchStrings = [];
+  const matchStrings: any[] = [];
   while ((m = regex.exec(text)) !== null) {
     // This is necessary to avoid infinite loops with zero-width matches
     if (m.index === regex.lastIndex) {
@@ -911,14 +911,14 @@ export async function extractRegexMatches(regex: RegExp, text: string): Promise<
 
 export async function extractRegexMatchesMultipleGroups(regex: RegExp, text: string): Promise<any[]> {
   let m;
-  const matchResults = [];
+  const matchResults: any[] = [];
   while ((m = regex.exec(text)) !== null) {
     // This is necessary to avoid infinite loops with zero-width matches
     if (m.index === regex.lastIndex) {
       regex.lastIndex++;
     }
     // Iterate thru the regex matches
-    const matchGroups = [];
+    const matchGroups: any[] = [];
     m.forEach((match) => {
       matchGroups.push(match);
     });

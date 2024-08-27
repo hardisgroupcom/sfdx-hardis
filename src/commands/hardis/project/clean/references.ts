@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { glob } from "glob";
@@ -10,7 +10,7 @@ import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } fr
 import { prompts } from "../../../../common/utils/prompts";
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 import { getConfig, setConfig } from "../../../../config/index.js";
-import { PACKAGE_ROOT_DIR } from "../../../../settings";
+import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
 import { FilterXmlContent } from "./filter-xml-content";
 
 // Initialize Messages with the current plugin directory
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanReferences extends SfCommand {
+export default class CleanReferences extends SfCommand<any> {
   public static title = "Clean references in dx sources";
 
   public static description = "Remove unwanted references within sfdx project sources";
@@ -64,7 +64,7 @@ export default class CleanReferences extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
   /* jscpd:ignore-end */
 
   protected debugMode = false;

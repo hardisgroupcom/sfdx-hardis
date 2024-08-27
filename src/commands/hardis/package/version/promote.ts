@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { execSfdxJson, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 
@@ -13,7 +13,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class PackageVersionPromote extends SfCommand {
+export default class PackageVersionPromote extends SfCommand<any> {
   public static title = "Promote new versions of package(s)";
 
   public static description = "Promote package(s) version(s): convert it from beta to released";
@@ -48,7 +48,7 @@ export default class PackageVersionPromote extends SfCommand {
   protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
 
@@ -66,7 +66,7 @@ export default class PackageVersionPromote extends SfCommand {
       availablePackageAliases[packageName] = packageAlias;
     }
     // Select packages to promote
-    const packagesToPromote = [];
+    const packagesToPromote: any[] = [];
     if (auto) {
       // Promote only packages not promoted yet
       const packageListRes = await execSfdxJson("sf package version list --released", this, { output: true, fail: true });
@@ -94,8 +94,8 @@ export default class PackageVersionPromote extends SfCommand {
       packagesToPromote.push(packageResponse.packageSelected);
     }
 
-    const promotedPackageVersions = [];
-    const errorPromotedVersions = [];
+    const promotedPackageVersions: any[] = [];
+    const errorPromotedVersions: any[] = [];
 
     // Promote packages
     for (const packageToPromote of packagesToPromote) {

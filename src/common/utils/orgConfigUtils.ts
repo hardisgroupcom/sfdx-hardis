@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as puppeteer from "puppeteer";
@@ -8,7 +8,7 @@ import { uxLog } from "./index.js";
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 
 export async function restoreListViewMine(listViewStrings: Array<string>, conn: any, options: any = { debug: false }) {
-  const listViewItems = [];
+  const listViewItems: any[] = [];
   for (const listViewStr of listViewStrings) {
     // Format Object:ListViewName
     const splits = listViewStr.split(":");
@@ -47,9 +47,9 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   // Process login page
   await page.goto(loginUrl, { waitUntil: ["domcontentloaded", "networkidle0"] });
 
-  const success = [];
-  const failed = [];
-  const unnecessary = [];
+  const success: any[] = [];
+  const failed: any[] = [];
+  const unnecessary: any[] = [];
 
   // Restore list views with Mine option
   for (const listView of listViewItems) {
@@ -110,7 +110,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
 
 // List all yml files in config/branches and build list of major orgs from them
 export async function listMajorOrgs() {
-  const majorOrgs = [];
+  const majorOrgs: any[] = [];
   const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
   const configFiles = await glob(branchConfigPattern);
   for (const configFile of configFiles) {

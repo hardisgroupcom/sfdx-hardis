@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { glob } from "glob";
 import * as path from "path";
 import * as fs from "fs-extra";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanListViews extends SfCommand {
+export default class CleanListViews extends SfCommand<any> {
   public static title = "Clean Flow Positions";
 
   public static description = `Replace all positions in Auto-Layout Flows by 0 to simplify conflicts management
@@ -75,7 +75,7 @@ autoCleanTypes:
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected folder: string;
   protected debugMode = false;

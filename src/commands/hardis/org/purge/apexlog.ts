@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { execCommand, uxLog } from "../../../../common/utils";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgPurgeFlow extends SfCommand {
+export default class OrgPurgeFlow extends SfCommand<any> {
   public static title = "Purge Apex Logs";
 
   public static description = "Purge apex logs in selected org";
@@ -52,7 +52,7 @@ export default class OrgPurgeFlow extends SfCommand {
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   /* jscpd:ignore-end */
 

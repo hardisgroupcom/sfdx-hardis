@@ -1,9 +1,9 @@
 /* jscpd:ignore-start */
 // External Libraries
-import * as c from "chalk";
+import c from "chalk";
 import { glob } from "glob";
 import * as path from "path";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 
 // Salesforce Specific
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
@@ -30,7 +30,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Access extends SfCommand {
+export default class Access extends SfCommand<any> {
   public static title = "check permission access";
 
   public static description = `Check if elements(apex class and field) are at least in one permission set
@@ -85,7 +85,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected static supportsDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected folder: string;
   protected customSettingsNames: string[] = [];
@@ -303,7 +303,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   }
 
   private ruleBasedCheckForFields(el: string): Array<string> {
-    const otherElementsToCheck = [];
+    const otherElementsToCheck: any[] = [];
 
     // Activity is the parent object of Task and Event: check also rights to avoid false positives
     if (el.startsWith("Activity.")) {
@@ -402,7 +402,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   }
 
   private constructLogAndDisplayTable(remainingElements) {
-    const remainingElementsTable = [];
+    const remainingElementsTable: any[] = [];
     let counterTable = 0;
 
     for (const currentType of Access.sourceElements) {
@@ -526,7 +526,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   private async listLocalCustomSettings() {
     const globPatternObjects = process.cwd() + `/**/*.object-meta.xml`;
     const objectFiles = await glob(globPatternObjects);
-    const csList = [];
+    const csList: any[] = [];
     for (const objectFile of objectFiles) {
       const objectXml = await parseXmlFile(objectFile);
       if (objectXml?.CustomObject?.customSettingsType?.length > 0) {
@@ -539,7 +539,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   private async listLocalPermissionSets() {
     const globPatternPS = process.cwd() + `/**/*.permissionset-meta.xml`;
     const psFiles = await glob(globPatternPS);
-    const psList = [];
+    const psList: any[] = [];
     for (const ps of psFiles) {
       psList.push({ name: path.basename(ps).replace(".permissionset-meta.xml", ""), filePath: ps });
     }

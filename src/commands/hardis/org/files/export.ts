@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { uxLog } from "../../../../common/utils/index.js";
 import { FilesExporter, getFilesWorkspaceDetail, promptFilesExportConfiguration, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
 import { prompts } from "../../../../common/utils/prompts";
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class FilesExport extends SfCommand {
+export default class FilesExport extends SfCommand<any> {
   public static title = "Export files";
 
   public static description = `Export file attachments from a Salesforce org
@@ -66,7 +66,7 @@ See article below
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   /* jscpd:ignore-end */
 

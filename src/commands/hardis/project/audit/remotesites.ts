@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as psl from "psl";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import * as url from "url";
 import { catchMatches, generateReports, uxLog } from "../../../../common/utils";
 
@@ -16,7 +16,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class RemoteSites extends SfCommand {
+export default class RemoteSites extends SfCommand<any> {
   public static title = "Audit Remote Sites";
 
   public static description = messages.getMessage("auditRemoteSites");
@@ -47,7 +47,7 @@ export default class RemoteSites extends SfCommand {
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
 

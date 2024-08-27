@@ -4,8 +4,8 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { execCommand, execSfdxJson, uxLog } from "../../../common/utils";
 import { prompts } from "../../../common/utils/prompts";
-import * as c from "chalk";
-import * as sortArray from "sort-array";
+import c from "chalk";
+import sortArray from "sort-array";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ScratchDelete extends SfCommand {
+export default class ScratchDelete extends SfCommand<any> {
   public static title = "Delete scratch orgs(s)";
 
   public static description = "Assisted menu to delete scratch orgs associated to a DevHub";

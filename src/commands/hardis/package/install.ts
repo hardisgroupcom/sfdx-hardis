@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as axios1 from "axios";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 // import * as packages from '../../../../defaults/packages.json'
@@ -11,7 +11,7 @@ import { MetadataUtils } from "../../../common/metadata-utils";
 import { isCI, uxLog } from "../../../common/utils";
 import { managePackageConfig } from "../../../common/utils/orgUtils";
 import { prompts } from "../../../common/utils/prompts";
-import { PACKAGE_ROOT_DIR } from "../../../settings";
+import { PACKAGE_ROOT_DIR } from "../../../settings.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -22,7 +22,7 @@ const axios = axios1.default;
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class PackageVersionInstall extends SfCommand {
+export default class PackageVersionInstall extends SfCommand<any> {
   public static title = "Install packages in an org";
 
   public static description = `Install a package in an org using its id (starting with **04t**)
@@ -64,7 +64,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   /* jscpd:ignore-end */
 
@@ -75,7 +75,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
     const packagesRaw = await fs.readFile(this.allPackagesFileName, "utf8");
     const packages = JSON.parse(packagesRaw);
     const packageId = this.flags.package || null;
-    const packagesToInstall = [];
+    const packagesToInstall: any[] = [];
     // If no package Id is sent, ask user what package he/she wants to install
     if (!isCI && (packageId == null || !packageId.startsWith("04t"))) {
       const allPackages = packages.map((pack) => ({

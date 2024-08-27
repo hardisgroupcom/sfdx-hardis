@@ -2,9 +2,9 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { glob } from "glob";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import { uxLog } from "../../../../common/utils/index.js";
 import { soqlQueryTooling } from "../../../../common/utils/apiUtils";
 import { prompts } from "../../../../common/utils/prompts";
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class FixV53Flexipages extends SfCommand {
+export default class FixV53Flexipages extends SfCommand<any> {
   public static title = "Fix profiles to add tabs that are not retrieved by SF CLI";
 
   public static description = `Interactive prompts to add tab visibilities that are not retrieved by project retrieve start`;
@@ -50,7 +50,7 @@ export default class FixV53Flexipages extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected pathToBrowse: string;
   protected debugMode = false;

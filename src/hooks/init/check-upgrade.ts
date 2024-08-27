@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import { readPackageUp } from 'read-package-up';
 import updateNotifier from 'update-notifier';
 import * as semver from "semver";

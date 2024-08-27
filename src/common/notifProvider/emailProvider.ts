@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import * as DOMPurify from "isomorphic-dompurify";
-import * as c from "chalk";
+import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, uxLog } from "../utils";
 import { NotifMessage, UtilsNotifs } from "./index.js";

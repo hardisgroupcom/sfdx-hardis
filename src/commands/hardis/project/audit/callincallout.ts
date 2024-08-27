@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import * as fs from "fs-extra";
 import { glob } from "glob";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import { catchMatches, generateReports, uxLog } from "../../../../common/utils";
 
 // Initialize Messages with the current plugin directory
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CallInCallOut extends SfCommand {
+export default class CallInCallOut extends SfCommand<any> {
   public static title = "Audit CallIns and CallOuts";
 
   public static description = messages.getMessage("auditCallInCallOut");
@@ -45,7 +45,7 @@ export default class CallInCallOut extends SfCommand {
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
 

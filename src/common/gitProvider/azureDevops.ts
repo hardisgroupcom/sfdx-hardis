@@ -1,6 +1,6 @@
 import { GitProviderRoot } from "./gitProviderRoot";
 import * as azdev from "azure-devops-node-api";
-import * as c from "chalk";
+import c from "chalk";
 import { getCurrentGitBranch, git, uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import {

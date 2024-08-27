@@ -1,12 +1,12 @@
 import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
 import { SfError } from "@salesforce/core";
-import * as c from "chalk";
+import c from "chalk";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { isCI, uxLog } from "../../../common/utils";
 import { promptOrgUsernameDefault } from "../../../common/utils/orgUtils";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 
-export class SourceRetrieve extends SfCommand {
+export class SourceRetrieve extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:retrieve
 
 - If no retrieve constraint is sent, as assisted menu will request the list of metadatas to retrieve

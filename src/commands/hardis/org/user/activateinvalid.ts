@@ -2,9 +2,9 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as columnify from "columnify";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import { isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { bulkQuery, bulkUpdate, soqlQuery } from "../../../../common/utils/apiUtils";
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgUserActiveInvalid extends SfCommand {
+export default class OrgUserActiveInvalid extends SfCommand<any> {
   public static title = "Reactivate sandbox invalid users";
 
   public static description = `Update sandbox users so their email is valid
@@ -62,7 +62,7 @@ See article below
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected profiles = [];
   protected maxUsersDisplay = 100;

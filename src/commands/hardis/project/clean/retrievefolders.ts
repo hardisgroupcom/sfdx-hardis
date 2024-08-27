@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { execCommand, uxLog } from "../../../../common/utils";
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanRetrieveFolders extends SfCommand {
+export default class CleanRetrieveFolders extends SfCommand<any> {
   public static title = "Retrieve dashboards, documents and report folders in DX sources";
 
   public static description = "Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS";
@@ -42,7 +42,7 @@ export default class CleanRetrieveFolders extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
   /* jscpd:ignore-end */
 
   protected debugMode = false;

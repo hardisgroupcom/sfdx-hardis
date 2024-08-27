@@ -1,5 +1,5 @@
 import { uxLog } from "./index.js";
-import * as c from "chalk";
+import c from "chalk";
 import { Connection, SfError } from "@salesforce/core";
 import { RestApiOptions, RecordResult } from "jsforce";
 import * as ora from "ora";
@@ -26,7 +26,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
   uxLog(this, c.grey("SOQL BULK: " + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + "..." : soqlQuery)));
   conn.bulk.pollInterval = 5000; // 5 sec
   conn.bulk.pollTimeout = 60000; // 60 sec
-  const records = [];
+  const records: any[] = [];
   return new Promise((resolve, reject) => {
     spinnerQ = ora({ text: `Bulk query...`, spinner: "moon" }).start();
     const job = conn.bulk.query(soqlQuery);

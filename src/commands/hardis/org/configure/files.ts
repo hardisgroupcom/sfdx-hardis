@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as pascalcase from "pascalcase";
 import * as path from "path";
@@ -10,7 +10,7 @@ import { uxLog } from "../../../../common/utils/index.js";
 import { filesFolderRoot } from "../../../../common/utils/filesUtils";
 import { promptFilesExportConfiguration } from "../../../../common/utils/filesUtils";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
-import { PACKAGE_ROOT_DIR } from "../../../../settings";
+import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
 import { prompts } from "../../../../common/utils/prompts";
 
 // Initialize Messages with the current plugin directory
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ConfigureData extends SfCommand {
+export default class ConfigureData extends SfCommand<any> {
   public static title = "Configure File export project";
 
   public static description = `Configure export of file attachments from a Salesforce org
@@ -53,7 +53,7 @@ See article below
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
   exportConfig: any;
   filesExportPath: any;
 
@@ -97,7 +97,7 @@ You can now call it using ${c.white("sf hardis:org:files:export")}
   }
 
   private async selectTemplate() {
-    const templateFileChoices = [];
+    const templateFileChoices: any[] = [];
     const templatesFilesFolder = path.join(PACKAGE_ROOT_DIR, "defaults/templates/files");
     const templateFiles = fs.readdirSync(templatesFilesFolder);
     for (const templateFile of templateFiles) {

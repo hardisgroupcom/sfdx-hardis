@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import { isCI, isMonitoringJob, uxLog } from "../../common/utils/index.js";
 import { prompts } from "../../common/utils/prompts.js";

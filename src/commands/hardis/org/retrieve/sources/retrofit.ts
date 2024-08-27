@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getConfig } from "../../../../../config/index.js";
-import * as c from "chalk";
+import c from "chalk";
 // import * as path from "path";
 import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog, isCI } from "../../../../../common/utils";
 import { CleanOptions } from "simple-git";
@@ -18,7 +18,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Retrofit extends SfCommand {
+export default class Retrofit extends SfCommand<any> {
   public static DEFAULT_SOURCES_TO_RETROFIT = [
     "CompactLayout",
     "CustomApplication",
@@ -126,7 +126,7 @@ export default class Retrofit extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected configInfo: any = {};
   protected debugMode = false;
@@ -227,7 +227,7 @@ export default class Retrofit extends SfCommand {
   // Push changes and add merge request options if requested
   async pushChanges(retrofitWorkBranch: string) {
     const origin = `https://root:${process.env.CI_TOKEN}@${process.env.CI_SERVER_HOST}/${process.env.CI_PROJECT_PATH}.git`;
-    const pushOptions = [];
+    const pushOptions: any[] = [];
     if (this.pushMode === "mergerequest") {
       const mrOptions = [
         "-o merge_request.create",

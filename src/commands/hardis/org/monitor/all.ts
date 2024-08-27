@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { execCommand, uxLog } from "../../../../common/utils";
 import { getConfig, getEnvVar } from "../../../../config/index.js";
 
@@ -13,7 +13,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class MonitorAll extends SfCommand {
+export default class MonitorAll extends SfCommand<any> {
   public static title = "Monitor org";
 
   public static description = `Monitor org, generate reports and sends notifications
@@ -74,7 +74,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
@@ -168,7 +168,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
     const monitoringDisable = config.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(",") : []);
 
     let success = true;
-    const commandsSummary = [];
+    const commandsSummary: any[] = [];
     for (const command of commands) {
       if (monitoringDisable.includes(command.key)) {
         uxLog(this, c.grey(`Skipped command ${c.bold(command.key)} according to custom configuration`));

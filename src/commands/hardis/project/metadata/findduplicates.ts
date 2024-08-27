@@ -7,7 +7,7 @@ import { parseXmlFile } from "../../../../common/utils/xmlUtils.js";
 import { getConfig } from "../../../../config/index.js";
 import { glob } from "glob";
 import { basename } from "path";
-import * as c from "chalk";
+import c from "chalk";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -22,7 +22,7 @@ function getCommonPermissionPatterns(rootTagName: "Profile" | "PermissionSet") {
   return [`${rootTagName}.fieldPermissions.field`, `${rootTagName}.objectPermissions.object`, `${rootTagName}.classAccesses.apexClass`];
 }
 
-export default class Find extends SfCommand {
+export default class Find extends SfCommand<any> {
   protected static metadataDuplicateFindKeys = {
     layout: ["Layout.layoutSections.layoutColumns.layoutItems.field", "Layout.quickActionListItems.quickActionName"],
     profile: getCommonPermissionPatterns("Profile"),
@@ -94,7 +94,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
     uxLog(this, c.cyan(`Start finding duplicate values in XML metadata files.`));
@@ -118,14 +118,14 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
 
   async findDuplicates() {
     // Collect input parameters
-    const inputFiles = [];
+    const inputFiles: any[] = [];
 
     if (this.flags.files) {
       const files = await glob("./" + this.flags.files, { cwd: process.cwd() });
       inputFiles.push(...files);
     }
 
-    const foundFilesWithDuplicates = [];
+    const foundFilesWithDuplicates: any[] = [];
     for (const inputFile of inputFiles) {
       // Extract given metadata type based on filename using type-meta.xml
       // For example PersonAccount.layout-meta.xml returns layout and Admin.profile-meta.xml returns profile

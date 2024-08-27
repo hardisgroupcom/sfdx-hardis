@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { isCI, uxLog } from "../../../common/utils";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import { MegaLinterRunner } from "mega-linter-runner/lib";
 
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ProjectCreate extends SfCommand {
+export default class ProjectCreate extends SfCommand<any> {
   public static title = "Lint";
 
   public static description = "Apply syntactic analysis (linters) on the repository sources, using Mega-Linter";
@@ -48,7 +48,7 @@ export default class ProjectCreate extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected fix = false;
   protected debugMode = false;

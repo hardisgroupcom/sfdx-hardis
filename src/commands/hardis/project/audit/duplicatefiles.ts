@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils/index.js";
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class AuditDuplicateFiles extends SfCommand {
+export default class AuditDuplicateFiles extends SfCommand<any> {
   public static title = "Find duplicate sfdx files";
 
   public static description = "Find duplicate files in sfdx folder (often from past @salesforce/cli bugs)";
@@ -42,7 +42,7 @@ export default class AuditDuplicateFiles extends SfCommand {
 
   // Comment this out if your command does not require an org username
   protected static requiresUsername = false;
-  protected static requiresProject = false;
+  public static requiresProject = false;
   /* jscpd:ignore-end */
 
   protected matchResults: any[] = [];

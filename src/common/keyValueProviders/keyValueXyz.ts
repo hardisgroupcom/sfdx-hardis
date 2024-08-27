@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import axios from "axios";
-import * as c from "chalk";
+import c from "chalk";
 import { getConfig, setConfig } from "../../config/index.js";
 import { uxLog } from "../utils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";

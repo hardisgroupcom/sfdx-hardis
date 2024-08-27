@@ -1,5 +1,5 @@
 import { SfCommand } from "@salesforce/sf-plugins-core";
-import * as c from "chalk";
+import c from "chalk";
 import { execCommand, uxLog } from "./index.js";
 import { analyzeDeployErrorLogs } from "./deployTips.js";
 

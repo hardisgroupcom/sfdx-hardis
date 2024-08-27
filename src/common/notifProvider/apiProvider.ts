@@ -1,5 +1,5 @@
 import { SfError } from "@salesforce/core";
-import * as c from "chalk";
+import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils";
 import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
@@ -215,7 +215,7 @@ export class ApiProvider extends NotifProviderRoot {
       `orgIdentifier=${this.payload.orgIdentifier},` +
       `gitIdentifier=${this.payload.gitIdentifier}`;
     // Add extra fields and value
-    const metricsPayloadLines = [];
+    const metricsPayloadLines: any[] = [];
     for (const metricId of Object.keys(this.payload.data._metrics)) {
       const metricData = this.payload.data._metrics[metricId];
       let metricPayloadLine = metricId + "," + metricTags + " ";
@@ -223,7 +223,7 @@ export class ApiProvider extends NotifProviderRoot {
         metricPayloadLine += "metric=" + metricData.toFixed(2);
         metricsPayloadLines.push(metricPayloadLine);
       } else if (typeof metricData === "object") {
-        const metricFields = [];
+        const metricFields: any[] = [];
         if (metricData.min) {
           metricFields.push("min=" + metricData.min.toFixed(2));
         }

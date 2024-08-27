@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { AiResponse } from "./index.js";
 import { AiProviderRoot } from "./aiProviderRoot";
-import * as c from "chalk";
+import c from "chalk";
 import { uxLog } from "../utils";
 
 export class OpenApiProvider extends AiProviderRoot {

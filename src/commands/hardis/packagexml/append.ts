@@ -2,7 +2,7 @@ import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
 import { AnyJson } from "@salesforce/ts-types";
 import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils.js";
 
-export class PackageXmlAppend extends SfCommand {
+export class PackageXmlAppend extends SfCommand<any> {
   public static readonly description = `Append one or multiple package.xml files into a single one`;
   public static readonly examples = ["$ sf hardis packagexml append -p package1.xml,package2.xml -o package3.xml"];
   public static readonly requiresProject = false;

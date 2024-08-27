@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as columnify from "columnify";
 import { execSfdxJson, isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgPurgeFlow extends SfCommand {
+export default class OrgPurgeFlow extends SfCommand<any> {
   public static title = "Purge Flow versions";
 
   public static description = messages.getMessage("orgPurgeFlow");
@@ -93,7 +93,7 @@ export default class OrgPurgeFlow extends SfCommand {
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   /* jscpd:ignore-end */
 
@@ -212,8 +212,8 @@ export default class OrgPurgeFlow extends SfCommand {
     }
 
     // Perform deletion
-    const deleted = [];
-    const deleteErrors = [];
+    const deleted: any[] = [];
+    const deleteErrors: any[] = [];
     const conn = this.org.getConnection();
     const deleteResults = await bulkDeleteTooling("Flow", records, conn);
     for (const deleteRes of deleteResults.results) {

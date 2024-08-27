@@ -11,7 +11,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class SourcePull extends SfCommand {
+export default class SourcePull extends SfCommand<any> {
   public static title = "Scratch PULL";
 
   public static description = `This commands pulls the updates you performed in your scratch or sandbox org, into your local files
@@ -58,7 +58,7 @@ autoRetrieveWhenPull:
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
 

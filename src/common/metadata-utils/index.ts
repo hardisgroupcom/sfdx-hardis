@@ -1,13 +1,13 @@
 import { SfError } from "@salesforce/core";
-import * as c from "chalk";
+import c from "chalk";
 import * as extractZip from "extract-zip";
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import { elapseEnd, elapseStart, execCommand, execSfdxJson, filterPackageXml, git, isGitRepo, uxLog } from "../../common/utils/index.js";
 import { CONSTANTS } from "../../config/index.js";
-import { PACKAGE_ROOT_DIR } from "../../settings";
-import { getCache, setCache } from "../cache";
+import { PACKAGE_ROOT_DIR } from "../../settings.js";
+import { getCache, setCache } from "../cache/index.js";
 import { buildOrgManifest } from "../utils/deployUtils";
 import { listMajorOrgs } from "../utils/orgConfigUtils";
 import { isSfdxProject } from "../utils/projectUtils";

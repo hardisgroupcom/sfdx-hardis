@@ -2,9 +2,9 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
-import * as moment from "moment";
+import moment from "moment";
 import * as ora from "ora";
 import * as path from "path";
 import * as readline from "readline";
@@ -20,7 +20,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Toml2Csv extends SfCommand {
+export default class Toml2Csv extends SfCommand<any> {
   public static title = "TOML to CSV";
 
   public static description = "Split TOML file into distinct CSV files";
@@ -76,7 +76,7 @@ export default class Toml2Csv extends SfCommand {
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected transfoConfig: any = {};
   protected transfoConfigFile: string;
@@ -393,7 +393,7 @@ export default class Toml2Csv extends SfCommand {
 
   // Convert input CSV line into SF Bulk API expected CSV line
   async convertLineToSfThenWrite(section: string, lineSplit: string[]) {
-    const linesSfArray = [];
+    const linesSfArray: any[] = [];
 
     // convert into input format
     const inputCols: any = {};

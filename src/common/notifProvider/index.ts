@@ -1,5 +1,5 @@
 import { uxLog } from "../utils";
-import * as c from "chalk";
+import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { SlackProvider } from "./slackProvider";
 import { UtilsNotifs as utilsNotifs } from "./utils/index.js";

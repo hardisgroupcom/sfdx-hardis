@@ -23,7 +23,7 @@ Messages.importMessagesDirectory(__dirname);
 // Load Messages
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 /* jscpd:ignore-end */
-export default class UnusedMetadatas extends SfCommand {
+export default class UnusedMetadatas extends SfCommand<any> {
   public static title = "check unused labels and custom permissions";
   public static description = `Check if elements (custom labels and custom permissions) are used in the project
 
@@ -58,7 +58,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   // Comment this out if your command does not support a hub org username
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
 
   private projectFiles: string[];

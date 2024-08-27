@@ -1,5 +1,5 @@
 import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as util from "util";
@@ -9,7 +9,7 @@ import { uxLog } from "../../../../common/utils/index.js";
 import { writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 
 // The code of this method is awful... it's migrated from sfdx-essentials, written when async / await were not existing ^^
-export class FilterXmlContent extends SfCommand {
+export class FilterXmlContent extends SfCommand<any> {
   public static readonly description = `Filter content of metadatas (XML) in order to be able to deploy only part of them on an org (See [Example configuration](https://github.com/nvuillam/sfdx-essentials/blob/master/examples/filter-xml-content-config.json))
 
 When you perform deployments from one org to another, the features activated in the target org may not fit the content of the sfdx/metadata files extracted from the source org.
@@ -143,7 +143,7 @@ This script requires a filter-config.json file`;
             uxLog(this, elementValue[eltKey]);
             // Filter type values
             const typeValues = elementValue[eltKey];
-            const newTypeValues = [];
+            const newTypeValues: any[] = [];
             typeValues.forEach((typeItem) => {
               // If identifier tag not found, do not filter and avoid crash
               if (
@@ -172,7 +172,7 @@ This script requires a filter-config.json file`;
         }
       });
     } else if (Array.isArray(elementValue)) {
-      const newElementValue = [];
+      const newElementValue: any[] = [];
       elementValue.forEach((element) => {
         element = self.filterElement(element, filter, file);
         newElementValue.push(element);

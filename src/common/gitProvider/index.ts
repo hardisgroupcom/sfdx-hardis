@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import { getCurrentGitBranch, isCI, uxLog } from "../utils";
 import { AzureDevopsProvider } from "./azureDevops";
 import { GithubProvider } from "./github";

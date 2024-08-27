@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
 import { forceSourcePull, forceSourcePush } from "../../../common/utils/deployUtils";
 import { prompts } from "../../../common/utils/prompts";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class RefreshTask extends SfCommand {
+export default class RefreshTask extends SfCommand<any> {
   public static title = "Refresh work task";
 
   public static description = messages.getMessage("refreshWorkTask");
@@ -50,7 +50,7 @@ export default class RefreshTask extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected debugMode = false;
   protected noPull = false;

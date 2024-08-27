@@ -1,7 +1,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from "../../../../common/utils";
@@ -16,7 +16,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgTestApex extends SfCommand {
+export default class OrgTestApex extends SfCommand<any> {
   public static title = "Run apex tests";
 
   public static description = `Run apex tests in Salesforce org

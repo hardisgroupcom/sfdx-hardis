@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import { mergeObjectPropertyLists, uxLog } from "../../../../common/utils";
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgMissingItems extends SfCommand {
+export default class OrgMissingItems extends SfCommand<any> {
   public static title = "Clean SFDX items using target org definition";
 
   public static description = "Clean SFDX sources from items present neither in target org nor local package.xml";
@@ -59,7 +59,7 @@ export default class OrgMissingItems extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
   /* jscpd:ignore-end */
   protected folder: string;
   protected targetOrgUsernameAlias: string;

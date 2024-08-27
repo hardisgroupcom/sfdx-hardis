@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as path from "path";
 // import * as path from "path";
 import { uxLog, isCI, createTempDir, execCommand } from "../../../../../common/utils";
@@ -18,7 +18,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Retrofit extends SfCommand {
+export default class Retrofit extends SfCommand<any> {
   public static title = "Retrieve CRM Analytics configuration from an org";
 
   public static description = `Retrieve all CRM Analytics sources from an org, with workarounds for SFDX bugs`;
@@ -46,7 +46,7 @@ export default class Retrofit extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected configInfo: any = {};
   protected debugMode = false;

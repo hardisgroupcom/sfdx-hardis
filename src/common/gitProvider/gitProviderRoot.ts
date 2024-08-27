@@ -1,5 +1,5 @@
 import { SfError } from "@salesforce/core";
-import * as c from "chalk";
+import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils";
 

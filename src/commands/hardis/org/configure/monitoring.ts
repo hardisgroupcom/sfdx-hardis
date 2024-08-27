@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as open from "open";
@@ -18,7 +18,7 @@ import {
 } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
 import { setInConfigFile } from "../../../../config/index.js";
-import { PACKAGE_ROOT_DIR } from "../../../../settings";
+import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
 import { promptOrg } from "../../../../common/utils/orgUtils";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 
@@ -29,7 +29,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgConfigureMonitoring extends SfCommand {
+export default class OrgConfigureMonitoring extends SfCommand<any> {
   public static title = "Configure org monitoring";
 
   public static description = "Configure monitoring of an org";
@@ -60,7 +60,7 @@ export default class OrgConfigureMonitoring extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
   /* jscpd:ignore-end */
 
   protected static requiresDependencies = ["openssl"];

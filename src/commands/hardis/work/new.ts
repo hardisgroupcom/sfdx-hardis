@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as path from "path";
 import { MetadataUtils } from "../../../common/metadata-utils";
 import { checkGitClean, ensureGitBranch, execCommand, execSfdxJson, git, gitCheckOutRemote, uxLog } from "../../../common/utils";
@@ -28,7 +28,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class NewTask extends SfCommand {
+export default class NewTask extends SfCommand<any> {
   public static title = "New work task";
 
   public static description = `Assisted menu to start working on a Salesforce task.
@@ -80,7 +80,7 @@ Under the hood, it can:
   protected static supportsDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected targetBranch: string;
   protected debugMode = false;
@@ -192,7 +192,7 @@ Under the hood, it can:
     const allowedOrgTypes = config?.allowedOrgTypes || [];
     let selectedOrgType = allowedOrgTypes.length == 1 ? allowedOrgTypes[0] : null;
     // If necessary, Prompt if you want to use a scratch org or a tracked sandbox org, or no org
-    const orgTypeChoices = [];
+    const orgTypeChoices: any[] = [];
     if (allowedOrgTypes.includes("sandbox") || allowedOrgTypes.length === 0) {
       orgTypeChoices.push({
         title: "🌎 Sandbox org with source tracking",

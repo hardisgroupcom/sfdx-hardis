@@ -1,5 +1,5 @@
 import { SfError } from "@salesforce/core";
-import * as c from "chalk";
+import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils";
@@ -59,7 +59,7 @@ export class SlackProvider extends NotifProviderRoot {
     blocks.push(block);
     // Add action blocks
     if (notifMessage.buttons?.length > 0) {
-      const actionElements = [];
+      const actionElements: any[] = [];
       for (const button of notifMessage.buttons) {
         // Url button
         if (button.url) {

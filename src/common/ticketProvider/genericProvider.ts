@@ -1,5 +1,5 @@
 import { Ticket } from "./index.js";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import { extractRegexMatches } from "../utils";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import { getEnvVar } from "../../config/index.js";

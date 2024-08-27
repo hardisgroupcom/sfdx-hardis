@@ -1,7 +1,7 @@
 // External Libraries and Node.js Modules
 import * as fs from "fs-extra";
 import * as path from "path";
-import * as c from "chalk";
+import c from "chalk";
 import * as fetch from "@adobe/node-fetch-retry";
 import * as split from "split";
 import { PromisePool } from "@supercharge/promise-pool";
@@ -13,8 +13,8 @@ import * as ExcelJS from "exceljs";
 
 // Project Specific Utilities
 import { getCurrentGitBranch, isCI, uxLog } from "./index.js";
-import { bulkQuery, soqlQuery } from "./apiUtils";
-import { prompts } from "./prompts";
+import { bulkQuery, soqlQuery } from "./apiUtils.js";
+import { prompts } from "./prompts.js";
 import { CONSTANTS, getReportDirectory } from "../../config/index.js";
 import { WebSocketClient } from "../websocketClient.js";
 
@@ -233,7 +233,7 @@ export class FilesExporter {
     // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
     // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
     // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
-    const versionsAndLinks = [];
+    const versionsAndLinks: any[] = [];
     contentVersions.records.forEach((contentVersion) => {
       contentDocumentLinks.records.forEach((contentDocumentLink) => {
         if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
@@ -543,7 +543,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
 }
 
 export async function promptFilesExportConfiguration(filesExportConfig: any, override = false) {
-  const questions = [];
+  const questions: any[] = [];
   if (override === false) {
     questions.push(
       ...[

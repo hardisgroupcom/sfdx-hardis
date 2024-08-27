@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { MetadataUtils } from "../../../../common/metadata-utils";
 import { execSfdxJson, isCI, uxLog } from "../../../../common/utils";
 import { prompts } from "../../../../common/utils/prompts";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class PackageVersionCreate extends SfCommand {
+export default class PackageVersionCreate extends SfCommand<any> {
   public static title = "Create a new version of a package";
 
   public static description = messages.getMessage("packageVersionCreate");
@@ -64,7 +64,7 @@ export default class PackageVersionCreate extends SfCommand {
   protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected package: string;
   protected deleteAfter = false;
@@ -151,7 +151,7 @@ export default class PackageVersionCreate extends SfCommand {
     }
     // Install package on org just after is has been generated
     else if (this.install) {
-      const packagesToInstall = [];
+      const packagesToInstall: any[] = [];
       const pckg: { SubscriberPackageVersionId?: string; installationkey?: string } = {
         SubscriberPackageVersionId: latestVersion,
       };

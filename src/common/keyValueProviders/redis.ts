@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import * as Keyv from "keyv";
-import * as c from "chalk";
+import c from "chalk";
 import { getConfig, setConfig } from "../../config/index.js";
 import { uxLog } from "../utils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";

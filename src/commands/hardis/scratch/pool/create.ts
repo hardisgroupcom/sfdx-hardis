@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import * as c from "chalk";
+import c from "chalk";
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AuthInfo, Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
@@ -16,7 +16,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ScratchPoolCreate extends SfCommand {
+export default class ScratchPoolCreate extends SfCommand<any> {
   public static title = "Create and configure scratch org pool";
 
   public static description = `Select a data storage service and configure information to build a scratch org pool
@@ -58,7 +58,7 @@ export default class ScratchPoolCreate extends SfCommand {
   protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
 

@@ -1,18 +1,18 @@
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
-import * as moment from "moment";
+import moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { getConfig, setConfig } from "../../config/index.js";
 import { createTempDir, execSfdxJson, isCI, uxLog } from "./index.js";
-import { KeyValueProviderInterface } from "./keyValueUtils";
-import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz";
-import { KvdbIoProvider } from "../keyValueProviders/kvdbIo";
-import { LocalTestProvider } from "../keyValueProviders/localtest";
+import { KeyValueProviderInterface } from "./keyValueUtils.js";
+import { KeyValueXyzProvider } from "../keyValueProviders/keyValueXyz.js";
+import { KvdbIoProvider } from "../keyValueProviders/kvdbIo.js";
+import { LocalTestProvider } from "../keyValueProviders/localtest.js";
 import { SfError } from "@salesforce/core";
-import { prompts } from "./prompts";
-import { RedisProvider } from "../keyValueProviders/redis";
-import { SalesforceProvider } from "../keyValueProviders/salesforce";
+import { prompts } from "./prompts.js";
+import { RedisProvider } from "../keyValueProviders/redis.js";
+import { SalesforceProvider } from "../keyValueProviders/salesforce.js";
 
 let keyValueProvider: KeyValueProviderInterface;
 

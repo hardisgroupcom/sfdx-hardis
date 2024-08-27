@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { spawn } from "child_process";
-import * as c from "chalk";
+import c from "chalk";
 
 import * as which from "which";
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
@@ -9,7 +9,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config/index.js";
 import { execCommand, stripAnsi, uxLog } from "../../../../common/utils";
-import * as moment from "moment";
+import moment from "moment";
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
@@ -19,7 +19,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class ScratchPoolRefresh extends SfCommand {
+export default class ScratchPoolRefresh extends SfCommand<any> {
   public static title = "Refresh scratch org pool";
 
   public static description = "Create enough scratch orgs to fill the pool";
@@ -49,7 +49,7 @@ export default class ScratchPoolRefresh extends SfCommand {
   protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   private debugMode = false;
 
@@ -74,7 +74,7 @@ export default class ScratchPoolRefresh extends SfCommand {
     /* jscpd:ignore-end */
     // Clean expired orgs
     const minScratchOrgRemainingDays = config.poolConfig.minScratchOrgRemainingDays || 25;
-    const scratchOrgsToDelete = [];
+    const scratchOrgsToDelete: any[] = [];
     scratchOrgs = scratchOrgs.filter((scratchOrg) => {
       const expiration = moment(scratchOrg?.authFileJson?.result?.expirationDate);
       const today = moment();
@@ -123,7 +123,7 @@ export default class ScratchPoolRefresh extends SfCommand {
     uxLog(this, c.cyan("Creating " + numberOfOrgsToCreate + " scratch orgs..."));
     let numberCreated = 0;
     let numberfailed = 0;
-    const subProcesses = [];
+    const subProcesses: any[] = [];
     for (let i = 0; i < numberOfOrgsToCreate; i++) {
       // eslint-disable-next-line no-async-promise-executor
       const spawnPromise = new Promise(async (resolve) => {

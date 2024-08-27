@@ -1,20 +1,20 @@
-import { MetadataUtils } from "../metadata-utils";
-import { prompts } from "./prompts";
-import * as c from "chalk";
+import { MetadataUtils } from "../metadata-utils/index.js";
+import { prompts } from "./prompts.js";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from "./index.js";
 import { WebSocketClient } from "../websocketClient.js";
 import { getConfig, setConfig } from "../../config/index.js";
 import * as EmailValidator from "email-validator";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import { Connection, SfError } from "@salesforce/core";
-import { importData } from "./dataUtils";
-import { soqlQuery } from "./apiUtils";
-import { isSfdxProject } from "./projectUtils";
-import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "./deployUtils";
-import { PACKAGE_ROOT_DIR } from "../../settings";
-import { clearCache } from "../cache";
+import { importData } from "./dataUtils.js";
+import { soqlQuery } from "./apiUtils.js";
+import { isSfdxProject } from "./projectUtils.js";
+import { deployMetadatas, forceSourceDeploy, forceSourcePush } from "./deployUtils.js";
+import { PACKAGE_ROOT_DIR } from "../../settings.js";
+import { clearCache } from "../cache/index.js";
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -393,8 +393,8 @@ export async function initOrgMetadatas(
           debug: debugMode,
         });
       } catch (e) {
-        uxLog(self, c.yellow("Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"));
-        uxLog(self, c.grey((e as Error).message));
+        uxLog(this, c.yellow("Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"));
+        uxLog(this, c.grey((e as Error).message));
       }
     }
     await forceSourcePush(orgAlias, this, debugMode, options);

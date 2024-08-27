@@ -2,11 +2,11 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as path from "path";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import * as xmldom from "@xmldom/xmldom";
 import * as xpath from "xpath";
 import { isCI, uxLog } from "../../../../common/utils";
@@ -21,7 +21,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class CleanXml extends SfCommand {
+export default class CleanXml extends SfCommand<any> {
   public static title = "Clean retrieved empty items in dx sources";
 
   public static description = `Remove XML elements using Glob patterns and XPath expressions
@@ -84,7 +84,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected folder: string;
   protected globPattern: string;

@@ -1,6 +1,6 @@
 // XML Utils functions
 import { SfError } from "@salesforce/core";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as util from "util";

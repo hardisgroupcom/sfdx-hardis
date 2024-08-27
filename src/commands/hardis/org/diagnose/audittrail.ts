@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { isCI, uxLog } from "../../../../common/utils";
 import { bulkQuery } from "../../../../common/utils/apiUtils";
 import { getConfig } from "../../../../config/index.js";
@@ -18,7 +18,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DiagnoseAuditTrail extends SfCommand {
+export default class DiagnoseAuditTrail extends SfCommand<any> {
   public static title = "Diagnose content of Setup Audit Trail";
 
   public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
@@ -160,7 +160,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected excludeUsers = [];
   protected lastNdays: number;
@@ -299,9 +299,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       `ORDER BY CreatedDate DESC`;
     uxLog(this, c.grey("Query: " + c.italic(auditTrailQuery)));
     const queryRes = await bulkQuery(auditTrailQuery, conn);
-    const suspectRecords = [];
+    const suspectRecords: any[] = [];
     let suspectUsers = [];
-    const suspectActions = [];
+    const suspectActions: any[] = [];
     const severityIconLog = getSeverityIcon("log");
     const severityIconWarning = getSeverityIcon("warning");
     this.auditTrailRecords = queryRes.records.map((record) => {
@@ -328,7 +328,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     let statusCode = 0;
     let msg = "No suspect Setup Audit Trail records has been found";
-    const suspectActionsWithCount = [];
+    const suspectActionsWithCount: any[] = [];
     if (suspectRecords.length > 0) {
       statusCode = 1;
       uxLog(this, c.yellow("Suspect records list"));

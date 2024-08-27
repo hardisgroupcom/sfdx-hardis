@@ -1,7 +1,7 @@
 import * as JiraApi from "jira-client";
 import { TicketProviderRoot } from "./ticketProviderRoot";
-import * as c from "chalk";
-import * as sortArray from "sort-array";
+import c from "chalk";
+import sortArray from "sort-array";
 import { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
 import { extractRegexMatches, uxLog } from "../utils";

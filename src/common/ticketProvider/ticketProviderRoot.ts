@@ -1,5 +1,5 @@
 import { SfError } from "@salesforce/core";
-import * as c from "chalk";
+import c from "chalk";
 import { Ticket } from "./index.js";
 import { getCurrentGitBranch, uxLog } from "../utils";
 

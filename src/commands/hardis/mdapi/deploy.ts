@@ -1,13 +1,13 @@
 /* jscpd:ignore-start */
 import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
-import * as c from "chalk";
+import c from "chalk";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 import { uxLog } from "../../../common/utils";
 
 const xorFlags = ["zipfile", "validateddeployrequestid", "deploydir"];
-export class Deploy extends SfCommand {
+export class Deploy extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:mdapi:deploy that displays tips to solve deployment errors.
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)

@@ -1,5 +1,5 @@
-import * as c from "chalk";
-import * as sortArray from "sort-array";
+import c from "chalk";
+import sortArray from "sort-array";
 import { JiraProvider } from "./jiraProvider";
 import { TicketProviderRoot } from "./ticketProviderRoot";
 import { uxLog } from "../utils";

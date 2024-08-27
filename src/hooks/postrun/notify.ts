@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import { elapseEnd, uxLog } from "../../common/utils/index.js";
 
 // The use of this method is deprecated: use NotifProvider.sendNotification :)

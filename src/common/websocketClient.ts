@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import * as util from "util";
 import * as WebSocket from "ws";
 import { isCI, uxLog } from "./utils/index.js";

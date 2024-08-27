@@ -1,5 +1,5 @@
 import * as github from "@actions/github";
-import * as c from "chalk";
+import c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot";
 import { getCurrentGitBranch, git, uxLog } from "../utils";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";

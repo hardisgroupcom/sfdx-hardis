@@ -1,11 +1,11 @@
 import { FlagsConfig, flags, SfCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
-import * as c from "chalk";
+import c from "chalk";
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
 import { uxLog } from "../../../common/utils";
 
-export default class Push extends SfCommand {
+export default class Push extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
@@ -39,7 +39,7 @@ export default class Push extends SfCommand {
     }),
   };
   protected static requiresUsername = true;
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
     uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));

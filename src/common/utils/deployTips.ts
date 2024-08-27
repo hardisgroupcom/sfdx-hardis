@@ -1,5 +1,5 @@
 // Analyze deployment errors to provide tips to user :)
-import * as c from "chalk";
+import c from "chalk";
 import * as format from "string-template";
 
 import { getAllTips } from "./deployTipsList";
@@ -25,7 +25,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
     }
   }
   // Add default error messages for errors without tips
-  const logResLines = [];
+  const logResLines: any[] = [];
   const updatedLogLines = returnErrorLines(logRes);
   let index = 0;
   for (const logLine of updatedLogLines) {
@@ -65,7 +65,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   }
 
   // Extract failed test classes
-  const failedTests = [];
+  const failedTests: any[] = [];
   const logRaw = stripAnsi(log);
   const regexFailedTests = /Test Failures([\S\s]*?)Test Success/gm;
   if (logRaw.match(regexFailedTests)) {
@@ -103,7 +103,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
 // Checks if the error string or regex is found in the log
 // Adds the fix tip under the line if includeInLog is true
 async function matchesTip(tipDefinition: any, includeInLog = true): Promise<boolean | any> {
-  const newLogLines = [];
+  const newLogLines: any[] = [];
   // string matching
   if (
     tipDefinition.expressionString &&
@@ -162,7 +162,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
     }).length > 0
   ) {
     if (includeInLog) {
-      const newLogLines = [];
+      const newLogLines: any[] = [];
       const logLines = returnErrorLines(logRes);
       for (const line of logLines) {
         newLogLines.push(line);

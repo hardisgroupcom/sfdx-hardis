@@ -11,7 +11,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgSelect extends SfCommand {
+export default class OrgSelect extends SfCommand<any> {
   public static title = "Select org";
 
   public static description = messages.getMessage("selectOrg");
@@ -51,7 +51,7 @@ export default class OrgSelect extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected debugMode = false;
 

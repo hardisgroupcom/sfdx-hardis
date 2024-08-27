@@ -14,7 +14,7 @@ Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { MetadataUtils } from "../../../../../common/metadata-utils";
@@ -38,7 +38,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DxSources extends SfCommand {
+export default class DxSources extends SfCommand<any> {
   public static title = "Deploy sfdx sources to org";
 
   public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
@@ -235,7 +235,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   protected static requiresUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected checkOnly = false;
   protected configInfo: any = {};
@@ -284,7 +284,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Install packages
     const packages = this.configInfo.installedPackages || [];
-    const missingPackages = [];
+    const missingPackages: any[] = [];
     const installPackages =
       this.checkOnly === false ||
       process.env.INSTALL_PACKAGES_DURING_CHECK_DEPLOY === "true" ||

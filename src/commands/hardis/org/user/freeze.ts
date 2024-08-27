@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as columnify from "columnify";
 import { generateReports, isCI, uxLog } from "../../../../common/utils";
 import { promptProfiles } from "../../../../common/utils/orgUtils";
@@ -17,7 +17,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class OrgFreezeUser extends SfCommand {
+export default class OrgFreezeUser extends SfCommand<any> {
   public static title = "Freeze user logins";
 
   public static description = messages.getMessage("orgfreezeUser");
@@ -70,7 +70,7 @@ export default class OrgFreezeUser extends SfCommand {
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected maxUsersDisplay = 100;
   protected debugMode = false;

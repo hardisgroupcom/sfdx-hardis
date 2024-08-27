@@ -1,19 +1,19 @@
 import { SfError } from "@salesforce/core";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as path from "path";
-import * as sortArray from "sort-array";
+import sortArray from "sort-array";
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, git, gitHasLocalUpdates, isCI, uxLog } from "./index.js";
 import { CONSTANTS, getConfig, setConfig } from "../../config/index.js";
 import { GitProvider } from "../gitProvider";
 import { deployCodeCoverageToMarkdown } from "../gitProvider/utilsMarkdown";
-import { MetadataUtils } from "../metadata-utils";
-import { importData } from "./dataUtils";
+import { MetadataUtils } from "../metadata-utils/index.js";
+import { importData } from "./dataUtils.js";
 import { analyzeDeployErrorLogs } from "./deployTips.js";
 import { callSfdxGitDelta } from "./gitUtils";
-import { createBlankSfdxProject, isSfdxProject } from "./projectUtils";
-import { prompts } from "./prompts";
+import { createBlankSfdxProject, isSfdxProject } from "./projectUtils.js";
+import { prompts } from "./prompts.js";
 import { arrangeFilesBefore, restoreArrangedFiles } from "./workaroundUtils";
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "./xmlUtils.js";
 import { ResetMode } from "simple-git";
@@ -137,7 +137,7 @@ export async function forceSourceDeploy(
   elapseStart("all deployments");
   let quickDeploy = false;
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
-  const messages = [];
+  const messages: any[] = [];
   let deployXmlCount = splitDeployments.length;
 
   if (deployXmlCount === 0) {

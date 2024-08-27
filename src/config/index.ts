@@ -12,7 +12,7 @@ getConfig(layer) returns:
 
 import { SfError } from "@salesforce/core";
 import axios from "axios";
-import * as c from "chalk";
+import c from "chalk";
 import { cosmiconfig } from "cosmiconfig";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";

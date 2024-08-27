@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as path from "path";
 import { isCI, uxLog } from "../../../../common/utils";
 import { getReportDirectory } from "../../../../config/index.js";
@@ -16,7 +16,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class GeneratePackageXmlFull extends SfCommand {
+export default class GeneratePackageXmlFull extends SfCommand<any> {
   public static title = "Generate Full Org package.xml";
 
   public static description = "Generates full org package.xml, including managed items";
@@ -51,7 +51,7 @@ export default class GeneratePackageXmlFull extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected debugMode = false;
   protected outputFile;

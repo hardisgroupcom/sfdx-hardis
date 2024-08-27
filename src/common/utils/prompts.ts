@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import inquirer from "inquirer";
 import { SfError } from "@salesforce/core";

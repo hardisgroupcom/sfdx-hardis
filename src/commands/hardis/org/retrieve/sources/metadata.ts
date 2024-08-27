@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as child from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -11,7 +11,7 @@ import { ensureGitRepository, execCommand, isMonitoringJob, uxLog } from "../../
 import LegacyApi from "../../diagnose/legacyapi";
 import OrgTestApex from "../../test/apex";
 import * as util from "util";
-import { PACKAGE_ROOT_DIR } from "../../../../../settings";
+import { PACKAGE_ROOT_DIR } from "../../../../../settings.js";
 const exec = util.promisify(child.exec);
 
 // Initialize Messages with the current plugin directory
@@ -21,7 +21,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DxSources extends SfCommand {
+export default class DxSources extends SfCommand<any> {
   public static title = "Retrieve sfdx sources from org";
 
   public static description = messages.getMessage("retrieveDx");
@@ -69,7 +69,7 @@ export default class DxSources extends SfCommand {
   // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;

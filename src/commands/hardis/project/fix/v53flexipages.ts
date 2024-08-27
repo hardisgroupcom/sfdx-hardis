@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import { uxLog } from "../../../../common/utils/index.js";
@@ -14,7 +14,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class FixV53Flexipages extends SfCommand {
+export default class FixV53Flexipages extends SfCommand<any> {
   public static title = "Fix flexipages for v53";
 
   public static description = `Fix flexipages for apiVersion v53 (Winter22).
@@ -49,7 +49,7 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected pathToBrowse: string;
   protected debugMode = false;
@@ -65,7 +65,7 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
     const globPattern = this.pathToBrowse + `/**/*.flexipage-meta.xml`;
 
     let counter = 0;
-    const flexipages = [];
+    const flexipages: any[] = [];
     const flexipageSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse });
     uxLog(this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
     const regexAndReplacements = [

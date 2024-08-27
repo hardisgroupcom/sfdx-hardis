@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import { uxLog } from "../../../../common/utils/index.js";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
@@ -15,7 +15,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DiagnoseUnusedUsers extends SfCommand {
+export default class DiagnoseUnusedUsers extends SfCommand<any> {
   public static title = "List licenses subscribed and used in a Salesforce org";
 
   public static description = `Mostly used for monitoring (Grafana) but you can also use it manually :)`;
@@ -51,7 +51,7 @@ export default class DiagnoseUnusedUsers extends SfCommand {
   // Comment this out if your command does not support a hub org username
   protected static requiresDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected usedOnly = false;
   protected debugMode = false;
@@ -72,7 +72,7 @@ export default class DiagnoseUnusedUsers extends SfCommand {
     uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? "(used only)" : ""));
 
     const licensesByKey = {};
-    const usedLicenses = [];
+    const usedLicenses: any[] = [];
 
     // Query User Licenses
     const userLicenseQuery =

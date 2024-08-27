@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { createTempDir, uxLog } from "./index.js";
@@ -9,7 +9,7 @@ import { isScratchOrg } from "./orgUtils.js";
 // Update files for special cases
 export async function arrangeFilesBefore(commandThis: any, options: any = {}) {
   const tempDir = await createTempDir();
-  const arrangedFiles = [];
+  const arrangedFiles: any[] = [];
   if ((await isScratchOrg(options)) === true) {
     const arrangedLookupFields = await removeLookupFilters(tempDir, commandThis, options);
     arrangedFiles.push(...arrangedLookupFields);

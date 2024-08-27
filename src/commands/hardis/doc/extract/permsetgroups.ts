@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
+import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as path from "path";
@@ -19,7 +19,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DocGenerate extends SfCommand {
+export default class DocGenerate extends SfCommand<any> {
   public static title = "Generate project documentation";
 
   public static description = `Generate markdown files with project documentation`;
@@ -51,25 +51,25 @@ export default class DocGenerate extends SfCommand {
   protected static requiresDevhubUsername = false;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected outputFile;
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.outputFile = this.flags.outputfile || null;
-    this.debugMode = this.flags.debug || false;
-
+    const { flags } = await this.parse(DocGenerate);
+    this.outputFile = flags.outputfile || null;
+    this.debugMode = flags.debug || false;
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Generating CSV and Markdown with Permission Set Groups and their related Permission Sets`));
     /* jscpd:ignore-end */
 
-    const psgList = [];
+    const psgList: any[] = [];
     const globPatternPSG = process.cwd() + `/**/*.permissionsetgroup-meta.xml`;
     const psgFiles = await glob(globPatternPSG);
     uxLog(this, c.grey(`Found ${psgFiles.length} permission set groups`));
     for (const psgFile of psgFiles) {
-      const psgName = psgFile.replace(/\\/g, "/").split("/").pop().replace(".permissionsetgroup-meta.xml", "");
+      const psgName = (psgFile.replace(/\\/g, "/").split("/").pop() || "").replace(".permissionsetgroup-meta.xml", "");
       const psg = await parseXmlFile(psgFile);
       const psgItem = {
         name: psgName,
@@ -81,7 +81,7 @@ export default class DocGenerate extends SfCommand {
     }
 
     // Build CSV
-    const csvLines = [];
+    const csvLines: any[] = [];
     const header = ["Permission set group", "Permission sets"];
     csvLines.push(header);
     for (const psg of psgList) {
@@ -105,7 +105,7 @@ export default class DocGenerate extends SfCommand {
       uxLog(this, c.cyan(`Permission set groups CSV file generated in ${c.bold(c.green(this.outputFile))}`));
       // Trigger command to open CSV file in VsCode extension
       WebSocketClient.requestOpenFile(this.outputFile);
-    } catch (e) {
+    } catch (e: any) {
       uxLog(this, c.yellow("Error while generating CSV log file:\n" + (e as Error).message + "\n" + e.stack));
       this.outputFile = null;
     }

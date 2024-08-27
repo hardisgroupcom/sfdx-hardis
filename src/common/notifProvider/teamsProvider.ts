@@ -1,4 +1,4 @@
-import * as c from "chalk";
+import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot";
 import { uxLog } from "../utils";
 import { NotifMessage } from "./index.js";
