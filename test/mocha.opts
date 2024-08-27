@@ -1,5 +1,0 @@
---require @babel/register
---watch-extensions ts
---recursive
---reporter spec
---timeout 5000
