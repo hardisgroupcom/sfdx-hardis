@@ -6,8 +6,8 @@ import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { glob } from "glob";
-import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } from "../../../../common/utils";
-import { prompts } from "../../../../common/utils/prompts";
+import { createTempDir, execCommand, isCI, removeObjectPropertyLists, uxLog } from "../../../../common/utils/index.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 import { getConfig, setConfig } from "../../../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
@@ -68,7 +68,7 @@ export default class CleanReferences extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   protected debugMode = false;
-  protected cleaningTypes = [];
+  protected cleaningTypes: any[] = [];
   protected allCleaningTypes = [
     {
       value: "checkPermissions",
@@ -133,9 +133,9 @@ export default class CleanReferences extends SfCommand<any> {
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
-    this.cleaningTypes = this.flags.type ? [this.flags.type] : [];
-    this.configFile = this.flags.config || null;
+    this.debugMode = flags.debug || false;
+    this.cleaningTypes = flags.type ? [flags.type] : [];
+    this.configFile = flags.config || null;
     const config = await getConfig("project");
 
     // Config file sent by user
@@ -162,7 +162,7 @@ export default class CleanReferences extends SfCommand<any> {
     // Prompt user to save choice in configuration
     const autoCleanTypes = config.autoCleanTypes || [];
     const toAdd = this.cleaningTypes.filter((type) => !autoCleanTypes.includes(type));
-    if (toAdd.length > 0 && !isCI && this.flags.type !== "all") {
+    if (toAdd.length > 0 && !isCI && flags.type !== "all") {
       const saveResponse = await prompts({
         type: "confirm",
         name: "value",

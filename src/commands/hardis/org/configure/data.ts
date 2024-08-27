@@ -8,7 +8,7 @@ import * as pascalcase from "pascalcase";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils/index.js";
 import { dataFolderRoot } from "../../../../common/utils/dataUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 import { getConfig, setConfig } from "../../../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings.js";

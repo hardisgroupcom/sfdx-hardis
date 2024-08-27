@@ -4,7 +4,7 @@ import { TicketProviderRoot } from "./ticketProviderRoot";
 import c from "chalk";
 import sortArray from "sort-array";
 import { Ticket } from "./index.js";
-import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
+import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { extractRegexMatches, uxLog } from "../utils";
 import { SfError } from "@salesforce/core";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";

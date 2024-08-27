@@ -3,9 +3,9 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils";
+import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from "../../../../common/utils/index.js";
 import { getOrgAliasUsername, promptOrg } from "../../../../common/utils/orgUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { checkConfig, getConfig, setConfig, setInConfigFile } from "../../../../config/index.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 
@@ -59,7 +59,7 @@ export default class ConfigureAuth extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const devHub = this.flags.devhub || false;
+    const devHub = flags.devhub || false;
 
     // Ask user to login to org
     const prevUserName = devHub ? this.hubOrg?.getUsername() : this.org?.getUsername();

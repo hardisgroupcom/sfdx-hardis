@@ -6,7 +6,7 @@ import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import sortArray from "sort-array";
-import { catchMatches, generateReports, uxLog } from "../../../../common/utils";
+import { catchMatches, generateReports, uxLog } from "../../../../common/utils/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -25,7 +25,7 @@ export default class CallInCallOut extends SfCommand<any> {
   // public static args = [{name: 'file'}];
 
   protected static flagsConfig = {
-    minimumapiversion: flags.number({
+    minimumapiversion: Flags.integer({
       char: "m",
       default: 20.0,
       description: messages.getMessage("minimumApiVersion"),
@@ -62,9 +62,9 @@ export default class CallInCallOut extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
-    this.debug = this.flags.debug || false;
-    const minimumApiVersion = this.flags.minimumapiversion || false;
-    const failIfError = this.flags.failiferror || false;
+    this.debug = flags.debug || false;
+    const minimumApiVersion = flags.minimumapiversion || false;
+    const failIfError = flags.failiferror || false;
 
     const pattern = "**/*.xml";
     const catchers = [

@@ -9,7 +9,7 @@ import moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { clearCache } from "../../../common/cache";
-import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
+import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils/index.js";
 import {
   initApexScripts,
   initOrgData,
@@ -19,7 +19,7 @@ import {
   promptUserEmail,
 } from "../../../common/utils/orgUtils";
 import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
-import { prompts } from "../../../common/utils/prompts";
+import { prompts } from "../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { getConfig, setConfig } from "../../../config/index.js";
 
@@ -109,9 +109,9 @@ export default class ScratchCreate extends SfCommand<any> {
   protected scratchOrgFromPool: any;
 
   public async run(): Promise<AnyJson> {
-    this.pool = this.flags.pool || false;
-    this.debugMode = this.flags.debug || false;
-    this.forceNew = this.flags.forcenew || false;
+    this.pool = flags.pool || false;
+    this.debugMode = flags.debug || false;
+    this.forceNew = flags.forcenew || false;
     elapseStart(`Create and initialize scratch org`);
     await this.initConfig();
     await this.createScratchOrg();

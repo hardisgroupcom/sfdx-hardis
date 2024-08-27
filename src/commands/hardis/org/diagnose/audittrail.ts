@@ -3,13 +3,13 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils";
+import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { bulkQuery } from "../../../../common/utils/apiUtils";
 import { getConfig } from "../../../../config/index.js";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { prompts } from "../../../../common/utils/prompts";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
+import { prompts } from "../../../../common/utils/prompts.js";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -132,7 +132,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       char: "e",
       description: "Comma-separated list of usernames to exclude",
     }),
-    lastndays: flags.number({
+    lastndays: Flags.integer({
       char: "t",
       description: "Number of days to extract from today (included)",
     }),
@@ -162,22 +162,22 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
-  protected excludeUsers = [];
+  protected excludeUsers: any[] = [];
   protected lastNdays: number;
   protected allowedSectionsActions = {};
   protected debugMode = false;
 
-  protected auditTrailRecords = [];
+  protected auditTrailRecords: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
-    this.excludeUsers = this.flags.excludeusers ? this.flags.excludeusers.split(",") : [];
-    this.lastNdays = this.flags.lastndays;
-    this.outputFile = this.flags.outputfile || null;
+    this.debugMode = flags.debug || false;
+    this.excludeUsers = flags.excludeusers ? flags.excludeusers.split(",") : [];
+    this.lastNdays = flags.lastndays;
+    this.outputFile = flags.outputfile || null;
     const config = await getConfig("branch");
 
     // If manual mode and lastndays not sent as parameter, prompt user

@@ -2,8 +2,8 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { execCommand, execSfdxJson, uxLog } from "../../../common/utils";
-import { prompts } from "../../../common/utils/prompts";
+import { execCommand, execSfdxJson, uxLog } from "../../../common/utils/index.js";
+import { prompts } from "../../../common/utils/prompts.js";
 import c from "chalk";
 import sortArray from "sort-array";
 
@@ -46,7 +46,7 @@ export default class ScratchDelete extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const debugMode = this.flags.debug || false;
+    const debugMode = flags.debug || false;
 
     // List all scratch orgs referenced on local computer
     const orgListRequest = "sf org list";

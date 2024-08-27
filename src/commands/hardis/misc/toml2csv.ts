@@ -9,8 +9,8 @@ import * as ora from "ora";
 import * as path from "path";
 import * as readline from "readline";
 
-import { stripAnsi, uxLog } from "../../../common/utils";
-import { countLinesInFile } from "../../../common/utils/filesUtils";
+import { stripAnsi, uxLog } from "../../../common/utils/index.js";
+import { countLinesInFile } from "../../../common/utils/filesUtils.js";
 import { getRecordTypeId } from "../../../common/utils/orgUtils";
 
 // Initialize Messages with the current plugin directory
@@ -83,7 +83,7 @@ export default class Toml2Csv extends SfCommand<any> {
   protected rootConfigDirectory: string;
   protected outputDir: string;
   protected skipTransfo = false;
-  protected filterSections = [];
+  protected filterSections: any[] = [];
   protected doFilterSections = false;
 
   protected spinner: any;
@@ -118,14 +118,14 @@ export default class Toml2Csv extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     // Collect input parameters
-    const tomlFile = this.flags.tomlfile;
-    const tomlFileEncoding = this.flags.tomlfileencoding || "utf8";
-    this.transfoConfigFile = this.flags.transfoconfig || path.join(process.cwd(), "transfoConfig.json");
+    const tomlFile = flags.tomlfile;
+    const tomlFileEncoding = flags.tomlfileencoding || "utf8";
+    this.transfoConfigFile = flags.transfoconfig || path.join(process.cwd(), "transfoConfig.json");
     this.rootConfigDirectory = path.dirname(this.transfoConfigFile);
-    this.outputDir = this.flags.outputdir || path.join(process.cwd(), path.parse(tomlFile).name);
-    const debugMode = this.flags.debug || false;
-    this.skipTransfo = this.flags.skiptransfo || false;
-    this.filterSections = this.flags.filtersections || [];
+    this.outputDir = flags.outputdir || path.join(process.cwd(), path.parse(tomlFile).name);
+    const debugMode = flags.debug || false;
+    this.skipTransfo = flags.skiptransfo || false;
+    this.filterSections = flags.filtersections || [];
     this.doFilterSections = this.filterSections.length > 0;
 
     // Check TOML file is existing

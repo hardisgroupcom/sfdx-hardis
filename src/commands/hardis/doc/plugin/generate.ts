@@ -67,7 +67,8 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    const { flags } = await this.parse(DocPluginGenerate);
+    this.debugMode = flags.debug || false;
 
     // Load plugin configuration
     const cwd = process.cwd();

@@ -63,7 +63,7 @@ autoRetrieveWhenPull:
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const debugMode = this.flags.debug || false;
+    const debugMode = flags.debug || false;
     const targetUsername = this.org.getUsername();
     await forceSourcePull(targetUsername, debugMode);
 

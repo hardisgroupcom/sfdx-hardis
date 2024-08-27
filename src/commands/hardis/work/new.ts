@@ -4,8 +4,8 @@ import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as path from "path";
-import { MetadataUtils } from "../../../common/metadata-utils";
-import { checkGitClean, ensureGitBranch, execCommand, execSfdxJson, git, gitCheckOutRemote, uxLog } from "../../../common/utils";
+import { MetadataUtils } from "../../../common/metadata-utils/index.js";
+import { checkGitClean, ensureGitBranch, execCommand, execSfdxJson, git, gitCheckOutRemote, uxLog } from "../../../common/utils/index.js";
 import { selectTargetBranch } from "../../../common/utils/gitUtils.js";
 import {
   initApexScripts,
@@ -15,7 +15,7 @@ import {
   installPackages,
   promptOrg,
 } from "../../../common/utils/orgUtils";
-import { prompts } from "../../../common/utils/prompts";
+import { prompts } from "../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { getConfig, setConfig } from "../../../config/index.js";
 import SandboxCreate from "../org/create";
@@ -88,7 +88,7 @@ Under the hood, it can:
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     uxLog(this, c.cyan("This tool will assist you to create a new task (dev or config) with Hardis CI/CD"));
     uxLog(this, c.cyan("When you don't know what to answer, you can let the default value and push ENTER"));

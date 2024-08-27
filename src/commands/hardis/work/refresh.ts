@@ -3,9 +3,9 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils";
+import { execCommand, getCurrentGitBranch, git, uxLog } from "../../../common/utils/index.js";
 import { forceSourcePull, forceSourcePush } from "../../../common/utils/deployUtils";
-import { prompts } from "../../../common/utils/prompts";
+import { prompts } from "../../../common/utils/prompts.js";
 import { getConfig } from "../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
@@ -65,7 +65,7 @@ export default class RefreshTask extends SfCommand<any> {
       return { outputString: msg };
     }
 
-    this.noPull = this.flags.nopull || false;
+    this.noPull = flags.nopull || false;
     uxLog(this, c.cyan("This command will refresh your git branch and your org with the content of another git branch"));
     // Verify that the user saved his/her work before merging another branch
     const savePromptRes = await prompts({
@@ -115,7 +115,7 @@ export default class RefreshTask extends SfCommand<any> {
   }
 
   private async runRefresh(localBranch): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     uxLog(
       this,

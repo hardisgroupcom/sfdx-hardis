@@ -15,8 +15,8 @@ import {
   getGitRepoName,
   gitAddCommitPush,
   uxLog,
-} from "../../../../common/utils";
-import { prompts } from "../../../../common/utils/prompts";
+} from "../../../../common/utils/index.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { setInConfigFile } from "../../../../config/index.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
 import { promptOrg } from "../../../../common/utils/orgUtils";
@@ -105,7 +105,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
 
     // Get current default org
     const currentOrgId = this.org?.getOrgId() || "";
-    if (this.flags.orginstanceurl && this.org?.getConnection()?.instanceUrl === this.flags.orginstanceurl) {
+    if (flags.orginstanceurl && this.org?.getConnection()?.instanceUrl === flags.orginstanceurl) {
       uxLog(this, c.cyan(`Default org ${this.org.getConnection()?.instanceUrl} is selected, let's configure its monitoring !`));
     } else {
       // Select the org that must be monitored

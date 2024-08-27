@@ -7,8 +7,8 @@ import moment from "moment";
 import c from "chalk";
 import { uxLog } from "../../../../common/utils/index.js";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -53,7 +53,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     // Get instance name
     const orgQuery = "SELECT FIELDS(all) FROM Organization LIMIT 1";

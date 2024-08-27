@@ -11,12 +11,12 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 
 // Project Specific Utilities
-import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../common/notifProvider/index.js";
 import { MessageAttachment } from "@slack/types";
-import { getNotificationButtons, getBranchMarkdown, getSeverityIcon } from "../../../common/utils/notifUtils";
-import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
-import { uxLog } from "../../../common/utils";
-import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
+import { getNotificationButtons, getBranchMarkdown, getSeverityIcon } from "../../../common/utils/notifUtils.js";
+import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils.js";
+import { uxLog } from "../../../common/utils/index.js";
+import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -49,7 +49,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }),
   };
   /* jscpd:ignore-end */
-  protected unusedData = [];
+  protected unusedData: any[] = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
   // Comment this out if your command does not require an org username

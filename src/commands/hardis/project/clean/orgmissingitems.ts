@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
-import { mergeObjectPropertyLists, uxLog } from "../../../../common/utils";
+import { mergeObjectPropertyLists, uxLog } from "../../../../common/utils/index.js";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../common/utils/orgUtils";
 import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
@@ -84,10 +84,10 @@ export default class OrgMissingItems extends SfCommand<any> {
   protected standardSuffixes = ["Street", "City", "State", "PostalCode", "Country", "Latitude", "Longitude", "GeocodeAccuracy"];
 
   public async run(): Promise<AnyJson> {
-    this.folder = this.flags.folder || "./force-app";
-    this.debugMode = this.flags.debug || false;
-    this.targetOrgUsernameAlias = this.flags.packagexmltargetorg || null;
-    this.packageXmlFull = this.flags.packagexmlfull || null;
+    this.folder = flags.folder || "./force-app";
+    this.debugMode = flags.debug || false;
+    this.targetOrgUsernameAlias = flags.packagexmltargetorg || null;
+    this.packageXmlFull = flags.packagexmlfull || null;
 
     if (this.packageXmlFull === null) {
       // Request user to select an org if not provided

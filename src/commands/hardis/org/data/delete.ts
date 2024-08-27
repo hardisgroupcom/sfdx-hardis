@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils";
+import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { deleteData, selectDataWorkspace } from "../../../../common/utils/dataUtils";
 import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils";
 
@@ -54,7 +54,7 @@ export default class DataExport extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    let sfdmuPath = this.flags.path || null;
+    let sfdmuPath = flags.path || null;
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {

@@ -3,9 +3,9 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils";
-import { FilesImporter, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { isCI, uxLog } from "../../../../common/utils/index.js";
+import { FilesImporter, selectFilesWorkspace } from "../../../../common/utils/filesUtils.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -61,7 +61,7 @@ See article below to see how to Export them.
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    let filesPath = this.flags.path || null;
+    let filesPath = flags.path || null;
     this.handleOverwrite = this.flags?.overwrite === true;
 
     // Identify files workspace if not defined

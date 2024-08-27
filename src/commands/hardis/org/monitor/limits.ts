@@ -3,12 +3,12 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { execSfdxJson, uxLog } from "../../../../common/utils";
+import { execSfdxJson, uxLog } from "../../../../common/utils/index.js";
 import { getEnvVar } from "../../../../config/index.js";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
 import { MessageAttachment } from "@slack/web-api";
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -60,7 +60,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected limitThresholdWarning = Number(getEnvVar("LIMIT_THRESHOLD_WARNING") || 50.0);
   protected limitThresholdError = Number(getEnvVar("LIMIT_THRESHOLD_WARNING") || 75.0);
 
-  protected limitEntries = [];
+  protected limitEntries: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
   protected debugMode = false;
@@ -68,8 +68,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.outputFile = this.flags.outputfile || null;
-    this.debugMode = this.flags.debug || false;
+    this.outputFile = flags.outputfile || null;
+    this.debugMode = flags.debug || false;
 
     // List org limits
     uxLog(this, c.cyan(`Run the org limits list command ...`));

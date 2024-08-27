@@ -10,18 +10,18 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 
 // Project Specific Utilities
-import { uxLog } from "../../../common/utils";
-import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
+import { uxLog } from "../../../common/utils/index.js";
+import { NotifProvider, NotifSeverity } from "../../../common/notifProvider/index.js";
 import { MessageAttachment } from "@slack/types";
-import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils";
-import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
-import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
+import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils.js";
+import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils.js";
+import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils.js";
 
 // Initialize and Load Messages
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 /* jscpd:ignore-end */
-export default class metadatastatus extends SfCommand<any> {
+export default class LintMetadataStatus extends SfCommand<any> {
   public static title = "check inactive metadatas";
   public static description = `Check if elements (flows and validation rules) are inactive in the project
 
@@ -58,7 +58,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   private flowFilePattern = "**/flows/**/*.flow-meta.xml";
   private validationRuleFilePattern = "**/objects/**/validationRules/*.validationRule-meta.xml";
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
-  protected inactiveItems = [];
+  protected inactiveItems: any[] = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
 

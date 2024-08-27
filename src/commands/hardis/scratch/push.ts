@@ -49,7 +49,7 @@ Calls \`sf project deploy start\` under the hood
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const debugMode = this.flags.debug || false;
+    const debugMode = flags.debug || false;
     await forceSourcePush(this.org.getUsername(), this, debugMode, { conn: this.org.getConnection() });
     // Return an object to be displayed with --json
     return { outputString: "Pushed local git branch in scratch org" };

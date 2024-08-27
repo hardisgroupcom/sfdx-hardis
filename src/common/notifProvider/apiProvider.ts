@@ -5,7 +5,7 @@ import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils";
 import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 
-import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils";
+import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
 import { Connection } from "jsforce";
 import { GitProvider } from "../gitProvider/index.js";
 import axios, { AxiosRequestConfig } from "axios";

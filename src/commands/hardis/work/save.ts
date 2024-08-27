@@ -6,11 +6,11 @@ import c from "chalk";
 import * as fs from "fs-extra";
 import * as open from "open";
 import * as path from "path";
-import { createTempDir, execCommand, getCurrentGitBranch, git, gitHasLocalUpdates, normalizeFileStatusPath, uxLog } from "../../../common/utils";
+import { createTempDir, execCommand, getCurrentGitBranch, git, gitHasLocalUpdates, normalizeFileStatusPath, uxLog } from "../../../common/utils/index.js";
 import { exportData } from "../../../common/utils/dataUtils";
 import { forceSourcePull } from "../../../common/utils/deployUtils";
 import { callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from "../../../common/utils/gitUtils.js";
-import { prompts } from "../../../common/utils/prompts";
+import { prompts } from "../../../common/utils/prompts.js";
 import { appendPackageXmlFilesContent, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from "../../../common/utils/xmlUtils.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { CONSTANTS, getConfig, setConfig } from "../../../config/index.js";
@@ -124,12 +124,12 @@ autoRemoveUserPermissions:
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.noPull = this.flags.nopull || false;
-    this.noGit = this.flags.nogit || false;
-    this.noClean = this.flags.noclean || false;
-    this.auto = this.flags.auto || false;
-    this.targetBranch = this.flags.targetbranch || null;
-    this.debugMode = this.flags.debug || false;
+    this.noPull = flags.nopull || false;
+    this.noGit = flags.nogit || false;
+    this.noClean = flags.noclean || false;
+    this.auto = flags.auto || false;
+    this.targetBranch = flags.targetbranch || null;
+    this.debugMode = flags.debug || false;
     const localBranch = await getCurrentGitBranch();
 
     // Define current and target branches

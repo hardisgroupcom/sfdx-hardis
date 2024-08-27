@@ -4,10 +4,10 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as columnify from "columnify";
-import { generateReports, isCI, uxLog } from "../../../../common/utils";
+import { generateReports, isCI, uxLog } from "../../../../common/utils/index.js";
 import { promptProfiles } from "../../../../common/utils/orgUtils";
 //import { executeApex } from "../../../../common/utils/deployUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { soqlQuery, bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils";
 
 // Initialize Messages with the current plugin directory
@@ -45,7 +45,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
       char: "e",
       description: "List of profiles that you want to NOT freeze, separated by commas",
     }),
-    maxuserdisplay: flags.number({
+    maxuserdisplay: Flags.integer({
       char: "m",
       default: 100,
       description: "Maximum users to display in logs",
@@ -78,10 +78,10 @@ export default class OrgFreezeUser extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const includeProfileNames = this.flags.includeprofiles ? this.flags.includeprofiles.split(",") : [];
-    const excludeProfileNames = this.flags.excludeprofiles ? this.flags.excludeprofiles.split(",") : [];
-    this.maxUsersDisplay = this.flags.maxuserdisplay || 100;
-    this.debugMode = this.flags.debug || false;
+    const includeProfileNames = flags.includeprofiles ? flags.includeprofiles.split(",") : [];
+    const excludeProfileNames = flags.excludeprofiles ? flags.excludeprofiles.split(",") : [];
+    this.maxUsersDisplay = flags.maxuserdisplay || 100;
+    this.debugMode = flags.debug || false;
 
     const conn = this.org.getConnection();
 

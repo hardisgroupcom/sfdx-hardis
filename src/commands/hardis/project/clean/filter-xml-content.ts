@@ -55,10 +55,10 @@ This script requires a filter-config.json file`;
   public smmryResult = { filterResults: {} };
 
   public async run(): Promise<AnyJson> {
-    this.configFile = this.flags.configfile || "./filter-config.json";
-    this.inputFolder = this.flags.inputfolder || ".";
+    this.configFile = flags.configfile || "./filter-config.json";
+    this.inputFolder = flags.inputfolder || ".";
     this.outputFolder =
-      this.flags.outputfolder || "./" + path.dirname(this.inputFolder) + "/" + path.basename(this.inputFolder) + "_xml_content_filtered";
+      flags.outputfolder || "./" + path.dirname(this.inputFolder) + "/" + path.basename(this.inputFolder) + "_xml_content_filtered";
     uxLog(this, c.cyan(`Initialize XML content filtering of ${this.inputFolder} ,using ${this.configFile} , into ${this.outputFolder}`));
     // Read json config file
     const filterConfig = fs.readJsonSync(this.configFile);

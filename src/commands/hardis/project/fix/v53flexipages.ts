@@ -55,8 +55,8 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.pathToBrowse = this.flags.path || process.cwd();
-    this.debugMode = this.flags.debug || false;
+    this.pathToBrowse = flags.path || process.cwd();
+    this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Adding identifiers to componentInstance in flexipages`));

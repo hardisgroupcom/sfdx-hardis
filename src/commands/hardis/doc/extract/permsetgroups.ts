@@ -19,7 +19,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DocGenerate extends SfCommand<any> {
+export default class ExtractPermSetGroups extends SfCommand<any> {
   public static title = "Generate project documentation";
 
   public static description = `Generate markdown files with project documentation`;
@@ -57,7 +57,7 @@ export default class DocGenerate extends SfCommand<any> {
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(DocGenerate);
+    const { flags } = await this.parse(ExtractPermSetGroups);
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     // Delete standard files when necessary

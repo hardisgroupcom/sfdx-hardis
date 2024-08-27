@@ -49,7 +49,7 @@ export default class CleanStandardItems extends SfCommand<any> {
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Removing unwanted standard dx source files...`));

@@ -58,9 +58,9 @@ export default class OrgSelect extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const devHub = this.flags.devhub || false;
-    const scratch = this.flags.scratch;
-    this.debugMode = this.flags.debug || false;
+    const devHub = flags.devhub || false;
+    const scratch = flags.scratch;
+    this.debugMode = flags.debug || false;
 
     const org = await promptOrg(this, { devHub: devHub, setDefault: true, scratch: scratch });
 

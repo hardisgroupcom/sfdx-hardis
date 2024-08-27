@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import sortArray from "sort-array";
-import { catchMatches, generateReports, uxLog } from "../../../../common/utils";
+import { catchMatches, generateReports, uxLog } from "../../../../common/utils/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -52,7 +52,7 @@ export default class CallInCallOut extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
-    this.debug = this.flags.debug || false;
+    this.debug = flags.debug || false;
 
     const pattern = "**/*.{cls,trigger}";
     const catchers = [

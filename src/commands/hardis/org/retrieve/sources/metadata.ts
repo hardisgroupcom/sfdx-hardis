@@ -6,8 +6,8 @@ import c from "chalk";
 import * as child from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { ensureGitRepository, execCommand, isMonitoringJob, uxLog } from "../../../../../common/utils";
+import { MetadataUtils } from "../../../../../common/metadata-utils/index.js";
+import { ensureGitRepository, execCommand, isMonitoringJob, uxLog } from "../../../../../common/utils/index.js";
 import LegacyApi from "../../diagnose/legacyapi";
 import OrgTestApex from "../../test/apex";
 import * as util from "util";
@@ -79,10 +79,10 @@ export default class DxSources extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const folder = path.resolve(this.flags.folder || ".");
-    const packageXml = path.resolve(this.flags.packagexml || "package.xml");
-    const includeManaged = this.flags.includemanaged || false;
-    this.debugMode = this.flags.debug || false;
+    const folder = path.resolve(flags.folder || ".");
+    const packageXml = path.resolve(flags.packagexml || "package.xml");
+    const includeManaged = flags.includemanaged || false;
+    this.debugMode = flags.debug || false;
 
     // Check required pre-requisites
     await ensureGitRepository({ init: true });

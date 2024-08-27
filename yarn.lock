@@ -1863,6 +1863,11 @@
   resolved "https://registry.yarnpkg.com/@sinonjs/text-encoding/-/text-encoding-0.7.2.tgz#5981a8db18b56ba38ef0efb7d995b12aa7b51918"
   integrity sha512-sXXKG+uL9IrKqViTtao2Ws6dy0znu9sOaP1di/jKGW1M6VssO8vlpXCQcpZ+jisQ1tTFAC5Jo/EOzFbggBagFQ==
 
+"@slack/types@^2.12.0":
+  version "2.12.0"
+  resolved "https://registry.yarnpkg.com/@slack/types/-/types-2.12.0.tgz#f7f892b2aa6cc6fb6956d8cc75d0f8e02e4bc0b2"
+  integrity sha512-yFewzUomYZ2BYaGJidPuIgjoYj5wqPDmi7DLSaGIkf+rCi4YZ2Z3DaiYIbz7qb/PL2NmamWjCvB7e9ArI5HkKg==
+
 "@smithy/abort-controller@^3.1.1":
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/@smithy/abort-controller/-/abort-controller-3.1.1.tgz#291210611ff6afecfc198d0ca72d5771d8461d16"

@@ -6,8 +6,8 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { createTempDir, execCommand, uxLog } from "../../../../../common/utils";
+import { MetadataUtils } from "../../../../../common/metadata-utils/index.js";
+import { createTempDir, execCommand, uxLog } from "../../../../../common/utils/index.js";
 import { deployDestructiveChanges, deployMetadatas } from "../../../../../common/utils/deployUtils";
 import { getConfig } from "../../../../../config/index.js";
 
@@ -49,7 +49,7 @@ export default class DxSources extends SfCommand<any> {
       char: "k",
       description: "Path to destructiveChanges.xml file to deploy",
     }),
-    testlevel: flags.enum({
+    testlevel: Flags.enum({
       char: "l",
       default: "RunLocalTests",
       options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
@@ -87,13 +87,13 @@ export default class DxSources extends SfCommand<any> {
     uxLog(this, c.red("Nobody used Metadata format anymore :)"));
     uxLog(this, c.red("If you think it should be kept and maintained, please post an issue on sfdx-hardis GitHub repository"));
 
-    const check = this.flags.check || false;
-    const packageXml = this.flags.packagexml || null;
-    const filter = this.flags.filter || false;
-    const destructivePackageXml = this.flags.destructivepackagexml || null;
-    const testlevel = this.flags.testlevel || "RunLocalTests";
-    const debugMode = this.flags.debug || false;
-    this.deployDir = this.flags.deploydir || ".";
+    const check = flags.check || false;
+    const packageXml = flags.packagexml || null;
+    const filter = flags.filter || false;
+    const destructivePackageXml = flags.destructivepackagexml || null;
+    const testlevel = flags.testlevel || "RunLocalTests";
+    const debugMode = flags.debug || false;
+    this.deployDir = flags.deploydir || ".";
     this.configInfo = await getConfig("branch");
 
     // Install packages

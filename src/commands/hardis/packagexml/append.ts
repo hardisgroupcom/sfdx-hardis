@@ -29,8 +29,8 @@ export class PackageXmlAppend extends SfCommand<any> {
   protected outputFile: string;
 
   public async run(): Promise<AnyJson> {
-    this.packageXmlFiles = this.flags.packagexmls.split(",");
-    this.outputFile = this.flags.outputfile;
+    this.packageXmlFiles = flags.packagexmls.split(",");
+    this.outputFile = flags.outputfile;
     await appendPackageXmlFilesContent(this.packageXmlFiles, this.outputFile);
     return { outputPackageXmlFile: this.outputFile };
   }

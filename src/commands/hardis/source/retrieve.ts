@@ -1,10 +1,10 @@
 import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { MetadataUtils } from "../../../common/metadata-utils";
-import { isCI, uxLog } from "../../../common/utils";
+import { MetadataUtils } from "../../../common/metadata-utils/index.js";
+import { isCI, uxLog } from "../../../common/utils/index.js";
 import { promptOrgUsernameDefault } from "../../../common/utils/orgUtils";
-import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
+import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils.js";
 
 export class SourceRetrieve extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:retrieve
@@ -29,7 +29,7 @@ export class SourceRetrieve extends SfCommand<any> {
       longDescription: "sourcePath",
       exclusive: ["manifest", "metadata"],
     }),
-    wait: flags.minutes({
+    wait: Flags.integer({
       char: "w",
       description: "wait",
       longDescription: "wait",
@@ -81,13 +81,13 @@ export class SourceRetrieve extends SfCommand<any> {
     uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
     const args = this.argv;
     // Manage user selection for metadatas
-    if (!isCI && !this.flags.sourcepath && !this.flags.manifest && !this.flags.metadata && !this.flags.packagenames) {
+    if (!isCI && !flags.sourcepath && !flags.manifest && !flags.metadata && !flags.packagenames) {
       const metadatas = await MetadataUtils.promptMetadataTypes();
       const metadataArg = metadatas.map((metadataType: any) => metadataType.xmlName).join(",");
       args.push(...["-m", `"${metadataArg}"`]);
     }
     // Manage user selection for org
-    if (!isCI && !this.flags.targetusername) {
+    if (!isCI && !flags.targetusername) {
       let orgUsername = this.org.getUsername();
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
       if (orgUsername) {
@@ -96,6 +96,6 @@ export class SourceRetrieve extends SfCommand<any> {
         throw new SfError(c.yellow("For technical reasons, run again this command and select your org in the list :)"));
       }
     }
-    return await wrapSfdxCoreCommand("sfdx force:source:retrieve", args, this, this.flags.debug);
+    return await wrapSfdxCoreCommand("sfdx force:source:retrieve", args, this, flags.debug);
   }
 }

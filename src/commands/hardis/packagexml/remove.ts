@@ -40,15 +40,15 @@ export class PackageXmlRemove extends SfCommand<any> {
   protected outputFile: string;
 
   public async run(): Promise<AnyJson> {
-    this.packageXmlFile = this.flags.packagexml || 'package.xml';
-    this.removePackageXmlFile = this.flags.removepackagexml || 'destructiveChanges.xml';
-    this.removedOnly = this.flags.removedonly || false;
-    this.outputFile = this.flags.outputfile;
+    this.packageXmlFile = flags.packagexml || 'package.xml';
+    this.removePackageXmlFile = flags.removepackagexml || 'destructiveChanges.xml';
+    this.removedOnly = flags.removedonly || false;
+    this.outputFile = flags.outputfile;
 
     await removePackageXmlFilesContent(
       this.packageXmlFile,
       this.removePackageXmlFile,
-      { logFlag: this.flags.debug, outputXmlFile: this.outputFile, removedOnly: this.removedOnly }
+      { logFlag: flags.debug, outputXmlFile: this.outputFile, removedOnly: this.removedOnly }
     );
 
     return { outputPackageXmlFile: this.outputFile };

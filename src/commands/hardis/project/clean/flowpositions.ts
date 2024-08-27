@@ -81,8 +81,8 @@ autoCleanTypes:
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.folder = this.flags.folder || "./force-app";
-    this.debugMode = this.flags.debug || false;
+    this.folder = flags.folder || "./force-app";
+    this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Setting flows as Auto Layout and remove positions...`));

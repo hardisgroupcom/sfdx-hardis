@@ -9,8 +9,8 @@ import * as path from "path";
 import * as util from "util";
 const exec = util.promisify(child.exec);
 
-import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { uxLog } from "../../../../../common/utils";
+import { MetadataUtils } from "../../../../../common/metadata-utils/index.js";
+import { uxLog } from "../../../../../common/utils/index.js";
 import { WebSocketClient } from "../../../../../common/websocketClient.js";
 import { setConfig } from "../../../../../config/index.js";
 
@@ -81,12 +81,12 @@ export default class DxSources extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const folder = path.resolve(this.flags.folder || ".");
-    const tempFolder = path.resolve(this.flags.tempfolder || "./tmp");
-    const keepMetadataTypes = this.flags.keepmetadatatypes ? this.flags.keepmetadatatypes.split(",") : [];
-    const filteredMetadatas = this.flags.filteredmetadatas ? this.flags.filteredmetadatas.split(",") : MetadataUtils.listMetadatasNotManagedBySfdx();
-    const shapeFlag = this.flags.shape || false;
-    const debug = this.flags.debug || false;
+    const folder = path.resolve(flags.folder || ".");
+    const tempFolder = path.resolve(flags.tempfolder || "./tmp");
+    const keepMetadataTypes = flags.keepmetadatatypes ? flags.keepmetadatatypes.split(",") : [];
+    const filteredMetadatas = flags.filteredmetadatas ? flags.filteredmetadatas.split(",") : MetadataUtils.listMetadatasNotManagedBySfdx();
+    const shapeFlag = flags.shape || false;
+    const debug = flags.debug || false;
 
     // Create working temp folders and define it as cwd
     const prevCwd = process.cwd();

@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { execCommand, uxLog } from "../../../../common/utils";
+import { execCommand, uxLog } from "../../../../common/utils/index.js";
 import { getConfig, getEnvVar } from "../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
@@ -84,7 +84,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     // Build target org full manifest
     uxLog(this, c.cyan("Running monitoring scripts for org " + c.bold(this.org.getConnection().instanceUrl)) + " ...");

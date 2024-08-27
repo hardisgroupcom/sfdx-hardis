@@ -4,7 +4,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as path from "path";
-import { isCI, uxLog } from "../../../../common/utils";
+import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { getReportDirectory } from "../../../../config/index.js";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
 import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils";
@@ -59,8 +59,8 @@ export default class GeneratePackageXmlFull extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.outputFile = this.flags.outputfile || null;
-    this.debugMode = this.flags.debugMode || false;
+    this.outputFile = flags.outputfile || null;
+    this.debugMode = flags.debugMode || false;
 
     // Select org that will be used to export records
     let conn = null;

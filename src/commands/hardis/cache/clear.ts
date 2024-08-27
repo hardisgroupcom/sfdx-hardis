@@ -4,7 +4,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { clearCache } from "../../../common/cache";
-import { uxLog } from "../../../common/utils";
+import { uxLog } from "../../../common/utils/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

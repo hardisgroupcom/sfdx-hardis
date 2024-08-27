@@ -7,11 +7,11 @@ import * as fs from "fs-extra";
 import * as ora from "ora";
 import * as path from "path";
 
-import { execCommand, uxLog } from "../../../common/utils";
-import { prompts } from "../../../common/utils/prompts";
-import { MetadataUtils } from "../../../common/metadata-utils";
+import { execCommand, uxLog } from "../../../common/utils/index.js";
+import { prompts } from "../../../common/utils/prompts.js";
+import { MetadataUtils } from "../../../common/metadata-utils/index.js";
 import { glob } from "glob";
-import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils";
+import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils.js";
 import { applyAllReplacementsDefinitions } from "../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory

@@ -52,7 +52,7 @@ export default class WebSocketAction extends SfCommand<any> {
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
-    this.event = this.flags.event || "";
+    this.event = flags.event || "";
 
     if (WebSocketClient.isAlive()) {
       if (this.event === "refreshStatus") {

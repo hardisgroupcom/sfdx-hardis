@@ -4,8 +4,8 @@ import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as columnify from "columnify";
-import { execSfdxJson, isCI, uxLog } from "../../../../common/utils";
-import { prompts } from "../../../../common/utils/prompts";
+import { execSfdxJson, isCI, uxLog } from "../../../../common/utils/index.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { bulkDeleteTooling } from "../../../../common/utils/apiUtils";
 
 // Initialize Messages with the current plugin directory
@@ -98,17 +98,17 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const prompt = this.flags.prompt === false ? false : true;
-    let nameFilter = this.flags.name || null;
-    const allowPurgeFailure = this.flags.allowpurgefailure === false ? false : true;
-    const debugMode = this.flags.debug || false;
+    const prompt = flags.prompt === false ? false : true;
+    let nameFilter = flags.name || null;
+    const allowPurgeFailure = flags.allowpurgefailure === false ? false : true;
+    const debugMode = flags.debug || false;
     const username = this.org.getUsername();
 
     let statusFilter;
     const manageableConstraint = "ManageableState IN ('deprecatedEditable','installedEditable','unmanaged')";
-    if (this.flags.status) {
+    if (flags.status) {
       // Input parameter used
-      statusFilter = this.flags.status.split(",");
+      statusFilter = flags.status.split(",");
     } else if (isCI) {
       // Obsolete by default for CI
       statusFilter = ["Obsolete"];

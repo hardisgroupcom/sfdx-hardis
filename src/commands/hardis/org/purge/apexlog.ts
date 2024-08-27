@@ -5,8 +5,8 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execCommand, uxLog } from "../../../../common/utils";
-import { prompts } from "../../../../common/utils/prompts";
+import { execCommand, uxLog } from "../../../../common/utils/index.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -57,8 +57,8 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const prompt = this.flags.prompt === false ? false : true;
-    const debugMode = this.flags.debug || false;
+    const prompt = flags.prompt === false ? false : true;
+    const debugMode = flags.debug || false;
 
     // Build apex logs query
     const tempDir = "./tmp";

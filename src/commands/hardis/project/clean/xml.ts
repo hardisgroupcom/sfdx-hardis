@@ -9,8 +9,8 @@ import * as path from "path";
 import sortArray from "sort-array";
 import * as xmldom from "@xmldom/xmldom";
 import * as xpath from "xpath";
-import { isCI, uxLog } from "../../../../common/utils";
-import { prompts } from "../../../../common/utils/prompts";
+import { isCI, uxLog } from "../../../../common/utils/index.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { writeXmlFileFormatted } from "../../../../common/utils/xmlUtils.js";
 import { getConfig, setConfig } from "../../../../config/index.js";
 
@@ -93,11 +93,11 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.folder = this.flags.folder || "./force-app";
-    this.globPattern = this.flags.globpattern;
-    this.xpath = this.flags.xpath;
-    this.namespace = this.flags.namespace || "http://soap.sforce.com/2006/04/metadata";
-    this.debugMode = this.flags.debug || false;
+    this.folder = flags.folder || "./force-app";
+    this.globPattern = flags.globpattern;
+    this.xpath = flags.xpath;
+    this.namespace = flags.namespace || "http://soap.sforce.com/2006/04/metadata";
+    this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Clean XML elements matching patterns`));

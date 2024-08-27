@@ -8,7 +8,7 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils";
 import { getConfig } from "../../../../config/index.js";
-import { execCommand, stripAnsi, uxLog } from "../../../../common/utils";
+import { execCommand, stripAnsi, uxLog } from "../../../../common/utils/index.js";
 import moment from "moment";
 import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils";
 
@@ -54,7 +54,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
   private debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     // Check pool configuration is defined on project
     const config = await getConfig("project");

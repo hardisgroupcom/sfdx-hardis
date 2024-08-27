@@ -5,8 +5,8 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { uxLog } from "../../../../common/utils/index.js";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
+import { NotifProvider } from "../../../../common/notifProvider/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -63,9 +63,9 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.usedOnly = this.flags.usedonly || false;
-    this.debugMode = this.flags.debug || false;
-    this.outputFile = this.flags.outputfile || null;
+    this.usedOnly = flags.usedonly || false;
+    this.debugMode = flags.debug || false;
+    this.outputFile = flags.outputfile || null;
 
     // Retrieve the list of users who haven't logged in for a while
     const conn = this.org.getConnection();

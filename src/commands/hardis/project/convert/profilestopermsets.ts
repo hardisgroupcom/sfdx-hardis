@@ -6,7 +6,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execCommand, uxLog } from "../../../../common/utils";
+import { execCommand, uxLog } from "../../../../common/utils/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -52,7 +52,7 @@ export default class ConvertProfilesToPermSets extends SfCommand<any> {
   protected static requiresSfdxPlugins = ["shane-sfdx-plugins"];
 
   public async run(): Promise<AnyJson> {
-    const except = this.flags.except || [];
+    const except = flags.except || [];
 
     uxLog(this, c.cyan("This command will convert profiles into permission sets"));
 

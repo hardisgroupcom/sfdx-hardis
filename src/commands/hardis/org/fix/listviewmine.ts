@@ -108,14 +108,14 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     uxLog(this, c.cyan("Setting back listviews to Mine instead of Everything..."));
 
     // Identify listviews to process
-    if (this.flags.listviews) {
+    if (flags.listviews) {
       // Use input flag
-      this.listViewsStrings = this.flags.listviews.split(",");
+      this.listViewsStrings = flags.listviews.split(",");
     } else {
       // Use property listViewsToSetToMine from .sfdx-hardis.yml config file
       const config = await getConfig("project");

@@ -7,7 +7,7 @@ import { NotifMessage, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 import { marked } from "marked";
 import { EmailMessage, sendEmail } from "../utils/emailUtils";
-import { removeMarkdown } from "../utils/notifUtils";
+import { removeMarkdown } from "../utils/notifUtils.js";
 
 export class EmailProvider extends NotifProviderRoot {
   public getLabel(): string {

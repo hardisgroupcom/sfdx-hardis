@@ -6,13 +6,13 @@ import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { buildOrgManifest } from "../../../../common/utils/deployUtils";
-import { execCommand, filterPackageXml, uxLog } from "../../../../common/utils";
-import { MetadataUtils } from "../../../../common/metadata-utils";
+import { execCommand, filterPackageXml, uxLog } from "../../../../common/utils/index.js";
+import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
 import { CONSTANTS } from "../../../../config/index.js";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
 import { MessageAttachment } from "@slack/web-api";
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 import { parsePackageXmlFile, writePackageXmlFile } from "../../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory
@@ -70,8 +70,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   // Trigger notification(s) to MsTeams channel
   protected static triggerNotification = true;
 
-  protected diffFiles = [];
-  protected diffFilesSimplified = [];
+  protected diffFiles: any[] = [];
+  protected diffFilesSimplified: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
   protected debugMode = false;
@@ -79,8 +79,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.outputFile = this.flags.outputfile || null;
-    this.debugMode = this.flags.debug || false;
+    this.outputFile = flags.outputfile || null;
+    this.debugMode = flags.debug || false;
 
     // Build target org full manifest
     uxLog(this, c.cyan("Building full manifest for org " + c.bold(this.org.getConnection().instanceUrl)) + " ...");

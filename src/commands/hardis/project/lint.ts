@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { isCI, uxLog } from "../../../common/utils";
+import { isCI, uxLog } from "../../../common/utils/index.js";
 import c from "chalk";
 import * as fs from "fs-extra";
 import { MegaLinterRunner } from "mega-linter-runner/lib";
@@ -56,8 +56,8 @@ export default class ProjectCreate extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.fix = this.flags.fix || false;
-    this.debugMode = this.flags.debugMode || false;
+    this.fix = flags.fix || false;
+    this.debugMode = flags.debugMode || false;
 
     // Check if Mega-Linter is configured
     if (!fs.existsSync(".mega-linter.yml")) {

@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { getConfig } from "../../../../../config/index.js";
 import c from "chalk";
 // import * as path from "path";
-import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog, isCI } from "../../../../../common/utils";
+import { ensureGitRepository, gitHasLocalUpdates, execCommand, git, uxLog, isCI } from "../../../../../common/utils/index.js";
 import { CleanOptions } from "simple-git";
 import CleanReferences from "../../../project/clean/references";
 import SaveTask from "../../../work/save";
@@ -85,7 +85,7 @@ export default class Retrofit extends SfCommand<any> {
       default: false,
       description: "If true, a commit will be performed after the retrofit",
     }),
-    commitmode: flags.enum({
+    commitmode: Flags.enum({
       default: "updated",
       options: ["updated", "all"],
       description: "Defines if we commit all retrieved updates, or all updates including creations",
@@ -94,7 +94,7 @@ export default class Retrofit extends SfCommand<any> {
       default: false,
       description: "If true, a push will be performed after the retrofit",
     }),
-    pushmode: flags.enum({
+    pushmode: Flags.enum({
       default: "default",
       options: ["default", "mergerequest"],
       description: "Defines if we send merge request options to git push arguments",
@@ -141,13 +141,13 @@ export default class Retrofit extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.commit = this.flags.commit || false;
-    this.commitMode = this.flags.commitmode || false;
-    this.push = this.flags.push || false;
-    this.pushMode = this.flags.pushmode || "default";
-    this.productionBranch = this.flags.productionbranch || null;
-    this.retrofitTargetBranch = this.flags.retrofittargetbranch || null;
-    this.debugMode = this.flags.debug || false;
+    this.commit = flags.commit || false;
+    this.commitMode = flags.commitmode || false;
+    this.push = flags.push || false;
+    this.pushMode = flags.pushmode || "default";
+    this.productionBranch = flags.productionbranch || null;
+    this.retrofitTargetBranch = flags.retrofittargetbranch || null;
+    this.debugMode = flags.debug || false;
     this.configInfo = await getConfig("branch");
     // check git repo before processing
     await ensureGitRepository();

@@ -4,8 +4,8 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { uxLog } from "../../../../common/utils/index.js";
-import { FilesExporter, getFilesWorkspaceDetail, promptFilesExportConfiguration, selectFilesWorkspace } from "../../../../common/utils/filesUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { FilesExporter, getFilesWorkspaceDetail, promptFilesExportConfiguration, selectFilesWorkspace } from "../../../../common/utils/filesUtils.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -31,17 +31,17 @@ See article below
       char: "p",
       description: "Path to the file export project",
     }),
-    chunksize: flags.number({
+    chunksize: Flags.integer({
       char: "c",
       description: "Number of records to add in a chunk before it is processed",
       default: 1000,
     }),
-    polltimeout: flags.number({
+    polltimeout: Flags.integer({
       char: "t",
       description: "Timeout in MS for Bulk API calls",
       default: 300000,
     }),
-    startchunknumber: flags.number({
+    startchunknumber: Flags.integer({
       char: "s",
       description: "Chunk number to start from",
       default: 0,
@@ -71,11 +71,11 @@ See article below
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    let filesPath = this.flags.path || null;
-    const recordsChunkSize = this.flags.chunksize;
-    const pollTimeout = this.flags.polltimeout;
-    const startChunkNumber = this.flags.startchunknumber || 0;
-    //const debugMode = this.flags.debug || false;
+    let filesPath = flags.path || null;
+    const recordsChunkSize = flags.chunksize;
+    const pollTimeout = flags.polltimeout;
+    const startChunkNumber = flags.startchunknumber || 0;
+    //const debugMode = flags.debug || false;
 
     const exportOptions: any = {
       pollTimeout: pollTimeout,

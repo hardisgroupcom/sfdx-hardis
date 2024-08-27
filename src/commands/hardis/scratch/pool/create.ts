@@ -4,7 +4,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AuthInfo, Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { getConfig, setConfig } from "../../../../config/index.js";
-import { prompts } from "../../../../common/utils/prompts";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { uxLog } from "../../../../common/utils/index.js";
 import { instantiateProvider, listKeyValueProviders } from "../../../../common/utils/poolUtils";
 import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils";

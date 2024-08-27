@@ -54,8 +54,8 @@ export default class CleanSystemDebug extends SfCommand<any> {
   protected del = false;
 
   public async run(): Promise<AnyJson> {
-    this.folder = this.flags.folder || "./force-app";
-    this.del = this.flags.delete || false;
+    this.folder = flags.folder || "./force-app";
+    this.del = flags.delete || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Comment or delete System.debug line in apex classes and triggers`));

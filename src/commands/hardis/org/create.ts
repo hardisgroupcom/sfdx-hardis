@@ -9,7 +9,7 @@ import moment from "moment";
 import * as os from "os";
 import * as path from "path";
 import { clearCache } from "../../../common/cache";
-import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from "../../../common/utils";
+import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from "../../../common/utils/index.js";
 import { initApexScripts, initOrgData, initPermissionSetAssignments, promptUserEmail } from "../../../common/utils/orgUtils";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { getConfig } from "../../../config/index.js";
@@ -75,7 +75,7 @@ export default class SandboxCreate extends SfCommand<any> {
   protected sandboxOrgFromPool: any;
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
     elapseStart(`Create and initialize sandbox org`);
     await this.initConfig();
     await this.createSandboxOrg();

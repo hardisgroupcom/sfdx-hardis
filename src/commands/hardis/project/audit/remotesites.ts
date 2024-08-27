@@ -7,7 +7,7 @@ import { glob } from "glob";
 import * as psl from "psl";
 import sortArray from "sort-array";
 import * as url from "url";
-import { catchMatches, generateReports, uxLog } from "../../../../common/utils";
+import { catchMatches, generateReports, uxLog } from "../../../../common/utils/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -54,7 +54,7 @@ export default class RemoteSites extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
-    this.debug = this.flags.debug || false;
+    this.debug = flags.debug || false;
 
     const pattern = "**/*.{remoteSite-meta.xml,remoteSite}";
     const catchers = [

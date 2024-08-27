@@ -60,9 +60,9 @@ export default class CleanManagedItems extends SfCommand<any> {
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.namespace = this.flags.namespace || "";
-    this.folder = this.flags.folder || "./force-app";
-    this.debugMode = this.flags.debug || false;
+    this.namespace = flags.namespace || "";
+    this.folder = flags.folder || "./force-app";
+    this.debugMode = flags.debug || false;
 
     if (this.namespace === "") {
       throw new SfError("namespace argument is mandatory");

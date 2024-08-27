@@ -7,10 +7,10 @@ import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 // import * as packages from '../../../../defaults/packages.json'
-import { MetadataUtils } from "../../../common/metadata-utils";
-import { isCI, uxLog } from "../../../common/utils";
+import { MetadataUtils } from "../../../common/metadata-utils/index.js";
+import { isCI, uxLog } from "../../../common/utils/index.js";
 import { managePackageConfig } from "../../../common/utils/orgUtils";
-import { prompts } from "../../../common/utils/prompts";
+import { prompts } from "../../../common/utils/prompts.js";
 import { PACKAGE_ROOT_DIR } from "../../../settings.js";
 
 // Initialize Messages with the current plugin directory
@@ -74,7 +74,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
   public async run(): Promise<AnyJson> {
     const packagesRaw = await fs.readFile(this.allPackagesFileName, "utf8");
     const packages = JSON.parse(packagesRaw);
-    const packageId = this.flags.package || null;
+    const packageId = flags.package || null;
     const packagesToInstall: any[] = [];
     // If no package Id is sent, ask user what package he/she wants to install
     if (!isCI && (packageId == null || !packageId.startsWith("04t"))) {
@@ -127,8 +127,8 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
       const pckg: { SubscriberPackageVersionId: string; installationkey?: string } = {
         SubscriberPackageVersionId: packageId,
       };
-      if (this.flags.installationkey) {
-        pckg.installationkey = this.flags.installationkey;
+      if (flags.installationkey) {
+        pckg.installationkey = flags.installationkey;
       }
       packagesToInstall.push(pckg);
     }

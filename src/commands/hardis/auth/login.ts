@@ -59,8 +59,9 @@ export default class Login extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const devHub = this.flags.devhub || false;
-    const scratch = this.flags.scratchorg || false;
+    const { flags } = await this.parse(Login);
+    const devHub = flags.devhub || false;
+    const scratch = flags.scratchorg || false;
     await this.config.runHook("auth", {
       checkAuth: !devHub,
       Command: this,

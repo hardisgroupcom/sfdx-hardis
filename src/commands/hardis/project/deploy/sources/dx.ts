@@ -17,17 +17,17 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { MetadataUtils } from "../../../../../common/metadata-utils";
-import { createTempDir, getCurrentGitBranch, getLatestGitCommit, isCI, uxLog } from "../../../../../common/utils";
+import { MetadataUtils } from "../../../../../common/metadata-utils/index.js";
+import { createTempDir, getCurrentGitBranch, getLatestGitCommit, isCI, uxLog } from "../../../../../common/utils/index.js";
 import { getConfig } from "../../../../../config/index.js";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
 import { getApexTestClasses } from "../../../../../common/utils/classUtils";
 import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils";
-import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider";
+import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider/index.js";
 import { GitProvider } from "../../../../../common/gitProvider";
 import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from "../../../../../common/utils/gitUtils.js";
-import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from "../../../../../common/utils/notifUtils";
+import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from "../../../../../common/utils/notifUtils.js";
 import { MessageAttachment } from "@slack/web-api";
 import { TicketProvider } from "../../../../../common/ticketProvider";
 
@@ -200,7 +200,7 @@ If you need notifications to be sent using the current Pull Request and not the 
       default: false,
       description: messages.getMessage("checkOnly"),
     }),
-    testlevel: flags.enum({
+    testlevel: Flags.enum({
       char: "l",
       options: ["NoTestRun", "RunSpecifiedTests", "RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData", "RunLocalTests", "RunAllTestsInOrg"],
       description: messages.getMessage("testLevelExtended"),
@@ -245,34 +245,34 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
   public async run(): Promise<AnyJson> {
     this.configInfo = await getConfig("branch");
-    this.checkOnly = this.flags.check || false;
-    const deltaFromArgs = this.flags.delta || false;
+    this.checkOnly = flags.check || false;
+    const deltaFromArgs = flags.delta || false;
 
-    const givenTestlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
-    let testClasses = this.flags.runtests || this.configInfo.runtests || "";
+    const givenTestlevel = flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
+    let testClasses = flags.runtests || this.configInfo.runtests || "";
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
     if (["RunRepositoryTests", "RunRepositoryTestsExceptSeeAllData"].includes(givenTestlevel)) {
       const testClassList = await getApexTestClasses(testClasses, givenTestlevel === "RunRepositoryTestsExceptSeeAllData");
       if (Array.isArray(testClassList) && testClassList.length) {
-        this.flags.testlevel = "RunSpecifiedTests";
+        flags.testlevel = "RunSpecifiedTests";
         testClasses = testClassList.join();
       } else {
         // Default back to RunLocalTests in case if repository has zero tests
-        this.flags.testlevel = "RunLocalTests";
+        flags.testlevel = "RunLocalTests";
         testClasses = "";
       }
     }
 
-    const testlevel = this.flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
+    const testlevel = flags.testlevel || this.configInfo.testLevel || "RunLocalTests";
 
     // Test classes are only valid for RunSpecifiedTests
     if (testlevel != "RunSpecifiedTests") {
       testClasses = "";
     }
 
-    const packageXml = this.flags.packagexml || null;
-    this.debugMode = this.flags.debug || false;
+    const packageXml = flags.packagexml || null;
+    this.debugMode = flags.debug || false;
     const currentGitBranch = await getCurrentGitBranch();
 
     // Get target org

@@ -4,7 +4,7 @@ import c from "chalk";
 import { getConfig, setConfig } from "../../config/index.js";
 import { uxLog } from "../utils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
-import { prompts } from "../utils/prompts";
+import { prompts } from "../utils/prompts.js";
 
 export class KeyValueXyzProvider implements KeyValueProviderInterface {
   name = "keyvalue.xyz";

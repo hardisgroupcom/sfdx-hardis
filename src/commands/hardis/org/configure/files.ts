@@ -7,11 +7,11 @@ import * as fs from "fs-extra";
 import * as pascalcase from "pascalcase";
 import * as path from "path";
 import { uxLog } from "../../../../common/utils/index.js";
-import { filesFolderRoot } from "../../../../common/utils/filesUtils";
-import { promptFilesExportConfiguration } from "../../../../common/utils/filesUtils";
+import { filesFolderRoot } from "../../../../common/utils/filesUtils.js";
+import { promptFilesExportConfiguration } from "../../../../common/utils/filesUtils.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
 import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
-import { prompts } from "../../../../common/utils/prompts";
+import { prompts } from "../../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);

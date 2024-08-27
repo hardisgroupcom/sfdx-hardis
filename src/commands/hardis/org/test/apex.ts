@@ -4,10 +4,10 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from "../../../../common/utils";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from "../../../../common/utils/index.js";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils.js";
 import { getConfig, getReportDirectory } from "../../../../config/index.js";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -34,7 +34,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   public static examples = ["$ sf hardis:org:test:apex"];
 
   protected static flagsConfig = {
-    testlevel: flags.enum({
+    testlevel: Flags.enum({
       char: "l",
       default: "RunLocalTests",
       options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
@@ -68,7 +68,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected statusMessage: string;
   protected coverageTarget = 75.0;
   protected coverageValue = 0.0;
-  protected failingTestClasses = [];
+  protected failingTestClasses: any[] = [];
   private notifSeverity: NotifSeverity = "log";
   private notifText: string;
   private notifAttachments = [];
@@ -78,8 +78,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   /* jscpd:ignore-start */
   public async run(): Promise<AnyJson> {
-    const testlevel = this.flags.testlevel || "RunLocalTests";
-    const debugMode = this.flags.debug || false;
+    const testlevel = flags.testlevel || "RunLocalTests";
+    const debugMode = flags.debug || false;
 
     this.configInfo = await getConfig("branch");
     this.orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);

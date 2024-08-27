@@ -1,7 +1,7 @@
 import { FlagsConfig, flags, SfCommand } from "@salesforce/command";
 import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
-import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils";
+import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
 
 export default class ProjectDeployStart extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx project deploy start that displays tips to solve deployment errors.
@@ -12,7 +12,7 @@ export default class ProjectDeployStart extends SfCommand<any> {
 `;
 
   public static readonly flagsConfig: FlagsConfig = {
-    "api-version": flags.number({
+    "api-version": Flags.integer({
       char: "a",
       description: "api-version",
     }),
@@ -69,7 +69,7 @@ export default class ProjectDeployStart extends SfCommand<any> {
     "test-level": Flags.string({
       description: "test-level",
     }),
-    wait: flags.minutes({
+    wait: Flags.integer({
       char: "w",
       default: Duration.minutes(33),
       min: Duration.minutes(1),
@@ -102,6 +102,6 @@ export default class ProjectDeployStart extends SfCommand<any> {
   public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
-    return await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, this.flags.debug);
+    return await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
   }
 }

@@ -3,8 +3,8 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { execSfdxJson, uxLog } from "../../../common/utils";
-import { prompts } from "../../../common/utils/prompts";
+import { execSfdxJson, uxLog } from "../../../common/utils/index.js";
+import { prompts } from "../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -48,7 +48,7 @@ export default class PackageCreate extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const debugMode = this.flags.debug || false;
+    const debugMode = flags.debug || false;
 
     // Request questions to user
     const packageResponse = await prompts([

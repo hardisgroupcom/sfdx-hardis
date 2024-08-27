@@ -7,7 +7,7 @@ import { glob } from "glob";
 import sortArray from "sort-array";
 import { uxLog } from "../../../../common/utils/index.js";
 import { soqlQueryTooling } from "../../../../common/utils/apiUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { parseXmlFile, writeXmlFile } from "../../../../common/utils/xmlUtils.js";
 
 // Initialize Messages with the current plugin directory
@@ -56,8 +56,8 @@ export default class FixV53Flexipages extends SfCommand<any> {
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.pathToBrowse = this.flags.path || process.cwd();
-    this.debugMode = this.flags.debug || false;
+    this.pathToBrowse = flags.path || process.cwd();
+    this.debugMode = flags.debug || false;
 
     /* jscpd:ignore-end */
 

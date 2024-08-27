@@ -4,8 +4,8 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { GitProvider } from "../../../common/gitProvider";
 import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from "../../../common/utils/deployUtils";
-import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
-import { uxLog } from "../../../common/utils";
+import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils.js";
+import { uxLog } from "../../../common/utils/index.js";
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfCommand<any> {
@@ -69,13 +69,13 @@ Notes:
       default: false,
       description: "soapDeploy",
     }),
-    wait: flags.minutes({
+    wait: Flags.integer({
       char: "w",
       default: Duration.minutes(60),
       min: Duration.minutes(0), // wait=0 means deploy is asynchronous
       description: "wait",
     }),
-    testlevel: flags.enum({
+    testlevel: Flags.enum({
       char: "l",
       description: "testlevel",
       options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
@@ -135,7 +135,7 @@ Notes:
       description: "forceoverwrite",
       dependsOn: ["tracksource"],
     }),
-    resultsdir: flags.directory({
+    resultsdir: Flags.directory({
       description: "resultsdir",
     }),
     coverageformatters: flags.array({
@@ -159,11 +159,11 @@ Notes:
     uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
     // Run pre deployment commands if defined
     await executePrePostCommands("commandsPreDeploy", true);
-    const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, this.flags.debug);
+    const result = await wrapSfdxCoreCommand("sfdx force:source:deploy", this.argv, this, flags.debug);
     // Check org coverage if requested
-    if (this.flags.checkcoverage && result.stdout) {
+    if (flags.checkcoverage && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || "");
-      const checkOnly = this.flags.checkonly || false;
+      const checkOnly = flags.checkonly || false;
       if (orgCoveragePercent) {
         try {
           await checkDeploymentOrgCoverage(orgCoveragePercent, { check: checkOnly });

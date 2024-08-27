@@ -3,12 +3,12 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils";
+import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from "../../../../common/utils/apiUtils";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -73,21 +73,21 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected debugMode = false;
   protected outputFile;
   protected outputFilesRes: any = {};
-  protected permissionSetLicenseAssignmentsActive = [];
-  protected permissionSetLicenses = [];
-  protected unusedPermissionSetLicenseAssignments = [];
-  protected permissionSets = [];
-  protected permissionSetsGroupMembers = [];
-  protected permissionSetAssignments = [];
-  protected permissionSetGroupAssignments = [];
-  protected allPermissionSetAssignments = [];
+  protected permissionSetLicenseAssignmentsActive: any[] = [];
+  protected permissionSetLicenses: any[] = [];
+  protected unusedPermissionSetLicenseAssignments: any[] = [];
+  protected permissionSets: any[] = [];
+  protected permissionSetsGroupMembers: any[] = [];
+  protected permissionSetAssignments: any[] = [];
+  protected permissionSetGroupAssignments: any[] = [];
+  protected allPermissionSetAssignments: any[] = [];
   protected statusCode = 0;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
-    this.outputFile = this.flags.outputfile || null;
+    this.debugMode = flags.debug || false;
+    this.outputFile = flags.outputfile || null;
 
     const conn = this.org.getConnection();
 

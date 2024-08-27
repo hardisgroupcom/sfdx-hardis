@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execCommand, uxLog } from "../../../../common/utils";
+import { execCommand, uxLog } from "../../../../common/utils/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -49,7 +49,7 @@ export default class CleanRetrieveFolders extends SfCommand<any> {
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Retrieve dashboards, documents and report folders in DX sources`));

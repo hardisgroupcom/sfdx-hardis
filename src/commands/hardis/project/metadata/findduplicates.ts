@@ -120,8 +120,8 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
     // Collect input parameters
     const inputFiles: any[] = [];
 
-    if (this.flags.files) {
-      const files = await glob("./" + this.flags.files, { cwd: process.cwd() });
+    if (flags.files) {
+      const files = await glob("./" + flags.files, { cwd: process.cwd() });
       inputFiles.push(...files);
     }
 

@@ -6,11 +6,11 @@ import c from "chalk";
 import sortArray from "sort-array";
 import { uxLog } from "../../../../common/utils/index.js";
 import * as dns from "dns";
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils";
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
 import { soqlQuery } from "../../../../common/utils/apiUtils";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 const dnsPromises = dns.promises;
 
 // Initialize Messages with the current plugin directory
@@ -47,7 +47,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       default: "ApiTotalUsage",
       description: "Type of EventLogFile event to analyze",
     }),
-    limit: flags.number({
+    limit: Flags.integer({
       char: "l",
       default: 999,
       description: "Number of latest EventLogFile events to analyze",
@@ -107,23 +107,23 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     },
   ];
 
-  protected allErrors = [];
-  protected ipResultsSorted = [];
+  protected allErrors: any[] = [];
+  protected ipResultsSorted: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
     return await this.runJsForce();
   }
 
   // Refactoring of Philippe Ozil's apex script with JsForce queries
   private async runJsForce() {
-    const eventType = this.flags.eventtype || "ApiTotalUsage";
-    const limit = this.flags.limit || 999;
-    this.outputFile = this.flags.outputfile || null;
+    const eventType = flags.eventtype || "ApiTotalUsage";
+    const limit = flags.limit || 999;
+    this.outputFile = flags.outputfile || null;
 
     const limitConstraint = limit ? ` LIMIT ${limit}` : "";
     const conn = this.org.getConnection();

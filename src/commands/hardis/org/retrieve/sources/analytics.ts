@@ -5,7 +5,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as path from "path";
 // import * as path from "path";
-import { uxLog, isCI, createTempDir, execCommand } from "../../../../../common/utils";
+import { uxLog, isCI, createTempDir, execCommand } from "../../../../../common/utils/index.js";
 
 import { promptOrgUsernameDefault } from "../../../../../common/utils/orgUtils";
 import { buildOrgManifest } from "../../../../../common/utils/deployUtils";
@@ -58,7 +58,7 @@ export default class Retrofit extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     // Manage user selection for org if we are not in CI
     let orgUsername = this.org.getUsername();
-    if (!isCI && !this.flags.targetusername) {
+    if (!isCI && !flags.targetusername) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
     }
 

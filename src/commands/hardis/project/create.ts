@@ -2,14 +2,14 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { ensureGitRepository, execCommand, uxLog } from "../../../common/utils";
-import { prompts } from "../../../common/utils/prompts";
+import { ensureGitRepository, execCommand, uxLog } from "../../../common/utils/index.js";
+import { prompts } from "../../../common/utils/prompts.js";
 import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { getConfig, setConfig } from "../../../config/index.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
-import { isSfdxProject } from "../../../common/utils/projectUtils";
+import { isSfdxProject } from "../../../common/utils/projectUtils.js";
 import { PACKAGE_ROOT_DIR } from "../../../settings.js";
 
 // Initialize Messages with the current plugin directory
@@ -54,7 +54,7 @@ export default class ProjectCreate extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debugMode || false;
+    this.debugMode = flags.debugMode || false;
     // Check git repo
     await ensureGitRepository({ clone: true });
     const devHubPrompt = await prompts({

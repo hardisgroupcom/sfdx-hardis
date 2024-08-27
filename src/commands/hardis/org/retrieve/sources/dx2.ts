@@ -6,9 +6,9 @@ import c from "chalk";
 import * as fs from "fs-extra";
 import * as path from "path";
 
-import { execCommand, uxLog } from "../../../../../common/utils";
+import { execCommand, uxLog } from "../../../../../common/utils/index.js";
 import { promptOrg } from "../../../../../common/utils/orgUtils";
-import { prompts } from "../../../../../common/utils/prompts";
+import { prompts } from "../../../../../common/utils/prompts.js";
 import { PACKAGE_ROOT_DIR } from "../../../../../settings.js";
 
 // Initialize Messages with the current plugin directory
@@ -62,10 +62,10 @@ export default class DxSources2 extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    let packageXml = this.flags.packagexml || null;
-    let targetUsername = this.flags.targetusername || null;
-    const template = this.flags.template || null;
-    this.debugMode = this.flags.debug || false;
+    let packageXml = flags.packagexml || null;
+    let targetUsername = flags.targetusername || null;
+    const template = flags.template || null;
+    this.debugMode = flags.debug || false;
 
     // Prompt for organization if not sent
     if (targetUsername == null) {

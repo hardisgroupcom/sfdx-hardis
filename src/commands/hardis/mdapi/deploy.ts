@@ -1,10 +1,9 @@
 /* jscpd:ignore-start */
-import { flags, FlagsConfig, SfCommand } from "@salesforce/command";
+import { Flags, SfCommand } from '@salesforce/sf-plugins-core';
 import c from "chalk";
-import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
-import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils";
-import { uxLog } from "../../../common/utils";
+import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils.js";
+import { uxLog } from "../../../common/utils/index.js";
 
 const xorFlags = ["zipfile", "validateddeployrequestid", "deploydir"];
 export class Deploy extends SfCommand<any> {
@@ -16,29 +15,29 @@ export class Deploy extends SfCommand<any> {
 `;
   public static readonly examples = [];
   public static readonly requiresUsername = true;
-  public static readonly flagsConfig: FlagsConfig = {
+  public static readonly flagsConfig = {
     checkonly: Flags.boolean({
       char: "c",
       description: "checkOnly",
     }),
-    deploydir: flags.directory({
+    deploydir: Flags.directory({
       char: "d",
       description: "deployDir",
       exactlyOne: xorFlags,
     }),
-    wait: flags.minutes({
+    wait: Flags.integer({
       char: "w",
       description: "wait",
-      default: Duration.minutes(0),
+      default: 120,
       min: -1,
     }),
-    testlevel: flags.enum({
+    testlevel: Flags.enum({
       char: "l",
       description: "testLevel",
       options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
       default: "NoTestRun",
     }),
-    runtests: flags.array({
+    runtests: Flags.array({
       char: "r",
       description: "runTests",
       default: [],
@@ -91,6 +90,6 @@ export class Deploy extends SfCommand<any> {
     uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
     uxLog(this, c.red("Please migrate to command sf hardis project deploy start"));
     uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
-    return await wrapSfdxCoreCommand("sfdx force:mdapi:deploy", this.argv, this, this.flags.debug);
+    return await wrapSfdxCoreCommand("sfdx force:mdapi:deploy", this.argv, this, flags.debug);
   }
 }

@@ -3,12 +3,12 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils";
+import { isCI, uxLog } from "../../../../common/utils/index.js";
 import { bulkQuery } from "../../../../common/utils/apiUtils";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
+import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
+import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -51,11 +51,11 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       char: "o",
       description: "Force the path and name of output report file. Must end with .csv",
     }),
-    days: flags.number({
+    days: Flags.integer({
       char: "t",
       description: "Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days",
     }),
-    licensetypes: flags.enum({
+    licensetypes: Flags.enum({
       char: "l",
       options: ["all", "all-crm", "all-paying"],
       description: "Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm",
@@ -102,18 +102,18 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected lastNdays: number;
   protected licenseTypes: string;
   protected licenseIdentifiers: string;
-  protected users = [];
+  protected users: any[] = [];
   protected statusCode = 0;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
-    this.returnActiveUsers = this.flags.returnactiveusers ?? false;
-    this.outputFile = this.flags.outputfile || null;
-    this.lastNdays = this.flags.days || null;
-    this.licenseIdentifiers = this.flags.licenseidentifiers || null;
-    this.licenseTypes = this.flags.licensetypes;
+    this.debugMode = flags.debug || false;
+    this.returnActiveUsers = flags.returnactiveusers ?? false;
+    this.outputFile = flags.outputfile || null;
+    this.lastNdays = flags.days || null;
+    this.licenseIdentifiers = flags.licenseidentifiers || null;
+    this.licenseTypes = flags.licensetypes;
 
     // Calculate lastNdays to use
     await this.defineNumberOfInactiveDays();

@@ -5,7 +5,7 @@ import { getConfig, setConfig } from "../../config/index.js";
 import { uxLog } from "../utils";
 import { KeyValueProviderInterface } from "../utils/keyValueUtils";
 import { setPoolStorage } from "../utils/poolUtils";
-import { prompts } from "../utils/prompts";
+import { prompts } from "../utils/prompts.js";
 
 export class RedisProvider implements KeyValueProviderInterface {
   name = "redis";

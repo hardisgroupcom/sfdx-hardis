@@ -4,9 +4,9 @@ import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as path from "path";
-import { createTempDir, ensureGitRepository, git, gitCheckOutRemote, selectGitBranch, uxLog } from "../../../../common/utils";
+import { createTempDir, ensureGitRepository, git, gitCheckOutRemote, selectGitBranch, uxLog } from "../../../../common/utils/index.js";
 import { callSfdxGitDelta } from "../../../../common/utils/gitUtils.js";
-import { prompts } from "../../../../common/utils/prompts";
+import { prompts } from "../../../../common/utils/prompts.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -59,10 +59,10 @@ export default class GenerateGitDelta extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    let gitBranch = this.flags.branch || null;
-    let fromCommit = this.flags.fromcommit || null;
-    let toCommit = this.flags.fromcommit || null;
-    this.debugMode = this.flags.debugMode || false;
+    let gitBranch = flags.branch || null;
+    let fromCommit = flags.fromcommit || null;
+    let toCommit = flags.fromcommit || null;
+    this.debugMode = flags.debugMode || false;
     // Check git repo
     await ensureGitRepository();
 

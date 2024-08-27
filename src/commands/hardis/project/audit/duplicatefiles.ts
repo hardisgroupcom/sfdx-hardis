@@ -48,8 +48,8 @@ export default class AuditDuplicateFiles extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
-    const pathToBrowser = this.flags.path || process.cwd();
-    this.debug = this.flags.debug || false;
+    const pathToBrowser = flags.path || process.cwd();
+    this.debug = flags.debug || false;
 
     // List all files
     const allFiles = readFilesRecursive(pathToBrowser)

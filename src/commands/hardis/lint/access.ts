@@ -12,16 +12,16 @@ import * as fs from "fs-extra";
 import { AnyJson } from "@salesforce/ts-types";
 
 // Common Utilities
-import { isCI, uxLog } from "../../../common/utils";
-import { prompts } from "../../../common/utils/prompts";
+import { isCI, uxLog } from "../../../common/utils/index.js";
+import { prompts } from "../../../common/utils/prompts.js";
 import { parseXmlFile, writeXmlFile } from "../../../common/utils/xmlUtils.js";
-import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils";
-import { NotifProvider, NotifSeverity } from "../../../common/notifProvider";
+import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils.js";
+import { NotifProvider, NotifSeverity } from "../../../common/notifProvider/index.js";
 import { Parser } from "xml2js";
 
 // Config
 import { getConfig } from "../../../config/index.js";
-import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils";
+import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from "../../../common/utils/notifUtils.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -30,7 +30,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class Access extends SfCommand<any> {
+export default class LintAccess extends SfCommand<any> {
   public static title = "check permission access";
 
   public static description = `Check if elements(apex class and field) are at least in one permission set
@@ -146,8 +146,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   private hasToDisplayJsonOnly = false;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(LintAccess);
     const config = await getConfig("user");
-    this.folder = this.flags.folder || "./force-app";
+    this.folder = flags.folder || "./force-app";
     this.hasToDisplayJsonOnly = process.argv.includes("--json");
 
     this.ignoreSourceElementsIfDefined();
@@ -155,14 +156,14 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
-    uxLog(this, c.green(Access.messages.header));
+    uxLog(this, c.green(LintAccess.messages.header));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
 
     const elementsToCheckByType = { apexClass: [], field: [] };
 
     /* ELEMENTS TO CHECK */
-    for (const sourceElement of Access.sourceElements) {
+    for (const sourceElement of LintAccess.sourceElements) {
       //if the type(apex class, field) is ignored we pass to the next type
       if (sourceElement.ignore.all) {
         continue;
@@ -203,28 +204,28 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   }
 
   private ignoreSourceElementsIfDefined() {
-    const ignoreElements = this.flags.elementsignored;
+    const ignoreElements = flags.elementsignored;
 
     for (const ignoredElement of ignoreElements.split(",")) {
       const elementTrimmed = ignoredElement.trim();
 
       //check if all elements of a type are ignored
       if (elementTrimmed === "ApexClass") {
-        Access.sourceElements[0].ignore.all = true;
+        LintAccess.sourceElements[0].ignore.all = true;
       } else if (elementTrimmed === "CustomField") {
-        Access.sourceElements[1].ignore.all = true;
+        LintAccess.sourceElements[1].ignore.all = true;
       }
       //check individual elements (ex : ApexClass:ClassB)
       else if (elementTrimmed.startsWith("ApexClass")) {
-        Access.sourceElements[0].ignore.elements.push(elementTrimmed.substring(elementTrimmed.indexOf(":") + 1).trim());
+        LintAccess.sourceElements[0].ignore.elements.push(elementTrimmed.substring(elementTrimmed.indexOf(":") + 1).trim());
       } else if (elementTrimmed.startsWith("CustomField")) {
-        Access.sourceElements[1].ignore.elements.push(elementTrimmed.substring(elementTrimmed.indexOf(":") + 1).trim());
+        LintAccess.sourceElements[1].ignore.elements.push(elementTrimmed.substring(elementTrimmed.indexOf(":") + 1).trim());
       }
     }
   }
 
   private ignoreRightElementsIfDefined(projectConfig) {
-    const ignoreElements = this.flags.ignorerights ? this.flags.ignorerights : projectConfig.linterIgnoreRightMetadataFile;
+    const ignoreElements = flags.ignorerights ? flags.ignorerights : projectConfig.linterIgnoreRightMetadataFile;
     if (!ignoreElements) {
       return;
     }
@@ -329,8 +330,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
 
     if (!this.hasRemainingElementsToCheck(remainingElements)) {
-      uxLog(this, c.green(Access.messages.allElementsHaveRights));
-      return Access.messages.allElementsHaveRights;
+      uxLog(this, c.green(LintAccess.messages.allElementsHaveRights));
+      return LintAccess.messages.allElementsHaveRights;
     } else {
       //list remaining elements after checking on profiles and permissions sets
       this.missingElementsMap = Object.assign({}, remainingElements);
@@ -369,7 +370,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       const fileXml = await parseXmlFile(file);
 
       //checking all elements in the current type
-      for (const currentType of Access.sourceElements) {
+      for (const currentType of LintAccess.sourceElements) {
         //checking if current type is at least once in the current profile or permission set
         if (!(currentType.xmlChildren in fileXml[typeFile]) || fileXml[typeFile][currentType.xmlChildren].length == 0) {
           continue;
@@ -405,7 +406,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const remainingElementsTable: any[] = [];
     let counterTable = 0;
 
-    for (const currentType of Access.sourceElements) {
+    for (const currentType of LintAccess.sourceElements) {
       for (const e of remainingElements[currentType.xmlField]) {
         if (!remainingElementsTable[counterTable]) {
           remainingElementsTable[counterTable] = {};
@@ -420,7 +421,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     //we create an object to have a custom header in the table
     if (!this.hasToDisplayJsonOnly) {
-      uxLog(this, c.red(Access.messages.someElementsDontHaveRights));
+      uxLog(this, c.red(LintAccess.messages.someElementsDontHaveRights));
       console.table(remainingElementsTable);
     }
 

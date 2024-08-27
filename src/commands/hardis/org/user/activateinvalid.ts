@@ -5,8 +5,8 @@ import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import * as columnify from "columnify";
 import sortArray from "sort-array";
-import { isCI, uxLog } from "../../../../common/utils";
-import { prompts } from "../../../../common/utils/prompts";
+import { isCI, uxLog } from "../../../../common/utils/index.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { bulkQuery, bulkUpdate, soqlQuery } from "../../../../common/utils/apiUtils";
 import { promptProfiles } from "../../../../common/utils/orgUtils";
 
@@ -64,16 +64,16 @@ See article below
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
-  protected profiles = [];
+  protected profiles: any[] = [];
   protected maxUsersDisplay = 100;
   protected debugMode = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.profiles = this.flags.profiles ? this.flags.profiles.split(",") : null;
+    this.profiles = flags.profiles ? flags.profiles.split(",") : null;
     const hasProfileConstraint = this.profiles !== null;
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
 
     const conn = this.org.getConnection();
 

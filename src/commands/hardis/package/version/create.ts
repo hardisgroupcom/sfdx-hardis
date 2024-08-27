@@ -3,9 +3,9 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
-import { MetadataUtils } from "../../../../common/metadata-utils";
-import { execSfdxJson, isCI, uxLog } from "../../../../common/utils";
-import { prompts } from "../../../../common/utils/prompts";
+import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
+import { execSfdxJson, isCI, uxLog } from "../../../../common/utils/index.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 import { getConfig, setConfig } from "../../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
@@ -75,12 +75,12 @@ export default class PackageVersionCreate extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.package = this.flags.package || null;
-    this.install = this.flags.install || false;
-    this.installKey = this.flags.installkey || null;
-    this.deleteAfter = this.flags.deleteafter || false;
-    this.promote = this.flags.promote || false;
-    const debugMode = this.flags.debug || false;
+    this.package = flags.package || null;
+    this.install = flags.install || false;
+    this.installKey = flags.installkey || null;
+    this.deleteAfter = flags.deleteafter || false;
+    this.promote = flags.promote || false;
+    const debugMode = flags.debug || false;
     const config = await getConfig("project");
     // List project packages
     const packageDirectories = this.project.getUniquePackageDirectories();

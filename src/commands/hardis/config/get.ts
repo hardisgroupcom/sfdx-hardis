@@ -3,7 +3,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../common/utils";
+import { uxLog } from "../../../common/utils/index.js";
 import { getConfig } from "../../../config/index.js";
 
 // Initialize Messages with the current plugin directory
@@ -13,7 +13,7 @@ Messages.importMessagesDirectory(__dirname);
 // or any library that is using the messages framework can also be loaded this way.
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 
-export default class DxSources extends SfCommand<any> {
+export default class ConfigGet extends SfCommand<any> {
   public static title = "Deploy metadata sources to org";
 
   public static description = "Returns sfdx-hardis project config for a given level";
@@ -51,7 +51,8 @@ export default class DxSources extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const level = this.flags.level || "project";
+    const { flags } = await this.parse(ConfigGet);
+    const level = flags.level || "project";
     this.configInfo = await getConfig(level);
     uxLog(this, JSON.stringify(this.configInfo));
     return {

@@ -6,8 +6,8 @@ import c from "chalk";
 import * as fs from "fs-extra";
 import { glob } from "glob";
 import * as path from "path";
-import { uxLog } from "../../../common/utils";
-import { prompts } from "../../../common/utils/prompts";
+import { uxLog } from "../../../common/utils/index.js";
+import { prompts } from "../../../common/utils/prompts.js";
 import { WebSocketClient } from "../../../common/websocketClient.js";
 import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils.js";
 
@@ -67,17 +67,17 @@ export default class MergePackageXml extends SfCommand<any> {
 
   protected folder: string;
   protected pattern: string;
-  protected packageXmlFiles = [];
+  protected packageXmlFiles: any[] = [];
   protected resultFileName: string;
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.folder = this.flags.folder || "./manifest";
-    this.pattern = this.flags.pattern || "/**/*package*.xml";
-    this.packageXmlFiles = this.flags.packagexmls ? this.flags.packagexmls.split(",") : [];
-    this.resultFileName = this.flags.result || path.join(this.folder, "package-merge.xml");
+    this.folder = flags.folder || "./manifest";
+    this.pattern = flags.pattern || "/**/*package*.xml";
+    this.packageXmlFiles = flags.packagexmls ? flags.packagexmls.split(",") : [];
+    this.resultFileName = flags.result || path.join(this.folder, "package-merge.xml");
     await fs.ensureDir(path.dirname(this.resultFileName));
-    this.debugMode = this.flags.debug || false;
+    this.debugMode = flags.debug || false;
     /* jscpd:ignore-end */
 
     // If packagexmls are not provided, prompt user
