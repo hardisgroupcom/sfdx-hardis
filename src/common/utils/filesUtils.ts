@@ -96,10 +96,6 @@ export class FilesExporter {
     await fs.ensureDir(this.exportedFilesFolder);
 
     await this.calculateApiConsumption();
-    this.spinnerCustom = ora({
-      text: `Initializing files export...`,
-      spinner: 'moon',
-    }).start();
     this.startQueue();
     await this.processParentRecords();
     await this.queueCompleted();
@@ -346,9 +342,12 @@ export class FilesExporter {
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
+    this.spinnerCustom = ora({
+      text: `⚙️ (${this.filesDownloaded + 1}) Downloading ${outputFileLabel}...`,
+      spinner: 'moon',
+    }).start();
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     try {
-      this.spinnerCustom.text = `⚙️ (${this.filesDownloaded}) Downloading ${outputFileLabel}...`;
       this.fetchOptions.onRetry = (cause: unknown) => {
         this.spinnerCustom.text = `⚙️ (${this.filesDownloaded}) Retrying ${outputFileLabel} (${cause})...`;
       }
@@ -368,11 +367,11 @@ export class FilesExporter {
 
       // uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
       this.filesDownloaded++;
-      this.spinnerCustom.text = `✅ (${this.filesDownloaded}) Downloaded ${outputFileLabel}`;
+      this.spinnerCustom.succeed(`✅ (${this.filesDownloaded}) Downloaded ${outputFileLabel}`);
     } catch (err) {
       // Download failure
       // uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
-      this.spinnerCustom.text = `❌ (${this.filesDownloaded}) Error while downloading ${outputFileLabel}`;
+      this.spinnerCustom.fail(`❌ (${this.filesDownloaded}) Error while downloading ${outputFileLabel}`);
       this.filesErrors++;
     }
   }
