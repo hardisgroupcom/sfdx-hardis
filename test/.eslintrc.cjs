@@ -1,5 +1,5 @@
 module.exports = {
-  extends: '../.eslintrc.cjs',
+  extends: '../.eslintrc.json',
   // Allow describe and it
   env: { mocha: true },
   rules: {
