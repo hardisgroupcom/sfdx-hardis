@@ -54,7 +54,15 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:work:new: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
 - Convert plugin from SFDX plugin core to SF Cli Plugin core
 - Remove not used keyValueStores
-- Remove @adobe/node-fetch-retry
+- Remove npm dependencies
+  - @adobe/node-fetch-retry
+  - @amplitude/node
+  - @keyv/redis
+  - @oclif/command
+  - @oclif/errors
+  - @salesforce/command
+  - @salesforce/ts-types
+  - node-fetch
 - Migrate to Bulk API v2
 
 ## [4.53.0] 2024-08-20
