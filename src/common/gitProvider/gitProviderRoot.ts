@@ -41,7 +41,7 @@ export abstract class GitProviderRoot {
     uxLog(this, c.yellow("Method postPullRequestMessage is not yet implemented on " + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
   }
-
+  /* jscpd:ignore-start */
   // Do not make crash the whole process in case there is an issue with integration
   public async tryPostPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     let prResult: PullRequestMessageResult | null = null;
@@ -53,4 +53,5 @@ export abstract class GitProviderRoot {
     }
     return prResult;
   }
+  /* jscpd:ignore-end */
 }

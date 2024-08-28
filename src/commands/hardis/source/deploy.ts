@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
@@ -201,3 +202,4 @@ Notes:
     return result;
   }
 }
+/* jscpd:ignore-end */

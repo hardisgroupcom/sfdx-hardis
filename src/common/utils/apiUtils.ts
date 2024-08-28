@@ -11,9 +11,9 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
     this,
     c.grey(
       'SOQL REST: ' +
-        c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-        ' on ' +
-        conn.instanceUrl
+      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
+      ' on ' +
+      conn.instanceUrl
     )
   );
   return Promise.resolve(conn.query(soqlQuery));
@@ -25,9 +25,9 @@ export function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<a
     this,
     c.grey(
       'SOQL REST Tooling: ' +
-        c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-        ' on ' +
-        conn.instanceUrl
+      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
+      ' on ' +
+      conn.instanceUrl
     )
   );
   return Promise.resolve(conn.tooling.query(soqlQuery));
@@ -105,7 +105,7 @@ export async function bulkUpdate(
     object: objectName,
   });
   job.on('open', () => {
-    spinner.text = `[BulkApiV2] Load Job ${job.id} succesfully created.`;
+    spinner.text = `[BulkApiV2] Load Job ${job.id} successfully created.`;
   });
   // Upload job data
   await job.open();

@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
@@ -72,3 +73,5 @@ export default class ProjectDeployStart extends SfCommand<any> {
     return result;
   }
 }
+
+/* jscpd:ignore-end */

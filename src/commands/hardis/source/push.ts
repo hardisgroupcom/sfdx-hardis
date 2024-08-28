@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import c from 'chalk';
 import { AnyJson } from '@salesforce/ts-types';
@@ -54,3 +55,4 @@ export default class Push extends SfCommand<any> {
     return await wrapSfdxCoreCommand('sfdx force:source:push', this.argv, this, flags.debug);
   }
 }
+/* jscpd:ignore-end */

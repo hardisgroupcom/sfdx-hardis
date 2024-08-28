@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
@@ -106,3 +107,4 @@ export class SourceRetrieve extends SfCommand<any> {
     return await wrapSfdxCoreCommand('sfdx force:source:retrieve', args, this, flags.debug);
   }
 }
+/* jscpd:ignore-end */
