@@ -84,7 +84,7 @@ export default class RemoteSites extends SfCommand<any> {
         active: item.detail?.active ? 'yes' : 'no',
         description: item.detail?.description ? item.detail.description[0] : '',
         protocol: item.detail.url[0].includes('https') ? 'HTTPS' : 'HTTP',
-        domain: psl.parse(new url.URL(item.detail.url[0]).hostname).domain,
+        domain: (psl.parse(new url.URL(item.detail.url[0]).hostname) as any)?.domain || 'Domain not found',
       };
     });
 

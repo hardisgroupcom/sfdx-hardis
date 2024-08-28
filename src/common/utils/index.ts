@@ -8,7 +8,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import * as util from 'util';
-import * as which from 'which';
+import which from 'which';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
 import { SfError } from '@salesforce/core';
@@ -863,7 +863,7 @@ export async function filterPackageXml(
   );
   const builder = new xml2js.Builder({ renderOpts: { pretty: true, indent: '  ', newline: '\n' } });
   const updatedFileContent = builder.buildObject(manifest);
-  if (updatedFileContent !== initialFileContent) {
+  if (updatedFileContent !== initialFileContent.toString()) {
     await writeXmlFile(packageXmlFileOut, manifest);
     updated = true;
     if (packageXmlFile !== packageXmlFileOut) {

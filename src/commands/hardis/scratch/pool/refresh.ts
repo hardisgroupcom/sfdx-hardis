@@ -2,7 +2,7 @@
 import { spawn } from 'child_process';
 import c from 'chalk';
 
-import * as which from 'which';
+import which from 'which';
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
