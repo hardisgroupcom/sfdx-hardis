@@ -1,48 +1,48 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import { uxLog } from "../../../../common/utils/index.js";
-import { soqlQuery } from "../../../../common/utils/apiUtils.js";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
-import { NotifProvider } from "../../../../common/notifProvider/index.js";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { uxLog } from '../../../../common/utils/index.js';
+import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { NotifProvider } from '../../../../common/notifProvider/index.js';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnusedUsers extends SfCommand<any> {
-  public static title = "List licenses subscribed and used in a Salesforce org";
+  public static title = 'List licenses subscribed and used in a Salesforce org';
 
   public static description = `Mostly used for monitoring (Grafana) but you can also use it manually :)`;
 
-  public static examples = ["$ sf hardis:org:diagnose:licenses"];
+  public static examples = ['$ sf hardis:org:diagnose:licenses'];
 
   //Comment default values to test the prompts
   public static flags = {
     outputfile: Flags.string({
-      char: "o",
-      description: "Force the path and name of output report file. Must end with .csv",
+      char: 'o',
+      description: 'Force the path and name of output report file. Must end with .csv',
     }),
     usedonly: Flags.boolean({
-      char: "u",
+      char: 'u',
       default: false,
-      description: "Filter to have only used licenses",
+      description: 'Filter to have only used licenses',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -60,13 +60,14 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(DiagnoseUnusedUsers);
     this.usedOnly = flags.usedonly || false;
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
 
     // Retrieve the list of users who haven't logged in for a while
     const conn = flags['target-org'].getConnection();
-    uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? "(used only)" : ""));
+    uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? '(used only)' : ''));
 
     const licensesByKey = {};
     const usedLicenses: any[] = [];
@@ -82,7 +83,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
       const userLicenseInfo = Object.assign({}, userLicense);
       delete userLicenseInfo.Id;
       delete userLicenseInfo.attributes;
-      userLicenseInfo.type = "UserLicense";
+      userLicenseInfo.type = 'UserLicense';
       licensesByKey[userLicenseInfo.MasterLabel] = userLicenseInfo.TotalLicenses;
       if (userLicenseInfo.UsedLicenses > 0) {
         usedLicenses.push(userLicenseInfo.MasterLabel);
@@ -107,7 +108,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
       delete pslInfo.Id;
       delete pslInfo.attributes;
       delete pslInfo.PermissionSetLicenseKey;
-      pslInfo.type = "PermissionSetLicense";
+      pslInfo.type = 'PermissionSetLicense';
       licensesByKey[pslInfo.MasterLabel] = pslInfo.TotalLicenses;
       if (pslInfo.UsedLicenses > 0) {
         usedLicenses.push(pslInfo.MasterLabel);
@@ -118,17 +119,17 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
 
     usedLicenses.sort();
     console.table(this.licenses);
-    uxLog(this, c.cyan("Used licenses: " + usedLicenses.join(", ")));
+    uxLog(this, c.cyan('Used licenses: ' + usedLicenses.join(', ')));
 
     // Generate output CSV file
-    this.outputFile = await generateReportPath("licenses", this.outputFile);
+    this.outputFile = await generateReportPath('licenses', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.licenses, this.outputFile);
 
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "LICENSES",
-      text: "",
-      severity: "log",
+      type: 'LICENSES',
+      text: '',
+      severity: 'log',
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.licenses,
       data: {

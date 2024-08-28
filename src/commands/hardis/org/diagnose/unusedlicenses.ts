@@ -1,24 +1,24 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from "../../../../common/utils/apiUtils.js";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
-import { prompts } from "../../../../common/utils/prompts.js";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages, SfError } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from '../../../../common/utils/apiUtils.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
+import { prompts } from '../../../../common/utils/prompts.js';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnusedLicenses extends SfCommand<any> {
-  public static title = "Detect unused Permission Set Licenses (beta)";
+  public static title = 'Detect unused Permission Set Licenses (beta)';
 
   public static description = `When you assign a Permission Set to a user, and that this Permission Set is related to a Permission Set License, a Permission Set License Assignment is automatically created for the user.
 
@@ -33,35 +33,37 @@ Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for th
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
-  public static examples = ["$ sf hardis:org:diagnose:unusedlicenses", "$ sf hardis:org:diagnose:unusedlicenses --fix"];
+  public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix'];
 
   public static flags = {
     outputfile: Flags.string({
-      char: "o",
-      description: "Force the path and name of output report file. Must end with .csv",
+      char: 'o',
+      description: 'Force the path and name of output report file. Must end with .csv',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
-  };  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
+  };
   public static requiresProject = false;
 
-  protected static additionalPermissionSetsToAlwaysGet = ["Sales_User"];
+  protected static additionalPermissionSetsToAlwaysGet = ['Sales_User'];
 
-  protected static permSetsPermSetLicenses = [{ permSet: "Sales_User", permSetLicense: "SalesUserPsl" }];
+  protected static permSetsPermSetLicenses = [{ permSet: 'Sales_User', permSetLicense: 'SalesUserPsl' }];
 
-  protected static profilesPermissionSetLicenses = [{ profile: "Salesforce API Only", permSetLicense: "SalesforceAPIIntegrationPsl" }];
+  protected static profilesPermissionSetLicenses = [
+    { profile: 'Salesforce API Only', permSetLicense: 'SalesforceAPIIntegrationPsl' },
+  ];
 
-  protected static alwaysExcludeForActiveUsersPermissionSetLicenses = ["IdentityConnect"];
+  protected static alwaysExcludeForActiveUsersPermissionSetLicenses = ['IdentityConnect'];
 
   protected debugMode = false;
   protected outputFile;
@@ -79,6 +81,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(DiagnoseUnusedLicenses);
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
 
@@ -110,17 +113,20 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.allPermissionSetAssignments = this.permissionSetGroupAssignments.concat(this.permissionSetAssignments);
 
     // Browse Permission Sets License assignments
-    const severityIconWarning = getSeverityIcon("warning");
+    const severityIconWarning = getSeverityIcon('warning');
     for (const psla of this.permissionSetLicenseAssignmentsActive) {
-      const pslaUsername = psla["Assignee.Username"];
+      const pslaUsername = psla['Assignee.Username'];
       // Find related Permission Set assignments
       const foundMatchingPsAssignments = this.allPermissionSetAssignments.filter((psa) => {
-        if (psa["Assignee.Username"] === pslaUsername) {
+        if (psa['Assignee.Username'] === pslaUsername) {
           if (psa.licenseIds.includes(psla.PermissionSetLicenseId)) {
             return true;
           } else if (
             DiagnoseUnusedLicenses.permSetsPermSetLicenses.some((psPsl) => {
-              if (psa["PermissionSet.Name"] === psPsl.permSet && psla["PermissionSetLicense.DeveloperName"] === psPsl.permSetLicense) {
+              if (
+                psa['PermissionSet.Name'] === psPsl.permSet &&
+                psla['PermissionSetLicense.DeveloperName'] === psPsl.permSetLicense
+              ) {
                 return true;
               }
               return false;
@@ -135,17 +141,20 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       // Handle special cases of Profiles that assigns Permission set licenses when selected on a user
       const isProfileRelatedPSLA = DiagnoseUnusedLicenses.profilesPermissionSetLicenses.some((profilePsl) => {
         return (
-          psla["Assignee.Profile.Name"].startsWith(profilePsl.profile) && psla["PermissionSetLicense.DeveloperName"] === profilePsl.permSetLicense
+          psla['Assignee.Profile.Name'].startsWith(profilePsl.profile) &&
+          psla['PermissionSetLicense.DeveloperName'] === profilePsl.permSetLicense
         );
       });
-      const isExcluded = DiagnoseUnusedLicenses.alwaysExcludeForActiveUsersPermissionSetLicenses.includes(psla["PermissionSetLicense.DeveloperName"]);
+      const isExcluded = DiagnoseUnusedLicenses.alwaysExcludeForActiveUsersPermissionSetLicenses.includes(
+        psla['PermissionSetLicense.DeveloperName']
+      );
       if (foundMatchingPsAssignments.length === 0 && !isProfileRelatedPSLA && !isExcluded) {
         this.unusedPermissionSetLicenseAssignments.push({
           Id: psla.Id,
-          PermissionsSetLicense: psla["PermissionSetLicense.MasterLabel"],
-          User: psla["Assignee.Username"],
-          Reason: "Related PS assignment not found",
-          severity: "warning",
+          PermissionsSetLicense: psla['PermissionSetLicense.MasterLabel'],
+          User: psla['Assignee.Username'],
+          Reason: 'Related PS assignment not found',
+          severity: 'warning',
           severityIcon: severityIconWarning,
         });
       }
@@ -166,7 +175,12 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       uxLog(this, c.red(msg));
       for (const pslMasterLabel of Object.keys(summary).sort()) {
         const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
-        uxLog(this, c.red(`- ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)`));
+        uxLog(
+          this,
+          c.red(
+            `- ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)`
+          )
+        );
       }
     } else {
       uxLog(this, c.green(msg));
@@ -174,17 +188,17 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     // Generate output CSV file
     if (this.unusedPermissionSetLicenseAssignments.length > 0) {
-      this.outputFile = await generateReportPath("unused-ps-license-assignments", this.outputFile);
+      this.outputFile = await generateReportPath('unused-ps-license-assignments', this.outputFile);
       this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile);
     }
 
     // Manage notifications
-    await this.manageNotifications(this.unusedPermissionSetLicenseAssignments, summary);
+    await this.manageNotifications(this.unusedPermissionSetLicenseAssignments, summary, flags);
 
     // Propose to delete
     await this.managePermissionSetLicenseAssignmentsDeletion(conn);
 
-    if ((this.argv || []).includes("unusedlicenses")) {
+    if ((this.argv || []).includes('unusedlicenses')) {
       process.exitCode = this.statusCode;
     }
 
@@ -206,7 +220,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     FROM PermissionSetLicenseAssign
     WHERE Assignee.IsActive=true
     ORDER BY PermissionSetLicense.MasterLabel, Assignee.Username`,
-      conn,
+      conn
     );
     return pslaQueryRes.records;
   }
@@ -216,11 +230,14 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       .map((psla) => {
         return {
           Id: psla.PermissionSetLicenseId,
-          DeveloperName: psla["PermissionSetLicense.DeveloperName"],
-          MasterLabel: psla["PermissionSetLicense.MasterLabel"],
+          DeveloperName: psla['PermissionSetLicense.DeveloperName'],
+          MasterLabel: psla['PermissionSetLicense.MasterLabel'],
         };
       })
-      .filter((value, index, self) => index === self.findIndex((t) => t.Id === value.Id && t.MasterLabel === value.MasterLabel));
+      .filter(
+        (value, index, self) =>
+          index === self.findIndex((t) => t.Id === value.Id && t.MasterLabel === value.MasterLabel)
+      );
     const psLicensesIds = relatedPermissionSetLicenses.map((psl) => psl.Id);
     if (relatedPermissionSetLicenses.length > 0) {
       uxLog(this, c.cyan(`Extracting related Permission Sets Licenses...`));
@@ -229,7 +246,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
          FROM PermissionSetLicense
          WHERE Id in ({{IN}})`,
         conn,
-        psLicensesIds,
+        psLicensesIds
       );
       return pslQueryRes.records;
     }
@@ -243,14 +260,14 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
        FROM PermissionSet
        WHERE LicenseId in ({{IN}})`,
       conn,
-      psLicensesIds,
+      psLicensesIds
     );
     const psQueryAdditionalRes = await bulkQueryChunksIn(
       `SELECT Id,Label,Name,LicenseId
        FROM PermissionSet
        WHERE Name in ({{IN}})`,
       conn,
-      DiagnoseUnusedLicenses.additionalPermissionSetsToAlwaysGet,
+      DiagnoseUnusedLicenses.additionalPermissionSetsToAlwaysGet
     );
     return psQueryRes.records.concat(psQueryAdditionalRes.records);
   }
@@ -262,13 +279,15 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
          FROM PermissionSetGroupComponent
          WHERE PermissionSetId in ({{IN}})`,
       conn,
-      permissionSetsIds,
+      permissionSetsIds
     );
     return psgcQueryRes.records;
   }
 
   private async listRelatedPermissionSetAssignmentsToGroups(conn) {
-    const permissionSetsGroupIds = [...new Set(this.permissionSetsGroupMembers.map((psgc) => psgc.PermissionSetGroupId))];
+    const permissionSetsGroupIds = [
+      ...new Set(this.permissionSetsGroupMembers.map((psgc) => psgc.PermissionSetGroupId)),
+    ];
     if (permissionSetsGroupIds.length > 0) {
       uxLog(this, c.cyan(`Extracting related Permission Set Group Assignments...`));
       const psgaQueryRes = await bulkQueryChunksIn(
@@ -276,15 +295,15 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
            FROM PermissionSetAssignment
            WHERE PermissionSetGroupId in ({{IN}})`,
         conn,
-        permissionSetsGroupIds,
+        permissionSetsGroupIds
       );
       // Add related licenses in licenseIds for each PS Assignment
       psgaQueryRes.records = psgaQueryRes.records.map((psga) => {
         psga.licenseIds = [];
         for (const psgm of this.permissionSetsGroupMembers) {
           if (psgm.PermissionSetGroupId === psga.PermissionSetGroupId) {
-            if (psgm["PermissionSet.LicenseId"]) {
-              psga.licenseIds.push(psgm["PermissionSet.LicenseId"]);
+            if (psgm['PermissionSet.LicenseId']) {
+              psga.licenseIds.push(psgm['PermissionSet.LicenseId']);
             }
           }
         }
@@ -302,29 +321,29 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
        FROM PermissionSetAssignment
        WHERE PermissionSetId in ({{IN}})`,
       conn,
-      permissionSetsIds,
+      permissionSetsIds
     );
     // Add related license in licenseIds for each PS Assignment
     psaQueryRes.records = psaQueryRes.records.map((psa) => {
       psa.licenseIds = [];
-      if (psa["PermissionSet.LicenseId"]) {
-        psa.licenseIds.push(psa["PermissionSet.LicenseId"]);
+      if (psa['PermissionSet.LicenseId']) {
+        psa.licenseIds.push(psa['PermissionSet.LicenseId']);
       }
       return psa;
     });
     return psaQueryRes.records;
   }
 
-  private async manageNotifications(unusedPermissionSetLicenseAssignments: any[], summary: any) {
+  private async manageNotifications(unusedPermissionSetLicenseAssignments: any[], summary: any, flags) {
     // Build notification
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
-    let notifSeverity: NotifSeverity = "log";
+    let notifSeverity: NotifSeverity = 'log';
     let notifText = `No unused Permission Set Licenses Assignments has been found in ${orgMarkdown}`;
     let notifDetailText = ``;
     let attachments: any[] = [];
     if (unusedPermissionSetLicenseAssignments.length > 0) {
-      notifSeverity = "warning";
+      notifSeverity = 'warning';
       notifText = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`;
       for (const pslMasterLabel of Object.keys(summary).sort()) {
         const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
@@ -335,7 +354,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     // Send notifications
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "UNUSED_LICENSES",
+      type: 'UNUSED_LICENSES',
       text: notifText,
       attachments: attachments,
       buttons: notifButtons,
@@ -353,25 +372,28 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   private async managePermissionSetLicenseAssignmentsDeletion(conn) {
     if (!isCI && this.unusedPermissionSetLicenseAssignments.length) {
       const confirmRes = await prompts({
-        type: "select",
-        message: "Do you want to delete unused Permission Set License Assignments ?",
+        type: 'select',
+        message: 'Do you want to delete unused Permission Set License Assignments ?',
         choices: [
           {
             title: `Yes, delete the ${this.unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`,
-            value: "all",
+            value: 'all',
           },
-          { title: "No" },
+          { title: 'No' },
         ],
       });
-      if (confirmRes.value === "all") {
+      if (confirmRes.value === 'all') {
         const pslaToDelete = this.unusedPermissionSetLicenseAssignments.map((psla) => {
           return { Id: psla.Id };
         });
-        const deleteRes = await bulkUpdate("PermissionSetLicenseAssign", "delete", pslaToDelete, conn);
+        const deleteRes = await bulkUpdate('PermissionSetLicenseAssign', 'delete', pslaToDelete, conn);
         const deleteSuccessNb = deleteRes.successRecordsNb;
         const deleteErrorNb = deleteRes.errorRecordsNb;
         if (deleteErrorNb > 0) {
-          uxLog(this, c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`));
+          uxLog(
+            this,
+            c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`)
+          );
           this.statusCode = 1;
         } else {
           this.statusCode = 0;

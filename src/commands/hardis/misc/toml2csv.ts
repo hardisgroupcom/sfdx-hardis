@@ -82,7 +82,7 @@ export default class Toml2Csv extends SfCommand<any> {
   protected filterSections: any[] = [];
   protected doFilterSections = false;
 
-  protected spinner: any;
+  protected spinnerCustom: any;
   protected spinnerInterval: any;
   protected inputFileSeparator: string;
   protected outputFileSeparator: string;
@@ -159,7 +159,7 @@ export default class Toml2Csv extends SfCommand<any> {
     );
 
     // Start spinner
-    this.spinner = ora({ text: `Processing...`, spinner: 'moon' }).start();
+    this.spinnerCustom = ora({ text: `Processing...`, spinner: 'moon' }).start();
     this.spinnerInterval = setInterval(() => {
       this.updateSpinner();
     }, 10000);
@@ -293,7 +293,7 @@ export default class Toml2Csv extends SfCommand<any> {
 
     // Stop spinner
     clearInterval(this.spinnerInterval);
-    this.spinner.succeed(
+    this.spinnerCustom.succeed(
       `File processing complete of ${this.stats.dataLinesNb} data lines (${this.stats.dataErrorLinesNb} in error)`
     );
 
@@ -352,7 +352,7 @@ export default class Toml2Csv extends SfCommand<any> {
   }
 
   updateSpinner() {
-    this.spinner.text =
+    this.spinnerCustom.text =
       `Processing section ${this.currentSection} (total lines: ${this.stats.dataLinesNb},` +
       ` success: ${this.stats.dataSuccessLinesNb},` +
       ` errors: ${this.stats.dataErrorLinesNb}, filtered: ${this.stats.dataFilteredLinesNb})`;
@@ -679,7 +679,7 @@ export default class Toml2Csv extends SfCommand<any> {
   triggerError(errorMsg: string, fatal = true) {
     if (fatal && this.spinner) {
       clearInterval(this.spinnerInterval);
-      this.spinner.fail(errorMsg);
+      this.spinnerCustom.fail(errorMsg);
     }
     throw new SfError(errorMsg);
   }

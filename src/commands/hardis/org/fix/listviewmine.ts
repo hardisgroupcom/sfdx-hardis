@@ -1,21 +1,21 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../../common/utils/index.js";
-import { restoreListViewMine } from "../../../../common/utils/orgConfigUtils.js";
-import { getConfig } from "../../../../config/index.js";
-import c from "chalk";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { uxLog } from '../../../../common/utils/index.js';
+import { restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
+import { getConfig } from '../../../../config/index.js';
+import c from 'chalk';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class FixListViewMine extends SfCommand<any> {
-  public static title = "Fix listviews with ";
+  public static title = 'Fix listviews with ';
 
   public static description = `Fix listviews whose scope Mine has been replaced by Everything
 
@@ -69,30 +69,30 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 `;
 
   public static examples = [
-    "$ sf hardis:org:fix:listviewmine",
-    "$ sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners",
+    '$ sf hardis:org:fix:listviewmine',
+    '$ sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners',
   ];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     listviews: Flags.string({
-      char: "l",
+      char: 'l',
       description: `Comma-separated list of listviews following format Object:ListViewName\nExample: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportunities`,
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
-  };  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
+  };
   public static requiresProject = true;
 
   protected debugMode = false;
@@ -101,21 +101,24 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(FixListViewMine);
     this.debugMode = flags.debug || false;
 
-    uxLog(this, c.cyan("Setting back listviews to Mine instead of Everything..."));
+    uxLog(this, c.cyan('Setting back listviews to Mine instead of Everything...'));
 
     // Identify listviews to process
     if (flags.listviews) {
       // Use input flag
-      this.listViewsStrings = flags.listviews.split(",");
+      this.listViewsStrings = flags.listviews.split(',');
     } else {
       // Use property listViewsToSetToMine from .sfdx-hardis.yml config file
-      const config = await getConfig("project");
+      const config = await getConfig('project');
       this.listViewsStrings = config.listViewsToSetToMine || [];
     }
 
-    const result = await restoreListViewMine(this.listViewsStrings, flags['target-org'].getConnection(), { debug: this.debugMode });
+    const result = await restoreListViewMine(this.listViewsStrings, flags['target-org'].getConnection(), {
+      debug: this.debugMode,
+    });
     return result;
   }
 }

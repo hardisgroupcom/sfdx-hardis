@@ -1,21 +1,21 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { importData, selectDataWorkspace } from "../../../../common/utils/dataUtils.js";
-import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { importData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
+import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DataImport extends SfCommand<any> {
-  public static title = "Import data";
+  public static title = 'Import data';
 
   public static description = `Import/Load data in an org using a [SFDX Data Loader](https://help.sfdmu.com/) Project
 
@@ -24,23 +24,23 @@ See article:
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
 `;
 
-  public static examples = ["$ sf hardis:org:data:import"];
+  public static examples = ['$ sf hardis:org:data:import'];
 
   public static flags = {
     path: Flags.string({
-      char: "p",
-      description: "Path to the sfdmu workspace folder",
+      char: 'p',
+      description: 'Path to the sfdmu workspace folder',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -49,7 +49,7 @@ See article:
   public static requiresProject = false;
 
   // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ["sfdmu"];
+  protected static requiresSfdxPlugins = ['sfdmu'];
 
   /* jscpd:ignore-end */
 
@@ -59,22 +59,24 @@ See article:
 
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
-      sfdmuPath = await selectDataWorkspace({ selectDataLabel: "Please select a data workspace to IMPORT" });
+      sfdmuPath = await selectDataWorkspace({ selectDataLabel: 'Please select a data workspace to IMPORT' });
     }
 
     // Select org that where records will be imported
     let orgUsername = flags['target-org'].getUsername();
     if (!isCI) {
-      orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
+      orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
     }
 
     // Export data from org
-    await importData(sfdmuPath, this, {
+    await importData(sfdmuPath || '', this, {
       targetUsername: orgUsername,
     });
 
     // Output message
-    const message = `Successfully import data from sfdmu project ${c.green(sfdmuPath)} into org ${c.green(orgUsername)}`;
+    const message = `Successfully import data from sfdmu project ${c.green(sfdmuPath)} into org ${c.green(
+      orgUsername
+    )}`;
     uxLog(this, c.cyan(message));
     return { outputString: message };
   }

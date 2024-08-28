@@ -1,24 +1,24 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import * as columnify from "columnify";
-import { execSfdxJson, isCI, uxLog } from "../../../../common/utils/index.js";
-import { prompts } from "../../../../common/utils/prompts.js";
-import { bulkDeleteTooling } from "../../../../common/utils/apiUtils.js";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages, SfError } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import * as columnify from 'columnify';
+import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { bulkDeleteTooling } from '../../../../common/utils/apiUtils.js';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgPurgeFlow extends SfCommand<any> {
-  public static title = "Purge Flow versions";
+  public static title = 'Purge Flow versions';
 
-  public static description = messages.getMessage("orgPurgeFlow");
+  public static description = messages.getMessage('orgPurgeFlow');
 
   public static examples = [
     `$ sf hardis:org:purge:flow --no-prompt`,
@@ -49,46 +49,43 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   public static flags = {
     // flag with a value (-n, --name=VALUE)
     prompt: Flags.boolean({
-      char: "z",
+      char: 'z',
       default: true,
       allowNo: true,
-      description: messages.getMessage("prompt"),
+      description: messages.getMessage('prompt'),
     }),
     name: Flags.string({
-      char: "n",
-      description: messages.getMessage("nameFilter"),
+      char: 'n',
+      description: messages.getMessage('nameFilter'),
     }),
     status: Flags.string({
-      char: "s",
-      description: messages.getMessage("statusFilter"),
+      char: 's',
+      description: messages.getMessage('statusFilter'),
     }),
     allowpurgefailure: Flags.boolean({
-      char: "f",
+      char: 'f',
       default: true,
       allowNo: true,
-      description: messages.getMessage("allowPurgeFailure"),
+      description: messages.getMessage('allowPurgeFailure'),
     }),
     instanceurl: Flags.string({
-      char: "r",
-      default: "https://login.salesforce.com",
-      description: messages.getMessage("instanceUrl"),
+      char: 'r',
+      default: 'https://login.salesforce.com',
+      description: messages.getMessage('instanceUrl'),
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
-
-
-
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
@@ -96,6 +93,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(OrgPurgeFlow);
     const prompt = flags.prompt === false ? false : true;
     let nameFilter = flags.name || null;
     const allowPurgeFailure = flags.allowpurgefailure === false ? false : true;
@@ -106,17 +104,17 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     const manageableConstraint = "ManageableState IN ('deprecatedEditable','installedEditable','unmanaged')";
     if (flags.status) {
       // Input parameter used
-      statusFilter = flags.status.split(",");
+      statusFilter = flags.status.split(',');
     } else if (isCI) {
       // Obsolete by default for CI
-      statusFilter = ["Obsolete"];
+      statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
       const allFlowQueryCommand =
-        "sf data query " +
+        'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
         ` --target-org ${username}` +
-        " --use-tooling-api";
+        ' --use-tooling-api';
       const allFlowQueryRes = await execSfdxJson(allFlowQueryCommand, this, {
         output: false,
         debug: debugMode,
@@ -127,24 +125,24 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       const flowNamesChoice = flowNamesUnique.map((flowName) => {
         return { title: flowName, value: flowName };
       });
-      flowNamesChoice.unshift({ title: "All flows", value: "all" });
+      flowNamesChoice.unshift({ title: 'All flows', value: 'all' });
 
       // Manually select status
       const selectStatus = await prompts([
         {
-          type: "select",
-          name: "name",
-          message: "Please select the flow you want to clean",
+          type: 'select',
+          name: 'name',
+          message: 'Please select the flow you want to clean',
           choices: flowNamesChoice,
         },
         {
-          type: "multiselect",
-          name: "status",
-          message: "Please select the status(es) you want to delete",
+          type: 'multiselect',
+          name: 'status',
+          message: 'Please select the status(es) you want to delete',
           choices: [
-            { title: `Draft`, value: "Draft" },
-            { title: `Inactive`, value: "Inactive" },
-            { title: `Obsolete`, value: "Obsolete" },
+            { title: `Draft`, value: 'Draft' },
+            { title: `Inactive`, value: 'Inactive' },
+            { title: `Obsolete`, value: 'Obsolete' },
           ],
         },
       ]);
@@ -153,20 +151,21 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     }
 
     // Check we don't delete active Flows
-    if (statusFilter.includes("Active")) {
-      throw new SfError("You can not delete active records");
+    if (statusFilter.includes('Active')) {
+      throw new SfError('You can not delete active records');
     }
 
     // Build query with name filter if sent
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${statusFilter.join(
-      "','",
+      "','"
     )}')`;
-    if (nameFilter && nameFilter != "all") {
+    if (nameFilter && nameFilter != 'all') {
       query += ` AND Definition.DeveloperName = '${nameFilter}'`;
     }
-    query += " ORDER BY Definition.DeveloperName,VersionNumber";
+    query += ' ORDER BY Definition.DeveloperName,VersionNumber';
 
-    const flowQueryCommand = "sf data query " + ` --query "${query}"` + ` --target-org ${username}` + " --use-tooling-api";
+    const flowQueryCommand =
+      'sf data query ' + ` --query "${query}"` + ` --target-org ${username}` + ' --use-tooling-api';
     const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
       output: false,
       debug: debugMode,
@@ -198,14 +197,14 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     // Confirm deletion
     if (prompt) {
       const confirmDelete = await prompts({
-        type: "confirm",
-        name: "value",
+        type: 'confirm',
+        name: 'value',
         message: c.cyanBright(`Do you confirm you want to delete these ${records.length} flow versions ?`),
       });
 
       if (confirmDelete.value === false) {
-        uxLog(this, c.magenta("Action cancelled by user"));
-        return { outputString: "Action cancelled by user" };
+        uxLog(this, c.magenta('Action cancelled by user'));
+        return { outputString: 'Action cancelled by user' };
       }
     }
 
@@ -213,26 +212,34 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     const deleted: any[] = [];
     const deleteErrors: any[] = [];
     const conn = flags['target-org'].getConnection();
-    const deleteResults = await bulkDeleteTooling("Flow", records, conn);
+    const deleteResults = await bulkDeleteTooling('Flow', records, conn);
     for (const deleteRes of deleteResults.results) {
       if (deleteRes.success) {
         deleted.push(deleteRes);
       } else {
-        this.ux.error(c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
+        uxLog(this, c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
         deleteErrors.push(deleteRes);
       }
     }
     if (deleteErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There have been errors while deleting ${deleteErrors.length} record(s): \n${JSON.stringify(deleteErrors)}`;
+      const errMsg = `[sfdx-hardis] There have been errors while deleting ${
+        deleteErrors.length
+      } record(s): \n${JSON.stringify(deleteErrors)}`;
       if (allowPurgeFailure) {
         uxLog(this, c.yellow(errMsg));
       } else {
-        throw new SfError(c.yellow(`There have been errors while deleting ${deleteErrors.length} record(s): \n${JSON.stringify(deleteErrors)}`));
+        throw new SfError(
+          c.yellow(
+            `There have been errors while deleting ${deleteErrors.length} record(s): \n${JSON.stringify(deleteErrors)}`
+          )
+        );
       }
     }
 
     const summary =
-      deleted.length > 0 ? `[sfdx-hardis] Deleted the following list of record(s):\n${columnify(deleted)}` : "[sfdx-hardis] No record(s) to delete";
+      deleted.length > 0
+        ? `[sfdx-hardis] Deleted the following list of record(s):\n${columnify(deleted)}`
+        : '[sfdx-hardis] No record(s) to delete';
     uxLog(this, c.green(summary));
     // Return an object to be displayed with --json
     return { orgId: flags['target-org'].getOrgId(), outputString: summary };
