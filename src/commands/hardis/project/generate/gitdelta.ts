@@ -1,47 +1,54 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import * as path from "path";
-import { createTempDir, ensureGitRepository, git, gitCheckOutRemote, selectGitBranch, uxLog } from "../../../../common/utils/index.js";
-import { callSfdxGitDelta } from "../../../../common/utils/gitUtils.js";
-import { prompts } from "../../../../common/utils/prompts.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import * as path from 'path';
+import {
+  createTempDir,
+  ensureGitRepository,
+  git,
+  gitCheckOutRemote,
+  selectGitBranch,
+  uxLog,
+} from '../../../../common/utils/index.js';
+import { callSfdxGitDelta } from '../../../../common/utils/gitUtils.js';
+import { prompts } from '../../../../common/utils/prompts.js';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class GenerateGitDelta extends SfCommand<any> {
-  public static title = "Generate Git Delta";
+  public static title = 'Generate Git Delta';
 
-  public static description = "Generate package.xml git delta between 2 commits";
+  public static description = 'Generate package.xml git delta between 2 commits';
 
-  public static examples = ["$ sf hardis:project:generate:gitdelta"];
+  public static examples = ['$ sf hardis:project:generate:gitdelta'];
 
   public static flags = {
     branch: Flags.string({
-      description: "Git branch to use to generate delta",
+      description: 'Git branch to use to generate delta',
     }),
     fromcommit: Flags.string({
-      description: "Hash of commit to start from",
+      description: 'Hash of commit to start from',
     }),
     tocommit: Flags.string({
-      description: "Hash of commit to stop at",
+      description: 'Hash of commit to stop at',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
@@ -53,10 +60,11 @@ export default class GenerateGitDelta extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(GenerateGitDelta);
     let gitBranch = flags.branch || null;
     let fromCommit = flags.fromcommit || null;
     let toCommit = flags.fromcommit || null;
-    this.debugMode = flags.debugMode || false;
+    this.debugMode = flags.debug || false;
     // Check git repo
     await ensureGitRepository();
 
@@ -68,7 +76,7 @@ export default class GenerateGitDelta extends SfCommand<any> {
     }
 
     // List branch commits
-    const branchCommits = await git().log(["--first-parent"]);
+    const branchCommits = await git().log(['--first-parent']);
     const branchCommitsChoices = branchCommits.all.map((commit) => {
       return {
         title: commit.message,
@@ -80,14 +88,14 @@ export default class GenerateGitDelta extends SfCommand<any> {
     // Prompt fromCommit
     if (fromCommit === null) {
       const headItem = {
-        title: "HEAD",
+        title: 'HEAD',
         description: `Current git HEAD`,
-        value: { hash: "HEAD" },
+        value: { hash: 'HEAD' },
       };
       const commitFromResp = await prompts({
-        type: "select",
-        name: "value",
-        message: "Please select the commit that you want to start from",
+        type: 'select',
+        name: 'value',
+        message: 'Please select the commit that you want to start from',
         choices: [headItem, ...branchCommitsChoices],
       });
       fromCommit = commitFromResp.value.hash;
@@ -96,14 +104,14 @@ export default class GenerateGitDelta extends SfCommand<any> {
     // Prompt toCommit
     if (toCommit === null) {
       const currentItem = {
-        title: "current",
+        title: 'current',
         description: `Local files not committed yet`,
-        value: { hash: "*" },
+        value: { hash: '*' },
       };
       const commitToResp = await prompts({
-        type: "select",
-        name: "value",
-        message: "Please select the commit hash that you want to go to",
+        type: 'select',
+        name: 'value',
+        message: 'Please select the commit hash that you want to go to',
         choices: [currentItem, ...branchCommitsChoices],
       });
       toCommit = commitToResp.value.hash;
@@ -111,15 +119,19 @@ export default class GenerateGitDelta extends SfCommand<any> {
 
     // Generate package.xml & destructiveChanges.xml using sfdx-git-delta
     const tmpDir = await createTempDir();
-    await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
+    await callSfdxGitDelta(fromCommit || '', toCommit || '', tmpDir, { debug: this.debugMode });
 
-    const diffPackageXml = path.join(tmpDir, "package", "package.xml");
-    const diffDestructiveChangesXml = path.join(tmpDir, "destructiveChanges", "destructiveChanges.xml");
+    const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
+    const diffDestructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
 
     uxLog(this, c.cyan(`Generated diff package.xml at ${c.green(diffPackageXml)}`));
     uxLog(this, c.cyan(`Generated diff destructiveChanges.xml at ${c.green(diffDestructiveChangesXml)}`));
 
     // Return an object to be displayed with --json
-    return { outputString: "Generated package.xml", diffPackageXml: diffPackageXml, diffDestructiveChangesXml: diffDestructiveChangesXml };
+    return {
+      outputString: 'Generated package.xml',
+      diffPackageXml: diffPackageXml,
+      diffDestructiveChangesXml: diffDestructiveChangesXml,
+    };
   }
 }

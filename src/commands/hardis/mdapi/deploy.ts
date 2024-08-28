@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import { Flags, requiredOrgFlagWithDeprecations, SfCommand } from '@salesforce/sf-plugins-core';
-import c from "chalk";
-import { AnyJson } from "@salesforce/ts-types";
-import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils.js";
-import { uxLog } from "../../../common/utils/index.js";
+import c from 'chalk';
+import { AnyJson } from '@salesforce/ts-types';
+import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
+import { uxLog } from '../../../common/utils/index.js';
 
-const xorFlags = ["zipfile", "validateddeployrequestid", "deploydir"];
+const xorFlags = ['zipfile', 'validateddeployrequestid', 'deploydir'];
 export class Deploy extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:mdapi:deploy that displays tips to solve deployment errors.
 
@@ -16,80 +16,87 @@ export class Deploy extends SfCommand<any> {
   public static readonly examples = [];
   public static readonly flagsConfig = {
     checkonly: Flags.boolean({
-      char: "c",
-      description: "checkOnly",
+      char: 'c',
+      description: 'checkOnly',
     }),
     deploydir: Flags.directory({
-      char: "d",
-      description: "deployDir",
+      char: 'd',
+      description: 'deployDir',
       exactlyOne: xorFlags,
     }),
     wait: Flags.integer({
-      char: "w",
-      description: "wait",
+      char: 'w',
+      description: 'wait',
       default: 120,
       min: -1,
     }),
-    testlevel: Flags.enum({
-      char: "l",
-      description: "testLevel",
-      options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
-      default: "NoTestRun",
+    testlevel: Flags.string({
+      char: 'l',
+      description: 'testLevel',
+      options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
+      default: 'NoTestRun',
     }),
-    runtests: Flags.array({
-      char: "r",
-      description: "runTests",
+    runtests: Flags.string({
+      char: 'r',
+      description: 'runTests',
       default: [],
+      multiple: true,
     }),
     ignoreerrors: Flags.boolean({
-      char: "o",
-      description: "ignoreErrors",
+      char: 'o',
+      description: 'ignoreErrors',
     }),
     ignorewarnings: Flags.boolean({
-      char: "g",
-      description: "ignoreWarnings",
+      char: 'g',
+      description: 'ignoreWarnings',
     }),
-    validateddeployrequestid: flags.id({
-      char: "q",
-      description: "validatedDeployRequestId",
+    validateddeployrequestid: Flags.string({
+      char: 'q',
+      description: 'validatedDeployRequestId',
       exactlyOne: xorFlags,
-      exclusive: ["testlevel", "runtests", "ignoreerrors", "ignorewarnings", "checkonly"],
+      exclusive: ['testlevel', 'runtests', 'ignoreerrors', 'ignorewarnings', 'checkonly'],
     }),
-    verbose: flags.builtin({
-      description: "verbose",
+    verbose: Flags.boolean({
+      description: 'verbose',
     }),
-    zipfile: flags.filepath({
-      char: "f",
-      description: "zipFile",
+    zipfile: Flags.file({
+      char: 'f',
+      description: 'zipFile',
       exactlyOne: xorFlags,
     }),
     singlepackage: Flags.boolean({
-      char: "s",
-      description: "singlePackage",
+      char: 's',
+      description: 'singlePackage',
     }),
     soapdeploy: Flags.boolean({
-      description: "soapDeploy",
+      description: 'soapDeploy',
     }),
     purgeondelete: Flags.boolean({
-      description: "purgeOnDelete",
+      description: 'purgeOnDelete',
     }),
-    concise: flags.builtin({
-      description: "concise",
+    concise: Flags.boolean({
+      description: 'concise',
     }),
     debug: Flags.boolean({
       default: false,
-      description: "debug",
+      description: 'debug',
     }),
     websocket: Flags.string({
-      description: "websocket",
+      description: 'websocket',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
-    uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
-    uxLog(this, c.red("Please migrate to command sf hardis project deploy start"));
-    uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
-    return await wrapSfdxCoreCommand("sfdx force:mdapi:deploy", this.argv, this, flags.debug);
+    const { flags } = await this.parse(Deploy);
+    uxLog(this, c.red('This command will be removed by Salesforce in November 2024.'));
+    uxLog(this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog(
+      this,
+      c.red(
+        'See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm'
+      )
+    );
+    return await wrapSfdxCoreCommand('sfdx force:mdapi:deploy', this.argv, this, flags.debug);
   }
 }

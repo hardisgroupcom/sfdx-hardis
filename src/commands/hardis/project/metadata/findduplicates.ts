@@ -1,36 +1,40 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Logger, LoggerLevel, Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../../common/utils/index.js";
-import { parseXmlFile } from "../../../../common/utils/xmlUtils.js";
-import { getConfig } from "../../../../config/index.js";
-import { glob } from "glob";
-import { basename } from "path";
-import c from "chalk";
+import { Logger, LoggerLevel, Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { uxLog } from '../../../../common/utils/index.js';
+import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { getConfig } from '../../../../config/index.js';
+import { glob } from 'glob';
+import { basename } from 'path';
+import c from 'chalk';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-function getCommonPermissionPatterns(rootTagName: "Profile" | "PermissionSet") {
-  return [`${rootTagName}.fieldPermissions.field`, `${rootTagName}.objectPermissions.object`, `${rootTagName}.classAccesses.apexClass`];
+function getCommonPermissionPatterns(rootTagName: 'Profile' | 'PermissionSet') {
+  return [
+    `${rootTagName}.fieldPermissions.field`,
+    `${rootTagName}.objectPermissions.object`,
+    `${rootTagName}.classAccesses.apexClass`,
+  ];
 }
 
 export default class Find extends SfCommand<any> {
   protected static metadataDuplicateFindKeys = {
-    layout: ["Layout.layoutSections.layoutColumns.layoutItems.field", "Layout.quickActionListItems.quickActionName"],
-    profile: getCommonPermissionPatterns("Profile"),
-    labels: ["CustomLabels.labels.fullName"],
-    permissionset: getCommonPermissionPatterns("PermissionSet"),
+    layout: ['Layout.layoutSections.layoutColumns.layoutItems.field', 'Layout.quickActionListItems.quickActionName'],
+    profile: getCommonPermissionPatterns('Profile'),
+    labels: ['CustomLabels.labels.fullName'],
+    permissionset: getCommonPermissionPatterns('PermissionSet'),
   };
 
-  public static title = "XML duplicate values finder";
+  public static title = 'XML duplicate values finder';
   public static description = `find duplicate values in XML file(s).
   Find duplicate values in XML file(s). Keys to be checked can be configured in \`config/sfdx-hardis.yml\` using property metadataDuplicateFindKeys.
 
@@ -81,15 +85,16 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
   protected logLevel: LoggerLevel;
 
   public static flags = {
-    files: flags.array({
-      char: "f",
-      description: "XML metadata files path",
+    files: Flags.string({
+      char: 'f',
+      description: 'XML metadata files path',
+      multiple: true,
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
@@ -97,9 +102,10 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
   public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(Find);
     uxLog(this, c.cyan(`Start finding duplicate values in XML metadata files.`));
     await this.initConfig();
-    const filesWithDuplicates = await this.findDuplicates();
+    const filesWithDuplicates = await this.findDuplicates(flags);
     uxLog(this, c.cyan(`Done finding duplicate values in XML metadata files.`));
     if (filesWithDuplicates.length > 0) {
       process.exitCode = 1;
@@ -108,7 +114,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
   }
 
   async initConfig() {
-    this.configInfo = await getConfig("user");
+    this.configInfo = await getConfig('user');
     if (this.configInfo.metadataDuplicateFindKeys) {
       Find.metadataDuplicateFindKeys = this.configInfo.metadataDuplicateFindKeys;
     }
@@ -116,12 +122,12 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
     this.logLevel = (await Logger.root()).getLevel();
   }
 
-  async findDuplicates() {
+  async findDuplicates(flags) {
     // Collect input parameters
     const inputFiles: any[] = [];
 
     if (flags.files) {
-      const files = await glob("./" + flags.files, { cwd: process.cwd() });
+      const files = await glob('./' + flags.files, { cwd: process.cwd() });
       inputFiles.push(...files);
     }
 
@@ -145,7 +151,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
       const file = await parseXmlFile(inputFile);
       uniqueKeys.forEach((key) => {
         // Traverse the file down to the key based on the fragments separated by . (dots), abort if not found
-        const allProps = key.split(".");
+        const allProps = key.split('.');
         const valuesFound = this.traverseDown(file, allProps[0], allProps, []);
 
         // https://stackoverflow.com/a/840808
@@ -160,8 +166,8 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
             this,
             c.red(`Duplicate values in ${basename(inputFile)}
   - Key    : ${key}
-  - Values : ${duplicates.join(", ")}
-`),
+  - Values : ${duplicates.join(', ')}
+`)
           );
         }
       });
@@ -173,7 +179,12 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
    *  Traverse down a XML tree, allProps containing all the properties to be traversed, currentProp being updated as we
    * descend.
    */
-  traverseDown(parent: Record<string, unknown> | Array<any>, currentProp: string, allProps: Array<string>, results: Array<string>) {
+  traverseDown(
+    parent: Record<string, unknown> | Array<any>,
+    currentProp: string,
+    allProps: Array<string>,
+    results: Array<string>
+  ) {
     const nextProp = allProps[allProps.indexOf(currentProp) + 1];
 
     // If we're at the end of property path (A.B.C -> parent = A.B, currentProp = C, nextProp = undefined) we add the

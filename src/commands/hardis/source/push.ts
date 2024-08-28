@@ -1,8 +1,8 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import c from "chalk";
-import { AnyJson } from "@salesforce/ts-types";
-import { wrapSfdxCoreCommand } from "../../../common/utils/wrapUtils.js";
-import { uxLog } from "../../../common/utils/index.js";
+import c from 'chalk';
+import { AnyJson } from '@salesforce/ts-types';
+import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
+import { uxLog } from '../../../common/utils/index.js';
 
 export default class Push extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.
@@ -13,28 +13,28 @@ export default class Push extends SfCommand<any> {
 `;
   public static readonly flags = {
     forceoverwrite: Flags.boolean({
-      char: "f",
-      description: "forceoverwrite",
+      char: 'f',
+      description: 'forceoverwrite',
     }),
     wait: Flags.integer({
-      char: "w",
+      char: 'w',
       default: 60,
       min: 1,
-      description: "wait",
+      description: 'wait',
     }),
     ignorewarnings: Flags.boolean({
-      char: "g",
-      description: "ignorewarnings",
+      char: 'g',
+      description: 'ignorewarnings',
     }),
-    quiet: Flags.builtin({
-      description: "quiet",
+    quiet: Flags.boolean({
+      description: 'quiet',
     }),
     debug: Flags.boolean({
       default: false,
-      description: "debug",
+      description: 'debug',
     }),
     websocket: Flags.string({
-      description: "websocket",
+      description: 'websocket',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -43,9 +43,14 @@ export default class Push extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Push);
-    uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
-    uxLog(this, c.red("Please migrate to command sf hardis project deploy start"));
-    uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
-    return await wrapSfdxCoreCommand("sfdx force:source:push", this.argv, this, flags.debug);
+    uxLog(this, c.red('This command will be removed by Salesforce in November 2024.'));
+    uxLog(this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog(
+      this,
+      c.red(
+        'See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm'
+      )
+    );
+    return await wrapSfdxCoreCommand('sfdx force:source:push', this.argv, this, flags.debug);
   }
 }
