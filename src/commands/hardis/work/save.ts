@@ -545,7 +545,7 @@ autoRemoveUserPermissions:
     deploymentPlan.packages = packages.sort((a, b) => (a.order > b.order ? 1 : -1));
     await setConfig('project', { deploymentPlan: deploymentPlan });
     if (!this.noGit) {
-      await git({ output: true }).add(['./config/index.js']);
+      await git({ output: true }).add(['./config']);
       await git({ output: true }).add(['./manifest']);
     }
     let gitStatusAfterDeployPlan = await git().status();

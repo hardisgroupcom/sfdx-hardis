@@ -1,7 +1,7 @@
 {
   "name": "sfdx-hardis",
   "description": "Swiss Army Knife for Salesforce CLI: CI/CD, Monitoring, and more !",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "dependencies": {
     "@actions/github": "^6.0.0",
     "@gitbeaker/node": "^35.8.1",
