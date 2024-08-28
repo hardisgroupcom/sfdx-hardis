@@ -349,7 +349,7 @@ export class FilesExporter {
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     try {
       this.fetchOptions.onRetry = (cause: unknown) => {
-        this.spinnerCustom.text = `⚙️ (${this.filesDownloaded}) Retrying ${outputFileLabel} (${cause})...`;
+        this.spinnerCustom.text = `(${this.filesDownloaded}) Retrying ${outputFileLabel} (${cause})...`;
       }
       const fetchRes = await makeFetchHappen(fetchUrl, this.fetchOptions);
       if (fetchRes.ok !== true) {
