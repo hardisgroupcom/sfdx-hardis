@@ -73,6 +73,7 @@ nav:
         mdapi:
           deploy: hardis/mdapi/deploy.md
         misc:
+          purge-references: hardis/misc/purge-references.md
           toml2csv: hardis/misc/toml2csv.md
         org:
           configure:
@@ -87,12 +88,14 @@ nav:
             import: hardis/org/data/import.md
           diagnose:
             audittrail: hardis/org/diagnose/audittrail.md
+            instanceupgrade: hardis/org/diagnose/instanceupgrade.md
             legacyapi: hardis/org/diagnose/legacyapi.md
             licenses: hardis/org/diagnose/licenses.md
             unusedlicenses: hardis/org/diagnose/unusedlicenses.md
             unusedusers: hardis/org/diagnose/unusedusers.md
           files:
             export: hardis/org/files/export.md
+            import: hardis/org/files/import.md
           fix:
             listviewmine: hardis/org/fix/listviewmine.md
           generate:
@@ -127,6 +130,9 @@ nav:
             create: hardis/package/version/create.md
             list: hardis/package/version/list.md
             promote: hardis/package/version/promote.md
+        packagexml:
+          append: hardis/packagexml/append.md
+          remove: hardis/packagexml/remove.md
         project:
           audit:
             apiversion: hardis/project/audit/apiversion.md
@@ -135,6 +141,7 @@ nav:
             remotesites: hardis/project/audit/remotesites.md
           clean:
             emptyitems: hardis/project/clean/emptyitems.md
+            filter-xml-content: hardis/project/clean/filter-xml-content.md
             flowpositions: hardis/project/clean/flowpositions.md
             hiddenitems: hardis/project/clean/hiddenitems.md
             listviews: hardis/project/clean/listviews.md
@@ -155,6 +162,7 @@ nav:
             sources:
               dx: hardis/project/deploy/sources/dx.md
               metadata: hardis/project/deploy/sources/metadata.md
+            start: hardis/project/deploy/start.md
           fix:
             profiletabs: hardis/project/fix/profiletabs.md
             v53flexipages: hardis/project/fix/v53flexipages.md
@@ -184,6 +192,8 @@ nav:
           resetselection: hardis/work/resetselection.md
           save: hardis/work/save.md
           ws: hardis/work/ws.md
+      hello:
+        world: hello/world.md
   - Salesforce CI/CD:
       - CI/CD Home: salesforce-ci-cd-home.md
       - Contributor Guide:

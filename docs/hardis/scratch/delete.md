@@ -7,20 +7,19 @@ Assisted menu to delete scratch orgs associated to a DevHub
 
 ## Parameters
 
-| Name                        |  Type   | Description                                                          | Default | Required |                        Options                        |
-|:----------------------------|:-------:|:---------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
-| apiversion                  | option  | override the api version used for api requests made by this command  |         |          |                                                       |
-| debug<br/>-d                | boolean | Activate debug mode (more logs)                                      |         |          |                                                       |
-| json                        | boolean | format output as json                                                |         |          |                                                       |
-| loglevel                    | option  | logging level for this command invocation                            |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| skipauth                    | boolean | Skip authentication check when a default username is required        |         |          |                                                       |
-| targetdevhubusername<br/>-v | option  | username or alias for the dev hub org; overrides default dev hub org |         |          |                                                       |
-| websocket                   | option  | Websocket host:port for VsCode SFDX Hardis UI integration            |         |          |                                                       |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined|nicolas.vuillamy@cloudity-jdc.com|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:scratch:delete
+$ sf hardis:scratch:delete
 ```
 
 

@@ -7,19 +7,19 @@ Clean System.debug() lines in APEX Code (classes and triggers)
 
 ## Parameters
 
-| Name          |  Type   | Description                                                   |  Default  | Required |                        Options                        |
-|:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-----------------------------------------------------:|
-| delete<br/>-d | boolean | Delete lines with System.debug                                |           |          |                                                       |
-| folder<br/>-f | option  | Root folder                                                   | force-app |          |                                                       |
-| json          | boolean | format output as json                                         |           |          |                                                       |
-| loglevel      | option  | logging level for this command invocation                     |   warn    |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| skipauth      | boolean | Skip authentication check when a default username is required |           |          |                                                       |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |                                                       |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|delete<br/>-d|boolean|Delete lines with System.debug||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:project:clean:systemdebug
+$ sf hardis:project:clean:systemdebug
 ```
 
 

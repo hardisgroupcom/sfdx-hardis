@@ -18,22 +18,21 @@ Create and initialize a scratch org or a source-tracked sandbox (config can be d
 
 ## Parameters
 
-| Name                        |  Type   | Description                                                             | Default | Required |                        Options                        |
-|:----------------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
-| apiversion                  | option  | override the api version used for api requests made by this command     |         |          |                                                       |
-| debug<br/>-d                | boolean | Activate debug mode (more logs)                                         |         |          |                                                       |
-| forcenew<br/>-n             | boolean | If an existing scratch org exists, do not reuse it but create a new one |         |          |                                                       |
-| json                        | boolean | format output as json                                                   |         |          |                                                       |
-| loglevel                    | option  | logging level for this command invocation                               |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| pool<br/>-d                 | boolean | Creates the scratch org for a scratch org pool                          |         |          |                                                       |
-| skipauth                    | boolean | Skip authentication check when a default username is required           |         |          |                                                       |
-| targetdevhubusername<br/>-v | option  | username or alias for the dev hub org; overrides default dev hub org    |         |          |                                                       |
-| websocket                   | option  | Websocket host:port for VsCode SFDX Hardis UI integration               |         |          |                                                       |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|forcenew<br/>-n|boolean|If an existing scratch org exists, do not reuse it but create a new one||||
+|json|boolean|Format output as json.||||
+|pool<br/>-d|boolean|Creates the scratch org for a scratch org pool||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined|nicolas.vuillamy@cloudity-jdc.com|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:scratch:create
+$ sf hardis:scratch:create
 ```
 
 

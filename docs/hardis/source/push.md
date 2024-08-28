@@ -12,18 +12,17 @@ sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deplo
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                         |  Default   | Required |                        Options                        |
-|:----------------------|:-------:|:--------------------------------------------------------------------|:----------:|:--------:|:-----------------------------------------------------:|
-| apiversion            | option  | override the api version used for api requests made by this command |            |          |                                                       |
-| debug                 | boolean | debug                                                               |            |          |                                                       |
-| forceoverwrite<br/>-f | boolean | forceoverwrite                                                      |            |          |                                                       |
-| ignorewarnings<br/>-g | boolean | ignorewarnings                                                      |            |          |                                                       |
-| json                  | boolean | format output as json                                               |            |          |                                                       |
-| loglevel              | option  | logging level for this command invocation                           |    warn    |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| quiet                 | boolean | quiet                                                               |            |          |                                                       |
-| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org  |            |          |                                                       |
-| wait<br/>-w           | option  | wait                                                                | 60 minutes |          |                                                       |
-| websocket             | option  | websocket                                                           |            |          |                                                       |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|forceoverwrite<br/>-f|boolean|forceoverwrite||||
+|ignorewarnings<br/>-g|boolean|ignorewarnings||||
+|json|boolean|Format output as json.||||
+|quiet|boolean|quiet||||
+|target-org<br/>-o|option|undefined|hardis@aefc2021.com|||
+|wait<br/>-w|option|wait|60|||
+|websocket|option|websocket||||
 
 ## Examples
 

@@ -143,34 +143,48 @@ ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
 ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
 ```
 
-If you need to increase the deployment waiting time (force:source:deploy --wait arg), you can define env var SFDX_DEPLOY_WAIT_MINUTES
-  
+If you need to increase the deployment waiting time (project deploy start --wait arg), you can define env variable SFDX_DEPLOY_WAIT_MINUTES
+
+If you need notifications to be sent using the current Pull Request and not the one just merged ([see use case](https://github.com/hardisgroupcom/sfdx-hardis/issues/637#issuecomment-2230798904)), define env variable SFDX_HARDIS_DEPLOY_BEFORE_MERGE=true
+
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                               |    Default    | Required |                                            Options                                            |
-|:----------------------|:-------:|:----------------------------------------------------------------------------------------------------------|:-------------:|:--------:|:---------------------------------------------------------------------------------------------:|
-| apiversion            | option  | override the api version used for api requests made by this command                                       |               |          |                                                                                               |
-| check<br/>-c          | boolean | Only checks the deployment, there is no impact on target org                                              |               |          |                                                                                               |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                           |               |          |                                                                                               |
-| delta                 | boolean | Applies sfdx-git-delta to package.xml before other deployment processes                                   |               |          |                                                                                               |
-| json                  | boolean | format output as json                                                                                     |               |          |                                                                                               |
-| loglevel              | option  | logging level for this command invocation                                                                 |     warn      |          |                     trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal                     |
-| packagexml<br/>-p     | option  | Path to package.xml containing what you want to deploy in target org                                      |               |          |                                                                                               |
-| runtests<br/>-r       | option  | Apex test classes to run if --testlevel is RunSpecifiedTests                                              |               |          |                                                                                               |
-| skipauth              | boolean | Skip authentication check when a default username is required                                             |               |          |                                                                                               |
-| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org                                        |               |          |                                                                                               |
-| testlevel<br/>-l      | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes | RunLocalTests |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                 |               |          |                                                                                               |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|check<br/>-c|boolean|Only checks the deployment, there is no impact on target org||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|delta|boolean|Applies sfdx-git-delta to package.xml before other deployment processes||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|packagexml<br/>-p|option|Path to package.xml containing what you want to deploy in target org||||
+|runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
+If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|hardis@aefc2021.com|||
+|testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunAllTestsInOrg|
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:project:deploy:sources:dx
+$ sf hardis:project:deploy:sources:dx
 ```
 
 ```shell
-sf hardis:project:deploy:sources:dx --check
+$ sf hardis:project:deploy:sources:dx --check
+```
+
+```shell
+$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests
+```
+
+```shell
+$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'
+```
+
+```shell
+$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTestsExceptSeeAllData
 ```
 
 
