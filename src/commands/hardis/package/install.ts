@@ -16,7 +16,7 @@ import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 const axios = axios1.default;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class PackageVersionInstall extends SfCommand<any> {
   public static title = 'Install packages in an org';

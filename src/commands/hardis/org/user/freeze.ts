@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import * as columnify from 'columnify';
+import columnify from 'columnify';
 import { generateReports, isCI, uxLog } from '../../../../common/utils/index.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 //import { executeApex } from "../../../../common/utils/deployUtils.js";
@@ -11,7 +11,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQuery, bulkQuery, bulkUpdate } from '../../../../common/utils/apiUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgFreezeUser extends SfCommand<any> {
   public static title = 'Freeze user logins';

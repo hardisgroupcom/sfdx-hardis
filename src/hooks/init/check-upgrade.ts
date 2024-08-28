@@ -4,8 +4,9 @@ import updateNotifier from 'update-notifier';
 import * as semver from 'semver';
 import { fileURLToPath } from 'url';
 import * as path from 'path';
+import { Hook } from '@oclif/core';
 
-export const hook = async (options: any) => {
+const hook: Hook<'init'> = async (options) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.id || '';
   if (!commandId.startsWith('hardis')) {
@@ -47,3 +48,5 @@ export const hook = async (options: any) => {
     );
   }
 };
+
+export default hook;

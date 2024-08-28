@@ -7,7 +7,7 @@ import { clearCache } from '../../../common/cache/index.js';
 import { uxLog } from '../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DxSources extends SfCommand<any> {
   public static title = 'Clear sfdx-hardis cache';

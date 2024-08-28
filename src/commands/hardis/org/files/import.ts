@@ -8,7 +8,7 @@ import { FilesImporter, selectFilesWorkspace } from '../../../../common/utils/fi
 import { prompts } from '../../../../common/utils/prompts.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class FilesImport extends SfCommand<any> {
   public static title = 'Import files';

@@ -10,7 +10,7 @@ import { getConfig, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgTestApex extends SfCommand<any> {
   public static title = 'Run apex tests';

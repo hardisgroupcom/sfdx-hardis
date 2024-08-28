@@ -19,7 +19,7 @@ import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class CleanReferences extends SfCommand<any> {
   public static title = 'Clean references in dx sources';

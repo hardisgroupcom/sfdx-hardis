@@ -15,7 +15,7 @@ import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { applyAllReplacementsDefinitions } from '../../../common/utils/xmlUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class PurgeRef extends SfCommand<any> {
   public static title = 'Purge References';

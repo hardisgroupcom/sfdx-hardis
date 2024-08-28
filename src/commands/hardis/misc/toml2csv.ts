@@ -14,7 +14,7 @@ import { countLinesInFile } from '../../../common/utils/filesUtils.js';
 import { getRecordTypeId } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class Toml2Csv extends SfCommand<any> {
   public static title = 'TOML to CSV';

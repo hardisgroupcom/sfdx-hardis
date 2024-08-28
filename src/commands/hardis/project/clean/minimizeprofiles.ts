@@ -10,7 +10,7 @@ import { minimizeProfile } from '../../../../common/utils/profileUtils.js';
 import { getConfig } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class CleanMinimizeProfiles extends SfCommand<any> {
   public static title = 'Clean profiles of Permission Set attributes';

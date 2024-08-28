@@ -13,7 +13,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DocPluginGenerate extends SfCommand<any> {
   public static title = 'Generate SF Cli Plugin Documentation';

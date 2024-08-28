@@ -10,7 +10,7 @@ import { instantiateProvider, listKeyValueProviders } from '../../../../common/u
 import { KeyValueProviderInterface } from '../../../../common/utils/keyValueUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ScratchPoolCreate extends SfCommand<any> {
   public static title = 'Create and configure scratch org pool';

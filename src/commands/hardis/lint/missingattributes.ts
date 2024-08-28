@@ -19,7 +19,7 @@ import { generateCsvFile, generateReportPath } from '../../../common/utils/files
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 export default class MetadataStatus extends SfCommand<any> {
   public static title = 'check missing description on custom fields';

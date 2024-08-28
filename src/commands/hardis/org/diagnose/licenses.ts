@@ -9,7 +9,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { NotifProvider } from '../../../../common/notifProvider/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnusedUsers extends SfCommand<any> {
   public static title = 'List licenses subscribed and used in a Salesforce org';

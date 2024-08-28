@@ -11,7 +11,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class FixV53Flexipages extends SfCommand<any> {
   public static title = 'Fix profiles to add tabs that are not retrieved by SF CLI';

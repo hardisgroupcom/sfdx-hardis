@@ -2,7 +2,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'hello.world');
+const messages = Messages.loadMessages('sfdx-hardis', 'hello.world');
 
 export type HelloWorldResult = {
   name: string;

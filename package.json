@@ -1,7 +1,7 @@
 {
-  "name": "plugin-template-sf-external",
-  "description": "A template repository for external sf plugins",
-  "version": "1.0.0",
+  "name": "sfdx-hardis",
+  "description": "Swiss Army Knife for Salesforce CLI: CI/CD, Monitoring, and more !",
+  "version": "4.0.0",
   "dependencies": {
     "@actions/github": "^6.0.0",
     "@gitbeaker/node": "^35.8.1",
@@ -53,6 +53,7 @@
     "@salesforce/cli-plugins-testkit": "^5.3.10",
     "@salesforce/dev-config": "^4.3.1",
     "@salesforce/dev-scripts": "^10",
+    "@types/columnify": "^1.5.4",
     "@types/cosmiconfig": "^6.0.0",
     "@types/cross-spawn": "^6.0.6",
     "@types/extract-zip": "^2.0.1",
@@ -65,6 +66,7 @@
     "@types/papaparse": "^5.3.14",
     "@types/sort-array": "^4.1.2",
     "@types/update-notifier": "^6.0.8",
+    "@types/ws": "^8.5.12",
     "eslint-plugin-sf-plugin": "^1.18.6",
     "oclif": "^4.14.0",
     "ts-node": "^10.9.2",
@@ -101,7 +103,26 @@
         "description": "Commands to say hello."
       }
     },
-    "flexibleTaxonomy": true
+    "flexibleTaxonomy": true,
+    "hooks": {
+      "init": [
+        "./lib/hooks/init/log",
+        "./lib/hooks/init/check-upgrade",
+        "./lib/hooks/init/check-local-sfdx-hardis-files",
+        "./lib/hooks/init/start-ws-client"
+      ],
+      "prerun": [
+        "./lib/hooks/prerun/auth",
+        "./lib/hooks/prerun/check-dependencies"
+      ],
+      "auth": [
+        "./lib/hooks/prerun/auth"
+      ],
+      "postrun": [
+        "./lib/hooks/postrun/notify",
+        "./lib/hooks/postrun/store-cache"
+      ]
+    }
   },
   "scripts": {
     "build": "wireit",

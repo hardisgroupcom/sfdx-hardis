@@ -38,7 +38,7 @@ import { MessageAttachment } from '@slack/web-api';
 import { TicketProvider } from '../../../../../common/ticketProvider/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DxSources extends SfCommand<any> {
   public static title = 'Deploy sfdx sources to org';

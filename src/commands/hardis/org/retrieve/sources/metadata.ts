@@ -15,7 +15,7 @@ import { PACKAGE_ROOT_DIR } from '../../../../../settings.js';
 const exec = util.promisify(child.exec);
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DxSources extends SfCommand<any> {
   public static title = 'Retrieve sfdx sources from org';

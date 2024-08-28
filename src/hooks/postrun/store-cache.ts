@@ -1,9 +1,10 @@
-import { copyLocalSfdxInfo } from "../../common/utils/index.js";
+import { Hook } from '@oclif/core';
+import { copyLocalSfdxInfo } from '../../common/utils/index.js';
 
-export const hook = async (options: any) => {
+const hook: Hook<'postrun'> = async (options) => {
   // Skip hooks from other commands than hardis commands
-  const commandId = options?.Command?.id || "";
-  if (!commandId.startsWith("hardis:scratch:create")) {
+  const commandId = options?.Command?.id || '';
+  if (!commandId.startsWith('hardis:scratch:create')) {
     return;
   }
 
@@ -11,3 +12,5 @@ export const hook = async (options: any) => {
   await copyLocalSfdxInfo();
   return;
 };
+
+export default hook;

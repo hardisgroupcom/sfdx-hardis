@@ -12,7 +12,7 @@ import { prompts } from '../../../../../common/utils/prompts.js';
 import { PACKAGE_ROOT_DIR } from '../../../../../settings.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DxSources2 extends SfCommand<any> {
   public static title = 'Retrieve sfdx sources from org (2)';

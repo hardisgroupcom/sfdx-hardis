@@ -12,7 +12,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { appendPackageXmlFilesContent } from '../../../common/utils/xmlUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class MergePackageXml extends SfCommand<any> {
   public static title = 'Merge package.xml files';

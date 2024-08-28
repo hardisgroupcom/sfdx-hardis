@@ -12,7 +12,7 @@ import { deployDestructiveChanges, deployMetadatas } from '../../../../../common
 import { getConfig } from '../../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DxSources extends SfCommand<any> {
   public static title = 'Deploy metadata sources to org';

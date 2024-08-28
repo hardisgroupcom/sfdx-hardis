@@ -16,7 +16,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class MonitorBackup extends SfCommand<any> {
   public static title = 'Backup DX sources';

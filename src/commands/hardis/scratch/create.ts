@@ -32,7 +32,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig, setConfig } from '../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ScratchCreate extends SfCommand<any> {
   public static title = 'Create and initialize scratch org';

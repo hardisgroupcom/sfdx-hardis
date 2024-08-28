@@ -2,8 +2,9 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';
 import { isCI } from '../../common/utils/index.js';
+import { Hook } from '@oclif/core';
 
-export const hook = async (options: any) => {
+const hook: Hook<'init'> = async (options) => {
   // Set argv as global as sf arch messes with it !
   globalThis.processArgv = [...options.argv];
   // Skip hooks from other commands than hardis commands
@@ -28,3 +29,5 @@ export const hook = async (options: any) => {
     globalThis.hardisLogFileStream.write(process.argv.join(' '));
   }
 };
+
+export default hook;

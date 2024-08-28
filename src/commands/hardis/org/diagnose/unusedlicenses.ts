@@ -11,7 +11,7 @@ import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../.
 import { prompts } from '../../../../common/utils/prompts.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseUnusedLicenses extends SfCommand<any> {
   public static title = 'Detect unused Permission Set Licenses (beta)';

@@ -12,7 +12,7 @@ import { buildOrgManifest } from '../../../../../common/utils/deployUtils.js';
 import { parsePackageXmlFile, writePackageXmlFile } from '../../../../../common/utils/xmlUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class RetrieveAnalytics extends SfCommand<any> {
   public static title = 'Retrieve CRM Analytics configuration from an org';

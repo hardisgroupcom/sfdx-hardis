@@ -20,7 +20,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig } from '../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class SandboxCreate extends SfCommand<any> {
   public static title = 'Create sandbox org';

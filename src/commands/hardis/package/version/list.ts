@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { execCommand } from '../../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class PackageVersionList extends SfCommand<any> {
   public static title = 'Create a new version of a package';

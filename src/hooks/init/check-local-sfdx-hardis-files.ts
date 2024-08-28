@@ -3,8 +3,9 @@ import fs from 'fs-extra';
 import { isCI, isMonitoringJob, uxLog } from '../../common/utils/index.js';
 import { prompts } from '../../common/utils/prompts.js';
 import { getConfig, setConfig } from '../../config/index.js';
+import { Hook } from '@oclif/core';
 
-export const hook = async (options: any) => {
+const hook: Hook<'init'> = async (options) => {
   // Skip hooks from other commands than hardis:scratch commands
   const commandId = options?.id || '';
 
@@ -170,3 +171,5 @@ async function getHardisForceIgnoreContent() {
   ];
   return forceIgnoreContent;
 }
+
+export default hook;

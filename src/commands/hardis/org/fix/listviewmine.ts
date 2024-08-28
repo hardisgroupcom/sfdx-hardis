@@ -8,7 +8,7 @@ import { getConfig } from '../../../../config/index.js';
 import c from 'chalk';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class FixListViewMine extends SfCommand<any> {
   public static title = 'Fix listviews with ';

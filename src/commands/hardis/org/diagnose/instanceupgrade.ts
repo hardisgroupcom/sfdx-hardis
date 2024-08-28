@@ -11,7 +11,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
   public static title = 'Get Instance Upgrade date';

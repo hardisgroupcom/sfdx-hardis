@@ -8,7 +8,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { getPoolStorage } from '../../../../common/utils/poolUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ScratchPoolView extends SfCommand<any> {
   public static title = 'View scratch org pool info';

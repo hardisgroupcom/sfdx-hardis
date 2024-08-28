@@ -19,8 +19,9 @@ import {
 import { WebSocketClient } from '../../common/websocketClient.js';
 import { checkConfig, getConfig } from '../../config/index.js';
 import { prompts } from '../../common/utils/prompts.js';
+import { Hook } from '@oclif/core';
 
-export const hook = async (options: any) => {
+const hook: Hook<'prerun'> = async (options) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || '';
 
@@ -53,7 +54,10 @@ export const hook = async (options: any) => {
     return;
   }
   // Manage authentication if DevHub is required but current user is disconnected
-  if ((options.Command && options.Command.requiresDevhubUsername === true) || options.devHub === true) {
+  if (
+    (options.Command && (options?.Command as any)['target-dev-hub']?.required === true) ||
+    (options as any)?.devHub === true
+  ) {
     let devHubAlias = configInfo.devHubAlias || process.env.DEVHUB_ALIAS;
     if (devHubAlias == null) {
       await checkConfig(options);
@@ -64,17 +68,17 @@ export const hook = async (options: any) => {
   }
   // Manage authentication if org is required but current user is disconnected
   if (
-    ((options?.Command?.requiresUsername === true && !options?.argv?.includes('--skipauth')) ||
-      options.checkAuth === true) &&
-    !(options.devHub === true)
+    (((options?.Command as any)['target-org']?.required === true && !options?.argv?.includes('--skipauth')) ||
+      (options as any)?.checkAuth === true) &&
+    !((options as any)?.devHub === true)
   ) {
-    const orgAlias = options.alias
-      ? options.alias
+    const orgAlias = (options as any)?.alias
+      ? (options as any).alias
       : process.env.ORG_ALIAS
       ? process.env.ORG_ALIAS
       : isCI && configInfo.scratchOrgAlias
       ? configInfo.scratchOrgAlias
-      : isCI && options.scratch && configInfo.sfdxAuthUrl
+      : isCI && (options as any)?.scratch && configInfo.sfdxAuthUrl
       ? configInfo.sfdxAuthUrl
       : isCI
       ? await getCurrentGitBranch({ formatted: true })
@@ -477,3 +481,5 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
   }
   return null;
 }
+
+export default hook;

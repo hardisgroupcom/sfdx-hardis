@@ -7,7 +7,7 @@ import { promptOrg } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgConnect extends SfCommand<any> {
   public static title = 'Connect to an org';

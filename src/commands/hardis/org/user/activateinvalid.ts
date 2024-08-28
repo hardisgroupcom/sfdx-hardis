@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import * as columnify from 'columnify';
+import columnify from 'columnify';
 import sortArray from 'sort-array';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -11,7 +11,7 @@ import { bulkQuery, bulkUpdate, soqlQuery } from '../../../../common/utils/apiUt
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgUserActiveInvalid extends SfCommand<any> {
   public static title = 'Reactivate sandbox invalid users';

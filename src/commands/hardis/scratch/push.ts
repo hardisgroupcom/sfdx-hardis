@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { forceSourcePush } from '../../../common/utils/deployUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class SourcePush extends SfCommand<any> {
   public static title = 'Scratch PUSH';

@@ -19,7 +19,7 @@ import SaveTask from '../../../work/save.js';
 import CleanXml from '../../../project/clean/xml.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class Retrofit extends SfCommand<any> {
   public static DEFAULT_SOURCES_TO_RETROFIT = [

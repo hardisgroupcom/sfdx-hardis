@@ -9,7 +9,7 @@ import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class CleanStandardItems extends SfCommand<any> {
   public static title = 'Clean retrieved standard items in dx sources';

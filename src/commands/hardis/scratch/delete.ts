@@ -8,7 +8,7 @@ import c from 'chalk';
 import sortArray from 'sort-array';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ScratchDelete extends SfCommand<any> {
   public static title = 'Delete scratch orgs(s)';

@@ -9,7 +9,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import fs from 'fs-extra';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class CleanSystemDebug extends SfCommand<any> {
   public static title = 'Clean System debug';

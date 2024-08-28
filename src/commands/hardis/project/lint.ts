@@ -8,7 +8,7 @@ import fs from 'fs-extra';
 import { MegaLinterRunner } from 'mega-linter-runner/lib/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class Lint extends SfCommand<any> {
   public static title = 'Lint';

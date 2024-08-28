@@ -7,7 +7,7 @@ import { execCommand, uxLog } from '../../../../common/utils/index.js';
 import { getConfig, getEnvVar } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class MonitorAll extends SfCommand<any> {
   public static title = 'Monitor org';

@@ -20,7 +20,7 @@ export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
     return [];
   }
-  const profileRes = await conn.queryAll('SELECT Id,Name FROM Profile ORDER BY Name');
+  const profileRes = await soqlQuery('SELECT Id,Name FROM Profile ORDER BY Name', conn);
   return profileRes.records;
 }
 

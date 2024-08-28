@@ -14,7 +14,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 const dnsPromises = dns.promises;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
-const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class LegacyApi extends SfCommand<any> {
   public static title = 'Check for legacy API use';
