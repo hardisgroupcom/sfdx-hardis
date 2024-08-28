@@ -62,6 +62,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - @oclif/errors
   - @salesforce/command
   - @salesforce/ts-types
+  - find-package-json
   - node-fetch
 - Migrate to Bulk API v2
 
