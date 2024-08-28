@@ -4,57 +4,74 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- sfdx to SF Cli commands replacement
-  - sfdx force:mdapi:convert -> sf project convert mdapi
-  - sfdx force:mdapi:deploy -> sf project deploy start --metadata-dir
-  - sfdx force:source:retrieve -> sf project retrieve start
-  - sfdx force:source:deploy -> sf project deploy start
-  - sfdx force:source:pull -> sf project retrieve start
-  - sfdx force:source:push -> sf project deploy start
-  - sfdx force:source:tracking:clear -> sf project delete tracking
-  - sfdx force:source:manifest:create -> sf project generate manifest
-  - sfdx sgd:source:delta -> sf sgd:source:delta
-  - sfdx force:org:create -> sf org create sandbox | sf org create scratch
-  - sfdx force:org:list -> sf org list
-  - sfdx force:org:delete -> sf org delete scratch
-  - sfdx config:get -> sf config get
-  - sfdx config:set -> sf config set
-  - sfdx auth:web:login -> sf org login web
-  - sfdx auth:jwt:grant -> sf org login jwt
-  - sfdx auth:sfdxurl:store -> sf org login sfdx-url
-  - sfdx org:login:device -> sf org login device
-  - sfdx force:data:record:get -> sf data get record
-  - sfdx force:data:record:update -> sf data update record
-  - sfdx force:data:soql:query -> sf data query
-  - sfdx force:data:bulk:delete -> sf data delete bulk
-  - sfdx alias:list -> sf alias list
-  - sfdx alias:set -> sf alias set
-  - sfdx force:apex:test:run -> sf apex run test
-  - sfdx force:apex:execute -> sf apex run
-  - sfdx force:package:create -> sf package create
-  - sfdx force:package:version:create -> sf package version create
-  - sfdx force:package:version:delete -> sf package version delete
-  - sfdx force:package:version:list -> sf package version list
-  - sfdx force:package:version:promote -> sf package version promote
-  - sfdx force:package:installed:list -> sf package installed list
-  - sfdx force:package:install -> sf package install
-  - sfdx force:user:password:generate -> sf org generate password
-  - sfdx force:user:permset:assign -> sf org assign permset
-  - sfdx hardis:_ -> sf hardis:_
-- Get rid of sfdx-essentials dependency by internalizing its used commands
-  - sf hardis:packagexml:append
-  - sf hardis:packagexml:remove
-  - sf hardis:project:clean:filter-xml-content
+### Major changes
+
+- Migrate plugin from SFDX plugin core to SF Cli Plugin core
+  - [Convert commands code from SfdxCommand base to SfCommand base](https://github.com/salesforcecli/cli/wiki/Migrate-Plugins-Built-for-sfdx)
+  - Migrate calls from Bulk API v1 to Bulk API v2
+  - Upgrade all npm dependencies to their latest version (more secured)
+
+- Change background calls to legacy sfdx commands to call their SF Cli replacements
+  - `sfdx force:mdapi:convert` -> `sf project convert mdapi`
+  - `sfdx force:mdapi:deploy` -> `sf project deploy start --metadata-dir`
+  - `sfdx force:source:retrieve` -> `sf project retrieve start`
+  - `sfdx force:source:deploy` -> `sf project deploy start`
+  - `sfdx force:source:pull` -> `sf project retrieve start`
+  - `sfdx force:source:push` -> `sf project deploy start`
+  - `sfdx force:source:tracking:clear` -> `sf project delete tracking`
+  - `sfdx force:source:manifest:create` -> `sf project generate manifest`
+  - `sfdx sgd:source:delta` -> `sf sgd:source:delta`
+  - `sfdx force:org:create` -> `sf org create sandbox` | `sf org create scratch`
+  - `sfdx force:org:list` -> `sf org list`
+  - `sfdx force:org:delete` -> `sf org delete scratch`
+  - `sfdx config:get` -> `sf config get`
+  - `sfdx config:set` -> `sf config set`
+  - `sfdx auth:web:login` -> `sf org login web`
+  - `sfdx auth:jwt:grant` -> `sf org login jwt`
+  - `sfdx auth:sfdxurl:store` -> `sf org login sfdx-url`
+  - `sfdx org:login:device` -> `sf org login device`
+  - `sfdx force:data:record:get` -> `sf data get record`
+  - `sfdx force:data:record:update` -> `sf data update record`
+  - `sfdx force:data:soql:query` -> `sf data query`
+  - `sfdx force:data:bulk:delete` -> `sf data delete bulk`
+  - `sfdx alias:list` -> `sf alias list`
+  - `sfdx alias:set` -> `sf alias set`
+  - `sfdx force:apex:test:run` -> `sf apex run test`
+  - `sfdx force:apex:execute` -> `sf apex run`
+  - `sfdx force:package:create` -> `sf package create`
+  - `sfdx force:package:version:create` -> `sf package version create`
+  - `sfdx force:package:version:delete` -> `sf package version delete`
+  - `sfdx force:package:version:list` -> `sf package version list`
+  - `sfdx force:package:version:promote` -> `sf package version promote`
+  - `sfdx force:package:installed:list` -> `sf package installed `
+  - `sfdx force:package:install` -> `sf package install`
+  - `sfdx force:user:password:generate` -> `sf org generate password`
+  - `sfdx force:user:permset:assign` -> `sf org assign permset`
+  - `sfdx hardis:_` -> `sf hardis:_`
+
+- New wrappers commands for SF Cli deployment commands
+  - `sf hardis project deploy validate` -> Wraps `sf project deploy validate`
+  - `sf hardis project deploy quick` -> Wraps `sf project deploy quick`
+  - `sf hardis project deploy start` -> Wraps `sf project deploy start`
+
+### Deprecations
+
 - Deprecate wrapper commands matching sfdx commands that will be removed. All replaced by sf hardis deploy start (TODO: complete !)
-  - sfdx hardis:source:push
-  - sfdx hardis:source:deploy
-  - sfdx hardis:mdapi:retrieve
-  - sfdx hardis:mdapi:deploy
-- Deprecate hardis:deploy:sources:metadata as nobody used metadata format anymore
-- hardis:work:new: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
-- Convert plugin from SFDX plugin core to SF Cli Plugin core
-- Remove not used keyValueStores
-- Remove npm dependencies
+  - `sfdx hardis:source:push`
+  - `sfdx hardis:source:deploy`
+  - `sfdx hardis:mdapi:retrieve`
+  - `sfdx hardis:mdapi:deploy`
+
+- Deprecate `hardis:deploy:sources:metadata` as nobody used metadata format anymore
+
+### Removals
+
+- Get rid of sfdx-essentials plugin dependency by internalizing its used commands
+  - `sf hardis:packagexml:append`
+  - `sf hardis:packagexml:remove`
+  - `sf hardis:project:clean:filter-xml-content`
+
+- Remove npm dependencies (some of them not maintained anymore)
   - @adobe/node-fetch-retry
   - @amplitude/node
   - @keyv/redis
@@ -65,7 +82,13 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - @salesforce/ts-types
   - find-package-json
   - node-fetch
-- Migrate to Bulk API v2
+
+- Remove not used keyValueStores to keep only Salesforce one
+
+### Additional Features
+
+- New command **haardis:misc:purge-references** to partially automate the cleaning of related dependencies when you need to delete a field, or change its type (for example from master detail to lookup)
+- **hardis:work:new**: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
 
 ## [4.53.0] 2024-08-20
 
