@@ -343,7 +343,7 @@ export class FilesExporter {
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
     this.spinnerCustom = ora({
-      text: `⚙️ (${this.filesDownloaded + 1}) Downloading ${outputFileLabel}...`,
+      text: `(${(this.filesDownloaded + 1)}) Downloading ${outputFileLabel}...`,
       spinner: 'moon',
     }).start();
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
