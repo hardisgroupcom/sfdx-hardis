@@ -55,7 +55,7 @@ const hook: Hook<'prerun'> = async (options) => {
   }
   // Manage authentication if DevHub is required but current user is disconnected
   if (
-    (options.Command && (options?.Command as any)['target-dev-hub']?.required === true) ||
+    (options.Command && (options?.Command?.flags as any)['target-dev-hub']?.required === true) ||
     (options as any)?.devHub === true
   ) {
     let devHubAlias = configInfo.devHubAlias || process.env.DEVHUB_ALIAS;
@@ -68,7 +68,7 @@ const hook: Hook<'prerun'> = async (options) => {
   }
   // Manage authentication if org is required but current user is disconnected
   if (
-    (((options?.Command as any)['target-org']?.required === true && !options?.argv?.includes('--skipauth')) ||
+    (((options?.Command?.flags as any)['target-org']?.required === true && !options?.argv?.includes('--skipauth')) ||
       (options as any)?.checkAuth === true) &&
     !((options as any)?.devHub === true)
   ) {

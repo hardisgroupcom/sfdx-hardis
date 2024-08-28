@@ -1,7 +1,7 @@
 import { uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
-import ora from 'ora';
+import ora, { Ora } from 'ora';
 import { IngestJobV2Results, IngestOperation, JobInfoV2 } from 'jsforce/lib/api/bulk2.js';
 import { Schema } from 'jsforce';
 
@@ -82,7 +82,7 @@ export async function bulkQueryChunksIn(
   return results;
 }
 
-let spinner;
+let spinner: Ora;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkUpdate(
   objectName: string,
@@ -104,8 +104,8 @@ export async function bulkUpdate(
     operation: action,
     object: objectName,
   });
-  job.on('open', (job) => {
-    uxLog(this, c.grey(`[BulkApiV2] Job ${job.id} succesfully created.`));
+  job.on('open', () => {
+    spinner.text = `[BulkApiV2] Load Job ${job.id} succesfully created.`;
   });
   // Upload job data
   await job.open();
@@ -113,10 +113,10 @@ export async function bulkUpdate(
   await job.close();
   // Monitor job execution
   job.on('inProgress', (jobInfo: JobInfoV2) => {
-    uxLog(
-      this,
-      c.grey(`[BulkApiV2] Processed: ${jobInfo.numberRecordsProcessed}. Failed: ${jobInfo.numberRecordsFailed}`)
-    );
+    spinner.text = `[BulkApiV2] Processed: ${jobInfo.numberRecordsProcessed}. Failed: ${jobInfo.numberRecordsFailed}`;
+  });
+  job.on('failed', (e) => {
+    spinner.fail(`[BulkApiV2] Error: ${e.message}`);
   });
   await job.poll();
   const res = await job.getAllResults();
