@@ -1,5 +1,4 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
 
@@ -71,8 +70,8 @@ export default class ProjectDeployStart extends SfCommand<any> {
     }),
     wait: Flags.integer({
       char: "w",
-      default: Duration.minutes(33),
-      min: Duration.minutes(1),
+      default: 33,
+      min: 1,
       description: "wait",
       exclusive: ["async"],
     }),
@@ -95,6 +94,10 @@ export default class ProjectDeployStart extends SfCommand<any> {
     }),
     "results-dir": Flags.string({
       description: "results-dir",
+    }),
+    debug: Flags.boolean({
+      default: false,
+      description: "debug",
     }),
   };
 

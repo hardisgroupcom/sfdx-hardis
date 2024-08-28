@@ -46,6 +46,7 @@ export default class WebSocketAction extends SfCommand<any> {
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(WebSocketAction);
     this.event = flags.event || "";
 
     if (WebSocketClient.isAlive()) {

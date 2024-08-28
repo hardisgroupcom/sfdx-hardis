@@ -1,5 +1,4 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Duration } from "@salesforce/kit";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
 import { GitProvider } from "../../../common/gitProvider/index.js";
@@ -80,7 +79,7 @@ Notes:
       options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
       default: "NoTestRun",
     }),
-    runtests: flags.array({
+    runtests: Flags.array({
       char: "r",
       description: "runTests",
       default: [],
@@ -93,34 +92,34 @@ Notes:
       char: "g",
       description: "ignoreWarnings",
     }),
-    validateddeployrequestid: flags.id({
+    validateddeployrequestid: Flags.id({
       char: "q",
       description: "validateDeployRequestId",
       exclusive: ["manifest", "metadata", "sourcepath", "checkonly", "testlevel", "runtests", "ignoreerrors", "ignorewarnings"],
     }),
-    verbose: flags.builtin({
+    verbose: Flags.builtin({
       description: "verbose",
     }),
-    metadata: flags.array({
+    metadata: Flags.array({
       char: "m",
       description: "metadata",
       exclusive: ["manifest", "sourcepath"],
     }),
-    sourcepath: flags.array({
+    sourcepath: Flags.array({
       char: "p",
       description: "sourcePath",
       exclusive: ["manifest", "metadata"],
     }),
-    manifest: flags.filepath({
+    manifest: Flags.file({
       char: "x",
       description: "flagsLong.manifest",
       exclusive: ["metadata", "sourcepath"],
     }),
-    predestructivechanges: flags.filepath({
+    predestructivechanges: Flags.file({
       description: "predestructivechanges",
       dependsOn: ["manifest"],
     }),
-    postdestructivechanges: flags.filepath({
+    postdestructivechanges: Flags.file({
       description: "postdestructivechanges",
       dependsOn: ["manifest"],
     }),
@@ -137,7 +136,7 @@ Notes:
     resultsdir: Flags.directory({
       description: "resultsdir",
     }),
-    coverageformatters: flags.array({
+    coverageformatters: Flags.array({
       description: "coverageformatters",
     }),
     junit: Flags.boolean({ description: "junit" }),
@@ -154,6 +153,7 @@ Notes:
   protected xorFlags = ["manifest", "metadata", "sourcepath", "validateddeployrequestid"];
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(Deploy);
     uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
     uxLog(this, c.red("Please migrate to command sf hardis project deploy start"));
     uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
@@ -166,7 +166,7 @@ Notes:
       const checkOnly = flags.checkonly || false;
       if (orgCoveragePercent) {
         try {
-          await checkDeploymentOrgCoverage(orgCoveragePercent, { check: checkOnly });
+          await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: checkOnly });
         } catch (errCoverage) {
           await GitProvider.managePostPullRequestComment();
           throw errCoverage;

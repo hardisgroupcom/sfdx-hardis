@@ -10,7 +10,7 @@ export abstract class AiProviderRoot {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async promptAi(prompt: string): Promise<AiResponse> {
+  public async promptAi(prompt: string): Promise<AiResponse | null> {
     throw new SfError("promptAi should be implemented on this call");
   }
 

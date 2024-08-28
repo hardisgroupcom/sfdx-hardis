@@ -11,7 +11,7 @@ Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com
 
 */
 
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import c from "chalk";
@@ -22,14 +22,14 @@ import { createTempDir, getCurrentGitBranch, getLatestGitCommit, isCI, uxLog } f
 import { getConfig } from "../../../../../config/index.js";
 import { forceSourceDeploy, removePackageXmlContent } from "../../../../../common/utils/deployUtils.js";
 import { promptOrg } from "../../../../../common/utils/orgUtils.js";
-import { getApexTestClasses } from "../../../../../common/utils/classUtils";
+import { getApexTestClasses } from "../../../../../common/utils/classUtils.js";
 import { listMajorOrgs, restoreListViewMine } from "../../../../../common/utils/orgConfigUtils.js";
 import { NotifProvider, UtilsNotifs } from "../../../../../common/notifProvider/index.js";
-import { GitProvider } from "../../../../../common/gitProvider";
+import { GitProvider } from "../../../../../common/gitProvider/index.js";
 import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from "../../../../../common/utils/gitUtils.js";
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from "../../../../../common/utils/notifUtils.js";
 import { MessageAttachment } from "@slack/web-api";
-import { TicketProvider } from "../../../../../common/ticketProvider";
+import { TicketProvider } from "../../../../../common/ticketProvider/index.js";
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
@@ -242,6 +242,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(DxSources);
     this.configInfo = await getConfig("branch");
     this.checkOnly = flags.check || false;
     const deltaFromArgs = flags.delta || false;
@@ -387,7 +388,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         const prInfo = await GitProvider.getPullRequestInfo();
         const deltaScope = await getGitDeltaScope(prInfo?.sourceBranch || currentGitBranch, prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH);
         fromCommit = deltaScope.fromCommit;
-        toCommit = deltaScope.toCommit.hash;
+        toCommit = deltaScope?.toCommit?.hash || "";
       }
       // call delta
       uxLog(this, c.cyan("Generating git delta package.xml and destructiveChanges.xml ..."));
@@ -443,12 +444,12 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       try {
         // Build notification attachments & handle ticketing systems comments
         const commitsSummary = await this.collectNotifAttachments(attachments, pullRequestInfo);
-        await TicketProvider.postDeploymentActions(commitsSummary.tickets, flags['target-org']?.getConnection()?.instanceUrl || targetUsername, pullRequestInfo);
-      } catch (e4) {
+        await TicketProvider.postDeploymentActions(commitsSummary.tickets, flags['target-org']?.getConnection()?.instanceUrl || targetUsername || "", pullRequestInfo);
+      } catch (e4: any) {
         uxLog(this, c.yellow("Unable to handle commit info on TicketProvider post deployment actions:\n" + e4.message) + "\n" + c.gray(e4.stack));
       }
 
-      const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl || targetUsername);
+      const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl || targetUsername || "");
       const branchMarkdown = await getBranchMarkdown();
       let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
       notifMessage += quickDeploy ? " (🚀 quick deployment)" : delta ? " (🌙 delta deployment)" : " (🌕 full deployment)";

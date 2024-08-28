@@ -4,7 +4,7 @@ import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js"
 import { uxLog } from "../utils/index.js";
 
 export abstract class GitProviderRoot {
-  public serverUrl: string;
+  public serverUrl: string | null;
   public token: string;
 
 

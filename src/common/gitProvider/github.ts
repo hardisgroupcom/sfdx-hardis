@@ -3,20 +3,19 @@ import c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { GitHub } from "@actions/github/lib/utils";
+import { GitHub } from "@actions/github/lib/utils.js";
 
 export class GithubProvider extends GitProviderRoot {
   private octokit: InstanceType<typeof GitHub>;
-  private repoOwner: string;
-  private repoName: string;
-  public serverUrl: string;
-  public token: string;
+  private repoOwner: string | null;
+  private repoName: string | null;
+  public serverUrl: string | null;
 
   constructor() {
     super();
     const tokenName = process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? "CI_SFDX_HARDIS_GITHUB_TOKEN" : process.env.PAT ? "PAT" : "GITHUB_TOKEN";
     const token = process.env[tokenName];
-    this.octokit = github.getOctokit(token);
+    this.octokit = github.getOctokit(token || "");
     this.repoOwner = github?.context?.repo?.owner || null;
     this.repoName = github?.context?.repo?.repo || null;
     this.serverUrl = github?.context?.serverUrl || null;
@@ -26,14 +25,14 @@ export class GithubProvider extends GitProviderRoot {
     return "sfdx-hardis GitHub connector";
   }
 
-  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
+  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId = null;
     const repoOwner = github?.context?.repo?.owner || null;
     const repoName = github?.context?.repo?.repo || null;
     uxLog(this, c.grey("[GitHub integration] Listing previously closed Pull Requests"));
     const latestPullRequestsOnBranch = await this.octokit.rest.pulls.list({
-      owner: repoOwner,
-      repo: repoName,
+      owner: repoOwner || "",
+      repo: repoName || "",
       state: "closed",
       direction: "desc",
       per_page: 10,
@@ -42,17 +41,17 @@ export class GithubProvider extends GitProviderRoot {
     if (latestPullRequestsOnBranch.data.length > 0) {
       const latestPullRequest = latestPullRequestsOnBranch.data[0];
       const latestPullRequestId = latestPullRequest.number;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, repoOwner, repoName, deploymentCheckId, latestPullRequest);
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, repoOwner || "", repoName || "", deploymentCheckId, latestPullRequest);
     }
     return deploymentCheckId;
   }
 
-  public async getPullRequestDeploymentCheckId(): Promise<string> {
+  public async getPullRequestDeploymentCheckId(): Promise<string | null> {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
       const repoOwner = github?.context?.repo?.owner || null;
       const repoName = github?.context?.repo?.repo || null;
-      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.number, repoOwner, repoName, null, pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.number, repoOwner || "", repoName || "", null, pullRequestInfo);
     }
     return null;
   }
@@ -71,8 +70,8 @@ export class GithubProvider extends GitProviderRoot {
       issue_number: latestPullRequestId,
     });
     for (const existingComment of existingComments.data) {
-      if (existingComment.body.includes("<!-- sfdx-hardis deployment-id ")) {
-        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body);
+      if ((existingComment.body || "").includes("<!-- sfdx-hardis deployment-id ")) {
+        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body || "");
         if (matches) {
           deploymentCheckId = matches[1];
           uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
@@ -84,13 +83,13 @@ export class GithubProvider extends GitProviderRoot {
   }
 
   // Returns current job URL
-  public async getCurrentJobUrl(): Promise<string> {
+  public async getCurrentJobUrl(): Promise<string | null> {
     try {
       const runId = github?.context?.runId;
       if (this.repoOwner && this.repoName && this.serverUrl && runId) {
         return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${runId}`;
       }
-    } catch (err) {
+    } catch (err: any) {
       uxLog(this, c.yellow("[GitHub integration]" + err.message));
     }
     if (process.env.GITHUB_JOB_URL) {
@@ -100,13 +99,13 @@ export class GithubProvider extends GitProviderRoot {
   }
 
   // Returns current job URL
-  public async getCurrentBranchUrl(): Promise<string> {
+  public async getCurrentBranchUrl(): Promise<string | null> {
     try {
       const branch = github?.context?.ref || null;
       if (this.repoOwner && this.repoName && this.serverUrl && branch) {
         return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/tree/${branch}`;
       }
-    } catch (err) {
+    } catch (err: any) {
       uxLog(this, c.yellow("[GitHub integration]" + err.message));
     }
     return null;
@@ -119,7 +118,7 @@ export class GithubProvider extends GitProviderRoot {
     if (prNumber !== null && this.repoOwner !== null && prNumber !== null) {
       const pullRequest = await this.octokit.rest.pulls.get({
         owner: this.repoOwner,
-        repo: this.repoName,
+        repo: this.repoName || "",
         pull_number: prNumber,
       });
       // Add cross git provider properties used by sfdx-hardis
@@ -210,11 +209,11 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubWo
     // Check for existing note from a previous run
     uxLog(this, c.grey("[GitHub integration] Listing comments of Pull Request..."));
     const existingComments = await this.octokit.rest.issues.listComments({
-      owner: this.repoOwner,
+      owner: this.repoOwner || "",
       repo: this.repoName,
       issue_number: pullRequestId,
     });
-    let existingCommentId = null;
+    let existingCommentId: number | null = null;
     for (const existingComment of existingComments.data) {
       if (existingComment?.body?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
         existingCommentId = existingComment.id;
@@ -226,7 +225,7 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubWo
       // Update existing note
       uxLog(this, c.grey("[GitHub integration] Updating Pull Request Comment on GitHub..."));
       const githubCommentEditResult = await this.octokit.rest.issues.updateComment({
-        owner: this.repoOwner,
+        owner: this.repoOwner || "",
         repo: this.repoName,
         issue_number: pullRequestId,
         comment_id: existingCommentId,
@@ -241,7 +240,7 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubWo
       // Create new note if no existing not was found
       uxLog(this, c.grey("[GitHub integration] Adding Pull Request Comment on GitHub..."));
       const githubCommentCreateResult = await this.octokit.rest.issues.createComment({
-        owner: this.repoOwner,
+        owner: this.repoOwner || "",
         repo: this.repoName,
         issue_number: pullRequestId,
         body: messageBody,

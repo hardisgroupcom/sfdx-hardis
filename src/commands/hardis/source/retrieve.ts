@@ -16,13 +16,13 @@ export class SourceRetrieve extends SfCommand<any> {
 `;
   public static readonly examples = [];
   public static readonly requiresProject = true;
-  public static readonly flagsConfig: FlagsConfig = {
-    apiversion: flags.builtin({
+  public static readonly flags = {
+    apiversion: Flags.builtin({
       /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
       // @ts-ignore force char override for backward compat
       char: "a",
     }),
-    sourcepath: flags.array({
+    sourcepath: Flags.array({
       char: "p",
       description: "sourcePath",
       longDescription: "sourcePath",
@@ -30,22 +30,20 @@ export class SourceRetrieve extends SfCommand<any> {
     }),
     wait: Flags.integer({
       char: "w",
-      description: "wait",
-      longDescription: "wait",
+      description: "wait"
     }),
-    manifest: flags.filepath({
+    manifest: Flags.directory({
       char: "x",
       description: "manifest",
-      longDescription: "manifest",
       exclusive: ["metadata", "sourcepath"],
     }),
-    metadata: flags.array({
+    metadata: Flags.array({
       char: "m",
       description: "metadata",
       longDescription: "metadata",
       exclusive: ["manifest", "sourcepath"],
     }),
-    packagenames: flags.array({
+    packagenames: Flags.array({
       char: "n",
       description: "packagenames",
     }),
@@ -58,7 +56,7 @@ export class SourceRetrieve extends SfCommand<any> {
       description: "forceoverwrite",
       dependsOn: ["tracksource"],
     }),
-    verbose: flags.builtin({
+    verbose: Flags.builtin({
       description: "verbose",
     }),
     debug: Flags.boolean({
@@ -76,6 +74,7 @@ export class SourceRetrieve extends SfCommand<any> {
   };
 
   public async run(): Promise<any> {
+    const { flags } = await this.parse(SourceRetrieve);
     uxLog(this, c.red("This command will be removed by Salesforce in November 2024."));
     uxLog(this, c.red("Please migrate to command sf hardis project retrieve start"));
     uxLog(this, c.red("See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm"));
@@ -87,7 +86,7 @@ export class SourceRetrieve extends SfCommand<any> {
       args.push(...["-m", `"${metadataArg}"`]);
     }
     // Manage user selection for org
-    if (!isCI && !flags.targetusername) {
+    if (!isCI && !flags['target-org']) {
       let orgUsername = flags['target-org'].getUsername();
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
       if (orgUsername) {

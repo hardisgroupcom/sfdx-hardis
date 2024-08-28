@@ -1,10 +1,10 @@
 import OpenAI from "openai";
 import { AiResponse } from "./index.js";
-import { AiProviderRoot } from "./aiProviderRoot";
+import { AiProviderRoot } from "./aiProviderRoot.js";
 import c from "chalk";
 import { uxLog } from "../utils/index.js";
 
-export class OpenApiProvider extends AiProviderRoot {
+export class OpenAiProvider extends AiProviderRoot {
   protected openai: OpenAI;
 
   constructor() {
@@ -13,10 +13,10 @@ export class OpenApiProvider extends AiProviderRoot {
   }
 
   public getLabel(): string {
-    return "OpenApi connector";
+    return "OpenAi connector";
   }
 
-  public async promptAi(promptText: string): Promise<AiResponse> {
+  public async promptAi(promptText: string): Promise<AiResponse | null> {
     if (!this.checkMaxAiCallsNumber()) {
       const maxCalls = this.getAiMaxCallsNumber();
       uxLog(this, c.grey(`[OpenAi] Already performed maximum ${maxCalls} calls. Increase it by defining OPENAI_MAXIMUM_CALL_NUMBER`));
@@ -35,7 +35,7 @@ export class OpenApiProvider extends AiProviderRoot {
     };
     if (completion?.choices?.length > 0) {
       aiResponse.success = true;
-      aiResponse.promptResponse = completion.choices[0].message.content;
+      aiResponse.promptResponse = completion.choices[0].message.content ?? undefined;
     }
     return aiResponse;
   }

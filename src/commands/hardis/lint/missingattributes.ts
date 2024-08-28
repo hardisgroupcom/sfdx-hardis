@@ -22,7 +22,7 @@ import { GLOB_IGNORE_PATTERNS } from "../../../common/utils/projectUtils.js";
 Messages.importMessagesDirectory(__dirname);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
 /* jscpd:ignore-end */
-export default class metadatastatus extends SfCommand<any> {
+export default class MetadataStatus extends SfCommand<any> {
   public static title = "check missing description on custom fields";
   public static description = "Check if elements(custom fields) aren't description";
   public static examples = ["$ sf hardis:lint:missingattributes"];
@@ -60,6 +60,7 @@ export default class metadatastatus extends SfCommand<any> {
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(MetadataStatus);
     await this.filterOutCustomSettings();
     this.fieldsWithoutDescription = await this.verifyFieldDescriptions();
 

@@ -65,6 +65,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   private customPermissionFilePattern = "**/customPermissions/*.xml";
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(UnusedMetadatas);
     await this.setProjectFiles();
     const unusedLabels = await this.verifyLabels();
     const unusedCustomPermissions = await this.verifyCustomPermissions();

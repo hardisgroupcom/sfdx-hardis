@@ -51,6 +51,7 @@ export default class RefreshTask extends SfCommand<any> {
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(RefreshTask);
     const config = await getConfig("project");
     if (config.get("EXPERIMENTAL", "") !== "true") {
       const msg = "This command is not stable enough to be used. Use EXPERIMENTAL=true to use it anyway";
@@ -100,14 +101,14 @@ export default class RefreshTask extends SfCommand<any> {
     this.mergeBranch = branchRes.value;
     // Run refresh of local branch
     try {
-      return await this.runRefresh(localBranch);
+      return await this.runRefresh(localBranch, flags);
     } catch (e) {
       uxLog(this, c.yellow("There has been a merge conflict or a technical error, please contact a Developer for help !"));
       throw e;
     }
   }
 
-  private async runRefresh(localBranch): Promise<AnyJson> {
+  private async runRefresh(localBranch, flags): Promise<AnyJson> {
     this.debugMode = flags.debug || false;
 
     uxLog(
@@ -145,7 +146,7 @@ export default class RefreshTask extends SfCommand<any> {
     // Pull most recent version of development branch
     uxLog(this, c.cyan(`Pulling most recent version of remote branch ${c.green(this.mergeBranch)}...`));
     await git({ output: true }).fetch();
-    await git({ output: true }).checkout(this.mergeBranch);
+    await git({ output: true }).checkout(this.mergeBranch || "");
     const pullRes = await git({ output: true }).pull();
     // Go back to current work branch
     await git({ output: true }).checkout(localBranch);
@@ -160,7 +161,7 @@ export default class RefreshTask extends SfCommand<any> {
     if (pullRes.summary.changes > 0 || mergeRef !== localRef) {
       // Create new commit from merge
       uxLog(this, c.cyan(`Creating a merge commit of ${c.green(this.mergeBranch)} within ${c.green(localBranch)}...`));
-      let mergeSummary = await git({ output: true }).merge([this.mergeBranch]);
+      let mergeSummary = await git({ output: true }).merge([this.mergeBranch || ""]);
       while (mergeSummary.failed) {
         const mergeResult = await prompts({
           type: "select",

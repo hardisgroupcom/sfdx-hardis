@@ -3,7 +3,9 @@
   "description": "A template repository for external sf plugins",
   "version": "1.0.0",
   "dependencies": {
+    "@actions/github": "^6.0.0",
     "@adobe/node-fetch-retry": "^2.2.0",
+    "@gitbeaker/node": "^35.8.1",
     "@oclif/core": "^4",
     "@salesforce/core": "^7.2.0",
     "@salesforce/sf-plugins-core": "^10.0.0",
@@ -29,6 +31,7 @@
     "keyv": "^5.0.1",
     "markdown-toc": "^1.2.0",
     "moment": "^2.30.1",
+    "openai": "^4.56.1",
     "ora": "^8.1.0",
     "papaparse": "^5.4.1",
     "pascalcase": "^2.0.0",
