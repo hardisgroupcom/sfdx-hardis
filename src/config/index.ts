@@ -119,7 +119,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
     const configExplorer = await explorer.search();
     configFile = configExplorer != null ? configExplorer.filepath : searchPlaces.slice(-1)[0];
   }
-  let doc = {};
+  let doc: any = {};
   if (fs.existsSync(configFile)) {
     doc = yaml.load(fs.readFileSync(configFile, 'utf-8'));
   }

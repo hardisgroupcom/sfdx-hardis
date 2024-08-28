@@ -142,7 +142,7 @@ export async function listMajorOrgs() {
   const branchConfigPattern = '**/config/branches/.sfdx-hardis.*.yml';
   const configFiles = await glob(branchConfigPattern);
   for (const configFile of configFiles) {
-    const props = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+    const props = (yaml.load(fs.readFileSync(configFile, 'utf-8')) || {}) as any;
     listViewRegex.lastIndex = 0;
     const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
     const m = branchNameRegex.exec(configFile);
