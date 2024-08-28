@@ -368,10 +368,10 @@ export class FilesExporter {
       // uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
       this.filesDownloaded++;
       this.spinnerCustom.succeed(`✅ (${this.filesDownloaded}) Downloaded ${outputFileLabel}`);
-    } catch (err) {
+    } catch (err: any) {
       // Download failure
       // uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
-      this.spinnerCustom.fail(`❌ (${this.filesDownloaded}) Error while downloading ${outputFileLabel}`);
+      this.spinnerCustom.fail(`❌ (${this.filesDownloaded}) Error while downloading ${outputFileLabel}: ${err.message}`);
       this.filesErrors++;
     }
   }
