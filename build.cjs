@@ -1,18 +1,18 @@
 #!/usr/bin/node
 /* eslint-disable */
 const fs = require("fs-extra");
-const { getAllTips } = require("./lib/common/utils/deployTipsList");
 
 class SfdxHardisBuilder {
-  run() {
+  async run() {
     console.log("Start additional building of sfdx-hardis repository...");
-    this.buildDeployTipsDoc();
+    await this.buildDeployTipsDoc();
     this.truncateReadme();
   }
 
-  buildDeployTipsDoc() {
+  async buildDeployTipsDoc() {
     console.log("Building salesforce-deployment-assistant-error-list.md doc...");
     const deployTipsDocFile = "./docs/salesforce-deployment-assistant-error-list.md";
+    const { getAllTips } = await import("./lib/common/utils/deployTipsList.js");
     const deployTips = getAllTips();
     const deployTipsMd = [
       "---",
@@ -60,9 +60,12 @@ class SfdxHardisBuilder {
     const readmeFile = "./README.md";
     const readmeContent = fs.readFileSync(readmeFile, "utf-8");
     const chunks = readmeContent.split("<!-- commands -->")
-    fs.writeFileSync(readmeFile, chunks[0]+"\n\n<!-- commands -->");
+    fs.writeFileSync(readmeFile, chunks[0] + "\n\n<!-- commands -->");
     console.log("Removed README.md commands");
   }
 }
 
-new SfdxHardisBuilder().run();
+(async () => {
+  await new SfdxHardisBuilder().run();
+})();
+

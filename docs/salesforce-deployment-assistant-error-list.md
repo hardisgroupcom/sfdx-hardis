@@ -116,7 +116,7 @@ You need to manually delete record type {1} in target org
 ```shell
 Folder {2} is missing.
 - If folder {2} is existing in sources, add it in related package.xml
-- If folder {2} is not existing in DX sources, please use sf hardis:oject:clean:retrievefolders to retrieve it
+- If folder {2} is not existing in DX sources, please use sf hardis:project:clean:retrievefolders to retrieve it
 - If both previous solutions did not work, go create manually folder {2} in target org
 
 ```
@@ -214,7 +214,7 @@ A reference to a custom field {3}.{4} is not found in {1}:
 - If you deleted {3}.{4}, or if you don't want to deploy it, do a search on {4} in all sources, and remove all XML elements referring to {3}.{4} (except in destructiveChanges.xml)
 - If {3}.{4} should exist, make sure it is in force-app/main/default/objects/{3}/fields and that {3}.{4} is in manifest/package.xml in CustomField section
 - If {3}.{4} is standard, the error is because {3}.{4} is not available in the org you are trying to deploy to. You can:
-  - Remove the reference to {4} in the XML of {1} ( maybe sf hardis:oject:clean:references can clean automatically for you ! )
+  - Remove the reference to {4} in the XML of {1} ( maybe sf hardis:project:clean:references can clean automatically for you ! )
   - Activate the required features/license in the target org
 
 ```
