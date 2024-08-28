@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import * as Config from '@oclif/config';
+import Config from '@oclif/config';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -111,7 +111,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     }
 
     // Update mkdocs nav items
-    const mkdocsYml = yaml.load(
+    const mkdocsYml: any = yaml.load(
       fs
         .readFileSync(mkdocsYmlFile, 'utf-8')
         .replace('!!python/name:materialx.emoji.twemoji', "'!!python/name:materialx.emoji.twemoji'")
