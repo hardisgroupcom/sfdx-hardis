@@ -110,7 +110,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
         )
       );
       let packageSkipItems = {};
-      if (fs.existsSync(packageXmlToRemove)) {
+      if (fs.existsSync(packageXmlToRemove || '')) {
         packageSkipItems = await parsePackageXmlFile(packageXmlToRemove || '');
       }
       for (const metadataType of additionalSkipMetadataTypes.split(',')) {

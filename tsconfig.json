@@ -1,11 +1,12 @@
 {
-  "extends": "@salesforce/dev-config/tsconfig-strict-esm",
+  "extends": "@salesforce/dev-config/tsconfig-strict-esm.js",
   "compilerOptions": {
     "outDir": "lib",
     "rootDir": "src",
     "noImplicitAny": false,
     "noImplicitThis": false,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "skipLibCheck": true
   },
   "include": [
     "./src/**/*.ts"

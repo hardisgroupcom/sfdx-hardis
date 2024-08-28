@@ -145,7 +145,7 @@ export default class FixV53Flexipages extends SfCommand<any> {
           by: ['key'],
           order: ['asc'],
         }
-      ).map((sorted) => sorted.value);
+      ).map((sorted: any) => sorted.value);
       profile.Profile['tabVisibilities'] = sortedTabVisibility;
       // Update Profile XML File
       await writeXmlFile(profileFile, profile);

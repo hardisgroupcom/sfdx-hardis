@@ -130,7 +130,7 @@ See article below
           type: 'multiselect',
           name: 'value',
           message: 'Please select users that you want to remove the .invalid from emails',
-          choices: usersSorted.map((user) => {
+          choices: usersSorted.map((user: any) => {
             return { title: `${user.Name} - ${user.Email}`, value: user };
           }),
         });

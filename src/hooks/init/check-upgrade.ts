@@ -1,12 +1,12 @@
-import c from "chalk";
+import c from 'chalk';
 import { readPackageUp } from 'read-package-up';
 import updateNotifier from 'update-notifier';
-import * as semver from "semver";
+import * as semver from 'semver';
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
-  const commandId = options?.id || "";
-  if (!commandId.startsWith("hardis")) {
+  const commandId = options?.id || '';
+  if (!commandId.startsWith('hardis')) {
     return;
   }
 
@@ -23,14 +23,22 @@ export const hook = async (options: any) => {
     notifier.update.current !== notifier.update.latest &&
     semver.compare(notifier.update.latest, notifier.update.current) === 1
   ) {
-    console.warn(c.yellow("***********************************************************************************************************************"));
     console.warn(
       c.yellow(
-        `WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to v${notifier.update.latest} by running ${c.green(
-          "sf plugins install sfdx-hardis",
-        )}`,
-      ),
+        '***********************************************************************************************************************'
+      )
     );
-    console.warn(c.yellow("***********************************************************************************************************************"));
+    console.warn(
+      c.yellow(
+        `WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to v${
+          notifier.update.latest
+        } by running ${c.green('sf plugins install sfdx-hardis')}`
+      )
+    );
+    console.warn(
+      c.yellow(
+        '***********************************************************************************************************************'
+      )
+    );
   }
 };

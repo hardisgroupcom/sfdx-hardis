@@ -174,7 +174,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     lines.push(...['', '## Commands']);
     cmdLines.push('# Commands');
     let currentSection = '';
-    for (const command of sortArray(config.commands, { by: ['id'], order: ['asc'] })) {
+    for (const command of sortArray(config.commands, { by: ['id'], order: ['asc'] }) as any[]) {
       const section = command.id.split(':')[0] + ':' + command.id.split(':')[1];
       if (section !== currentSection) {
         lines.push(...['', `### ${section}`, '', '|Command|Title|', '|:------|:----------|']);
