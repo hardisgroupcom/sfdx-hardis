@@ -59,6 +59,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - @amplitude/node
   - @keyv/redis
   - @oclif/command
+  - @oclif/config
   - @oclif/errors
   - @salesforce/command
   - @salesforce/ts-types

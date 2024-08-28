@@ -1,5 +1,4 @@
 /* jscpd:ignore-start */
-import Config from '@oclif/config';
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -7,10 +6,11 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import sortArray from 'sort-array';
-import * as set from 'set-value';
+import set from 'set-value';
 import * as yaml from 'js-yaml';
 import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
+import { Config } from '@oclif/core';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
