@@ -37,27 +37,31 @@ let spinnerQ;
 const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
-  uxLog(this, c.grey('SOQL BULK: ' + c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)));
+  const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
+  uxLog(this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)));
   conn.bulk.pollInterval = 5000; // 5 sec
   conn.bulk.pollTimeout = 60000; // 60 sec
   // Start query
   try {
-    spinnerQ = ora({ text: `[BulkApiV2] Bulk query...`, spinner: 'moon' }).start();
+    spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
     const recordStream = await conn.bulk2.query(soqlQuery);
     recordStream.on('error', (err) => {
-      uxLog(this, c.yellow('Bulk query error: ' + err));
+      uxLog(this, c.yellow('Bulk Query error: ' + err));
       globalThis.sfdxHardisFatalError = true;
     });
     // Wait for all results
     const records = await recordStream.toArray();
-    spinnerQ.succeed(`Bulk query completed with ${records.length} results.`);
+    spinnerQ.succeed(`[BulkApiV2] Bulk Query completed with ${records.length} results.`);
     return { records: records };
-  } catch (e) {
-    spinnerQ.fail(`Bulk query error.`);
+  } catch (e: any) {
+    spinnerQ.fail(`[BulkApiV2] Bulk query error: ${e.message}`);
     // Try again if the reason is a timeout and max number of retries is not reached yet
     if ((e + '').includes('ETIMEDOUT') && retries < maxRetry) {
-      uxLog(this, c.yellow('Bulk query retry attempt #' + retries + 1));
+      uxLog(this, c.yellow('[BulkApiV2] Bulk Query retry attempt #' + retries + 1));
       return await bulkQuery(soqlQuery, conn, retries + 1);
+    }
+    else {
+      throw e;
     }
   }
 }

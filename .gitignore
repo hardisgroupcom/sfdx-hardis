@@ -49,3 +49,5 @@ node_modules
 .idea
 
 hardis-report/
+megalinter-reports/
+config/user/

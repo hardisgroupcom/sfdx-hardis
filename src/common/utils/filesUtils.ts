@@ -2,7 +2,7 @@
 import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
-import makeFetchHappen from 'make-fetch-happen';
+import makeFetchHappen, { FetchOptions } from 'make-fetch-happen';
 import * as split from 'split';
 import { PromisePool } from '@supercharge/promise-pool';
 
@@ -17,6 +17,7 @@ import { bulkQuery, soqlQuery } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
+import ora, { Ora } from 'ora';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -28,7 +29,7 @@ export class FilesExporter {
   private startChunkNumber: number;
   private commandThis: any;
 
-  private fetchOptions: any;
+  private fetchOptions: FetchOptions;
   private dtl: any = null; // export config
   private exportedFilesFolder: string = '';
   private recordsChunk: any[] = [];
@@ -51,6 +52,7 @@ export class FilesExporter {
   private filesIgnoredExisting = 0;
   private apiUsedBefore: number = 0;
   private apiLimit: number = 0;
+  protected spinnerCustom: Ora;
 
   constructor(
     filesPath: string,
@@ -94,9 +96,14 @@ export class FilesExporter {
     await fs.ensureDir(this.exportedFilesFolder);
 
     await this.calculateApiConsumption();
+    this.spinnerCustom = ora({
+      text: `Initializing files export...`,
+      spinner: 'moon',
+    }).start();
     this.startQueue();
     await this.processParentRecords();
     await this.queueCompleted();
+    this.spinnerCustom.succeed("Files export completed");
     return await this.buildResult();
   }
 
@@ -189,11 +196,10 @@ export class FilesExporter {
 
   private async processParentRecords() {
     // Query parent records using SOQL defined in export.json file
-    uxLog(this, c.grey('Bulk query: ' + c.italic(this.dtl.soqlQuery)));
     this.totalSoqlRequests++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
-    const records = await bulkQuery(this.dtl.soqlQuery, this.conn, 3);
-    for (const record of records) {
+    const queryRes = await bulkQuery(this.dtl.soqlQuery, this.conn, 3);
+    for (const record of queryRes.records) {
       this.totalParentRecords++;
       const parentRecordFolderForFiles = path.resolve(
         path.join(this.exportedFilesFolder, record[this.dtl.outputFolderNameField] || record.Id)
@@ -307,23 +313,24 @@ export class FilesExporter {
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
         this.dtl?.outputFileNameFormat === 'title_id'
-        ? path.join(
+          ? path.join(
             parentRecordFolderForFiles,
             `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-')}_${contentVersion.Id}`
           )
-        : // Id + Title
-        this.dtl?.outputFileNameFormat === 'id_title'
-        ? path.join(
-            parentRecordFolderForFiles,
-            `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-')}`
-          )
-        : // Title
-          path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
+          : // Id + Title
+          this.dtl?.outputFileNameFormat === 'id_title'
+            ? path.join(
+              parentRecordFolderForFiles,
+              `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-')}`
+            )
+            : // Title
+            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
       outputFile =
         outputFile + '.' + (contentVersion.FileExtension !== 'snote' ? contentVersion.FileExtension : 'html');
     }
+    const outputFileLabel = path.relative(process.cwd(), outputFile);
     // Check file extension
     if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
       uxLog(this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
@@ -341,6 +348,10 @@ export class FilesExporter {
     // Download file locally
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     try {
+      this.spinnerCustom.text = `⚙️ (${this.filesDownloaded}) Downloading ${outputFileLabel}...`;
+      this.fetchOptions.onRetry = (cause: unknown) => {
+        this.spinnerCustom.text = `⚙️ (${this.filesDownloaded}) Retrying ${outputFileLabel} (${cause})...`;
+      }
       const fetchRes = await makeFetchHappen(fetchUrl, this.fetchOptions);
       if (fetchRes.ok !== true) {
         throw new SfError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
@@ -354,11 +365,14 @@ export class FilesExporter {
           resolve(true);
         });
       }) */
-      uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
+
+      // uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
       this.filesDownloaded++;
+      this.spinnerCustom.text = `✅ (${this.filesDownloaded}) Downloaded ${outputFileLabel}`;
     } catch (err) {
       // Download failure
-      uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
+      // uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
+      this.spinnerCustom.text = `❌ (${this.filesDownloaded}) Error while downloading ${outputFileLabel}`;
       this.filesErrors++;
     }
   }
