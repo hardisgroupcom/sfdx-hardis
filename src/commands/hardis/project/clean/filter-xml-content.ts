@@ -63,12 +63,16 @@ This script requires a filter-config.json file`;
     uxLog(
       this,
       c.cyan(
-        `Initialize XML content filtering of ${this.inputFolder} ,using ${this.configFile} , into ${this.outputFolder}`
+        `Initialize XML content filtering of ${this.inputFolder}, using ${c.bold(this.configFile)} , into ${
+          this.outputFolder
+        }`
       )
     );
     // Read json config file
     const filterConfig = fs.readJsonSync(this.configFile);
-    uxLog(this, c.grey('Filtering config file content:\n' + JSON.stringify(filterConfig, null, 2)));
+    if (flags.debug) {
+      uxLog(this, c.grey('Filtering config file content:\n' + JSON.stringify(filterConfig, null, 2)));
+    }
 
     // Create output folder/empty it if existing
     if (fs.existsSync(this.outputFolder) && this.outputFolder !== this.inputFolder) {
