@@ -214,13 +214,13 @@ export default class SandboxCreate extends SfCommand<any> {
     });
     let updatedUserValues = `LastName='SFDX-HARDIS' FirstName='Sandbox Org'`;
     // Fix country value is State & Country picklist activated
+    /* jscpd:ignore-start */
     if (
       (this.projectSandboxDef.features || []).includes('StateAndCountryPicklist') &&
       userQueryRes.result.CountryCode == null
     ) {
-      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${
-        config.defaultCountry || 'France'
-      }'`;
+      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${config.defaultCountry || 'France'
+        }'`;
     }
     if (
       (this.projectSandboxDef.features || []).includes('MarketingUser') &&
@@ -231,5 +231,6 @@ export default class SandboxCreate extends SfCommand<any> {
     }
     const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.sandboxOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
+    /* jscpd:ignore-end */
   }
 }
