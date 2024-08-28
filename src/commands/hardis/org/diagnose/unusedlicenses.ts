@@ -387,8 +387,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
           return { Id: psla.Id };
         });
         const deleteRes = await bulkUpdate('PermissionSetLicenseAssign', 'delete', pslaToDelete, conn);
-        const deleteSuccessNb = deleteRes.successRecordsNb;
-        const deleteErrorNb = deleteRes.errorRecordsNb;
+        const deleteSuccessNb = deleteRes.successfulResults.length;
+        const deleteErrorNb = deleteRes.failedResults.length;
         if (deleteErrorNb > 0) {
           uxLog(
             this,

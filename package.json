@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "dependencies": {
     "@actions/github": "^6.0.0",
-    "@adobe/node-fetch-retry": "^2.2.0",
     "@gitbeaker/node": "^35.8.1",
     "@oclif/config": "^1.18.17",
     "@oclif/core": "^4",
@@ -30,6 +29,7 @@
     "jira-client": "^8.2.2",
     "jsforce": "^3.4.1",
     "keyv": "^5.0.1",
+    "make-fetch-happen": "^13.0.1",
     "markdown-toc": "^1.2.0",
     "mega-linter-runner": "^8.0.0",
     "moment": "^2.30.1",
@@ -61,6 +61,7 @@
     "@types/glob": "^8.1.0",
     "@types/inquirer": "^9.0.7",
     "@types/jira-client": "^7.1.9",
+    "@types/make-fetch-happen": "^10.0.4",
     "@types/papaparse": "^5.3.14",
     "@types/sort-array": "^4.1.2",
     "@types/update-notifier": "^6.0.8",

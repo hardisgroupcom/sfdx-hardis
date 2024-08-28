@@ -40,7 +40,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - sfdx force:package:install -> sf package install
   - sfdx force:user:password:generate -> sf org generate password
   - sfdx force:user:permset:assign -> sf org assign permset
-  - sfdx hardis:* -> sf hardis:*
+  - sfdx hardis:_ -> sf hardis:_
 - Get rid of sfdx-essentials dependency by internalizing its used commands
   - sf hardis:packagexml:append
   - sf hardis:packagexml:remove
@@ -54,6 +54,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:work:new: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
 - Convert plugin from SFDX plugin core to SF Cli Plugin core
 - Remove not used keyValueStores
+- Remove @adobe/node-fetch-retry
+- Migrate to Bulk API v2
+
 ## [4.53.0] 2024-08-20
 
 - Upgrade workflows to Node 20 (fixes <https://github.com/hardisgroupcom/sfdx-hardis/issues/668>)
@@ -115,7 +118,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.48.0] 2024-07-26
 
 - [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): Allow new mode for running test during deployments: **RunRepositoryTestsExceptSeeAllData** (⚠️ Use with caution !)
-
 
 ## [4.47.0] 2024-07-22
 
@@ -227,7 +229,7 @@ commandsPostDeploy:
 ## [4.38.2] 2024-06-06
 
 - Fix npm packages installation for GitHub monitoring to avoid random failures
-- Add _notifKey in Grafana notifications to be able to build unique alerts
+- Add \_notifKey in Grafana notifications to be able to build unique alerts
 
 ## [4.38.1] 2024-06-04
 
@@ -290,7 +292,7 @@ commandsPostDeploy:
 
 ## [4.34.1] 2024-05-13
 
-- Notifications org identifier: replace dot by __ to avoid mess with Grafana label filters
+- Notifications org identifier: replace dot by \_\_ to avoid mess with Grafana label filters
 
 ## [4.34.0] 2024-05-12
 
@@ -332,6 +334,7 @@ commandsPostDeploy:
 ## [4.32.0] 2024-04-24
 
 - Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
+
   - Deployment status in Pull Request comments
   - Quick Deploy to enhance performance
 

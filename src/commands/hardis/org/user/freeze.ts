@@ -1,26 +1,26 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import * as columnify from "columnify";
-import { generateReports, isCI, uxLog } from "../../../../common/utils/index.js";
-import { promptProfiles } from "../../../../common/utils/orgUtils.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import * as columnify from 'columnify';
+import { generateReports, isCI, uxLog } from '../../../../common/utils/index.js';
+import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 //import { executeApex } from "../../../../common/utils/deployUtils.js";
-import { prompts } from "../../../../common/utils/prompts.js";
-import { soqlQuery, bulkQuery, bulkUpdate } from "../../../../common/utils/apiUtils.js";
+import { prompts } from '../../../../common/utils/prompts.js';
+import { soqlQuery, bulkQuery, bulkUpdate } from '../../../../common/utils/apiUtils.js';
 
 // Initialize Messages with the current plugin directory
 Messages.importMessagesDirectory(__dirname);
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgFreezeUser extends SfCommand<any> {
-  public static title = "Freeze user logins";
+  public static title = 'Freeze user logins';
 
-  public static description = messages.getMessage("orgfreezeUser");
+  public static description = messages.getMessage('orgfreezeUser');
 
   public static examples = [
     `$ sf hardis:org:user:freeze`,
@@ -34,38 +34,35 @@ export default class OrgFreezeUser extends SfCommand<any> {
   public static flags = {
     // flag with a value (-n, --name=VALUE)
     name: Flags.string({
-      char: "n",
-      description: messages.getMessage("nameFilter"),
+      char: 'n',
+      description: messages.getMessage('nameFilter'),
     }),
     includeprofiles: Flags.string({
-      char: "p",
-      description: "List of profiles that you want to freeze, separated by commas",
+      char: 'p',
+      description: 'List of profiles that you want to freeze, separated by commas',
     }),
     excludeprofiles: Flags.string({
-      char: "e",
-      description: "List of profiles that you want to NOT freeze, separated by commas",
+      char: 'e',
+      description: 'List of profiles that you want to NOT freeze, separated by commas',
     }),
     maxuserdisplay: Flags.integer({
-      char: "m",
+      char: 'm',
       default: 100,
-      description: "Maximum users to display in logs",
+      description: 'Maximum users to display in logs',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
-
-
-
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
@@ -77,8 +74,8 @@ export default class OrgFreezeUser extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgFreezeUser);
-    const includeProfileNames = flags.includeprofiles ? flags.includeprofiles.split(",") : [];
-    const excludeProfileNames = flags.excludeprofiles ? flags.excludeprofiles.split(",") : [];
+    const includeProfileNames = flags.includeprofiles ? flags.includeprofiles.split(',') : [];
+    const excludeProfileNames = flags.excludeprofiles ? flags.excludeprofiles.split(',') : [];
     this.maxUsersDisplay = flags.maxuserdisplay || 100;
     this.debugMode = flags.debug || false;
 
@@ -91,12 +88,13 @@ export default class OrgFreezeUser extends SfCommand<any> {
       // Manual user selection
       const profilesRes = await promptProfiles(conn, {
         multiselect: true,
-        message: "Please select profiles that you do you want to freeze users that are assigned to them ?",
-        returnField: "record",
+        message: 'Please select profiles that you do you want to freeze users that are assigned to them ?',
+        returnField: 'record',
         allowSelectMine: false,
         allowSelectMineErrorMessage: "If you freeze your own profile, you'll be unable to unfreeze it later :)",
         allowSelectAll: false,
-        allowSelectAllErrorMessage: "You can not select all profiles, keep at least one (usually System Administrator) so you can unfreeze later !",
+        allowSelectAllErrorMessage:
+          'You can not select all profiles, keep at least one (usually System Administrator) so you can unfreeze later !',
       });
       profileIds = profilesRes.map((profile) => profile.Id);
       profileNames = profilesRes.map((profile) => {
@@ -104,7 +102,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
       });
     } else if (includeProfileNames.length > 0) {
       // Use includeprofiles argument
-      const profilesConstraintIn = includeProfileNames.map((profileName) => `'${profileName}'`).join(",");
+      const profilesConstraintIn = includeProfileNames.map((profileName) => `'${profileName}'`).join(',');
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       if (this.debugMode) {
@@ -116,7 +114,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
       });
     } else if (excludeProfileNames.length > 0) {
       // Use excludeprofiles argument
-      const profilesConstraintIn = excludeProfileNames.map((profileName) => `'${profileName}'`).join(",");
+      const profilesConstraintIn = excludeProfileNames.map((profileName) => `'${profileName}'`).join(',');
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       if (this.debugMode) {
@@ -129,14 +127,14 @@ export default class OrgFreezeUser extends SfCommand<any> {
     }
 
     // List profiles that must be frozen
-    const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(",");
+    const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(',');
 
     // Query users that we want to freeze
     uxLog(this, c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
     const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
     const userQueryRes = await bulkQuery(userQuery, conn);
     const usersToFreeze = userQueryRes.records;
-    const userIdsStr = usersToFreeze.map((user) => `'${user.Id}'`).join(",");
+    const userIdsStr = usersToFreeze.map((user) => `'${user.Id}'`).join(',');
 
     // Check empty result
     if (usersToFreeze.length === 0) {
@@ -160,29 +158,35 @@ export default class OrgFreezeUser extends SfCommand<any> {
         Profile: profileNames.filter((profile) => profile[0] === matchingUser.ProfileId)[1],
       };
     });
-    uxLog(this, "\n" + c.white(columnify(this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay))));
+    uxLog(
+      this,
+      '\n' +
+        c.white(columnify(this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay)))
+    );
     if (!this.debugMode === false && usersToFreezeDisplay.length > this.maxUsersDisplay) {
       uxLog(this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
     }
     uxLog(this, c.cyan(`${c.bold(userLoginsToFreeze.length)} users can be frozen.`));
     // Generate csv + xls of users about to be frozen
-    await generateReports(usersToFreezeDisplay, ["Username", "Name", "Profile"], this, {
-      logFileName: "users-to-freeze",
-      logLabel: "Extract of users to freeze",
+    await generateReports(usersToFreezeDisplay, ['Username', 'Name', 'Profile'], this, {
+      logFileName: 'users-to-freeze',
+      logLabel: 'Extract of users to freeze',
     });
 
     // Request configuration from user
     if (!isCI) {
       const confirmfreeze = await prompts({
-        type: "confirm",
-        name: "value",
+        type: 'confirm',
+        name: 'value',
         initial: true,
         message: c.cyanBright(
-          `Are you sure you want to freeze these ${c.bold(userLoginsToFreeze.length)} users in org ${c.green(flags['target-org'].getUsername())} (y/n)?`,
+          `Are you sure you want to freeze these ${c.bold(userLoginsToFreeze.length)} users in org ${c.green(
+            flags['target-org'].getUsername()
+          )} (y/n)?`
         ),
       });
       if (confirmfreeze.value !== true) {
-        const outputString = "Script cancelled by user";
+        const outputString = 'Script cancelled by user';
         uxLog(this, c.yellow(outputString));
         return { outputString };
       }
@@ -192,10 +196,10 @@ export default class OrgFreezeUser extends SfCommand<any> {
     const userLoginsFrozen = userLoginsToFreeze.map((userLogin) => {
       return { Id: userLogin.Id, IsFrozen: true };
     });
-    const bulkUpdateRes = await bulkUpdate("UserLogin", "update", userLoginsFrozen, conn);
+    const bulkUpdateRes = await bulkUpdate('UserLogin', 'update', userLoginsFrozen, conn);
 
-    const freezeSuccessNb = bulkUpdateRes.successRecordsNb;
-    const freezeErrorsNb = bulkUpdateRes.errorRecordsNb;
+    const freezeSuccessNb = bulkUpdateRes.successfulResults.length;
+    const freezeErrorsNb = bulkUpdateRes.failedResults.length;
     if (freezeErrorsNb > 0) {
       uxLog(this, c.yellow(`Warning: ${c.red(c.bold(freezeErrorsNb))} users has not been frozen (bulk API errors)`));
     }

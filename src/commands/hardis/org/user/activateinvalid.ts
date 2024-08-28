@@ -157,8 +157,8 @@ See article below
         )
     );
 
-    const activateSuccessNb = bulkUpdateRes.successRecordsNb;
-    const activateErrorNb = bulkUpdateRes.errorRecordsNb;
+    const activateSuccessNb = bulkUpdateRes.successfulResults.length;
+    const activateErrorNb = bulkUpdateRes.failedResults.length;
     if (activateErrorNb > 0) {
       uxLog(
         this,
