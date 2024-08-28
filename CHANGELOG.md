@@ -66,7 +66,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ### Removals
 
-- Get rid of sfdx-essentials plugin dependency by internalizing its used commands
+- Get rid of [sfdx-essentials](https://github.com/nvuillam/sfdx-essentials) plugin dependency by internalizing its used commands
   - `sf hardis:packagexml:append`
   - `sf hardis:packagexml:remove`
   - `sf hardis:project:clean:filter-xml-content`
