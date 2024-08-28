@@ -1,53 +1,53 @@
-import c from "chalk";
-import * as fs from "fs-extra";
-import { isCI, isMonitoringJob, uxLog } from "../../common/utils/index.js";
-import { prompts } from "../../common/utils/prompts.js";
-import { getConfig, setConfig } from "../../config/index.js";
+import c from 'chalk';
+import fs from 'fs-extra';
+import { isCI, isMonitoringJob, uxLog } from '../../common/utils/index.js';
+import { prompts } from '../../common/utils/prompts.js';
+import { getConfig, setConfig } from '../../config/index.js';
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis:scratch commands
-  const commandId = options?.id || "";
+  const commandId = options?.id || '';
 
   // Disable this hook for now
-  if ((process.env?.AUTO_UPDATE || "false") !== "true") {
+  if ((process.env?.AUTO_UPDATE || 'false') !== 'true') {
     return;
   }
 
-  if (!process.argv.includes("--json")) {
+  if (!process.argv.includes('--json')) {
     await manageGitIgnoreForceIgnore(commandId);
   }
 };
 
 async function manageGitIgnoreForceIgnore(commandId: string) {
-  if (!commandId.startsWith("hardis")) {
+  if (!commandId.startsWith('hardis')) {
     return;
   }
   const isMon = await isMonitoringJob();
-  if (!commandId.includes("monitoring") && !isMon) {
+  if (!commandId.includes('monitoring') && !isMon) {
     if (
-      commandId.startsWith("hardis:work:task:new") ||
-      commandId.startsWith("hardis:doc") ||
-      commandId.startsWith("hardis:scratch") ||
-      commandId.startsWith("hardis:org")
+      commandId.startsWith('hardis:work:task:new') ||
+      commandId.startsWith('hardis:doc') ||
+      commandId.startsWith('hardis:scratch') ||
+      commandId.startsWith('hardis:org')
     ) {
       return;
     }
 
-    if (!isCI && process.env.AUTO_UPDATE !== "true" && process.env.AUTO_UPDATE_CI_CONFIG !== "true") {
+    if (!isCI && process.env.AUTO_UPDATE !== 'true' && process.env.AUTO_UPDATE_CI_CONFIG !== 'true') {
       return;
     }
   }
-  const config = await getConfig("user");
+  const config = await getConfig('user');
   // Manage .gitignore
   if (!config.skipUpdateGitIgnore === true) {
-    const gitIgnoreFile = "./.gitignore";
+    const gitIgnoreFile = './.gitignore';
     if (fs.existsSync(gitIgnoreFile)) {
-      const gitIgnore = await fs.readFile(gitIgnoreFile, "utf-8");
+      const gitIgnore = await fs.readFile(gitIgnoreFile, 'utf-8');
       const gitIgnoreLines = gitIgnore
-        .replace("\r\n", "\n")
-        .split("\n")
+        .replace('\r\n', '\n')
+        .split('\n')
         .map((line) => line.trim())
-        .filter((line) => line !== "");
+        .filter((line) => line !== '');
       let updated = false;
       for (const gitIgnoreMandatoryLine of await getHardisGitRepoIgnoreContent()) {
         if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine)) {
@@ -60,22 +60,24 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
       // Propose user to apply updates
       if ((updated || gitIgnoreLines.length !== gitIgnoreLinesUnique.length) && !isCI) {
         const confirm = await prompts({
-          type: "select",
-          name: "value",
+          type: 'select',
+          name: 'value',
           initial: true,
-          message: c.cyanBright("Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)"),
+          message: c.cyanBright(
+            'Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
+          ),
           choices: [
-            { title: "Yes", value: "true" },
-            { title: "No  ", value: "false" },
-            { title: "Never ask again  ", value: "never" },
+            { title: 'Yes', value: 'true' },
+            { title: 'No  ', value: 'false' },
+            { title: 'Never ask again  ', value: 'never' },
           ],
         });
-        if (confirm.value === "true" || isCI) {
-          await fs.writeFile(gitIgnoreFile, gitIgnoreLinesUnique.join("\n") + "\n", "utf-8");
-          uxLog(this, c.cyan("[sfdx-hardis] Updated .gitignore"));
+        if (confirm.value === 'true' || isCI) {
+          await fs.writeFile(gitIgnoreFile, gitIgnoreLinesUnique.join('\n') + '\n', 'utf-8');
+          uxLog(this, c.cyan('[sfdx-hardis] Updated .gitignore'));
         }
-        if (confirm.value === "never") {
-          await setConfig("project", { skipUpdateGitIgnore: true });
+        if (confirm.value === 'never') {
+          await setConfig('project', { skipUpdateGitIgnore: true });
         }
       }
     }
@@ -83,14 +85,14 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
 
   // Manage .forceignore
   if (!config.skipUpdateForceIgnore === true) {
-    const forceIgnoreFile = "./.forceignore";
+    const forceIgnoreFile = './.forceignore';
     if (fs.existsSync(forceIgnoreFile)) {
-      const forceIgnore = await fs.readFile(forceIgnoreFile, "utf-8");
+      const forceIgnore = await fs.readFile(forceIgnoreFile, 'utf-8');
       const forceIgnoreLines = forceIgnore
-        .replace("\r\n", "\n")
-        .split("\n")
+        .replace('\r\n', '\n')
+        .split('\n')
         .map((line) => line.trim())
-        .filter((line) => line !== "");
+        .filter((line) => line !== '');
       let updated = false;
       for (const forceIgnoreMandatoryLine of await getHardisForceIgnoreContent()) {
         if (!forceIgnoreLines.includes(forceIgnoreMandatoryLine)) {
@@ -104,23 +106,23 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
       /* jscpd:ignore-start */
       if ((updated || forceIgnoreLines.length !== forceIgnoreLinesUnique.length) && !isCI) {
         const confirm = await prompts({
-          type: "select",
-          name: "value",
+          type: 'select',
+          name: 'value',
           initial: true,
-          message: c.cyanBright("Your .forceignore is deprecated, do you agree to upgrade it ?"),
+          message: c.cyanBright('Your .forceignore is deprecated, do you agree to upgrade it ?'),
           choices: [
-            { title: "Yes", value: "true" },
-            { title: "No  ", value: "false" },
-            { title: "Never ask again  ", value: "never" },
+            { title: 'Yes', value: 'true' },
+            { title: 'No  ', value: 'false' },
+            { title: 'Never ask again  ', value: 'never' },
           ],
         });
         /* jscpd:ignore-end */
-        if (confirm.value === "true" || isCI) {
-          await fs.writeFile(forceIgnoreFile, forceIgnoreLinesUnique.join("\n") + "\n", "utf-8");
-          uxLog(this, c.cyan("[sfdx-hardis] Updated .forceignore"));
+        if (confirm.value === 'true' || isCI) {
+          await fs.writeFile(forceIgnoreFile, forceIgnoreLinesUnique.join('\n') + '\n', 'utf-8');
+          uxLog(this, c.cyan('[sfdx-hardis] Updated .forceignore'));
         }
-        if (confirm.value === "never") {
-          await setConfig("project", { skipUpdateForceIgnore: true });
+        if (confirm.value === 'never') {
+          await setConfig('project', { skipUpdateForceIgnore: true });
         }
       }
     }
@@ -129,42 +131,42 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
 
 async function getHardisGitRepoIgnoreContent() {
   const gitIgnoreContent = [
-    ".cache/",
-    "config/user/",
-    "hardis-report/",
-    "tmp/",
-    "**/__tests__/**",
+    '.cache/',
+    'config/user/',
+    'hardis-report/',
+    'tmp/',
+    '**/__tests__/**',
     // Metadatas to be ignored
-    "**/cleanDataServices/",
-    "**/siteDotComSites/*.site",
+    '**/cleanDataServices/',
+    '**/siteDotComSites/*.site',
     // SFDX Items to be ignored
-    "**/data/**/source/**",
-    "**/data/**/target/**",
-    "force-app/main/default/appMenus/AppSwitcher.appMenu-meta.xml",
+    '**/data/**/source/**',
+    '**/data/**/target/**',
+    'force-app/main/default/appMenus/AppSwitcher.appMenu-meta.xml',
   ];
   return gitIgnoreContent;
 }
 
 async function getHardisForceIgnoreContent() {
   const forceIgnoreContent = [
-    "**/appMenu/**",
-    "**/appSwitcher/**",
-    "**/appMenus/AppSwitcher.appMenu-meta.xml",
+    '**/appMenu/**',
+    '**/appSwitcher/**',
+    '**/appMenus/AppSwitcher.appMenu-meta.xml',
 
-    "**/connectedApps/**",
-    "**/certs/**",
-    "**/profilePasswordPolicies/**",
+    '**/connectedApps/**',
+    '**/certs/**',
+    '**/profilePasswordPolicies/**',
 
     //"**/objectTranslations/**",
     // "**/profiles/**",
     // "**/settings/**",
 
-    "**/jsconfig.json",
-    "**/.eslintrc.json",
+    '**/jsconfig.json',
+    '**/.eslintrc.json',
 
-    "**/__tests__/**",
-    "**/pubsub/**",
-    "**SfdxHardisDeferSharingRecalc**",
+    '**/__tests__/**',
+    '**/pubsub/**',
+    '**SfdxHardisDeferSharingRecalc**',
   ];
   return forceIgnoreContent;
 }

@@ -1,25 +1,21 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { bulkQuery } from "../../../../common/utils/apiUtils.js";
-import { getConfig } from "../../../../config/index.js";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
-import { prompts } from "../../../../common/utils/prompts.js";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from "../../../../common/utils/notifUtils.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { getConfig } from '../../../../config/index.js';
+import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class DiagnoseAuditTrail extends SfCommand<any> {
-  public static title = "Diagnose content of Setup Audit Trail";
+  public static title = 'Diagnose content of Setup Audit Trail';
 
   public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
 
@@ -121,35 +117,35 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 `;
 
   public static examples = [
-    "$ sf hardis:org:diagnose:audittrail",
-    "$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com",
-    "$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com",
-    "$ sf hardis:org:diagnose:audittrail --lastndays 5",
+    '$ sf hardis:org:diagnose:audittrail',
+    '$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com',
+    '$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com',
+    '$ sf hardis:org:diagnose:audittrail --lastndays 5',
   ];
 
   public static flags = {
     excludeusers: Flags.string({
-      char: "e",
-      description: "Comma-separated list of usernames to exclude",
+      char: 'e',
+      description: 'Comma-separated list of usernames to exclude',
     }),
     lastndays: Flags.integer({
-      char: "t",
-      description: "Number of days to extract from today (included)",
+      char: 't',
+      description: 'Number of days to extract from today (included)',
     }),
     outputfile: Flags.string({
-      char: "o",
-      description: "Force the path and name of output report file. Must end with .csv",
+      char: 'o',
+      description: 'Force the path and name of output report file. Must end with .csv',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -170,17 +166,18 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseAuditTrail);
     this.debugMode = flags.debug || false;
-    this.excludeUsers = flags.excludeusers ? flags.excludeusers.split(",") : [];
+    this.excludeUsers = flags.excludeusers ? flags.excludeusers.split(',') : [];
     this.lastNdays = flags.lastndays;
     this.outputFile = flags.outputfile || null;
-    const config = await getConfig("branch");
+    const config = await getConfig('branch');
 
     // If manual mode and lastndays not sent as parameter, prompt user
     if (!isCI && !this.lastNdays) {
       const lastNdaysResponse = await prompts({
-        type: "select",
-        name: "lastndays",
-        message: "Please select the number of days in the past from today you want to detect suspiscious setup activities",
+        type: 'select',
+        name: 'lastndays',
+        message:
+          'Please select the number of days in the past from today you want to detect suspiscious setup activities',
         choices: [
           { title: `1`, value: 1 },
           { title: `2`, value: 2 },
@@ -202,63 +199,63 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
 
     this.allowedSectionsActions = {
-      "": ["createScratchOrg", "changedsenderemail", "deleteScratchOrg", "loginasgrantedtopartnerbt"],
-      "Certificate and Key Management": ["insertCertificate"],
-      "Custom App Licenses": ["addeduserpackagelicense", "granteduserpackagelicense"],
-      Currency: ["updateddatedexchrate"],
-      "Data Management": ["queueMembership"],
-      "Email Administration": ["dkimRotationSuccessful", "dkimRotationPreparationSuccessful"],
-      Holidays: ["holiday_insert"],
-      "Inbox mobile and legacy desktop apps": ["enableSIQUserNonEAC"],
-      Groups: ["groupMembership"],
-      "Manage Territories": ["tm2_userAddedToTerritory", "tm2_userRemovedFromTerritory"],
-      "Manage Users": [
-        "activateduser",
-        "createduser",
-        "changedcommunitynickname",
-        "changedemail",
-        "changedfederationid",
-        "changedinteractionuseroffon",
-        "changedinteractionuseronoff",
-        "changedmarketinguseroffon",
-        "changedmarketinguseronoff",
-        "changedManager",
-        "changedprofileforuser",
-        "changedprofileforusercusttostd",
-        "changedprofileforuserstdtocust",
-        "changedroleforusertonone",
-        "changedroleforuser",
-        "changedroleforuserfromnone",
-        "changedpassword",
-        "changedUserEmailVerifiedStatusUnverified",
-        "changedUserEmailVerifiedStatusVerified",
-        "changedUserPhoneNumber",
-        "changedUserPhoneVerifiedStatusUnverified",
-        "deactivateduser",
-        "deleteAuthenticatorPairing",
-        "deleteTwoFactorInfo2",
-        "deleteTwoFactorTempCode",
-        "frozeuser",
-        "insertAuthenticatorPairing",
-        "insertTwoFactorInfo2",
-        "insertTwoFactorTempCode",
-        "lightningloginenroll",
-        "PermSetAssign",
-        "PermSetGroupAssign",
-        "PermSetGroupUnassign",
-        "PermSetLicenseAssign",
-        "PermSetUnassign",
-        "PermSetLicenseUnassign",
-        "registeredUserPhoneNumber",
-        "resetpassword",
-        "suOrgAdminLogin",
-        "suOrgAdminLogout",
-        "unfrozeuser",
-        "useremailchangesent",
+      '': ['createScratchOrg', 'changedsenderemail', 'deleteScratchOrg', 'loginasgrantedtopartnerbt'],
+      'Certificate and Key Management': ['insertCertificate'],
+      'Custom App Licenses': ['addeduserpackagelicense', 'granteduserpackagelicense'],
+      Currency: ['updateddatedexchrate'],
+      'Data Management': ['queueMembership'],
+      'Email Administration': ['dkimRotationSuccessful', 'dkimRotationPreparationSuccessful'],
+      Holidays: ['holiday_insert'],
+      'Inbox mobile and legacy desktop apps': ['enableSIQUserNonEAC'],
+      Groups: ['groupMembership'],
+      'Manage Territories': ['tm2_userAddedToTerritory', 'tm2_userRemovedFromTerritory'],
+      'Manage Users': [
+        'activateduser',
+        'createduser',
+        'changedcommunitynickname',
+        'changedemail',
+        'changedfederationid',
+        'changedinteractionuseroffon',
+        'changedinteractionuseronoff',
+        'changedmarketinguseroffon',
+        'changedmarketinguseronoff',
+        'changedManager',
+        'changedprofileforuser',
+        'changedprofileforusercusttostd',
+        'changedprofileforuserstdtocust',
+        'changedroleforusertonone',
+        'changedroleforuser',
+        'changedroleforuserfromnone',
+        'changedpassword',
+        'changedUserEmailVerifiedStatusUnverified',
+        'changedUserEmailVerifiedStatusVerified',
+        'changedUserPhoneNumber',
+        'changedUserPhoneVerifiedStatusUnverified',
+        'deactivateduser',
+        'deleteAuthenticatorPairing',
+        'deleteTwoFactorInfo2',
+        'deleteTwoFactorTempCode',
+        'frozeuser',
+        'insertAuthenticatorPairing',
+        'insertTwoFactorInfo2',
+        'insertTwoFactorTempCode',
+        'lightningloginenroll',
+        'PermSetAssign',
+        'PermSetGroupAssign',
+        'PermSetGroupUnassign',
+        'PermSetLicenseAssign',
+        'PermSetUnassign',
+        'PermSetLicenseUnassign',
+        'registeredUserPhoneNumber',
+        'resetpassword',
+        'suOrgAdminLogin',
+        'suOrgAdminLogout',
+        'unfrozeuser',
+        'useremailchangesent',
       ],
-      "Mobile Administration": ["assigneduserstomobileconfig"],
-      "Reporting Snapshots": ["createdReportJob", "deletedReportJob"],
-      Sandboxes: ["DeleteSandbox"],
+      'Mobile Administration': ['assigneduserstomobileconfig'],
+      'Reporting Snapshots': ['createdReportJob', 'deletedReportJob'],
+      Sandboxes: ['DeleteSandbox'],
     };
 
     // Append custom sections & actions considered as not suspect
@@ -283,8 +280,13 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       whereConstraint += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
 
-    uxLog(this, c.cyan(`Excluded users are ${this.excludeUsers.join(",") || "None"}`));
-    uxLog(this, c.cyan(`Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`));
+    uxLog(this, c.cyan(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
+    uxLog(
+      this,
+      c.cyan(
+        `Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`
+      )
+    );
 
     // Fetch SetupAuditTrail records
     const auditTrailQuery =
@@ -292,17 +294,17 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       `FROM SetupAuditTrail ` +
       whereConstraint +
       `ORDER BY CreatedDate DESC`;
-    uxLog(this, c.grey("Query: " + c.italic(auditTrailQuery)));
+    uxLog(this, c.grey('Query: ' + c.italic(auditTrailQuery)));
     const queryRes = await bulkQuery(auditTrailQuery, conn);
     const suspectRecords: any[] = [];
     let suspectUsers: any[] = [];
     const suspectActions: any[] = [];
-    const severityIconLog = getSeverityIcon("log");
-    const severityIconWarning = getSeverityIcon("warning");
+    const severityIconLog = getSeverityIcon('log');
+    const severityIconWarning = getSeverityIcon('warning');
     this.auditTrailRecords = queryRes.records.map((record) => {
-      const section = record?.Section || "";
+      const section = record?.Section || '';
       record.Suspect = false;
-      record.severity = "log";
+      record.severity = 'log';
       record.severityIcon = severityIconLog;
       // Unallowed actions
       if (
@@ -311,10 +313,10 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       ) {
         record.Suspect = true;
         record.SuspectReason = `Manual config in unallowed section ${section} with action ${record.Action}`;
-        record.severity = "warning";
+        record.severity = 'warning';
         record.severityIcon = severityIconWarning;
         suspectRecords.push(record);
-        suspectUsers.push(record["CreatedBy.Username"] + " - " + record["CreatedBy.Name"]);
+        suspectUsers.push(record['CreatedBy.Username'] + ' - ' + record['CreatedBy.Name']);
         suspectActions.push(`${section} - ${record.Action}`);
         return record;
       }
@@ -322,11 +324,11 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     });
 
     let statusCode = 0;
-    let msg = "No suspect Setup Audit Trail records has been found";
+    let msg = 'No suspect Setup Audit Trail records has been found';
     const suspectActionsWithCount: any[] = [];
     if (suspectRecords.length > 0) {
       statusCode = 1;
-      uxLog(this, c.yellow("Suspect records list"));
+      uxLog(this, c.yellow('Suspect records list'));
       uxLog(this, JSON.stringify(suspectRecords, null, 2));
       msg = `${suspectRecords.length} suspect Setup Audit Trail records has been found`;
       uxLog(this, c.yellow(msg));
@@ -340,41 +342,41 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
         suspectActionsWithCount.push(`${suspectAction} (${suspectActionsSummary[suspectAction]})`);
       }
       suspectActionsWithCount.sort();
-      uxLog(this, "");
-      uxLog(this, c.yellow("Related users:"));
+      uxLog(this, '');
+      uxLog(this, c.yellow('Related users:'));
       for (const user of suspectUsers) {
         uxLog(this, c.yellow(`- ${user}`));
       }
-      uxLog(this, "");
-      uxLog(this, c.yellow("Related actions:"));
+      uxLog(this, '');
+      uxLog(this, c.yellow('Related actions:'));
       for (const action of suspectActionsWithCount) {
         uxLog(this, c.yellow(`- ${action}`));
       }
-      uxLog(this, "");
+      uxLog(this, '');
     } else {
       uxLog(this, c.green(msg));
     }
 
     // Generate output CSV file
-    this.outputFile = await generateReportPath("audit-trail", this.outputFile);
+    this.outputFile = await generateReportPath('audit-trail', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.auditTrailRecords, this.outputFile);
 
     // Manage notifications
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
-    let notifSeverity: NotifSeverity = "log";
+    let notifSeverity: NotifSeverity = 'log';
     let notifText = `No suspect Setup Audit Trail records has been found in ${orgMarkdown}`;
     let notifAttachments: any[] = [];
     if (suspectRecords.length > 0) {
-      notifSeverity = "warning";
+      notifSeverity = 'warning';
       notifText = `${suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
       let notifDetailText = ``;
-      notifDetailText += "*Related users*:\n";
+      notifDetailText += '*Related users*:\n';
       for (const user of suspectUsers) {
         notifDetailText += `• ${user}\n`;
       }
-      notifDetailText += "\n";
-      notifDetailText += "*Related actions*:\n";
+      notifDetailText += '\n';
+      notifDetailText += '*Related actions*:\n';
       for (const action of suspectActionsWithCount) {
         notifDetailText += `• ${action}\n`;
       }
@@ -383,7 +385,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "AUDIT_TRAIL",
+      type: 'AUDIT_TRAIL',
       text: notifText,
       attachments: notifAttachments,
       buttons: notifButtons,
@@ -396,7 +398,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       },
     });
 
-    if ((this.argv || []).includes("audittrail")) {
+    if ((this.argv || []).includes('audittrail')) {
       process.exitCode = statusCode;
     }
 

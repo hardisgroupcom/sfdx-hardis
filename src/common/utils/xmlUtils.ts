@@ -1,15 +1,15 @@
 // XML Utils functions
-import { SfError } from "@salesforce/core";
-import c from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
-import * as util from "util";
-import * as xml2js from "xml2js";
-import { uxLog } from "./index.js";
-import { CONSTANTS } from "../../config/index.js";
+import { SfError } from '@salesforce/core';
+import c from 'chalk';
+import fs from 'fs-extra';
+import * as path from 'path';
+import * as util from 'util';
+import * as xml2js from 'xml2js';
+import { uxLog } from './index.js';
+import { CONSTANTS } from '../../config/index.js';
 
 export async function parseXmlFile(xmlFile: string) {
-  const packageXmlString = await fs.readFile(xmlFile, "utf8");
+  const packageXmlString = await fs.readFile(xmlFile, 'utf8');
   const parsedXml = await xml2js.parseStringPromise(packageXmlString);
   return parsedXml;
 }
@@ -18,10 +18,10 @@ export async function writeXmlFile(xmlFile: string, xmlObject: any) {
   const builder = new xml2js.Builder({
     renderOpts: {
       pretty: true,
-      indent: process.env.SFDX_XML_INDENT || "    ",
-      newline: "\n",
+      indent: process.env.SFDX_XML_INDENT || '    ',
+      newline: '\n',
     },
-    xmldec: { version: "1.0", encoding: "UTF-8" },
+    xmldec: { version: '1.0', encoding: 'UTF-8' },
   });
   const updatedFileContent = builder.buildObject(xmlObject);
   await fs.ensureDir(path.dirname(xmlFile));
@@ -65,14 +65,25 @@ export async function isPackageXmlEmpty(
   options: { ignoreStandaloneParentItems: boolean } = { ignoreStandaloneParentItems: false }
 ) {
   const packageXmlContent = await parseXmlFile(packageXmlFile);
-  if (packageXmlContent && packageXmlContent.Package && packageXmlContent.Package.types && packageXmlContent.Package.types.length > 0) {
+  if (
+    packageXmlContent &&
+    packageXmlContent.Package &&
+    packageXmlContent.Package.types &&
+    packageXmlContent.Package.types.length > 0
+  ) {
     if (options.ignoreStandaloneParentItems === true) {
       // Check if only contains SharingRules without SharingOwnerRule
-      if (packageXmlContent.Package.types.length === 1 && packageXmlContent.Package.types[0].name[0] === "SharingRules") {
+      if (
+        packageXmlContent.Package.types.length === 1 &&
+        packageXmlContent.Package.types[0].name[0] === 'SharingRules'
+      ) {
         return true;
       }
       // Check if only contains SharingOwnerRule without SharingRules
-      if (packageXmlContent.Package.types.length === 1 && packageXmlContent.Package.types[0].name[0] === "SharingOwnerRule") {
+      if (
+        packageXmlContent.Package.types.length === 1 &&
+        packageXmlContent.Package.types[0].name[0] === 'SharingOwnerRule'
+      ) {
         return true;
       }
     }
@@ -84,7 +95,7 @@ export async function isPackageXmlEmpty(
 
 // Read package.xml files and build concatenated list of items
 export async function appendPackageXmlFilesContent(packageXmlFileList: string[], outputXmlFile: string) {
-  uxLog(this, c.cyan(`Appending ${packageXmlFileList.join(",")} into ${outputXmlFile}...`));
+  uxLog(this, c.cyan(`Appending ${packageXmlFileList.join(',')} into ${outputXmlFile}...`));
   let firstPackageXmlContent: any = null;
   let allPackageXmlFilesTypes = {};
   // loop on packageXml files
@@ -98,7 +109,7 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
     try {
       packageXmlMetadatasTypeLs = result.Package.types || [];
     } catch {
-      throw new SfError("Unable to find Package XML element in " + packageXmlFile);
+      throw new SfError('Unable to find Package XML element in ' + packageXmlFile);
     }
     // Add metadata members in concatenation list of items & store doublings
     for (const typePkg of packageXmlMetadatasTypeLs) {
@@ -107,7 +118,9 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
       }
       const nameKey = typePkg.name[0];
       if (allPackageXmlFilesTypes[nameKey] != null && typePkg.members != null) {
-        allPackageXmlFilesTypes[nameKey] = Array.from(new Set(allPackageXmlFilesTypes[nameKey].concat(typePkg.members))).sort();
+        allPackageXmlFilesTypes[nameKey] = Array.from(
+          new Set(allPackageXmlFilesTypes[nameKey].concat(typePkg.members))
+        ).sort();
       } else if (typePkg.members != null) {
         allPackageXmlFilesTypes[nameKey] = Array.from(new Set(typePkg.members)).sort();
       }
@@ -128,7 +141,7 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
 export async function removePackageXmlFilesContent(
   packageXmlFile: string,
   removePackageXmlFile: string,
-  { outputXmlFile = "", logFlag = false, removedOnly = false, keepEmptyTypes = false }
+  { outputXmlFile = '', logFlag = false, removedOnly = false, keepEmptyTypes = false }
 ) {
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
@@ -140,7 +153,7 @@ export async function removePackageXmlFilesContent(
   try {
     packageXmlMetadatasTypeLs = parsedPackageXml.Package.types || [];
   } catch {
-    throw new SfError("Unable to parse package Xml file " + packageXmlFile);
+    throw new SfError('Unable to parse package Xml file ' + packageXmlFile);
   }
 
   // Read package.xml file to use for filtering first file
@@ -153,7 +166,7 @@ export async function removePackageXmlFilesContent(
   try {
     packageXmlRemoveMetadatasTypeLs = parsedPackageXmlRemove.Package.types || [];
   } catch {
-    throw new SfError("Unable to parse package Xml file " + removePackageXmlFile);
+    throw new SfError('Unable to parse package Xml file ' + removePackageXmlFile);
   }
 
   // Filter main package.xml file
@@ -174,18 +187,34 @@ export async function removePackageXmlFilesContent(
     const type = types[0];
     let typeMembers = type.members || [];
     // Manage * case contained in target
-    if (removedOnly === true && typeMembers.includes("*")) {
+    if (removedOnly === true && typeMembers.includes('*')) {
       typeMembers = removeTypeMembers;
       uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}, kept items: ${typeMembers.length}`)));
     }
     // Manage * case contained in source
-    else if (removeTypeMembers[0] && removeTypeMembers[0] === "*") {
+    else if (removeTypeMembers[0] && removeTypeMembers[0] === '*') {
       typeMembers = typeMembers.filter(() => checkRemove(false, removedOnly));
-      uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)} which have all been ${removedOnly ? "kept" : "removed"}`)));
+      uxLog(
+        this,
+        c.grey(
+          c.italic(
+            `Found wildcard * on type ${c.bold(type.name)} which have all been ${removedOnly ? 'kept' : 'removed'}`
+          )
+        )
+      );
     } else {
       // Filter members
-      typeMembers = typeMembers.filter((member: string) => checkRemove(!removeTypeMembers.includes(member), removedOnly));
-      uxLog(this, c.grey(c.italic(`Found type ${c.bold(type.name)}, ${typeMembers.length} items have been ${removedOnly ? "removed" : "kept"}`)));
+      typeMembers = typeMembers.filter((member: string) =>
+        checkRemove(!removeTypeMembers.includes(member), removedOnly)
+      );
+      uxLog(
+        this,
+        c.grey(
+          c.italic(
+            `Found type ${c.bold(type.name)}, ${typeMembers.length} items have been ${removedOnly ? 'removed' : 'kept'}`
+          )
+        )
+      );
     }
     if (typeMembers.length > 0 || keepEmptyTypes === true) {
       // Update members for type
@@ -205,12 +234,14 @@ export async function removePackageXmlFilesContent(
 
   // If removedOnly mode, remove types which were not present in removePackageXml
   if (removedOnly) {
-    packageXmlMetadatasTypeLs = packageXmlMetadatasTypeLs.filter((type1: any) => processedTypes.includes(type1.name[0]));
+    packageXmlMetadatasTypeLs = packageXmlMetadatasTypeLs.filter((type1: any) =>
+      processedTypes.includes(type1.name[0])
+    );
   }
 
   // display in logs if requested
   if (logFlag) {
-    uxLog(this, "Package.xml remove results :\n" + util.inspect(packageXmlMetadatasTypeLs, false, null));
+    uxLog(this, 'Package.xml remove results :\n' + util.inspect(packageXmlMetadatasTypeLs, false, null));
   }
 
   // Write in output file if required
@@ -218,7 +249,7 @@ export async function removePackageXmlFilesContent(
     parsedPackageXml.Package.types = packageXmlMetadatasTypeLs;
     await writeXmlFile(outputXmlFile, parsedPackageXml);
     if (logFlag) {
-      uxLog(this, "Generated package.xml file: " + outputXmlFile);
+      uxLog(this, 'Generated package.xml file: ' + outputXmlFile);
     }
   }
   return packageXmlMetadatasTypeLs;
@@ -237,8 +268,12 @@ function checkRemove(boolRes, removedOnly = false) {
   return boolRes;
 }
 
-export async function applyAllReplacementsDefinitions(allMatchingSourceFiles: string[], referenceStrings: string[], replacementDefinitions: any[]) {
-  uxLog(this, c.cyan(`Initializing replacements in files for ${referenceStrings.join(",")}...`));
+export async function applyAllReplacementsDefinitions(
+  allMatchingSourceFiles: string[],
+  referenceStrings: string[],
+  replacementDefinitions: any[]
+) {
+  uxLog(this, c.cyan(`Initializing replacements in files for ${referenceStrings.join(',')}...`));
   for (const ref of referenceStrings) {
     for (const replacementDefinition of replacementDefinitions) {
       replacementDefinition.refRegexes = replacementDefinition.refRegexes.map((refRegex) => {
@@ -250,14 +285,20 @@ export async function applyAllReplacementsDefinitions(allMatchingSourceFiles: st
   }
 }
 
-export async function applyReplacementDefinition(replacementDefinition: any, allMatchingSourceFiles: string[], ref: string) {
-  for (const sourceFile of allMatchingSourceFiles.filter((file) => replacementDefinition.extensions.some((ext) => file.endsWith(ext)))) {
-    let fileText = await fs.readFile(sourceFile, "utf8");
+export async function applyReplacementDefinition(
+  replacementDefinition: any,
+  allMatchingSourceFiles: string[],
+  ref: string
+) {
+  for (const sourceFile of allMatchingSourceFiles.filter((file) =>
+    replacementDefinition.extensions.some((ext) => file.endsWith(ext))
+  )) {
+    let fileText = await fs.readFile(sourceFile, 'utf8');
     let updated = false;
     // Replacement in all text
-    if (replacementDefinition.replaceMode.includes("all")) {
+    if (replacementDefinition.replaceMode.includes('all')) {
       for (const regexReplace of replacementDefinition.refRegexes) {
-        const updatedfileText = fileText.replace(new RegExp(regexReplace.regex, "gm"), regexReplace.replace);
+        const updatedfileText = fileText.replace(new RegExp(regexReplace.regex, 'gm'), regexReplace.replace);
         if (updatedfileText !== fileText) {
           updated = true;
           fileText = updatedfileText;
@@ -266,21 +307,21 @@ export async function applyReplacementDefinition(replacementDefinition: any, all
     }
     // Replacement by line
     let fileLines = fileText.split(/\r?\n/);
-    if (replacementDefinition.replaceMode.includes("line")) {
+    if (replacementDefinition.replaceMode.includes('line')) {
       const updatedFileLines = fileLines.map((line) => {
         const trimLine = line.trim();
-        if (trimLine.startsWith("/") || trimLine.startsWith("<!--")) {
+        if (trimLine.startsWith('/') || trimLine.startsWith('<!--')) {
           return line;
         }
         if (
-          (replacementDefinition.type === "code" && line.includes(ref)) ||
-          (replacementDefinition.type === "xml" &&
-            (line.includes(">" + ref + "<") || line.includes("." + ref + "<") || line.includes(">" + ref + ".")))
+          (replacementDefinition.type === 'code' && line.includes(ref)) ||
+          (replacementDefinition.type === 'xml' &&
+            (line.includes('>' + ref + '<') || line.includes('.' + ref + '<') || line.includes('>' + ref + '.')))
         ) {
           updated = true;
           let regexReplaced = false;
           for (const regexReplace of replacementDefinition.refRegexes) {
-            const updatedLine = line.replace(new RegExp(regexReplace.regex, "gm"), regexReplace.replace);
+            const updatedLine = line.replace(new RegExp(regexReplace.regex, 'gm'), regexReplace.replace);
             if (updatedLine !== line) {
               line = updatedLine;
               regexReplaced = true;
@@ -288,13 +329,13 @@ export async function applyReplacementDefinition(replacementDefinition: any, all
             }
           }
           if (regexReplaced) {
-            return replacementDefinition.type === "code" ? line + " // Updated by sfdx-hardis purge-references" : line;
+            return replacementDefinition.type === 'code' ? line + ' // Updated by sfdx-hardis purge-references' : line;
           }
-          return replacementDefinition.type === "code"
-            ? "// " + line + " // Commented by sfdx-hardis purge-references"
-            : replacementDefinition.type === "xml"
-              ? "<!-- " + line + " Commented by sfdx-hardis purge-references --> "
-              : line;
+          return replacementDefinition.type === 'code'
+            ? '// ' + line + ' // Commented by sfdx-hardis purge-references'
+            : replacementDefinition.type === 'xml'
+            ? '<!-- ' + line + ' Commented by sfdx-hardis purge-references --> '
+            : line;
         }
         return line;
       });
@@ -302,7 +343,7 @@ export async function applyReplacementDefinition(replacementDefinition: any, all
     }
     // Apply updates on file
     if (updated) {
-      const updatedFileText = fileLines.join("\n");
+      const updatedFileText = fileLines.join('\n');
       await fs.writeFile(sourceFile, updatedFileText);
       uxLog(this, c.grey(`- updated ${replacementDefinition.label}: ${sourceFile}`));
     }

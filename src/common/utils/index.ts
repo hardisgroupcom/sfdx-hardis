@@ -3,7 +3,7 @@ import * as child from 'child_process';
 import { spawn as crossSpawn } from 'cross-spawn';
 import * as crypto from 'crypto';
 import { stringify as csvStringify } from 'csv-stringify/sync';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import * as os from 'os';
 import * as path from 'path';
 

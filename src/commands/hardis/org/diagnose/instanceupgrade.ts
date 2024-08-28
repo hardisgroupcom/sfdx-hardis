@@ -1,41 +1,37 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import axios from "axios";
-import moment from "moment";
-import c from "chalk";
-import { uxLog } from "../../../../common/utils/index.js";
-import { soqlQuery } from "../../../../common/utils/apiUtils.js";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider/index.js";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import axios from 'axios';
+import moment from 'moment';
+import c from 'chalk';
+import { uxLog } from '../../../../common/utils/index.js';
+import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
-  public static title = "Get Instance Upgrade date";
+  public static title = 'Get Instance Upgrade date';
 
   public static description = `Get the date when the org instance will be upgraded (to Spring, Summer or Winter)
   `;
 
-  public static examples = ["$ sf hardis:org:diagnose:instanceupgrade"];
+  public static examples = ['$ sf hardis:org:diagnose:instanceupgrade'];
 
   public static flags = {
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -51,7 +47,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
     this.debugMode = flags.debug || false;
 
     // Get instance name
-    const orgQuery = "SELECT FIELDS(all) FROM Organization LIMIT 1";
+    const orgQuery = 'SELECT FIELDS(all) FROM Organization LIMIT 1';
     const orgQueryRes = await soqlQuery(orgQuery, flags['target-org'].getConnection());
     const orgInfo = orgQueryRes.records[0];
     const instanceName = orgInfo.InstanceName;
@@ -63,7 +59,11 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
     const maintenances = instanceInfo.Maintenances || [];
     orgInfo.maintenanceNextUpgrade = {};
     for (const maintenance of maintenances) {
-      if (maintenance.isCore && maintenance.releaseType === "Major" && maintenance.serviceKeys.includes("coreService")) {
+      if (
+        maintenance.isCore &&
+        maintenance.releaseType === 'Major' &&
+        maintenance.serviceKeys.includes('coreService')
+      ) {
         orgInfo.maintenanceNextUpgrade = maintenance;
         break;
       }
@@ -73,20 +73,20 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
     const nextUpgradeDate = moment(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
     const nextMajorUpgradeDateStr = nextUpgradeDate.format();
     const today = moment();
-    const daysBeforeUpgrade = nextUpgradeDate.diff(today, "days");
+    const daysBeforeUpgrade = nextUpgradeDate.diff(today, 'days');
 
     // Manage notifications
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
-    let notifSeverity: NotifSeverity = "log";
+    let notifSeverity: NotifSeverity = 'log';
     const notifText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
 
     // Change severity according to number of days
     if (daysBeforeUpgrade <= 15) {
-      notifSeverity = "warning";
+      notifSeverity = 'warning';
       uxLog(this, c.yellow(notifText));
     } else if (daysBeforeUpgrade <= 30) {
-      notifSeverity = "info";
+      notifSeverity = 'info';
       uxLog(this, c.green(notifText));
     } else {
       uxLog(this, c.green(notifText));
@@ -94,7 +94,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
 
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "ORG_INFO",
+      type: 'ORG_INFO',
       text: notifText,
       attachments: [],
       buttons: notifButtons,

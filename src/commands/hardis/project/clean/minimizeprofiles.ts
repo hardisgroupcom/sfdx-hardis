@@ -1,23 +1,19 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import { glob } from "glob";
-import * as path from "path";
-import { uxLog } from "../../../../common/utils/index.js";
-import { minimizeProfile } from "../../../../common/utils/profileUtils.js";
-import { getConfig } from "../../../../config/index.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { glob } from 'glob';
+import * as path from 'path';
+import { uxLog } from '../../../../common/utils/index.js';
+import { minimizeProfile } from '../../../../common/utils/profileUtils.js';
+import { getConfig } from '../../../../config/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class CleanMinimizeProfiles extends SfCommand<any> {
-  public static title = "Clean profiles of Permission Set attributes";
+  public static title = 'Clean profiles of Permission Set attributes';
 
   public static description = `Remove all profile attributes that exist on Permission Sets
 
@@ -50,24 +46,24 @@ skipMinimizeProfiles
 \`\`\`
 `;
 
-  public static examples = ["$ sf hardis:project:clean:minimizeprofiles"];
+  public static examples = ['$ sf hardis:project:clean:minimizeprofiles'];
 
   public static flags = {
     folder: Flags.string({
-      char: "f",
-      default: "force-app",
-      description: "Root folder",
+      char: 'f',
+      default: 'force-app',
+      description: 'Root folder',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
@@ -79,7 +75,7 @@ skipMinimizeProfiles
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CleanMinimizeProfiles);
-    this.folder = flags.folder || "./force-app";
+    this.folder = flags.folder || './force-app';
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
@@ -88,11 +84,11 @@ skipMinimizeProfiles
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.profile-meta.xml`;
     const matchingProfileFiles = await glob(findManagedPattern, { cwd: process.cwd() });
-    const config = await getConfig("branch");
+    const config = await getConfig('branch');
     const skipMinimizeProfiles = config.skipMinimizeProfiles || [];
     let counter = 0;
     for (const profileFile of matchingProfileFiles) {
-      const profileName = path.basename(profileFile).replace(".profile-meta.xml", "");
+      const profileName = path.basename(profileFile).replace('.profile-meta.xml', '');
       if (skipMinimizeProfiles.includes(profileName)) {
         uxLog(this, c.grey(`Skipped ${profileName} as found in skipMinimizeProfiles property`));
         continue;
@@ -105,7 +101,7 @@ skipMinimizeProfiles
 
     // Summary
     if (counter > 0) {
-      uxLog(this, c.yellow("Please make sure the attributes removed from Profiles are defined on Permission Sets"));
+      uxLog(this, c.yellow('Please make sure the attributes removed from Profiles are defined on Permission Sets'));
       globalThis.displayProfilesWarning = true;
     }
     const msg = `Cleaned ${c.green(c.bold(counter))} profiles from attributes existing on Permission Sets`;

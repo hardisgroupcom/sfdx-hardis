@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as axios1 from 'axios';
 import c from 'chalk';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import * as path from 'path';
 // import * as packages from '../../../../defaults/packages.json'
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
@@ -13,14 +13,10 @@ import { managePackageConfig } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
 const axios = axios1.default;
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('sfdx-hardis', 'org');
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class PackageVersionInstall extends SfCommand<any> {
   public static title = 'Install packages in an org';

@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 // External Libraries and Node.js Modules
 import { glob } from 'glob';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import * as path from 'path';
 
 // Salesforce Specific
@@ -17,9 +17,9 @@ import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../.
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 
-// Initialize and Load Messages
-Messages.importMessagesDirectory(__dirname);
-const messages = Messages.loadMessages('sfdx-hardis', 'org');
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
+
 /* jscpd:ignore-end */
 export default class LintMetadataStatus extends SfCommand<any> {
   public static title = 'check inactive metadatas';

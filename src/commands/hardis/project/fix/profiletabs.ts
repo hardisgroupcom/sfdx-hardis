@@ -10,12 +10,8 @@ import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages('sfdx-hardis', 'org');
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class FixV53Flexipages extends SfCommand<any> {
   public static title = 'Fix profiles to add tabs that are not retrieved by SF CLI';

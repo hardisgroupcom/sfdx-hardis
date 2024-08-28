@@ -1,23 +1,19 @@
 /* jscpd:ignore-start */
-import c from "chalk";
+import c from 'chalk';
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { AuthInfo, Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { getConfig, setConfig } from "../../../../config/index.js";
-import { prompts } from "../../../../common/utils/prompts.js";
-import { uxLog } from "../../../../common/utils/index.js";
-import { instantiateProvider, listKeyValueProviders } from "../../../../common/utils/poolUtils.js";
-import { KeyValueProviderInterface } from "../../../../common/utils/keyValueUtils.js";
+import { AuthInfo, Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { getConfig, setConfig } from '../../../../config/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { uxLog } from '../../../../common/utils/index.js';
+import { instantiateProvider, listKeyValueProviders } from '../../../../common/utils/poolUtils.js';
+import { KeyValueProviderInterface } from '../../../../common/utils/keyValueUtils.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class ScratchPoolCreate extends SfCommand<any> {
-  public static title = "Create and configure scratch org pool";
+  public static title = 'Create and configure scratch org pool';
 
   public static description = `Select a data storage service and configure information to build a scratch org pool
 
@@ -33,21 +29,21 @@ export default class ScratchPoolCreate extends SfCommand<any> {
 \`\`\`
   `;
 
-  public static examples = ["$ sf hardis:scratch:pool:configure"];
+  public static examples = ['$ sf hardis:scratch:pool:configure'];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-dev-hub': requiredHubFlagWithDeprecations,
   };
@@ -60,7 +56,7 @@ export default class ScratchPoolCreate extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     // Get pool configuration
     const { flags } = await this.parse(ScratchPoolCreate);
-    const config = await getConfig("project");
+    const config = await getConfig('project');
     const poolConfig = config.poolConfig || {};
 
     // Tell user if he/she's about to overwrite existing configuration
@@ -69,27 +65,27 @@ export default class ScratchPoolCreate extends SfCommand<any> {
         this,
         c.yellow(
           `There is already an existing scratch org pool configuration: ${JSON.stringify(config.poolConfig)}.
-If you really want to replace it, please remove poolConfig property from .sfdx-hardis.yml and run again this command`,
-        ),
+If you really want to replace it, please remove poolConfig property from .sfdx-hardis.yml and run again this command`
+        )
       );
-      return { outputString: "Scratch org pool configuration already existing" };
+      return { outputString: 'Scratch org pool configuration already existing' };
     }
 
     const allProviders = await listKeyValueProviders();
     const response = await prompts([
       {
-        type: "select",
-        name: "storageService",
-        message: c.cyanBright("What storage service do you want to use for your scratch orgs pool ?"),
+        type: 'select',
+        name: 'storageService',
+        message: c.cyanBright('What storage service do you want to use for your scratch orgs pool ?'),
         initial: 0,
         choices: allProviders.map((provider: KeyValueProviderInterface) => {
           return { title: provider.name, description: provider.description, value: provider.name };
         }),
       },
       {
-        type: "number",
-        name: "maxScratchOrgsNumber",
-        message: c.cyanBright("What is the maximum number of scratch orgs in the pool ?"),
+        type: 'number',
+        name: 'maxScratchOrgsNumber',
+        message: c.cyanBright('What is the maximum number of scratch orgs in the pool ?'),
         initial: poolConfig.maxScratchOrgsNumber || 5,
       },
     ]);
@@ -97,28 +93,36 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
     // Store updated config
     poolConfig.maxScratchOrgsNumber = response.maxScratchOrgsNumber;
     poolConfig.storageService = response.storageService;
-    await setConfig("project", { poolConfig: poolConfig });
+    await setConfig('project', { poolConfig: poolConfig });
 
     // Request additional setup to the user
     const provider = await instantiateProvider(response.storageService);
-    await provider.userSetup({ devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
+    await provider.userSetup({
+      devHubConn: flags['target-dev-hub'].getConnection(),
+      devHubUsername: flags['target-dev-hub'].getUsername(),
+    });
 
     const authInfo = await AuthInfo.create({ username: flags['target-dev-hub'].getUsername() });
     const sfdxAuthUrl = authInfo.getSfdxAuthUrl();
     if (sfdxAuthUrl) {
-      uxLog(this, c.cyan(`You need to define CI masked variable ${c.green("SFDX_AUTH_URL_DEV_HUB")} = ${c.green(sfdxAuthUrl)}`));
+      uxLog(
+        this,
+        c.cyan(`You need to define CI masked variable ${c.green('SFDX_AUTH_URL_DEV_HUB')} = ${c.green(sfdxAuthUrl)}`)
+      );
     } else {
       uxLog(
         this,
         c.yellow(
           `You'll probably need to define CI masked variable ${c.green(
-            "SFDX_AUTH_URL_DEV_HUB",
-          )} with content of sfdxAuthUrl that you can retrieve with ${c.white("sf org display -o YOURDEVHUBUSERNAME --verbose --json")}`,
-        ),
+            'SFDX_AUTH_URL_DEV_HUB'
+          )} with content of sfdxAuthUrl that you can retrieve with ${c.white(
+            'sf org display -o YOURDEVHUBUSERNAME --verbose --json'
+          )}`
+        )
       );
     }
 
     // Return an object to be displayed with --json
-    return { outputString: "Configured scratch orgs pool" };
+    return { outputString: 'Configured scratch orgs pool' };
   }
 }

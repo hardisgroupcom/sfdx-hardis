@@ -1,38 +1,34 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import { execSfdxJson, uxLog } from "../../../common/utils/index.js";
-import { prompts } from "../../../common/utils/prompts.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { execSfdxJson, uxLog } from '../../../common/utils/index.js';
+import { prompts } from '../../../common/utils/prompts.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class PackageCreate extends SfCommand<any> {
-  public static title = "Create a new package";
+  public static title = 'Create a new package';
 
-  public static description = messages.getMessage("packageCreate");
+  public static description = messages.getMessage('packageCreate');
 
-  public static examples = ["$ sf hardis:package:create"];
+  public static examples = ['$ sf hardis:package:create'];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-dev-hub': requiredHubFlagWithDeprecations,
   };
@@ -49,30 +45,31 @@ export default class PackageCreate extends SfCommand<any> {
     // Request questions to user
     const packageResponse = await prompts([
       {
-        type: "text",
-        name: "packageName",
+        type: 'text',
+        name: 'packageName',
         message: c.cyanBright(`Please input the name of the package (ex: MyPackage)`),
       },
       {
-        type: "text",
-        name: "packagePath",
+        type: 'text',
+        name: 'packagePath',
         message: c.cyanBright(`Please input the path of the package (ex: sfdx-source/apex-mocks)`),
       },
       {
-        type: "select",
-        name: "packageType",
+        type: 'select',
+        name: 'packageType',
         message: c.cyanBright(`Please select the type of the package`),
         choices: [
           {
-            title: "Managed",
-            value: "Managed",
-            description: "Managed packages code is hidden in orgs where it is installed. Suited for AppExchanges packages",
+            title: 'Managed',
+            value: 'Managed',
+            description:
+              'Managed packages code is hidden in orgs where it is installed. Suited for AppExchanges packages',
           },
           {
-            title: "Unlocked",
-            value: "Unlocked",
+            title: 'Unlocked',
+            value: 'Unlocked',
             description:
-              "Unlocked packages code is readable and modifiable in orgs where it is installed. Use it for client project or shared tooling",
+              'Unlocked packages code is readable and modifiable in orgs where it is installed. Use it for client project or shared tooling',
           },
         ],
       },
@@ -80,7 +77,7 @@ export default class PackageCreate extends SfCommand<any> {
 
     // Create package
     const packageCreateCommand =
-      "sf package create" +
+      'sf package create' +
       ` --name "${packageResponse.packageName}"` +
       ` --package-type ${packageResponse.packageType}` +
       ` --path "${packageResponse.packagePath}"`;
@@ -89,7 +86,14 @@ export default class PackageCreate extends SfCommand<any> {
       fail: true,
       debug: debugMode,
     });
-    uxLog(this, c.cyan(`Created package Id: ${c.green(packageCreateResult.result.Id)} associated to DevHub ${c.green(flags['target-dev-hub'].getUsername())}`));
+    uxLog(
+      this,
+      c.cyan(
+        `Created package Id: ${c.green(packageCreateResult.result.Id)} associated to DevHub ${c.green(
+          flags['target-dev-hub'].getUsername()
+        )}`
+      )
+    );
 
     // Return an object to be displayed with --json
     return {

@@ -1,59 +1,55 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
-import { execSfdxJson, isCI, uxLog } from "../../../../common/utils/index.js";
-import { prompts } from "../../../../common/utils/prompts.js";
-import { getConfig, setConfig } from "../../../../config/index.js";
+import { Messages, SfError } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
+import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { getConfig, setConfig } from '../../../../config/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class PackageVersionCreate extends SfCommand<any> {
-  public static title = "Create a new version of a package";
+  public static title = 'Create a new version of a package';
 
-  public static description = messages.getMessage("packageVersionCreate");
+  public static description = messages.getMessage('packageVersionCreate');
 
-  public static examples = ["$ sf hardis:package:version:create"];
+  public static examples = ['$ sf hardis:package:version:create'];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     package: Flags.string({
-      char: "p",
-      default: "",
-      description: "Package identifier that you want to use to generate a new package version",
+      char: 'p',
+      default: '',
+      description: 'Package identifier that you want to use to generate a new package version',
     }),
     installkey: Flags.string({
-      char: "k",
-      default: "",
-      description: "Package installation key",
+      char: 'k',
+      default: '',
+      description: 'Package installation key',
     }),
     deleteafter: Flags.boolean({
       default: false,
-      description: "Delete package version after creating it",
+      description: 'Delete package version after creating it',
     }),
     install: Flags.boolean({
-      char: "i",
+      char: 'i',
       default: false,
-      description: "Install package version on default org after generation",
+      description: 'Install package version on default org after generation',
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-dev-hub': requiredHubFlagWithDeprecations,
   };
@@ -77,7 +73,7 @@ export default class PackageVersionCreate extends SfCommand<any> {
     this.deleteAfter = flags.deleteafter || false;
     //this.promote = flags.promote || false;
     const debugMode = flags.debug || false;
-    const config = await getConfig("project");
+    const config = await getConfig('project');
     // List project packages
     const packageDirectories = this.project?.getUniquePackageDirectories() || [];
     // Ask user to select package and input install key if not sent as command arguments
@@ -87,9 +83,11 @@ export default class PackageVersionCreate extends SfCommand<any> {
       }
       const packageResponse = await prompts([
         {
-          type: "select",
-          name: "packageSelected",
-          message: c.cyanBright(`Please select a package (this is not a drill, it will create an official new version !)`),
+          type: 'select',
+          name: 'packageSelected',
+          message: c.cyanBright(
+            `Please select a package (this is not a drill, it will create an official new version !)`
+          ),
           choices: packageDirectories.map((packageDirectory) => {
             return {
               title: packageDirectory.package || packageDirectory.path,
@@ -98,10 +96,10 @@ export default class PackageVersionCreate extends SfCommand<any> {
           }),
         },
         {
-          type: "text",
-          name: "packageInstallationKey",
+          type: 'text',
+          name: 'packageInstallationKey',
           message: c.cyanBright(`Please input an installation password (or let empty)`),
-          initial: config.defaultPackageInstallationKey || "",
+          initial: config.defaultPackageInstallationKey || '',
         },
       ]);
       this.package = packageResponse.packageSelected;
@@ -109,21 +107,21 @@ export default class PackageVersionCreate extends SfCommand<any> {
     }
     // Identify package directory
     const pckgDirectory = packageDirectories.filter(
-      (pckgDirectory) => pckgDirectory.name === this.package || pckgDirectory.package === this.package,
+      (pckgDirectory) => pckgDirectory.name === this.package || pckgDirectory.package === this.package
     )[0];
     if (config.defaultPackageInstallationKey !== this.installKey && this.installKey != null) {
-      await setConfig("project", {
+      await setConfig('project', {
         defaultPackageInstallationKey: this.installKey,
       });
     }
     // Create package version
     uxLog(this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
     const createCommand =
-      "sf package version create" +
+      'sf package version create' +
       ` --package "${pckgDirectory.package}"` +
-      (this.installKey ? ` --installation-key "${this.installKey}"` : " --installation-key-bypass") +
-      " --code-coverage" +
-      " --wait 60";
+      (this.installKey ? ` --installation-key "${this.installKey}"` : ' --installation-key-bypass') +
+      ' --code-coverage' +
+      ' --wait 60';
     const createResult = await execSfdxJson(createCommand, this, {
       fail: true,
       output: true,
@@ -134,8 +132,11 @@ export default class PackageVersionCreate extends SfCommand<any> {
     // If delete after is true, delete package version we just created
     if (this.deleteAfter) {
       // Delete package version
-      uxLog(this, c.cyan(`Delete new package version ${c.green(latestVersion)} of package ${c.green(pckgDirectory.package)}...`));
-      const deleteVersionCommand = "sf package version delete --no-prompt --package " + latestVersion;
+      uxLog(
+        this,
+        c.cyan(`Delete new package version ${c.green(latestVersion)} of package ${c.green(pckgDirectory.package)}...`)
+      );
+      const deleteVersionCommand = 'sf package version delete --no-prompt --package ' + latestVersion;
       const deleteVersionResult = await execSfdxJson(deleteVersionCommand, this, {
         fail: true,
         output: true,
@@ -155,12 +156,12 @@ export default class PackageVersionCreate extends SfCommand<any> {
         pckg.installationkey = this.installKey;
       }
       packagesToInstall.push(pckg);
-      await MetadataUtils.installPackagesOnOrg(packagesToInstall, null, this, "install");
+      await MetadataUtils.installPackagesOnOrg(packagesToInstall, null, this, 'install');
     }
 
     // Return an object to be displayed with --json
     return {
-      outputString: "Generated new package version",
+      outputString: 'Generated new package version',
       packageVersionId: latestVersion,
     };
   }

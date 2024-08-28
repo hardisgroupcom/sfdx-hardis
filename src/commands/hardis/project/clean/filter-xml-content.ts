@@ -1,12 +1,12 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import c from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
-import * as util from "util";
-import * as xml2js from "xml2js";
-import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../../common/utils/index.js";
-import { writeXmlFile } from "../../../../common/utils/xmlUtils.js";
+import c from 'chalk';
+import fs from 'fs-extra';
+import * as path from 'path';
+import * as util from 'util';
+import * as xml2js from 'xml2js';
+import { AnyJson } from '@salesforce/ts-types';
+import { uxLog } from '../../../../common/utils/index.js';
+import { writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 
 // The code of this method is awful... it's migrated from sfdx-essentials, written when async / await were not existing ^^
 export class FilterXmlContent extends SfCommand<any> {
@@ -24,23 +24,23 @@ This script requires a filter-config.json file`;
   public static readonly requiresProject = true;
   public static readonly flags = {
     configfile: Flags.string({
-      char: "c",
-      description: "Config JSON file path",
+      char: 'c',
+      description: 'Config JSON file path',
     }),
     inputfolder: Flags.string({
-      char: "i",
+      char: 'i',
       description: 'Input folder (default: "." )',
     }),
     outputfolder: Flags.string({
-      char: "o",
-      description: "Output folder (default: parentFolder + _xml_content_filtered)",
+      char: 'o',
+      description: 'Output folder (default: parentFolder + _xml_content_filtered)',
     }),
     debug: Flags.boolean({
       default: false,
-      description: "debug",
+      description: 'debug',
     }),
     websocket: Flags.string({
-      description: "websocket",
+      description: 'websocket',
     }),
   };
 
@@ -55,49 +55,55 @@ This script requires a filter-config.json file`;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(FilterXmlContent);
-    this.configFile = flags.configfile || "./filter-config.json";
-    this.inputFolder = flags.inputfolder || ".";
+    this.configFile = flags.configfile || './filter-config.json';
+    this.inputFolder = flags.inputfolder || '.';
     this.outputFolder =
-      flags.outputfolder || "./" + path.dirname(this.inputFolder) + "/" + path.basename(this.inputFolder) + "_xml_content_filtered";
-    uxLog(this, c.cyan(`Initialize XML content filtering of ${this.inputFolder} ,using ${this.configFile} , into ${this.outputFolder}`));
+      flags.outputfolder ||
+      './' + path.dirname(this.inputFolder) + '/' + path.basename(this.inputFolder) + '_xml_content_filtered';
+    uxLog(
+      this,
+      c.cyan(
+        `Initialize XML content filtering of ${this.inputFolder} ,using ${this.configFile} , into ${this.outputFolder}`
+      )
+    );
     // Read json config file
     const filterConfig = fs.readJsonSync(this.configFile);
-    uxLog(this, c.grey("Filtering config file content:\n" + JSON.stringify(filterConfig, null, 2)));
+    uxLog(this, c.grey('Filtering config file content:\n' + JSON.stringify(filterConfig, null, 2)));
 
     // Create output folder/empty it if existing
     if (fs.existsSync(this.outputFolder) && this.outputFolder !== this.inputFolder) {
-      uxLog(this, c.grey("Empty output folder " + this.outputFolder));
+      uxLog(this, c.grey('Empty output folder ' + this.outputFolder));
       fs.emptyDirSync(this.outputFolder);
     } else if (!fs.existsSync(this.outputFolder)) {
-      uxLog(this, c.grey("Create output folder " + this.outputFolder));
+      uxLog(this, c.grey('Create output folder ' + this.outputFolder));
       fs.mkdirSync(this.outputFolder);
     }
 
     // Copy input folder to output folder
     if (this.outputFolder !== this.inputFolder) {
-      uxLog(this, "Copy in output folder " + this.outputFolder);
+      uxLog(this, 'Copy in output folder ' + this.outputFolder);
       fs.copySync(this.inputFolder, this.outputFolder);
     }
 
     // Browse filters
     filterConfig.filters.forEach((filter) => {
-      uxLog(this, c.grey(filter.name + " (" + filter.description + ")..."));
+      uxLog(this, c.grey(filter.name + ' (' + filter.description + ')...'));
       // Browse filter folders
       filter.folders.forEach((filterFolder) => {
         // Browse folder files
-        if (!fs.existsSync(this.outputFolder + "/" + filterFolder)) {
+        if (!fs.existsSync(this.outputFolder + '/' + filterFolder)) {
           return;
         }
-        const folderFiles = fs.readdirSync(this.outputFolder + "/" + filterFolder);
+        const folderFiles = fs.readdirSync(this.outputFolder + '/' + filterFolder);
         folderFiles.forEach((file) => {
           // Build file name
-          const fpath = file.replace(/\\/g, "/");
-          const browsedFileExtension = fpath.substring(fpath.lastIndexOf(".") + 1);
+          const fpath = file.replace(/\\/g, '/');
+          const browsedFileExtension = fpath.substring(fpath.lastIndexOf('.') + 1);
           filter.file_extensions.forEach((filterFileExt) => {
             if (browsedFileExtension === filterFileExt) {
               // Found a matching file, process it
-              const fullFilePath = this.outputFolder + "/" + filterFolder + "/" + fpath;
-              uxLog(this, c.grey("- " + fullFilePath));
+              const fullFilePath = this.outputFolder + '/' + filterFolder + '/' + fpath;
+              uxLog(this, c.grey('- ' + fullFilePath));
               this.filterXmlFromFile(filter, fullFilePath);
             }
           });
@@ -107,7 +113,7 @@ This script requires a filter-config.json file`;
     this.smmryResult.filterResults = this.smmryUpdatedFiles;
 
     // Display results as JSON
-    uxLog(this, c.grey("Filtering results:" + JSON.stringify(this.smmryResult)));
+    uxLog(this, c.grey('Filtering results:' + JSON.stringify(this.smmryResult)));
     return {};
   }
 
@@ -116,13 +122,13 @@ This script requires a filter-config.json file`;
     const parser = new xml2js.Parser();
     const data = fs.readFileSync(file);
     parser.parseString(data, (err2, fileXmlContent) => {
-      uxLog(this, "Parsed XML \n" + util.inspect(fileXmlContent, false, null));
+      uxLog(this, 'Parsed XML \n' + util.inspect(fileXmlContent, false, null));
       Object.keys(fileXmlContent).forEach((eltKey) => {
         fileXmlContent[eltKey] = this.filterElement(fileXmlContent[eltKey], filter, file);
       });
       if (this.smmryUpdatedFiles[file] != null && this.smmryUpdatedFiles[file].updated === true) {
         writeXmlFile(file, fileXmlContent);
-        uxLog(this, "Updated " + file);
+        uxLog(this, 'Updated ' + file);
       }
     });
   }
@@ -131,7 +137,7 @@ This script requires a filter-config.json file`;
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     // Object case
-    if (typeof elementValue === "object") {
+    if (typeof elementValue === 'object') {
       Object.keys(elementValue).forEach((eltKey) => {
         let found = false;
         // Browse filter exclude_list for elementValue
@@ -139,7 +145,7 @@ This script requires a filter-config.json file`;
           if (excludeDef.type_tag === eltKey) {
             // Found matching type tag
             found = true;
-            uxLog(this, "\nFound type: " + eltKey);
+            uxLog(this, '\nFound type: ' + eltKey);
             uxLog(this, elementValue[eltKey]);
             // Filter type values
             const typeValues = elementValue[eltKey];
@@ -151,7 +157,7 @@ This script requires a filter-config.json file`;
                 (excludeDef.values.includes(typeItem[excludeDef.identifier_tag]) ||
                   excludeDef.values.includes(typeItem[excludeDef.identifier_tag][0]))
               ) {
-                uxLog(this, "----- filtered " + typeItem[excludeDef.identifier_tag]);
+                uxLog(this, '----- filtered ' + typeItem[excludeDef.identifier_tag]);
                 if (self.smmryUpdatedFiles[file] == null) {
                   self.smmryUpdatedFiles[file] = { updated: true, excluded: {} };
                 }
@@ -160,7 +166,7 @@ This script requires a filter-config.json file`;
                 }
                 self.smmryUpdatedFiles[file].excluded[excludeDef.type_tag].push(typeItem[excludeDef.identifier_tag][0]);
               } else {
-                uxLog(this, "--- kept " + typeItem[excludeDef.identifier_tag]);
+                uxLog(this, '--- kept ' + typeItem[excludeDef.identifier_tag]);
                 newTypeValues.push(typeItem);
               }
             });

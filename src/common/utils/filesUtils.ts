@@ -1,5 +1,5 @@
 // External Libraries and Node.js Modules
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
 import makeFetchHappen from 'make-fetch-happen';

@@ -1,40 +1,36 @@
 /* jscpd:ignore-start */
-import c from "chalk";
+import c from 'chalk';
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { getPoolStorage, setPoolStorage } from "../../../../common/utils/poolUtils.js";
-import { getConfig } from "../../../../config/index.js";
-import { execCommand, uxLog } from "../../../../common/utils/index.js";
-import { authenticateWithSfdxUrlStore } from "../../../../common/utils/orgUtils.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { getPoolStorage, setPoolStorage } from '../../../../common/utils/poolUtils.js';
+import { getConfig } from '../../../../config/index.js';
+import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class ScratchPoolReset extends SfCommand<any> {
-  public static title = "Reset scratch org pool";
+  public static title = 'Reset scratch org pool';
 
-  public static description = "Reset scratch org pool (delete all scratches in the pool)";
+  public static description = 'Reset scratch org pool (delete all scratches in the pool)';
 
-  public static examples = ["$ sf hardis:scratch:pool:refresh"];
+  public static examples = ['$ sf hardis:scratch:pool:refresh'];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-dev-hub': requiredHubFlagWithDeprecations,
   };
@@ -50,16 +46,24 @@ export default class ScratchPoolReset extends SfCommand<any> {
     this.debugMode = flags.debug || false;
 
     // Check pool configuration is defined on project
-    const config = await getConfig("project");
+    const config = await getConfig('project');
     if (config.poolConfig == null) {
-      uxLog(this, c.yellow("Configuration file must contain a poolConfig property") + "\n" + c.grey(JSON.stringify(config, null, 2)));
-      return { outputString: "Configuration file must contain a poolConfig property" };
+      uxLog(
+        this,
+        c.yellow('Configuration file must contain a poolConfig property') +
+          '\n' +
+          c.grey(JSON.stringify(config, null, 2))
+      );
+      return { outputString: 'Configuration file must contain a poolConfig property' };
     }
     uxLog(this, c.cyan(`Reseting scratch org pool on org ${c.green(flags['target-dev-hub'].getUsername())}...`));
-    uxLog(this, c.grey("Pool config: " + JSON.stringify(config.poolConfig)));
+    uxLog(this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
-    const poolStorage = await getPoolStorage({ devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
+    const poolStorage = await getPoolStorage({
+      devHubConn: flags['target-dev-hub'].getConnection(),
+      devHubUsername: flags['target-dev-hub'].getUsername(),
+    });
     let scratchOrgs = poolStorage.scratchOrgs || [];
 
     // Delete existing scratch orgs
@@ -67,7 +71,10 @@ export default class ScratchPoolReset extends SfCommand<any> {
     const scratchOrgsToDelete = [...scratchOrgs];
     scratchOrgs = [];
     poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage, { devHubConn: flags['target-dev-hub'].getConnection(), devHubUsername: flags['target-dev-hub'].getUsername() });
+    await setPoolStorage(poolStorage, {
+      devHubConn: flags['target-dev-hub'].getConnection(),
+      devHubUsername: flags['target-dev-hub'].getUsername(),
+    });
     for (const scratchOrgToDelete of scratchOrgsToDelete) {
       // Authenticate to scratch org to delete
       await authenticateWithSfdxUrlStore(scratchOrgToDelete);
@@ -77,13 +84,14 @@ export default class ScratchPoolReset extends SfCommand<any> {
       uxLog(
         this,
         c.cyan(
-          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
-          } has been deleted`,
-        ),
+          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${
+            scratchOrgToDelete?.authFileJson?.result?.instanceUrl
+          } has been deleted`
+        )
       );
     }
     /* jscpd:ignore-end */
 
-    return { outputString: "Reset scratch orgs pool" };
+    return { outputString: 'Reset scratch orgs pool' };
   }
 }

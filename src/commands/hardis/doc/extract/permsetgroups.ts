@@ -1,46 +1,42 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import * as fs from "fs-extra";
-import { glob } from "glob";
-import * as path from "path";
-import * as toc from "markdown-toc";
-import { uxLog } from "../../../../common/utils/index.js";
-import { parseXmlFile } from "../../../../common/utils/xmlUtils.js";
-import { getReportDirectory } from "../../../../config/index.js";
-import { WebSocketClient } from "../../../../common/websocketClient.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import fs from 'fs-extra';
+import { glob } from 'glob';
+import * as path from 'path';
+import * as toc from 'markdown-toc';
+import { uxLog } from '../../../../common/utils/index.js';
+import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { getReportDirectory } from '../../../../config/index.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class ExtractPermSetGroups extends SfCommand<any> {
-  public static title = "Generate project documentation";
+  public static title = 'Generate project documentation';
 
   public static description = `Generate markdown files with project documentation`;
 
-  public static examples = ["$ sf hardis:doc:extract:permsetgroups"];
+  public static examples = ['$ sf hardis:doc:extract:permsetgroups'];
 
   public static flags = {
     outputfile: Flags.string({
-      char: "o",
-      description: "Force the path and name of output report file. Must end with .csv",
+      char: 'o',
+      description: 'Force the path and name of output report file. Must end with .csv',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
@@ -63,7 +59,7 @@ export default class ExtractPermSetGroups extends SfCommand<any> {
     const psgFiles = await glob(globPatternPSG);
     uxLog(this, c.grey(`Found ${psgFiles.length} permission set groups`));
     for (const psgFile of psgFiles) {
-      const psgName = (psgFile.replace(/\\/g, "/").split("/").pop() || "").replace(".permissionsetgroup-meta.xml", "");
+      const psgName = (psgFile.replace(/\\/g, '/').split('/').pop() || '').replace('.permissionsetgroup-meta.xml', '');
       const psg = await parseXmlFile(psgFile);
       const psgItem = {
         name: psgName,
@@ -76,11 +72,11 @@ export default class ExtractPermSetGroups extends SfCommand<any> {
 
     // Build CSV
     const csvLines: any[] = [];
-    const header = ["Permission set group", "Permission sets"];
+    const header = ['Permission set group', 'Permission sets'];
     csvLines.push(header);
     for (const psg of psgList) {
       const psgLine = [psg.name];
-      psgLine.push(`"${psg.permissionSetsNames.join(",")}"`);
+      psgLine.push(`"${psg.permissionSetsNames.join(',')}"`);
       csvLines.push(psgLine);
     }
 
@@ -88,41 +84,41 @@ export default class ExtractPermSetGroups extends SfCommand<any> {
     if (this.outputFile == null) {
       // Default file in system temp directory if --outputfile not provided
       const reportDir = await getReportDirectory();
-      this.outputFile = path.join(reportDir, "permission-set-groups.csv");
+      this.outputFile = path.join(reportDir, 'permission-set-groups.csv');
     } else {
       // Ensure directories to provided --outputfile are existing
       await fs.ensureDir(path.dirname(this.outputFile));
     }
     try {
-      const csvText = csvLines.map((e) => e.join(",")).join("\n");
-      await fs.writeFile(this.outputFile, csvText, "utf8");
+      const csvText = csvLines.map((e) => e.join(',')).join('\n');
+      await fs.writeFile(this.outputFile, csvText, 'utf8');
       uxLog(this, c.cyan(`Permission set groups CSV file generated in ${c.bold(c.green(this.outputFile))}`));
       // Trigger command to open CSV file in VsCode extension
       WebSocketClient.requestOpenFile(this.outputFile);
     } catch (e: any) {
-      uxLog(this, c.yellow("Error while generating CSV log file:\n" + (e as Error).message + "\n" + e.stack));
+      uxLog(this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + e.stack));
       this.outputFile = null;
     }
 
     // Build markdown file
-    const mdPsg = ["# Permission set groups", "", "<!-- toc -->", "<!-- tocstop -->"];
+    const mdPsg = ['# Permission set groups', '', '<!-- toc -->', '<!-- tocstop -->'];
     for (const psg of psgList) {
-      mdPsg.push(...[`## ${psg.name}`, "", psg.label, "", psg.description, ""]);
+      mdPsg.push(...[`## ${psg.name}`, '', psg.label, '', psg.description, '']);
       for (const psName of psg.permissionSetsNames) {
         mdPsg.push(`  - ${psName} `);
       }
-      mdPsg.push("");
+      mdPsg.push('');
     }
-    const docFile = "docs/permission-set-groups.md";
-    await fs.ensureDir("docs");
-    let mdPsgText = mdPsg.join("\n");
+    const docFile = 'docs/permission-set-groups.md';
+    await fs.ensureDir('docs');
+    let mdPsgText = mdPsg.join('\n');
     mdPsgText = toc.insert(mdPsgText);
-    await fs.writeFile(docFile, mdPsgText, "utf8");
+    await fs.writeFile(docFile, mdPsgText, 'utf8');
     uxLog(this, c.cyan(`Permission set groups Markdown file generated in ${c.bold(c.green(docFile))}`));
     // Trigger command to open CSV file in VsCode extension
     WebSocketClient.requestOpenFile(docFile);
 
     // Return an object to be displayed with --json
-    return { outputString: "Permission set groups Documentation generated" };
+    return { outputString: 'Permission set groups Documentation generated' };
   }
 }

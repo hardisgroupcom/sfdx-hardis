@@ -2,6 +2,8 @@ import c from 'chalk';
 import { readPackageUp } from 'read-package-up';
 import updateNotifier from 'update-notifier';
 import * as semver from 'semver';
+import { fileURLToPath } from 'url';
+import * as path from 'path';
 
 export const hook = async (options: any) => {
   // Skip hooks from other commands than hardis commands
@@ -9,6 +11,9 @@ export const hook = async (options: any) => {
   if (!commandId.startsWith('hardis')) {
     return;
   }
+
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
 
   // Check if an upgrade of sfdx-hardis is required
   // Use promise + then to not block plugin execution during that

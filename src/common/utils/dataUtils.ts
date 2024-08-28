@@ -1,32 +1,32 @@
-import { SfError } from "@salesforce/core";
-import c from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
-import { elapseEnd, elapseStart, execCommand, uxLog } from "./index.js";
-import { getConfig } from "../../config/index.js";
-import { prompts } from "./prompts.js";
+import { SfError } from '@salesforce/core';
+import c from 'chalk';
+import fs from 'fs-extra';
+import * as path from 'path';
+import { elapseEnd, elapseStart, execCommand, uxLog } from './index.js';
+import { getConfig } from '../../config/index.js';
+import { prompts } from './prompts.js';
 
-export const dataFolderRoot = path.join(".", "scripts", "data");
+export const dataFolderRoot = path.join('.', 'scripts', 'data');
 
 // Import data from sfdmu folder
 export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl?.isDelete === true) {
-    throw new SfError("Your export.json contains deletion info, please use appropriate delete command");
+    throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
   uxLog(commandThis, c.cyan(`Importing data from ${c.green(dtl?.full_label)} ...`));
   /* jscpd:ignore-start */
   uxLog(commandThis, c.italic(c.grey(dtl?.description)));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
-  await fs.ensureDir(path.join(sfdmuPath, "logs"));
-  const config = await getConfig("branch");
+  await fs.ensureDir(path.join(sfdmuPath, 'logs'));
+  const config = await getConfig('branch');
   const dataImportCommand =
-    "sf sfdmu:run" +
+    'sf sfdmu:run' +
     ` --sourceusername csvfile` +
     ` --targetusername ${targetUsername}` +
     ` -p ${sfdmuPath}` +
-    " --noprompt" +
-    (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : "");
+    ' --noprompt' +
+    (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : '');
   /* jscpd:ignore-end */
   elapseStart(`import ${dtl?.full_label}`);
   await execCommand(dataImportCommand, commandThis, {
@@ -41,20 +41,20 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl?.isDelete === false) {
     throw new SfError(
-      "Your export.json does not contain deletion information. Please check http://help.sfdmu.com/full-documentation/advanced-features/delete-from-source",
+      'Your export.json does not contain deletion information. Please check http://help.sfdmu.com/full-documentation/advanced-features/delete-from-source'
     );
   }
   uxLog(commandThis, c.cyan(`Deleting data from ${c.green(dtl?.full_label)} ...`));
   uxLog(commandThis, c.italic(c.grey(dtl?.description)));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
-  await fs.ensureDir(path.join(sfdmuPath, "logs"));
-  const config = await getConfig("branch");
+  await fs.ensureDir(path.join(sfdmuPath, 'logs'));
+  const config = await getConfig('branch');
   const dataImportCommand =
-    "sf sfdmu:run" +
+    'sf sfdmu:run' +
     ` --sourceusername ${targetUsername}` +
     ` -p ${sfdmuPath}` +
-    " --noprompt" +
-    (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : "");
+    ' --noprompt' +
+    (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : '');
   elapseStart(`delete ${dtl?.full_label}`);
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
@@ -68,13 +68,13 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   /* jscpd:ignore-start */
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl?.isDelete === true) {
-    throw new SfError("Your export.json contains deletion info, please use appropriate delete command");
+    throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
   /* jscpd:ignore-end */
   uxLog(commandThis, c.cyan(`Exporting data from ${c.green(dtl?.full_label)} ...`));
   uxLog(commandThis, c.italic(c.grey(dtl?.description)));
   const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
-  await fs.ensureDir(path.join(sfdmuPath, "logs"));
+  await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
@@ -82,19 +82,19 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   });
 }
 
-export async function selectDataWorkspace(opts = { selectDataLabel: "Please select a data workspace to export" }) {
+export async function selectDataWorkspace(opts = { selectDataLabel: 'Please select a data workspace to export' }) {
   if (!fs.existsSync(dataFolderRoot)) {
     throw new SfError(
-      "There is no sfdmu root folder 'scripts/data' in your workspace. Create it and define sfdmu exports using sfdmu: https://help.sfdmu.com/",
+      "There is no sfdmu root folder 'scripts/data' in your workspace. Create it and define sfdmu exports using sfdmu: https://help.sfdmu.com/"
     );
   }
 
   const sfdmuFolders = fs
     .readdirSync(dataFolderRoot, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => path.join(".", "scripts", "data", dirent.name));
+    .map((dirent) => path.join('.', 'scripts', 'data', dirent.name));
   if (sfdmuFolders.length === 0) {
-    throw new SfError("There is no sfdmu folder in your workspace. Create them using sfdmu: https://help.sfdmu.com/");
+    throw new SfError('There is no sfdmu folder in your workspace. Create them using sfdmu: https://help.sfdmu.com/');
   }
   const choices: any = [];
   for (const sfdmuFolder of sfdmuFolders) {
@@ -108,8 +108,8 @@ export async function selectDataWorkspace(opts = { selectDataLabel: "Please sele
     }
   }
   const sfdmuDirResult = await prompts({
-    type: "select",
-    name: "value",
+    type: 'select',
+    name: 'value',
     message: c.cyanBright(opts.selectDataLabel),
     choices: choices,
   });
@@ -117,17 +117,20 @@ export async function selectDataWorkspace(opts = { selectDataLabel: "Please sele
 }
 
 export async function getDataWorkspaceDetail(dataWorkspace: string) {
-  const exportFile = path.join(dataWorkspace, "export.json");
+  const exportFile = path.join(dataWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
-    uxLog(this, c.yellow(`Your SFDMU folder ${c.bold(dataWorkspace)} must contain an ${c.bold("export.json")} configuration file`));
+    uxLog(
+      this,
+      c.yellow(`Your SFDMU folder ${c.bold(dataWorkspace)} must contain an ${c.bold('export.json')} configuration file`)
+    );
     return null;
   }
-  const exportFileJson = JSON.parse(await fs.readFile(exportFile, "utf8"));
-  const folderName = (dataWorkspace.replace(/\\/g, "/").match(/([^/]*)\/*$/) || [])[1];
+  const exportFileJson = JSON.parse(await fs.readFile(exportFile, 'utf8'));
+  const folderName = (dataWorkspace.replace(/\\/g, '/').match(/([^/]*)\/*$/) || [])[1];
   const hardisLabel = exportFileJson.sfdxHardisLabel || folderName;
   const hardisDescription = exportFileJson.sfdxHardisDescription || dataWorkspace;
   return {
-    full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ""}`,
+    full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ''}`,
     label: hardisLabel,
     description: hardisDescription,
     exportJson: exportFileJson,
@@ -139,7 +142,7 @@ export async function getDataWorkspaceDetail(dataWorkspace: string) {
 export function isDeleteDataWorkspace(exportFileJson: any) {
   let isDelete = false;
   for (const objectConfig of exportFileJson.objects) {
-    if (objectConfig?.deleteFromSource === true || objectConfig.operation === "DeleteSource") {
+    if (objectConfig?.deleteFromSource === true || objectConfig.operation === 'DeleteSource') {
       isDelete = true;
     }
   }

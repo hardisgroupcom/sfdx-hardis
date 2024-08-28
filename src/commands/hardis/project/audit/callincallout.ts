@@ -1,43 +1,38 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as fs from "fs-extra";
-import { glob } from "glob";
-import sortArray from "sort-array";
-import { catchMatches, generateReports, uxLog } from "../../../../common/utils/index.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import fs from 'fs-extra';
+import { glob } from 'glob';
+import sortArray from 'sort-array';
+import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class CallInCallOut extends SfCommand<any> {
-  public static title = "Audit CallIns and CallOuts";
+  public static title = 'Audit CallIns and CallOuts';
 
-  public static description = messages.getMessage("auditCallInCallOut");
+  public static description = messages.getMessage('auditCallInCallOut');
 
-  public static examples = ["$ sf hardis:project:audit:callouts"];
+  public static examples = ['$ sf hardis:project:audit:callouts'];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     // flag with a value (-n, --name=VALUE)
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
   };
-
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
@@ -47,27 +42,27 @@ export default class CallInCallOut extends SfCommand<any> {
   protected matchResults: any[] = [];
 
   public async run(): Promise<AnyJson> {
-    const pattern = "**/*.{cls,trigger}";
+    const pattern = '**/*.{cls,trigger}';
     const catchers = [
       {
-        type: "INBOUND",
-        subType: "SOAP",
+        type: 'INBOUND',
+        subType: 'SOAP',
         regex: /webservice static/gim,
-        detail: [{ name: "webServiceName", regex: /webservice static (.*?){/gims }],
+        detail: [{ name: 'webServiceName', regex: /webservice static (.*?){/gims }],
       },
       {
-        type: "INBOUND",
-        subType: "REST",
+        type: 'INBOUND',
+        subType: 'REST',
         regex: /@RestResource/gim,
-        detail: [{ name: "restResource", regex: /@RestResource\((.*?)\)/gims }],
+        detail: [{ name: 'restResource', regex: /@RestResource\((.*?)\)/gims }],
       },
       {
-        type: "OUTBOUND",
-        subType: "HTTP",
+        type: 'OUTBOUND',
+        subType: 'HTTP',
         regex: /new HttpRequest/gim,
         detail: [
-          { name: "endPoint", regex: /setEndpoint\((.*?);/gims },
-          { name: "action", regex: /<soapenv:Body><[A-Za-z0-9_-]*:(.*?)>/gims },
+          { name: 'endPoint', regex: /setEndpoint\((.*?);/gims },
+          { name: 'action', regex: /<soapenv:Body><[A-Za-z0-9_-]*:(.*?)>/gims },
         ],
       },
     ];
@@ -76,8 +71,8 @@ export default class CallInCallOut extends SfCommand<any> {
     uxLog(this, `Browsing ${apexFiles.length} files`);
     // Loop in files
     for (const file of apexFiles) {
-      const fileText = await fs.readFile(file, "utf8");
-      if (fileText.startsWith("hidden") || fileText.includes("@isTest")) {
+      const fileText = await fs.readFile(file, 'utf8');
+      if (fileText.startsWith('hidden') || fileText.includes('@isTest')) {
         continue;
       }
       // Loop on criteria to find matches in this file
@@ -93,31 +88,31 @@ export default class CallInCallOut extends SfCommand<any> {
         type: item.type,
         subType: item.subType,
         fileName: item.fileName,
-        nameSpace: item.fileName.includes("__") ? item.fileName.split("__")[0] : "Custom",
+        nameSpace: item.fileName.includes('__') ? item.fileName.split('__')[0] : 'Custom',
         matches: item.matches,
         detail:
           Object.keys(item.detail)
             .map(
               (key: string) =>
                 key +
-                ": " +
+                ': ' +
                 item.detail[key]
                   .map(
                     (extractedText: string) =>
                       extractedText
-                        .replace(/(\r\n|\n|\r)/gm, "") // Remove new lines from result
-                        .replace(/\s+/g, " "), // Replace multiple whitespaces by single whitespaces
+                        .replace(/(\r\n|\n|\r)/gm, '') // Remove new lines from result
+                        .replace(/\s+/g, ' ') // Replace multiple whitespaces by single whitespaces
                   )
-                  .join(" | "),
+                  .join(' | ')
             )
-            .join(" || ") || "",
+            .join(' || ') || '',
       };
     });
 
     // Sort array
     const resultSorted = sortArray(result, {
-      by: ["type", "subType", "fileName", "matches"],
-      order: ["asc", "asc", "asc", "desc"],
+      by: ['type', 'subType', 'fileName', 'matches'],
+      order: ['asc', 'asc', 'asc', 'desc'],
     });
 
     // Display as table
@@ -126,23 +121,23 @@ export default class CallInCallOut extends SfCommand<any> {
       resultsLight.map((item: any) => {
         delete item.detail;
         return item;
-      }),
+      })
     );
 
     // Generate output files
     const columns = [
-      { key: "type", header: "IN/OUT" },
-      { key: "subType", header: "Protocol" },
-      { key: "fileName", header: "Apex" },
-      { key: "nameSpace", header: "Namespace" },
-      { key: "matches", header: "Number" },
-      { key: "detail", header: "Detail" },
+      { key: 'type', header: 'IN/OUT' },
+      { key: 'subType', header: 'Protocol' },
+      { key: 'fileName', header: 'Apex' },
+      { key: 'nameSpace', header: 'Namespace' },
+      { key: 'matches', header: 'Number' },
+      { key: 'detail', header: 'Detail' },
     ];
     const reportFiles = await generateReports(resultSorted, columns, this);
 
     // Return an object to be displayed with --json
     return {
-      outputString: "Processed callIns and callOuts audit",
+      outputString: 'Processed callIns and callOuts audit',
       result: resultSorted,
       reportFiles,
     };

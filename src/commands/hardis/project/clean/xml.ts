@@ -1,28 +1,24 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import * as fs from "fs-extra";
-import { glob } from "glob";
-import * as path from "path";
-import sortArray from "sort-array";
-import * as xmldom from "@xmldom/xmldom";
-import * as xpath from "xpath";
-import { isCI, uxLog } from "../../../../common/utils/index.js";
-import { prompts } from "../../../../common/utils/prompts.js";
-import { writeXmlFileFormatted } from "../../../../common/utils/xmlUtils.js";
-import { getConfig, setConfig } from "../../../../config/index.js";
+import { Messages, SfError } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import fs from 'fs-extra';
+import { glob } from 'glob';
+import * as path from 'path';
+import sortArray from 'sort-array';
+import * as xmldom from '@xmldom/xmldom';
+import * as xpath from 'xpath';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { writeXmlFileFormatted } from '../../../../common/utils/xmlUtils.js';
+import { getConfig, setConfig } from '../../../../config/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class CleanXml extends SfCommand<any> {
-  public static title = "Clean retrieved empty items in dx sources";
+  public static title = 'Clean retrieved empty items in dx sources';
 
   public static description = `Remove XML elements using Glob patterns and XPath expressions
   
@@ -39,41 +35,42 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   `;
 
   public static examples = [
-    "$ sf hardis:project:clean:xml",
+    '$ sf hardis:project:clean:xml',
     `$ sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"`,
   ];
 
   public static flags = {
     folder: Flags.string({
-      char: "f",
-      default: "force-app",
-      description: "Root folder",
+      char: 'f',
+      default: 'force-app',
+      description: 'Root folder',
     }),
     globpattern: Flags.string({
-      char: "p",
-      description: "Glob pattern to find files to clean. Ex: /**/*.flexipage-meta.xml",
-      dependsOn: ["xpath"],
+      char: 'p',
+      description: 'Glob pattern to find files to clean. Ex: /**/*.flexipage-meta.xml',
+      dependsOn: ['xpath'],
     }),
     xpath: Flags.string({
-      char: "x",
-      description: "XPath to use to detect the elements to remove. Ex: //ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]",
-      dependsOn: ["globpattern"],
+      char: 'x',
+      description:
+        "XPath to use to detect the elements to remove. Ex: //ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]",
+      dependsOn: ['globpattern'],
     }),
     namespace: Flags.string({
-      char: "n",
-      default: "http://soap.sforce.com/2006/04/metadata",
-      description: "XML Namespace to use",
+      char: 'n',
+      default: 'http://soap.sforce.com/2006/04/metadata',
+      description: 'XML Namespace to use',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
@@ -88,10 +85,10 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CleanXml);
-    this.folder = flags.folder || "./force-app";
+    this.folder = flags.folder || './force-app';
     this.globPattern = flags.globpattern;
     this.xpath = flags.xpath;
-    this.namespace = flags.namespace || "http://soap.sforce.com/2006/04/metadata";
+    this.namespace = flags.namespace || 'http://soap.sforce.com/2006/04/metadata';
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
@@ -108,7 +105,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
       // Iterate on matching files
       for (const xmlFile of matchingXmlFiles) {
         let updated = false;
-        const xml = await fs.readFile(xmlFile, "utf8");
+        const xml = await fs.readFile(xmlFile, 'utf8');
         const doc = new xmldom.DOMParser().parseFromString(xml);
         // Iterate on xpaths
         for (const xpathItem of cleanXmlPattern.xpaths) {
@@ -141,7 +138,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   public async buildCleanXmlPatterns() {
     // Input parameters
     if (this.globPattern && this.xpath) {
-      uxLog(this, c.cyan("Using configuration from input arguments..."));
+      uxLog(this, c.cyan('Using configuration from input arguments...'));
       return [
         {
           globPattern: this.globPattern,
@@ -150,8 +147,11 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
       ];
     }
     // Stored config
-    uxLog(this, c.cyan(`Using configuration from property ${c.bold("cleanXmlPatterns")} in .sfdx-hardis.yml config file...`));
-    const config = await getConfig("branch");
+    uxLog(
+      this,
+      c.cyan(`Using configuration from property ${c.bold('cleanXmlPatterns')} in .sfdx-hardis.yml config file...`)
+    );
+    const config = await getConfig('branch');
     return config.cleanXmlPatterns || [];
   }
 
@@ -164,7 +164,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   }
 
   public findRemoveParentNodeName(xpathItem: string) {
-    const splits = xpathItem.split("//ns:").filter((str) => str !== "");
+    const splits = xpathItem.split('//ns:').filter((str) => str !== '');
     if (splits[0]) {
       return splits[0];
     }
@@ -184,16 +184,20 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   // Propose user to perform such cleaning at each future hardis:work:save command
   public async manageAddToPermanentConfig(globPattern: string, xpath: string) {
     if (!isCI) {
-      const config = await getConfig("project");
+      const config = await getConfig('project');
       let cleanXmlPatterns = config.cleanXmlPatterns || [];
-      const alreadyDefined = cleanXmlPatterns.filter((item: any) => item.globPattern === globPattern && item.xpaths.includes(xpath));
+      const alreadyDefined = cleanXmlPatterns.filter(
+        (item: any) => item.globPattern === globPattern && item.xpaths.includes(xpath)
+      );
       if (alreadyDefined.length > 0) {
         return;
       }
       // prompt user
       const addConfigRes = await prompts({
-        type: "confirm",
-        message: c.cyanBright(`Do you want to ALWAYS apply removal of xpath ${xpath} from files of pattern ${globPattern} ?`),
+        type: 'confirm',
+        message: c.cyanBright(
+          `Do you want to ALWAYS apply removal of xpath ${xpath} from files of pattern ${globPattern} ?`
+        ),
       });
       if (addConfigRes.value === true) {
         let updated = false;
@@ -215,10 +219,10 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
         }
         // Update config with sorted new value
         cleanXmlPatterns = sortArray(cleanXmlPatterns, {
-          by: ["globPattern"],
-          order: ["asc"],
+          by: ['globPattern'],
+          order: ['asc'],
         });
-        await setConfig("project", { cleanXmlPatterns: cleanXmlPatterns });
+        await setConfig('project', { cleanXmlPatterns: cleanXmlPatterns });
       }
     }
   }

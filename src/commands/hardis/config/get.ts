@@ -1,44 +1,40 @@
 /* jscpd:ignore-start */
 
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../common/utils/index.js";
-import { getConfig } from "../../../config/index.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { uxLog } from '../../../common/utils/index.js';
+import { getConfig } from '../../../config/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class ConfigGet extends SfCommand<any> {
-  public static title = "Deploy metadata sources to org";
+  public static title = 'Deploy metadata sources to org';
 
-  public static description = "Returns sfdx-hardis project config for a given level";
+  public static description = 'Returns sfdx-hardis project config for a given level';
 
-  public static examples = ["$ sf hardis:project:deploy:sources:metadata"];
+  public static examples = ['$ sf hardis:project:deploy:sources:metadata'];
 
   public static flags = {
     level: Flags.string({
-      char: "l",
-      default: "project",
-      description: "project,branch or user",
-      options: ["project", "branch", "user"],
+      char: 'l',
+      default: 'project',
+      description: 'project,branch or user',
+      options: ['project', 'branch', 'user'],
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
-  };  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
+  }; // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
   protected configInfo: any = {};
@@ -47,7 +43,7 @@ export default class ConfigGet extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ConfigGet);
-    const level = flags.level || "project";
+    const level = flags.level || 'project';
     this.configInfo = await getConfig(level);
     uxLog(this, JSON.stringify(this.configInfo));
     return {

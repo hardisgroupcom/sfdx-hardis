@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
-import open from "open";
+import { Messages, SfError } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import fs from 'fs-extra';
+import * as path from 'path';
+import open from 'open';
 import {
   ensureGitBranch,
   ensureGitRepository,
@@ -15,41 +15,37 @@ import {
   getGitRepoName,
   gitAddCommitPush,
   uxLog,
-} from "../../../../common/utils/index.js";
-import { prompts } from "../../../../common/utils/prompts.js";
-import { setInConfigFile } from "../../../../config/index.js";
-import { PACKAGE_ROOT_DIR } from "../../../../settings.js";
-import { promptOrg } from "../../../../common/utils/orgUtils.js";
-import { WebSocketClient } from "../../../../common/websocketClient.js";
+} from '../../../../common/utils/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { setInConfigFile } from '../../../../config/index.js';
+import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
+import { promptOrg } from '../../../../common/utils/orgUtils.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class OrgConfigureMonitoring extends SfCommand<any> {
-  public static title = "Configure org monitoring";
+  public static title = 'Configure org monitoring';
 
-  public static description = "Configure monitoring of an org";
+  public static description = 'Configure monitoring of an org';
 
-  public static examples = ["$ sf hardis:org:configure:monitoring"];
+  public static examples = ['$ sf hardis:org:configure:monitoring'];
 
   public static flags = {
     orginstanceurl: Flags.string({
-      description: "Org instance url (technical param, do not use manually)",
+      description: 'Org instance url (technical param, do not use manually)',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -58,7 +54,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
   public static requiresProject = false;
   /* jscpd:ignore-end */
 
-  protected static requiresDependencies = ["openssl"];
+  protected static requiresDependencies = ['openssl'];
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgConfigureMonitoring);
@@ -66,59 +62,71 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
     await ensureGitRepository();
 
     // Check git repo name is valid (contains monitoring)
-    const repoName = await getGitRepoName() || "";
-    if (!repoName.includes("monitoring")) {
+    const repoName = (await getGitRepoName()) || '';
+    if (!repoName.includes('monitoring')) {
       const confirmMix = await prompts({
-        type: "select",
-        name: "value",
+        type: 'select',
+        name: 'value',
         choices: [
-          { title: "Yes, I'm sure because I know what I'm doing, like Roman :)", value: "yes" },
-          { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: "no" },
+          { title: "Yes, I'm sure because I know what I'm doing, like Roman :)", value: 'yes' },
+          { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: 'no' },
         ],
-        message: c.cyanBright("It's safer to have monitoring in a separate repo. Are you sure you want to mix monitoring and deployment sources ?"),
+        message: c.cyanBright(
+          "It's safer to have monitoring in a separate repo. Are you sure you want to mix monitoring and deployment sources ?"
+        ),
       });
-      if (confirmMix.value === "no") {
+      if (confirmMix.value === 'no') {
         throw new SfError('Your git repository name must contain the expression "monitoring"');
       }
     }
-    const preRequisitesUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions";
-    uxLog(this, c.yellow("Monitoring pre-requisites documentation: " + c.bold(preRequisitesUrl)));
+    const preRequisitesUrl = 'https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions';
+    uxLog(this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
     const confirmPreRequisites = await prompts({
-      type: "select",
-      name: "value",
+      type: 'select',
+      name: 'value',
       choices: [
-        { title: "Yes", value: "yes" },
-        { title: "No, help me !", value: "no" },
+        { title: 'Yes', value: 'yes' },
+        { title: 'No, help me !', value: 'no' },
       ],
-      message: c.cyanBright("Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?"),
+      message: c.cyanBright('Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?'),
     });
-    if (confirmPreRequisites.value === "no") {
-      const msg = "Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n" + preRequisitesUrl;
+    if (confirmPreRequisites.value === 'no') {
+      const msg =
+        'Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n' +
+        preRequisitesUrl;
       uxLog(this, c.yellow(msg));
       await open(preRequisitesUrl, { wait: true });
       return { outputString: msg };
     }
 
     // Get current default org
-    const currentOrgId = flags['target-org']?.getOrgId() || "";
+    const currentOrgId = flags['target-org']?.getOrgId() || '';
     if (flags.orginstanceurl && flags['target-org']?.getConnection()?.instanceUrl === flags.orginstanceurl) {
-      uxLog(this, c.cyan(`Default org ${flags['target-org'].getConnection()?.instanceUrl} is selected, let's configure its monitoring !`));
+      uxLog(
+        this,
+        c.cyan(
+          `Default org ${
+            flags['target-org'].getConnection()?.instanceUrl
+          } is selected, let's configure its monitoring !`
+        )
+      );
     } else {
       // Select the org that must be monitored
       const org = await promptOrg(this, {
         devHub: false,
         setDefault: true,
         scratch: false,
-        promptMessage: "Please select or connect to the org that you want to monitor",
+        promptMessage: 'Please select or connect to the org that you want to monitor',
       });
 
       // Restart command so the org is selected as default org (will help to select profiles)
       if (currentOrgId !== org.orgId) {
-        const infoMsg = "Default org changed. Please restart the same command if VsCode does not do that automatically for you :)";
+        const infoMsg =
+          'Default org changed. Please restart the same command if VsCode does not do that automatically for you :)';
         uxLog(this, c.yellow(infoMsg));
-        const currentCommand = "sf " + this.id + " " + this.argv.join(" ") + " --orginstanceurl " + org.instanceUrl;
+        const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
         WebSocketClient.sendMessage({
-          event: "runSfdxHardisCommand",
+          event: 'runSfdxHardisCommand',
           sfdxHardisCommand: currentCommand,
         });
         return { outputString: infoMsg };
@@ -127,39 +135,39 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
 
     // Build monitoring branch name
     const branchName =
-      "monitoring_" +
+      'monitoring_' +
       flags['target-org']
         ?.getConnection()
-        .instanceUrl.replace("https://", "")
-        .replace(".my.salesforce.com", "")
-        .replace(/\./gm, "_")
-        .replace(/--/gm, "__")
-        .replace(/-/gm, "_");
+        .instanceUrl.replace('https://', '')
+        .replace('.my.salesforce.com', '')
+        .replace(/\./gm, '_')
+        .replace(/--/gm, '__')
+        .replace(/-/gm, '_');
 
     // Checkout branch, or create it if not existing (stash before if necessary)
-    await execCommand("git add --all", this, { output: true, fail: false });
-    await execCommand("git stash", this, { output: true, fail: false });
-    await ensureGitBranch(branchName, { parent: "main" });
+    await execCommand('git add --all', this, { output: true, fail: false });
+    await execCommand('git stash', this, { output: true, fail: false });
+    await ensureGitBranch(branchName, { parent: 'main' });
 
     // Create sfdx project if not existing yet
-    if (!fs.existsSync("sfdx-project.json")) {
-      const createCommand = "sf project generate" + ` --name "sfdx-hardis-monitoring"`;
-      uxLog(this, c.cyan("Creating sfdx-project..."));
+    if (!fs.existsSync('sfdx-project.json')) {
+      const createCommand = 'sf project generate' + ` --name "sfdx-hardis-monitoring"`;
+      uxLog(this, c.cyan('Creating sfdx-project...'));
       await execCommand(createCommand, this, {
         output: true,
         fail: true,
       });
-      uxLog(this, c.cyan("Moving sfdx-project to root..."));
-      await fs.copy("sfdx-hardis-monitoring", process.cwd(), { overwrite: true });
-      await fs.remove("sfdx-hardis-monitoring");
+      uxLog(this, c.cyan('Moving sfdx-project to root...'));
+      await fs.copy('sfdx-hardis-monitoring', process.cwd(), { overwrite: true });
+      await fs.remove('sfdx-hardis-monitoring');
 
       // Copying monitoring folder structure
-      uxLog(this, "Copying default monitoring files...");
-      if (fs.existsSync("README.md") && fs.readFileSync("README.md", "utf8").toString().split("\n").length < 5) {
+      uxLog(this, 'Copying default monitoring files...');
+      if (fs.existsSync('README.md') && fs.readFileSync('README.md', 'utf8').toString().split('\n').length < 5) {
         // Remove default README if necessary
-        await fs.remove("README.md");
+        await fs.remove('README.md');
       }
-      await fs.copy(path.join(PACKAGE_ROOT_DIR, "defaults/monitoring", "."), process.cwd(), { overwrite: true });
+      await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/monitoring', '.'), process.cwd(), { overwrite: true });
     }
 
     // Update config file
@@ -169,35 +177,44 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
         targetUsername: flags['target-org'].getUsername(),
         instanceUrl: flags['target-org'].getConnection().instanceUrl,
       },
-      "./.sfdx-hardis.yml",
+      './.sfdx-hardis.yml'
     );
 
     // Generate SSL certificate (requires openssl to be installed on computer)
-    await generateSSLCertificate(branchName, "./.ssh", this, flags['target-org'].getConnection(), {});
+    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), {});
 
     // Confirm & push on server
     const confirmPush = await prompts({
-      type: "confirm",
-      name: "value",
+      type: 'confirm',
+      name: 'value',
       initial: true,
-      message: c.cyanBright("(RECOMMENDED) Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)"),
+      message: c.cyanBright(
+        '(RECOMMENDED) Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)'
+      ),
     });
 
     if (confirmPush.value === true) {
       await gitAddCommitPush({
-        message: "[sfdx-hardis] Update monitoring configuration",
+        message: '[sfdx-hardis] Update monitoring configuration',
       });
-      uxLog(this, c.green("Your configuration for org monitoring is now ready :)"));
+      uxLog(this, c.green('Your configuration for org monitoring is now ready :)'));
     } else {
-      uxLog(this, c.yellow("Please manually git add, commit and push to the remote repository :)"));
+      uxLog(this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
     }
     const branch = await getCurrentGitBranch();
-    uxLog(this, c.greenBright(`Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`));
-    const scheduleMonitoringUrl = "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions";
-    const msg = "Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: " + c.bold(scheduleMonitoringUrl);
+    uxLog(
+      this,
+      c.greenBright(
+        `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`
+      )
+    );
+    const scheduleMonitoringUrl = 'https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions';
+    const msg =
+      'Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: ' +
+      c.bold(scheduleMonitoringUrl);
     uxLog(this, c.yellow(msg));
     await open(scheduleMonitoringUrl, { wait: true });
     // Return an object to be displayed with --json
-    return { outputString: "Configured branch for authentication" };
+    return { outputString: 'Configured branch for authentication' };
   }
 }

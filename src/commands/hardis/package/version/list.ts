@@ -1,36 +1,32 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { execCommand } from "../../../../common/utils/index.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { execCommand } from '../../../../common/utils/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class PackageVersionList extends SfCommand<any> {
-  public static title = "Create a new version of a package";
+  public static title = 'Create a new version of a package';
 
-  public static description = messages.getMessage("packageVersionList");
+  public static description = messages.getMessage('packageVersionList');
 
-  public static examples = ["$ sf hardis:package:version:list"];
+  public static examples = ['$ sf hardis:package:version:list'];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     'target-dev-hub': requiredHubFlagWithDeprecations,
   };
@@ -43,13 +39,13 @@ export default class PackageVersionList extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PackageVersionList);
     const debugMode = flags.debug || false;
-    const createCommand = "sf package version list";
+    const createCommand = 'sf package version list';
     await execCommand(createCommand, this, {
       fail: true,
       output: true,
       debug: debugMode,
     });
     // Return an object to be displayed with --json
-    return { outputString: "Listed package versions" };
+    return { outputString: 'Listed package versions' };
   }
 }

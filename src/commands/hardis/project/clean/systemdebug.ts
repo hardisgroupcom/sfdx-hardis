@@ -1,43 +1,39 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import c from "chalk";
-import { glob } from "glob";
-import * as path from "path";
-import { uxLog } from "../../../../common/utils/index.js";
-import * as fs from "fs-extra";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { glob } from 'glob';
+import * as path from 'path';
+import { uxLog } from '../../../../common/utils/index.js';
+import fs from 'fs-extra';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class CleanSystemDebug extends SfCommand<any> {
-  public static title = "Clean System debug";
+  public static title = 'Clean System debug';
 
-  public static description = "Clean System.debug() lines in APEX Code (classes and triggers)";
+  public static description = 'Clean System.debug() lines in APEX Code (classes and triggers)';
 
-  public static examples = ["$ sf hardis:project:clean:systemdebug"];
+  public static examples = ['$ sf hardis:project:clean:systemdebug'];
 
   public static flags = {
     folder: Flags.string({
-      char: "f",
-      default: "force-app",
-      description: "Root folder",
+      char: 'f',
+      default: 'force-app',
+      description: 'Root folder',
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
     delete: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: "Delete lines with System.debug",
+      description: 'Delete lines with System.debug',
     }),
   };
 
@@ -49,7 +45,7 @@ export default class CleanSystemDebug extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CleanSystemDebug);
-    this.folder = flags.folder || "./force-app";
+    this.folder = flags.folder || './force-app';
     this.del = flags.delete || false;
 
     // Delete standard files when necessary
@@ -60,14 +56,16 @@ export default class CleanSystemDebug extends SfCommand<any> {
     const matchingFiles = await glob(findManagedPattern, { cwd: process.cwd() });
     let countFiles = 0;
     for (const apexFile of matchingFiles) {
-      const fileText = await fs.readFile(apexFile, "utf8");
-      const fileLines = fileText.split("\n");
+      const fileText = await fs.readFile(apexFile, 'utf8');
+      const fileLines = fileText.split('\n');
       let counter = 0;
       let writeF = false;
       for (const line of fileLines) {
-        if ((line.includes("System.debug") || line.includes("system.debug")) && !line.includes("NOPMD")) {
-          if (!this.del && line.trim().substring(0, 2) != "//") {
-            fileLines[counter] = line.replace("System.debug", "// System.debug").replace("system.debug", "// system.debug");
+        if ((line.includes('System.debug') || line.includes('system.debug')) && !line.includes('NOPMD')) {
+          if (!this.del && line.trim().substring(0, 2) != '//') {
+            fileLines[counter] = line
+              .replace('System.debug', '// System.debug')
+              .replace('system.debug', '// system.debug');
             writeF = true;
           } else if (this.del) {
             delete fileLines[counter];
@@ -77,8 +75,8 @@ export default class CleanSystemDebug extends SfCommand<any> {
         counter++;
       }
       if (writeF) {
-        const joinLines = fileLines.join("\n");
-        await fs.writeFile(apexFile, joinLines, "utf8");
+        const joinLines = fileLines.join('\n');
+        await fs.writeFile(apexFile, joinLines, 'utf8');
         countFiles++;
       }
     }

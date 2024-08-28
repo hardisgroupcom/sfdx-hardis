@@ -1,40 +1,36 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { WebSocketClient } from "../../../common/websocketClient.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { WebSocketClient } from '../../../common/websocketClient.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class WebSocketAction extends SfCommand<any> {
-  public static title = "WebSocket operations";
+  public static title = 'WebSocket operations';
 
-  public static description = "Technical calls to WebSocket functions";
+  public static description = 'Technical calls to WebSocket functions';
 
-  public static examples = ["$ sf hardis:work:ws --event refreshStatus"];
+  public static examples = ['$ sf hardis:work:ws --event refreshStatus'];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     event: Flags.string({
-      char: "e",
-      description: "WebSocket event",
+      char: 'e',
+      description: 'WebSocket event',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
@@ -42,18 +38,18 @@ export default class WebSocketAction extends SfCommand<any> {
   public static requiresProject = false;
 
   protected debugMode = false;
-  protected event = "";
+  protected event = '';
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(WebSocketAction);
-    this.event = flags.event || "";
+    this.event = flags.event || '';
 
     if (WebSocketClient.isAlive()) {
-      if (this.event === "refreshStatus") {
-        WebSocketClient.sendMessage({ event: "refreshStatus" });
-      } else if (this.event === "refreshPlugins") {
-        WebSocketClient.sendMessage({ event: "refreshPlugins" });
+      if (this.event === 'refreshStatus') {
+        WebSocketClient.sendMessage({ event: 'refreshStatus' });
+      } else if (this.event === 'refreshPlugins') {
+        WebSocketClient.sendMessage({ event: 'refreshPlugins' });
       }
     }
 

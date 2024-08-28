@@ -1,46 +1,42 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { promptOrg } from "../../../common/utils/orgUtils.js";
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { promptOrg } from '../../../common/utils/orgUtils.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('plugin-template-sf-external', 'org');
 
 export default class OrgSelect extends SfCommand<any> {
-  public static title = "Select org";
+  public static title = 'Select org';
 
-  public static description = messages.getMessage("selectOrg");
+  public static description = messages.getMessage('selectOrg');
 
-  public static examples = ["$ sf hardis:org:select"];
+  public static examples = ['$ sf hardis:org:select'];
 
   // public static args = [{name: 'file'}];
 
   public static flags = {
     devhub: Flags.boolean({
-      char: "h",
+      char: 'h',
       default: false,
-      description: messages.getMessage("withDevHub"),
+      description: messages.getMessage('withDevHub'),
     }),
     scratch: Flags.boolean({
-      char: "s",
+      char: 's',
       default: false,
-      description: "Select scratch org related to default DevHub",
+      description: 'Select scratch org related to default DevHub',
     }),
     debug: Flags.boolean({
-      char: "d",
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
     websocket: Flags.string({
-      description: messages.getMessage("websocket"),
+      description: messages.getMessage('websocket'),
     }),
     skipauth: Flags.boolean({
-      description: "Skip authentication check when a default username is required",
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
