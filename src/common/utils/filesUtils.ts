@@ -17,7 +17,7 @@ import { bulkQuery, soqlQuery } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
-import ora, { Ora } from 'ora';
+import ora from 'ora';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -52,7 +52,6 @@ export class FilesExporter {
   private filesIgnoredExisting = 0;
   private apiUsedBefore: number = 0;
   private apiLimit: number = 0;
-  protected spinnerCustom: Ora;
 
   constructor(
     filesPath: string,
@@ -99,7 +98,6 @@ export class FilesExporter {
     this.startQueue();
     await this.processParentRecords();
     await this.queueCompleted();
-    this.spinnerCustom.succeed("Files export completed");
     return await this.buildResult();
   }
 
@@ -342,14 +340,14 @@ export class FilesExporter {
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
-    this.spinnerCustom = ora({
+    const spinnerCustom = ora({
       text: `(${(this.filesDownloaded + 1)}) Downloading ${outputFileLabel}...`,
       spinner: 'moon',
     }).start();
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     try {
       this.fetchOptions.onRetry = (cause: unknown) => {
-        this.spinnerCustom.text = `(${this.filesDownloaded}) Retrying ${outputFileLabel} (${cause})...`;
+        spinnerCustom.text = `(${this.filesDownloaded}) Retrying ${outputFileLabel} (${cause})...`;
       }
       const fetchRes = await makeFetchHappen(fetchUrl, this.fetchOptions);
       if (fetchRes.ok !== true) {
@@ -367,11 +365,11 @@ export class FilesExporter {
 
       // uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
       this.filesDownloaded++;
-      this.spinnerCustom.succeed(`(${this.filesDownloaded}) Downloaded ${outputFileLabel}`);
+      spinnerCustom.succeed(`(${this.filesDownloaded}) Downloaded ${outputFileLabel}`);
     } catch (err: any) {
       // Download failure
       // uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
-      this.spinnerCustom.fail(`(${this.filesDownloaded}) Error while downloading ${outputFileLabel}: ${err.message}`);
+      spinnerCustom.fail(`(${this.filesDownloaded}) Error while downloading ${outputFileLabel}: ${err.message}`);
       this.filesErrors++;
     }
   }
