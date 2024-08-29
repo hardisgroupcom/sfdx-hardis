@@ -15,6 +15,7 @@ import { isSfdxProject } from './projectUtils.js';
 import { deployMetadatas, forceSourceDeploy, forceSourcePush } from './deployUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { clearCache } from '../cache/index.js';
+import { SfCommand } from '@salesforce/sf-plugins-core';
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -33,8 +34,8 @@ export async function getRecordTypeId(recordTypeInfo: { sObjectType: string; dev
   }
   const recordTypeQueryRes = await soqlQuery(
     `SELECT Id FROM RecordType WHERE SobjectType='${recordTypeInfo.sObjectType}' AND` +
-      ` DeveloperName='${recordTypeInfo.developerName}'` +
-      ` LIMIT 1`,
+    ` DeveloperName='${recordTypeInfo.developerName}'` +
+    ` LIMIT 1`,
     conn
   );
   if (recordTypeQueryRes.records[0].Id) {
@@ -113,7 +114,7 @@ export async function promptProfiles(
 }
 
 export async function promptOrg(
-  commandThis: any,
+  commandThis: SfCommand<any>,
   options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null }
 ) {
   // List all local orgs and request to user

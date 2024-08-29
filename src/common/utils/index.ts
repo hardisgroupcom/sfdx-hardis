@@ -149,8 +149,7 @@ export async function checkAppDependency(appName) {
       uxLog(
         this,
         c.red(
-          `You need ${c.bold(appName)} to be locally installed to run this command.\n${
-            dependenciesInstallLink[appName] || ''
+          `You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''
           }`
         )
       );
@@ -218,7 +217,7 @@ export async function promptInstanceUrl(
     name: 'value',
     message: c.cyanBright('Please input the base URL of the salesforce org (ex: https://myclient.my.salesforce.com)'),
   });
-  const urlCustom = (customUrlResponse.value || []).replace('.lightning.force.com', '.my.salesforce.com');
+  const urlCustom = (customUrlResponse?.value || "").replace('.lightning.force.com', '.my.salesforce.com');
   return urlCustom;
 }
 
@@ -343,10 +342,10 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
         const mainBranch = branches.all.includes('main')
           ? 'main'
           : branches.all.includes('origin/main')
-          ? 'main'
-          : branches.all.includes('remotes/origin/main')
-          ? 'main'
-          : 'master';
+            ? 'main'
+            : branches.all.includes('remotes/origin/main')
+              ? 'main'
+              : 'master';
         await git().checkout(mainBranch);
         await git().checkoutBranch(branchName, mainBranch);
       } else {
@@ -465,11 +464,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         this,
         c.grey(
           'The following list of files has not been proposed for selection\n' +
-            filesFiltered
-              .map((fileStatus: FileStatusResult) => {
-                return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
-              })
-              .join('\n')
+          filesFiltered
+            .map((fileStatus: FileStatusResult) => {
+              return `  - (${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`;
+            })
+            .join('\n')
         )
       );
     }
@@ -679,8 +678,7 @@ export async function execCommand(
     return {
       status: 1,
       errorMessage: c.red(
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${(e as Error).message}\n${commandResult.stdout}\n${
-          commandResult.stderr
+        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${(e as Error).message}\n${commandResult.stdout}\n${commandResult.stderr
         })`
       ),
     };
@@ -1197,8 +1195,7 @@ export async function generateSSLCertificate(
       uxLog(
         commandThis,
         c.cyan(
-          `Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${
-            options.targetUsername || ''
+          `Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ''
           } ...`
         )
       );
@@ -1224,14 +1221,13 @@ export async function generateSSLCertificate(
         commandThis,
         c.yellow(`
 ${c.bold('MANUAL INSTRUCTIONS')}
-If this is a Test class issue (production env), you may have to create manually connected app ${
-          promptResponses.appName
-        }:
+If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName
+          }:
 - Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
   - Use certificate ${c.bold(crtFile)} in "Use Digital Signature section" (delete the file from your computer after !)
 - Once created, update CI/CD variable ${c.green(
-          c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-        )} with the ConsumerKey of the newly created connected app`)
+            c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
+          )} with the ConsumerKey of the newly created connected app`)
       );
       await prompts({
         type: 'confirm',

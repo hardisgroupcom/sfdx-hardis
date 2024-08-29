@@ -2,8 +2,8 @@
 import {
   SfCommand,
   Flags,
-  requiredOrgFlagWithDeprecations,
-  requiredHubFlagWithDeprecations,
+  optionalOrgFlagWithDeprecations,
+  optionalHubFlagWithDeprecations,
 } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -43,8 +43,8 @@ export default class ConfigureAuth extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
-    'target-org': requiredOrgFlagWithDeprecations,
-    'target-dev-hub': requiredHubFlagWithDeprecations,
+    'target-org': optionalOrgFlagWithDeprecations,
+    'target-dev-hub': optionalHubFlagWithDeprecations,
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -59,17 +59,10 @@ export default class ConfigureAuth extends SfCommand<any> {
 
     // Ask user to login to org
     const prevUserName = devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername();
-    /*uxLog(this, c.cyan("Please select org login into the org you want to configure the SF CLI Authentication"));
-     await this.config.runHook("auth", {
-      checkAuth: true,
-      Command: this,
-      alias: "CONFIGURE_CI",
-      devHub,
-    }); */
     await promptOrg(this, {
       setDefault: true,
       devHub: devHub,
-      promptMessage: 'Please select org login into the org you want to configure the SF CLI Authentication',
+      promptMessage: 'Please select or login into the org you want to configure the SF CLI Authentication',
     });
     await checkConfig(this);
 
@@ -112,18 +105,17 @@ export default class ConfigureAuth extends SfCommand<any> {
       } */
       instanceUrl = await promptInstanceUrl(['login', 'test'], `${branchName} related org`, {
         instanceUrl: devHub
-          ? flags['target-dev-hub'].getConnection().instanceUrl
-          : flags['target-org'].getConnection().instanceUrl,
+          ? flags['target-dev-hub']?.getConnection()?.instanceUrl || ""
+          : flags['target-org']?.getConnection()?.instanceUrl || "",
       });
     }
     // Request username
     const usernameResponse = await prompts({
       type: 'text',
       name: 'value',
-      initial: (devHub ? flags['target-dev-hub'].getUsername() : flags['target-org'].getUsername()) || '',
+      initial: (devHub ? flags['target-dev-hub']?.getUsername() || "" : flags['target-org'].getUsername() || "") || '',
       message: c.cyanBright(
-        `What is the Salesforce username that will be ${
-          devHub ? 'used as Dev Hub' : 'used for deployments by CI server'
+        `What is the Salesforce username that will be ${devHub ? 'used as Dev Hub' : 'used for deployments by CI server'
         } ? Example: admin.sfdx@myclient.com`
       ),
     });
