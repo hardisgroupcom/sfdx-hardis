@@ -3,6 +3,11 @@ tmp/
 # use yarn by default, so ignore npm
 package-lock.json
 
+# MacOS system files
+.DS_Store
+
+.nyc_output/
+
 # never checking npm config
 .npmrc
 
