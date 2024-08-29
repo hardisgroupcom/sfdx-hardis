@@ -26,7 +26,7 @@ const hook: Hook<'init'> = async (options) => {
     const logFileName = (new Date().toJSON().slice(0, 19) + '-' + commandId + '.log').replace(/:/g, '-');
     const hardisLogFile = path.resolve(path.join(commandsLogFolder, logFileName));
     globalThis.hardisLogFileStream = fs.createWriteStream(hardisLogFile, { flags: 'a' });
-    globalThis.hardisLogFileStream.write(process.argv.join(' '));
+    globalThis.hardisLogFileStream.write(globalThis.processArgv.join(' '));
   }
 };
 

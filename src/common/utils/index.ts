@@ -22,6 +22,7 @@ import { promptProfiles, promptUserEmail } from './orgUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import moment from 'moment';
 import { writeXmlFile } from './xmlUtils.js';
+import { SfCommand } from '@salesforce/sf-plugins-core';
 
 let pluginsStdout: string | null = null;
 
@@ -580,7 +581,7 @@ export async function execSfdxJson(
 // Execute command
 export async function execCommand(
   command: string,
-  commandThis: any,
+  commandThis: SfCommand<any> | null,
   options: any = {
     fail: false,
     output: false,
@@ -600,7 +601,7 @@ export async function execCommand(
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = '0';
-  const output = options.output !== null ? options.output : !process.argv.includes('--json');
+  const output = options.output !== null ? options.output : !commandThis?.argv?.includes('--json');
   let spinner: any;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: 'moon' }).start();
@@ -1018,7 +1019,7 @@ export function uxLog(commandThis: any, text: string) {
   text = text.includes('[sfdx-hardis]') ? text : '[sfdx-hardis]' + (text.startsWith('[') ? '' : ' ') + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
-  } else if (!(globalThis.processArgv || process.argv).includes('--json')) {
+  } else if (!(globalThis?.processArgv || process?.argv || "").includes('--json')) {
     console.log(text);
   }
   if (globalThis.hardisLogFileStream) {

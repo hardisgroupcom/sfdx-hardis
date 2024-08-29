@@ -142,7 +142,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const { flags } = await this.parse(LintAccess);
     const config = await getConfig('user');
     this.folder = flags.folder || './force-app';
-    this.hasToDisplayJsonOnly = process.argv.includes('--json');
+    this.hasToDisplayJsonOnly = this.argv.includes('--json');
 
     this.ignoreSourceElementsIfDefined(flags);
     this.ignoreRightElementsIfDefined(config, flags);

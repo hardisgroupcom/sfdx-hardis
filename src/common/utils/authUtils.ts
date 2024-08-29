@@ -23,12 +23,12 @@ export async function authOrg(orgAlias: string, options: any) {
       orgDisplayCommand += ' --targetusername ' + orgAlias;
       setDefaultUsername = true;
     } else {
-      if (process.argv.includes('-u') || process.argv.includes('--targetusername')) {
+      if (options?.argv.includes('-u') || options?.argv.includes('--targetusername')) {
         const posUsername =
-          process.argv.indexOf('-u') > -1
-            ? process.argv.indexOf('-u') + 1
-            : process.argv.indexOf('--targetusername') + 1;
-        orgDisplayCommand += ' --targetusername ' + process.argv[posUsername];
+          options.argv.indexOf('-u') > -1
+            ? options.argv.indexOf('-u') + 1
+            : options.argv.indexOf('--targetusername') + 1;
+        orgDisplayCommand += ' --targetusername ' + options.argv[posUsername];
       }
     }
     const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {

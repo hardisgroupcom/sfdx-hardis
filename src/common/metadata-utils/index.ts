@@ -482,8 +482,7 @@ class MetadataUtils {
       uxLog(
         this,
         c.yellow(
-          `Unable to list installed packages: This is probably a @salesforce/cli bug !\n${(e as Error).message}\n${
-            (e as Error).stack
+          `Unable to list installed packages: This is probably a @salesforce/cli bug !\n${(e as Error).message}\n${(e as Error).stack
           }`
         )
       );
@@ -570,7 +569,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         }
         elapseStart(`Install package ${package1.SubscriberPackageName}`);
         try {
-          await execCommand(packageInstallCommand, this, {
+          await execCommand(packageInstallCommand, null, {
             fail: true,
             output: true,
           });
@@ -586,8 +585,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
           uxLog(
             this,
             c.yellow(
-              `${c.bold('This is not a real error')}: A newer version of ${
-                package1.SubscriberPackageName
+              `${c.bold('This is not a real error')}: A newer version of ${package1.SubscriberPackageName
               } has been found. You may update installedPackages property in .sfdx-hardis.yml`
             )
           );
