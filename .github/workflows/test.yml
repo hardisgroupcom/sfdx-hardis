@@ -7,6 +7,8 @@ on:
 jobs:
   unit-tests:
     uses: salesforcecli/github-workflows/.github/workflows/unitTest.yml@main
+    with:
+      nodeVersionOverride: 21
   nuts:
     needs: unit-tests
     uses: salesforcecli/github-workflows/.github/workflows/nut.yml@main
