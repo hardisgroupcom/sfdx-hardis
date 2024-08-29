@@ -156,28 +156,4 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you
 
 [**Read Online Documentation to see everything you can do with SFDX Hardis :)**](https://sfdx-hardis.cloudity.com)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!-- commands -->
