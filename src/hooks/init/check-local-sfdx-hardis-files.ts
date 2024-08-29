@@ -18,20 +18,12 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
   if (!commandId.startsWith('hardis')) {
     return;
   }
+  // Run this command only during a monitoring job, or a Release Manager local operation
   const isMon = await isMonitoringJob();
-  if (!commandId.includes('monitoring') && !isMon) {
-    if (
-      commandId.startsWith('hardis:work:task:new') ||
-      commandId.startsWith('hardis:doc') ||
-      commandId.startsWith('hardis:scratch') ||
-      commandId.startsWith('hardis:org')
-    ) {
-      return;
-    }
-
-    if (!isCI && process.env.AUTO_UPDATE !== 'true' && process.env.AUTO_UPDATE_CI_CONFIG !== 'true') {
-      return;
-    }
+  if (
+    !((isMon && commandId.includes('backup')) || commandId.startsWith("hardis:project:configure:auth"))
+  ) {
+    return;
   }
   const config = await getConfig('user');
   // Manage .gitignore
