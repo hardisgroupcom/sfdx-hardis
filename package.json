@@ -157,7 +157,7 @@
         "./lib/hooks/prerun/check-dependencies"
       ],
       "auth": [
-        "./lib/hooks/prerun/auth"
+        "./lib/hooks/auth/auth"
       ],
       "postrun": [
         "./lib/hooks/postrun/notify",
