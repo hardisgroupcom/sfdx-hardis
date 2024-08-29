@@ -895,7 +895,7 @@
       "type": "string"
     },
     "msTeamsWebhookUrlInfo": {
-      "$id": "#/properties/msTeamsWebhookUrlWarning",
+      "$id": "#/properties/msTeamsWebhookUrlInfo",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send INFO notifications",
       "examples": ["https://my.msteams.webhook.url"],

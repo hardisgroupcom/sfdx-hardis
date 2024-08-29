@@ -10,6 +10,9 @@ node_modules
 report
 sfdx-hardis-*.tgz
 
+# MacOS system files
+.DS_Store
+
 .nyc_output/
 
 site/
