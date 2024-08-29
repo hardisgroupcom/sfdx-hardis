@@ -4,11 +4,13 @@ on:
     branches-ignore: [main]
   workflow_dispatch:
 
+env:
+  NODE_VERSION_OVERRIDE: 21
+
 jobs:
   unit-tests:
     uses: salesforcecli/github-workflows/.github/workflows/unitTest.yml@main
-    with:
-      nodeVersionOverride: 21
+
   nuts:
     needs: unit-tests
     uses: salesforcecli/github-workflows/.github/workflows/nut.yml@main
