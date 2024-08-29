@@ -1,7 +1,7 @@
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
   for (const err of errorsAndTips) {
-    const errorMessage = (err as any).message.trim().includes("Error ")
+    const errorMessage = (err as any)?.message?.trim()?.includes("Error ")
       ? (err as any).message
         .trim()
         .replace("Error ", "")
