@@ -20,7 +20,7 @@ export default class GeneratePackageXmlFull extends SfCommand<any> {
   public static examples = [
     '$ sf hardis:org:generate:packagexmlfull',
     '$ sf hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml',
-    '$ sf hardis:org:generate:packagexmlfull --targetusername nico@example.com',
+    '$ sf hardis:org:generate:packagexmlfull --target-org nico@example.com',
   ];
 
   public static flags = {

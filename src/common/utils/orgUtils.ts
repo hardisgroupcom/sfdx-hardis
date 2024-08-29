@@ -204,11 +204,11 @@ export async function promptOrg(
 
   if (options.setDefault === true) {
     // Set default username
-    const setDefaultUsernameCommand =
+    const setDefaultOrgCommand =
       `sf config set ` +
       `${options.devHub ? 'target-dev-hub' : 'target-org'}=${org.username}` +
       (!isSfdxProject() ? ' --global' : '');
-    await execSfdxJson(setDefaultUsernameCommand, commandThis, {
+    await execSfdxJson(setDefaultOrgCommand, commandThis, {
       fail: true,
       output: false,
     });

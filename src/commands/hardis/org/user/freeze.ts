@@ -20,7 +20,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
 
   public static examples = [
     `$ sf hardis:org:user:freeze`,
-    `$ sf hardis:org:user:freeze --targetusername myuser@myorg.com`,
+    `$ sf hardis:org:user:freeze --target-org myuser@myorg.com`,
     `$ sf hardis:org:user:freeze --includeprofiles 'Standard'`,
     `$ sf hardis:org:user:freeze --excludeprofiles 'System Administrator,Some Other Profile'`,
   ];
@@ -157,7 +157,7 @@ export default class OrgFreezeUser extends SfCommand<any> {
     uxLog(
       this,
       '\n' +
-        c.white(columnify(this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay)))
+      c.white(columnify(this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay)))
     );
     if (!this.debugMode === false && usersToFreezeDisplay.length > this.maxUsersDisplay) {
       uxLog(this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));

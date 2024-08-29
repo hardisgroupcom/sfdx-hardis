@@ -99,7 +99,7 @@ export class SourceRetrieve extends SfCommand<any> {
       let orgUsername = (flags['target-org'] as any).getUsername();
       orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
       if (orgUsername) {
-        args.push(...['--targetusername', `"${orgUsername}"`]);
+        args.push(...['--target-org', `"${orgUsername}"`]);
       } else {
         throw new SfError(c.yellow('For technical reasons, run again this command and select your org in the list :)'));
       }

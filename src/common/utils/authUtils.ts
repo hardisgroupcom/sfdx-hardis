@@ -18,17 +18,22 @@ export async function authOrg(orgAlias: string, options: any) {
   if (!options.checkAuth) {
     // Check if we are already authenticated
     let orgDisplayCommand = 'sf org display';
-    let setDefaultUsername = false;
+    let setDefaultOrg = false;
     if (orgAlias !== 'MY_ORG' && (isCI || isDevHub) && !orgAlias.includes('force://')) {
-      orgDisplayCommand += ' --targetusername ' + orgAlias;
-      setDefaultUsername = true;
+      orgDisplayCommand += ' --target-org ' + orgAlias;
+      setDefaultOrg = true;
     } else {
-      if (options?.argv.includes('-u') || options?.argv.includes('--targetusername')) {
+      if (options?.argv.includes('--target-org') || options?.argv.includes('--targetusername') ||
+        options?.argv.includes('-o') || options?.argv.includes('-u')) {
         const posUsername =
-          options.argv.indexOf('-u') > -1
-            ? options.argv.indexOf('-u') + 1
-            : options.argv.indexOf('--targetusername') + 1;
-        orgDisplayCommand += ' --targetusername ' + options.argv[posUsername];
+          options.argv.indexOf('--target-org') > -1
+            ? options.argv.indexOf('--target-org') + 1 :
+            options.argv.indexOf('--targetusername') > -1
+              ? options.argv.indexOf('--targetusername') + 1 :
+              options.argv.indexOf('-o') > -1
+                ? options.argv.indexOf('-o') + 1 :
+                options.argv.indexOf('-u') > -1;
+        orgDisplayCommand += ' --target-org ' + options.argv[posUsername];
       }
     }
     const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {
@@ -67,10 +72,10 @@ export async function authOrg(orgAlias: string, options: any) {
           )
         );
       }
-      if (setDefaultUsername) {
-        const setDefaultUsernameCommand = `sf config set ${isDevHub ? 'target-dev-hub' : 'target-org'}=${orgInfoResult.result.username
+      if (setDefaultOrg) {
+        const setDefaultOrgCommand = `sf config set ${isDevHub ? 'target-dev-hub' : 'target-org'}=${orgInfoResult.result.username
           }`;
-        await execSfdxJson(setDefaultUsernameCommand, this, { fail: false });
+        await execSfdxJson(setDefaultOrgCommand, this, { fail: false });
       }
       doConnect = false;
     }

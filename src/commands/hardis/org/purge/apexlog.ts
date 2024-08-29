@@ -18,7 +18,7 @@ export default class PurgeApexLogs extends SfCommand<any> {
 
   public static examples = [
     `$ sf hardis:org:purge:apexlog`,
-    `$ sf hardis:org:purge:apexlog --targetusername nicolas.vuillamy@gmail.com`,
+    `$ sf hardis:org:purge:apexlog --target-org nicolas.vuillamy@gmail.com`,
   ];
 
   // public static args = [{name: 'file'}];

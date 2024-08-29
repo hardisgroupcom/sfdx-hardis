@@ -2,9 +2,9 @@
 /*
 To test locally, you can call the command like that:
 
-Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.demointeg
+Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --target-org nicolas.vuillamy@cloudity.com.demointeg
 
-Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --targetusername nicolas.vuillamy@cloudity.com.muuuurf
+Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --target-org nicolas.vuillamy@cloudity.com.muuuurf
 
 - Before, you need to make a sf alias set myBranch=myUsername
 - You can find CI_PROJECT_ID with https://gitlab.com/api/v4/projects?search=YOUR-REPO-NAME
@@ -359,9 +359,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get package.xml
     let packageXmlFile =
       packageXml ||
-      process.env.PACKAGE_XML_TO_DEPLOY ||
-      this.configInfo.packageXmlToDeploy ||
-      fs.existsSync('./manifest/package.xml')
+        process.env.PACKAGE_XML_TO_DEPLOY ||
+        this.configInfo.packageXmlToDeploy ||
+        fs.existsSync('./manifest/package.xml')
         ? './manifest/package.xml'
         : './config/package.xml';
     const forceSourceDeployOptions: any = {
@@ -372,8 +372,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get destructiveChanges.xml and add it in options if existing
     const postDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE ||
-      this.configInfo.packageXmlToDelete ||
-      fs.existsSync('./manifest/destructiveChanges.xml')
+        this.configInfo.packageXmlToDelete ||
+        fs.existsSync('./manifest/destructiveChanges.xml')
         ? './manifest/destructiveChanges.xml'
         : './config/destructiveChanges.xml';
     if (fs.existsSync(postDestructiveChanges)) {
@@ -383,8 +383,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get preDestructiveChanges.xml and add it in options if existing
     const preDestructiveChanges =
       process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-      this.configInfo.packageXmlToDeletePreDeploy ||
-      fs.existsSync('./manifest/preDestructiveChanges.xml')
+        this.configInfo.packageXmlToDeletePreDeploy ||
+        fs.existsSync('./manifest/preDestructiveChanges.xml')
         ? './manifest/preDestructiveChanges.xml'
         : './config/preDestructiveChanges.xml';
     if (fs.existsSync(preDestructiveChanges)) {
@@ -482,8 +482,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         uxLog(
           this,
           c.yellow('Unable to handle commit info on TicketProvider post deployment actions:\n' + e4.message) +
-            '\n' +
-            c.gray(e4.stack)
+          '\n' +
+          c.gray(e4.stack)
         );
       }
 
@@ -495,8 +495,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       notifMessage += quickDeploy
         ? ' (🚀 quick deployment)'
         : delta
-        ? ' (🌙 delta deployment)'
-        : ' (🌕 full deployment)';
+          ? ' (🌙 delta deployment)'
+          : ' (🌕 full deployment)';
 
       const notifButtons = await getNotificationButtons();
       if (pullRequestInfo) {

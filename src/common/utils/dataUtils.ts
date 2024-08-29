@@ -23,7 +23,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   const dataImportCommand =
     'sf sfdmu:run' +
     ` --sourceusername csvfile` +
-    ` --targetusername ${targetUsername}` +
+    ` --targetusername ${targetUsername}` + // Keep targetusername until sfdmu switches to target-org
     ` -p ${sfdmuPath}` +
     ' --noprompt' +
     (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : '');
@@ -75,7 +75,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   uxLog(commandThis, c.italic(c.grey(dtl?.description)));
   const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
-  const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;
+  const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`; // keep target username until sfdmu migrates to SF cli base
   await execCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,

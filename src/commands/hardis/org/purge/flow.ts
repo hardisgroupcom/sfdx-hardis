@@ -18,7 +18,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
 
   public static examples = [
     `$ sf hardis:org:purge:flow --no-prompt`,
-    `$ sf hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
+    `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com
   Found 1 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -28,7 +28,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
   `,
-    `$ sf hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
+    `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
   Found 4 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -218,9 +218,8 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       }
     }
     if (deleteErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There have been errors while deleting ${
-        deleteErrors.length
-      } record(s): \n${JSON.stringify(deleteErrors)}`;
+      const errMsg = `[sfdx-hardis] There have been errors while deleting ${deleteErrors.length
+        } record(s): \n${JSON.stringify(deleteErrors)}`;
       if (allowPurgeFailure) {
         uxLog(this, c.yellow(errMsg));
       } else {
