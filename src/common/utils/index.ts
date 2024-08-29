@@ -1202,7 +1202,6 @@ export async function generateSSLCertificate(
       const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
         testlevel: branchName.includes('production') ? 'RunLocalTests' : 'NoTestRun',
-        soap: true,
         targetUsername: options.targetUsername ? options.targetUsername : null,
       });
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));

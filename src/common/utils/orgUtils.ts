@@ -414,7 +414,6 @@ export async function initOrgMetadatas(
       await deployMetadatas({
         deployDir: path.join(path.join(PACKAGE_ROOT_DIR, 'defaults/utils/deferSharingCalc', '.')),
         testlevel: 'NoTestRun',
-        soap: true,
       });
       // Assign to permission set allowing to update SharingCalc
       try {

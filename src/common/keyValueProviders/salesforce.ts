@@ -97,7 +97,6 @@ export class SalesforceProvider implements KeyValueProviderInterface {
     try {
       await deployMetadatas({
         deployDir: path.join(path.join(PACKAGE_ROOT_DIR, "defaults/utils/sfdxHardisKeyValueStore", ".")),
-        soap: true,
         targetUsername: options.devHubConn.options.authInfo.fields.username,
       });
     } catch (e) {
