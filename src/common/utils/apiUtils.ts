@@ -11,9 +11,9 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
     this,
     c.grey(
       'SOQL REST: ' +
-      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-      ' on ' +
-      conn.instanceUrl
+        c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
+        ' on ' +
+        conn.instanceUrl
     )
   );
   return Promise.resolve(conn.query(soqlQuery));
@@ -25,9 +25,9 @@ export function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<a
     this,
     c.grey(
       'SOQL REST Tooling: ' +
-      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-      ' on ' +
-      conn.instanceUrl
+        c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
+        ' on ' +
+        conn.instanceUrl
     )
   );
   return Promise.resolve(conn.tooling.query(soqlQuery));
@@ -59,8 +59,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     if ((e + '').includes('ETIMEDOUT') && retries < maxRetry) {
       uxLog(this, c.yellow('[BulkApiV2] Bulk Query retry attempt #' + retries + 1));
       return await bulkQuery(soqlQuery, conn, retries + 1);
-    }
-    else {
+    } else {
       throw e;
     }
   }
@@ -134,6 +133,7 @@ export async function bulkDeleteTooling(
   conn: Connection
 ): Promise<any> {
   const records = recordsFull.map((record) => record.Id);
-  const deleteJobResults = await conn.tooling.del(objectName, records, { allOrNone: false });
+  uxLog(this, c.grey(`[ToolingApi] Delete ${records.length} records on ${objectName}: ${JSON.stringify(records)}`));
+  const deleteJobResults = await conn.tooling.destroy(objectName, records, { allOrNone: false });
   return deleteJobResults;
 }
