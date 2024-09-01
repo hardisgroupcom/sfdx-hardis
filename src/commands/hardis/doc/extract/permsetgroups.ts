@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import * as path from 'path';
-import * as toc from 'markdown-toc';
+import toc from 'markdown-toc';
 import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getReportDirectory } from '../../../../config/index.js';
