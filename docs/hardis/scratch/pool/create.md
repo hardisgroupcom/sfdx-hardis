@@ -7,9 +7,9 @@ Select a data storage service and configure information to build a scratch org p
 
   Run the command, follow instruction, then you need to schedule a daily CI job for the pool maintenance:
 
-  - Define CI ENV variable SCRATCH_ORG_POOL with value "true"
+- Define CI ENV variable SCRATCH_ORG_POOL with value "true"
 
-  - Call the following lines in the CI job:
+- Call the following lines in the CI job:
 
 ```shell
   sf hardis:auth:login --devhub
@@ -19,19 +19,19 @@ Select a data storage service and configure information to build a scratch org p
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-dev-hub<br/>-v|option|undefined|nicolas.vuillamy@cloudity-jdc.com|||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                  |  Type   | Description                                                   |               Default               | Required | Options |
+|:----------------------|:-------:|:--------------------------------------------------------------|:-----------------------------------:|:--------:|:-------:|
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |                                     |          |         |
+| flags-dir             | option  | undefined                                                     |                                     |          |         |
+| json                  | boolean | Format output as json.                                        |                                     |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required |                                     |          |         |
+| target-dev-hub<br/>-v | option  | undefined                                                     | <nicolas.vuillamy@cloudity-jdc.com> |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                     |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:scratch:pool:configure
+sf hardis:scratch:pool:configure
 ```
 
 
