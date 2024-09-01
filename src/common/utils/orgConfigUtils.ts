@@ -1,7 +1,7 @@
 import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
-import * as puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer';
 import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';
 import { SfError } from '@salesforce/core';
