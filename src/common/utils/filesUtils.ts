@@ -8,8 +8,8 @@ import { PromisePool } from '@supercharge/promise-pool';
 
 // Salesforce Specific and Other Specific Libraries
 import { Connection, SfError } from '@salesforce/core';
-import * as Papa from 'papaparse';
-import * as ExcelJS from 'exceljs';
+import Papa from 'papaparse';
+import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
