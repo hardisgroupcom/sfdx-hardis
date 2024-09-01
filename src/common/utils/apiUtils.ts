@@ -2,8 +2,6 @@ import { uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
-import { IngestJobV2Results, IngestOperation, JobInfoV2 } from 'jsforce/lib/api/bulk2.js';
-import { Schema } from 'jsforce';
 
 // Perform simple SOQL query (max results: 10000)
 export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
@@ -11,9 +9,9 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
     this,
     c.grey(
       'SOQL REST: ' +
-        c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-        ' on ' +
-        conn.instanceUrl
+      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
+      ' on ' +
+      conn.instanceUrl
     )
   );
   return Promise.resolve(conn.query(soqlQuery));
@@ -25,9 +23,9 @@ export function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<a
     this,
     c.grey(
       'SOQL REST Tooling: ' +
-        c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-        ' on ' +
-        conn.instanceUrl
+      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
+      ' on ' +
+      conn.instanceUrl
     )
   );
   return Promise.resolve(conn.tooling.query(soqlQuery));
@@ -89,10 +87,10 @@ let spinner: Ora;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkUpdate(
   objectName: string,
-  action: IngestOperation,
+  action: string,
   records: Array<any>,
   conn: Connection
-): Promise<IngestJobV2Results<Schema>> {
+): Promise<any> {
   uxLog(
     this,
     c.grey(
@@ -104,7 +102,7 @@ export async function bulkUpdate(
   // Initialize Job
   spinner = ora({ text: `[BulkApiV2] Bulk Load on ${objectName} (${action})`, spinner: 'moon' }).start();
   const job = conn.bulk2.createJob({
-    operation: action,
+    operation: action as any,
     object: objectName,
   });
   job.on('open', () => {
@@ -115,7 +113,7 @@ export async function bulkUpdate(
   await job.uploadData(records);
   await job.close();
   // Monitor job execution
-  job.on('inProgress', (jobInfo: JobInfoV2) => {
+  job.on('inProgress', (jobInfo: any) => {
     spinner.text = `[BulkApiV2] Processed: ${jobInfo.numberRecordsProcessed}. Failed: ${jobInfo.numberRecordsFailed}`;
   });
   job.on('failed', (e) => {

@@ -1,4 +1,4 @@
-import { Connection } from 'jsforce';
+import { Connection } from '@salesforce/core';
 import { getNested, uxLog } from './index.js';
 import c from 'chalk';
 import fs from 'fs-extra';
@@ -22,9 +22,8 @@ export async function sendEmail(emailMessage: EmailMessage) {
          <urn:sendEmail>
             <urn:messages xsi:type="urn:SingleEmailMessage">
                <urn:charset>utf8</urn:charset>
-               <urn:senderDisplayName>${
-                 emailMessage.senderDisplayName || 'SFDX-HARDIS Notifications'
-               }</urn:senderDisplayName>
+               <urn:senderDisplayName>${emailMessage.senderDisplayName || 'SFDX-HARDIS Notifications'
+    }</urn:senderDisplayName>
                <urn:subject>${emailMessage.subject}</urn:subject>
     `;
 

@@ -34,7 +34,6 @@
     "isomorphic-dompurify": "^2.15.0",
     "jira-client": "^8.2.2",
     "js-yaml": "^4.1.0",
-    "jsforce": "^3.4.1",
     "keyv": "^5.0.1",
     "make-fetch-happen": "^13.0.1",
     "markdown-toc": "^1.2.0",

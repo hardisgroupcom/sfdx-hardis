@@ -1,4 +1,4 @@
-import { SfError } from "@salesforce/core";
+import { Connection, SfError } from "@salesforce/core";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
@@ -6,7 +6,6 @@ import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
-import { Connection } from "jsforce";
 import { GitProvider } from "../gitProvider/index.js";
 import axios, { AxiosRequestConfig } from "axios";
 
