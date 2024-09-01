@@ -1,4 +1,4 @@
-import { uxLog } from './index.js';
+import { execSfdxJson, uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
@@ -132,6 +132,27 @@ export async function bulkDeleteTooling(
 ): Promise<any> {
   const records = recordsFull.map((record) => record.Id);
   uxLog(this, c.grey(`[ToolingApi] Delete ${records.length} records on ${objectName}: ${JSON.stringify(records)}`));
-  const deleteJobResults = await conn.tooling.destroy(objectName, records, { allOrNone: false });
-  return deleteJobResults;
+  try {
+    const deleteJobResults = await conn.tooling.destroy(objectName, records, { allOrNone: false });
+    return deleteJobResults
+  } catch (e: any) {
+    uxLog(this, c.yellow(`[ToolingApi] jsforce error while calling Tooling API. Fallback to to unitary delete (longer but should work !)`));
+    uxLog(this, c.grey(e.message));
+    const deleteJobResults: any = [];
+    for (const record of records) {
+      const deleteCommand =
+        `sf data:delete:record --sobject ${objectName} --record-id ${record} --target-org ${conn.getUsername()} --use-tooling-api`;
+      const deleteCommandRes = await execSfdxJson(deleteCommand, this, {
+        fail: false,
+        output: false
+      });
+      const deleteResult: any = { Id: record, success: true }
+      if (!(deleteCommandRes.status === 0)) {
+        deleteResult.success = false;
+        deleteResult.error = JSON.stringify(deleteCommandRes);
+      }
+      deleteJobResults.push(deleteResult);
+    }
+    return { results: deleteJobResults };
+  }
 }

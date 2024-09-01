@@ -91,10 +91,15 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - **hardis:work:save** and **hardis:project:deploy:sources:dx**: Improve runtime performances thanks to internalization of sfdx-essentials commands
 - **hardis:work:new**: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
 - **hardis:org:files:export**: Improve display with spinner
+
 ### Documentation
 
 - Reorganize README content
   - Add link to Dreamforce 24 session
+
+## Fixes
+
+- Avoid error when removing obsolete flows (workaround using SF CLI if tooling api connection fails). Fixes [#662](https://github.com/hardisgroupcom/sfdx-hardis/issues/662)
 
 ## [4.53.0] 2024-08-20
 
