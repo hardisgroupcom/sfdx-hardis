@@ -2,7 +2,7 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import * as axios1 from 'axios';
+import axios from 'axios';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
@@ -12,8 +12,6 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { managePackageConfig } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
-
-const axios = axios1.default;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -88,7 +86,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
             name: 'value',
             message: c.cyanBright(
               'What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request ' +
-                c.bold('Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage')
+              c.bold('Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage')
             ),
           },
           {
