@@ -27,9 +27,6 @@ lib
 coverage
 test_session*
 
-# generated docs
-docs
-
 # ignore sfdx-trust files
 *.tgz
 *.sig
