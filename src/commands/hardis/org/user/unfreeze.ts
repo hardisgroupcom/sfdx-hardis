@@ -27,7 +27,7 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     // flag with a value (-n, --name=VALUE)
     name: Flags.string({
       char: 'n',
@@ -82,7 +82,7 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
     let profileNames: any[] = [];
     if (includeProfileNames.length === 0 && excludeProfileNames.length === 0) {
       // Manual user selection
-      const profilesRes = await promptProfiles(conn, {
+      const profilesRes = await promptProfiles(conn as any, {
         multiselect: true,
         message: 'Please select profiles that you do you want to unfreeze users that are assigned to them ?',
         returnField: 'record',
@@ -95,7 +95,7 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
       // Use includeprofiles argument
       const profilesConstraintIn = includeProfileNames.map((profileName) => `'${profileName}'`).join(',');
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
-      const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+      const profilesQueryRes = await soqlQuery(profilesQuery, conn as any);
       if (this.debugMode) {
         uxLog(this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
       }
@@ -107,7 +107,7 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
       // Use excludeprofiles argument
       const profilesConstraintIn = excludeProfileNames.map((profileName) => `'${profileName}'`).join(',');
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
-      const profilesQueryRes = await soqlQuery(profilesQuery, conn);
+      const profilesQueryRes = await soqlQuery(profilesQuery, conn as any);
       if (this.debugMode) {
         uxLog(this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
       }
@@ -123,7 +123,7 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
     // Query users that we want to unfreeze
     uxLog(this, c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
     const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
-    const userQueryRes = await bulkQuery(userQuery, conn);
+    const userQueryRes = await bulkQuery(userQuery, conn as any);
     const usersToUnfreeze = userQueryRes.records;
     const userIdsStr = usersToUnfreeze.map((user) => `'${user.Id}'`).join(',');
 
@@ -137,7 +137,7 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
     // Query related UserLogin records
     uxLog(this, c.cyan(`Querying UserLogin records matching ${c.bold(usersToUnfreeze.length)} users...`));
     const userLoginQuery = `SELECT Id,UserId,IsFrozen FROM UserLogin WHERE UserId IN (${userIdsStr}) and IsFrozen=true`;
-    const userLoginQueryRes = await bulkQuery(userLoginQuery, conn);
+    const userLoginQueryRes = await bulkQuery(userLoginQuery, conn as any);
     const userLoginsToUnfreeze = userLoginQueryRes.records;
 
     // Display list of users to unfreeze
@@ -189,7 +189,7 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
     const userLoginsFrozen = userLoginsToUnfreeze.map((userLogin) => {
       return { Id: userLogin.Id, IsFrozen: false };
     });
-    const bulkUpdateRes = await bulkUpdate('UserLogin', 'update', userLoginsFrozen, conn);
+    const bulkUpdateRes = await bulkUpdate('UserLogin', 'update', userLoginsFrozen, conn as any);
 
     const unfreezeSuccessNb = bulkUpdateRes.successfulResults.length;
     const unfreezeErrorsNb = bulkUpdateRes.failedResults.length;

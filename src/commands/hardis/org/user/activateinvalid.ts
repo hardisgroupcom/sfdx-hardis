@@ -33,7 +33,7 @@ See article below
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     profiles: Flags.string({
       char: 'p',
       description:
@@ -143,7 +143,7 @@ See article below
       const emailReplaced = user.Email.replace('.invalid', '');
       return { Id: user.Id, Email: emailReplaced };
     });
-    const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn);
+    const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn as any);
 
     uxLog(
       this,

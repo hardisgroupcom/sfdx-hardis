@@ -20,7 +20,7 @@ export default class PackageVersionCreate extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -90,7 +90,7 @@ export default class PackageVersionCreate extends SfCommand<any> {
           ),
           choices: packageDirectories.map((packageDirectory) => {
             return {
-              title: packageDirectory.package || packageDirectory.path,
+              title: packageDirectory.name || packageDirectory.path,
               value: packageDirectory.name,
             };
           }),
@@ -107,7 +107,7 @@ export default class PackageVersionCreate extends SfCommand<any> {
     }
     // Identify package directory
     const pckgDirectory = packageDirectories.filter(
-      (pckgDirectory) => pckgDirectory.name === this.package || pckgDirectory.package === this.package
+      (pckgDirectory) => pckgDirectory.name === this.package || pckgDirectory.name === this.package
     )[0];
     if (config.defaultPackageInstallationKey !== this.installKey && this.installKey != null) {
       await setConfig('project', {
@@ -115,10 +115,10 @@ export default class PackageVersionCreate extends SfCommand<any> {
       });
     }
     // Create package version
-    uxLog(this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
+    uxLog(this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.name)}...`));
     const createCommand =
       'sf package version create' +
-      ` --package "${pckgDirectory.package}"` +
+      ` --package "${pckgDirectory.name}"` +
       (this.installKey ? ` --installation-key "${this.installKey}"` : ' --installation-key-bypass') +
       ' --code-coverage' +
       ' --wait 60';
@@ -134,7 +134,7 @@ export default class PackageVersionCreate extends SfCommand<any> {
       // Delete package version
       uxLog(
         this,
-        c.cyan(`Delete new package version ${c.green(latestVersion)} of package ${c.green(pckgDirectory.package)}...`)
+        c.cyan(`Delete new package version ${c.green(latestVersion)} of package ${c.green(pckgDirectory.name)}...`)
       );
       const deleteVersionCommand = 'sf package version delete --no-prompt --package ' + latestVersion;
       const deleteVersionResult = await execSfdxJson(deleteVersionCommand, this, {
