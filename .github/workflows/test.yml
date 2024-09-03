@@ -16,7 +16,9 @@ jobs:
       skipTsDepCheck: true
 
   nuts:
-    needs: unit-tests
+    needs:
+      - linux-unit-tests
+      - windows-unit-tests
     uses: salesforcecli/github-workflows/.github/workflows/nut.yml@main
     secrets: inherit
     strategy:
