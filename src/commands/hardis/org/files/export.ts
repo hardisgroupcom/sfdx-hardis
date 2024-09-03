@@ -27,7 +27,7 @@ See article below
 
   public static examples = ['$ sf hardis:org:files:export'];
 
-  public static flags: any = {
+  public static flags = {
     path: Flags.string({
       char: 'p',
       description: 'Path to the file export project',

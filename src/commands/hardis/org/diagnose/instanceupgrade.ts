@@ -21,7 +21,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:org:diagnose:instanceupgrade'];
 
-  public static flags: any = {
+  public static flags = {
     debug: Flags.boolean({
       char: 'd',
       default: false,

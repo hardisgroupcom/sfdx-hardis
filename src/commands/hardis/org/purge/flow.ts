@@ -42,7 +42,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags: any = {
+  public static flags = {
     // flag with a value (-n, --name=VALUE)
     prompt: Flags.boolean({
       char: 'z',

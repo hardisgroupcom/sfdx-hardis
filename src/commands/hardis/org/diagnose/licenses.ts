@@ -19,7 +19,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
   public static examples = ['$ sf hardis:org:diagnose:licenses'];
 
   //Comment default values to test the prompts
-  public static flags: any = {
+  public static flags = {
     outputfile: Flags.string({
       char: 'o',
       description: 'Force the path and name of output report file. Must end with .csv',
@@ -74,7 +74,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
       `FROM UserLicense ` +
       `WHERE Status='Active' AND TotalLicenses > 0 ` +
       `ORDER BY MasterLabel`;
-    const userLicenseQueryRes = await soqlQuery(userLicenseQuery, conn as any);
+    const userLicenseQueryRes = await soqlQuery(userLicenseQuery, conn);
     const userLicenses = userLicenseQueryRes.records.map((userLicense) => {
       const userLicenseInfo = Object.assign({}, userLicense);
       delete userLicenseInfo.Id;
@@ -97,7 +97,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
       pslQuery += `AND UsedLicenses > 0 `;
     }
     pslQuery += `ORDER BY MasterLabel`;
-    const pslQueryRes = await soqlQuery(pslQuery, conn as any);
+    const pslQueryRes = await soqlQuery(pslQuery, conn);
     const pslLicenses = pslQueryRes.records.map((psl) => {
       const pslInfo = Object.assign({}, psl);
       pslInfo.Name = pslInfo.PermissionSetLicenseKey;
