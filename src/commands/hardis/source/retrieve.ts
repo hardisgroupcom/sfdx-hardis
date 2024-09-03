@@ -17,7 +17,7 @@ export class SourceRetrieve extends SfCommand<any> {
 `;
   public static readonly examples = [];
   public static readonly requiresProject = true;
-  public static readonly flags = {
+  public static readonly flags: any = {
     apiversion: Flags.orgApiVersion({
       /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
       // @ts-ignore force char override for backward compat

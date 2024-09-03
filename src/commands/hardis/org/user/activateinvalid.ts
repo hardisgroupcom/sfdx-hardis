@@ -33,7 +33,7 @@ See article below
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     profiles: Flags.string({
       char: 'p',
       description:

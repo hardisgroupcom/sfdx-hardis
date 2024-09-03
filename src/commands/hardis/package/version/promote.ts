@@ -18,7 +18,7 @@ export default class PackageVersionPromote extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     auto: Flags.boolean({
       char: 'd',
       default: false,

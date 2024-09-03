@@ -28,7 +28,7 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
 
   public static examples = ['$ sf hardis:misc:purge-references'];
 
-  public static flags = {
+  public static flags: any = {
     references: Flags.string({
       char: 'r',
       description: 'Comma-separated list of references to find in metadatas',

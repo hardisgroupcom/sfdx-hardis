@@ -16,7 +16,7 @@ export default class OrgSelect extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     devhub: Flags.boolean({
       char: 'h',
       default: false,

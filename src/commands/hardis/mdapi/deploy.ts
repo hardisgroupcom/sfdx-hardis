@@ -14,7 +14,7 @@ export class Deploy extends SfCommand<any> {
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_mdapi.htm#cli_reference_force_mdapi_deploy)
 `;
   public static readonly examples = [];
-  public static readonly flagsConfig = {
+  public static readonly flags: any = {
     checkonly: Flags.boolean({
       char: 'c',
       description: 'checkOnly',

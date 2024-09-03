@@ -20,7 +20,7 @@ export default class CallInCallOut extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     minimumapiversion: Flags.integer({
       char: 'm',
       default: 20.0,

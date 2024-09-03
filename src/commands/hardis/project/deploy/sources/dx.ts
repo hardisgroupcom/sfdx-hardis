@@ -196,7 +196,7 @@ If you need notifications to be sent using the current Pull Request and not the 
     '$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTestsExceptSeeAllData',
   ];
 
-  public static flags = {
+  public static flags: any = {
     check: Flags.boolean({
       char: 'c',
       default: false,

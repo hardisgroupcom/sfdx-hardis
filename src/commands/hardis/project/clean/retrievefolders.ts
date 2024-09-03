@@ -17,7 +17,7 @@ export default class CleanRetrieveFolders extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:project:clean:retrievefolders'];
 
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,

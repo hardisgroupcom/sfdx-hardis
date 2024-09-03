@@ -32,7 +32,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:org:configure:monitoring'];
 
-  public static flags = {
+  public static flags: any = {
     orginstanceurl: Flags.string({
       description: 'Org instance url (technical param, do not use manually)',
     }),
@@ -105,8 +105,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
       uxLog(
         this,
         c.cyan(
-          `Default org ${
-            flags['target-org'].getConnection()?.instanceUrl
+          `Default org ${flags['target-org'].getConnection()?.instanceUrl
           } is selected, let's configure its monitoring !`
         )
       );

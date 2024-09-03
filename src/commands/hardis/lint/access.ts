@@ -40,7 +40,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     '$ sf hardis:lint:access -i "PermissionSet:permissionSetA, Profile"',
   ];
 
-  public static flags = {
+  public static flags: any = {
     elementsignored: Flags.string({
       char: 'e',
       default: '',

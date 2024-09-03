@@ -5,7 +5,7 @@ import { appendPackageXmlFilesContent } from "../../../common/utils/xmlUtils.js"
 export class PackageXmlAppend extends SfCommand<any> {
   public static readonly description = `Append one or multiple package.xml files into a single one`;
   public static readonly examples = ["$ sf hardis packagexml append -p package1.xml,package2.xml -o package3.xml"];
-  public static readonly flags = {
+  public static readonly flags: any = {
     packagexmls: Flags.string({
       char: "p",
       description: "package.xml files path (separated by commas)",

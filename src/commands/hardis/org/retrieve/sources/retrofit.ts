@@ -83,7 +83,7 @@ export default class Retrofit extends SfCommand<any> {
     'sf hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode updated --push --pushmode mergerequest',
   ];
 
-  public static flags = {
+  public static flags: any = {
     commit: Flags.boolean({
       default: false,
       description: 'If true, a commit will be performed after the retrofit',

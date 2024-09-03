@@ -74,7 +74,7 @@ autoRemoveUserPermissions:
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     nopull: Flags.boolean({
       char: 'n',
       default: false,
@@ -353,7 +353,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
-          c.red(destructivePackageXmlDiffStr)
+        c.red(destructivePackageXmlDiffStr)
       );
       await appendPackageXmlFilesContent(
         [localDestructiveChangesXml, diffDestructivePackageXml],
@@ -369,7 +369,7 @@ autoRemoveUserPermissions:
       uxLog(
         this,
         c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) +
-          c.green(packageXmlDiffStr)
+        c.green(packageXmlDiffStr)
       );
       await appendPackageXmlFilesContent([localPackageXml, diffPackageXml], localPackageXml);
       await removePackageXmlFilesContent(localPackageXml, localDestructiveChangesXml, {

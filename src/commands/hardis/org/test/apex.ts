@@ -29,7 +29,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   public static examples = ['$ sf hardis:org:test:apex'];
 
-  public static flags = {
+  public static flags: any = {
     testlevel: Flags.string({
       char: 'l',
       default: 'RunLocalTests',
@@ -195,10 +195,10 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     );
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
-        process.env.APEX_TESTS_MIN_COVERAGE ||
-        this.configInfo.apexTestsMinCoverageOrgWide ||
-        this.configInfo.apexTestsMinCoverage ||
-        75.0
+      process.env.APEX_TESTS_MIN_COVERAGE ||
+      this.configInfo.apexTestsMinCoverageOrgWide ||
+      this.configInfo.apexTestsMinCoverage ||
+      75.0
     );
     this.coverageTarget = minCoverageOrgWide;
     this.coverageValue = coverageOrgWide;
@@ -234,9 +234,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       );
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
-          process.env.APEX_TESTS_MIN_COVERAGE ||
-          this.configInfo.apexTestsMinCoverage ||
-          this.coverageTarget
+        process.env.APEX_TESTS_MIN_COVERAGE ||
+        this.configInfo.apexTestsMinCoverage ||
+        this.coverageTarget
       );
       this.coverageTarget = minCoverageTestRun;
       this.coverageValue = coverageTestRun;

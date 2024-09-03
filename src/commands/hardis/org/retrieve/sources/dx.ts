@@ -24,7 +24,7 @@ export default class DxSources extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:org:retrieve:sources:dx'];
 
-  public static flags = {
+  public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: '.',
@@ -124,9 +124,8 @@ export default class DxSources extends SfCommand<any> {
     // Converting metadatas to sfdx
     uxLog(this, c.cyan(`Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`));
     process.chdir(sfdxFolder);
-    const mdapiConvertCommand = `sf project convert mdapi --root-dir ${path.join(metadataFolder, 'unpackaged')} ${
-      debug ? '--verbose' : ''
-    }`;
+    const mdapiConvertCommand = `sf project convert mdapi --root-dir ${path.join(metadataFolder, 'unpackaged')} ${debug ? '--verbose' : ''
+      }`;
     uxLog(this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
     try {
       const convertRes = await exec(mdapiConvertCommand, {

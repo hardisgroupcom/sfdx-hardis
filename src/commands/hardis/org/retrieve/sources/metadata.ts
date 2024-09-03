@@ -27,7 +27,7 @@ export default class DxSources extends SfCommand<any> {
     '$ SFDX_RETRIEVE_WAIT_MINUTES=200 sf hardis:org:retrieve:sources:metadata',
   ];
 
-  public static flags = {
+  public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: '.',

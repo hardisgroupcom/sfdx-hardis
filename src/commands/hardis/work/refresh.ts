@@ -20,7 +20,7 @@ export default class RefreshTask extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     nopull: Flags.boolean({
       char: 'n',
       default: false,

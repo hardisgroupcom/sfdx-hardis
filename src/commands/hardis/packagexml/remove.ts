@@ -6,7 +6,7 @@ export class PackageXmlRemove extends SfCommand<any> {
   public static readonly description = `Removes the content of a package.xml file matching another package.xml file`;
   public static readonly examples = ["$ sf hardis packagexml:remove -p package.xml -r destructiveChanges.xml -o my-reduced-package.xml"];
   public static readonly requiresProject = false;
-  public static readonly flags = {
+  public static readonly flags: any = {
     packagexml: Flags.string({
       char: 'p',
       description: 'package.xml file to reduce'

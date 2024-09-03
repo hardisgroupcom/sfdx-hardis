@@ -29,7 +29,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 `;
   public static examples = ['$ sf hardis:lint:metadatastatus'];
   /* jscpd:ignore-start */
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,

@@ -19,7 +19,7 @@ Calls \`sf project deploy start\` under the hood
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,

@@ -21,7 +21,7 @@ export default class DxSources extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:project:deploy:sources:metadata'];
 
-  public static flags = {
+  public static flags: any = {
     check: Flags.boolean({
       char: 'c',
       default: false,

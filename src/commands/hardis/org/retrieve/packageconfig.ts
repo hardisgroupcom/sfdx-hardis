@@ -18,7 +18,7 @@ export default class RetrievePackageConfig extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:org:retrieve:packageconfig', 'sf hardis:org:retrieve:packageconfig -u myOrg'];
 
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,

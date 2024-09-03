@@ -18,7 +18,7 @@ export default class CleanSystemDebug extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:project:clean:systemdebug'];
 
-  public static flags = {
+  public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',

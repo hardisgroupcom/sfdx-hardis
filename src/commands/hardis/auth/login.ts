@@ -15,7 +15,7 @@ export default class Login extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     instanceurl: Flags.string({
       char: 'r',
       description: messages.getMessage('instanceUrl'),

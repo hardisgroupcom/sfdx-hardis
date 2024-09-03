@@ -25,7 +25,7 @@ export default class GenerateGitDelta extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:project:generate:gitdelta'];
 
-  public static flags = {
+  public static flags: any = {
     branch: Flags.string({
       description: 'Git branch to use to generate delta',
     }),

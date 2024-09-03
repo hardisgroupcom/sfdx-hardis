@@ -35,7 +35,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -181,8 +181,8 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
       const title = commandInstance.title
         ? commandInstance.title
         : commandInstance.description
-        ? commandInstance.description.split('\n')[0]
-        : '';
+          ? commandInstance.description.split('\n')[0]
+          : '';
       lines.push(...[`|[**${command.id}**](${commandsLinks[command.id]})|${title}|`]);
       cmdLines.push(...[`|[**${command.id}**](${commandsLinks[command.id]})|${title}|`]);
     }
@@ -227,9 +227,8 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
               optionsUnique.push(option);
             }
           }
-          return `|${flag.name + (flag.char ? `<br/>-${flag.char}` : '')}|${flag.type}|${flag.description}|${
-            flag.default || ''
-          }|${flag.required ? '' : ''}|${optionsUnique.join('<br/>')}|`;
+          return `|${flag.name + (flag.char ? `<br/>-${flag.char}` : '')}|${flag.type}|${flag.description}|${flag.default || ''
+            }|${flag.required ? '' : ''}|${optionsUnique.join('<br/>')}|`;
         }),
       '',
     ];

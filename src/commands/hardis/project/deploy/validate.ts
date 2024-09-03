@@ -12,7 +12,7 @@ export default class ProjectDeployValidate extends SfCommand<any> {
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_validate_unified)
 `;
-  public static flags = {
+  public static flags: any = {
     "api-version": Flags.integer({
       char: "a",
       description: "api-version",

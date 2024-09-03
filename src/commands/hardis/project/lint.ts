@@ -17,7 +17,7 @@ export default class Lint extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:project:lint', '$ sf hardis:project:lint --fix'];
 
-  public static flags = {
+  public static flags: any = {
     fix: Flags.boolean({
       char: 'f',
       default: false,

@@ -63,7 +63,7 @@ Notes:
     '$ sf hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --target-org nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary',
   ];
   public static readonly requiresProject = true;
-  public static readonly flags = {
+  public static readonly flags: any = {
     checkonly: Flags.boolean({
       char: 'c',
       description: 'checkonly',

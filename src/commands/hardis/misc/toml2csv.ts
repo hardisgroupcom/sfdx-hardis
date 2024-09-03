@@ -28,7 +28,7 @@ export default class Toml2Csv extends SfCommand<any> {
     "$ NODE_OPTIONS=--max_old_space_size=9096 sf hardis:misc:toml2csv --skiptransfo --tomlfile './input/V1.txt' --outputdir './output' --filtersections 'COMPTES,SOUS'",
   ];
 
-  public static flags = {
+  public static flags: any = {
     tomlfile: Flags.string({
       char: 'f',
       description: 'Input TOML file path',
@@ -370,8 +370,7 @@ export default class Toml2Csv extends SfCommand<any> {
       // Create SF Object output file name
       const outputFile = path.join(
         this.outputDir,
-        `${errMode ? 'errors' + path.sep + 'err__' : ''}${
-          this.transfoConfig.entities[section].outputFile.salesforceObjectApiName
+        `${errMode ? 'errors' + path.sep + 'err__' : ''}${this.transfoConfig.entities[section].outputFile.salesforceObjectApiName
         }___${section}.csv`
       );
       // Init writeStream
@@ -600,10 +599,10 @@ export default class Toml2Csv extends SfCommand<any> {
         filter.type === 'date'
           ? this.checkFilterDate(filter, lineSplit)
           : filter.type === 'parentId'
-          ? this.checkFilterParentId(filter, lineSplit)
-          : filter.type === 'colValue'
-          ? this.checkFilterColValue(filter, lineSplit)
-          : null;
+            ? this.checkFilterParentId(filter, lineSplit)
+            : filter.type === 'colValue'
+              ? this.checkFilterColValue(filter, lineSplit)
+              : null;
       if (checkRes === null) {
         throw Error('Unknown filter type ' + JSON.stringify(filter));
       }
@@ -622,8 +621,8 @@ export default class Toml2Csv extends SfCommand<any> {
       filter.typeDtl === 'higherThan'
         ? colValue.isAfter(dateStart, 'day')
         : filter.typeDtl === 'lowerThan'
-        ? colValue.isBefore(dateStart, 'day')
-        : colValue.isSame(dateStart, 'day');
+          ? colValue.isBefore(dateStart, 'day')
+          : colValue.isSame(dateStart, 'day');
     return res;
   }
 

@@ -22,7 +22,7 @@ This script requires a filter-config.json file`;
     'sf hardis:project:clean:filter-xml-content -i "retrieveUnpackaged"',
   ];
   public static readonly requiresProject = true;
-  public static readonly flags = {
+  public static readonly flags: any = {
     configfile: Flags.string({
       char: 'c',
       description: 'Config JSON file path',
@@ -63,8 +63,7 @@ This script requires a filter-config.json file`;
     uxLog(
       this,
       c.cyan(
-        `Initialize XML content filtering of ${this.inputFolder}, using ${c.bold(this.configFile)} , into ${
-          this.outputFolder
+        `Initialize XML content filtering of ${this.inputFolder}, using ${c.bold(this.configFile)} , into ${this.outputFolder
         }`
       )
     );

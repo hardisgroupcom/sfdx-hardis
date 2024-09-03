@@ -28,7 +28,7 @@ See article below
 
   public static examples = ['$ sf hardis:org:configure:files'];
 
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,

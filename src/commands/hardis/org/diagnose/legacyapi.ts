@@ -37,7 +37,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     eventtype: Flags.string({
       char: 'e',
       default: 'ApiTotalUsage',
@@ -162,8 +162,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
         descriptor.severity === 'ERROR' && descriptor.errors.length > 0
           ? c.red
           : descriptor.severity === 'WARNING' && descriptor.errors.length > 0
-          ? c.yellow
-          : c.green;
+            ? c.yellow
+            : c.green;
       uxLog(this, colorMethod(`- ${descriptor.deprecationRelease} : ${c.bold(descriptor.errors.length)}`));
     }
     uxLog(this, '');

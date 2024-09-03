@@ -21,7 +21,7 @@ export default class RemoteSites extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     // flag with a value (-n, --name=VALUE)
     debug: Flags.boolean({
       char: 'd',

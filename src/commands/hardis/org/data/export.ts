@@ -22,7 +22,7 @@ See article:
 
   public static examples = ['$ sf hardis:org:data:export'];
 
-  public static flags = {
+  public static flags: any = {
     path: Flags.string({
       char: 'p',
       description: 'Path to the sfdmu workspace folder',

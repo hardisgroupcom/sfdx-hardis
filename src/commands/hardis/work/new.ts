@@ -62,7 +62,7 @@ Under the hood, it can:
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -170,9 +170,8 @@ Under the hood, it can:
     ]);
 
     // Checkout development main branch
-    const branchName = `${projectBranchPart}${response.branch || 'features'}/${
-      response.sources || 'dev'
-    }/${response.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}`;
+    const branchName = `${projectBranchPart}${response.branch || 'features'}/${response.sources || 'dev'
+      }/${response.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}`;
     uxLog(
       this,
       c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`)
@@ -469,8 +468,8 @@ Under the hood, it can:
           this,
           c.yellow(`If you really want your sandbox to be up to date with branch ${c.bold(this.targetBranch)}, you may:
   - ${c.bold(
-    'Fix the errors'
-  )} (probably by manually updating the target sandbox in setup), then run new task again and select again the same sandbox
+            'Fix the errors'
+          )} (probably by manually updating the target sandbox in setup), then run new task again and select again the same sandbox
   - ${c.bold('Refresh your sandbox')} (ask your release manager if you don't know how)
   Else, you can start working now (but beware of conflicts ^^):)
         `)

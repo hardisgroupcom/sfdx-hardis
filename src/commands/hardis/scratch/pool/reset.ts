@@ -20,7 +20,7 @@ export default class ScratchPoolReset extends SfCommand<any> {
 
   // public static args = [{name: 'file'}];
 
-  public static flags = {
+  public static flags: any = {
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -51,8 +51,8 @@ export default class ScratchPoolReset extends SfCommand<any> {
       uxLog(
         this,
         c.yellow('Configuration file must contain a poolConfig property') +
-          '\n' +
-          c.grey(JSON.stringify(config, null, 2))
+        '\n' +
+        c.grey(JSON.stringify(config, null, 2))
       );
       return { outputString: 'Configuration file must contain a poolConfig property' };
     }
@@ -84,8 +84,7 @@ export default class ScratchPoolReset extends SfCommand<any> {
       uxLog(
         this,
         c.cyan(
-          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${
-            scratchOrgToDelete?.authFileJson?.result?.instanceUrl
+          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
           } has been deleted`
         )
       );

@@ -18,7 +18,7 @@ export default class CleanHiddenItems extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:project:clean:hiddenitems'];
 
-  public static flags = {
+  public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',

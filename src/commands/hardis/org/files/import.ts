@@ -22,7 +22,7 @@ See article below to see how to Export them.
 
   public static examples = ['$ sf hardis:org:files:import'];
 
-  public static flags = {
+  public static flags: any = {
     path: Flags.string({
       char: 'p',
       description: 'Path to the file export project',

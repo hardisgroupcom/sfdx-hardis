@@ -12,7 +12,7 @@ export default class Push extends SfCommand<any> {
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_push)
 `;
-  public static readonly flags = {
+  public static readonly flags: any = {
     forceoverwrite: Flags.boolean({
       char: 'f',
       description: 'forceoverwrite',

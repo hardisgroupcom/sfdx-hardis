@@ -39,7 +39,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     `$ sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"`,
   ];
 
-  public static flags = {
+  public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',

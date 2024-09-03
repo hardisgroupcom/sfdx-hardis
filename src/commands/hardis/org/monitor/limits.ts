@@ -23,7 +23,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   public static examples = ['$ sf hardis:org:monitor:limits'];
 
-  public static flags = {
+  public static flags: any = {
     outputfile: Flags.string({
       char: 'o',
       description: 'Force the path and name of output report file. Must end with .csv',
@@ -83,8 +83,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
           limit.percentUsed > this.limitThresholdError
             ? 'error'
             : limit.percentUsed > this.limitThresholdWarning
-            ? 'warning'
-            : 'success';
+              ? 'warning'
+              : 'success';
         limit.severityIcon = getSeverityIcon(limit.severity);
         limit.label = limit.name.replace(/([A-Z])/g, ' $1');
         return limit;

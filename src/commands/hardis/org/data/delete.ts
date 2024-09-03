@@ -17,7 +17,7 @@ export default class DataExport extends SfCommand<any> {
 
   public static examples = ['$ sf hardis:org:data:delete'];
 
-  public static flags = {
+  public static flags: any = {
     path: Flags.string({
       char: 'p',
       description: 'Path to the sfdmu workspace folder',
