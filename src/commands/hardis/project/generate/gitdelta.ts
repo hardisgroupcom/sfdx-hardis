@@ -73,7 +73,10 @@ export default class GenerateGitDelta extends SfCommand<any> {
 
     // List branch commits
     const branchCommits = await git().log(['--first-parent']);
-    const branchCommitsChoices = branchCommits.all.map((commit) => {
+    let pos = 0;
+    const branchCommitsChoices = branchCommits.all.map((commit: any) => {
+      commit.pos = pos;
+      pos++;
       return {
         title: commit.message,
         description: `${commit.author_name} on ${new Date(commit.date).toLocaleString()}`,
@@ -82,6 +85,8 @@ export default class GenerateGitDelta extends SfCommand<any> {
     });
 
     // Prompt fromCommit
+    let selectedFirstCommitLabel = "";
+    let selectedFirstCommitPos = 0;
     if (fromCommit === null) {
       const headItem = {
         title: 'HEAD',
@@ -95,6 +100,8 @@ export default class GenerateGitDelta extends SfCommand<any> {
         choices: [headItem, ...branchCommitsChoices],
       });
       fromCommit = commitFromResp.value.hash;
+      selectedFirstCommitLabel = commitFromResp.value.message;
+      selectedFirstCommitPos = commitFromResp.value.pos;
     }
 
     // Prompt toCommit
@@ -104,11 +111,16 @@ export default class GenerateGitDelta extends SfCommand<any> {
         description: `Local files not committed yet`,
         value: { hash: '*' },
       };
+      const singleCommitChoice = {
+        title: 'Single commit',
+        description: `Only for ${selectedFirstCommitLabel}`,
+        value: branchCommitsChoices[selectedFirstCommitPos + 1].value
+      };
       const commitToResp = await prompts({
         type: 'select',
         name: 'value',
         message: 'Please select the commit hash that you want to go to',
-        choices: [currentItem, ...branchCommitsChoices],
+        choices: [currentItem, singleCommitChoice, ...branchCommitsChoices],
       });
       toCommit = commitToResp.value.hash;
     }
