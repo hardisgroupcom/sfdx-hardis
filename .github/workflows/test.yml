@@ -12,8 +12,6 @@ jobs:
 
   windows-unit-tests:
     uses: salesforcecli/github-workflows/.github/workflows/unitTestsWindows.yml@main
-    with:
-      skipTsDepCheck: true
 
   nuts:
     needs:
