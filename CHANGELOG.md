@@ -87,6 +87,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ### Additional Features
 
+- New command **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
 - New command **hardis:misc:purge-references** to partially automate the cleaning of related dependencies when you need to delete a field, or change its type (for example from master detail to lookup)
 - **hardis:work:save** and **hardis:project:deploy:sources:dx**: Improve runtime performances thanks to internalization of sfdx-essentials commands
 - **hardis:work:new**: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`

@@ -2,8 +2,8 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { execCommand } from '../../../../common/utils/index.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { wrapSfdxCoreCommand } from '../../../../common/utils/wrapUtils.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -57,17 +57,19 @@ Used by VsCode Extension`;
     this.debugMode = flags.debug || false;
 
     // Prompt target org to user
-    const orgUsername = promptOrgUsernameDefault(this,
+    const orgUsername = await promptOrgUsernameDefault(this,
       flags['target-org'].getUsername(),
       { devHub: false, setDefault: false, message: `Do you want to use org ${flags['target-org'].getConnection().instanceUrl} to simulate deployment of metadata ${sourceDirOrFile} ?`, quickOrgList: true });
-    // Simulate deployment
 
-    const command = "sf project deploy start" +
+    // Build command
+    const simulateDeployCommand = "sf project deploy start" +
       ` --source-dir ${sourceDirOrFile} ` +
       ` --target-org ${orgUsername}` +
       ` --ignore-conflicts` +
       ` --dry-run`;
-    const execRes = await execCommand(command, this, { fail: true, output: true, debug: this.debugMode });
-    return { simulationDeploymentResult: execRes };
+
+    // Simulate deployment
+    const result = await wrapSfdxCoreCommand(simulateDeployCommand, [], this, flags.debug);
+    return result;
   }
 }
