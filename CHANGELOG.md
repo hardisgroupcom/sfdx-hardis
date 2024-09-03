@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ### Refactoring explanations
 
-The future [deprecation of sfdx force:source:** commands on 6 november ](https://github.com/forcedotcom/cli/issues/2974) finally convinced us to switch everything from SFDX core to SF CLI core. (otherwise existing CI/CD pipelines would not work anymore from this date !)
+The future [deprecation of sfdx force:source:** commands on 6 november](https://github.com/forcedotcom/cli/issues/2974) finally convinced us to switch everything from SFDX core to SF CLI core. (otherwise existing CI/CD pipelines would not work anymore from this date !)
 
 Therefore, sfdx-hardis required a complete refactoring as described below, but this won't impact existing CI/CD and Monitoring pipelines.
 
