@@ -115,10 +115,10 @@ export async function promptProfiles(
 
 export async function promptOrg(
   commandThis: SfCommand<any>,
-  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null }
+  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false }
 ) {
   // List all local orgs and request to user
-  const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any');
+  const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList });
   let orgList = [
     ...sortArray(orgListResult?.scratchOrgs || [], {
       by: ['devHubUsername', 'username', 'alias', 'instanceUrl'],
@@ -252,11 +252,11 @@ export async function promptOrg(
 export async function promptOrgUsernameDefault(
   commandThis: any,
   defaultOrg: string,
-  options: any = { devHub: false, setDefault: true }
+  options: any = { devHub: false, setDefault: true, message: "", quickOrgList: true }
 ) {
   const defaultOrgRes = await prompts({
     type: 'confirm',
-    message: `Do you want to use org ${defaultOrg}`,
+    message: options.message || `Do you want to use org ${defaultOrg} ?`,
   });
   if (defaultOrgRes.value === true) {
     return defaultOrg;

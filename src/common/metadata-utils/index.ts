@@ -417,10 +417,12 @@ class MetadataUtils {
 
   // List local orgs for user
   public static async listLocalOrgs(type = 'any', options: any = {}) {
-    let orgListResult = await getCache('sf org list', null);
+    const quickListParams = options?.quickOrgList === true ? ' --skip-connection-status' : '';
+    const orgListCommand = `sf org list${quickListParams}`;
+    let orgListResult = await getCache(orgListCommand, null);
     if (orgListResult == null) {
-      orgListResult = await execSfdxJson('sf org list', this);
-      await setCache('sf org list', orgListResult);
+      orgListResult = await execSfdxJson(orgListCommand, this);
+      await setCache(orgListCommand, orgListResult);
     }
     // All orgs
     if (type === 'any') {

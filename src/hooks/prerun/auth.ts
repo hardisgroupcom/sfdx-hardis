@@ -28,6 +28,7 @@ const hook: Hook<'prerun'> = async (options) => {
       'hardis:source:deploy',
       'hardis:source:push',
       'hardis:mdapi:deploy',
+      'hardis:project:deploy:simulate'
     ].includes(commandId)
   ) {
     return;
