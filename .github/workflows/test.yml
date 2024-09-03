@@ -5,8 +5,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  unit-tests:
-    uses: salesforcecli/github-workflows/.github/workflows/unitTest.yml@main
+  linux-unit-tests:
+    uses: salesforcecli/github-workflows/.github/workflows/unitTestsLinux.yml@main
+    with:
+      skipTsDepCheck: true
+
+  windows-unit-tests:
+    uses: salesforcecli/github-workflows/.github/workflows/unitTestsWindows.yml@main
+    with:
+      skipTsDepCheck: true
 
   nuts:
     needs: unit-tests
