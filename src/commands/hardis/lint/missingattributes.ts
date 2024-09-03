@@ -141,7 +141,7 @@ export default class MetadataStatus extends SfCommand<any> {
       if (fieldResult && fieldResult.CustomField) {
         const fieldName = fieldResult.CustomField.fullName[0];
         if (fieldName.endsWith('__c') && !fieldResult.CustomField.description) {
-          const fieldFile = this.nonCustomSettingsFieldDirectories[i];
+          const fieldFile = this.nonCustomSettingsFieldDirectories[i].replace(/\\/g, '/');
           const objectName = fieldFile.split('/').slice(-3, -2)[0];
           const fullFieldName = `${objectName}.${fieldName}`;
           fieldsWithoutDescription.push({
@@ -181,9 +181,9 @@ export default class MetadataStatus extends SfCommand<any> {
     });
   }
 
-  private async buildCsvFile(fieldsWithoutDescription: string[]): Promise<void> {
+  private async buildCsvFile(fieldsWithoutDescription: any[]): Promise<void> {
     this.outputFile = await generateReportPath('lint-missingattributes', this.outputFile);
-    const csvData = fieldsWithoutDescription.map((field) => ({ type: 'Field', name: field }));
+    const csvData = fieldsWithoutDescription.map((field) => ({ type: 'Field', name: field.name }));
     this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
   }
 }

@@ -271,7 +271,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   private async retrieveElementToCheck(elements, xmlField, excludedElements): Promise<Array<string>> {
     let fieldsToSearch: any[] = [];
 
-    for (const element of elements) {
+    for (let element of elements) {
+      element = element.replace(/\\/g, '/');
       // Exclude mandatory fields
       if (element.endsWith('.field-meta.xml')) {
         const fieldXml = await parseXmlFile(element);
@@ -580,6 +581,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     for (const permissionSetFile of permissionSetFiles) {
       const psFileXml = await parseXmlFile(permissionSetFile);
       for (const element of elements) {
+        element.element = element.element.replace(/\\/g, '/');
         // Apex class access
         if (element.type === 'apexClass') {
           const className = element.element.split('/').pop();
