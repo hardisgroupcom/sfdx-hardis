@@ -206,7 +206,8 @@ export async function forceSourceDeploy(
       uxLog(
         commandThis,
         c.cyan(
-          `${check ? 'Simulating deployment of' : 'Deploying'} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile
+          `${check ? 'Simulating deployment of' : 'Deploying'} ${c.bold(deployment.label)} package: ${
+            deployment.packageXmlFile
           } ...`
         )
       );
@@ -260,15 +261,14 @@ export async function forceSourceDeploy(
       // No QuickDeploy Available, or QuickDeploy failing : try full deploy
       const branchConfig = await getConfig('branch');
       const deployCommand =
-        `sf project deploy start --manifest "${deployment.packageXmlFile}"` +
+        `sf project deploy ${check ? 'validate' : 'start'} --manifest "${deployment.packageXmlFile}"` +
         ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff
-        ` --test_level ${testlevel}` +
+        ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --run-tests ${options.testClasses}` : '') +
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
         (options.postDestructiveChanges ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
-        (check ? ' --check-only' : '') +
-        (branchConfig?.skipCodeCoverage === true ? '' : ' --coverageformatters json-summary') +
+        (branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
         ' --verbose' +
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '60'}` +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
@@ -398,7 +398,8 @@ async function handleDeployError(
     commandThis,
     c.yellow(
       c.bold(
-        `You may${tips.length > 0 ? ' also' : ''
+        `You may${
+          tips.length > 0 ? ' also' : ''
         } copy-paste errors on google to find how to solve the deployment issues :)`
       )
     )
@@ -443,7 +444,7 @@ async function displayDeploymentLink(rawLog: string, options: any) {
     }
     const openRes = await execSfdxJson(
       `sf org open -p ${deploymentUrl} --url-only` +
-      (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
+        (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
       this,
       {
         fail: true,
@@ -638,7 +639,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   // Retrieve sfdx sources in local git repo
   await execCommand(
     `sf project retrieve start --manifest ${packageDeployOnChangePath}` +
-    (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
+      (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
     this,
     {
       fail: true,
@@ -745,12 +746,11 @@ export async function deployDestructiveChanges(
   );
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
   const deployDelete =
-    `sf project deploy start --metadata-dir ${tmpDir}` +
+    `sf project deploy ${options.check ? 'validate' : 'start'} --metadata-dir ${tmpDir}` +
     ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '60'}` +
     ` --test-level ${options.testLevel || 'NoTestRun'}` +
     ' --ignore-warnings' + // So it does not fail in case metadata is already deleted
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
-    (options.check ? ' --check-only' : '') +
     (options.debug ? ' --verbose' : '');
   // Deploy destructive changes
   let deployDeleteRes: any = {};
@@ -777,8 +777,9 @@ export async function deployDestructiveChanges(
   await fs.remove(tmpDir);
   let deleteMsg = '';
   if (deployDeleteRes.status === 0) {
-    deleteMsg = `[sfdx-hardis] Successfully ${options.check ? 'checked deployment of' : 'deployed'
-      } destructive changes to Salesforce org`;
+    deleteMsg = `[sfdx-hardis] Successfully ${
+      options.check ? 'checked deployment of' : 'deployed'
+    } destructive changes to Salesforce org`;
     uxLog(commandThis, c.green(deleteMsg));
   } else {
     deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';
@@ -798,12 +799,11 @@ export async function deployMetadatas(
 ) {
   // Perform deployment
   const deployCommand =
-    'sf project deploy start' +
+    `sf project deploy ${options.check ? 'validate' : 'start'}` +
     ` --metadata-dir ${options.deployDir || '.'}` +
     ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '60'}` +
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
     ` --api-version ${options.apiVersion || CONSTANTS.API_VERSION}` +
-    (options.check ? ' --check-only' : '') +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
     ' --verbose';
   let deployRes;
@@ -924,10 +924,10 @@ export async function buildOrgManifest(
     // Use sfdx manifest build in current project
     await execCommand(
       `sf project generate manifest` +
-      ` --name ${manifestName}` +
-      ` --output-dir ${path.resolve(manifestDir)}` +
-      ` --include-packages managed,unlocked` +
-      ` --from-org ${targetOrgUsernameAlias}`,
+        ` --name ${manifestName}` +
+        ` --output-dir ${path.resolve(manifestDir)}` +
+        ` --include-packages managed,unlocked` +
+        ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -941,10 +941,10 @@ export async function buildOrgManifest(
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sf project generate manifest` +
-      ` --name ${manifestName}` +
-      ` --output-dir ${path.resolve(manifestDir)}` +
-      ` --include-packages managed,unlocked` +
-      ` --from-org ${targetOrgUsernameAlias}`,
+        ` --name ${manifestName}` +
+        ` --output-dir ${path.resolve(manifestDir)}` +
+        ` --include-packages managed,unlocked` +
+        ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -1145,7 +1145,8 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
     commandThis,
     c.yellow(
       c.bold(
-        `You may${tips.length > 0 ? ' also' : ''
+        `You may${
+          tips.length > 0 ? ' also' : ''
         } copy-paste errors on google to find how to solve the metadata deployment issues :)`
       )
     )
