@@ -33,10 +33,12 @@ jobs:
           always-auth: true
           # Defaults to the user or organization that owns the workflow file
           scope: "hardisgroupcom"
-      - run: yarn
-      - run: yarn config set version-git-tag false && tsc -b
-      - run: ALPHAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$ALPHAID"
-      - run: yarn config set network-timeout 300000 && yarn publish --tag alpha
+      - run: yarn install --frozen-lockfile && yarn run compile
+      - run: yarn config set version-git-tag false
+      - run: ALPHAID=$(date '+%Y%m%d%H%M')
+      - run: yarn version --prepatch --preid="alpha$ALPHAID"
+      - run: yarn config set network-timeout 300000
+      - run: yarn publish --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
