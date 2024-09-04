@@ -2059,23 +2059,23 @@
     unbzip2-stream "^1.4.3"
     yargs "^17.7.2"
 
-"@salesforce/cli-plugins-testkit@^5.3.10":
-  version "5.3.10"
-  resolved "https://registry.npmjs.org/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-5.3.10.tgz"
-  integrity sha512-D41LFxtkZGExooVecva5q/oGM+ggsoK7BDcxfdpHS+wD4c62pzQC9qeH7qb3QZczmvXf5Iyt1g/c9ajBzvk74g==
+"@salesforce/cli-plugins-testkit@^5.3.28":
+  version "5.3.28"
+  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-5.3.28.tgz#5f102c23446009be88c386507722d7ac1d0ab64f"
+  integrity sha512-kO/TgIOGin+grB+T93dILA1VbrQbtuoLyD2N/LAAhBeqBG8XtrZdll/9GJ6FdSfpZO5p4KNvffBjtrO34pUJVw==
   dependencies:
-    "@salesforce/core" "^7.3.12"
-    "@salesforce/kit" "^3.1.2"
-    "@salesforce/ts-types" "^2.0.9"
+    "@salesforce/core" "^8.5.1"
+    "@salesforce/kit" "^3.2.1"
+    "@salesforce/ts-types" "^2.0.11"
     "@types/shelljs" "^0.8.15"
-    debug "^4.3.5"
+    debug "^4.3.6"
     jszip "^3.10.1"
     shelljs "^0.8.4"
     sinon "^17.0.2"
     strip-ansi "6.0.1"
     ts-retry-promise "^0.8.1"
 
-"@salesforce/core@^7.3.12", "@salesforce/core@^7.3.9":
+"@salesforce/core@^7.3.9":
   version "7.4.0"
   resolved "https://registry.npmjs.org/@salesforce/core/-/core-7.4.0.tgz"
   integrity sha512-wn3fJnpG8h493qKR52Il3xgRbXg4zwbV34wonf/mTZP3n5rJeC/7S69249CGN155Os6Lds5rEUo3pGJFwgCBdQ==
@@ -2232,7 +2232,7 @@
     string-width "^7.2.0"
     terminal-link "^3.0.0"
 
-"@salesforce/ts-types@^2.0.10", "@salesforce/ts-types@^2.0.12", "@salesforce/ts-types@^2.0.9":
+"@salesforce/ts-types@^2.0.10", "@salesforce/ts-types@^2.0.11", "@salesforce/ts-types@^2.0.12", "@salesforce/ts-types@^2.0.9":
   version "2.0.12"
   resolved "https://registry.npmjs.org/@salesforce/ts-types/-/ts-types-2.0.12.tgz"
   integrity sha512-BIJyduJC18Kc8z+arUm5AZ9VkPRyw1KKAm+Tk+9LT99eOzhNilyfKzhZ4t+tG2lIGgnJpmytZfVDZ0e2kFul8g==
