@@ -75,7 +75,7 @@ export default class PackageVersionCreate extends SfCommand<any> {
     const debugMode = flags.debug || false;
     const config = await getConfig('project');
     // List project packages
-    const packageDirectories = this.project?.getUniquePackageDirectories() || [];
+    const packageDirectories: any[] = this.project?.getUniquePackageDirectories() || [];
     // Ask user to select package and input install key if not sent as command arguments
     if (this.package == null) {
       if (isCI) {
@@ -90,7 +90,7 @@ export default class PackageVersionCreate extends SfCommand<any> {
           ),
           choices: packageDirectories.map((packageDirectory) => {
             return {
-              title: packageDirectory.package || packageDirectory.path,
+              title: packageDirectory?.package || packageDirectory?.path || packageDirectory?.fullPath || packageDirectory?.name,
               value: packageDirectory.name,
             };
           }),
