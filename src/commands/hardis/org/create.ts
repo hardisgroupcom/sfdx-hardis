@@ -154,7 +154,7 @@ export default class SandboxCreate extends SfCommand<any> {
     const createCommand =
       'sf org create sandbox --set-default ' +
       `--definition-file ${projectSandboxDefLocal} ` +
-      `--set-alias ${this.sandboxOrgAlias} ` +
+      `--alias ${this.sandboxOrgAlias} ` +
       `--wait ${waitTime} ` +
       `--target-org ${this.devHubAlias} `;
     const createResult = await execSfdxJson(createCommand, this, {
@@ -219,8 +219,9 @@ export default class SandboxCreate extends SfCommand<any> {
       (this.projectSandboxDef.features || []).includes('StateAndCountryPicklist') &&
       userQueryRes.result.CountryCode == null
     ) {
-      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${config.defaultCountry || 'France'
-        }'`;
+      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${
+        config.defaultCountry || 'France'
+      }'`;
     }
     if (
       (this.projectSandboxDef.features || []).includes('MarketingUser') &&

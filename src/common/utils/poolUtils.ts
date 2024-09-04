@@ -147,7 +147,7 @@ export async function tryFetchScratchOrg(options: any) {
       return null;
     }
     await fs.writeFile(tmpAuthFile, authFileContent, 'utf8');
-    const authCommand = `sf org login sfdx-url --sfdx-url-file ${tmpAuthFile} --set-default --set-alias ${scratchOrg.scratchOrgAlias}`;
+    const authCommand = `sf org login sfdx-url --sfdx-url-file ${tmpAuthFile} --set-default --alias ${scratchOrg.scratchOrgAlias}`;
     const authRes = await execSfdxJson(authCommand, this, { fail: false, output: false });
     if (authRes.status !== 0) {
       uxLog(

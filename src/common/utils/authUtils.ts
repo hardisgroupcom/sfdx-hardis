@@ -2,7 +2,15 @@ import c from 'chalk';
 import * as crossSpawn from 'cross-spawn';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, isCI, promptInstanceUrl, uxLog } from "./index.js";
+import {
+  createTempDir,
+  execCommand,
+  execSfdxJson,
+  getCurrentGitBranch,
+  isCI,
+  promptInstanceUrl,
+  uxLog,
+} from './index.js';
 import { getConfig } from '../../config/index.js';
 import { SfError } from '@salesforce/core';
 import { prompts } from './prompts.js';
@@ -23,16 +31,20 @@ export async function authOrg(orgAlias: string, options: any) {
       orgDisplayCommand += ' --target-org ' + orgAlias;
       setDefaultOrg = true;
     } else {
-      if (options?.argv.includes('--target-org') || options?.argv.includes('--targetusername') ||
-        options?.argv.includes('-o') || options?.argv.includes('-u')) {
+      if (
+        options?.argv.includes('--target-org') ||
+        options?.argv.includes('--targetusername') ||
+        options?.argv.includes('-o') ||
+        options?.argv.includes('-u')
+      ) {
         const posUsername =
           options.argv.indexOf('--target-org') > -1
-            ? options.argv.indexOf('--target-org') + 1 :
-            options.argv.indexOf('--targetusername') > -1
-              ? options.argv.indexOf('--targetusername') + 1 :
-              options.argv.indexOf('-o') > -1
-                ? options.argv.indexOf('-o') + 1 :
-                options.argv.indexOf('-u') > -1;
+            ? options.argv.indexOf('--target-org') + 1
+            : options.argv.indexOf('--targetusername') > -1
+            ? options.argv.indexOf('--targetusername') + 1
+            : options.argv.indexOf('-o') > -1
+            ? options.argv.indexOf('-o') + 1
+            : options.argv.indexOf('-u') > -1;
         orgDisplayCommand += ' --target-org ' + options.argv[posUsername];
       }
     }
@@ -73,8 +85,9 @@ export async function authOrg(orgAlias: string, options: any) {
         );
       }
       if (setDefaultOrg) {
-        const setDefaultOrgCommand = `sf config set ${isDevHub ? 'target-dev-hub' : 'target-org'}=${orgInfoResult.result.username
-          }`;
+        const setDefaultOrgCommand = `sf config set ${isDevHub ? 'target-dev-hub' : 'target-org'}=${
+          orgInfoResult.result.username
+        }`;
         await execSfdxJson(setDefaultOrgCommand, this, { fail: false });
       }
       doConnect = false;
@@ -103,7 +116,7 @@ export async function authOrg(orgAlias: string, options: any) {
       const authCommand =
         `sf org login sfdx-url -f ${authFile}` +
         (isDevHub ? ` --set-default-dev-hub` : ` --set-default`) +
-        (!orgAlias.includes('force://') ? ` --set-alias ${orgAlias}` : '');
+        (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
       await execCommand(authCommand, this, { fail: true, output: false });
       uxLog(this, c.cyan('Successfully logged using sfdxAuthUrl'));
       await fs.remove(authFile);
@@ -115,8 +128,8 @@ export async function authOrg(orgAlias: string, options: any) {
       typeof options.Command.flags?.targetusername === 'string'
         ? options.Command.flags?.targetusername
         : process.env.TARGET_USERNAME || isDevHub
-          ? config.devHubUsername
-          : config.targetUsername;
+        ? config.devHubUsername
+        : config.targetUsername;
     if (username == null && isCI) {
       const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
       console.error(
@@ -125,8 +138,8 @@ export async function authOrg(orgAlias: string, options: any) {
             isDevHub
               ? 'devHubUsername in .sfdx-hardis.yml'
               : options.scratch
-                ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
-                : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`
+              ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
+              : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`
           )} `
         )
       );
@@ -134,13 +147,13 @@ export async function authOrg(orgAlias: string, options: any) {
     }
     let instanceUrl =
       typeof options.Command?.flags?.instanceurl === 'string' &&
-        (options.Command?.flags?.instanceurl || '').startsWith('https')
+      (options.Command?.flags?.instanceurl || '').startsWith('https')
         ? options.Command.flags.instanceurl
         : (process.env.INSTANCE_URL || '').startsWith('https')
-          ? process.env.INSTANCE_URL
-          : config.instanceUrl
-            ? config.instanceUrl
-            : 'https://login.salesforce.com';
+        ? process.env.INSTANCE_URL
+        : config.instanceUrl
+        ? config.instanceUrl
+        : 'https://login.salesforce.com';
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
@@ -154,7 +167,7 @@ export async function authOrg(orgAlias: string, options: any) {
         ` --jwt-key-file ${crtKeyfile}` +
         ` --username ${username}` +
         ` --instance-url ${instanceUrl}` +
-        (orgAlias !== 'MY_ORG' ? ` --set-alias ${orgAlias}` : '');
+        (orgAlias !== 'MY_ORG' ? ` --alias ${orgAlias}` : '');
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
       });
