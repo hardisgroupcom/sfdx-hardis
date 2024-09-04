@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ### Refactoring explanations
 
-The future [deprecation of sfdx force:source:** commands on 6 november](https://github.com/forcedotcom/cli/issues/2974) finally convinced us to switch everything from SFDX core to SF CLI core. (otherwise existing CI/CD pipelines would not work anymore from this date !)
+The future [deprecation of sfdx force:source:\*\* commands on 6 november](https://github.com/forcedotcom/cli/issues/2974) finally convinced us to switch everything from SFDX core to SF CLI core. (otherwise existing CI/CD pipelines would not work anymore from this date !)
 
 Therefore, sfdx-hardis required a complete refactoring as described below, but this won't impact existing CI/CD and Monitoring pipelines.
 
@@ -15,11 +15,13 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 ### Major changes
 
 - Migrate plugin from SFDX plugin core to SF Cli Plugin core
+
   - [Convert commands code from SfdxCommand base to SfCommand base](https://github.com/salesforcecli/cli/wiki/Migrate-Plugins-Built-for-sfdx)
   - Migrate calls from Bulk API v1 to Bulk API v2
   - Upgrade all npm dependencies to their latest version (more secured)
 
 - Change background calls to legacy sfdx commands to call their SF Cli replacements
+
   - `sfdx force:mdapi:convert` -> `sf project convert mdapi`
   - `sfdx force:mdapi:deploy` -> `sf project deploy start --metadata-dir`
   - `sfdx force:source:retrieve` -> `sf project retrieve start`
@@ -65,6 +67,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 ### Deprecations
 
 - Deprecate wrapper commands matching sfdx commands that will be removed. All replaced by sf hardis deploy start (TODO: complete !)
+
   - `sfdx hardis:source:push`
   - `sfdx hardis:source:deploy`
   - `sfdx hardis:mdapi:retrieve`
@@ -74,12 +77,16 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 
 ### Removals
 
+- Replace puppeteer by puppeteer-core: it means that if you use a command requiring puppeteer, please make sure to have a Chrome available in your environment (already integrated within the Docker image)
+
 - Get rid of [sfdx-essentials](https://github.com/nvuillam/sfdx-essentials) plugin dependency by internalizing its used commands
+
   - `sf hardis:packagexml:append`
   - `sf hardis:packagexml:remove`
   - `sf hardis:project:clean:filter-xml-content`
 
 - Remove npm dependencies (some of them not maintained anymore)
+
   - @adobe/node-fetch-retry
   - @amplitude/node
   - @keyv/redis
