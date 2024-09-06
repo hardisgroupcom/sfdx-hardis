@@ -144,7 +144,7 @@ export async function bulkDeleteTooling(
         `sf data:delete:record --sobject ${objectName} --record-id ${record} --target-org ${conn.getUsername()} --use-tooling-api`;
       const deleteCommandRes = await execSfdxJson(deleteCommand, this, {
         fail: false,
-        output: false
+        output: true
       });
       const deleteResult: any = { Id: record, success: true }
       if (!(deleteCommandRes.status === 0)) {
