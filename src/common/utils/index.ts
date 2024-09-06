@@ -597,6 +597,15 @@ export async function execCommand(
       commandLog += c.grey(` ${c.italic('in directory')} ${execOptions.cwd}`);
     }
   }
+  // Remove NODE_OPTIONS in case it contains --inspect-brk to avoid to trigger again the debugger
+  const env = Object.assign({}, process.env);
+  if (env?.NODE_OPTIONS && env.NODE_OPTIONS.includes("--inspect-brk")) {
+    env.NODE_OPTIONS = "";
+  }
+  if (env?.JSFORCE_LOG_LEVEL) {
+    env.JSFORCE_LOG_LEVEL = "";
+  }
+  execOptions.env = env;
   let commandResult: any = {};
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
