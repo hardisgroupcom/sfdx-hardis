@@ -597,8 +597,11 @@ export async function execCommand(
       commandLog += c.grey(` ${c.italic('in directory')} ${execOptions.cwd}`);
     }
   }
-  // Remove NODE_OPTIONS in case it contains --inspect-brk to avoid to trigger again the debugger
+
   const env = Object.assign({}, process.env);
+  // Disable colors for json parsing
+  // Remove NODE_OPTIONS in case it contains --inspect-brk to avoid to trigger again the debugger
+  env.FORCE_COLOR = '0';
   if (env?.NODE_OPTIONS && env.NODE_OPTIONS.includes("--inspect-brk")) {
     env.NODE_OPTIONS = "";
   }
@@ -607,9 +610,6 @@ export async function execCommand(
   }
   execOptions.env = env;
   let commandResult: any = {};
-  // Call command (disable color before for json parsing)
-  const prevForceColor = process.env.FORCE_COLOR;
-  process.env.FORCE_COLOR = '0';
   const output = options.output !== null ? options.output : !commandThis?.argv?.includes('--json');
   let spinner: any;
   if (output && !(options.spinner === false)) {
@@ -626,7 +626,6 @@ export async function execCommand(
     if (spinner) {
       spinner.fail(commandLog);
     }
-    process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
       const strErr = truncateProgressLogLines(`${(e as any).stdout}\n${(e as any).stderr}`);
@@ -665,7 +664,6 @@ export async function execCommand(
     uxLog(commandThis, c.italic(c.grey(truncateProgressLogLines(commandResult.stdout))));
   }
   // Return status 0 if not --json
-  process.env.FORCE_COLOR = prevForceColor;
   if (!command.includes('--json')) {
     return {
       status: 0,

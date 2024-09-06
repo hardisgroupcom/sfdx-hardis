@@ -108,6 +108,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - **hardis:work:new**: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
 - **hardis:org:files:export**: Improve display with spinner
 - **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
+- Authentication: do not use alias MY_ORG anymore + do not update local user config if no values to replace.
 
 ### Documentation
 

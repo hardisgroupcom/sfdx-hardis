@@ -27,7 +27,7 @@ export async function authOrg(orgAlias: string, options: any) {
     // Check if we are already authenticated
     let orgDisplayCommand = 'sf org display';
     let setDefaultOrg = false;
-    if (orgAlias !== 'MY_ORG' && (isCI || isDevHub) && !orgAlias.includes('force://')) {
+    if (orgAlias && (isCI || isDevHub) && !orgAlias.includes('force://')) {
       orgDisplayCommand += ' --target-org ' + orgAlias;
       setDefaultOrg = true;
     } else {
@@ -41,10 +41,10 @@ export async function authOrg(orgAlias: string, options: any) {
           options.argv.indexOf('--target-org') > -1
             ? options.argv.indexOf('--target-org') + 1
             : options.argv.indexOf('--targetusername') > -1
-            ? options.argv.indexOf('--targetusername') + 1
-            : options.argv.indexOf('-o') > -1
-            ? options.argv.indexOf('-o') + 1
-            : options.argv.indexOf('-u') > -1;
+              ? options.argv.indexOf('--targetusername') + 1
+              : options.argv.indexOf('-o') > -1
+                ? options.argv.indexOf('-o') + 1
+                : options.argv.indexOf('-u') > -1;
         orgDisplayCommand += ' --target-org ' + options.argv[posUsername];
       }
     }
@@ -85,9 +85,8 @@ export async function authOrg(orgAlias: string, options: any) {
         );
       }
       if (setDefaultOrg) {
-        const setDefaultOrgCommand = `sf config set ${isDevHub ? 'target-dev-hub' : 'target-org'}=${
-          orgInfoResult.result.username
-        }`;
+        const setDefaultOrgCommand = `sf config set ${isDevHub ? 'target-dev-hub' : 'target-org'}=${orgInfoResult.result.username
+          }`;
         await execSfdxJson(setDefaultOrgCommand, this, { fail: false });
       }
       doConnect = false;
@@ -128,8 +127,8 @@ export async function authOrg(orgAlias: string, options: any) {
       typeof options.Command.flags?.targetusername === 'string'
         ? options.Command.flags?.targetusername
         : process.env.TARGET_USERNAME || isDevHub
-        ? config.devHubUsername
-        : config.targetUsername;
+          ? config.devHubUsername
+          : config.targetUsername;
     if (username == null && isCI) {
       const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
       console.error(
@@ -138,8 +137,8 @@ export async function authOrg(orgAlias: string, options: any) {
             isDevHub
               ? 'devHubUsername in .sfdx-hardis.yml'
               : options.scratch
-              ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
-              : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`
+                ? 'cache between your CI jobs: folder ".cache/sfdx-hardis/.sfdx"'
+                : `targetUsername in config/branches/.sfdx-hardis.${gitBranchFormatted}.yml`
           )} `
         )
       );
@@ -147,13 +146,13 @@ export async function authOrg(orgAlias: string, options: any) {
     }
     let instanceUrl =
       typeof options.Command?.flags?.instanceurl === 'string' &&
-      (options.Command?.flags?.instanceurl || '').startsWith('https')
+        (options.Command?.flags?.instanceurl || '').startsWith('https')
         ? options.Command.flags.instanceurl
         : (process.env.INSTANCE_URL || '').startsWith('https')
-        ? process.env.INSTANCE_URL
-        : config.instanceUrl
-        ? config.instanceUrl
-        : 'https://login.salesforce.com';
+          ? process.env.INSTANCE_URL
+          : config.instanceUrl
+            ? config.instanceUrl
+            : 'https://login.salesforce.com';
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
@@ -167,7 +166,7 @@ export async function authOrg(orgAlias: string, options: any) {
         ` --jwt-key-file ${crtKeyfile}` +
         ` --username ${username}` +
         ` --instance-url ${instanceUrl}` +
-        (orgAlias !== 'MY_ORG' ? ` --alias ${orgAlias}` : '');
+        (orgAlias ? ` --alias ${orgAlias}` : '');
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
       });
@@ -229,7 +228,7 @@ export async function authOrg(orgAlias: string, options: any) {
       // Manage device login
       if (loginTypeRes.loginType === 'device') {
         const loginCommandArgs = ['org login device', '--instance-url', instanceUrl];
-        if (orgAlias !== 'MY_ORG' && orgAlias !== configInfoUsr?.scratchOrgAlias) {
+        if (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias) {
           loginCommandArgs.push(...['--alias', orgAlias]);
         }
         if (options.setDefault === true && isDevHub) {
@@ -248,7 +247,7 @@ export async function authOrg(orgAlias: string, options: any) {
           'sf org login web' +
           (options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
           ` --instance-url ${instanceUrl}` +
-          (orgAlias !== 'MY_ORG' && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --setalias ${orgAlias}` : '');
+          (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
         try {
           loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
         } catch (e) {
