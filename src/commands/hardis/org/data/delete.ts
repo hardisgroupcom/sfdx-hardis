@@ -13,7 +13,13 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DataExport extends SfCommand<any> {
   public static title = 'Delete data';
 
-  public static description = messages.getMessage('orgDataDelete');
+  public static description = `Delete records in multiple objects using SFDMU Workspace
+  
+If you need to run this command in production, you need to:
+
+- define runnableInProduction in export.json
+- define sfdmuCanModify: YOUR_INSTANCE_URL in config/branches/.sfdx-hardis.YOUR_BRANCH.yml
+`;
 
   public static examples = ['$ sf hardis:org:data:delete'];
 

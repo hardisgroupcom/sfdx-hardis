@@ -98,10 +98,6 @@ Export data from org using sfdmu
 
 Import data in org using sfdmu
 
-# orgDataDelete
-
-Delete data in org using sfdmu
-
 # orgPurgeFlow
 
 Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Status and Name

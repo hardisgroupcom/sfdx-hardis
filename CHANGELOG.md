@@ -110,6 +110,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - **hardis:org:purge:flow**: If FlowInterview records are preventing Flow Versions to be deleted, prompt user to delete Flow Interviews before trying again to delete Flow Versions
 - **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
 - Authentication: do not use alias MY_ORG anymore + do not update local user config if no values to replace.
+- **hardis:org:data:delete**: Check for property "runnableInProduction" in export.json before running deletion in production org.
 
 ### Documentation
 
