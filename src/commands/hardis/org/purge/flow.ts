@@ -58,6 +58,11 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       char: 's',
       description: messages.getMessage('statusFilter'),
     }),
+    "delete-flow-interviews": Flags.boolean({
+      char: 'f',
+      default: false,
+      description: `If the presence of Flow interviews prevent to delete flows versions, delete them before retrying to delete flow versions`,
+    }),
     allowpurgefailure: Flags.boolean({
       char: 'f',
       default: true,
@@ -86,30 +91,141 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
+  protected statusFilter: string[] = [];
+  protected nameFilter: string | null = null;
+  protected username: string;
+  protected flowRecordsRaw: any[];
+  protected flowRecords: any[];
+  protected deletedRecords: any[] = [];
+  protected deletedErrors: any[] = [];
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgPurgeFlow);
     const prompt = flags.prompt === false ? false : true;
-    let nameFilter = flags.name || null;
+    this.nameFilter = flags.name || null;
     const allowPurgeFailure = flags.allowpurgefailure === false ? false : true;
+    // const deleteFlowInterviews = flags["delete-flow-interviews"] || false;
     const debugMode = flags.debug || false;
-    const username = flags['target-org'].getUsername();
+    this.username = flags['target-org'].getUsername();
 
-    let statusFilter;
+    // List flows to delete, prompt user if not in CI and not send as arguments
+    const manageableConstraint = await this.getFlowsScope(flags, debugMode);
+
+    // Check we don't delete active Flows
+    if (this.statusFilter.includes('Active')) {
+      throw new SfError('You can not delete active records');
+    }
+
+    // Build query with name filter if sent
+    await this.listFlowVersionsToDelete(manageableConstraint, debugMode);
+
+    // Check empty result
+    if (this.flowRecordsRaw.length === 0) {
+      const outputString = `[sfdx-hardis] No matching Flow records found`;
+      uxLog(this, c.yellow(outputString));
+      return { deleted: [], outputString };
+    }
+
+    // Simplify results format & display them
+    this.formatFlowRecords();
+
+    // Confirm deletion
+    if (prompt) {
+      const confirmDelete = await prompts({
+        type: 'confirm',
+        name: 'value',
+        message: c.cyanBright(`Do you confirm you want to delete these ${this.flowRecords.length} flow versions ?`),
+      });
+
+      if (confirmDelete.value === false) {
+        uxLog(this, c.magenta('Action cancelled by user'));
+        return { outputString: 'Action cancelled by user' };
+      }
+    }
+
+    // Perform deletion
+    const conn = flags['target-org'].getConnection();
+    await this.processDelete(conn, allowPurgeFailure);
+
+    const summary =
+      this.deletedRecords.length > 0
+        ? `[sfdx-hardis] Deleted the following list of record(s):\n${columnify(this.deletedRecords)}`
+        : '[sfdx-hardis] No record(s) to delete';
+    uxLog(this, c.green(summary));
+    // Return an object to be displayed with --json
+    return { orgId: flags['target-org'].getOrgId(), outputString: summary };
+  }
+
+  private async processDelete(conn: any, allowPurgeFailure: boolean) {
+    const deleteResults = await bulkDeleteTooling('Flow', this.flowRecords, conn);
+    for (const deleteRes of deleteResults.results) {
+      if (deleteRes.success) {
+        this.deletedRecords.push(deleteRes);
+      } else {
+        uxLog(this, c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
+        this.deletedErrors.push(deleteRes);
+      }
+    }
+    if (this.deletedErrors.length > 0) {
+      const errMsg = `[sfdx-hardis] There have been errors while deleting ${this.deletedErrors.length} record(s): \n${JSON.stringify(this.deletedErrors)}`;
+      if (allowPurgeFailure) {
+        uxLog(this, c.yellow(errMsg));
+      } else {
+        throw new SfError(
+          c.yellow(
+            `There have been errors while deleting ${this.deletedErrors.length} record(s): \n${JSON.stringify(this.deletedErrors)}`
+          )
+        );
+      }
+    }
+  }
+
+  private formatFlowRecords() {
+    this.flowRecords = this.flowRecordsRaw.map((record: any) => {
+      return {
+        Id: record.Id,
+        MasterLabel: record.MasterLabel,
+        VersionNumber: record.VersionNumber,
+        DefinitionDevName: record.Definition.DeveloperName,
+        Status: record.Status,
+        Description: record.Description,
+      };
+    });
+    uxLog(this, `[sfdx-hardis] Found ${c.bold(this.flowRecords.length)} records:\n${c.yellow(columnify(this.flowRecords))}`);
+  }
+
+  private async listFlowVersionsToDelete(manageableConstraint: string, debugMode: any) {
+    let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${this.statusFilter.join(
+      "','"
+    )}')`;
+    if (this.nameFilter && this.nameFilter != 'all') {
+      query += ` AND Definition.DeveloperName = '${this.nameFilter}'`;
+    }
+    query += ' ORDER BY Definition.DeveloperName,VersionNumber';
+
+    const flowQueryCommand = 'sf data query ' + ` --query "${query}"` + ` --target-org ${this.username}` + ' --use-tooling-api';
+    const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
+      output: false,
+      debug: debugMode,
+      fail: true,
+    });
+    this.flowRecordsRaw = flowQueryRes?.result?.records || flowQueryRes.records || [];
+  }
+
+  private async getFlowsScope(flags, debugMode: any) {
     const manageableConstraint = "ManageableState IN ('deprecatedEditable','installedEditable','unmanaged')";
     if (flags.status) {
       // Input parameter used
-      statusFilter = flags.status.split(',');
+      this.statusFilter = flags.status.split(',');
     } else if (isCI) {
       // Obsolete by default for CI
-      statusFilter = ['Obsolete'];
+      this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
-      const allFlowQueryCommand =
-        'sf data query ' +
+      const allFlowQueryCommand = 'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
-        ` --target-org ${username}` +
+        ` --target-org ${this.username}` +
         ' --use-tooling-api';
       const allFlowQueryRes = await execSfdxJson(allFlowQueryCommand, this, {
         output: false,
@@ -142,101 +258,9 @@ export default class OrgPurgeFlow extends SfCommand<any> {
           ],
         },
       ]);
-      nameFilter = selectStatus.name;
-      statusFilter = selectStatus.status;
+      this.nameFilter = selectStatus.name;
+      this.statusFilter = selectStatus.status;
     }
-
-    // Check we don't delete active Flows
-    if (statusFilter.includes('Active')) {
-      throw new SfError('You can not delete active records');
-    }
-
-    // Build query with name filter if sent
-    let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${statusFilter.join(
-      "','"
-    )}')`;
-    if (nameFilter && nameFilter != 'all') {
-      query += ` AND Definition.DeveloperName = '${nameFilter}'`;
-    }
-    query += ' ORDER BY Definition.DeveloperName,VersionNumber';
-
-    const flowQueryCommand =
-      'sf data query ' + ` --query "${query}"` + ` --target-org ${username}` + ' --use-tooling-api';
-    const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
-      output: false,
-      debug: debugMode,
-      fail: true,
-    });
-    const recordsRaw = flowQueryRes?.result?.records || flowQueryRes.records || [];
-
-    // Check empty result
-    if (recordsRaw.length === 0) {
-      const outputString = `[sfdx-hardis] No matching Flow records found with query ${query}`;
-      uxLog(this, c.yellow(outputString));
-      return { deleted: [], outputString };
-    }
-
-    // Simplify results format & display them
-    const records = recordsRaw.map((record: any) => {
-      return {
-        Id: record.Id,
-        MasterLabel: record.MasterLabel,
-        VersionNumber: record.VersionNumber,
-        DefinitionDevName: record.Definition.DeveloperName,
-        Status: record.Status,
-        Description: record.Description,
-      };
-    });
-
-    uxLog(this, `[sfdx-hardis] Found ${c.bold(records.length)} records:\n${c.yellow(columnify(records))}`);
-
-    // Confirm deletion
-    if (prompt) {
-      const confirmDelete = await prompts({
-        type: 'confirm',
-        name: 'value',
-        message: c.cyanBright(`Do you confirm you want to delete these ${records.length} flow versions ?`),
-      });
-
-      if (confirmDelete.value === false) {
-        uxLog(this, c.magenta('Action cancelled by user'));
-        return { outputString: 'Action cancelled by user' };
-      }
-    }
-
-    // Perform deletion
-    const deleted: any[] = [];
-    const deleteErrors: any[] = [];
-    const conn = flags['target-org'].getConnection();
-    const deleteResults = await bulkDeleteTooling('Flow', records, conn);
-    for (const deleteRes of deleteResults.results) {
-      if (deleteRes.success) {
-        deleted.push(deleteRes);
-      } else {
-        uxLog(this, c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
-        deleteErrors.push(deleteRes);
-      }
-    }
-    if (deleteErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There have been errors while deleting ${deleteErrors.length
-        } record(s): \n${JSON.stringify(deleteErrors)}`;
-      if (allowPurgeFailure) {
-        uxLog(this, c.yellow(errMsg));
-      } else {
-        throw new SfError(
-          c.yellow(
-            `There have been errors while deleting ${deleteErrors.length} record(s): \n${JSON.stringify(deleteErrors)}`
-          )
-        );
-      }
-    }
-
-    const summary =
-      deleted.length > 0
-        ? `[sfdx-hardis] Deleted the following list of record(s):\n${columnify(deleted)}`
-        : '[sfdx-hardis] No record(s) to delete';
-    uxLog(this, c.green(summary));
-    // Return an object to be displayed with --json
-    return { orgId: flags['target-org'].getOrgId(), outputString: summary };
+    return manageableConstraint;
   }
 }
