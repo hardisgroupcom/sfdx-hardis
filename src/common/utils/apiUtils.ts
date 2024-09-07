@@ -125,21 +125,29 @@ export async function bulkUpdate(
   return res;
 }
 
-export async function bulkDeleteTooling(
+export async function bulkDelete(
   objectName: string,
-  recordsFull: { Id: string }[],
+  recordIds: string[],
   conn: Connection
 ): Promise<any> {
-  const records = recordsFull.map((record) => record.Id);
-  uxLog(this, c.grey(`[ToolingApi] Delete ${records.length} records on ${objectName}: ${JSON.stringify(records)}`));
+  const records = recordIds.map(recordId => { return { Id: recordId } });
+  return await bulkUpdate(objectName, "delete", records, conn);
+}
+
+export async function bulkDeleteTooling(
+  objectName: string,
+  recordsIds: string[],
+  conn: Connection
+): Promise<any> {
+  uxLog(this, c.grey(`[ToolingApi] Delete ${recordsIds.length} records on ${objectName}: ${JSON.stringify(recordsIds)}`));
   try {
-    const deleteJobResults = await conn.tooling.destroy(objectName, records, { allOrNone: false });
+    const deleteJobResults = await conn.tooling.destroy(objectName, recordsIds, { allOrNone: false });
     return deleteJobResults
   } catch (e: any) {
     uxLog(this, c.yellow(`[ToolingApi] jsforce error while calling Tooling API. Fallback to to unitary delete (longer but should work !)`));
     uxLog(this, c.grey(e.message));
     const deleteJobResults: any = [];
-    for (const record of records) {
+    for (const record of recordsIds) {
       const deleteCommand =
         `sf data:delete:record --sobject ${objectName} --record-id ${record} --target-org ${conn.getUsername()} --use-tooling-api`;
       const deleteCommandRes = await execSfdxJson(deleteCommand, this, {
