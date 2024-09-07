@@ -37,7 +37,7 @@ const hook: Hook<'auth'> = async (options: any) => {
               ? await getCurrentGitBranch({ formatted: true })
               : commandId === 'hardis:auth:login' && configInfo.orgAlias
                 ? configInfo.orgAlias
-                : configInfo.scratchOrgAlias || 'MY_ORG'; // Can be null and it's ok if we're not in scratch org context
+                : configInfo.scratchOrgAlias || ''; // Can be ''  and it's ok if we're not in scratch org context
     await authOrg(orgAlias, options);
   }
 };

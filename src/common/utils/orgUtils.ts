@@ -221,13 +221,6 @@ export async function promptOrg(
         fail: true,
         output: false,
       });
-    } else {
-      // If not devHub, set MY_ORG as alias
-      const setAliasCommand = `sf alias set MY_ORG=${org.username}`;
-      await execSfdxJson(setAliasCommand, commandThis, {
-        fail: true,
-        output: false,
-      });
     }
 
     WebSocketClient.sendMessage({ event: 'refreshStatus' });
@@ -238,10 +231,13 @@ export async function promptOrg(
         scratchOrgUsername: org.username || org.alias,
       });
     } else {
-      await setConfig('user', {
-        scratchOrgAlias: null,
-        scratchOrgUsername: null,
-      });
+      const configUser = await getConfig('user');
+      if (configUser.scratchOrgAlias || configUser.scratchOrgUsername) {
+        await setConfig('user', {
+          scratchOrgAlias: null,
+          scratchOrgUsername: null,
+        });
+      }
     }
   }
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
