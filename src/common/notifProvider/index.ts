@@ -96,7 +96,8 @@ export interface NotifMessage {
   | "UNUSED_LICENSES"
   | "UNUSED_USERS"
   | "ORG_INFO"
-  | "ORG_LIMITS";
+  | "ORG_LIMITS"
+  | "RELEASE_UPDATES";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;

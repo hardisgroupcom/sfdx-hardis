@@ -5,6 +5,7 @@ import * as path from 'path';
 import { elapseEnd, elapseStart, execCommand, uxLog } from './index.js';
 import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
+import { isProductionOrg } from './orgUtils.js';
 
 export const dataFolderRoot = path.join('.', 'scripts', 'data');
 
@@ -38,17 +39,26 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
 
 // Delete data using sfdmu folder
 export async function deleteData(sfdmuPath: string, commandThis: any, options: any = {}) {
+  const config = await getConfig('branch');
   const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl?.isDelete === false) {
     throw new SfError(
       'Your export.json does not contain deletion information. Please check http://help.sfdmu.com/full-documentation/advanced-features/delete-from-source'
     );
   }
+  // If org is production, make sure that "runnableInProduction": true is present in export.json
+  const isProdOrg = await isProductionOrg(options?.targetUsername || options?.conn?.username || "ERROR", options);
+  if (isProdOrg === true && (dtl?.runnableInProduction || false) !== true) {
+    throw new SfError(`To run this delete SFDMU script in production, you need to define "runnableInProduction": true in its export.json file`);
+  }
+  if (isProdOrg === true && !config.sfdmuCanModify) {
+    uxLog(this, c.yellow(`If you see a sfdmu error, you probably need to add a property sfdmuCanModify: YOUR_ORG_INSTANCE_URL in the related config/branches/.sfdx-hardis.YOUR_BRANCH.yml config file.`));
+  }
+  // Delete using sfdmu
   uxLog(commandThis, c.cyan(`Deleting data from ${c.green(dtl?.full_label)} ...`));
   uxLog(commandThis, c.italic(c.grey(dtl?.description)));
-  const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
+  const targetUsername = options.targetUsername || options.conn.username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
-  const config = await getConfig('branch');
   const dataImportCommand =
     'sf sfdmu:run' +
     ` --sourceusername ${targetUsername}` +
@@ -135,6 +145,7 @@ export async function getDataWorkspaceDetail(dataWorkspace: string) {
     description: hardisDescription,
     exportJson: exportFileJson,
     isDelete: isDeleteDataWorkspace(exportFileJson),
+    runnableInProduction: exportFileJson.runnableInProduction || false
   };
 }
 

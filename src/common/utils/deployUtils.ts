@@ -28,7 +28,7 @@ import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
-import { isSandbox } from './orgUtils.js';
+import { isProductionOrg } from './orgUtils.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -206,8 +206,7 @@ export async function forceSourceDeploy(
       uxLog(
         commandThis,
         c.cyan(
-          `${check ? 'Simulating deployment of' : 'Deploying'} ${c.bold(deployment.label)} package: ${
-            deployment.packageXmlFile
+          `${check ? 'Simulating deployment of' : 'Deploying'} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile
           } ...`
         )
       );
@@ -245,8 +244,8 @@ export async function forceSourceDeploy(
               )
             );
             uxLog(commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok :)"));
-            const isSandboxOrg = await isSandbox(options);
-            if (isSandboxOrg) {
+            const isProdOrg = await isProductionOrg(options.targetUsername || "", options);
+            if (!isProdOrg) {
               testlevel = 'NoTestRun';
               uxLog(
                 commandThis,
@@ -398,8 +397,7 @@ async function handleDeployError(
     commandThis,
     c.yellow(
       c.bold(
-        `You may${
-          tips.length > 0 ? ' also' : ''
+        `You may${tips.length > 0 ? ' also' : ''
         } copy-paste errors on google to find how to solve the deployment issues :)`
       )
     )
@@ -444,7 +442,7 @@ async function displayDeploymentLink(rawLog: string, options: any) {
     }
     const openRes = await execSfdxJson(
       `sf org open -p ${deploymentUrl} --url-only` +
-        (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
+      (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
       this,
       {
         fail: true,
@@ -639,7 +637,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
   // Retrieve sfdx sources in local git repo
   await execCommand(
     `sf project retrieve start --manifest ${packageDeployOnChangePath}` +
-      (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
+    (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
     this,
     {
       fail: true,
@@ -777,9 +775,8 @@ export async function deployDestructiveChanges(
   await fs.remove(tmpDir);
   let deleteMsg = '';
   if (deployDeleteRes.status === 0) {
-    deleteMsg = `[sfdx-hardis] Successfully ${
-      options.check ? 'checked deployment of' : 'deployed'
-    } destructive changes to Salesforce org`;
+    deleteMsg = `[sfdx-hardis] Successfully ${options.check ? 'checked deployment of' : 'deployed'
+      } destructive changes to Salesforce org`;
     uxLog(commandThis, c.green(deleteMsg));
   } else {
     deleteMsg = '[sfdx-hardis] Unable to deploy destructive changes to Salesforce org';
@@ -924,10 +921,10 @@ export async function buildOrgManifest(
     // Use sfdx manifest build in current project
     await execCommand(
       `sf project generate manifest` +
-        ` --name ${manifestName}` +
-        ` --output-dir ${path.resolve(manifestDir)}` +
-        ` --include-packages managed,unlocked` +
-        ` --from-org ${targetOrgUsernameAlias}`,
+      ` --name ${manifestName}` +
+      ` --output-dir ${path.resolve(manifestDir)}` +
+      ` --include-packages managed,unlocked` +
+      ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -941,10 +938,10 @@ export async function buildOrgManifest(
     // Use sfdx manifest build in dummy project
     await execCommand(
       `sf project generate manifest` +
-        ` --name ${manifestName}` +
-        ` --output-dir ${path.resolve(manifestDir)}` +
-        ` --include-packages managed,unlocked` +
-        ` --from-org ${targetOrgUsernameAlias}`,
+      ` --name ${manifestName}` +
+      ` --output-dir ${path.resolve(manifestDir)}` +
+      ` --include-packages managed,unlocked` +
+      ` --from-org ${targetOrgUsernameAlias}`,
       this,
       {
         fail: true,
@@ -1145,8 +1142,7 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
     commandThis,
     c.yellow(
       c.bold(
-        `You may${
-          tips.length > 0 ? ' also' : ''
+        `You may${tips.length > 0 ? ' also' : ''
         } copy-paste errors on google to find how to solve the metadata deployment issues :)`
       )
     )

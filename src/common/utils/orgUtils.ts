@@ -536,6 +536,25 @@ export async function getOrgAliasUsername(alias: string) {
 }
 
 // Returns true if the org is a sandbox and not a scratch org
+export async function isProductionOrg(targetUsername: string, options: any) {
+  // Use jsforce connection is applicable
+  if (options?.conn?.username && options.conn.username === targetUsername) {
+    const orgRes = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', options.conn);
+    return orgRes.records[0].IsSandbox === false;
+  }
+  // Use SF Cli command
+  const orgQuery = `sf data query --query "SELECT IsSandbox FROM Organization LIMIT 1"` +
+    targetUsername ? ` --target-org ${targetUsername}` : "";
+  const orgQueryRes = await execSfdxJson(orgQuery, this, {
+    output: false,
+    debug: this.debugMode,
+    fail: true,
+  });
+  const orgRes = orgQueryRes?.result?.records || orgQueryRes.records || [];
+  return orgRes.records[0].IsSandbox === false;
+}
+
+// Returns true if the org is a sandbox and not a scratch org
 export async function isSandbox(options: any) {
   if (options.conn) {
     const orgRes = await soqlQuery('SELECT IsSandbox,TrialExpirationDate FROM Organization LIMIT 1', options.conn);

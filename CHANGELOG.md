@@ -103,6 +103,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 ### Additional Features
 
 - New command **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
+- New command **hardis:org:diagnose:releaseupdates** to check for org Release Updates from Monitoring or locally
 - New command **hardis:misc:purge-references** to partially automate the cleaning of related dependencies when you need to delete a field, or change its type (for example from master detail to lookup)
 - **hardis:work:save** and **hardis:project:deploy:sources:dx**: Improve runtime performances thanks to internalization of sfdx-essentials commands
 - **hardis:work:new**: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
@@ -110,6 +111,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - **hardis:org:purge:flow**: If FlowInterview records are preventing Flow Versions to be deleted, prompt user to delete Flow Interviews before trying again to delete Flow Versions
 - **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
 - Authentication: do not use alias MY_ORG anymore + do not update local user config if no values to replace.
+- **hardis:org:data:delete**: Check for property "runnableInProduction" in export.json before running deletion in production org.
 
 ### Documentation
 
