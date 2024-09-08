@@ -90,7 +90,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       const notifText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${orgMarkdown}`
       let notifDetailText = '';
       for (const releaseUpdate of this.releaseUpdatesRecords) {
-        notifDetailText += `• ${releaseUpdate.Title} (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate).format()}\n`;
+        notifDetailText += `• ${releaseUpdate.Title} (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate).format("ll")}\n`;
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif

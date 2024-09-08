@@ -46,25 +46,11 @@
       }
     ]
   },
-  "description": "Displays the limits of a Salesforce org",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
-  "links": [
-    {
-      "asDropdown": false,
-      "icon": "dashboard",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [],
-      "targetBlank": false,
-      "title": "Back to main dashboard",
-      "tooltip": "",
-      "type": "link",
-      "url": "/d/sfdx-hardis-today-summary/dash-today-summary"
-    }
-  ],
+  "links": [],
   "panels": [
     {
       "collapsed": false,
@@ -74,7 +60,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 3,
+      "id": 2,
       "panels": [],
       "repeat": "org",
       "title": "$org",
@@ -85,32 +71,24 @@
         "type": "loki",
         "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-BlPu"
+            "mode": "thresholds"
           },
           "custom": {
             "align": "auto",
             "cellOptions": {
               "type": "auto"
             },
-            "filterable": false,
             "inspect": false
           },
-          "links": [
-            {
-              "title": "",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
-            }
-          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "blue",
                 "value": null
               }
             ]
@@ -120,89 +98,52 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "percentUsed"
+              "options": "MasterLabel"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 114
+                "value": 248
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "used"
+              "options": "UsedLicenses"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 134
+                "value": 148
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "max"
+              "options": "TotalLicenses"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 140
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "remaining"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 157
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": " "
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 64
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Remaining"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 130
+                "value": 160
               }
             ]
           }
         ]
       },
       "gridPos": {
-        "h": 18,
-        "w": 24,
+        "h": 14,
+        "w": 12,
         "x": 0,
         "y": 1
       },
-      "id": 2,
+      "id": 1,
       "options": {
         "cellHeight": "sm",
         "footer": {
           "countRows": false,
-          "enablePagination": false,
           "fields": "",
           "reducer": [
             "sum"
@@ -213,7 +154,7 @@
         "sortBy": [
           {
             "desc": true,
-            "displayName": "% used"
+            "displayName": "Used"
           }
         ]
       },
@@ -225,7 +166,7 @@
             "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
           },
           "editorMode": "builder",
-          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\", source=\"sfdx-hardis\"} |= ``",
+          "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -238,7 +179,7 @@
             "format": "json",
             "jsonPaths": [
               {
-                "path": "limits"
+                "path": "_logElements"
               }
             ],
             "keepTime": false,
@@ -249,14 +190,14 @@
         {
           "id": "extractFields",
           "options": {
+            "keepTime": false,
             "replace": true,
-            "source": "limits"
+            "source": "_logElements"
           }
         },
         {
           "id": "reduce",
           "options": {
-            "labelsToFields": false,
             "reducers": [
               "allValues"
             ]
@@ -265,6 +206,7 @@
         {
           "id": "extractFields",
           "options": {
+            "format": "auto",
             "replace": true,
             "source": "All values"
           }
@@ -277,57 +219,238 @@
           }
         },
         {
-          "id": "convertFieldType",
+          "id": "filterByValue",
           "options": {
-            "conversions": [
+            "filters": [
               {
-                "destinationType": "number",
-                "targetField": "percentUsed"
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "PermissionSetLicense"
+                  }
+                },
+                "fieldName": "type"
               }
             ],
-            "fields": {}
+            "match": "any",
+            "type": "include"
           }
         },
         {
           "id": "organize",
           "options": {
             "excludeByName": {
-              "name": false,
-              "severity": true
+              "Name": true,
+              "type": true
             },
             "includeByName": {},
             "indexByName": {
-              "label": 1,
-              "max": 4,
-              "name": 7,
-              "percentUsed": 2,
-              "remaining": 5,
-              "severity": 6,
-              "severityIcon": 0,
-              "used": 3
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
             },
             "renameByName": {
-              "label": "Limit",
-              "max": "Maximum",
-              "name": "limitName",
-              "percentUsed": "% used",
-              "remaining": "Remaining",
-              "severity": "Severity",
-              "severityIcon": " ",
-              "used": "Total used"
+              "MasterLabel": "Permission Set License",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
             }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MasterLabel"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 248
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UsedLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TotalLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Used"
+          }
+        ]
+      },
+      "pluginVersion": "11.3.0-75420",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
           }
         },
         {
-          "id": "sortBy",
+          "id": "extractFields",
           "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "% used"
-              }
+            "keepTime": false,
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "allValues"
             ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "All values"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "UserLicense"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Name": true,
+              "type": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
+            },
+            "renameByName": {
+              "MasterLabel": "User License",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
+            }
           }
         }
       ],
@@ -346,7 +469,6 @@
         },
         "definition": "",
         "includeAll": true,
-        "label": "Salesforce Org",
         "multi": true,
         "name": "org",
         "options": [],
@@ -357,7 +479,7 @@
           "type": 1
         },
         "refresh": 1,
-        "regex": "^[^.]*$",
+        "regex": "^(?!.*\\..*)(?!.*sandbox.*).*$",
         "sort": 1,
         "type": "query"
       }
@@ -369,8 +491,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "DTL - Limits Details",
-  "uid": "sfdx-hardis-limits-details",
-  "version": 17,
+  "title": "DASH - Licenses for all orgs",
+  "uid": "sfdx-hardis-licenses-all-orgs",
+  "version": 12,
   "weekStart": ""
 }
