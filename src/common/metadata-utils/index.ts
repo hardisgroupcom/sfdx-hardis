@@ -733,6 +733,33 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const filesSorted = files.sort((a, b) => (a.path > b.path ? 1 : -1));
     return filesSorted;
   }
+
+  public static getMetadataPrettyNames(metadataFilePaths: string[], bold = false): Map<string, string> {
+    const metadataList = listMetadataTypes();
+    const metadataFilePathsHuman = new Map<string, string>();
+    for (const fileRaw of metadataFilePaths) {
+      const file = fileRaw.replace(/\\/g, '/').replace('force-app/main/default/', '');
+      let fileHuman = "" + file;
+      for (const metadataDesc of metadataList) {
+        if (file.includes(metadataDesc.directoryName || "THEREISNOT")) {
+          const endOfPath = file.split(metadataDesc.directoryName + "/")[1];
+          const suffix = metadataDesc.suffix ?? "THEREISNOT";
+          let metadataName = endOfPath.includes("." + suffix + "-meta.xml") ?
+            endOfPath.replace("." + suffix + "-meta.xml", "") :
+            endOfPath.includes("." + suffix) ?
+              endOfPath.replace("." + suffix, "") :
+              endOfPath;
+          if (bold) {
+            metadataName = "*" + metadataName + "*";
+          }
+          fileHuman = metadataDesc.xmlName + " " + metadataName;
+          continue;
+        }
+      }
+      metadataFilePathsHuman.set(fileRaw, fileHuman);
+    }
+    return metadataFilePathsHuman;
+  }
 }
 
 export { MetadataUtils };
