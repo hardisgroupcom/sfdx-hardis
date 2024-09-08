@@ -140,6 +140,12 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
         frequency: 'weekly',
       },
       {
+        key: 'RELEASE_UPDATES',
+        title: 'Gather warnings about incoming and overdue Release Updates',
+        command: 'sf hardis:org:diagnose:releaseupdates',
+        frequency: 'weekly',
+      },
+      {
         key: 'UNUSED_METADATAS',
         title: 'Detect custom labels and custom permissions that are not in use',
         command: 'sf hardis:lint:unusedmetadatas',

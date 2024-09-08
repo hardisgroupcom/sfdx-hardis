@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
-import { bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
@@ -66,12 +66,13 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const releaseUpdatesQuery =
       `SELECT StepStage,Status,Category,DurableId,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion, HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
       `FROM ReleaseUpdate ` +
-      `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Invocable','Revocable','Nascent')` +
+      `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
       `ORDER BY DueDate DESC`;
-    const queryRes = await bulkQuery(releaseUpdatesQuery, conn);
+    const queryRes = await soqlQueryTooling(releaseUpdatesQuery, conn);
     const severityIconWarning = getSeverityIcon('warning');
     const severityIconError = getSeverityIcon('error');
     this.releaseUpdatesRecords = queryRes.records.map((record) => {
+      delete record.attributes
       record.severityIcon = record.StepStage === 'OverDue' ? severityIconError : severityIconWarning;
       return record;
     });
@@ -89,13 +90,13 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       const notifText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${orgMarkdown}`
       let notifDetailText = '';
       for (const releaseUpdate of this.releaseUpdatesRecords) {
-        notifDetailText += `• ${releaseUpdate.Title} (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate)}\n`;
+        notifDetailText += `• ${releaseUpdate.Title} (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate).format()}\n`;
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif
       globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
       NotifProvider.postNotifications({
-        type: 'AUDIT_TRAIL',
+        type: 'RELEASE_UPDATES',
         text: notifText,
         attachments: notifAttachments,
         buttons: notifButtons,
@@ -115,7 +116,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
           StepStage: releaseUpdate.StepStage,
           Status: releaseUpdate.Status,
           Category: releaseUpdate.Category,
-          DueDate: moment(releaseUpdate.DueDate)
+          DueDate: moment(releaseUpdate.DueDate).format('ll')
         }
       })
       uxLog(this, c.yellow(notifText + "\n" + columnify(releaseUpdatesLight)));
