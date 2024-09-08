@@ -19,6 +19,10 @@ export default class DiagnoseReleaseUpdates extends SfCommand<any> {
 
   public static description = `Export Release Updates into a CSV file with selected criteria, and highlight Release Updates that should be checked.
 
+Before publishing **Breaking Changes** ❌, Salesforce announce them in the setup menu [**Release Updates**](https://help.salesforce.com/s/articleView?id=sf.release_updates.htm&type=5)
+
+⚠️ Some of them are very important, because if you don't make the related upgrades in time (ex: before Winter 25) , your production org can crash !
+
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-release-updates/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
@@ -64,7 +68,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     // Fetch ReleaseUpdate records
     const releaseUpdatesQuery =
-      `SELECT StepStage,Status,Category,DurableId,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion, HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
+      `SELECT StepStage,Status,Category,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion,DurableId,HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
       `FROM ReleaseUpdate ` +
       `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
       `ORDER BY DueDate DESC`;
@@ -90,7 +94,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       const notifText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${orgMarkdown}`
       let notifDetailText = '';
       for (const releaseUpdate of this.releaseUpdatesRecords) {
-        notifDetailText += `• ${releaseUpdate.Title} (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate).format("ll")}\n`;
+        notifDetailText += `• *${releaseUpdate.Title}* (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate).format("ll")}\n`;
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif

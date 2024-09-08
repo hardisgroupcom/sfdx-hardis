@@ -268,8 +268,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     if (users.length > 0) {
       notifSeverity = this.returnActiveUsers ? 'log' : 'warning';
       notifText = this.returnActiveUsers
-        ? `${this.users.length} active users have logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`
-        : `${this.users.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
+        ? `*${this.users.length}* active users have logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`
+        : `*${this.users.length}* active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
       attachments = [{ text: notifDetailText }];
     }
     const metrics = this.returnActiveUsers ? { ActiveUsers: this.users.length } : { UnusedUsers: this.users.length };

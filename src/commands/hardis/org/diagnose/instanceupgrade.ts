@@ -71,15 +71,15 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
 
     // Get number of days before next major upgrade
     const nextUpgradeDate = moment(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
-    const nextMajorUpgradeDateStr = nextUpgradeDate.format();
+    const nextMajorUpgradeDateStr = nextUpgradeDate.format("ll");
     const today = moment();
-    const daysBeforeUpgrade = nextUpgradeDate.diff(today, 'days');
+    const daysBeforeUpgrade = today.diff(nextUpgradeDate, 'days');
 
     // Manage notifications
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    const notifText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
+    const notifText = `Salesforce instance *${instanceName}* of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (*${daysBeforeUpgrade} days*) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
 
     // Change severity according to number of days
     if (daysBeforeUpgrade <= 15) {
