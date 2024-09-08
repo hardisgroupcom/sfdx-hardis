@@ -192,12 +192,14 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     // Write output file
     if (this.diffFiles.length > 0) {
+      const filesHumanUnformatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), false);
       const severityIconLog = getSeverityIcon('log');
       this.outputFile = await generateReportPath('backup-updated-files', this.outputFile);
       this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
         return {
           File: diffFile.path.replace('force-app/main/default/', ''),
           ChangeType: diffFile.index === '?' ? 'A' : diffFile.index,
+          FileHuman: filesHumanUnformatted.get(diffFile.path) || diffFile.path.replace('force-app/main/default/', ''),
           WorkingDir: diffFile.working_dir === '?' ? '' : diffFile.working_dir,
           PrevName: diffFile?.from || '',
           severity: 'log',
@@ -214,6 +216,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     let notifText = `No updates detected in ${orgMarkdown}`;
     let notifAttachments: MessageAttachment[] = [];
     if (this.diffFiles.length > 0) {
+      const filesHumanFormatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), true);
       notifSeverity = 'info';
       notifText = `Updates detected in ${orgMarkdown}`;
       notifAttachments = [
@@ -224,7 +227,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
               if (diffFile.index && diffFile.index !== ' ') {
                 flag = ` (${diffFile.index === '?' ? 'A' : diffFile.index})`;
               }
-              const line = `• ${diffFile.path.replace('force-app/main/default/', '')}` + flag;
+              const line = `• ${filesHumanFormatted.get(diffFile.path)}` + flag;
               return line;
             })
             .join('\n'),
@@ -256,4 +259,5 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
   }
+
 }
