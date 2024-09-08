@@ -17,7 +17,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - Migrate plugin from SFDX plugin core to SF Cli Plugin core
 
   - [Convert commands code from SfdxCommand base to SfCommand base](https://github.com/salesforcecli/cli/wiki/Migrate-Plugins-Built-for-sfdx)
-  - Migrate calls from Bulk API v1 to Bulk API v2
+  - Migrate internal Bulk Api calls from Bulk API v1 to Bulk API v2
   - Upgrade all npm dependencies to their latest version (more secured)
 
 - Change background calls to legacy sfdx commands to call their SF Cli replacements
@@ -73,7 +73,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
   - `sfdx hardis:mdapi:retrieve`
   - `sfdx hardis:mdapi:deploy`
 
-- Deprecate `hardis:deploy:sources:metadata` as nobody used metadata format anymore
+- Deprecate `hardis:deploy:sources:metadata` as nobody uses metadata format anymore
 
 ### Removals
 
@@ -100,7 +100,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 
 - Remove not used keyValueStores to keep only Salesforce one
 
-### Additional Features
+### New Features / Enhancements
 
 - New command **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
 - New command **hardis:org:diagnose:releaseupdates** to check for org Release Updates from Monitoring or locally
@@ -112,15 +112,21 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
 - Authentication: do not use alias MY_ORG anymore + do not update local user config if no values to replace.
 - **hardis:org:data:delete**: Check for property "runnableInProduction" in export.json before running deletion in production org.
+- Update sfdx-hardis Grafana Dashboards to import in your Grafana Cloud
+  - SF Instance name
+  - Next platform upgrade
+  - Release Updates to check
+  - Installed packages
+  - Org licenses
+
+### Fixes
+
+- Avoid error when removing obsolete flows (workaround using SF CLI if tooling api connection fails). Fixes [#662](https://github.com/hardisgroupcom/sfdx-hardis/issues/662)
 
 ### Documentation
 
 - Reorganize README content
   - Add link to Dreamforce 24 session
-
-## Fixes
-
-- Avoid error when removing obsolete flows (workaround using SF CLI if tooling api connection fails). Fixes [#662](https://github.com/hardisgroupcom/sfdx-hardis/issues/662)
 
 ## [4.53.0] 2024-08-20
 
