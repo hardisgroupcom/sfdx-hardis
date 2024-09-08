@@ -122,6 +122,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 ### Fixes
 
 - Avoid error when removing obsolete flows (workaround using SF CLI if tooling api connection fails). Fixes [#662](https://github.com/hardisgroupcom/sfdx-hardis/issues/662)
+- Improve Slack/Teams notifications display
 
 ### Documentation
 

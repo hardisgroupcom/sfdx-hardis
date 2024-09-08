@@ -68,7 +68,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     // Fetch ReleaseUpdate records
     const releaseUpdatesQuery =
-      `SELECT StepStage,Status,Category,DurableId,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion, HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
+      `SELECT StepStage,Status,Category,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion,DurableId,HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
       `FROM ReleaseUpdate ` +
       `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
       `ORDER BY DueDate DESC`;
@@ -94,7 +94,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       const notifText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${orgMarkdown}`
       let notifDetailText = '';
       for (const releaseUpdate of this.releaseUpdatesRecords) {
-        notifDetailText += `• ${releaseUpdate.Title} (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate).format("ll")}\n`;
+        notifDetailText += `• *${releaseUpdate.Title}* (${releaseUpdate.StepStage},${releaseUpdate.Status},${releaseUpdate.Category}), due for ${moment(releaseUpdate.DueDate).format("ll")}\n`;
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif

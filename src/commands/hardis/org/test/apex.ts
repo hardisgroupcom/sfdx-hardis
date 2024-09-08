@@ -181,7 +181,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       {
         text: this.failingTestClasses
           .map((failingTestClass) => {
-            return '• ' + failingTestClass.name + ' / ' + failingTestClass.error;
+            return '• *' + failingTestClass.name + '*: ' + failingTestClass.error;
           })
           .join('\n'),
       },
@@ -215,13 +215,13 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     // Min coverage not reached
     else if (coverageOrgWide < minCoverageOrgWide) {
       this.notifSeverity = 'error';
-      this.statusMessage = `Test run coverage (org wide) ${coverageOrgWide}% should be > to ${minCoverageOrgWide}%`;
+      this.statusMessage = `Test run coverage (org wide) *${coverageOrgWide}%* should be > to ${minCoverageOrgWide}%`;
       this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
     }
     // We are good !
     else {
       this.notifSeverity = 'log';
-      this.statusMessage = `Test run coverage (org wide) ${coverageOrgWide}% is > to ${minCoverageOrgWide}%`;
+      this.statusMessage = `Test run coverage (org wide) *${coverageOrgWide}%* is > to ${minCoverageOrgWide}%`;
       this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
     }
   }
@@ -253,13 +253,13 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       // Min coverage not reached
       else if (coverageTestRun < minCoverageTestRun) {
         this.notifSeverity = 'error';
-        this.statusMessage = `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`;
+        this.statusMessage = `Test run coverage *${coverageTestRun}%* should be > to ${minCoverageTestRun}%`;
         this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
       // We are good !
       else {
         this.notifSeverity = 'log';
-        this.statusMessage = `Test run coverage ${coverageTestRun}% is > to ${minCoverageTestRun}%`;
+        this.statusMessage = `Test run coverage *${coverageTestRun}%* is > to ${minCoverageTestRun}%`;
         this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
     }
