@@ -113,7 +113,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       notifText = `Limit severe alerts have been detected in ${orgMarkdown} (error: ${numberLimitsError}, warning: ${numberLimitsWarning})`;
       const errorText = `*Error Limits*\n${limitsError
         .map((limit) => {
-          return `• ${limit.name}: ${limit.percentUsed}% used (${limit.used}/${limit.max})`;
+          return `• ${limit.name}: *${limit.percentUsed}%* used (${limit.used}/${limit.max})`;
         })
         .join('\n')}`;
       notifAttachments.push({
@@ -128,7 +128,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       notifText = `Limit warning alerts have been detected in ${orgMarkdown} (${numberLimitsWarning})`;
       const warningText = `*Warning Limits*\n${limitsWarning
         .map((limit) => {
-          return `• ${limit.name}: ${limit.percentUsed}% used (${limit.used}/${limit.max})`;
+          return `• ${limit.name}: *${limit.percentUsed}%* used (${limit.used}/${limit.max})`;
         })
         .join('\n')}`;
       notifAttachments.push({

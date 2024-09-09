@@ -71,7 +71,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       `SELECT StepStage,Status,Category,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion,DurableId,HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
       `FROM ReleaseUpdate ` +
       `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
-      `ORDER BY DueDate DESC`;
+      `ORDER BY DueDate ASC`;
     const queryRes = await soqlQueryTooling(releaseUpdatesQuery, conn);
     const severityIconWarning = getSeverityIcon('warning');
     const severityIconError = getSeverityIcon('error');
