@@ -26,7 +26,7 @@ Depending of your git provider, configure one of the following integrations.
   - Deployment status in Pull Request threads
   - Quick Deploy to enhance performances
 
-- [BitBucket](salesforce-ci-cd-setup-integrations-bitbucket.md)
+- [BitBucket](salesforce-ci-cd-setup-integration-bitbucket.md)
   - Deployment status in Pull Request comments
   - Quick Deploy to enhance performance
 
