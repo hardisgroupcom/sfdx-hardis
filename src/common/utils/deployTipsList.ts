@@ -219,7 +219,7 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
     {
       name: "error-parsing-file",
       label: "Error parsing file",
-      expressionRegex: [/Error (.*) Error parsing file: (.*) /gm],
+      expressionRegex: [/Error (.*) Error parsing file: (.*)/gm],
       tip: `There has been an error parsing the XML file of {1}: {2}
 - Open file {1} and look where the error can be ! (merge issue, typo, XML tag not closed...)`,
     },
