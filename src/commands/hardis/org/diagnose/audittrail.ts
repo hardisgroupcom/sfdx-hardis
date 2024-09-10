@@ -31,6 +31,8 @@ Regular setup actions performed in major orgs are filtered.
 - Custom App Licenses
   - addeduserpackagelicense
   - granteduserpackagelicense
+- Customer Portal
+  - createdcustomersuccessuser
 - Currency
   - updateddatedexchrate
 - Data Management
@@ -202,6 +204,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       '': ['createScratchOrg', 'changedsenderemail', 'deleteScratchOrg', 'loginasgrantedtopartnerbt'],
       'Certificate and Key Management': ['insertCertificate'],
       'Custom App Licenses': ['addeduserpackagelicense', 'granteduserpackagelicense'],
+      'Customer Portal': ['createdcustomersuccessuser'],
       Currency: ['updateddatedexchrate'],
       'Data Management': ['queueMembership'],
       'Email Administration': ['dkimRotationSuccessful', 'dkimRotationPreparationSuccessful'],
