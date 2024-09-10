@@ -572,26 +572,26 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     if (process.env?.DISABLE_DELTA_DEPLOYMENT === 'true') {
       uxLog(
         this,
-        c.yellow(`Delta deployment has been explicitly disabled with variable DISABLE_DELTA_DEPLOYMENT=true`)
+        c.yellow(`[Delta] Delta deployment has been explicitly disabled with variable DISABLE_DELTA_DEPLOYMENT=true`)
       );
       return false;
     }
     const latestCommit = await getLatestGitCommit();
-    if (latestCommit && (latestCommit?.body?.includes('nodelta') || latestCommit?.message?.includes('nodelta'))) {
-      uxLog(this, c.yellow(`Latest commit contains string "nodelta" so disable delta for this time :)`));
+    if (latestCommit && this.isNoDelta(latestCommit)) {
+      uxLog(this, c.yellow(c.bold((`[Delta] Latest commit contains string "nodelta" so disable delta for this time :)`))));
       return false;
     }
     if (this.checkOnly === false && !(process.env?.USE_DELTA_DEPLOYMENT_AFTER_MERGE === 'true')) {
       uxLog(
         this,
         c.yellow(
-          "We'll try to deploy using Quick Deployment feature. If not available, it's safer to use full deployment for a merge job."
+          "[Delta] We'll try to deploy using Quick Deployment feature. If not available, it's safer to use full deployment for a merge job."
         )
       );
       uxLog(
         this,
         c.yellow(
-          'If you want to use delta deployment anyway, define env variable USE_DELTA_DEPLOYMENT_AFTER_MERGE=true'
+          '[Delta]  If you want to use delta deployment anyway, define env variable USE_DELTA_DEPLOYMENT_AFTER_MERGE=true'
         )
       );
       return false;
@@ -599,12 +599,12 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === 'true') {
       uxLog(
         this,
-        c.yellow(`Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`)
+        c.yellow(`[Delta] Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`)
       );
       uxLog(
         this,
         c.yellow(
-          `It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
+          `[Delta] It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
         )
       );
       return true;
@@ -638,5 +638,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       )
     );
     return true;
+  }
+
+  isNoDelta(latestCommit) {
+    return latestCommit?.body?.trim().includes('nodelta') || latestCommit?.message?.trim().includes('nodelta') ||
+      latestCommit?.body?.trim().includes('no delta') || latestCommit?.message?.trim().includes('no delta')
   }
 }

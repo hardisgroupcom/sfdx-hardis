@@ -172,6 +172,17 @@ You probably updated the type of field {1} to type {2}, and Salesforce does not 
 ```
 
 ---
+## Change Matching Rule
+
+- `Error (.*) Before you change a matching rule, you must deactivate it`
+
+**Resolution tip**
+
+```shell
+To be able to deploy, you must go in target org setup to manually deactivate matching rule {1}
+```
+
+---
 ## Condition missing reference
 
 - `Error (.*) field integrity exception: unknown \(A condition has a reference to (.*), which doesn't exist.\)`
@@ -1012,7 +1023,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 ---
 ## Test classes with 0% coverage
 
-- `0%`
+- ` 0%`
 
 **Resolution tip**
 
