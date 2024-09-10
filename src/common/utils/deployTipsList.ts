@@ -106,7 +106,12 @@ Example of XML you have to remove in {1}:
 - Delete field {1} in target org: it will be recreated after deployment (but you will loose data on existing records, so be careful if your target is a production org)
 - Create another field with desired type and manage data recovery if the target is a production org`,
     },
-
+    {
+      name: "change-matching-rule",
+      label: "Change Matching Rule",
+      expressionRegex: [/Error (.*) Before you change a matching rule, you must deactivate it/gm],
+      tip: `To be able to deploy, you must go in target org setup to manually deactivate matching rule {1}`,
+    },
     {
       name: "condition-missing-reference",
       label: "Condition missing reference",
