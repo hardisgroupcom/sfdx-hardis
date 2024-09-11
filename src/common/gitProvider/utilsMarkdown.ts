@@ -1,14 +1,14 @@
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
   for (const err of errorsAndTips) {
-    const errorMessage = (err as any)?.message?.trim()?.includes("Error ")
-      ? (err as any).message
+    const errorMessage = (err as any)?.error?.message?.trim().includes("Error ")
+      ? (err as any)?.error?.message
         .trim()
         .replace("Error ", "")
         .replace(" ", "<br/>")
         .trim()
         .replace(/(.*)<br\/>/gm, `<b>$1</b> `)
-      : (err as any).message.trim();
+      : (err as any)?.error?.message?.trim() || "WE SHOULD NOT GO THERE: PLEASE DECLARE AN ISSUE";
     // sfdx-hardis tip
     if (err.tip) {
       const aiText = err?.tipFromAi?.promptResponse
