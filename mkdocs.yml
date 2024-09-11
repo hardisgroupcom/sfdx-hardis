@@ -242,7 +242,7 @@ nav:
               - GitHub: salesforce-ci-cd-setup-integration-github.md
               - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
               - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
-              - BitBucket: salesforce-ci-cd-setup-integrations-bitbucket.md
+              - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
               - Slack: salesforce-ci-cd-setup-integration-slack.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
               - Email: salesforce-ci-cd-setup-integration-email.md

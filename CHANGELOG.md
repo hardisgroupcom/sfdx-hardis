@@ -118,6 +118,10 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
   - Release Updates to check
   - Installed packages
   - Org licenses
+- **hardis:org:diagnose:audittrail**: Add new filtered actions
+  - Customer Portal: createdcustomersuccessuser
+- AI Deployment assistant
+  - Add error `Change Matching Rule`
 
 ### Fixes
 

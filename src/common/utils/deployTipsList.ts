@@ -106,7 +106,12 @@ Example of XML you have to remove in {1}:
 - Delete field {1} in target org: it will be recreated after deployment (but you will loose data on existing records, so be careful if your target is a production org)
 - Create another field with desired type and manage data recovery if the target is a production org`,
     },
-
+    {
+      name: "change-matching-rule",
+      label: "Change Matching Rule",
+      expressionRegex: [/Error (.*) Before you change a matching rule, you must deactivate it/gm],
+      tip: `To be able to deploy, you must go in target org setup to manually deactivate matching rule {1}`,
+    },
     {
       name: "condition-missing-reference",
       label: "Condition missing reference",
@@ -219,7 +224,7 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
     {
       name: "error-parsing-file",
       label: "Error parsing file",
-      expressionRegex: [/Error (.*) Error parsing file: (.*) /gm],
+      expressionRegex: [/Error (.*) Error parsing file: (.*)/gm],
       tip: `There has been an error parsing the XML file of {1}: {2}
 - Open file {1} and look where the error can be ! (merge issue, typo, XML tag not closed...)`,
     },
