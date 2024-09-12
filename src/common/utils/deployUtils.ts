@@ -263,7 +263,7 @@ export async function forceSourceDeploy(
         `sf project deploy ${check ? 'validate' : 'start'} --manifest "${deployment.packageXmlFile}"` +
         ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff
         ` --test-level ${testlevel}` +
-        (options.testClasses && testlevel !== 'NoTestRun' ? ` --run-tests ${options.testClasses}` : '') +
+        (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
         (options.postDestructiveChanges ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
