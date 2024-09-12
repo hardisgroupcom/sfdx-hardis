@@ -267,7 +267,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       );
       if (Array.isArray(testClassList) && testClassList.length) {
         flags.testlevel = 'RunSpecifiedTests';
-        testClasses = testClassList.join();
+        testClasses = testClassList.join(" ");
       } else {
         // Default back to RunLocalTests in case if repository has zero tests
         flags.testlevel = 'RunLocalTests';
