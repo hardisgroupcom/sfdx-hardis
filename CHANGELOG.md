@@ -127,6 +127,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 
 - Avoid error when removing obsolete flows (workaround using SF CLI if tooling api connection fails). Fixes [#662](https://github.com/hardisgroupcom/sfdx-hardis/issues/662)
 - Improve Slack/Teams notifications display
+- Display explicit error message in case a password is required to intall a managed package.
 
 ### Documentation
 
