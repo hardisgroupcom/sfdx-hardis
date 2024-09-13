@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags, optionalHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalHubFlagWithDeprecations, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
@@ -75,6 +75,7 @@ Under the hood, it can:
       description: 'Skip authentication check when a default username is required',
     }),
     'target-dev-hub': optionalHubFlagWithDeprecations,
+    'target-org': optionalOrgFlagWithDeprecations
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -222,6 +223,13 @@ Under the hood, it can:
         description: 'Scratch orgs are configured on my project so I want to create or reuse one',
       });
     }
+    if (flags['target-org'] && flags['target-org']?.getConnection()) {
+      orgTypeChoices.push({
+        title: `😎 Current org ${flags['target-org']?.getConnection().instanceUrl.replace("https://", "")}`,
+        value: 'currentOrg',
+        description: `Your default org with username ${flags['target-org']?.getUsername()} is already the org you want to use to work :)`,
+      });
+    }
     orgTypeChoices.push({
       title: "🤠 I'm hardcore, I don't need an org !",
       value: 'noOrg',
@@ -240,9 +248,9 @@ Under the hood, it can:
     if (selectedOrgType === 'scratch') {
       // scratch org
       await this.selectOrCreateScratchOrg(branchName, flags);
-    } else if (selectedOrgType === 'sandbox') {
+    } else if (selectedOrgType === 'sandbox' || selectedOrgType === 'currentOrg') {
       // source tracked sandbox
-      await this.selectOrCreateSandbox(branchName, config, flags);
+      await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType);
     } else {
       uxLog(this, c.yellow(`No org selected... I hope you know what you are doing, don't break anything :)`));
     }
@@ -330,67 +338,17 @@ Under the hood, it can:
   }
 
   // Select or create sandbox
-  async selectOrCreateSandbox(branchName, config, flags) {
-    const hubOrgUsername = flags['target-dev-hub']?.getUsername();
-    const sandboxOrgList = await MetadataUtils.listLocalOrgs('devSandbox', { devHubUsername: hubOrgUsername });
-    const sandboxResponse = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(
-        `Please select a sandbox org to use for your branch ${c.green(
-          branchName
-        )} (if you want to avoid conflicts, you should often refresh your sandbox)`
-      ),
-      initial: 0,
-      choices: [
-        ...[
-          {
-            title: c.yellow('🌐 Connect to a sandbox not appearing in this list'),
-            description: 'Login in web browser to your source-tracked sandbox',
-            value: 'connectSandbox',
-          },
-          /* {
-            title: c.yellow("Create new sandbox from another sandbox or production org (ALPHA -> UNSTABLE, DO NOT USE YET)"),
-            value: "newSandbox",
-          }, */
-        ],
-        ...sandboxOrgList.map((sandboxOrg: any) => {
-          return {
-            title: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
-            description: sandboxOrg.instanceUrl,
-            value: sandboxOrg,
-          };
-        }),
-      ],
-    });
-    // Remove scratch org info in user config
-    await setConfig('user', {
-      scratchOrgAlias: null,
-      scratchOrgUsername: null,
-    });
-    let orgUsername = '';
+  async selectOrCreateSandbox(branchName, config, flags, selectedOrgType: "sandbox" | "currentOrg") {
     let openOrg = false;
-    // Connect to a sandbox
-    if (sandboxResponse.value === 'connectSandbox') {
-      const slctdOrg = await promptOrg(this, { setDefault: true, devSandbox: true });
-      orgUsername = slctdOrg.username;
-    }
-    // Create a new sandbox ( NOT WORKING YET, DO NOT USE)
-    else if (sandboxResponse.value === 'newSandbox') {
-      const createResult = await SandboxCreate.run();
-      if (createResult == null) {
-        throw new SfError('Unable to create sandbox org');
-      }
-      orgUsername = (createResult as any).username;
-    }
-    // Selected sandbox from list
-    else {
-      await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
-        output: true,
-        fail: true,
-      });
-      orgUsername = sandboxResponse.value.username;
+    let orgUsername = "";
+    if (selectedOrgType === "currentOrg") {
       openOrg = true;
+      orgUsername = flags['target-org'].getUsername();
+    }
+    else {
+      const promptRes = await this.promptSandbox(flags, branchName);
+      orgUsername = promptRes.orgUsername;
+      openOrg = promptRes.openOrg;
     }
     // Initialize / Update existing sandbox if required
     const initSandboxResponse = await prompts({
@@ -487,5 +445,72 @@ Under the hood, it can:
 
     // Trigger a status refresh on VsCode WebSocket Client
     WebSocketClient.sendMessage({ event: 'refreshStatus' });
+  }
+
+  private async promptSandbox(flags: any, branchName: any) {
+    const hubOrgUsername = flags['target-dev-hub']?.getUsername();
+    const sandboxOrgList = await MetadataUtils.listLocalOrgs('devSandbox', { devHubUsername: hubOrgUsername });
+    const sandboxResponse = await prompts({
+      type: 'select',
+      name: 'value',
+      message: c.cyanBright(
+        `Please select a sandbox org to use for your branch ${c.green(
+          branchName
+        )} (if you want to avoid conflicts, you should often refresh your sandbox)`
+      ),
+      initial: 0,
+      choices: [
+        ...[
+          {
+            title: c.yellow('🌐 Connect to a sandbox not appearing in this list'),
+            description: 'Login in web browser to your source-tracked sandbox',
+            value: 'connectSandbox',
+          },
+          /* {
+            title: c.yellow("Create new sandbox from another sandbox or production org (ALPHA -> UNSTABLE, DO NOT USE YET)"),
+            value: "newSandbox",
+          }, */
+        ],
+        ...sandboxOrgList.map((sandboxOrg: any) => {
+          return {
+            title: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
+            description: sandboxOrg.instanceUrl,
+            value: sandboxOrg,
+          };
+        }),
+      ],
+    });
+    // Remove scratch org info in user config
+    await setConfig('user', {
+      scratchOrgAlias: null,
+      scratchOrgUsername: null,
+    });
+    let orgUsername = '';
+    let openOrg = false;
+    // Connect to a sandbox
+    if (sandboxResponse.value === 'connectSandbox') {
+      const slctdOrg = await promptOrg(this, { setDefault: true, devSandbox: true });
+      orgUsername = slctdOrg.username;
+    }
+
+    // Create a new sandbox ( NOT WORKING YET, DO NOT USE)
+    else if (sandboxResponse.value === 'newSandbox') {
+      const createResult = await SandboxCreate.run();
+      if (createResult == null) {
+        throw new SfError('Unable to create sandbox org');
+      }
+      orgUsername = (createResult as any).username;
+    }
+
+    // Selected sandbox from list
+    else {
+      await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
+        output: true,
+        fail: true,
+      });
+      orgUsername = sandboxResponse.value.username;
+      openOrg = true;
+    }
+    return { orgUsername, openOrg };
   }
 }
