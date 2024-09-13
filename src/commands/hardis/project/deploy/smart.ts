@@ -17,33 +17,37 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { MetadataUtils } from '../../../../../common/metadata-utils/index.js';
+import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import {
   createTempDir,
   getCurrentGitBranch,
   getLatestGitCommit,
   isCI,
   uxLog,
-} from '../../../../../common/utils/index.js';
-import { getConfig } from '../../../../../config/index.js';
-import { forceSourceDeploy, removePackageXmlContent } from '../../../../../common/utils/deployUtils.js';
-import { promptOrg } from '../../../../../common/utils/orgUtils.js';
-import { getApexTestClasses } from '../../../../../common/utils/classUtils.js';
-import { listMajorOrgs, restoreListViewMine } from '../../../../../common/utils/orgConfigUtils.js';
-import { NotifProvider, UtilsNotifs } from '../../../../../common/notifProvider/index.js';
-import { GitProvider } from '../../../../../common/gitProvider/index.js';
-import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from '../../../../../common/utils/gitUtils.js';
-import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from '../../../../../common/utils/notifUtils.js';
+} from '../../../../common/utils/index.js';
+import { getConfig } from '../../../../config/index.js';
+import { forceSourceDeploy, removePackageXmlContent } from '../../../../common/utils/deployUtils.js';
+import { promptOrg } from '../../../../common/utils/orgUtils.js';
+import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
+import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
+import { NotifProvider, UtilsNotifs } from '../../../../common/notifProvider/index.js';
+import { GitProvider } from '../../../../common/gitProvider/index.js';
+import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from '../../../../common/utils/gitUtils.js';
+import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { MessageAttachment } from '@slack/web-api';
-import { TicketProvider } from '../../../../../common/ticketProvider/index.js';
+import { TicketProvider } from '../../../../common/ticketProvider/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class DxSources extends SfCommand<any> {
-  public static title = 'Deploy sfdx sources to org';
+export default class SmartDeploy extends SfCommand<any> {
+  public static title = 'Smart Deploy sfdx sources to org';
 
-  public static description = `Deploy SFDX source to org, following deploymentPlan in .sfdx-hardis.yml
+  public static aliases = [
+    "hardis:project:deploy:sources:dx"
+  ]
+
+  public static description = `Smart deploy of SFDX sources to target org, with many useful options.
 
 In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
@@ -251,7 +255,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(DxSources);
+    const { flags } = await this.parse(SmartDeploy);
     this.configInfo = await getConfig('branch');
     this.checkOnly = flags.check || false;
     const deltaFromArgs = flags.delta || false;
