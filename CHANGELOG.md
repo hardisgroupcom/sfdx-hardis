@@ -125,6 +125,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
   - Customer Portal: createdcustomersuccessuser
 - AI Deployment assistant
   - Add error `Change Matching Rule`
+  - Improve documentation by adding examples of errors, and a standalone page for each tip
 
 ### Fixes
 

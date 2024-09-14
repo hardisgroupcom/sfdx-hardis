@@ -31,19 +31,20 @@ class SfdxHardisBuilder {
       ""
     ];
     for (const tip of deployTips) {
-      const tipFile = `./docs/sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`;
+      const linkName = `sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
+      const tipFile = `./docs/` + linkName;
       this.buildIndividualMarkdownPageForTip(tip, tipFile);
-      this.buildMainDeployFixesMarkdown(tip, deployTipsMd);
+      this.buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName);
     }
     fs.writeFileSync(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
     console.log("Written doc file " + deployTipsDocFile);
   }
 
-  buildMainDeployFixesMarkdown(tip, deployTipsMd) {
+  buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName) {
     if (!tip.label) {
       throw new Error(`Missing label for ${JSON.stringify(tip)}`);
     }
-    deployTipsMd.push(`## ${tip.label}`);
+    deployTipsMd.push(`## [${tip.label}](${linkName})`);
     deployTipsMd.push(...["", "**Detection**", ""]);
     if (tip.expressionRegex) {
       deployTipsMd.push(...tip.expressionRegex.map((regEx) => "- RegExp: `" + regEx.toString().slice(1).replace("/gm", "") + "`"));
