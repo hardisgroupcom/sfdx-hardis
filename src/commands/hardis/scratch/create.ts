@@ -142,8 +142,8 @@ export default class ScratchCreate extends SfCommand<any> {
         uxLog(
           this,
           '[pool] ' +
-            c.yellow('Put back scratch org in the scratch orgs pool. ') +
-            c.grey({ result: this.scratchOrgFromPool })
+          c.yellow('Put back scratch org in the scratch orgs pool. ') +
+          c.grey({ result: this.scratchOrgFromPool })
         );
         await addScratchOrgToPool(this.scratchOrgFromPool, { position: 'first' });
       } else if (isCI && this.scratchOrgUsername) {
@@ -225,10 +225,10 @@ export default class ScratchCreate extends SfCommand<any> {
     this.scratchOrgDuration = process.env?.SCRATCH_ORG_DURATION
       ? process.env.SCRATCH_ORG_DURATION // Priority to global variable if defined
       : isCI && this.pool === false
-      ? 1 // If CI and not during pool feed job, default is 1 day because the scratch will not be used after the job
-      : this.configInfo?.scratchOrgDuration
-      ? this.configInfo.scratchOrgDuration // Override default value in scratchOrgDuration
-      : 30; // Default value: 30
+        ? 1 // If CI and not during pool feed job, default is 1 day because the scratch will not be used after the job
+        : this.configInfo?.scratchOrgDuration
+          ? this.configInfo.scratchOrgDuration // Override default value in scratchOrgDuration
+          : 30; // Default value: 30
 
     this.userEmail = process.env.USER_EMAIL || process.env.GITLAB_USER_EMAIL || this.configInfo.userEmail;
 
@@ -281,16 +281,16 @@ export default class ScratchCreate extends SfCommand<any> {
         uxLog(
           this,
           '[pool] ' +
-            c.cyan(
-              `Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`
-            )
+          c.cyan(
+            `Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`
+          )
         );
         if (!isCI) {
           uxLog(
             this,
             c.cyan('Now opening org...') +
-              ' ' +
-              c.yellow('(The org is not ready to work in until this script is completed !)')
+            ' ' +
+            c.yellow('(The org is not ready to work in until this script is completed !)')
           );
           await execSfdxJson('sf org open', this, {
             fail: true,
@@ -454,9 +454,8 @@ export default class ScratchCreate extends SfCommand<any> {
       (this.projectScratchDef.features || []).includes('StateAndCountryPicklist') &&
       userQueryRes.result.CountryCode == null
     ) {
-      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${
-        config.defaultCountry || 'France'
-      }'`;
+      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${config.defaultCountry || 'France'
+        }'`;
     }
     if (
       (this.projectScratchDef.features || []).includes('MarketingUser') &&

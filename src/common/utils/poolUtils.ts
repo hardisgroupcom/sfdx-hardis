@@ -117,7 +117,7 @@ export async function tryFetchScratchOrg(options: any) {
     uxLog(
       this,
       '[pool] ' +
-        c.yellow('No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth')
+      c.yellow('No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth')
     );
     return null;
   }
@@ -153,8 +153,7 @@ export async function tryFetchScratchOrg(options: any) {
       uxLog(
         this,
         c.yellow(
-          `[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${
-            scratchOrg.scratchOrgUsername
+          `[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername
           }\n${c.grey(JSON.stringify(authRes))}`
         )
       );
@@ -181,11 +180,11 @@ export async function tryFetchScratchOrg(options: any) {
   uxLog(
     this,
     '[pool]' +
-      c.yellow(
-        `No scratch org available in scratch org pool. You may increase ${c.white(
-          'poolConfig.maxScratchOrgsNumber'
-        )} or schedule call to ${c.white('sf hardis:scratch:pool:refresh')} more often in CI`
-      )
+    c.yellow(
+      `No scratch org available in scratch org pool. You may increase ${c.white(
+        'poolConfig.maxScratchOrgsNumber'
+      )} or schedule call to ${c.white('sf hardis:scratch:pool:refresh')} more often in CI`
+    )
   );
   return null;
 }

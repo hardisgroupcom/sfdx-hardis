@@ -169,6 +169,12 @@ Example of element to delete:
 `,
     },
     {
+      name: "expired-access-token",
+      label: "Expired Access / Refresh Token",
+      expressionString: ["expired access/refresh token"],
+      tip: `Run command "Select another org" from Status panel (or sf hardis:org:select) to authenticate again to your org`,
+    },
+    {
       name: "missingDataCategoryGroup",
       label: "Missing Data Category Group",
       expressionRegex: [/Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found/gm],

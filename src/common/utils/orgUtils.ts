@@ -195,10 +195,10 @@ export async function promptOrg(
   }
 
   // Token is expired: login again to refresh it
-  if (org?.connectedStatus === 'RefreshTokenAuthError') {
+  if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
     uxLog(this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
     const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
-    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: true });
+    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     org = loginResult.result;
   }
 
@@ -243,6 +243,39 @@ export async function promptOrg(
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
   uxLog(commandThis, c.cyan(`Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
   return orgResponse.org;
+}
+
+export async function makeSureOrgIsConnected(targetOrg: string | any) {
+  // Get connected Status and instance URL
+  let connectedStatus;
+  let instanceUrl;
+  if (typeof targetOrg !== 'string') {
+    instanceUrl = targetOrg.instanceUrl;
+    connectedStatus = targetOrg.connectedStatus;
+    targetOrg = targetOrg.username;
+  }
+  else {
+    const displayOrgCommand = `sf org display --target-org ${targetOrg}`;
+    const displayResult = await execSfdxJson(displayOrgCommand, this, {
+      fail: false,
+      output: false,
+    });
+    connectedStatus = displayResult?.result?.connectedStatus || "error";
+    instanceUrl = displayResult?.result?.instanceUrl || "error";
+  }
+  // Org is connected
+  if (connectedStatus === "Connected") {
+    return;
+  }
+  // Authentication is necessary
+  if (connectedStatus?.includes("expired")) {
+    uxLog(this, c.yellow("Your auth token is expired, you need to authenticate again"));
+    const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
+    await execSfdxJson(loginCommand, this, { fail: true, output: false });
+    return;
+  }
+  // We shouldn't be here :)
+  uxLog(this, c.yellow("What are we doing here ? Please declare an issue with the following text: " + instanceUrl + ":" + connectedStatus));
 }
 
 export async function promptOrgUsernameDefault(
@@ -385,7 +418,7 @@ export async function initOrgMetadatas(
   // Push or deploy according to config (default: push)
   if ((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true') {
     // if CI, use sf project deploy start to make sure package.xml is consistent
-    uxLog(this, c.cyan(`Deploying project sources to scratch org ${c.green(orgAlias)}...`));
+    uxLog(this, c.cyan(`Deploying project sources to org ${c.green(orgAlias)}...`));
     const packageXmlFile =
       process.env.PACKAGE_XML_TO_DEPLOY || configInfo.packageXmlToDeploy || fs.existsSync('./manifest/package.xml')
         ? './manifest/package.xml'
@@ -398,7 +431,7 @@ export async function initOrgMetadatas(
     uxLog(
       this,
       c.cyan(
-        `Pushing project sources to scratch org ${c.green(
+        `Pushing project sources to org ${c.green(
           orgAlias
         )}... (You can see progress in Setup -> Deployment Status)`
       )

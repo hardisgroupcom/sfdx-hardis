@@ -21,6 +21,7 @@ import {
   initOrgMetadatas,
   initPermissionSetAssignments,
   installPackages,
+  makeSureOrgIsConnected,
   promptOrg,
 } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -344,6 +345,7 @@ Under the hood, it can:
     if (selectedOrgType === "currentOrg") {
       openOrg = true;
       orgUsername = flags['target-org'].getUsername();
+      await makeSureOrgIsConnected(orgUsername);
     }
     else {
       const promptRes = await this.promptSandbox(flags, branchName);
@@ -480,14 +482,18 @@ Under the hood, it can:
         }),
       ],
     });
-    // Remove scratch org info in user config
-    await setConfig('user', {
-      scratchOrgAlias: null,
-      scratchOrgUsername: null,
-    });
+    // Remove scratch org info in user config if necessary
+    const config = await getConfig("user");
+    if (config.scratchOrgAlias || config.scratchOrgUsername) {
+      await setConfig('user', {
+        scratchOrgAlias: null,
+        scratchOrgUsername: null,
+      });
+    }
+
+    // Connect to a sandbox
     let orgUsername = '';
     let openOrg = false;
-    // Connect to a sandbox
     if (sandboxResponse.value === 'connectSandbox') {
       const slctdOrg = await promptOrg(this, { setDefault: true, devSandbox: true });
       orgUsername = slctdOrg.username;
@@ -504,6 +510,7 @@ Under the hood, it can:
 
     // Selected sandbox from list
     else {
+      await makeSureOrgIsConnected(sandboxResponse.value);
       await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
         output: true,
         fail: true,

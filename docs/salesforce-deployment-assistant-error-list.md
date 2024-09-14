@@ -264,6 +264,17 @@ A reference to a custom metadata {3} of type {2} is not found in {1}:
 ```
 
 ---
+## Expired Access / Refresh Token
+
+- `expired access/refresh token`
+
+**Resolution tip**
+
+```shell
+Run command "Select another org" from Status panel (or sf hardis:org:select) to authenticate again to your org
+```
+
+---
 ## Missing Data Category Group
 
 - `Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found`

@@ -169,6 +169,7 @@ export async function authOrg(orgAlias: string, options: any) {
         (orgAlias ? ` --alias ${orgAlias}` : '');
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
+        output: false
       });
       // await fs.remove(crtKeyfile); // Delete private key file from temp folder TODO: move to postrun hook
       logged = jwtAuthRes.status === 0;
@@ -249,7 +250,7 @@ export async function authOrg(orgAlias: string, options: any) {
           ` --instance-url ${instanceUrl}` +
           (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
         try {
-          loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
+          loginResult = await execCommand(loginCommand, this, { output: false, fail: true, spinner: false });
         } catch (e) {
           // Give instructions if server is unavailable
           if (((e as Error).message || '').includes('Cannot start the OAuth redirect server on port')) {

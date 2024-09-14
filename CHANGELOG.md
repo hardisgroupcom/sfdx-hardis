@@ -114,6 +114,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
 - Authentication: do not use alias MY_ORG anymore + do not update local user config if no values to replace.
 - **hardis:org:data:delete**: Check for property "runnableInProduction" in export.json before running deletion in production org.
+- When selecting an org, make sure it is still connected. If not, open browser so the user can authenticate again.
 - Update sfdx-hardis Grafana Dashboards to import in your Grafana Cloud
   - SF Instance name
   - Next platform upgrade
