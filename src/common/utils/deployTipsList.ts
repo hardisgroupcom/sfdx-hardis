@@ -144,6 +144,9 @@ You may also have a look to command sf hardis:project:clean:references
   - Remove the reference to {4} in the XML of {1} ( maybe sf hardis:project:clean:references can clean automatically for you ! )
   - Activate the required features/license in the target org
 `,
+      examples: [
+        "Error PS_Admin In field: field - no CustomField named User.expcloud__Portal_Username__c found"
+      ]
     },
     {
       name: "custom-field-rights-mandatory",

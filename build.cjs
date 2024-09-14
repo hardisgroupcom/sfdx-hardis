@@ -35,12 +35,16 @@ class SfdxHardisBuilder {
         throw new Error(`Missing label for ${JSON.stringify(tip)}`);
       }
       deployTipsMd.push(`## ${tip.label}`);
-      deployTipsMd.push("");
+      deployTipsMd.push(...["", "**Detection**", ""]);
       if (tip.expressionRegex) {
-        deployTipsMd.push(...tip.expressionRegex.map((regEx) => "- `" + regEx.toString().slice(1).replace("/gm", "") + "`"));
+        deployTipsMd.push(...tip.expressionRegex.map((regEx) => "- RegExp: `" + regEx.toString().slice(1).replace("/gm", "") + "`"));
       }
       if (tip.expressionString) {
-        deployTipsMd.push(...tip.expressionString.map((str) => "- `" + str + "`"));
+        deployTipsMd.push(...tip.expressionString.map((str) => "- String: `" + str + "`"));
+      }
+      if (tip.examples) {
+        deployTipsMd.push(...["", "**Examples**", ""]);
+        deployTipsMd.push(...tip.examples.map((str) => "- `" + str + "`"));
       }
       deployTipsMd.push(...["", "**Resolution tip**", ""]);
       if (!tip.tip) {
