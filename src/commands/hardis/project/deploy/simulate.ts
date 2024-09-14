@@ -63,7 +63,7 @@ Used by VsCode Extension`;
 
     // Build command
     const simulateDeployCommand = "sf project deploy start" +
-      ` --source-dir ${sourceDirOrFile} ` +
+      ` --source-dir "${sourceDirOrFile}"` +
       ` --target-org ${orgUsername}` +
       ` --ignore-conflicts` +
       ` --dry-run`;
