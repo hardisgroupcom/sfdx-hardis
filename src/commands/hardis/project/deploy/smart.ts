@@ -136,7 +136,12 @@ installedPackages:
 
 ### Deployment pre or post commands
 
-You can define command lines to run before or after a deployment
+You can define command lines to run before or after a deployment, with parameters:
+
+- **id**: Unique Id for the command
+- **label**: Human readable label for the command
+- **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
+- **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 

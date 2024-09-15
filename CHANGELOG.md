@@ -102,6 +102,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 
 ### New Features / Enhancements
 
+- commandsPreDeploy and commandsPostDeploy: Allow to define a running context for a command: **all** (default), **check-deployment-only** or **process-deployment-only****process-deployment-only**
 - New command **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
 - New command **hardis:org:diagnose:releaseupdates** to check for org Release Updates from Monitoring or locally
 - New command **hardis:misc:purge-references** to partially automate the cleaning of related dependencies when you need to delete a field, or change its type (for example from master detail to lookup)
@@ -125,7 +126,8 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
   - Customer Portal: createdcustomersuccessuser
 - AI Deployment assistant
   - Add error `Change Matching Rule`
-  - Improve documentation by adding examples of errors, and a standalone page for each tip
+- Git Providers
+  - On Pull Requests / Merge Requests comments, add hyperlinks to errors documentation URL
 
 ### Fixes
 
@@ -137,6 +139,8 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 
 - Reorganize README content
   - Add link to Dreamforce 24 session
+- Deployment assistant: Improve documentation by adding examples of errors, and a standalone page for each tip
+- Factorize the definition of DOC_ROOT_URL https://sfdx-hardis.cloudity.com
 
 ## [4.53.0] 2024-08-20
 

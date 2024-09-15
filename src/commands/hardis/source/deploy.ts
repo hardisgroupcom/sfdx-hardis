@@ -31,7 +31,12 @@ You can also have deployment results as pull request comments, on:
 
 ### Deployment pre or post commands
 
-You can define command lines to run before or after a deployment
+You can define command lines to run before or after a deployment, with parameters:
+
+- **id**: Unique Id for the command
+- **label**: Human readable label for the command
+- **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
+- **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
@@ -182,12 +187,12 @@ Notes:
       )
     );
     // Run pre deployment commands if defined
-    await executePrePostCommands('commandsPreDeploy', true);
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: flags.checkonly });
     const result = await wrapSfdxCoreCommand('sfdx force:source:deploy', this.argv, this, flags.debug);
     // Check org coverage if requested
+    const checkOnly = flags.checkonly || false;
     if (flags.checkcoverage && result.stdout) {
       const orgCoveragePercent = await extractOrgCoverageFromLog(result.stdout + result.stderr || '');
-      const checkOnly = flags.checkonly || false;
       if (orgCoveragePercent) {
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: checkOnly });
@@ -198,7 +203,7 @@ Notes:
       }
     }
     // Run post deployment commands if defined
-    await executePrePostCommands('commandsPostDeploy', process.exitCode === 0);
+    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly });
     await GitProvider.managePostPullRequestComment();
     return result;
   }

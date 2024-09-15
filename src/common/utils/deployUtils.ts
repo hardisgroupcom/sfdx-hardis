@@ -170,7 +170,7 @@ export async function forceSourceDeploy(
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
-  await executePrePostCommands('commandsPreDeploy', true);
+  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check });
   // Process items of deployment plan
   uxLog(this, c.cyan('Processing split deployments build from deployment plan...'));
   uxLog(this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
@@ -360,7 +360,7 @@ export async function forceSourceDeploy(
     messages.push(message);
   }
   // Run deployment post commands
-  await executePrePostCommands('commandsPostDeploy', true);
+  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check });
   elapseEnd('all deployments');
   return { messages, quickDeploy, deployXmlCount };
 }
@@ -407,7 +407,7 @@ async function handleDeployError(
   if (check) {
     await GitProvider.managePostPullRequestComment();
   }
-  await executePrePostCommands('commandsPostDeploy', false);
+  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check });
   throw new SfError('Deployment failure. Check messages above');
 }
 
@@ -1024,18 +1024,31 @@ export async function buildOrgManifest(
   return packageXmlFull;
 }
 
-export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', success = true) {
+export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean }) {
   const branchConfig = await getConfig('branch');
   const commands = branchConfig[property] || [];
   if (commands.length === 0) {
     uxLog(this, c.grey(`No ${property} found to run`));
     return;
   }
-  uxLog(this, c.cyan(`Running ${property} found in .sfdx-hardis.yml configuration...`));
+  uxLog(this, c.cyan(`Processing ${property} found in .sfdx-hardis.yml configuration...`));
   for (const cmd of commands) {
-    if (success === false && cmd.skipIfError === true) {
+    // If if skipIfError is true and deployment failed
+    if (options.success === false && cmd.skipIfError === true) {
       uxLog(this, c.yellow(`Skipping skipIfError=true command [${cmd.id}]: ${cmd.label}`));
+      continue;
     }
+    // Skip if we are in another context than the requested one
+    const cmdContext = cmd.context || "all";
+    if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
+      uxLog(this, c.grey(`Skipping check-deployment-only command as we are in process deployment mode [${cmd.id}]: ${cmd.label}`));
+      continue;
+    }
+    if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
+      uxLog(this, c.grey(`Skipping process-deployment-only command as we are in check deploymentS mode [${cmd.id}]: ${cmd.label}`));
+      continue;
+    }
+    // Run command
     uxLog(this, c.cyan(`Running [${cmd.id}]: ${cmd.label}`));
     await execCommand(cmd.command, this, { fail: false, output: true });
   }
