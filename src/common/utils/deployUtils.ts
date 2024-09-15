@@ -1,4 +1,4 @@
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
@@ -29,6 +29,8 @@ import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
 import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
+import { soqlQuery } from './apiUtils.js';
+import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -170,7 +172,7 @@ export async function forceSourceDeploy(
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
-  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check });
+  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn });
   // Process items of deployment plan
   uxLog(this, c.cyan('Processing split deployments build from deployment plan...'));
   uxLog(this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
@@ -360,7 +362,7 @@ export async function forceSourceDeploy(
     messages.push(message);
   }
   // Run deployment post commands
-  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check });
+  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn });
   elapseEnd('all deployments');
   return { messages, quickDeploy, deployXmlCount };
 }
@@ -407,7 +409,7 @@ async function handleDeployError(
   if (check) {
     await GitProvider.managePostPullRequestComment();
   }
-  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check });
+  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
   throw new SfError('Deployment failure. Check messages above');
 }
 
@@ -1024,7 +1026,7 @@ export async function buildOrgManifest(
   return packageXmlFull;
 }
 
-export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean }) {
+export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection }) {
   const branchConfig = await getConfig('branch');
   const commands = branchConfig[property] || [];
   if (commands.length === 0) {
@@ -1045,12 +1047,35 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       continue;
     }
     if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog(this, c.grey(`Skipping process-deployment-only command as we are in check deploymentS mode [${cmd.id}]: ${cmd.label}`));
+      uxLog(this, c.grey(`Skipping process-deployment-only command as we are in check deployment mode [${cmd.id}]: ${cmd.label}`));
       continue;
+    }
+    const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg || false;
+    if (runOnlyOnceByOrg) {
+      await checkSfdxHardisTraceAvailable(options.conn);
+      const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c=${property} AND Key__c=${cmd.id} LIMIT 1`;
+      const commandTraceRes = await soqlQuery(commandTraceQuery, options.conn);
+      if (commandTraceRes?.records?.length > 0) {
+        uxLog(this, c.grey(`Skipping command [${cmd.id}]: ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
+        continue;
+      }
     }
     // Run command
     uxLog(this, c.cyan(`Running [${cmd.id}]: ${cmd.label}`));
-    await execCommand(cmd.command, this, { fail: false, output: true });
+    const commandRes = await execCommand(cmd.command, this, { fail: false, output: true });
+    if (commandRes.status === 0 && runOnlyOnceByOrg) {
+      const hardisTraceRecord = {
+        Type__c: property,
+        Key__c: cmd.id
+      }
+      const insertRes = await options.conn.insert("SfdxHardisTrace__c", [hardisTraceRecord]);
+      if (insertRes[0].success) {
+        uxLog(this, c.green(`Stored SfdxHardisTrace__c entry ${insertRes[0].id} with command [${cmd.id}] so it is not run again in the future (runOnlyOnceByOrg: true)`));
+      }
+      else {
+        uxLog(this, c.red(`Error storing SfdxHardisTrace__c entry :` + JSON.stringify(insertRes, null, 2)));
+      }
+    }
   }
 }
 

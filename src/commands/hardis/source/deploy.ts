@@ -37,6 +37,7 @@ You can define command lines to run before or after a deployment, with parameter
 - **label**: Human readable label for the command
 - **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
+- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
@@ -50,6 +51,7 @@ commandsPreDeploy:
   - id: knowledgeAssign
     label: Assign Knowledge user to the deployment user
     command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+
 commandsPostDeploy:
   - id: knowledgeUnassign
     label: Remove KnowledgeUser right to the user who has it
@@ -57,6 +59,12 @@ commandsPostDeploy:
   - id: knowledgeAssign
     label: Assign Knowledge user to desired username
     command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+  - id: someActionToRunJustOneTime
+    label: And to run only if deployment is success
+    command: sf sfdmu:run ...
+    skipIfError: true
+    context: process-deployment-only
+    runOnlyOnceByOrg: true
 \`\`\`
 
 Notes:
@@ -187,7 +195,8 @@ Notes:
       )
     );
     // Run pre deployment commands if defined
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: flags.checkonly });
+    const conn = flags["target-org"].getConnection();
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: flags.checkonly, conn: conn });
     const result = await wrapSfdxCoreCommand('sfdx force:source:deploy', this.argv, this, flags.debug);
     // Check org coverage if requested
     const checkOnly = flags.checkonly || false;
@@ -203,7 +212,7 @@ Notes:
       }
     }
     // Run post deployment commands if defined
-    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly });
+    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
     await GitProvider.managePostPullRequestComment();
     return result;
   }
