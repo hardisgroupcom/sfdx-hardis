@@ -110,6 +110,9 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - **hardis:work:new**: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
 - **hardis:work:new**: Add current default org in the choices when prompting which org to use
 - Rename command **hardis:project:deploy:source:dx** into **hardis:project:deploy:smart**
+- **hardis:project:new**
+  - Initialize autoCleanTypes with **destructivechanges**, **flowPositions** and **minimizeProfiles**
+  - Initialize package-no-overwrite.xml with Certificate metadata. (certificates must be uploaded manually)
 - **hardis:org:files:export**: Improve display with spinner
 - **hardis:org:purge:flow**: If FlowInterview records are preventing Flow Versions to be deleted, prompt user to delete Flow Interviews before trying again to delete Flow Versions
 - **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
