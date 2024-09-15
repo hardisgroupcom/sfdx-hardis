@@ -149,7 +149,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
   }
 }
 
-export async function forceSourceDeploy(
+export async function smartDeploy(
   packageXmlFile: string,
   check = false,
   testlevel = 'RunLocalTests',

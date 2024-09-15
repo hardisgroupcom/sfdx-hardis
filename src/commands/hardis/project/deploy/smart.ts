@@ -26,7 +26,7 @@ import {
   uxLog,
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
-import { forceSourceDeploy, removePackageXmlContent } from '../../../../common/utils/deployUtils.js';
+import { smartDeploy, removePackageXmlContent } from '../../../../common/utils/deployUtils.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
@@ -36,6 +36,7 @@ import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from '../..
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { MessageAttachment } from '@slack/web-api';
 import { TicketProvider } from '../../../../common/ticketProvider/index.js';
+import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -255,6 +256,11 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
   protected checkOnly = false;
   protected configInfo: any = {};
+  protected testLevel;
+  protected testClasses;
+  protected smartDeployOptions: any;
+  protected packageXmlFile: string;
+  protected delta = false;
   protected debugMode = false;
 
   /* jscpd:ignore-end */
@@ -264,37 +270,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     this.configInfo = await getConfig('branch');
     this.checkOnly = flags.check || false;
     const deltaFromArgs = flags.delta || false;
-
-    const givenTestlevel = flags.testlevel || this.configInfo.testLevel || 'RunLocalTests';
-    let testClasses = flags.runtests || this.configInfo.runtests || '';
-
-    // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
-    if (['RunRepositoryTests', 'RunRepositoryTestsExceptSeeAllData'].includes(givenTestlevel)) {
-      const testClassList = await getApexTestClasses(
-        testClasses,
-        givenTestlevel === 'RunRepositoryTestsExceptSeeAllData'
-      );
-      if (Array.isArray(testClassList) && testClassList.length) {
-        flags.testlevel = 'RunSpecifiedTests';
-        testClasses = testClassList.join(" ");
-      } else {
-        // Default back to RunLocalTests in case if repository has zero tests
-        flags.testlevel = 'RunLocalTests';
-        testClasses = '';
-      }
-    }
-
-    const testlevel = flags.testlevel || this.configInfo.testLevel || 'RunLocalTests';
-
-    // Test classes are only valid for RunSpecifiedTests
-    if (testlevel != 'RunSpecifiedTests') {
-      testClasses = '';
-    }
-
     const packageXml = flags.packagexml || null;
     this.debugMode = flags.debug || false;
     const currentGitBranch = await getCurrentGitBranch();
-
     // Get target org
     let targetUsername = flags['target-org'].getUsername();
     if (!isCI) {
@@ -302,11 +280,227 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       targetUsername = targetOrg.username;
     }
 
-    // Install packages
+    await this.initTestLevelAndTestClasses(flags);
+
+    await this.handlePackages(targetUsername);
+
+    // Compute commitsSummary and store it in globalThis.pullRequestData.commitsSummary
+    if (this.checkOnly) {
+      try {
+        const pullRequestInfo = await GitProvider.getPullRequestInfo();
+        const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
+        const prDataCommitsSummary = { commitsSummary: commitsSummary.markdown };
+        globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
+      } catch (e3) {
+        uxLog(this, c.yellow('Unable to compute git summary:\n' + e3));
+      }
+    }
+
+    // Get package.xml & destructiveChanges.xml
+    this.initPackageXmlAndDestructiveChanges(packageXml, targetUsername, flags);
+
+    // Compute and apply delta if required
+    await this.handleDeltaDeployment(deltaFromArgs, currentGitBranch);
+
+    // Process deployment (or deployment check)
+    const { messages, quickDeploy, deployXmlCount } = await smartDeploy(
+      this.packageXmlFile,
+      this.checkOnly,
+      this.testLevel,
+      this.debugMode,
+      this,
+      this.smartDeployOptions
+    );
+
+    const deployExecuted = !this.checkOnly && deployXmlCount > 0 ? true : false;
+
+    // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
+    if (this.configInfo.listViewsToSetToMine && deployExecuted) {
+      await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), {
+        debug: this.debugMode,
+      });
+    }
+
+    // Send notification of deployment success
+    if (deployExecuted) {
+      await this.handleNotifications(flags, targetUsername, quickDeploy);
+    }
+    // Return result
+    return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };
+  }
+
+  private async handleNotifications(flags, targetUsername: any, quickDeploy: any) {
+    const pullRequestInfo = await GitProvider.getPullRequestInfo();
+    const attachments: MessageAttachment[] = [];
+    try {
+      // Build notification attachments & handle ticketing systems comments
+      const commitsSummary = await this.collectNotifAttachments(attachments, pullRequestInfo);
+      await TicketProvider.postDeploymentActions(
+        commitsSummary.tickets,
+        flags['target-org']?.getConnection()?.instanceUrl || targetUsername || '',
+        pullRequestInfo
+      );
+    } catch (e4: any) {
+      uxLog(
+        this,
+        c.yellow('Unable to handle commit info on TicketProvider post deployment actions:\n' + e4.message) +
+        '\n' +
+        c.gray(e4.stack)
+      );
+    }
+
+    const orgMarkdown = await getOrgMarkdown(
+      flags['target-org']?.getConnection()?.instanceUrl || targetUsername || ''
+    );
+    const branchMarkdown = await getBranchMarkdown();
+    let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
+    notifMessage += quickDeploy
+      ? ' (🚀 quick deployment)'
+      : this.delta
+        ? ' (🌙 delta deployment)'
+        : ' (🌕 full deployment)';
+
+    const notifButtons = await getNotificationButtons();
+    if (pullRequestInfo) {
+      if (this.debugMode) {
+        uxLog(this, c.gray('PR info:\n' + JSON.stringify(pullRequestInfo)));
+      }
+      const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+      const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+      notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
+      const prButtonText = 'View Pull Request';
+      notifButtons.push({ text: prButtonText, url: prUrl });
+    } else {
+      uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
+    }
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    NotifProvider.postNotifications({
+      type: 'DEPLOYMENT',
+      text: notifMessage,
+      buttons: notifButtons,
+      severity: 'success',
+      attachments: attachments,
+      logElements: [],
+      data: { metric: 0 }, // Todo: if delta used, count the number of items deployed
+      metrics: {
+        DeployedItems: 0,
+      },
+    });
+  }
+
+  private async handleDeltaDeployment(deltaFromArgs: any, currentGitBranch: string | null) {
+    this.delta = false;
+    if ((deltaFromArgs === true ||
+      process.env.USE_DELTA_DEPLOYMENT === 'true' ||
+      this.configInfo.useDeltaDeployment === true) &&
+      (await this.isDeltaAllowed()) === true) {
+      this.delta = true;
+      this.smartDeployOptions.delta = true;
+      // Define delta deployment depending on context
+      let fromCommit = 'HEAD';
+      let toCommit = 'HEAD^';
+      if (this.checkOnly) {
+        // In deployment check context
+        const prInfo = await GitProvider.getPullRequestInfo();
+        const deltaScope = await getGitDeltaScope(
+          prInfo?.sourceBranch || currentGitBranch,
+          prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH
+        );
+        fromCommit = deltaScope.fromCommit;
+        toCommit = deltaScope?.toCommit?.hash || '';
+      }
+      // call delta
+      uxLog(this, c.cyan('Generating git delta package.xml and destructiveChanges.xml ...'));
+      const tmpDir = await createTempDir();
+      await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
+
+      // Update package.xml
+      const packageXmlFileDeltaDeploy = path.join(tmpDir, 'package', 'packageDelta.xml');
+      await fs.copy(this.packageXmlFile, packageXmlFileDeltaDeploy);
+      this.packageXmlFile = packageXmlFileDeltaDeploy;
+      const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
+      await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {
+        debugMode: this.debugMode,
+        keepEmptyTypes: false,
+      });
+
+      const deltaContent = await fs.readFile(this.packageXmlFile, 'utf8');
+      uxLog(this, c.cyan('Final Delta package.xml to deploy:\n' + c.green(deltaContent)));
+
+      if (process.env?.USE_SMART_DEPLOYMENT_TESTS === 'true' || this.configInfo?.useSmartDeploymentTests === true) {
+        uxLog(this, c.cyan("SmartDeploy activated"));
+        const deltaPackageContent = await parsePackageXmlFile(this.packageXmlFile);
+        const metadataTypesInDelta = Object.keys(deltaPackageContent);
+        const impactingMetadataTypesInDelta: string[] = []
+        for (const metadataTypeInDelta of metadataTypesInDelta) {
+          if (!CONSTANTS.NOT_IMPACTING_METADATA_TYPES.includes(metadataTypeInDelta)) {
+            impactingMetadataTypesInDelta.push(metadataTypeInDelta);
+          }
+        }
+        if (impactingMetadataTypesInDelta.length === 0 /* && isProductionOrg() TODO */) {
+          this.testLevel = "NoTestRun";
+          this.testClasses = "";
+        }
+        else {
+          uxLog(this, c.cyan("Impacting metadata in delta package.xml, or production org as target: do not skip test classes"));
+        }
+
+      }
+
+      // Update destructiveChanges.xml
+      if (this.smartDeployOptions.postDestructiveChanges) {
+        const destructiveXmlFileDeploy = path.join(tmpDir, 'destructiveChanges', 'destructiveChangesDelta.xml');
+        await fs.copy(this.smartDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
+        const diffDestructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
+        await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
+          debugMode: this.debugMode,
+          keepEmptyTypes: false,
+        });
+        this.smartDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
+        const deltaContentDelete = await fs.readFile(destructiveXmlFileDeploy, 'utf8');
+        uxLog(this, c.cyan('Final Delta destructiveChanges.xml to delete:\n' + c.yellow(deltaContentDelete)));
+      }
+    }
+  }
+
+  private initPackageXmlAndDestructiveChanges(packageXml: any, targetUsername: any, flags) {
+    this.packageXmlFile =
+      packageXml ||
+        process.env.PACKAGE_XML_TO_DEPLOY ||
+        this.configInfo.packageXmlToDeploy ||
+        fs.existsSync('./manifest/package.xml')
+        ? './manifest/package.xml'
+        : './config/package.xml';
+    this.smartDeployOptions = {
+      targetUsername: targetUsername,
+      conn: flags['target-org']?.getConnection(),
+      testClasses: this.testClasses,
+    };
+    // Get destructiveChanges.xml and add it in options if existing
+    const postDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE ||
+      this.configInfo.packageXmlToDelete ||
+      fs.existsSync('./manifest/destructiveChanges.xml')
+      ? './manifest/destructiveChanges.xml'
+      : './config/destructiveChanges.xml';
+    if (fs.existsSync(postDestructiveChanges)) {
+      this.smartDeployOptions.postDestructiveChanges = postDestructiveChanges;
+    }
+
+    // Get preDestructiveChanges.xml and add it in options if existing
+    const preDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
+      this.configInfo.packageXmlToDeletePreDeploy ||
+      fs.existsSync('./manifest/preDestructiveChanges.xml')
+      ? './manifest/preDestructiveChanges.xml'
+      : './config/preDestructiveChanges.xml';
+    if (fs.existsSync(preDestructiveChanges)) {
+      this.smartDeployOptions.preDestructiveChanges = preDestructiveChanges;
+    }
+  }
+
+  private async handlePackages(targetUsername: any) {
     const packages = this.configInfo.installedPackages || [];
     const missingPackages: any[] = [];
-    const installPackages =
-      this.checkOnly === false ||
+    const installPackages = this.checkOnly === false ||
       process.env.INSTALL_PACKAGES_DURING_CHECK_DEPLOY === 'true' ||
       this.configInfo.installPackagesDuringCheckDeploy === true;
     if (packages.length > 0 && installPackages) {
@@ -316,13 +510,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       // If check mode, warn if there are missing packages
       const alreadyInstalled = await MetadataUtils.listInstalledPackages(targetUsername, this);
       for (const package1 of packages) {
-        if (
-          alreadyInstalled.filter(
-            (installedPackage: any) =>
-              package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId
-          ).length === 0 &&
-          package1.installDuringDeployments === true
-        ) {
+        if (alreadyInstalled.filter(
+          (installedPackage: any) => package1.SubscriberPackageVersionId === installedPackage.SubscriberPackageVersionId
+        ).length === 0 &&
+          package1.installDuringDeployments === true) {
           missingPackages.push(package1);
         }
       }
@@ -352,190 +543,34 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         )
       );
     }
+  }
 
-    // Compute commitsSummary and store it in globalThis.pullRequestData.commitsSummary
-    if (this.checkOnly) {
-      try {
-        const pullRequestInfo = await GitProvider.getPullRequestInfo();
-        const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
-        const prDataCommitsSummary = { commitsSummary: commitsSummary.markdown };
-        globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
-      } catch (e3) {
-        uxLog(this, c.yellow('Unable to compute git summary:\n' + e3));
-      }
-    }
+  private async initTestLevelAndTestClasses(flags) {
+    const givenTestlevel = flags.testlevel || this.configInfo.testLevel || 'RunLocalTests';
+    this.testClasses = flags.runtests || this.configInfo.runtests || '';
 
-    // Get package.xml
-    let packageXmlFile =
-      packageXml ||
-        process.env.PACKAGE_XML_TO_DEPLOY ||
-        this.configInfo.packageXmlToDeploy ||
-        fs.existsSync('./manifest/package.xml')
-        ? './manifest/package.xml'
-        : './config/package.xml';
-    const forceSourceDeployOptions: any = {
-      targetUsername: targetUsername,
-      conn: flags['target-org']?.getConnection(),
-      testClasses: testClasses,
-    };
-    // Get destructiveChanges.xml and add it in options if existing
-    const postDestructiveChanges =
-      process.env.PACKAGE_XML_TO_DELETE ||
-        this.configInfo.packageXmlToDelete ||
-        fs.existsSync('./manifest/destructiveChanges.xml')
-        ? './manifest/destructiveChanges.xml'
-        : './config/destructiveChanges.xml';
-    if (fs.existsSync(postDestructiveChanges)) {
-      forceSourceDeployOptions.postDestructiveChanges = postDestructiveChanges;
-    }
-
-    // Get preDestructiveChanges.xml and add it in options if existing
-    const preDestructiveChanges =
-      process.env.PACKAGE_XML_TO_DELETE_PRE_DEPLOY ||
-        this.configInfo.packageXmlToDeletePreDeploy ||
-        fs.existsSync('./manifest/preDestructiveChanges.xml')
-        ? './manifest/preDestructiveChanges.xml'
-        : './config/preDestructiveChanges.xml';
-    if (fs.existsSync(preDestructiveChanges)) {
-      forceSourceDeployOptions.preDestructiveChanges = preDestructiveChanges;
-    }
-
-    // Compute and apply delta if required
-    let delta = false;
-    if (
-      (deltaFromArgs === true ||
-        process.env.USE_DELTA_DEPLOYMENT === 'true' ||
-        this.configInfo.useDeltaDeployment === true) &&
-      (await this.isDeltaAllowed()) === true
-    ) {
-      delta = true;
-      forceSourceDeployOptions.delta = true;
-      // Define delta deployment depending on context
-      let fromCommit = 'HEAD';
-      let toCommit = 'HEAD^';
-      if (this.checkOnly) {
-        // In deployment check context
-        const prInfo = await GitProvider.getPullRequestInfo();
-        const deltaScope = await getGitDeltaScope(
-          prInfo?.sourceBranch || currentGitBranch,
-          prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH
-        );
-        fromCommit = deltaScope.fromCommit;
-        toCommit = deltaScope?.toCommit?.hash || '';
-      }
-      // call delta
-      uxLog(this, c.cyan('Generating git delta package.xml and destructiveChanges.xml ...'));
-      const tmpDir = await createTempDir();
-      await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
-
-      // Update package.xml
-      const packageXmlFileDeltaDeploy = path.join(tmpDir, 'package', 'packageDelta.xml');
-      await fs.copy(packageXmlFile, packageXmlFileDeltaDeploy);
-      packageXmlFile = packageXmlFileDeltaDeploy;
-      const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
-      await removePackageXmlContent(packageXmlFile, diffPackageXml, true, {
-        debugMode: this.debugMode,
-        keepEmptyTypes: false,
-      });
-
-      const deltaContent = await fs.readFile(packageXmlFile, 'utf8');
-      uxLog(this, c.cyan('Final Delta package.xml to deploy:\n' + c.green(deltaContent)));
-
-      // Update destructiveChanges.xml
-      if (forceSourceDeployOptions.postDestructiveChanges) {
-        const destructiveXmlFileDeploy = path.join(tmpDir, 'destructiveChanges', 'destructiveChangesDelta.xml');
-        await fs.copy(forceSourceDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
-        const diffDestructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
-        await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
-          debugMode: this.debugMode,
-          keepEmptyTypes: false,
-        });
-        forceSourceDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
-        const deltaContentDelete = await fs.readFile(destructiveXmlFileDeploy, 'utf8');
-        uxLog(this, c.cyan('Final Delta destructiveChanges.xml to delete:\n' + c.yellow(deltaContentDelete)));
-      }
-    }
-
-    // Process deployment (or deployment check)
-    const { messages, quickDeploy, deployXmlCount } = await forceSourceDeploy(
-      packageXmlFile,
-      this.checkOnly,
-      testlevel,
-      this.debugMode,
-      this,
-      forceSourceDeployOptions
-    );
-
-    const deployExecuted = !this.checkOnly && deployXmlCount > 0 ? true : false;
-
-    // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
-    if (this.configInfo.listViewsToSetToMine && deployExecuted) {
-      await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), {
-        debug: this.debugMode,
-      });
-    }
-
-    // Send notification of deployment success
-    if (deployExecuted) {
-      const pullRequestInfo = await GitProvider.getPullRequestInfo();
-      const attachments: MessageAttachment[] = [];
-      try {
-        // Build notification attachments & handle ticketing systems comments
-        const commitsSummary = await this.collectNotifAttachments(attachments, pullRequestInfo);
-        await TicketProvider.postDeploymentActions(
-          commitsSummary.tickets,
-          flags['target-org']?.getConnection()?.instanceUrl || targetUsername || '',
-          pullRequestInfo
-        );
-      } catch (e4: any) {
-        uxLog(
-          this,
-          c.yellow('Unable to handle commit info on TicketProvider post deployment actions:\n' + e4.message) +
-          '\n' +
-          c.gray(e4.stack)
-        );
-      }
-
-      const orgMarkdown = await getOrgMarkdown(
-        flags['target-org']?.getConnection()?.instanceUrl || targetUsername || ''
+    // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
+    if (['RunRepositoryTests', 'RunRepositoryTestsExceptSeeAllData'].includes(givenTestlevel)) {
+      const testClassList = await getApexTestClasses(
+        this.testClasses,
+        givenTestlevel === 'RunRepositoryTestsExceptSeeAllData'
       );
-      const branchMarkdown = await getBranchMarkdown();
-      let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
-      notifMessage += quickDeploy
-        ? ' (🚀 quick deployment)'
-        : delta
-          ? ' (🌙 delta deployment)'
-          : ' (🌕 full deployment)';
-
-      const notifButtons = await getNotificationButtons();
-      if (pullRequestInfo) {
-        if (this.debugMode) {
-          uxLog(this, c.gray('PR info:\n' + JSON.stringify(pullRequestInfo)));
-        }
-        const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-        const prAuthor =
-          pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-        notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
-        const prButtonText = 'View Pull Request';
-        notifButtons.push({ text: prButtonText, url: prUrl });
+      if (Array.isArray(testClassList) && testClassList.length) {
+        flags.testlevel = 'RunSpecifiedTests';
+        this.testClasses = testClassList.join(" ");
       } else {
-        uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
+        // Default back to RunLocalTests in case if repository has zero tests
+        flags.testlevel = 'RunLocalTests';
+        this.testClasses = '';
       }
-      globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
-        type: 'DEPLOYMENT',
-        text: notifMessage,
-        buttons: notifButtons,
-        severity: 'success',
-        attachments: attachments,
-        logElements: [],
-        data: { metric: 0 }, // Todo: if delta used, count the number of items deployed
-        metrics: {
-          DeployedItems: 0, // Todo: if delta used, count the number of items deployed
-        },
-      });
     }
-    return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };
+
+    this.testLevel = flags.testlevel || this.configInfo.testLevel || 'RunLocalTests';
+
+    // Test classes are only valid for RunSpecifiedTests
+    if (this.testLevel != 'RunSpecifiedTests') {
+      this.testClasses = '';
+    }
   }
 
   private async collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: any) {
