@@ -11,6 +11,7 @@ import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { CONSTANTS } from '../../../../config/index.js';
 const dnsPromises = dns.promises;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -25,7 +26,7 @@ See article below
 
 [![Handle Salesforce API versions Deprecation like a pro](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deprecated-api.jpg)](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-deprecated-api-calls/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-deprecated-api-calls/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = [

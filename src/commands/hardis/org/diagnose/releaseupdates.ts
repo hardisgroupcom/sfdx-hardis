@@ -10,6 +10,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import moment from 'moment';
 import columnify from 'columnify';
+import { CONSTANTS } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -23,7 +24,7 @@ Before publishing **Breaking Changes** ❌, Salesforce announce them in the setu
 
 ⚠️ Some of them are very important, because if you don't make the related upgrades in time (ex: before Winter 25) , your production org can crash !
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-release-updates/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-release-updates/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = [

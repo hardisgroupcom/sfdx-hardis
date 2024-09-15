@@ -9,6 +9,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { CONSTANTS } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -30,7 +31,7 @@ Note: You can see the full list of available license identifiers in [Salesforce 
 
 Use --returnactiveusers to revert the command and retrieve active users that has logged in during the period.
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-users/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-inactive-users/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = [

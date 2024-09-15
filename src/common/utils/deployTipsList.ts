@@ -1,4 +1,15 @@
+import { CONSTANTS } from "../../config/index.js";
+
 export function getAllTips() {
+  const allTips = listAllTips().map((tip: any) => {
+    tip.docUrl = `sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
+    return tip;
+  });
+
+  return allTips;
+}
+
+function listAllTips() {
   return [
     {
       name: "api-version-error",
@@ -292,7 +303,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["Invalid scope:Mine, not allowed"],
       tip: `Replace Mine by Everything in the list view SFDX source XML.
 Have a look at this command to manage that automatically :)
-https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/
+${CONSTANTS.DOC_URL_ROOT}/hardis/org/fix/listviewmine/
 `,
     },
     {
@@ -728,3 +739,4 @@ If you see two {2} XML blocks with {3}, please decide which one you keep and rem
     },
   ];
 }
+

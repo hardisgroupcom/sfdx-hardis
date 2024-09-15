@@ -17,6 +17,7 @@ import { getNotificationButtons, getBranchMarkdown, getSeverityIcon } from '../.
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
+import { CONSTANTS } from '../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -25,7 +26,7 @@ export default class UnusedMetadatas extends SfCommand<any> {
   public static title = 'check unused labels and custom permissions';
   public static description = `Check if elements (custom labels and custom permissions) are used in the project
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-metadata/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-metadata/) and can output Grafana, Slack and MsTeams Notifications.
   `;
   public static examples = ['$ sf hardis:lint:unusedmetadatas'];
   /* jscpd:ignore-start */

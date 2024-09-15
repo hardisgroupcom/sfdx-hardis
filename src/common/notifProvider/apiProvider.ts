@@ -3,7 +3,7 @@ import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
 import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
-import { getEnvVar } from "../../config/index.js";
+import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
 import { GitProvider } from "../gitProvider/index.js";
@@ -94,7 +94,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
 
     // Add sfdx-hardis ref
-    logBodyText += "Powered by sfdx-hardis: https://sfdx-hardis.cloudity.com";
+    logBodyText += `Powered by sfdx-hardis: ${CONSTANTS.DOC_URL_ROOT}`;
     logBodyText = removeMarkdown(logBodyText);
 
     // Build payload

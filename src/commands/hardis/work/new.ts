@@ -26,7 +26,7 @@ import {
 } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { getConfig, setConfig } from '../../../config/index.js';
+import { CONSTANTS, getConfig, setConfig } from '../../../config/index.js';
 import SandboxCreate from '../org/create.js';
 import ScratchCreate from '../scratch/create.js';
 
@@ -38,7 +38,7 @@ export default class NewTask extends SfCommand<any> {
 
   public static description = `Assisted menu to start working on a Salesforce task.
 
-Advanced instructions in [Create New Task documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
+Advanced instructions in [Create New Task documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/)
 
 At the end of the command, it will allow you to work on either a scratch org or a sandbox, depending on your choices.
 

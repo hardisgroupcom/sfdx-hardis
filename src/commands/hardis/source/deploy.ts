@@ -10,6 +10,7 @@ import {
 } from '../../../common/utils/deployUtils.js';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
+import { CONSTANTS } from '../../../config/index.js';
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfCommand<any> {
@@ -21,9 +22,9 @@ Additional to the base command wrapper: If using **--checkonly**, add options **
 
 You can also have deployment results as pull request comments, on:
 
-- GitHub (see [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/))
-- Gitlab (see [Gitlab integration configuration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/))
-- Azure DevOps (see [Azure integration configuration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/))
+- GitHub (see [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-github/))
+- Gitlab (see [Gitlab integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-gitlab/))
+- Azure DevOps (see [Azure integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-azure/))
 
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)

@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
-import { getConfig, getEnvVar } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -31,7 +31,7 @@ Example in env var:
 MONITORING_DISABLE=METADATA_STATUS,MISSING_ATTRIBUTES,UNUSED_METADATAS
 \`\`\`
 
-A [default list of monitoring commands](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/#monitoring-commands) is used, if you want to override it you can define property **monitoringCommands** in your .sfdx-hardis.yml file
+A [default list of monitoring commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/#monitoring-commands) is used, if you want to override it you can define property **monitoringCommands** in your .sfdx-hardis.yml file
 
 Example:
 
@@ -221,7 +221,7 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
     uxLog(
       this,
       c.yellow(
-        'To know more about sfdx-hardis monitoring, please check https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/'
+        `To know more about sfdx-hardis monitoring, please check ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`
       )
     );
 

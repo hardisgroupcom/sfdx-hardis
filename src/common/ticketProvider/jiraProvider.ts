@@ -243,7 +243,7 @@ export class JiraProvider extends TicketProviderRoot {
                 {
                   type: "link",
                   attrs: {
-                    href: "https://sfdx-hardis.cloudity.com/",
+                    href: "${CONSTANTS.DOC_URL_ROOT}/",
                   },
                 },
               ],

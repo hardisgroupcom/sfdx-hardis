@@ -25,7 +25,7 @@ import {
   isCI,
   uxLog,
 } from '../../../../common/utils/index.js';
-import { getConfig } from '../../../../config/index.js';
+import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { forceSourceDeploy, removePackageXmlContent } from '../../../../common/utils/deployUtils.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
@@ -49,7 +49,7 @@ export default class SmartDeploy extends SfCommand<any> {
 
   public static description = `Smart deploy of SFDX sources to target org, with many useful options.
 
-In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
+In case of errors, [tips to fix them](${CONSTANTS.DOC_URL_ROOT}/deployTips/) will be included within the error messages.
 
 ### Quick Deploy
 
@@ -57,9 +57,9 @@ In case Pull Request comments are configured on the project, Quick Deploy will t
 
 If you do not want to use QuickDeploy, define variable \`SFDX_HARDIS_QUICK_DEPLOY=false\`
 
-- [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/)
-- [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/)
-- [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+- [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-github/)
+- [Gitlab Merge requests notes config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-gitlab/)
+- [Azure Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-azure/)
 
 ### Delta deployments
 
@@ -76,7 +76,7 @@ If necessary,you can define the following files (that supports wildcards <member
 - \`manifest/package-no-overwrite.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org)
 - \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
-See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
+See [Overwrite management documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-config-overwrite/)
 
 ### Deployment plan
 
@@ -163,7 +163,7 @@ commandsPostDeploy:
 
 #### List view with scope Mine
 
-If you defined a property **listViewsToSetToMine** in your .sfdx-hardis.yml, related ListViews will be set to Mine ( see command <https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/> )
+If you defined a property **listViewsToSetToMine** in your .sfdx-hardis.yml, related ListViews will be set to Mine ( see command <${CONSTANTS.DOC_URL_ROOT}/hardis/org/fix/listviewmine/> )
 
 Example:
 

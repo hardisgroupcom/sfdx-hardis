@@ -33,6 +33,11 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
+export const CONSTANTS = {
+  API_VERSION: process.env.SFDX_API_VERSION || '61.0',
+  DOC_URL_ROOT: "${CONSTANTS.DOC_URL_ROOT}"
+};
+
 async function getBranchConfigFiles() {
   if (!isGitRepo()) {
     return [];
@@ -72,15 +77,11 @@ export const setConfig = async (layer: string, propValues: any): Promise<void> =
     layer === 'project'
       ? projectConfigFiles
       : layer === 'user'
-      ? userConfigFiles
-      : layer === 'branch'
-      ? await getBranchConfigFiles()
-      : [];
+        ? userConfigFiles
+        : layer === 'branch'
+          ? await getBranchConfigFiles()
+          : [];
   await setInConfigFile(configSearchPlaces, propValues);
-};
-
-export const CONSTANTS = {
-  API_VERSION: process.env.SFDX_API_VERSION || '61.0',
 };
 
 // Load configuration from file

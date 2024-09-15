@@ -6,7 +6,7 @@ import { GitlabProvider } from "./gitlab.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { BitbucketProvider } from "./bitbucket.js";
 import Debug from "debug";
-import { getEnvVar } from "../../config/index.js";
+import { CONSTANTS, getEnvVar } from "../../config/index.js";
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
@@ -75,7 +75,7 @@ export abstract class GitProvider {
       uxLog(this, c.yellow("[Git Provider] WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
       uxLog(
         this,
-        c.yellow("[Git Provider] See documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#git-providers"),
+        c.yellow(`[Git Provider] See documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers`),
       );
       return;
     }
@@ -157,7 +157,7 @@ export abstract class GitProvider {
     } catch (e) {
       uxLog(this, c.yellow("[GitProvider] Unable to get Pull Request info: " + (e as Error).message));
       uxLog(this, c.yellow(`[GitProvider] Maybe you misconfigured your ${gitProvider.getLabel()} ?`));
-      uxLog(this, c.yellow(`[GitProvider] See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#git-providers`));
+      uxLog(this, c.yellow(`[GitProvider] See ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers`));
       prInfo = null;
     }
     return prInfo;

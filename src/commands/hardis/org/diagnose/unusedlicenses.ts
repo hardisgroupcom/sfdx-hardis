@@ -9,6 +9,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { CONSTANTS } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -26,7 +27,7 @@ This command detects such useless Permission Set Licenses Assignments and sugges
 
 Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command :)
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix'];

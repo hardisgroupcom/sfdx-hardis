@@ -4,7 +4,7 @@ import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
 import { UtilsNotifs as utilsNotifs } from "./utils.js";
 import { TeamsProvider } from "./teamsProvider.js";
-import { getConfig } from "../../config/index.js";
+import { CONSTANTS, getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
 
@@ -42,7 +42,7 @@ export abstract class NotifProvider {
         uxLog(
           this,
           c.gray(
-            `[NotifProvider] No notif has been configured: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+            `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
           ),
         );
       }

@@ -1134,7 +1134,7 @@ export async function generateSSLCertificate(
     );
     uxLog(
       commandThis,
-      c.yellow('Help to configure CI variables are here: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/')
+      c.yellow(`Help to configure CI variables are here: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
     );
     await prompts({
       type: 'confirm',

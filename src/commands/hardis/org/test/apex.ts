@@ -6,7 +6,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from '../../../../common/utils/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
-import { getConfig, getReportDirectory } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -24,7 +24,7 @@ If following configuration is defined, it will fail if apex coverage target is n
 
 You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes.
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = ['$ sf hardis:org:test:apex'];

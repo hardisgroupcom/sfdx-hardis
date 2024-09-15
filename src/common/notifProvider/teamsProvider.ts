@@ -2,6 +2,7 @@ import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { uxLog } from "../utils/index.js";
 import { NotifMessage } from "./index.js";
+import { CONSTANTS } from "../../config/index.js";
 
 export class TeamsProvider extends NotifProviderRoot {
   public getLabel(): string {
@@ -14,6 +15,6 @@ export class TeamsProvider extends NotifProviderRoot {
       this,
       c.bold(c.yellow(`[TeamsProvider] MsTeams Web Hooks will be soon deprecated. Instead, please use EmailProvider with Ms Teams Channel e-mail`)),
     );
-    uxLog(this, c.bold(c.yellow(`[TeamsProvider] User Guide: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-email/`)));
+    uxLog(this, c.bold(c.yellow(`[TeamsProvider] User Guide: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-email/`)));
   }
 }

@@ -4,6 +4,7 @@ import c from "chalk";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequestCommentThread, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
+import { CONSTANTS } from "../../config/index.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -213,7 +214,7 @@ ${prMessage.message}
 
 <br/>
 
-_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJobName}](${azureBuildUri})_
+_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](${azureBuildUri})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present

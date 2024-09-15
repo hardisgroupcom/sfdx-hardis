@@ -7,7 +7,7 @@ import { prompts } from '../../../common/utils/prompts.js';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { getConfig, setConfig } from '../../../config/index.js';
+import { CONSTANTS, getConfig, setConfig } from '../../../config/index.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { isSfdxProject } from '../../../common/utils/projectUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
@@ -127,7 +127,7 @@ export default class ProjectCreate extends SfCommand<any> {
     uxLog(
       this,
       c.cyan(
-        'SFDX Project has been created. You can continue the steps in documentation at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/'
+        `SFDX Project has been created. You can continue the steps in documentation at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-home/`
       )
     );
 

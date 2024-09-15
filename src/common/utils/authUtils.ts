@@ -11,7 +11,7 @@ import {
   promptInstanceUrl,
   uxLog,
 } from './index.js';
-import { getConfig } from '../../config/index.js';
+import { CONSTANTS, getConfig } from '../../config/index.js';
 import { SfError } from '@salesforce/core';
 import { prompts } from './prompts.js';
 import { clearCache } from '../cache/index.js';
@@ -190,7 +190,7 @@ export async function authOrg(orgAlias: string, options: any) {
 
       if (isCI) {
         console.error(
-          c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`)
+          c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
         );
         throw new SfError(
           `In CI context, you may define:
@@ -324,7 +324,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
       )
     );
     console.warn(
-      c.yellow(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`)
+      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
     );
     return process.env.SFDX_CLIENT_ID;
   }
@@ -340,7 +340,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
         )} with the Consumer Key value defined on SFDX Connected app`
       )
     );
-    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
+    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }
@@ -365,7 +365,7 @@ async function getKey(orgAlias: string, config: any) {
       )
     );
     console.warn(
-      c.yellow(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`)
+      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
     );
     return process.env.SFDX_CLIENT_KEY;
   }
@@ -381,7 +381,7 @@ async function getKey(orgAlias: string, config: any) {
         )} with the value of SSH private key encryption key`
       )
     );
-    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
+    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }
@@ -415,7 +415,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
         )}`
       )
     );
-    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
+    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }

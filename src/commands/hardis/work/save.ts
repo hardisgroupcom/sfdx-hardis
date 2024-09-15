@@ -38,12 +38,12 @@ export default class SaveTask extends SfCommand<any> {
 
   public static description = `When a work task is completed, guide user to create a merge request
 
-Advanced instructions in [Publish a task](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
+Advanced instructions in [Publish a task](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/)
 
 - Generate package-xml diff using sfdx-git-delta
 - Automatically update \`manifest/package.xml\` and \`manifest/destructiveChanges.xml\` according to the committed updates
 - Automatically Clean XML files using \`.sfdx-hardis.yml\` properties
-  - \`autocleantypes\`: List of auto-performed sources cleanings, available on command [hardis:project:clean:references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/)
+  - \`autocleantypes\`: List of auto-performed sources cleanings, available on command [hardis:project:clean:references](${CONSTANTS.DOC_URL_ROOT}/hardis/project/clean/references/)
   - \`autoRemoveUserPermissions\`: List of userPermission to automatically remove from profile metadatas
 
 Example:
@@ -212,7 +212,7 @@ autoRemoveUserPermissions:
       this,
       c.cyan(
         `Merge request documentation is available here -> ${c.bold(
-          'https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#create-merge-request'
+          `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`
         )}`
       )
     );
@@ -286,7 +286,7 @@ autoRemoveUserPermissions:
       return { outputString: 'Pull performed' };
     } else if (commitReadyRes.value === 'help') {
       // Show pull commit stage help
-      const commitHelpUrl = 'https://sfdx-hardis.cloudity.com/hardis/scratch/pull/';
+      const commitHelpUrl = `${CONSTANTS.DOC_URL_ROOT}/hardis/scratch/pull/`;
       uxLog(this, c.cyan(`Opening help at ${commitHelpUrl} ...`));
       await open(commitHelpUrl, { wait: true });
       return { outputString: 'Help displayed at ' };

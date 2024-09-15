@@ -31,7 +31,7 @@ You can remove more metadata types from backup, especially in case you have too 
 
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = ['$ sf hardis:org:monitor:backup'];
@@ -161,7 +161,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
         this,
         c.yellow(
           c.bold(
-            'See troubleshooting doc at https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#troubleshooting'
+            `See troubleshooting doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#troubleshooting`
           )
         )
       );
