@@ -27,7 +27,7 @@ import {
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent } from '../../../../common/utils/deployUtils.js';
-import { promptOrg } from '../../../../common/utils/orgUtils.js';
+import { isProductionOrg, promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
 import { NotifProvider, UtilsNotifs } from '../../../../common/notifProvider/index.js';
@@ -252,7 +252,9 @@ If you need notifications to be sent using the current Pull Request and not the 
     "$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
     '$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTestsExceptSeeAllData',
     '$ sf hardis:project:deploy:sources:dx',
+    '$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod'
   ];
+
 
   public static flags: any = {
     check: Flags.boolean({
@@ -324,7 +326,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get target org
     let targetUsername = flags['target-org'].getUsername();
     if (!isCI) {
-      const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, scratch: false });
+      uxLog(this, c.yellow("Just to be sure, please select the org you want to use for this command :)"))
+      const targetOrg = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
       targetUsername = targetOrg.username;
     }
 
@@ -348,7 +351,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     this.initPackageXmlAndDestructiveChanges(packageXml, targetUsername, flags);
 
     // Compute and apply delta if required
-    await this.handleDeltaDeployment(deltaFromArgs, currentGitBranch);
+    await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
 
     // Process deployment (or deployment check)
     const { messages, quickDeploy, deployXmlCount } = await smartDeploy(
@@ -436,7 +439,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     });
   }
 
-  private async handleDeltaDeployment(deltaFromArgs: any, currentGitBranch: string | null) {
+  private async handleDeltaDeployment(deltaFromArgs: any, targetUsername: string, currentGitBranch: string | null) {
     this.delta = false;
     if ((deltaFromArgs === true ||
       process.env.USE_DELTA_DEPLOYMENT === 'true' ||
@@ -458,7 +461,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         toCommit = deltaScope?.toCommit?.hash || '';
       }
       // call delta
-      uxLog(this, c.cyan('Generating git delta package.xml and destructiveChanges.xml ...'));
+      uxLog(this, c.cyan('[DeltaDeployment] Generating git delta package.xml and destructiveChanges.xml ...'));
       const tmpDir = await createTempDir();
       await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
 
@@ -473,10 +476,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       });
 
       const deltaContent = await fs.readFile(this.packageXmlFile, 'utf8');
-      uxLog(this, c.cyan('Final Delta package.xml to deploy:\n' + c.green(deltaContent)));
+      uxLog(this, c.cyan('[DeltaDeployment] Final Delta package.xml to deploy:\n' + c.green(deltaContent)));
 
       if (process.env?.USE_SMART_DEPLOYMENT_TESTS === 'true' || this.configInfo?.useSmartDeploymentTests === true) {
-        uxLog(this, c.cyan("SmartDeploy activated"));
+        uxLog(this, c.cyan("[SmartDeploymentTests] Smart Deployment tests activated: analyzing delta package content..."));
         const deltaPackageContent = await parsePackageXmlFile(this.packageXmlFile);
         const metadataTypesInDelta = Object.keys(deltaPackageContent);
         const impactingMetadataTypesInDelta: string[] = []
@@ -485,12 +488,17 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
             impactingMetadataTypesInDelta.push(metadataTypeInDelta);
           }
         }
-        if (impactingMetadataTypesInDelta.length === 0 /* && isProductionOrg() TODO */) {
+        if (impactingMetadataTypesInDelta.length === 0 && !(await isProductionOrg(targetUsername, {}))) {
+          uxLog(this, c.green("[SmartDeploymentTests] No Impacting metadata in delta package.xml: Skip test classes as the deployed items seem safe :)"));
           this.testLevel = "NoTestRun";
           this.testClasses = "";
         }
         else {
-          uxLog(this, c.cyan("Impacting metadata in delta package.xml, or production org as target: do not skip test classes"));
+          if (impactingMetadataTypesInDelta.length > 0) {
+            uxLog(this, c.yellow(`[SmartDeploymentTests] Impacting metadata in delta package.xml (${impactingMetadataTypesInDelta.join(",")}): do not skip test classes.`));
+          } else {
+            uxLog(this, c.yellow("[SmartDeploymentTests] Production org as deployment target: do not skip test classes"));
+          }
         }
 
       }
@@ -506,7 +514,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         });
         this.smartDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
         const deltaContentDelete = await fs.readFile(destructiveXmlFileDeploy, 'utf8');
-        uxLog(this, c.cyan('Final Delta destructiveChanges.xml to delete:\n' + c.yellow(deltaContentDelete)));
+        uxLog(this, c.cyan('[DeltaDeployment] Final Delta destructiveChanges.xml to delete:\n' + c.yellow(deltaContentDelete)));
       }
     }
   }
@@ -664,26 +672,26 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     if (process.env?.DISABLE_DELTA_DEPLOYMENT === 'true') {
       uxLog(
         this,
-        c.yellow(`[Delta] Delta deployment has been explicitly disabled with variable DISABLE_DELTA_DEPLOYMENT=true`)
+        c.yellow(`[DeltaDeployment] Delta deployment has been explicitly disabled with variable DISABLE_DELTA_DEPLOYMENT=true`)
       );
       return false;
     }
     const latestCommit = await getLatestGitCommit();
     if (latestCommit && this.isNoDelta(latestCommit)) {
-      uxLog(this, c.yellow(c.bold((`[Delta] Latest commit contains string "nodelta" so disable delta for this time :)`))));
+      uxLog(this, c.yellow(c.bold((`[DeltaDeployment] Latest commit contains string "nodelta" so disable delta for this time :)`))));
       return false;
     }
     if (this.checkOnly === false && !(process.env?.USE_DELTA_DEPLOYMENT_AFTER_MERGE === 'true')) {
       uxLog(
         this,
         c.yellow(
-          "[Delta] We'll try to deploy using Quick Deployment feature. If not available, it's safer to use full deployment for a merge job."
+          "[DeltaDeployment] We'll try to deploy using Quick Deployment feature. If not available, it's safer to use full deployment for a merge job."
         )
       );
       uxLog(
         this,
         c.yellow(
-          '[Delta]  If you want to use delta deployment anyway, define env variable USE_DELTA_DEPLOYMENT_AFTER_MERGE=true'
+          '[DeltaDeployment] If you want to use delta deployment anyway, define env variable USE_DELTA_DEPLOYMENT_AFTER_MERGE=true'
         )
       );
       return false;
@@ -691,12 +699,12 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === 'true') {
       uxLog(
         this,
-        c.yellow(`[Delta] Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`)
+        c.yellow(`[DeltaDeployment] Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`)
       );
       uxLog(
         this,
         c.yellow(
-          `[Delta] It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
+          `[DeltaDeployment] It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
         )
       );
       return true;
@@ -726,7 +734,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     uxLog(
       this,
       c.cyan(
-        `Delta allowed between minor branch (${currentBranch}) and major branch (${parentBranch}): using delta deployment mode`
+        `[DeltaDeployment] Delta allowed between minor branch (${currentBranch}) and major branch (${parentBranch}): using delta deployment mode`
       )
     );
     return true;
