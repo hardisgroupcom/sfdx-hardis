@@ -38,7 +38,7 @@ Activate Smart Deployment tests with:
 - env variable `USE_SMART_DEPLOYMENT_TESTS=true`
 - .sfdx-hardis.yml config property `useSmartDeploymentTests: true`
 
-Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overriden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
+Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
 - Audience
 - AuraDefinitionBundle

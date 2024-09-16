@@ -43,9 +43,10 @@ jobs:
       # Upload Mega-Linter artifacts
       - name: Archive production artifacts
         if: success() || failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Mega-Linter reports
+          include-hidden-files: "true"
           path: |
             megalinter-reports
             mega-linter.log
