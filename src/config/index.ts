@@ -37,8 +37,27 @@ export const CONSTANTS = {
   API_VERSION: process.env.SFDX_API_VERSION || '61.0',
   DOC_URL_ROOT: "${CONSTANTS.DOC_URL_ROOT}",
   NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES?.split(",") ?? [
+    "Audience",
+    "AuraDefinitionBundle",
+    "Bot",
+    "BotVersion",
+    "ContentAsset",
+    "CustomObjectTranslation",
+    "CustomSite",
+    "CustomTab",
+    "Dashboard",
+    "ExperienceBundle",
     "Flexipage",
-    "Layout"
+    "GlobalValueSetTranslation",
+    "Layout",
+    "LightningComponentBundle",
+    "NavigationMenu",
+    "ReportType",
+    "Report",
+    "SiteDotCom",
+    "StandardValueSetTranslation",
+    "StaticResource",
+    "Translations"
   ]
 };
 

@@ -212,6 +212,7 @@ If you need notifications to be sent using the current Pull Request and not the 
     '$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests',
     "$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
     '$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTestsExceptSeeAllData',
+    '$ sf hardis:project:deploy:sources:dx',
   ];
 
   public static flags: any = {
