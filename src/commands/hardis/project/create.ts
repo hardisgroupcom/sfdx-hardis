@@ -121,8 +121,16 @@ export default class ProjectCreate extends SfCommand<any> {
       await setConfig('project', { developmentBranch: devBranchRes.devBranch });
     }
 
-    await setConfig('project', { autoCleanTypes: ['destructivechanges'] });
-
+    // Initialize autoCleanTypes
+    const defaultAutoCleanTypes = [
+      'destructivechanges',
+      'flowPositions',
+      'minimizeProfiles'];
+    await setConfig('project', {
+      autoCleanTypes: defaultAutoCleanTypes
+    });
+    uxLog(this, c.yellow(`autoCleanTypes ${defaultAutoCleanTypes.join(",")} has been activated on the new project.`));
+    uxLog(this, c.bold(c.yellow(`If you install CI/CD on an existing org with many rights in Profiles, you might remove "minimizeProfiles" from .sfdx-hardis.yml autoCleanTypes property `)));
     // Message instructions
     uxLog(
       this,

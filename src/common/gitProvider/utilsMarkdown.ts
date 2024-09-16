@@ -18,7 +18,7 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
           : "";
       md += `<details><summary>🛠️ ${errorMessage}</summary>
 
-_${err.tip.label}_
+_[**${err.tip.label}**](${err.tip.docUrl})_
 
 ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 ${aiText}

@@ -12,7 +12,7 @@ import { Connection, SfError } from '@salesforce/core';
 import { importData } from './dataUtils.js';
 import { soqlQuery } from './apiUtils.js';
 import { isSfdxProject } from './projectUtils.js';
-import { deployMetadatas, forceSourceDeploy, forceSourcePush } from './deployUtils.js';
+import { deployMetadatas, smartDeploy, forceSourcePush } from './deployUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { clearCache } from '../cache/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
@@ -423,7 +423,7 @@ export async function initOrgMetadatas(
       process.env.PACKAGE_XML_TO_DEPLOY || configInfo.packageXmlToDeploy || fs.existsSync('./manifest/package.xml')
         ? './manifest/package.xml'
         : './config/package.xml';
-    await forceSourceDeploy(packageXmlFile, false, 'NoTestRun', debugMode, this, {
+    await smartDeploy(packageXmlFile, false, 'NoTestRun', debugMode, this, {
       targetUsername: orgUsername,
     });
   } else {

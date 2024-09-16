@@ -538,7 +538,7 @@ Report type is missing for report {1}
 ```shell
 Replace Mine by Everything in the list view SFDX source XML.
 Have a look at this command to manage that automatically :)
-https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/
+${CONSTANTS.DOC_URL_ROOT}/hardis/org/fix/listviewmine/ 
 
 ```
 

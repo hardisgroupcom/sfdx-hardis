@@ -2,7 +2,7 @@ import { CONSTANTS } from "../../config/index.js";
 
 export function getAllTips() {
   const allTips = listAllTips().map((tip: any) => {
-    tip.docUrl = `sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
+    tip.docUrl = `${CONSTANTS.DOC_URL_ROOT}/sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
     return tip;
   });
 
@@ -303,7 +303,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["Invalid scope:Mine, not allowed"],
       tip: `Replace Mine by Everything in the list view SFDX source XML.
 Have a look at this command to manage that automatically :)
-${CONSTANTS.DOC_URL_ROOT}/hardis/org/fix/listviewmine/
+${CONSTANTS.DOC_URL_ROOT}/hardis/org/fix/listviewmine/ 
 `,
     },
     {
