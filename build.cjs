@@ -31,29 +31,73 @@ class SfdxHardisBuilder {
       ""
     ];
     for (const tip of deployTips) {
-      if (!tip.label) {
-        throw new Error(`Missing label for ${JSON.stringify(tip)}`);
-      }
-      deployTipsMd.push(`## ${tip.label}`);
-      deployTipsMd.push("");
-      if (tip.expressionRegex) {
-        deployTipsMd.push(...tip.expressionRegex.map((regEx) => "- `" + regEx.toString().slice(1).replace("/gm", "") + "`"));
-      }
-      if (tip.expressionString) {
-        deployTipsMd.push(...tip.expressionString.map((str) => "- `" + str + "`"));
-      }
-      deployTipsMd.push(...["", "**Resolution tip**", ""]);
-      if (!tip.tip) {
-        throw new Error(`Missing tip for ${JSON.stringify(tip)}`);
-      }
-      deployTipsMd.push("```shell");
-      deployTipsMd.push(...tip.tip.split("\n"));
-      deployTipsMd.push("```");
-      deployTipsMd.push("");
-      deployTipsMd.push("---");
+      const linkName = `sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
+      const tipFile = `./docs/` + linkName;
+      this.buildIndividualMarkdownPageForTip(tip, tipFile);
+      this.buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName);
     }
     fs.writeFileSync(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
     console.log("Written doc file " + deployTipsDocFile);
+  }
+
+  buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName) {
+    if (!tip.label) {
+      throw new Error(`Missing label for ${JSON.stringify(tip)}`);
+    }
+    deployTipsMd.push(`## [${tip.label}](${linkName})`);
+    deployTipsMd.push(...["", "**Detection**", ""]);
+    if (tip.expressionRegex) {
+      deployTipsMd.push(...tip.expressionRegex.map((regEx) => "- RegExp: `" + regEx.toString().slice(1).replace("/gm", "") + "`"));
+    }
+    if (tip.expressionString) {
+      deployTipsMd.push(...tip.expressionString.map((str) => "- String: `" + str + "`"));
+    }
+    if (tip.examples) {
+      deployTipsMd.push(...["", "**Examples**", ""]);
+      deployTipsMd.push(...tip.examples.map((str) => "- `" + str + "`"));
+    }
+    deployTipsMd.push(...["", "**Resolution**", ""]);
+    if (!tip.tip) {
+      throw new Error(`Missing tip for ${JSON.stringify(tip)}`);
+    }
+    deployTipsMd.push("```shell");
+    deployTipsMd.push(...tip.tip.split("\n"));
+    deployTipsMd.push("```");
+    deployTipsMd.push("");
+    deployTipsMd.push("---");
+  }
+
+  buildIndividualMarkdownPageForTip(tip, tipFile) {
+    const errorDescription = tip?.examples?.length > 0 ? tip.examples[0] :
+      tip?.expressionString?.length > 0 ? tip?.expressionString[0] :
+        tip.expressionRegex[0]
+    const tipFileMd = [
+      "---",
+      `title: : ${tip.label} (Deployment assistant)`,
+      `description: How to solve Salesforce deployment error ${errorDescription}`,
+      "---",
+      "<!-- markdownlint-disable MD013 -->"
+    ];
+    tipFileMd.push(`# ${tip.label}`);
+    tipFileMd.push(...["", "## Detection", ""]);
+    if (tip.expressionRegex) {
+      tipFileMd.push(...tip.expressionRegex.map((regEx) => "- RegExp: `" + regEx.toString().slice(1).replace("/gm", "") + "`"));
+    }
+    if (tip.expressionString) {
+      tipFileMd.push(...tip.expressionString.map((str) => "- String: `" + str + "`"));
+    }
+    if (tip.examples) {
+      tipFileMd.push(...["", "## Examples", ""]);
+      tipFileMd.push(...tip.examples.map((str) => "- `" + str + "`"));
+    }
+    tipFileMd.push(...["", "## Resolution", ""]);
+    if (!tip.tip) {
+      throw new Error(`Missing tip for ${JSON.stringify(tip)}`);
+    }
+    tipFileMd.push("```shell");
+    tipFileMd.push(...tip.tip.split("\n"));
+    tipFileMd.push("```");
+    fs.writeFileSync(tipFile, tipFileMd.join("\n") + "\n");
   }
 
   truncateReadme() {

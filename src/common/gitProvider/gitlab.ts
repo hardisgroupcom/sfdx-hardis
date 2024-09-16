@@ -3,6 +3,7 @@ import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
+import { CONSTANTS } from "../../config/index.js";
 
 export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
@@ -131,7 +132,7 @@ export class GitlabProvider extends GitProviderRoot {
 
 ${prMessage.message}
 
-_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
+_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present

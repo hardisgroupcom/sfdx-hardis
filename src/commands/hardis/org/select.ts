@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { promptOrg } from '../../../common/utils/orgUtils.js';
+import { makeSureOrgIsConnected, promptOrg } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -53,7 +53,11 @@ export default class OrgSelect extends SfCommand<any> {
     const scratch = flags.scratch;
     this.debugMode = flags.debug || false;
 
+    // Prompt user to select an org
     const org = await promptOrg(this, { devHub: devHub, setDefault: true, scratch: scratch });
+
+    // If the org is not connected, ask the user to authenticate again
+    await makeSureOrgIsConnected(org.username);
 
     // Return an object to be displayed with --json
     return { outputString: `Selected org ${org.username}` };

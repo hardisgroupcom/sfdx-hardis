@@ -3,6 +3,7 @@ import c from 'chalk';
 import { PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
+import { CONSTANTS } from '../../config/index.js';
 const { Bitbucket } = bbPkg;
 
 export class BitbucketProvider extends GitProviderRoot {
@@ -192,7 +193,7 @@ export class BitbucketProvider extends GitProviderRoot {
 
         ${prMessage.message}
         
-        \n_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
+        \n_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
         \n<!-- sfdx-hardis message-key ${messageKey} -->
         `;
 

@@ -48,6 +48,9 @@ export default class CleanReferences extends SfCommand<any> {
         'localfields',
         'productrequest',
         'entitlement',
+        'flowPositions',
+        'sensitiveMetadatas',
+        'minimizeProfiles'
       ],
     }),
     config: Flags.string({
@@ -91,6 +94,11 @@ export default class CleanReferences extends SfCommand<any> {
       value: 'flowPositions',
       title: `Flows: Replace all positions in AutoLayout Flows by 0 to simplify conflicts management`,
       command: 'sf hardis:project:clean:flowpositions',
+    },
+    {
+      value: 'sensitiveMetadatas',
+      title: `Remove sensitive metadata content from sources (ex: Certificates)`,
+      command: 'sf hardis:project:clean:sensitive-metadatas',
     },
     {
       value: 'listViewsMine',

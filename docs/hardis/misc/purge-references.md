@@ -11,20 +11,20 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |        Default        | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:---------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                       |          |         |
-| flags-dir         | option  | undefined                                                     |                       |          |         |
-| json              | boolean | Format output as json.                                        |                       |          |         |
-| references<br/>-r | option  | Comma-separated list of references to find in metadatas       |                       |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                       |          |         |
-| target-org<br/>-o | option  | undefined                                                     | <hardis@aefc2021.com> |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                       |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|references<br/>-r|option|Comma-separated list of references to find in metadatas||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:misc:purge-references
+$ sf hardis:misc:purge-references
 ```
 
 

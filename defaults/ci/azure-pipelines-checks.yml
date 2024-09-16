@@ -19,7 +19,7 @@
 #   - Tick "Override the YAML continuous integration trigger from here" and select "Disable continuous integration"
 
 #   - Now go to Repos -> Branches and create a "Branch policy" for each of your major branches
-#   - In Build Validation, click + and then select your Build pipeline (even if it is prefilled, it's buggy and you 
+#   - In Build Validation, click + and then select your Build pipeline (even if it is prefilled, it's buggy and you
 #     need to manually select it again) and keep the default settings for the other options then save.
 #         This causes the pipeline to be triggered on Pull Requests even if we previously disabled it.
 
@@ -33,14 +33,12 @@ variables:
     value: $[replace(variables['System.PullRequest.TargetBranch'], 'refs/heads/', '')]
 
 jobs:
-
   # Simulate SFDX deployment
   - job: DeploymentCheck
     timeoutInMinutes: 150
     pool:
       vmImage: ubuntu-20.04
     steps:
-
       # Checkout repo
       - checkout: self
         fetchDepth: 0
@@ -52,7 +50,6 @@ jobs:
         inputs:
           version: ">=20.0.0"
         displayName: "Use Node.js"
-        
 
       # Install SFDX & Dependencies
       - script: |
@@ -62,11 +59,11 @@ jobs:
           echo 'y' | sf plugins install sfdx-git-delta
           sf version --verbose --json
         displayName: "Install SFDX & plugins"
-      
+
       # Login & check deployment to PR target branch related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
           sf hardis:auth:login
-          sf hardis:project:deploy:sources:dx --check
+          sf hardis:project:deploy:smart --check
         env:
           SFDX_CLIENT_ID_INTEGRATION: $(SFDX_CLIENT_ID_INTEGRATION)
           SFDX_CLIENT_KEY_INTEGRATION: $(SFDX_CLIENT_KEY_INTEGRATION)
@@ -106,20 +103,20 @@ jobs:
     pool:
       vmImage: ubuntu-20.04
     steps:
-    # Pull MegaLinter docker image
-    - script: docker pull oxsecurity/megalinter-salesforce:latest
-      displayName: Pull MegaLinter
-    # Run MegaLinter
-    - script: |
-        docker run -v $(System.DefaultWorkingDirectory):/tmp/lint \
-          --env-file <(env | grep -e SYSTEM_ -e BUILD_ -e TF_ -e AGENT_) \
-          -e CI=true \
-          -e SYSTEM_ACCESSTOKEN=$(System.AccessToken) \
-          -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
-          oxsecurity/megalinter-salesforce:latest
-      displayName: Run MegaLinter
-    # Publish Megalinter reports
-    - publish: $(System.DefaultWorkingDirectory)/megalinter-reports/
-      condition: succeededOrFailed()
-      artifact: megalinter-reports
-      displayName: Publish reports
+      # Pull MegaLinter docker image
+      - script: docker pull oxsecurity/megalinter-salesforce:latest
+        displayName: Pull MegaLinter
+      # Run MegaLinter
+      - script: |
+          docker run -v $(System.DefaultWorkingDirectory):/tmp/lint \
+            --env-file <(env | grep -e SYSTEM_ -e BUILD_ -e TF_ -e AGENT_) \
+            -e CI=true \
+            -e SYSTEM_ACCESSTOKEN=$(System.AccessToken) \
+            -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
+            oxsecurity/megalinter-salesforce:latest
+        displayName: Run MegaLinter
+      # Publish Megalinter reports
+      - publish: $(System.DefaultWorkingDirectory)/megalinter-reports/
+        condition: succeededOrFailed()
+        artifact: megalinter-reports
+        displayName: Publish reports

@@ -1,4 +1,15 @@
+import { CONSTANTS } from "../../config/index.js";
+
 export function getAllTips() {
+  const allTips = listAllTips().map((tip: any) => {
+    tip.docUrl = `${CONSTANTS.DOC_URL_ROOT}/sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
+    return tip;
+  });
+
+  return allTips;
+}
+
+function listAllTips() {
   return [
     {
       name: "api-version-error",
@@ -144,6 +155,9 @@ You may also have a look to command sf hardis:project:clean:references
   - Remove the reference to {4} in the XML of {1} ( maybe sf hardis:project:clean:references can clean automatically for you ! )
   - Activate the required features/license in the target org
 `,
+      examples: [
+        "Error PS_Admin In field: field - no CustomField named User.expcloud__Portal_Username__c found"
+      ]
     },
     {
       name: "custom-field-rights-mandatory",
@@ -167,6 +181,12 @@ Example of element to delete:
 - Are you sure you deployed {3} ?
 - If you use a package.xml, is {3} present within type CustomMetadata ?
 `,
+    },
+    {
+      name: "expired-access-token",
+      label: "Expired Access / Refresh Token",
+      expressionString: ["expired access/refresh token"],
+      tip: `Run command "Select another org" from Status panel (or sf hardis:org:select) to authenticate again to your org`,
     },
     {
       name: "missingDataCategoryGroup",
@@ -283,7 +303,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["Invalid scope:Mine, not allowed"],
       tip: `Replace Mine by Everything in the list view SFDX source XML.
 Have a look at this command to manage that automatically :)
-https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/
+${CONSTANTS.DOC_URL_ROOT}/hardis/org/fix/listviewmine/ 
 `,
     },
     {
@@ -719,3 +739,4 @@ If you see two {2} XML blocks with {3}, please decide which one you keep and rem
     },
   ];
 }
+

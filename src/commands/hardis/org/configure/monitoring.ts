@@ -17,7 +17,7 @@ import {
   uxLog,
 } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { setInConfigFile } from '../../../../config/index.js';
+import { CONSTANTS, setInConfigFile } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -79,7 +79,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
         throw new SfError('Your git repository name must contain the expression "monitoring"');
       }
     }
-    const preRequisitesUrl = 'https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions';
+    const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
     uxLog(this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
     const confirmPreRequisites = await prompts({
       type: 'select',
@@ -207,7 +207,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
         `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`
       )
     );
-    const scheduleMonitoringUrl = 'https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/#instructions';
+    const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
     const msg =
       'Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: ' +
       c.bold(scheduleMonitoringUrl);

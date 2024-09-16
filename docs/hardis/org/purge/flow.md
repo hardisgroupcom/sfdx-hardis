@@ -7,28 +7,29 @@ Purge Obsolete flow versions to avoid the 50 max versions limit. Filters on Stat
 
 ## Parameters
 
-| Name                     |  Type   | Description                                                                         |            Default             | Required | Options |
-|:-------------------------|:-------:|:------------------------------------------------------------------------------------|:------------------------------:|:--------:|:-------:|
-| allowpurgefailure<br/>-f | boolean | Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable |                                |          |         |
-| debug<br/>-d             | boolean | Activate debug mode (more logs)                                                     |                                |          |         |
-| flags-dir                | option  | undefined                                                                           |                                |          |         |
-| instanceurl<br/>-r       | option  | URL of org instance                                                                 | <https://login.salesforce.com> |          |         |
-| json                     | boolean | Format output as json.                                                              |                                |          |         |
-| name<br/>-n              | option  | Filter according to Name criteria                                                   |                                |          |         |
-| prompt<br/>-z            | boolean | Prompt for confirmation (true by default, use --no-prompt to skip)                  |                                |          |         |
-| skipauth                 | boolean | Skip authentication check when a default username is required                       |                                |          |         |
-| status<br/>-s            | option  | Filter according to Status criteria                                                 |                                |          |         |
-| target-org<br/>-o        | option  | undefined                                                                           |     <hardis@aefc2021.com>      |          |         |
-| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                           |                                |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|allowpurgefailure<br/>-f|boolean|Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|delete-flow-interviews<br/>-f|boolean|If the presence of Flow interviews prevent to delete flows versions, delete them before retrying to delete flow versions||||
+|flags-dir|option|undefined||||
+|instanceurl<br/>-r|option|URL of org instance|https://login.salesforce.com|||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|Filter according to Name criteria||||
+|prompt<br/>-z|boolean|Prompt for confirmation (true by default, use --no-prompt to skip)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|status<br/>-s|option|Filter according to Status criteria||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:org:purge:flow --no-prompt
+$ sf hardis:org:purge:flow --no-prompt
 ```
 
 ```shell
-$ sf hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
+$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com
   Found 1 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
@@ -41,7 +42,7 @@ $ sf hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com
 ```
 
 ```shell
-$ sf hardis:org:purge:flow --targetusername nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
+$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
   Found 4 records:
   ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
   30109000000kX7uAAE TestFlow    2             test flowwww Obsolete

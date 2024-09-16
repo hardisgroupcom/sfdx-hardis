@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
-import { getEnvVar } from '../../../../config/index.js';
+import { CONSTANTS, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
@@ -18,7 +18,7 @@ export default class MonitorLimits extends SfCommand<any> {
 
   public static description = `Check limits of a SF org and send notifications about limits are superior to 50%, 75% or 100%.
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-org-limits/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-org-limits/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = ['$ sf hardis:org:monitor:limits'];

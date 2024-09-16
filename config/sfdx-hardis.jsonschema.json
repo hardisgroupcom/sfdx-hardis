@@ -76,6 +76,7 @@
           "listViewsMine",
           "minimizeProfiles",
           "productrequest",
+          "sensitiveMetadatas",
           "systemDebug",
           "v60"
         ]
@@ -340,6 +341,23 @@
             "description": "Command line to run",
             "title": "Command",
             "type": "string"
+          },
+          "context": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/context",
+            "description": "Context when the command must be run",
+            "title": "Context",
+            "default": "all",
+            "type": "string",
+            "enum": [
+              "all",
+              "check-deployment-only",
+              "process-deployment-only"
+            ],
+            "examples": [
+              "all",
+              "check-deployment-only",
+              "process-deployment-only"
+            ]
           },
           "skipIfError": {
             "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
@@ -1337,6 +1355,13 @@
       "default": false,
       "description": "Defines if sfdx-hardis will deploy in delta from minor to major branches",
       "title": "Use Delta Deployment",
+      "type": "boolean"
+    },
+    "useSmartDeploymentTests": {
+      "$id": "#/properties/useSmartDeploymentTests",
+      "default": false,
+      "description": "Define if smart deployment tests will be activated and run test classes only if necessary (see more in hardis:project:deploy:smart documentation",
+      "title": "Use Smart Deployment Tests",
       "type": "boolean"
     },
     "linterIgnoreRightMetadataFile": {

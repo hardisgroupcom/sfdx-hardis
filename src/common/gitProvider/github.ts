@@ -4,6 +4,7 @@ import { GitProviderRoot } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils.js";
+import { CONSTANTS } from "../../config/index.js";
 
 export class GithubProvider extends GitProviderRoot {
   private octokit: InstanceType<typeof GitHub>;
@@ -199,7 +200,7 @@ export class GithubProvider extends GitProviderRoot {
 
 ${prMessage.message}
 
-_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${githubWorkflowName}](${githubJobUrl})_
+_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${githubWorkflowName}](${githubJobUrl})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present

@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
-import { getConfig } from '../../../../config/index.js';
+import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
@@ -115,7 +115,7 @@ monitoringAllowedSectionsActions:
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 \`\`\`
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = [

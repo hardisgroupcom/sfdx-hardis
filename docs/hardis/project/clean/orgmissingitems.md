@@ -7,12 +7,12 @@ Clean SFDX sources from items present neither in target org nor local package.xm
 
 ## Parameters
 
-| Name          |  Type   | Description                     |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d  | boolean | Activate debug mode (more logs) |           |          |         |
-| flags-dir     | option  | undefined                       |           |          |         |
-| folder<br/>-f | option  | Root folder                     | force-app |          |         |
-| json          | boolean | Format output as json.          |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
 |packagexmlfull<br/>-p|option|Path to packagexml used for cleaning.
 Must contain also standard CustomObject and CustomField elements.
 If not provided, it will be generated from a remote org||||
@@ -24,7 +24,7 @@ If not provided, will be prompted to the user.||||
 ## Examples
 
 ```shell
-sf hardis:project:clean:orgmissingitems
+$ sf hardis:project:clean:orgmissingitems
 ```
 
 

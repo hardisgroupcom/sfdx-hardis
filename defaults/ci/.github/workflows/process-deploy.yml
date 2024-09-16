@@ -75,4 +75,4 @@ jobs:
         run: |
           echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
           sf hardis:auth:login
-          sf hardis:project:deploy:sources:dx
+          sf hardis:project:deploy:smart

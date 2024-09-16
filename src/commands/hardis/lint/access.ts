@@ -20,7 +20,7 @@ import { NotifProvider, NotifSeverity } from '../../../common/notifProvider/inde
 import { Parser } from 'xml2js';
 
 // Config
-import { getConfig } from '../../../config/index.js';
+import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../../../common/utils/notifUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -31,7 +31,7 @@ export default class LintAccess extends SfCommand<any> {
 
   public static description = `Check if elements(apex class and field) are at least in one permission set
   
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-missing-access/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-missing-access/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = [

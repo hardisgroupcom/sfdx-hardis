@@ -79,4 +79,4 @@ jobs:
         run: |
           echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
           sf hardis:auth:login
-          sf hardis:project:deploy:sources:dx --check
+          sf hardis:project:deploy:smart --check

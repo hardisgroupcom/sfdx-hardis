@@ -34,7 +34,6 @@ jobs:
     pool:
       vmImage: ubuntu-20.04
     steps:
-
       # Checkout repo
       - checkout: self
         fetchDepth: 0
@@ -60,7 +59,7 @@ jobs:
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
           sf hardis:auth:login
-          sf hardis:project:deploy:sources:dx
+          sf hardis:project:deploy:smart
         env:
           SFDX_CLIENT_ID_INTEGRATION: $(SFDX_CLIENT_ID_INTEGRATION)
           SFDX_CLIENT_KEY_INTEGRATION: $(SFDX_CLIENT_KEY_INTEGRATION)

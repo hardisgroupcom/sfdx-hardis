@@ -64,6 +64,58 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
   - `sf hardis project deploy quick` -> Wraps `sf project deploy quick`
   - `sf hardis project deploy start` -> Wraps `sf project deploy start`
 
+### New Features / Enhancements
+
+- **hardis:project:deploy:smart**
+  - New feature **useSmartDeploymentTests**: Improve performances by not running test classes when delta deployment contain only non impacting metadatas, and target org is not production
+  - Rename command **hardis:project:deploy:source:dx** into **hardis:project:deploy:smart** (previous command alias remains, no need to update your pipelines !)
+- **commandsPreDeploy** and **commandsPostDeploy**
+  - New option **context** for a command, defining when it is run and when it is not: **all** (default), **check-deployment-only** or **process-deployment-only**
+  - New option **runOnlyOnceByOrg**: If set to `true`, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- New commands
+  - **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
+  - **hardis:org:diagnose:releaseupdates** to check for org Release Updates from Monitoring or locally
+  - **hardis:misc:purge-references** to partially automate the cleaning of related dependencies when you need to delete a field, or change its type (for example from master detail to lookup)
+  - **hardis:project:clean:sensitive-metadatas** to mask sensitive metadatas from git repo (ex: Certificate content)
+- **hardis:work:save** and **hardis:project:deploy:sources:dx**: Improve runtime performances thanks to internalization of sfdx-essentials commands
+- **hardis:work:new**
+  - Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
+  - Add current default org in the choices when prompting which org to use
+- **hardis:project:new**
+  - Initialize autoCleanTypes with **destructivechanges**, **flowPositions** and **minimizeProfiles**
+  - Initialize package-no-overwrite.xml with Certificate metadata. (certificates must be uploaded manually)
+- **hardis:org:files:export**: Improve display with spinner
+- **hardis:org:purge:flow**: If FlowInterview records are preventing Flow Versions to be deleted, prompt user to delete Flow Interviews before trying again to delete Flow Versions
+- **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
+- **hardis:org:data:delete**: Check for property "runnableInProduction" in export.json before running deletion in production org.
+- **hardis:org:diagnose:audittrail**: Add new filtered actions
+  - Customer Portal: createdcustomersuccessuser
+- Authentication: do not use alias MY_ORG anymore + do not update local user config if no values to replace.
+- When selecting an org, make sure it is still connected. If not, open browser so the user can authenticate again.
+- Update sfdx-hardis Grafana Dashboards to import in your Grafana Cloud
+  - SF Instance name
+  - Next platform upgrade
+  - Release Updates to check
+  - Installed packages
+  - Org licenses
+- AI Deployment assistant
+  - Add error `Change Matching Rule`
+- Git Providers
+  - On Pull Requests / Merge Requests comments, add hyperlinks to errors documentation URL
+
+### Fixes
+
+- Avoid error when removing obsolete flows (workaround using SF CLI if tooling api connection fails). Fixes [#662](https://github.com/hardisgroupcom/sfdx-hardis/issues/662)
+- Improve Slack/Teams notifications display
+- Display explicit error message in case a password is required to intall a managed package.
+
+### Documentation
+
+- Reorganize README content
+  - Add link to Dreamforce 24 session
+- Deployment assistant: Improve documentation by adding examples of errors, and a standalone page for each tip
+- Factorize the definition of DOC_ROOT_URL https://sfdx-hardis.cloudity.com
+
 ### Deprecations
 
 - Deprecate wrapper commands matching sfdx commands that will be removed. All replaced by sf hardis deploy start (TODO: complete !)
@@ -99,39 +151,6 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
   - node-fetch
 
 - Remove not used keyValueStores to keep only Salesforce one
-
-### New Features / Enhancements
-
-- New command **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
-- New command **hardis:org:diagnose:releaseupdates** to check for org Release Updates from Monitoring or locally
-- New command **hardis:misc:purge-references** to partially automate the cleaning of related dependencies when you need to delete a field, or change its type (for example from master detail to lookup)
-- **hardis:work:save** and **hardis:project:deploy:sources:dx**: Improve runtime performances thanks to internalization of sfdx-essentials commands
-- **hardis:work:new**: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
-- **hardis:org:files:export**: Improve display with spinner
-- **hardis:org:purge:flow**: If FlowInterview records are preventing Flow Versions to be deleted, prompt user to delete Flow Interviews before trying again to delete Flow Versions
-- **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
-- Authentication: do not use alias MY_ORG anymore + do not update local user config if no values to replace.
-- **hardis:org:data:delete**: Check for property "runnableInProduction" in export.json before running deletion in production org.
-- Update sfdx-hardis Grafana Dashboards to import in your Grafana Cloud
-  - SF Instance name
-  - Next platform upgrade
-  - Release Updates to check
-  - Installed packages
-  - Org licenses
-- **hardis:org:diagnose:audittrail**: Add new filtered actions
-  - Customer Portal: createdcustomersuccessuser
-- AI Deployment assistant
-  - Add error `Change Matching Rule`
-
-### Fixes
-
-- Avoid error when removing obsolete flows (workaround using SF CLI if tooling api connection fails). Fixes [#662](https://github.com/hardisgroupcom/sfdx-hardis/issues/662)
-- Improve Slack/Teams notifications display
-
-### Documentation
-
-- Reorganize README content
-  - Add link to Dreamforce 24 session
 
 ## [4.53.0] 2024-08-20
 

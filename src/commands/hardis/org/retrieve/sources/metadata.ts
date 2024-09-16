@@ -12,6 +12,7 @@ import LegacyApi from '../../diagnose/legacyapi.js';
 import OrgTestApex from '../../test/apex.js';
 import * as util from 'util';
 import { PACKAGE_ROOT_DIR } from '../../../../../settings.js';
+import { CONSTANTS } from '../../../../../config/index.js';
 const exec = util.promisify(child.exec);
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -122,7 +123,7 @@ export default class DxSources extends SfCommand<any> {
         c.yellow(c.bold('This version of sfdx-hardis monitoring is deprecated and will not be maintained anymore'))
       );
       uxLog(this, c.yellow(c.bold('Switch to new sfdx-hardis monitoring that is enhanced !')));
-      uxLog(this, c.yellow(c.bold('Info: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/')));
+      uxLog(this, c.yellow(c.bold(`Info: ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`)));
     }
 
     return { orgId: flags['target-org'].getOrgId(), outputString: message };

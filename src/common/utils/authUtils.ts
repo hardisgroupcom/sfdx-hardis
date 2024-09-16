@@ -11,7 +11,7 @@ import {
   promptInstanceUrl,
   uxLog,
 } from './index.js';
-import { getConfig } from '../../config/index.js';
+import { CONSTANTS, getConfig } from '../../config/index.js';
 import { SfError } from '@salesforce/core';
 import { prompts } from './prompts.js';
 import { clearCache } from '../cache/index.js';
@@ -122,7 +122,7 @@ export async function authOrg(orgAlias: string, options: any) {
       return;
     }
 
-    // Get auth variables, with priority CLI arguments, environment variables, then .hardis-sfdx.yml config file
+    // Get auth variables, with priority CLI arguments, environment variables, then .sfdx-hardis.yml config file
     let username =
       typeof options.Command.flags?.targetusername === 'string'
         ? options.Command.flags?.targetusername
@@ -169,6 +169,7 @@ export async function authOrg(orgAlias: string, options: any) {
         (orgAlias ? ` --alias ${orgAlias}` : '');
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
+        output: false
       });
       // await fs.remove(crtKeyfile); // Delete private key file from temp folder TODO: move to postrun hook
       logged = jwtAuthRes.status === 0;
@@ -189,7 +190,7 @@ export async function authOrg(orgAlias: string, options: any) {
 
       if (isCI) {
         console.error(
-          c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`)
+          c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
         );
         throw new SfError(
           `In CI context, you may define:
@@ -249,7 +250,7 @@ export async function authOrg(orgAlias: string, options: any) {
           ` --instance-url ${instanceUrl}` +
           (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
         try {
-          loginResult = await execCommand(loginCommand, this, { output: true, fail: true, spinner: false });
+          loginResult = await execCommand(loginCommand, this, { output: false, fail: true, spinner: false });
         } catch (e) {
           // Give instructions if server is unavailable
           if (((e as Error).message || '').includes('Cannot start the OAuth redirect server on port')) {
@@ -323,7 +324,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
       )
     );
     console.warn(
-      c.yellow(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`)
+      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
     );
     return process.env.SFDX_CLIENT_ID;
   }
@@ -339,7 +340,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
         )} with the Consumer Key value defined on SFDX Connected app`
       )
     );
-    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
+    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }
@@ -364,7 +365,7 @@ async function getKey(orgAlias: string, config: any) {
       )
     );
     console.warn(
-      c.yellow(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`)
+      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
     );
     return process.env.SFDX_CLIENT_KEY;
   }
@@ -380,7 +381,7 @@ async function getKey(orgAlias: string, config: any) {
         )} with the value of SSH private key encryption key`
       )
     );
-    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
+    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }
@@ -414,7 +415,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
         )}`
       )
     );
-    console.error(c.red(`See CI authentication doc at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/`));
+    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }

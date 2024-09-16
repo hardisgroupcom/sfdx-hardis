@@ -16,6 +16,7 @@ import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
+import { CONSTANTS } from '../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -25,7 +26,7 @@ export default class LintMetadataStatus extends SfCommand<any> {
   public static title = 'check inactive metadatas';
   public static description = `Check if elements (flows and validation rules) are inactive in the project
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-metadata/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-inactive-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 `;
   public static examples = ['$ sf hardis:lint:metadatastatus'];
   /* jscpd:ignore-start */

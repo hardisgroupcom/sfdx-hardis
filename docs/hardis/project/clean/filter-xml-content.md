@@ -13,15 +13,15 @@ This script requires a filter-config.json file
 
 ## Parameters
 
-| Name                |  Type   | Description                                                   | Default | Required | Options |
-|:--------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| configfile<br/>-c   | option  | Config JSON file path                                         |         |          |         |
-| debug               | boolean | debug                                                         |         |          |         |
-| flags-dir           | option  | undefined                                                     |         |          |         |
-| inputfolder<br/>-i  | option  | Input folder (default: "." )                                  |         |          |         |
-| json                | boolean | Format output as json.                                        |         |          |         |
-| outputfolder<br/>-o | option  | Output folder (default: parentFolder + _xml_content_filtered) |         |          |         |
-| websocket           | option  | websocket                                                     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|configfile<br/>-c|option|Config JSON file path||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|inputfolder<br/>-i|option|Input folder (default: "." )||||
+|json|boolean|Format output as json.||||
+|outputfolder<br/>-o|option|Output folder (default: parentFolder + _xml_content_filtered)||||
+|websocket|option|websocket||||
 
 ## Examples
 

@@ -576,6 +576,16 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
             output: true,
           });
         } catch (ex: any) {
+          if (ex.message.includes('Installation key not valid')) {
+            uxLog(
+              this,
+              c.yellow(
+                `${c.bold('Package requiring password')}: Please manually install package ${package1.SubscriberPackageName
+                } in target org using its password, and define 'installDuringDeployments: false' in its .sfdx-hardis.yml reference`
+              )
+            );
+            throw ex;
+          }
           const ignoredErrors = [
             'Une version plus récente de ce package est installée.',
             'A newer version of this package is currently installed.',
