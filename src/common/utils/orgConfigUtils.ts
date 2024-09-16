@@ -159,8 +159,8 @@ export async function checkSfdxHardisTraceAvailable(conn: Connection) {
   let traceObject: DescribeSObjectResult;
   try {
     traceObject = await conn.sobject("SfdxHardisTrace__c").describe();
-  } catch (e) {
-    throw new SfError("You need a Custom Setting of type List (activate throug Schema Settings), named SfdxHardisTrace__c, with Type__c and Key__c fields (both string, length 80)");
+  } catch (e: any) {
+    throw new SfError("You need a Custom Setting of type List (activate throug Schema Settings), named SfdxHardisTrace__c, with Type__c and Key__c fields (both string, length 80)\n" + e.message);
   }
   const traceObjectFields = traceObject.fields;
   if (traceObjectFields.filter(field => field.name === "Type__c").length === 0) {
