@@ -478,7 +478,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       const deltaContent = await fs.readFile(this.packageXmlFile, 'utf8');
       uxLog(this, c.cyan('[DeltaDeployment] Final Delta package.xml to deploy:\n' + c.green(deltaContent)));
 
-      if (process.env?.USE_SMART_DEPLOYMENT_TESTS === 'true' || this.configInfo?.useSmartDeploymentTests === true) {
+      const smartDeploymentTestsAllowed = await this.isSmartDeploymentTestsAllowed()
+      if (smartDeploymentTestsAllowed) {
         uxLog(this, c.cyan("[SmartDeploymentTests] Smart Deployment tests activated: analyzing delta package content..."));
         const deltaPackageContent = await parsePackageXmlFile(this.packageXmlFile);
         const metadataTypesInDelta = Object.keys(deltaPackageContent);
@@ -743,5 +744,22 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   isNoDelta(latestCommit) {
     return latestCommit?.body?.trim().includes('nodelta') || latestCommit?.message?.trim().includes('nodelta') ||
       latestCommit?.body?.trim().includes('no delta') || latestCommit?.message?.trim().includes('no delta')
+  }
+
+  async isSmartDeploymentTestsAllowed() {
+    if (process.env?.USE_SMART_DEPLOYMENT_TESTS === 'true' || this.configInfo?.useSmartDeploymentTests === true) {
+      const latestCommit = await getLatestGitCommit();
+      if (latestCommit && this.isNoSmartDeploymentTests(latestCommit)) {
+        uxLog(this, c.yellow(c.bold((`[SmartDeploymentTests] Latest commit contains string "nosmart" so disable smartDeploymentTests for this time :)`))));
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  isNoSmartDeploymentTests(latestCommit) {
+    return latestCommit?.body?.trim().includes('nosmart') || latestCommit?.message?.trim().includes('nosmart') ||
+      latestCommit?.body?.trim().includes('no smart') || latestCommit?.message?.trim().includes('no smart')
   }
 }
