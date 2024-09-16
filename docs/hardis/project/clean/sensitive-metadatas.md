@@ -1,19 +1,21 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:doc:plugin:generate
+# hardis:project:clean:sensitive-metadatas
 
 ## Description
 
-Generate Markdown documentation ready for HTML conversion with mkdocs
+Sensitive data like credentials and certificates are not supposed to be stored in Git, to avoid security breaches.
 
-After the first run, you need to update manually:
+This command detects the related metadata and replaces their sensitive content by "HIDDEN_BY_SFDX_HARDIS"
 
-- mkdocs.yml
-- .github/workflows/build-deploy-docs.yml
-- docs/javascripts/gtag.js , if you want Google Analytics tracking
+Can be automated at each **hardis:work:save** if **sensitiveMetadatas** is added in .sfdx-hardis.yml **autoCleanTypes** property  
 
-Then, activate Github pages, with "gh_pages" as target branch
+Example in config/.sfdx-hardis.yml:
 
-At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages
+```yaml
+autoCleanTypes:
+  - destructivechanges
+  - sensitiveMetadatas
+```
 
 
 ## Parameters
@@ -22,6 +24,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
 |:---|:--:|:----------|:-----:|:------:|:-----:|
 |debug<br/>-d|boolean|Activate debug mode (more logs)||||
 |flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
 |json|boolean|Format output as json.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
@@ -29,7 +32,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
 ## Examples
 
 ```shell
-$ sf hardis:doc:plugin:generate
+$ sf hardis:project:clean:sensitive-metadatas
 ```
 
 

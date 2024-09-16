@@ -91,6 +91,7 @@ nav:
             instanceupgrade: hardis/org/diagnose/instanceupgrade.md
             legacyapi: hardis/org/diagnose/legacyapi.md
             licenses: hardis/org/diagnose/licenses.md
+            releaseupdates: hardis/org/diagnose/releaseupdates.md
             unusedlicenses: hardis/org/diagnose/unusedlicenses.md
             unusedusers: hardis/org/diagnose/unusedusers.md
           files:
@@ -150,6 +151,7 @@ nav:
             orgmissingitems: hardis/project/clean/orgmissingitems.md
             references: hardis/project/clean/references.md
             retrievefolders: hardis/project/clean/retrievefolders.md
+            sensitive-metadatas: hardis/project/clean/sensitive-metadatas.md
             standarditems: hardis/project/clean/standarditems.md
             systemdebug: hardis/project/clean/systemdebug.md
             xml: hardis/project/clean/xml.md
@@ -159,10 +161,14 @@ nav:
             profilestopermsets: hardis/project/convert/profilestopermsets.md
           create: hardis/project/create.md
           deploy:
+            quick: hardis/project/deploy/quick.md
+            simulate: hardis/project/deploy/simulate.md
+            smart: hardis/project/deploy/smart.md
             sources:
               dx: hardis/project/deploy/sources/dx.md
               metadata: hardis/project/deploy/sources/metadata.md
             start: hardis/project/deploy/start.md
+            validate: hardis/project/deploy/validate.md
           fix:
             profiletabs: hardis/project/fix/profiletabs.md
             v53flexipages: hardis/project/fix/v53flexipages.md

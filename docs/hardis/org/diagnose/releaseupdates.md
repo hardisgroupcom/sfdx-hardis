@@ -1,11 +1,15 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:org:monitor:limits
+# hardis:org:diagnose:releaseupdates
 
 ## Description
 
-Check limits of a SF org and send notifications about limits are superior to 50%, 75% or 100%.
+Export Release Updates into a CSV file with selected criteria, and highlight Release Updates that should be checked.
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-org-limits/) and can output Grafana, Slack and MsTeams Notifications.
+Before publishing **Breaking Changes** ❌, Salesforce announce them in the setup menu [**Release Updates**](https://help.salesforce.com/s/articleView?id=sf.release_updates.htm&type=5)
+
+⚠️ Some of them are very important, because if you don't make the related upgrades in time (ex: before Winter 25) , your production org can crash !
+
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-release-updates/) and can output Grafana, Slack and MsTeams Notifications.
 
 
 ## Parameters
@@ -23,7 +27,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 ## Examples
 
 ```shell
-$ sf hardis:org:monitor:limits
+$ sf hardis:org:diagnose:releaseupdates
 ```
 
 

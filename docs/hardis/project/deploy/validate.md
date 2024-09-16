@@ -1,22 +1,13 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:source:deploy
+# hardis:project:deploy:validate
 
 ## Description
 
-sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors.
-
-Additional to the base command wrapper: If using **--checkonly**, add options **--checkcoverage** and **--coverageformatters json-summary** to check that org coverage is > 75% (or value defined in .sfdx-hardis.yml property **apexTestsMinCoverageOrgWide**)
-
-### Deployment results
-
-You can also have deployment results as pull request comments, on:
-
-- GitHub (see [GitHub Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/))
-- Gitlab (see [Gitlab integration configuration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-gitlab/))
-- Azure DevOps (see [Azure integration configuration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/))
-
+sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors.
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
+
+[See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_validate_unified)
 
 ### Deployment pre or post commands
 
@@ -56,47 +47,36 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
-Notes:
-
-- You can disable coloring of errors in red by defining env variable SFDX_HARDIS_DEPLOY_ERR_COLORS=false
-
-[See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
-
 
 ## Parameters
 
 |Name|Type|Description|Default|Required|Options|
 |:---|:--:|:----------|:-----:|:------:|:-----:|
-|checkcoverage|boolean|Check Apex org coverage||||
-|checkonly<br/>-c|boolean|checkonly||||
-|coverageformatters|option|coverageformatters||||
+|api-version<br/>-a|option|api-version||||
+|async|boolean|async||||
+|coverage-formatters|option|coverage-formatters||||
 |debug|boolean|debug||||
+|dry-run|boolean|dry-run||||
 |flags-dir|option|undefined||||
-|forceoverwrite<br/>-f|boolean|forceoverwrite||||
-|ignoreerrors<br/>-o|boolean|ignoreErrors||||
-|ignorewarnings<br/>-g|boolean|ignoreWarnings||||
+|ignore-conflicts<br/>-c|boolean|ignore-conflicts||||
+|ignore-errors<br/>-r|boolean|ignore-errors||||
+|ignore-warnings<br/>-g|boolean|ignore-warnings||||
 |json|boolean|Format output as json.||||
 |junit|boolean|junit||||
-|manifest<br/>-x|option|flagsLong.manifest||||
+|manifest<br/>-x|option|manifest||||
 |metadata<br/>-m|option|metadata||||
-|postdestructivechanges|option|postdestructivechanges||||
-|predestructivechanges|option|predestructivechanges||||
-|resultsdir|option|resultsdir||||
-|runtests<br/>-r|option|runTests||||
-|soapdeploy|boolean|soapDeploy||||
-|sourcepath<br/>-p|option|sourcePath||||
+|metadata-dir|option|metadata-dir||||
+|post-destructive-changes|option|post-destructive-changes||||
+|pre-destructive-changes|option|pre-destructive-changes||||
+|purge-on-delete|boolean|purge-on-delete||||
+|results-dir|option|results-dir||||
+|single-package|boolean|single-package||||
+|source-dir<br/>-d|option|source-dir||||
 |target-org<br/>-o|option|undefined||||
-|testlevel<br/>-l|option|testlevel|NoTestRun||NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg|
-|tracksource<br/>-t|boolean|tracksource||||
-|validateddeployrequestid<br/>-q|option|validateDeployRequestId||||
-|verbose|boolean|verbose||||
-|wait<br/>-w|option|wait|60|||
-|websocket|option|websocket||||
+|test-level|option|test-level||||
+|tests|option|tests||||
+|wait<br/>-w|option|wait|33|||
 
 ## Examples
-
-```shell
-$ sf hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --target-org nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary
-```
 
 

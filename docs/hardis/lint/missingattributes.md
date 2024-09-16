@@ -7,19 +7,19 @@ Check if elements(custom fields) aren't description
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| flags-dir         | option  | undefined                                                         |         |          |         |
-| json              | boolean | Format output as json.                                            |         |          |         |
-| outputfile<br/>-o | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-o|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:lint:missingattributes
+$ sf hardis:lint:missingattributes
 ```
 
 

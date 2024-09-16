@@ -1,20 +1,13 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:doc:plugin:generate
+# hardis:project:deploy:simulate
 
 ## Description
 
-Generate Markdown documentation ready for HTML conversion with mkdocs
+Simulate the deployment of a metadata in an org prompted to the user
+  
+For example, helps to solve the issue in a Permission Set without having to run a CI/CD job.
 
-After the first run, you need to update manually:
-
-- mkdocs.yml
-- .github/workflows/build-deploy-docs.yml
-- docs/javascripts/gtag.js , if you want Google Analytics tracking
-
-Then, activate Github pages, with "gh_pages" as target branch
-
-At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages
-
+Used by VsCode Extension
 
 ## Parameters
 
@@ -24,12 +17,14 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
+|source-dir<br/>-d|option|Source file or directory to simulate the deployment||||
+|target-org<br/>-o|option|undefined||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-$ sf hardis:doc:plugin:generate
+$ sf hardis:project:deploy:simulate --source-dir force-app/defaut/main/permissionset/PS_Admin.permissionset-meta.xml
 ```
 
 
