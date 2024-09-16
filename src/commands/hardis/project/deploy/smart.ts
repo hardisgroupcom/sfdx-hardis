@@ -70,6 +70,45 @@ This will activate delta deployments only between minor and major branches (majo
 
 If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
 
+### Smart Deployments Tests
+
+Not all metadata updates can break test classes, use Smart Deployment Tests to skip running test classes if ALL the following conditions are met:
+
+- Delta deployment is activated and applicable to the source and target branches
+- Delta deployed metadatas are all matching the list of **NOT_IMPACTING_METADATA_TYPES** (see below)
+- Target org is not a production org
+
+Activate Smart Deployment tests with:
+
+- env variable \`USE_SMART_DEPLOYMENT_TESTS=true\`
+- .sfdx-hardis.yml config property \`useSmartDeploymentTests: true\`
+
+Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overriden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
+
+- Audience
+- AuraDefinitionBundle
+- Bot
+- BotVersion
+- ContentAsset
+- CustomObjectTranslation
+- CustomSite
+- CustomTab
+- Dashboard
+- ExperienceBundle
+- Flexipage
+- GlobalValueSetTranslation
+- Layout
+- LightningComponentBundle
+- NavigationMenu
+- ReportType
+- Report
+- SiteDotCom
+- StandardValueSetTranslation
+- StaticResource
+- Translations
+
+Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
+
 ### Dynamic deployment items / Overwrite management
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
