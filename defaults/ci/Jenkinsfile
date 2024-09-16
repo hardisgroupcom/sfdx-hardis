@@ -60,7 +60,7 @@ pipeline {
                 steps {
                     script {
                         sh 'sf hardis:auth:login'
-                        sh 'sf hardis:project:deploy:sources:dx --check'
+                        sh 'sf hardis:project:deploy:smart --check'
                     }
                 }
                 post {
@@ -77,21 +77,21 @@ pipeline {
                 }
                 //MANUAL: add your major branch if necessary
                 when {
-                    allOf{ 
+                    allOf {
                         anyOf {
-                            branch: 'integration'; //Example
-                            branch: 'uat'; //Example
-                            branch: 'preprod'; //Example
+                            branch: 'integration' //Example
+                            branch: 'uat' //Example
+                            branch: 'preprod' //Example
                             branch: 'main' //Example
-                        }; 
-                    not {changeRequest()}
+                        };
+                        not { changeRequest() }
                     }
                 }
                 //deploy on the appropriate org
                 steps {
                     script {
                         sh 'sf hardis:auth:login'
-                        sh 'sf hardis:project:deploy:sources:dx'
+                        sh 'sf hardis:project:deploy:smart'
                     }
                 }
                 post {

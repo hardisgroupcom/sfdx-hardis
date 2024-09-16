@@ -2,9 +2,9 @@
 /*
 To test locally, you can call the command like that:
 
-Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --target-org nicolas.vuillamy@cloudity.com.demointeg
+Gitlab: CI=true CI_SFDX_HARDIS_GITLAB_TOKEN=XXX CI_PROJECT_ID=YYY CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --target-org nicolas.vuillamy@cloudity.com.demointeg
 
-Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --target-org nicolas.vuillamy@cloudity.com.muuuurf
+Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com/MyAzureCollection/ BUILD_REPOSITORY_ID=XXX CI_JOB_TOKEN=xxx NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --target-org nicolas.vuillamy@cloudity.com.muuuurf
 
 - Before, you need to make a sf alias set myBranch=myUsername
 - You can find CI_PROJECT_ID with https://gitlab.com/api/v4/projects?search=YOUR-REPO-NAME
@@ -161,7 +161,7 @@ installedPackages:
     SubscriberPackageVersionName: Marketing Cloud
     SubscriberPackageVersionNumber: 236.0.0.2
     installOnScratchOrgs: true                  // true or false depending you want to install this package when creating a new scratch org
-    installDuringDeployments: true              // set as true to install package during a deployment using sf hardis:project:deploy:sources:dx
+    installDuringDeployments: true              // set as true to install package during a deployment using sf hardis:project:deploy:smart
     installationkey: xxxxxxxxxxxxxxxxxxxx       // if the package has a password, write it in this property
     - Id: 0A35r0000009F9CCAU
     SubscriberPackageId: 033b0000000Pf2AAAS
@@ -246,13 +246,13 @@ If you need notifications to be sent using the current Pull Request and not the 
 `;
 
   public static examples = [
-    '$ sf hardis:project:deploy:sources:dx',
-    '$ sf hardis:project:deploy:sources:dx --check',
-    '$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests',
-    "$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
-    '$ sf hardis:project:deploy:sources:dx --check --testlevel RunRepositoryTestsExceptSeeAllData',
-    '$ sf hardis:project:deploy:sources:dx',
-    '$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:sources:dx --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod'
+    '$ sf hardis:project:deploy:smart',
+    '$ sf hardis:project:deploy:smart --check',
+    '$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests',
+    "$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
+    '$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData',
+    '$ sf hardis:project:deploy:smart',
+    '$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod'
   ];
 
 

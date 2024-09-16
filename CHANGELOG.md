@@ -102,7 +102,10 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 
 ### New Features / Enhancements
 
-- commandsPreDeploy and commandsPostDeploy
+- **hardis:project:deploy:smart**
+  - New feature **useSmartDeploymentTests**: Improve performances by not running test classes when delta deployment contain only non impacting metadatas, and target org is not production
+  - Rename command **hardis:project:deploy:source:dx** into **hardis:project:deploy:smart** (previous command alias remains, no need to update your pipelines !)
+- **commandsPreDeploy** and **commandsPostDeploy**
   - New option **context** for a command, defining when it is run and when it is not: **all** (default), **check-deployment-only** or **process-deployment-only****process-deployment-only**
   - New option **runOnlyOnceByOrg**: If set to `true`, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
 - New command **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
@@ -112,7 +115,6 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - **hardis:work:save** and **hardis:project:deploy:sources:dx**: Improve runtime performances thanks to internalization of sfdx-essentials commands
 - **hardis:work:new**: Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
 - **hardis:work:new**: Add current default org in the choices when prompting which org to use
-- Rename command **hardis:project:deploy:source:dx** into **hardis:project:deploy:smart**
 - **hardis:project:new**
   - Initialize autoCleanTypes with **destructivechanges**, **flowPositions** and **minimizeProfiles**
   - Initialize package-no-overwrite.xml with Certificate metadata. (certificates must be uploaded manually)
