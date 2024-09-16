@@ -76,6 +76,7 @@
           "listViewsMine",
           "minimizeProfiles",
           "productrequest",
+          "sensitiveMetadatas",
           "systemDebug",
           "v60"
         ]
@@ -1354,6 +1355,13 @@
       "default": false,
       "description": "Defines if sfdx-hardis will deploy in delta from minor to major branches",
       "title": "Use Delta Deployment",
+      "type": "boolean"
+    },
+    "useSmartDeploymentTests": {
+      "$id": "#/properties/useSmartDeploymentTests",
+      "default": false,
+      "description": "Define if smart deployment tests will be activated and run test classes only if necessary (see more in hardis:project:deploy:smart documentation",
+      "title": "Use Smart Deployment Tests",
       "type": "boolean"
     },
     "linterIgnoreRightMetadataFile": {
