@@ -6,7 +6,7 @@ import * as xml2js from 'xml2js';
 import * as path from 'path';
 
 // Salesforce Specific
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 
@@ -46,13 +46,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': optionalOrgFlagWithDeprecations,
   };
   /* jscpd:ignore-end */
   protected unusedData: any[] = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
-
-  protected static supportsUsername = true;
 
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
