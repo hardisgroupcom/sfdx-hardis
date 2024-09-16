@@ -6,7 +6,7 @@ import * as path from 'path';
 import sortArray from 'sort-array';
 
 // Salesforce Specific
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import fs from 'fs-extra';
 import { AnyJson } from '@salesforce/ts-types';
@@ -71,9 +71,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': optionalOrgFlagWithDeprecations,
   };
-
-  protected static supportsUsername = true;
 
   protected static supportsDevhubUsername = false;
 

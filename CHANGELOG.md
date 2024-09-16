@@ -114,7 +114,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 - Reorganize README content
   - Add link to Dreamforce 24 session
 - Deployment assistant: Improve documentation by adding examples of errors, and a standalone page for each tip
-- Factorize the definition of DOC_ROOT_URL https://sfdx-hardis.cloudity.com
+- Factorize the definition of DOC_ROOT_URL <https://sfdx-hardis.cloudity.com>
 
 ### Deprecations
 

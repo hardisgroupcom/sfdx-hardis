@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { isCI, uxLog } from '../../../common/utils/index.js';
@@ -34,9 +34,9 @@ export default class Lint extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': optionalOrgFlagWithDeprecations,
   };
 
-  protected static supportsUsername = true; // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
   protected fix = false;

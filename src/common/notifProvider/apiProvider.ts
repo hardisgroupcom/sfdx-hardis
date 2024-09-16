@@ -101,7 +101,7 @@ export class ApiProvider extends NotifProviderRoot {
     const repoName = (await getGitRepoName() || "").replace(".git", "");
     const currentGitBranch = await getCurrentGitBranch();
     const conn: Connection = globalThis.jsForceConn;
-    const orgIdentifier = conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__");
+    const orgIdentifier = (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
     const notifKey = orgIdentifier + "!!" + notifMessage.type;
     this.payload = {
       source: "sfdx-hardis",
