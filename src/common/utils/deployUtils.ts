@@ -1053,7 +1053,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg || false;
     if (runOnlyOnceByOrg) {
       await checkSfdxHardisTraceAvailable(options.conn);
-      const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c=${property} AND Key__c=${cmd.id} LIMIT 1`;
+      const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c='${property}' AND Key__c='${cmd.id}' LIMIT 1`;
       const commandTraceRes = await soqlQuery(commandTraceQuery, options.conn);
       if (commandTraceRes?.records?.length > 0) {
         uxLog(this, c.grey(`Skipping command [${cmd.id}]: ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
@@ -1065,6 +1065,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     const commandRes = await execCommand(cmd.command, this, { fail: false, output: true });
     if (commandRes.status === 0 && runOnlyOnceByOrg) {
       const hardisTraceRecord = {
+        Name: property + "--" + cmd.id,
         Type__c: property,
         Key__c: cmd.id
       }

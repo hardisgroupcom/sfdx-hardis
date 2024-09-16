@@ -122,7 +122,7 @@ export async function authOrg(orgAlias: string, options: any) {
       return;
     }
 
-    // Get auth variables, with priority CLI arguments, environment variables, then .hardis-sfdx.yml config file
+    // Get auth variables, with priority CLI arguments, environment variables, then .sfdx-hardis.yml config file
     let username =
       typeof options.Command.flags?.targetusername === 'string'
         ? options.Command.flags?.targetusername
