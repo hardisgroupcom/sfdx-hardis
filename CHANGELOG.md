@@ -102,7 +102,9 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 
 ### New Features / Enhancements
 
-- commandsPreDeploy and commandsPostDeploy: Allow to define a running context for a command: **all** (default), **check-deployment-only** or **process-deployment-only****process-deployment-only**
+- commandsPreDeploy and commandsPostDeploy
+  - New option **context** for a command, defining when it is run and when it is not: **all** (default), **check-deployment-only** or **process-deployment-only****process-deployment-only**
+  - New option **runOnlyOnceByOrg**: If set to `true`, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
 - New command **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
 - New command **hardis:org:diagnose:releaseupdates** to check for org Release Updates from Monitoring or locally
 - New command **hardis:misc:purge-references** to partially automate the cleaning of related dependencies when you need to delete a field, or change its type (for example from master detail to lookup)
