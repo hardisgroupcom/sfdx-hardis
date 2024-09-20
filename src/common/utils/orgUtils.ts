@@ -580,7 +580,7 @@ export async function isProductionOrg(targetUsername: string, options: any) {
     targetUsername ? ` --target-org ${targetUsername}` : "";
   const orgQueryRes = await execSfdxJson(orgQuery, this, {
     output: false,
-    debug: this.debugMode,
+    debug: options.debugMode || false,
     fail: true,
   });
   const orgRes = orgQueryRes?.result?.records || orgQueryRes.records || [];
