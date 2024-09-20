@@ -30,3 +30,9 @@ config/user/
 megalinter-reports/
 
 .idea
+
+.wireit/
+
+tsconfig.tsbuildinfo
+
+.eslintcache
