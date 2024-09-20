@@ -3,6 +3,7 @@
     "**/node_modules/**",
     "**/vscode-extension/**",
     "**/.git/**",
+    "**/.gitignore",
     "**/grafana/**",
     ".vscode",
     "package-lock.json",
