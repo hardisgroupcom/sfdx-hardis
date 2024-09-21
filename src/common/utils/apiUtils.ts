@@ -19,6 +19,16 @@ export function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<a
   return conn.tooling.query(soqlQuery);
 }
 
+export function toolingRequest(endpoint, conn: Connection, info?): Promise<any> {
+  const url = `${conn.instanceUrl}/services/data/v61.0/tooling/${endpoint}`
+  return conn.tooling.request({url, ...info});
+}
+
+// Perform Tooling Global Description API call
+export function describeGlobalTooling(conn: Connection, callback?: () => void): Promise<any> {
+  return conn.tooling.describeGlobal(callback);
+}
+
 let spinnerQ;
 const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
