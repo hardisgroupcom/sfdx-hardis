@@ -262,8 +262,11 @@ export async function smartDeploy(
       // No QuickDeploy Available, or QuickDeploy failing : try full deploy
       const branchConfig = await getConfig('branch');
       const deployCommand =
-        `sf project deploy ${check ? 'validate' : 'start'} --manifest "${deployment.packageXmlFile}"` +
-        (check === false ? ' --ignore-warnings' : '') + // So it does not fail in for objectTranslations stuff
+        `sf project deploy` +
+        (check && testlevel !== 'NoTestRun' ? ' validate' : ' start') +
+        (check && testlevel === 'NoTestRun' ? ' --dry-run' : '') + // validate with NoTestRun does not work, so use --dry-run
+        ` --manifest "${deployment.packageXmlFile}"` +
+        (check === false ? ' --ignore-warnings' : '') + // So it does not fail in for objectTranslations stuff for example
         ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +

@@ -577,14 +577,14 @@ export async function isProductionOrg(targetUsername: string, options: any) {
   }
   // Use SF Cli command
   const orgQuery = `sf data query --query "SELECT IsSandbox FROM Organization LIMIT 1"` +
-    targetUsername ? ` --target-org ${targetUsername}` : "";
+    (targetUsername ? ` --target-org ${targetUsername}` : "");
   const orgQueryRes = await execSfdxJson(orgQuery, this, {
     output: false,
-    debug: this.debugMode,
+    debug: options.debugMode || false,
     fail: true,
   });
   const orgRes = orgQueryRes?.result?.records || orgQueryRes.records || [];
-  return orgRes.records[0].IsSandbox === false;
+  return orgRes[0].IsSandbox === false;
 }
 
 // Returns true if the org is a sandbox and not a scratch org
