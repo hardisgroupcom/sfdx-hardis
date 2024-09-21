@@ -327,8 +327,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     let targetUsername = flags['target-org'].getUsername();
     if (!isCI) {
       uxLog(this, c.yellow("Just to be sure, please select the org you want to use for this command :)"))
-      const targetOrg = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
-      targetUsername = targetOrg.username;
+      targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
 
     await this.initTestLevelAndTestClasses(flags);
