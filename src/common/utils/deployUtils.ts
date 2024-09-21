@@ -86,9 +86,10 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
 }
 
 export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
+  let pullCommandResult: any;
   try {
     const pullCommand = `sf project retrieve start --ignore-conflicts -o ${scratchOrgAlias} --wait 60`;
-    await execCommand(pullCommand, this, {
+    pullCommandResult = await execCommand(pullCommand, this, {
       fail: true,
       output: true,
       debug: debug,
@@ -148,6 +149,21 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       output: true,
       debug: debug,
     });
+  }
+
+  // If there are SharingRules, retrieve all of them to avoid the previous one are deleted (SF Cli strange/buggy behaviour)
+  if (pullCommandResult?.stdout?.includes("SharingRules")) {
+    uxLog(this, c.yellow('Detected Sharing Rules in the pull: rerieving the whole of them to avoid silly overrides !'));
+    const sharingRulesNamesMatches = [...pullCommandResult.stdout.matchAll(/([^ \\/]+)\.sharingRules-meta\.xml/gm)];
+    for (const match of sharingRulesNamesMatches) {
+      uxLog(this, c.grey(`Retrieve the whole ${match[1]} SharingRules...`));
+      const retrieveCommand = `sf project retrieve start -m "SharingRules:${match[1]}" -o ${scratchOrgAlias} --wait 60`;
+      await execCommand(retrieveCommand, this, {
+        fail: true,
+        output: true,
+        debug: debug,
+      });
+    }
   }
 }
 
