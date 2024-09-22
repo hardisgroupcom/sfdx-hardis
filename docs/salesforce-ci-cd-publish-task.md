@@ -24,7 +24,7 @@ _The following video shows how to perform theses operations_
 
 ### Retrieve metadatas
 
-If you made updates on your org that you have not pulled yet, Use command ![Pull from org button](assets/images/btn-pull-from-org.jpg) to **pull your latest updates in local files**
+If you made updates on your org that you have not pulled yet, Use command [![Pull from org button](assets/images/btn-pull-from-org.jpg)](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/) to **pull your latest updates in local files**
 
 If you updated config elements that you do not see in your local files, you may discuss with your release manager to [automate force retrieve metadatas](salesforce-ci-cd-retrieve.md)
 

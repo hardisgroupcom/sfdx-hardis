@@ -3,6 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
+import { uxLog } from '../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -16,8 +17,9 @@ Then, you probably want to stage and commit the files containing the updates you
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-- Calls sf project retrieve start under the hood
+- Calls \`sf project retrieve start\` under the hood
 - If there are errors, proposes to automatically add erroneous item in \`.forceignore\`, then pull again
+- If you don't see your updated items in the results, you can manually retrieve [using SF Extension **Org Browser** or **Salesforce CLI**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas)
 - If you want to always retrieve sources like CustomApplication that are not always detected as updates by project:retrieve:start , you can define property **autoRetrieveWhenPull** in .sfdx-hardis.yml
 
 Example:
@@ -59,7 +61,9 @@ autoRetrieveWhenPull:
     const targetUsername = flags['target-org'].getUsername() || '';
     await forceSourcePull(targetUsername, debugMode);
 
+    uxLog(this, `If you don't see your updated items in the results, check the following documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`);
+
     // Return an object to be displayed with --json
-    return { outputString: 'Pulled scratch org updates' };
+    return { outputString: 'Pulled scratch org / source-tracked sandbox updates' };
   }
 }
