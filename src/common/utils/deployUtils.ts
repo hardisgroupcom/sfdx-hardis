@@ -151,9 +151,9 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
     });
   }
 
-  // If there are SharingRules, retrieve all of them to avoid the previous one are deleted (SF Cli strange/buggy behaviour)
+  // If there are SharingRules, retrieve all of them to avoid the previous one are deleted (SF Cli strange/buggy behavior)
   if (pullCommandResult?.stdout?.includes("SharingRules")) {
-    uxLog(this, c.yellow('Detected Sharing Rules in the pull: rerieving the whole of them to avoid silly overrides !'));
+    uxLog(this, c.yellow('Detected Sharing Rules in the pull: retrieving the whole of them to avoid silly overrides !'));
     const sharingRulesNamesMatches = [...pullCommandResult.stdout.matchAll(/([^ \\/]+)\.sharingRules-meta\.xml/gm)];
     for (const match of sharingRulesNamesMatches) {
       uxLog(this, c.grey(`Retrieve the whole ${match[1]} SharingRules...`));
