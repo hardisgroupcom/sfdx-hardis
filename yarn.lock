@@ -1635,13 +1635,13 @@
     "@inquirer/core" "^9.0.10"
     "@inquirer/type" "^1.5.2"
 
-"@inquirer/password@^2.1.22":
-  version "2.1.22"
-  resolved "https://registry.npmjs.org/@inquirer/password/-/password-2.1.22.tgz"
-  integrity sha512-5Fxt1L9vh3rAKqjYwqsjU4DZsEvY/2Gll+QkqR4yEpy6wvzLxdSgFhUcxfDAOtO4BEoTreWoznC0phagwLU5Kw==
+"@inquirer/password@^2.1.22", "@inquirer/password@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@inquirer/password/-/password-2.2.0.tgz#0b6f26336c259c8a9e5f5a3f2e1a761564f764ba"
+  integrity sha512-5otqIpgsPYIshqhgtEwSspBQE40etouR8VIxzpJkv9i0dVHIpyhiivbkH9/dGiMLdyamT54YRdGJLfl8TFnLHg==
   dependencies:
-    "@inquirer/core" "^9.0.10"
-    "@inquirer/type" "^1.5.2"
+    "@inquirer/core" "^9.1.0"
+    "@inquirer/type" "^1.5.3"
     ansi-escapes "^4.3.2"
 
 "@inquirer/prompts@^5.3.8":
@@ -2467,7 +2467,7 @@
     typescript "^5.4.3"
     wireit "^0.14.4"
 
-"@salesforce/kit@^3.1.2", "@salesforce/kit@^3.2.1", "@salesforce/kit@^3.2.2", "@salesforce/kit@^3.2.3":
+"@salesforce/kit@^3.1.2", "@salesforce/kit@^3.2.2", "@salesforce/kit@^3.2.3":
   version "3.2.3"
   resolved "https://registry.yarnpkg.com/@salesforce/kit/-/kit-3.2.3.tgz#a7293c384ef6133191fe3590e604e3896fdecf4a"
   integrity sha512-X8rZouLt06dxRkn+uYTwywWDS/NqZ783AyomGqgtWdUxF61EOJvu0ehtcYeutx9Ng08uuZ+s6wNvWiDsdhUcPg==
@@ -2484,16 +2484,16 @@
   resolved "https://registry.npmjs.org/@salesforce/schemas/-/schemas-1.9.0.tgz"
   integrity sha512-LiN37zG5ODT6z70sL1fxF7BQwtCX9JOWofSU8iliSNIM+WDEeinnoFtVqPInRSNt8I0RiJxIKCrqstsmQRBNvA==
 
-"@salesforce/sf-plugins-core@^11.3.7":
-  version "11.3.7"
-  resolved "https://registry.npmjs.org/@salesforce/sf-plugins-core/-/sf-plugins-core-11.3.7.tgz"
-  integrity sha512-aqOAYex3JGHUE/ECWpQuedEJXq00vJOqNr3VYF0Lp9OBAVn0AZZu10fzv+ww2hLDjA9dH782ZNqw/CiE0XKJlA==
+"@salesforce/sf-plugins-core@^11.3.10":
+  version "11.3.10"
+  resolved "https://registry.yarnpkg.com/@salesforce/sf-plugins-core/-/sf-plugins-core-11.3.10.tgz#22dcb645e24110a5a50a5ee2602c62d855e85de6"
+  integrity sha512-Gvj6OM57cs1R/M/U8tWCo0srTyLNAsSOVtRWie8nz6x/qp6212ewkVgwwHBmP8XJsfuzjNvbzGcCjrCgwBzmCQ==
   dependencies:
     "@inquirer/confirm" "^3.1.22"
-    "@inquirer/password" "^2.1.22"
+    "@inquirer/password" "^2.2.0"
     "@oclif/core" "^4.0.19"
     "@salesforce/core" "^8.5.1"
-    "@salesforce/kit" "^3.2.1"
+    "@salesforce/kit" "^3.2.2"
     "@salesforce/ts-types" "^2.0.12"
     ansis "^3.3.2"
     cli-progress "^3.12.0"
