@@ -54,7 +54,7 @@
     "sort-array": "^4.1.5",
     "split": "^1.0.1",
     "string-template": "^1.0.0",
-    "update-notifier": "^7.3.0",
+    "update-notifier": "^7.3.1",
     "which": "^4.0.0",
     "ws": "^8.18.0",
     "xml2js": "^0.6.2",

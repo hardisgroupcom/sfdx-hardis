@@ -4726,9 +4726,9 @@ boxen@^7.1.1:
     widest-line "^4.0.1"
     wrap-ansi "^8.1.0"
 
-boxen@^8.0.0:
+boxen@^8.0.1:
   version "8.0.1"
-  resolved "https://registry.npmjs.org/boxen/-/boxen-8.0.1.tgz"
+  resolved "https://registry.yarnpkg.com/boxen/-/boxen-8.0.1.tgz#7e9fcbb45e11a2d7e6daa8fdcebfc3242fc19fe3"
   integrity sha512-F3PH5k5juxom4xktynS7MoFY+NUWH5LC4CnH11YB8NPew+HLpmBLCybSAEyb2F+4pRXhuhWqFesoQd6DAyc2hw==
   dependencies:
     ansi-align "^3.0.1"
@@ -12204,12 +12204,12 @@ update-browserslist-db@^1.0.13:
     escalade "^3.1.1"
     picocolors "^1.0.0"
 
-update-notifier@^7.3.0:
-  version "7.3.0"
-  resolved "https://registry.npmjs.org/update-notifier/-/update-notifier-7.3.0.tgz"
-  integrity sha512-nA5Zoy3rahYd/Lx1s6jZYHfrKKYOgw0kThkLdwgJtXEFsXqEbMnwdVNPT9D+HELlEXqTR7Iq8rjg/NjenGLIvg==
+update-notifier@^7.3.1:
+  version "7.3.1"
+  resolved "https://registry.yarnpkg.com/update-notifier/-/update-notifier-7.3.1.tgz#49af1ad6acfa0ea01c0d0f3c04047c154ead7096"
+  integrity sha512-+dwUY4L35XFYEzE+OAL3sarJdUioVovq+8f7lcIJ7wnmnYQV5UD1Y/lcwaMSyaQ6Bj3JMj1XSTjZbNLHn/19yA==
   dependencies:
-    boxen "^8.0.0"
+    boxen "^8.0.1"
     chalk "^5.3.0"
     configstore "^7.0.0"
     is-in-ci "^1.0.0"
