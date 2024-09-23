@@ -279,10 +279,12 @@ export async function smartDeploy(
       const branchConfig = await getConfig('branch');
       const deployCommand =
         `sf project deploy` +
-        (check && testlevel !== 'NoTestRun' ? ' validate' : ' start') +
-        (check && testlevel === 'NoTestRun' ? ' --dry-run' : '') + // validate with NoTestRun does not work, so use --dry-run
+        // (check && testlevel !== 'NoTestRun' ? ' validate' : ' start') + // Not until validate command is correct and accepts ignore-warnings
+        ' start' +
+        // (check && testlevel === 'NoTestRun' ? ' --dry-run' : '') + // validate with NoTestRun does not work, so use --dry-run
+        (check ? ' --dry-run' : '') +
         ` --manifest "${deployment.packageXmlFile}"` +
-        (check === false ? ' --ignore-warnings' : '') + // So it does not fail in for objectTranslations stuff for example
+        ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff for example
         ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
