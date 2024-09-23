@@ -118,7 +118,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 
 ### Deprecations
 
-- Deprecate wrapper commands matching sfdx commands that will be removed. All replaced by sf hardis deploy start (TODO: complete !)
+- Deprecate wrapper commands matching sfdx commands that will be removed. All replaced by sf hardis deploy start
 
   - `sfdx hardis:source:push`
   - `sfdx hardis:source:deploy`
