@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [5.0.1] 2024-09-23
+## [5.0.2] 2024-09-23
 
 - Always use `project deploy start --dry-run` for deployment validation, until command `project deploy validate` works with --ignore-warnings & NoTestRun
 
