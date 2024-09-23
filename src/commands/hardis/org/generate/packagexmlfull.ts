@@ -1,57 +1,47 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import * as path from "path";
-import { isCI, uxLog } from "../../../../common/utils";
-import { getReportDirectory } from "../../../../config";
-import { buildOrgManifest } from "../../../../common/utils/deployUtils";
-import { promptOrgUsernameDefault } from "../../../../common/utils/orgUtils";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Connection, Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import * as path from 'path';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { getReportDirectory } from '../../../../config/index.js';
+import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
+import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+export default class GeneratePackageXmlFull extends SfCommand<any> {
+  public static title = 'Generate Full Org package.xml';
 
-export default class GeneratePackageXmlFull extends SfdxCommand {
-  public static title = "Generate Full Org package.xml";
-
-  public static description = "Generates full org package.xml, including managed items";
+  public static description = 'Generates full org package.xml, including managed items';
 
   public static examples = [
-    "$ sfdx hardis:org:generate:packagexmlfull",
-    "$ sfdx hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml",
-    "$ sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com",
+    '$ sf hardis:org:generate:packagexmlfull',
+    '$ sf hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml',
+    '$ sf hardis:org:generate:packagexmlfull --target-org nico@example.com',
   ];
 
-  protected static flagsConfig = {
-    outputfile: flags.string({
-      description: "Output package.xml file",
+  public static flags: any = {
+    outputfile: Flags.string({
+      description: 'Output package.xml file',
     }),
-    debug: flags.boolean({
-      char: "d",
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
-  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected debugMode = false;
   protected outputFile;
@@ -59,17 +49,18 @@ export default class GeneratePackageXmlFull extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.outputFile = this.flags.outputfile || null;
-    this.debugMode = this.flags.debugMode || false;
+    const { flags } = await this.parse(GeneratePackageXmlFull);
+    this.outputFile = flags.outputfile || null;
+    this.debugMode = flags.debug || false;
 
     // Select org that will be used to export records
-    let conn = null;
-    let orgUsername = this.org.getUsername();
+    let conn: Connection | null = null;
+    let orgUsername = flags['target-org'].getUsername();
     if (!isCI) {
       const prevOrgUsername = orgUsername;
-      orgUsername = await promptOrgUsernameDefault(this, orgUsername, { devHub: false, setDefault: false });
+      orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
       if (prevOrgUsername === orgUsername) {
-        conn = this.org.getConnection();
+        conn = flags['target-org'].getConnection();
       }
     }
     uxLog(this, c.cyan(`Generating full package xml for ${orgUsername}`));
@@ -77,7 +68,7 @@ export default class GeneratePackageXmlFull extends SfdxCommand {
     // Calculate default output file if not provided as input
     if (this.outputFile == null) {
       const reportDir = await getReportDirectory();
-      this.outputFile = path.join(reportDir, "org-package-xml-full.xml");
+      this.outputFile = path.join(reportDir, 'org-package-xml-full.xml');
     }
 
     await buildOrgManifest(orgUsername, this.outputFile, conn);

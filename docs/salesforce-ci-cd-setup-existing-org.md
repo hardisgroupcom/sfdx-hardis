@@ -24,7 +24,7 @@ If you want to go for a **full init setup**, follow the steps below !
 
 - Run the following command that will retrieve locally all the metadatas of production org
 
-`sfdx hardis:org:retrieve:sources:dx --shape -u YOURSOURCEORGUSERNAME`
+`sf hardis:org:retrieve:sources:dx --shape -u YOURSOURCEORGUSERNAME`
 
 - In case you get an error:
   - Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
@@ -33,7 +33,7 @@ If you want to go for a **full init setup**, follow the steps below !
 
 Example :
   
-- `sfdx hardis:org:generate:packagexmlfull --targetusername nico@example.com --outputfile ./packagexmlfull.xml`
+- `sf hardis:org:generate:packagexmlfull --targetusername nico@example.com --outputfile ./packagexmlfull.xml`
 - Remove Document part on packagexmlfull.xml
   ```xml
       <types>
@@ -43,7 +43,7 @@ Example :
           <name>Document</name>
       </types>
   ```
-- `sfdx hardis:source:retrieve -x ./packagexmlfull.xml`
+- `sf hardis:source:retrieve -x ./packagexmlfull.xml`
 
 
 
@@ -59,7 +59,7 @@ Proceed to the following steps to automatically remove many of them, then procee
 Run the following command to delete all elements with a namespace.
 
 ```shell
-sfdx hardis:project:clean:manageditems --namespace SOMENAMESPACE
+sf hardis:project:clean:manageditems --namespace SOMENAMESPACE
 ```
 
 ### Remove (hidden) files
@@ -67,7 +67,7 @@ sfdx hardis:project:clean:manageditems --namespace SOMENAMESPACE
 Some items have no namespace but are managed anyway, and contain `(hidden)`, so they must me deleted with the following command.
 
 ```shell
-sfdx hardis:project:clean:hiddenitems
+sf hardis:project:clean:hiddenitems
 ```
 
 ### Remove empty items
@@ -75,7 +75,7 @@ sfdx hardis:project:clean:hiddenitems
 Some files are empty and do not need to be kept in repository, remove them using the following command.
 
 ```shell
-sfdx hardis:project:clean:emptyitems
+sf hardis:project:clean:emptyitems
 ```
 
 ### Standard objects without custom
@@ -85,7 +85,7 @@ The retrieve command pulled all standard objects and fields.
 Those which has never been customized do not need to remain in repository, delete them using the following command (that can take some time)
 
 ```shell
-sfdx hardis:project:clean:standarditems
+sf hardis:project:clean:standarditems
 ```
 
 ## Manual Metadata Cleaning
@@ -111,7 +111,7 @@ Manually delete files (or even folders) that are maintained directly in producti
 
 Run the following command to retrieve packages installed on production org
 
-`sfdx hardis:org:retrieve:packageconfig -u YOUR_PROD_ORG_USER`
+`sf hardis:org:retrieve:packageconfig -u YOUR_PROD_ORG_USER`
 
 This will update file **config/.sfdx-hardis.yml**
 

@@ -15,7 +15,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "11.1.0-70958"
+      "version": "11.3.0-75420"
     },
     {
       "type": "datasource",
@@ -67,6 +67,7 @@
   ],
   "panels": [
     {
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -76,7 +77,6 @@
       "id": 3,
       "panels": [],
       "repeat": "org",
-      "repeatDirection": "h",
       "title": "$org",
       "type": "row"
     },
@@ -204,7 +204,9 @@
           "countRows": false,
           "enablePagination": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
@@ -215,7 +217,7 @@
           }
         ]
       },
-      "pluginVersion": "11.1.0-70958",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -255,7 +257,9 @@
           "id": "reduce",
           "options": {
             "labelsToFields": false,
-            "reducers": ["allValues"]
+            "reducers": [
+              "allValues"
+            ]
           }
         },
         {
@@ -341,7 +345,6 @@
           "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
         },
         "definition": "",
-        "hide": 0,
         "includeAll": true,
         "label": "Salesforce Org",
         "multi": true,
@@ -355,7 +358,6 @@
         },
         "refresh": 1,
         "regex": "^[^.]*$",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       }
@@ -365,7 +367,6 @@
     "from": "now-30d",
     "to": "now"
   },
-  "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {},
   "timezone": "browser",
   "title": "DTL - Limits Details",

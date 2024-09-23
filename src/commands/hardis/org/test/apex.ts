@@ -1,23 +1,19 @@
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
-import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from "../../../../common/utils";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
-import { getConfig, getReportDirectory } from "../../../../config";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import fs from 'fs-extra';
+import * as path from 'path';
+import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from '../../../../common/utils/index.js';
+import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
+import { CONSTANTS, getConfig, getReportDirectory } from '../../../../config/index.js';
+import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
-
-export default class OrgTestApex extends SfdxCommand {
-  public static title = "Run apex tests";
+export default class OrgTestApex extends SfCommand<any> {
+  public static title = 'Run apex tests';
 
   public static description = `Run apex tests in Salesforce org
 
@@ -28,36 +24,31 @@ If following configuration is defined, it will fail if apex coverage target is n
 
 You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes.
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
-  public static examples = ["$ sfdx hardis:org:test:apex"];
+  public static examples = ['$ sf hardis:org:test:apex'];
 
-  protected static flagsConfig = {
-    testlevel: flags.enum({
-      char: "l",
-      default: "RunLocalTests",
-      options: ["NoTestRun", "RunSpecifiedTests", "RunLocalTests", "RunAllTestsInOrg"],
-      description: messages.getMessage("testLevel"),
+  public static flags: any = {
+    testlevel: Flags.string({
+      char: 'l',
+      default: 'RunLocalTests',
+      options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
+      description: messages.getMessage('testLevel'),
     }),
-    debug: flags.boolean({
-      char: "d",
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
-
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-
-  // Comment this out if your command does not support a hub org username
-  // protected static requiresDevhubUsername = true;
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   // protected static requiresProject = true;
@@ -68,33 +59,33 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected statusMessage: string;
   protected coverageTarget = 75.0;
   protected coverageValue = 0.0;
-  protected failingTestClasses = [];
-  private notifSeverity: NotifSeverity = "log";
+  protected failingTestClasses: any[] = [];
+  private notifSeverity: NotifSeverity = 'log';
   private notifText: string;
-  private notifAttachments = [];
-  private notifAttachedFiles = [];
-  private orgMarkdown = "";
-  private notifButtons = [];
+  private notifAttachments: any = [];
+  private notifAttachedFiles: any = [];
+  private orgMarkdown = '';
+  private notifButtons: any[] = [];
 
   /* jscpd:ignore-start */
   public async run(): Promise<AnyJson> {
-    const check = this.flags.check || false;
-    const testlevel = this.flags.testlevel || "RunLocalTests";
-    const debugMode = this.flags.debug || false;
+    const { flags } = await this.parse(OrgTestApex);
+    const testlevel = flags.testlevel || 'RunLocalTests';
+    const debugMode = flags.debug || false;
 
-    this.configInfo = await getConfig("branch");
-    this.orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    this.configInfo = await getConfig('branch');
+    this.orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
-    await this.runApexTests(testlevel, check, debugMode);
+    await this.runApexTests(testlevel, debugMode);
     // No Apex
-    if (this.testRunOutcome === "NoApex") {
-      this.notifSeverity = "log";
-      this.statusMessage = "No Apex found in the org";
+    if (this.testRunOutcome === 'NoApex') {
+      this.notifSeverity = 'log';
+      this.statusMessage = 'No Apex found in the org';
       this.notifText = `No Apex found in org ${this.orgMarkdown}`;
     }
     // Failed tests
-    else if (this.testRunOutcome === "Failed") {
+    else if (this.testRunOutcome === 'Failed') {
       await this.processApexTestsFailure();
     }
     // Get test coverage (and fail if not reached)
@@ -103,9 +94,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     uxLog(this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
 
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "APEX_TESTS",
+      type: 'APEX_TESTS',
       text: this.notifText,
       attachments: this.notifAttachments,
       buttons: this.notifButtons,
@@ -124,28 +115,27 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     });
 
     // Handle output message & exit code
-    if (this.notifSeverity === "error") {
+    if (this.notifSeverity === 'error') {
       process.exitCode = 1;
       uxLog(this, c.red(this.statusMessage));
     } else {
       uxLog(this, c.green(this.statusMessage));
     }
 
-    return { orgId: this.org.getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
+    return { orgId: flags['target-org'].getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
   }
 
-  private async runApexTests(testlevel: any, check: any, debugMode: any) {
+  private async runApexTests(testlevel: any, debugMode: any) {
     // Run tests with SFDX commands
     const reportDir = await getReportDirectory();
     const testCommand =
-      "sfdx force:apex:test:run" +
-      " --codecoverage" +
-      " --resultformat human" +
-      ` --outputdir ${reportDir}` +
-      ` --wait ${process.env.SFDX_TEST_WAIT_MINUTES || "60"}` +
-      ` --testlevel ${testlevel}` +
-      (check ? " --checkonly" : "") +
-      (debugMode ? " --verbose" : "");
+      'sf apex run test' +
+      ' --code-coverage' +
+      ' --result-format human' +
+      ` --output-dir ${reportDir}` +
+      ` --wait ${process.env.SFDX_TEST_WAIT_MINUTES || '60'}` +
+      ` --test-level ${testlevel}` +
+      (debugMode ? ' --verbose' : '');
     try {
       const execCommandRes = await execCommand(testCommand, this, {
         output: true,
@@ -153,37 +143,37 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
         fail: true,
       });
       // Parse outcome value from logs with Regex
-      this.testRunOutcome = /Outcome *(.*) */.exec(execCommandRes.stdout + execCommandRes.stderr)[1].trim();
+      this.testRunOutcome = (/Outcome *(.*) */.exec(execCommandRes.stdout + execCommandRes.stderr) || '')[1].trim();
       this.testRunOutputString = execCommandRes.stdout + execCommandRes.stderr;
     } catch (e) {
       // No Apex in the org
       if (
-        e.message.includes("Toujours fournir une propriété classes, suites, tests ou testLevel") ||
-        e.message.includes("Always provide a classes, suites, tests, or testLevel property")
+        (e as Error).message.includes('Toujours fournir une propriété classes, suites, tests ou testLevel') ||
+        (e as Error).message.includes('Always provide a classes, suites, tests, or testLevel property')
       ) {
-        this.testRunOutcome = "NoApex";
+        this.testRunOutcome = 'NoApex';
       } else {
         // Failing Apex tests
-        this.testRunOutputString = e.message;
-        this.testRunOutcome = "Failed";
+        this.testRunOutputString = (e as Error).message;
+        this.testRunOutcome = 'Failed';
       }
     }
   }
 
   private async processApexTestsFailure() {
-    this.notifSeverity = "error";
+    this.notifSeverity = 'error';
     this.statusMessage = `Org apex tests failure (Outcome: ${this.testRunOutcome})`;
     this.notifText = `Org apex tests failure in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
     const reportDir = await getReportDirectory();
     // Parse log from external file
-    const sfReportFile = path.join(reportDir, "/test-result.txt");
+    const sfReportFile = path.join(reportDir, '/test-result.txt');
     if (fs.existsSync(sfReportFile)) {
       this.notifAttachedFiles = [sfReportFile];
     }
     // Parse failing test classes
     const failuresRegex = /(.*) Fail (.*)/gm;
     const regexMatches = await extractRegexMatchesMultipleGroups(failuresRegex, this.testRunOutputString);
-    uxLog(this, c.yellow("Failing tests:"));
+    uxLog(this, c.yellow('Failing tests:'));
     for (const match of regexMatches) {
       this.failingTestClasses.push({ name: match[1].trim(), error: match[2].trim() });
     }
@@ -191,81 +181,85 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       {
         text: this.failingTestClasses
           .map((failingTestClass) => {
-            return "• " + failingTestClass.name + " / " + failingTestClass.error;
+            return '• *' + failingTestClass.name + '*: ' + failingTestClass.error;
           })
-          .join("\n"),
+          .join('\n'),
       },
     ];
     console.table(this.failingTestClasses);
   }
 
   private async checkOrgWideCoverage() {
-    const coverageOrgWide = parseFloat(/Org Wide Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
+    const coverageOrgWide = parseFloat(
+      (/Org Wide Coverage *(.*)/.exec(this.testRunOutputString) || '')[1].replace('%', '')
+    );
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
-        process.env.APEX_TESTS_MIN_COVERAGE ||
-        this.configInfo.apexTestsMinCoverageOrgWide ||
-        this.configInfo.apexTestsMinCoverage ||
-        75.0,
+      process.env.APEX_TESTS_MIN_COVERAGE ||
+      this.configInfo.apexTestsMinCoverageOrgWide ||
+      this.configInfo.apexTestsMinCoverage ||
+      75.0
     );
     this.coverageTarget = minCoverageOrgWide;
     this.coverageValue = coverageOrgWide;
     // Do not test if tests failed
-    if (this.testRunOutcome !== "Passed") {
+    if (this.testRunOutcome !== 'Passed') {
       return;
     }
     // Developer tried to cheat in config ^^
     if (minCoverageOrgWide < 75.0) {
-      this.notifSeverity = "error";
+      this.notifSeverity = 'error';
       this.statusMessage = `Don't try to cheat with configuration: Minimum org wide coverage must be 75% ;)`;
       this.notifText = this.statusMessage;
     }
     // Min coverage not reached
     else if (coverageOrgWide < minCoverageOrgWide) {
-      this.notifSeverity = "error";
-      this.statusMessage = `Test run coverage (org wide) ${coverageOrgWide}% should be > to ${minCoverageOrgWide}%`;
+      this.notifSeverity = 'error';
+      this.statusMessage = `Test run coverage (org wide) *${coverageOrgWide}%* should be > to ${minCoverageOrgWide}%`;
       this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
     }
     // We are good !
     else {
-      this.notifSeverity = "log";
-      this.statusMessage = `Test run coverage (org wide) ${coverageOrgWide}% is > to ${minCoverageOrgWide}%`;
+      this.notifSeverity = 'log';
+      this.statusMessage = `Test run coverage (org wide) *${coverageOrgWide}%* is > to ${minCoverageOrgWide}%`;
       this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
     }
   }
 
   private async checkTestRunCoverage() {
-    if (this.testRunOutputString.includes("Test Run Coverage")) {
+    if (this.testRunOutputString.includes('Test Run Coverage')) {
       // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
-      const coverageTestRun = parseFloat(/Test Run Coverage *(.*)/.exec(this.testRunOutputString)[1].replace("%", ""));
+      const coverageTestRun = parseFloat(
+        (/Test Run Coverage *(.*)/.exec(this.testRunOutputString) || '')[1].replace('%', '')
+      );
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
-          process.env.APEX_TESTS_MIN_COVERAGE ||
-          this.configInfo.apexTestsMinCoverage ||
-          this.coverageTarget,
+        process.env.APEX_TESTS_MIN_COVERAGE ||
+        this.configInfo.apexTestsMinCoverage ||
+        this.coverageTarget
       );
       this.coverageTarget = minCoverageTestRun;
       this.coverageValue = coverageTestRun;
       // Do not test if tests failed
-      if (this.testRunOutcome !== "Passed") {
+      if (this.testRunOutcome !== 'Passed') {
         return;
       }
       // Developer tried to cheat in config ^^
       if (minCoverageTestRun < 75.0) {
-        this.notifSeverity = "error";
+        this.notifSeverity = 'error';
         this.statusMessage = `Don't try to cheat with configuration: Minimum test run coverage must be 75% ;)`;
         this.notifText = this.statusMessage;
       }
       // Min coverage not reached
       else if (coverageTestRun < minCoverageTestRun) {
-        this.notifSeverity = "error";
-        this.statusMessage = `Test run coverage ${coverageTestRun}% should be > to ${minCoverageTestRun}%`;
+        this.notifSeverity = 'error';
+        this.statusMessage = `Test run coverage *${coverageTestRun}%* should be > to ${minCoverageTestRun}%`;
         this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
       // We are good !
       else {
-        this.notifSeverity = "log";
-        this.statusMessage = `Test run coverage ${coverageTestRun}% is > to ${minCoverageTestRun}%`;
+        this.notifSeverity = 'log';
+        this.statusMessage = `Test run coverage *${coverageTestRun}%* is > to ${minCoverageTestRun}%`;
         this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
     }

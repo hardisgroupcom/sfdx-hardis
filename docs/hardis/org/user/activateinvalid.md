@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:user:activateinvalid
 
 ## Description
@@ -14,29 +14,28 @@ See article below
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                                  | Default | Required |                        Options                        |
-|:----------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
-| apiversion            | option  | override the api version used for api requests made by this command                                          |         |          |                                                       |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                              |         |          |                                                       |
-| json                  | boolean | format output as json                                                                                        |         |          |                                                       |
-| loglevel              | option  | logging level for this command invocation                                                                    |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| profiles<br/>-p       | option  | Comma-separated list of profiles names that you want to reactive users assigned to and with a .invalid email |         |          |                                                       |
-| skipauth              | boolean | Skip authentication check when a default username is required                                                |         |          |                                                       |
-| targetusername<br/>-u | option  | username or alias for the target org; overrides default target org                                           |         |          |                                                       |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |                                                       |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | undefined                                                                                                    |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| profiles<br/>-p   | option  | Comma-separated list of profiles names that you want to reactive users assigned to and with a .invalid email |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | undefined                                                                                                    |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 
 ```shell
-sfdx hardis:org:user:activateinvalid
+sf hardis:org:user:activateinvalid
 ```
 
 ```shell
-sfdx hardis:org:user:activateinvalid --targetusername myuser@myorg.com
+sf hardis:org:user:activateinvalid --target-org myuser@myorg.com
 ```
 
 ```shell
-sfdx hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --targetusername myuser@myorg.com
+sf hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --target-org myuser@myorg.com
 ```
 
 

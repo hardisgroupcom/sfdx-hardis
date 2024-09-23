@@ -1,6 +1,6 @@
 # Docker image to run sfdx-hardis
 
-FROM alpine:3.18
+FROM alpine:3.20
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@hardis-group.com>"
 
@@ -27,11 +27,10 @@ ARG SFDX_HARDIS_VERSION=latest
 RUN npm install --no-cache yarn -g && \
     npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
     sf plugins install @salesforce/plugin-packaging && \
-    echo 'y' | sfdx plugins:install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
-    echo 'y' | sfdx plugins:install sfdmu && \
-    echo 'y' | sfdx plugins:install sfdx-git-delta && \
-    echo 'y' | sfdx plugins:install sfdx-essentials && \
-    echo 'y' | sfdx plugins:install texei-sfdx-plugin && \
+    echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
+    echo 'y' | sf plugins install sfdmu && \
+    echo 'y' | sf plugins install sfdx-git-delta && \
+    echo 'y' | sf plugins install texei-sfdx-plugin && \
     sf version --verbose --json && \
     rm -rf /root/.npm/_cacache
 

@@ -1,15 +1,15 @@
-import * as JiraApi from "jira-client";
-import { TicketProviderRoot } from "./ticketProviderRoot";
-import * as c from "chalk";
-import * as sortArray from "sort-array";
-import { Ticket } from ".";
-import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
-import { extractRegexMatches, uxLog } from "../utils";
-import { SfdxError } from "@salesforce/core";
-import { getEnvVar } from "../../config";
+import JiraApi from "jira-client";
+import { TicketProviderRoot } from "./ticketProviderRoot.js";
+import c from "chalk";
+import sortArray from "sort-array";
+import { Ticket } from "./index.js";
+import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
+import { extractRegexMatches, uxLog } from "../utils/index.js";
+import { SfError } from "@salesforce/core";
+import { getEnvVar } from "../../config/index.js";
 
 export class JiraProvider extends TicketProviderRoot {
-  private jiraClient: InstanceType<typeof JiraApi>;
+  private jiraClient: InstanceType<typeof JiraApi> | any = null;
 
   constructor() {
     super();
@@ -21,13 +21,13 @@ export class JiraProvider extends TicketProviderRoot {
     };
     // Basic Auth
     if (getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")) {
-      jiraOptions.username = getEnvVar("JIRA_EMAIL");
-      jiraOptions.password = getEnvVar("JIRA_TOKEN");
+      jiraOptions.username = getEnvVar("JIRA_EMAIL") || "";
+      jiraOptions.password = getEnvVar("JIRA_TOKEN") || "";
       this.isActive = true;
     }
     // Personal access token
     if (getEnvVar("JIRA_PAT")) {
-      jiraOptions.bearer = getEnvVar("JIRA_PAT");
+      jiraOptions.bearer = getEnvVar("JIRA_PAT") || "";
       this.isActive = true;
     }
     if (this.isActive) {
@@ -109,11 +109,11 @@ export class JiraProvider extends TicketProviderRoot {
     }
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
-        let ticketInfo: JiraApi.JsonResponse;
+        let ticketInfo: JiraApi.JsonResponse | null = null;
         try {
           ticketInfo = await this.jiraClient.getIssue(ticket.id);
         } catch (e) {
-          uxLog(this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${e.message}`));
+          uxLog(this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${(e as Error).message}`));
         }
         if (ticketInfo) {
           const body =
@@ -178,11 +178,11 @@ export class JiraProvider extends TicketProviderRoot {
         try {
           const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
           if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
-            throw new SfdxError(genericHtmlResponseError);
+            throw new SfError(genericHtmlResponseError);
           }
           commentedTickets.push(ticket);
         } catch (e6) {
-          uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}: ${e6.message}`));
+          uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}: ${(e6 as any).message}`));
         }
 
         // Add deployment label to JIRA ticket
@@ -195,10 +195,10 @@ export class JiraProvider extends TicketProviderRoot {
           await this.jiraClient.updateIssue(ticket.id, issueUpdate);
           taggedTickets.push(ticket);
         } catch (e6) {
-          if (e6.message != null && e6.message.includes("<!doctype html>")) {
-            e6.message = genericHtmlResponseError;
+          if ((e6 as any).message != null && (e6 as any).message.includes("<!doctype html>")) {
+            (e6 as any).message = genericHtmlResponseError;
           }
-          uxLog(this, c.yellow(`[JiraProvider] Error while adding label ${tag} on ${ticket.id}: ${e6.message}`));
+          uxLog(this, c.yellow(`[JiraProvider] Error while adding label ${tag} on ${ticket.id}: ${(e6 as any).message}`));
         }
       }
     }
@@ -243,7 +243,7 @@ export class JiraProvider extends TicketProviderRoot {
                 {
                   type: "link",
                   attrs: {
-                    href: "https://sfdx-hardis.cloudity.com/",
+                    href: "${CONSTANTS.DOC_URL_ROOT}/",
                   },
                 },
               ],

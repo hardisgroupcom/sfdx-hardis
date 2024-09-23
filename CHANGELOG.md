@@ -4,6 +4,156 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.0.0] 2024-09-23
+
+### Refactoring explanations
+
+The future [deprecation of sfdx force:source:\*\* commands on 6 november](https://github.com/forcedotcom/cli/issues/2974) finally convinced us to switch everything from SFDX core to SF CLI core. (otherwise existing CI/CD pipelines would not work anymore from this date !)
+
+Therefore, sfdx-hardis required a complete refactoring as described below, but this won't impact existing CI/CD and Monitoring pipelines.
+
+We made many tests but risk zero do not exist, so if you see any bug, please report them ASAP and we'll solve them quickly :)
+
+### Major changes
+
+- Migrate plugin from SFDX plugin core to SF Cli Plugin core
+
+  - [Convert commands code from SfdxCommand base to SfCommand base](https://github.com/salesforcecli/cli/wiki/Migrate-Plugins-Built-for-sfdx)
+  - Migrate internal Bulk Api calls from Bulk API v1 to Bulk API v2
+  - Upgrade all npm dependencies to their latest version (more secured)
+
+- Change background calls to legacy sfdx commands to call their SF Cli replacements
+
+  - `sfdx force:mdapi:convert` -> `sf project convert mdapi`
+  - `sfdx force:mdapi:deploy` -> `sf project deploy start --metadata-dir`
+  - `sfdx force:source:retrieve` -> `sf project retrieve start`
+  - `sfdx force:source:deploy` -> `sf project deploy start`
+  - `sfdx force:source:pull` -> `sf project retrieve start`
+  - `sfdx force:source:push` -> `sf project deploy start`
+  - `sfdx force:source:tracking:clear` -> `sf project delete tracking`
+  - `sfdx force:source:manifest:create` -> `sf project generate manifest`
+  - `sfdx sgd:source:delta` -> `sf sgd:source:delta`
+  - `sfdx force:org:create` -> `sf org create sandbox` | `sf org create scratch`
+  - `sfdx force:org:list` -> `sf org list`
+  - `sfdx force:org:delete` -> `sf org delete scratch`
+  - `sfdx config:get` -> `sf config get`
+  - `sfdx config:set` -> `sf config set`
+  - `sfdx auth:web:login` -> `sf org login web`
+  - `sfdx auth:jwt:grant` -> `sf org login jwt`
+  - `sfdx auth:sfdxurl:store` -> `sf org login sfdx-url`
+  - `sfdx org:login:device` -> `sf org login device`
+  - `sfdx force:data:record:get` -> `sf data get record`
+  - `sfdx force:data:record:update` -> `sf data update record`
+  - `sfdx force:data:soql:query` -> `sf data query`
+  - `sfdx force:data:bulk:delete` -> `sf data delete bulk`
+  - `sfdx alias:list` -> `sf alias list`
+  - `sfdx alias:set` -> `sf alias set`
+  - `sfdx force:apex:test:run` -> `sf apex run test`
+  - `sfdx force:apex:execute` -> `sf apex run`
+  - `sfdx force:package:create` -> `sf package create`
+  - `sfdx force:package:version:create` -> `sf package version create`
+  - `sfdx force:package:version:delete` -> `sf package version delete`
+  - `sfdx force:package:version:list` -> `sf package version list`
+  - `sfdx force:package:version:promote` -> `sf package version promote`
+  - `sfdx force:package:installed:list` -> `sf package installed`
+  - `sfdx force:package:install` -> `sf package install`
+  - `sfdx force:user:password:generate` -> `sf org generate password`
+  - `sfdx force:user:permset:assign` -> `sf org assign permset`
+  - `sfdx hardis:_` -> `sf hardis:_`
+
+- New wrappers commands for SF Cli deployment commands
+  - `sf hardis project deploy validate` -> Wraps `sf project deploy validate`
+  - `sf hardis project deploy quick` -> Wraps `sf project deploy quick`
+  - `sf hardis project deploy start` -> Wraps `sf project deploy start`
+
+### New Features / Enhancements
+
+- **hardis:project:deploy:smart**
+  - New feature **useSmartDeploymentTests**: Improve performances by not running test classes when delta deployment contain only non impacting metadatas, and target org is not production
+  - Rename command **hardis:project:deploy:source:dx** into **hardis:project:deploy:smart** (previous command alias remains, no need to update your pipelines !)
+- **commandsPreDeploy** and **commandsPostDeploy**
+  - New option **context** for a command, defining when it is run and when it is not: **all** (default), **check-deployment-only** or **process-deployment-only**
+  - New option **runOnlyOnceByOrg**: If set to `true`, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- New commands
+  - **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
+  - **hardis:org:diagnose:releaseupdates** to check for org Release Updates from Monitoring or locally
+  - **hardis:misc:purge-references** to partially automate the cleaning of related dependencies when you need to delete a field, or change its type (for example from master detail to lookup)
+  - **hardis:project:clean:sensitive-metadatas** to mask sensitive metadatas from git repo (ex: Certificate content)
+- **hardis:work:save** and **hardis:project:deploy:sources:dx**: Improve runtime performances thanks to internalization of sfdx-essentials commands
+- **hardis:work:new**
+  - Allow to add labels in property `availableTargetBranches`, using a comma. For examples, `- integration,Choose this branch if you are on the BUILD side of the project !`
+  - Add current default org in the choices when prompting which org to use
+- **hardis:project:new**
+  - Initialize autoCleanTypes with **destructivechanges**, **flowPositions** and **minimizeProfiles**
+  - Initialize package-no-overwrite.xml with Certificate metadata. (certificates must be uploaded manually)
+- **hardis:org:files:export**: Improve display with spinner
+- **hardis:org:purge:flow**: If FlowInterview records are preventing Flow Versions to be deleted, prompt user to delete Flow Interviews before trying again to delete Flow Versions
+- **hardis:project:generate:gitdelta**: Add option to generate package.xml related to a single commit
+- **hardis:org:data:delete**: Check for property "runnableInProduction" in export.json before running deletion in production org.
+- **hardis:org:diagnose:audittrail**: Add new filtered actions
+  - Customer Portal: createdcustomersuccessuser
+- Authentication: do not use alias MY_ORG anymore + do not update local user config if no values to replace.
+- When selecting an org, make sure it is still connected. If not, open browser so the user can authenticate again.
+- Update sfdx-hardis Grafana Dashboards to import in your Grafana Cloud
+  - SF Instance name
+  - Next platform upgrade
+  - Release Updates to check
+  - Installed packages
+  - Org licenses
+- AI Deployment assistant
+  - Add error `Change Matching Rule`
+- Git Providers
+  - On Pull Requests / Merge Requests comments, add hyperlinks to errors documentation URL
+
+### Fixes
+
+- Avoid error when removing obsolete flows (workaround using SF CLI if tooling api connection fails). Fixes [#662](https://github.com/hardisgroupcom/sfdx-hardis/issues/662)
+- Improve Slack/Teams notifications display
+- Display explicit error message in case a password is required to install a managed package.
+
+### Documentation
+
+- Reorganize README content
+  - Add link to Dreamforce 24 session
+- Deployment assistant: Improve documentation by adding examples of errors, and a standalone page for each tip
+- Factorize the definition of DOC_ROOT_URL <https://sfdx-hardis.cloudity.com>
+
+### Deprecations
+
+- Deprecate wrapper commands matching sfdx commands that will be removed. All replaced by sf hardis deploy start
+
+  - `sfdx hardis:source:push`
+  - `sfdx hardis:source:deploy`
+  - `sfdx hardis:mdapi:retrieve`
+  - `sfdx hardis:mdapi:deploy`
+
+- Deprecate `hardis:deploy:sources:metadata` as nobody uses metadata format anymore
+
+### Removals
+
+- Replace puppeteer by puppeteer-core: it means that if you use a command requiring puppeteer, please make sure to have a Chrome available in your environment (already integrated within the Docker image)
+
+- Get rid of [sfdx-essentials](https://github.com/nvuillam/sfdx-essentials) plugin dependency by internalizing its used commands
+
+  - `sf hardis:packagexml:append`
+  - `sf hardis:packagexml:remove`
+  - `sf hardis:project:clean:filter-xml-content`
+
+- Remove npm dependencies (some of them not maintained anymore)
+
+  - @adobe/node-fetch-retry
+  - @amplitude/node
+  - @keyv/redis
+  - @oclif/command
+  - @oclif/config
+  - @oclif/errors
+  - @salesforce/command
+  - @salesforce/ts-types
+  - find-package-json
+  - node-fetch
+
+- Remove not used keyValueStores to keep only Salesforce one
+
 ## [4.53.0] 2024-08-20
 
 - Upgrade workflows to Node 20 (fixes <https://github.com/hardisgroupcom/sfdx-hardis/issues/668>)
@@ -65,7 +215,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [4.48.0] 2024-07-26
 
 - [hardis:project:deploy:sources:dx](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/): Allow new mode for running test during deployments: **RunRepositoryTestsExceptSeeAllData** (⚠️ Use with caution !)
-
 
 ## [4.47.0] 2024-07-22
 
@@ -177,7 +326,7 @@ commandsPostDeploy:
 ## [4.38.2] 2024-06-06
 
 - Fix npm packages installation for GitHub monitoring to avoid random failures
-- Add _notifKey in Grafana notifications to be able to build unique alerts
+- Add \_notifKey in Grafana notifications to be able to build unique alerts
 
 ## [4.38.1] 2024-06-04
 
@@ -240,7 +389,7 @@ commandsPostDeploy:
 
 ## [4.34.1] 2024-05-13
 
-- Notifications org identifier: replace dot by __ to avoid mess with Grafana label filters
+- Notifications org identifier: replace dot by \_\_ to avoid mess with Grafana label filters
 
 ## [4.34.0] 2024-05-12
 
@@ -282,6 +431,7 @@ commandsPostDeploy:
 ## [4.32.0] 2024-04-24
 
 - Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
+
   - Deployment status in Pull Request comments
   - Quick Deploy to enhance performance
 

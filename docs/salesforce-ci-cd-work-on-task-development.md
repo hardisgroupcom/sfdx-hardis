@@ -10,7 +10,7 @@ description: Learn how to develop on a task with a tracked sandbox or a scratch 
 
 - You can update code and XML metadatas using VsCode IDE
 - When you need to upload the updates to your org, use command ![Push to org button](assets/images/btn-push-to-org.jpg)
-- If you made updates directly on your org, use command ![Pull from org button](assets/images/btn-pull-from-org.jpg) to retrieve into local files the updates that you performed online with point & click
+- If you made updates directly on your org, use command [![Pull from org button](assets/images/btn-pull-from-org.jpg)](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/) to retrieve into local files the updates that you performed online with point & click
 - Once you have finished, you can [publish your task](salesforce-ci-cd-publish-task.md)
 
 ### Recommendations

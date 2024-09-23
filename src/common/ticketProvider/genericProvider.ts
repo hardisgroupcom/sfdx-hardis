@@ -1,12 +1,12 @@
-import { Ticket } from ".";
-import * as sortArray from "sort-array";
-import { extractRegexMatches } from "../utils";
-import { TicketProviderRoot } from "./ticketProviderRoot";
-import { getEnvVar } from "../../config";
+import { Ticket } from "./index.js";
+import sortArray from "sort-array";
+import { extractRegexMatches } from "../utils/index.js";
+import { TicketProviderRoot } from "./ticketProviderRoot.js";
+import { getEnvVar } from "../../config/index.js";
 
 export class GenericTicketingProvider extends TicketProviderRoot {
-  private ticketRefRegex: string;
-  private ticketUrlBuilder: string;
+  private ticketRefRegex: string | null;
+  private ticketUrlBuilder: string | null;
 
   constructor() {
     super();
@@ -28,9 +28,9 @@ export class GenericTicketingProvider extends TicketProviderRoot {
       return tickets;
     }
     // Extract tickets using GENERIC_TICKETING_PROVIDER_REGEX regexp
-    const ticketRefRegexExec = new RegExp(getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX"), "g");
+    const ticketRefRegexExec = new RegExp(getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX") || "", "g");
     const regexMatches = await extractRegexMatches(ticketRefRegexExec, text);
-    const ticketUrlBuilder = getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER");
+    const ticketUrlBuilder = getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER") || "";
     for (const genericTicketRef of regexMatches) {
       const genericTicketUrl = ticketUrlBuilder.replace("{REF}", genericTicketRef);
       if (!tickets.some((ticket) => ticket.url === genericTicketUrl)) {

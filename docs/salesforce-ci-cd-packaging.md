@@ -16,7 +16,7 @@ sfdx-hardis menus allow to create new packages and new package versions, but to 
 
   - Instructions in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_dev2gp_create_namespace.htm)
 
-- Then you need a sfdx-hardis flavored sfdx project, that you can create with `sfdx hardis:project:create`, using scratch orgs only option.
+- Then you need a sfdx-hardis flavored sfdx project, that you can create with `sf hardis:project:create`, using scratch orgs only option.
 
 - Last, create your package folder (ex: `my-package`) at the root of the repository, following the same structure than `force-app`: it will contain your package content.
 
@@ -120,9 +120,9 @@ Once you merged your PR in packaging branch (after checking the control jobs are
 
 To promote a package version, run the following command
 
-`sfdx force:package:version:promote -p PACKAGE_VERSION_ID`
+`sf hardis:package:version:promote`
 
-Example: `sfdx force:package:version:promote -p 04t7S000000gYp7QAG`
+Example: `sf hardis:package:version:promote`
 
 Note: When later you will **create a new scratch org** in a new development branch, if you have issues, just increment again the `versionNumber` in `sfdx-project.json`
 

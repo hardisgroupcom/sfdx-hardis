@@ -1,12 +1,12 @@
-import { uxLog } from "../utils";
-import * as c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot";
-import { SlackProvider } from "./slackProvider";
-import { UtilsNotifs as utilsNotifs } from "./utils";
-import { TeamsProvider } from "./teamsProvider";
-import { getConfig } from "../../config";
-import { EmailProvider } from "./emailProvider";
-import { ApiProvider } from "./apiProvider";
+import { uxLog } from "../utils/index.js";
+import c from "chalk";
+import { NotifProviderRoot } from "./notifProviderRoot.js";
+import { SlackProvider } from "./slackProvider.js";
+import { UtilsNotifs as utilsNotifs } from "./utils.js";
+import { TeamsProvider } from "./teamsProvider.js";
+import { CONSTANTS, getConfig } from "../../config/index.js";
+import { EmailProvider } from "./emailProvider.js";
+import { ApiProvider } from "./apiProvider.js";
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -42,7 +42,7 @@ export abstract class NotifProvider {
         uxLog(
           this,
           c.gray(
-            `[NotifProvider] No notif has been configured: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+            `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
           ),
         );
       }
@@ -82,21 +82,22 @@ export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success
 export interface NotifMessage {
   text: string;
   type:
-    | "ACTIVE_USERS"
-    | "AUDIT_TRAIL"
-    | "APEX_TESTS"
-    | "BACKUP"
-    | "DEPLOYMENT"
-    | "LEGACY_API"
-    | "LICENSES"
-    | "LINT_ACCESS"
-    | "UNUSED_METADATAS"
-    | "METADATA_STATUS"
-    | "MISSING_ATTRIBUTES"
-    | "UNUSED_LICENSES"
-    | "UNUSED_USERS"
-    | "ORG_INFO"
-    | "ORG_LIMITS";
+  | "ACTIVE_USERS"
+  | "AUDIT_TRAIL"
+  | "APEX_TESTS"
+  | "BACKUP"
+  | "DEPLOYMENT"
+  | "LEGACY_API"
+  | "LICENSES"
+  | "LINT_ACCESS"
+  | "UNUSED_METADATAS"
+  | "METADATA_STATUS"
+  | "MISSING_ATTRIBUTES"
+  | "UNUSED_LICENSES"
+  | "UNUSED_USERS"
+  | "ORG_INFO"
+  | "ORG_LIMITS"
+  | "RELEASE_UPDATES";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;

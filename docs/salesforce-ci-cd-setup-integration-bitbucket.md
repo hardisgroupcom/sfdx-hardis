@@ -24,7 +24,7 @@ Everytime you will make a pull request, the CI job will post its result as a com
 
 Notes:
 
-- This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sfdx hardis:source:deploy](https://sfdx-hardis.cloudity.com/hardis/source/deploy/) instead of `sfdx force:source:deploy` !
+- This integration works with sfdx-hardis pipeline, but also on home-made pipelines, just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start` !
 
 - This integration uses the following variables:
   - CI_SFDX_HARDIS_BITBUCKET_TOKEN

@@ -1,36 +1,36 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Logger, LoggerLevel, Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../../common/utils";
-import { parseXmlFile } from "../../../../common/utils/xmlUtils";
-import { getConfig } from "../../../../config";
-import { glob } from "glob";
-import { basename } from "path";
-import * as c from "chalk";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Logger, LoggerLevel, Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { uxLog } from '../../../../common/utils/index.js';
+import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { getConfig } from '../../../../config/index.js';
+import { glob } from 'glob';
+import { basename } from 'path';
+import c from 'chalk';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
-
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 // Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
 // or any library that is using the messages framework can also be loaded this way.
-function getCommonPermissionPatterns(rootTagName: "Profile" | "PermissionSet") {
-  return [`${rootTagName}.fieldPermissions.field`, `${rootTagName}.objectPermissions.object`, `${rootTagName}.classAccesses.apexClass`];
+function getCommonPermissionPatterns(rootTagName: 'Profile' | 'PermissionSet') {
+  return [
+    `${rootTagName}.fieldPermissions.field`,
+    `${rootTagName}.objectPermissions.object`,
+    `${rootTagName}.classAccesses.apexClass`,
+  ];
 }
 
-export default class Find extends SfdxCommand {
+export default class Find extends SfCommand<any> {
   protected static metadataDuplicateFindKeys = {
-    layout: ["Layout.layoutSections.layoutColumns.layoutItems.field", "Layout.quickActionListItems.quickActionName"],
-    profile: getCommonPermissionPatterns("Profile"),
-    labels: ["CustomLabels.labels.fullName"],
-    permissionset: getCommonPermissionPatterns("PermissionSet"),
+    layout: ['Layout.layoutSections.layoutColumns.layoutItems.field', 'Layout.quickActionListItems.quickActionName'],
+    profile: getCommonPermissionPatterns('Profile'),
+    labels: ['CustomLabels.labels.fullName'],
+    permissionset: getCommonPermissionPatterns('PermissionSet'),
   };
 
-  public static title = "XML duplicate values finder";
+  public static title = 'XML duplicate values finder';
   public static description = `find duplicate values in XML file(s).
   Find duplicate values in XML file(s). Keys to be checked can be configured in \`config/sfdx-hardis.yml\` using property metadataDuplicateFindKeys.
 
@@ -59,13 +59,13 @@ ${Find.metadataDuplicateFindKeys}
 </Layout>
 `,
     `
-$ sfdx hardis:project:metadata:findduplicates --file layout.layout-meta.xml
+$ sf hardis:project:metadata:findduplicates --file layout.layout-meta.xml
 [sfdx-hardis] Duplicate values in layout.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
   - Values : Name
 `,
     `
-$ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
+$ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
 [sfdx-hardis] hardis:project:metadata:findduplicates execution time 0:00:00.397
 [sfdx-hardis] Duplicate values in layout1.layout-meta.xml
   - Key    : Layout.layoutSections.layoutColumns.layoutItems.field
@@ -80,26 +80,28 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
   protected configInfo: any;
   protected logLevel: LoggerLevel;
 
-  protected static flagsConfig = {
-    files: flags.array({
-      char: "f",
-      description: "XML metadata files path",
+  public static flags: any = {
+    files: Flags.string({
+      char: 'f',
+      description: 'XML metadata files path',
+      multiple: true,
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(Find);
     uxLog(this, c.cyan(`Start finding duplicate values in XML metadata files.`));
     await this.initConfig();
-    const filesWithDuplicates = await this.findDuplicates();
+    const filesWithDuplicates = await this.findDuplicates(flags);
     uxLog(this, c.cyan(`Done finding duplicate values in XML metadata files.`));
     if (filesWithDuplicates.length > 0) {
       process.exitCode = 1;
@@ -108,24 +110,24 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
   }
 
   async initConfig() {
-    this.configInfo = await getConfig("user");
+    this.configInfo = await getConfig('user');
     if (this.configInfo.metadataDuplicateFindKeys) {
       Find.metadataDuplicateFindKeys = this.configInfo.metadataDuplicateFindKeys;
     }
-    // Gets the root sfdx logger level
+    // Gets the root SF CLI logger level
     this.logLevel = (await Logger.root()).getLevel();
   }
 
-  async findDuplicates() {
+  async findDuplicates(flags) {
     // Collect input parameters
-    const inputFiles = [];
+    const inputFiles: any[] = [];
 
-    if (this.flags.files) {
-      const files = await glob("./" + this.flags.files, { cwd: process.cwd() });
+    if (flags.files) {
+      const files = await glob('./' + flags.files, { cwd: process.cwd() });
       inputFiles.push(...files);
     }
 
-    const foundFilesWithDuplicates = [];
+    const foundFilesWithDuplicates: any[] = [];
     for (const inputFile of inputFiles) {
       // Extract given metadata type based on filename using type-meta.xml
       // For example PersonAccount.layout-meta.xml returns layout and Admin.profile-meta.xml returns profile
@@ -145,7 +147,7 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
       const file = await parseXmlFile(inputFile);
       uniqueKeys.forEach((key) => {
         // Traverse the file down to the key based on the fragments separated by . (dots), abort if not found
-        const allProps = key.split(".");
+        const allProps = key.split('.');
         const valuesFound = this.traverseDown(file, allProps[0], allProps, []);
 
         // https://stackoverflow.com/a/840808
@@ -160,8 +162,8 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
             this,
             c.red(`Duplicate values in ${basename(inputFile)}
   - Key    : ${key}
-  - Values : ${duplicates.join(", ")}
-`),
+  - Values : ${duplicates.join(', ')}
+`)
           );
         }
       });
@@ -173,7 +175,12 @@ $ sfdx hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xm
    *  Traverse down a XML tree, allProps containing all the properties to be traversed, currentProp being updated as we
    * descend.
    */
-  traverseDown(parent: Record<string, unknown> | Array<any>, currentProp: string, allProps: Array<string>, results: Array<string>) {
+  traverseDown(
+    parent: Record<string, unknown> | Array<any>,
+    currentProp: string,
+    allProps: Array<string>,
+    results: Array<string>
+  ) {
     const nextProp = allProps[allProps.indexOf(currentProp) + 1];
 
     // If we're at the end of property path (A.B.C -> parent = A.B, currentProp = C, nextProp = undefined) we add the

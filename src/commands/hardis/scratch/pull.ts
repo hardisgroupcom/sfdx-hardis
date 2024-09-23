@@ -1,18 +1,15 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { forceSourcePull } from "../../../common/utils/deployUtils";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { forceSourcePull } from '../../../common/utils/deployUtils.js';
+import { uxLog } from '../../../common/utils/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
-
-export default class SourcePull extends SfdxCommand {
-  public static title = "Scratch PULL";
+export default class SourcePull extends SfCommand<any> {
+  public static title = 'Scratch PULL';
 
   public static description = `This commands pulls the updates you performed in your scratch or sandbox org, into your local files
 
@@ -20,9 +17,10 @@ Then, you probably want to stage and commit the files containing the updates you
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-- Calls sfdx force:source:pull under the hood
+- Calls \`sf project retrieve start\` under the hood
 - If there are errors, proposes to automatically add erroneous item in \`.forceignore\`, then pull again
-- If you want to always retrieve sources like CustomApplication that are not always detected as updates by force:source:pull , you can define property **autoRetrieveWhenPull** in .sfdx-hardis.yml
+- If you don't see your updated items in the results, you can manually retrieve [using SF Extension **Org Browser** or **Salesforce CLI**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas)
+- If you want to always retrieve sources like CustomApplication that are not always detected as updates by project:retrieve:start , you can define property **autoRetrieveWhenPull** in .sfdx-hardis.yml
 
 Example:
 \`\`\`yaml
@@ -33,41 +31,39 @@ autoRetrieveWhenPull:
 \`\`\`
 `;
 
-  public static examples = ["$ sfdx hardis:scratch:pull"];
+  public static examples = ['$ sf hardis:scratch:pull'];
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
-    debug: flags.boolean({
-      char: "d",
+  public static flags: any = {
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-
-  // Comment this out if your command does not support a hub org username
-  // protected static requiresDevhubUsername = true;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const debugMode = this.flags.debug || false;
-    const targetUsername = this.org.getUsername();
+    const { flags } = await this.parse(SourcePull);
+    const debugMode = flags.debug || false;
+    const targetUsername = flags['target-org'].getUsername() || '';
     await forceSourcePull(targetUsername, debugMode);
 
+    uxLog(this, `If you don't see your updated items in the results, check the following documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`);
+
     // Return an object to be displayed with --json
-    return { outputString: "Pulled scratch org updates" };
+    return { outputString: 'Pulled scratch org / source-tracked sandbox updates' };
   }
 }

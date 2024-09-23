@@ -1,24 +1,21 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import { isCI, uxLog } from "../../../../common/utils";
-import { bulkQuery } from "../../../../common/utils/apiUtils";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { CONSTANTS } from '../../../../config/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
-
-export default class DiagnoseUnusedUsers extends SfdxCommand {
-  public static title = "Detect unused Users in Salesforce";
+export default class DiagnoseUnusedUsers extends SfCommand<any> {
+  public static title = 'Detect unused Users in Salesforce';
 
   public static description = `Efficient user management is vital in Salesforce to ensure resources are optimized and costs are controlled. However, inactive or unused user accounts can often go unnoticed, leading to wasted licenses and potential security risks. This tool addresses this challenge by enabling administrators to identify users who haven't logged in within a specified period.
 
@@ -34,86 +31,86 @@ Note: You can see the full list of available license identifiers in [Salesforce 
 
 Use --returnactiveusers to revert the command and retrieve active users that has logged in during the period.
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-users/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-inactive-users/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
   public static examples = [
-    "$ sfdx hardis:org:diagnose:unusedusers",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 365",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1",
-    "$ sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers",
+    '$ sf hardis:org:diagnose:unusedusers',
+    '$ sf hardis:org:diagnose:unusedusers --days 365',
+    '$ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm',
+    '$ sf hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1',
+    '$ sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers',
   ];
 
   //Comment default values to test the prompts
-  protected static flagsConfig = {
-    outputfile: flags.string({
-      char: "o",
-      description: "Force the path and name of output report file. Must end with .csv",
+  public static flags: any = {
+    outputfile: Flags.string({
+      char: 'o',
+      description: 'Force the path and name of output report file. Must end with .csv',
     }),
-    days: flags.number({
-      char: "t",
-      description: "Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days",
-    }),
-    licensetypes: flags.enum({
-      char: "l",
-      options: ["all", "all-crm", "all-paying"],
-      description: "Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm",
-    }),
-    licenseidentifiers: flags.string({
-      char: "i",
+    days: Flags.integer({
+      char: 't',
       description:
-        "Comma-separated list of license identifiers, in case licensetypes is not used.. Identifiers available at https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm",
+        'Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days',
     }),
-    returnactiveusers: flags.boolean({
+    licensetypes: Flags.string({
+      char: 'l',
+      options: ['all', 'all-crm', 'all-paying'],
+      description: 'Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm',
+    }),
+    licenseidentifiers: Flags.string({
+      char: 'i',
+      description:
+        'Comma-separated list of license identifiers, in case licensetypes is not used.. Identifiers available at https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm',
+    }),
+    returnactiveusers: Flags.boolean({
       default: false,
-      description: "Inverts the command by returning the active users",
+      description: 'Inverts the command by returning the active users',
     }),
-    debug: flags.boolean({
-      char: "d",
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected licenseTypesCorrespondances = {
-    all: "all",
-    "all-crm": "SFDC,AUL,AUL1,AULL_IGHT",
-    "all-paying": "SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login",
+    all: 'all',
+    'all-crm': 'SFDC,AUL,AUL1,AULL_IGHT',
+    'all-paying':
+      'SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login',
   };
 
   protected returnActiveUsers = false;
   protected debugMode = false;
   protected outputFile;
   protected outputFilesRes: any = {};
-  protected lastNdays: number;
-  protected licenseTypes: string;
-  protected licenseIdentifiers: string;
-  protected users = [];
+  protected lastNdays: number | null;
+  protected licenseTypes: string | null;
+  protected licenseIdentifiers: string | null;
+  protected users: any[] = [];
   protected statusCode = 0;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
-    this.returnActiveUsers = this.flags.returnactiveusers ?? false;
-    this.outputFile = this.flags.outputfile || null;
-    this.lastNdays = this.flags.days || null;
-    this.licenseIdentifiers = this.flags.licenseidentifiers || null;
-    this.licenseTypes = this.flags.licensetypes;
+    const { flags } = await this.parse(DiagnoseUnusedUsers);
+    this.debugMode = flags.debug || false;
+    this.returnActiveUsers = flags.returnactiveusers ?? false;
+    this.outputFile = flags.outputfile || null;
+    this.lastNdays = flags.days || null;
+    this.licenseIdentifiers = flags.licenseidentifiers || null;
+    this.licenseTypes = flags.licensetypes || null;
 
     // Calculate lastNdays to use
     await this.defineNumberOfInactiveDays();
@@ -121,20 +118,23 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     await this.defineLicenseIdentifiers();
 
     // Retrieve the list of users who haven't logged in for a while
-    const conn = this.org.getConnection();
+    const conn = flags['target-org'].getConnection();
     uxLog(
       this,
       c.cyan(
         this.returnActiveUsers
           ? `Extracting active users on ${conn.instanceUrl} ...`
-          : `Extracting active users who haven't logged in for a while on ${conn.instanceUrl} ...`,
-      ),
+          : `Extracting active users who haven't logged in for a while on ${conn.instanceUrl} ...`
+      )
     );
     this.users = await this.listUsersFromLicenses(conn);
 
     // Generate output CSV file
     if (this.users.length > 0) {
-      this.outputFile = await generateReportPath(this.returnActiveUsers ? "active-users" : "unused-users", this.outputFile);
+      this.outputFile = await generateReportPath(
+        this.returnActiveUsers ? 'active-users' : 'unused-users',
+        this.outputFile
+      );
       this.outputFilesRes = await generateCsvFile(this.users, this.outputFile);
     }
 
@@ -144,7 +144,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       summary = `${this.users.length} users have logged in ${conn.instanceUrl} in the last ${this.lastNdays} days`;
     } else {
       // Inactive users mode
-      const userSummaryInfo = this.users.length == 1 ? "user has" : "users have";
+      const userSummaryInfo = this.users.length == 1 ? 'user has' : 'users have';
       summary = `No unused users have been found`;
       if (this.users.length === 0) {
         summary = `All users have logged in to ${conn.instanceUrl} within the last ${this.lastNdays} days!`;
@@ -153,7 +153,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
         summary = `${this.users.length} active ${userSummaryInfo} not logged in to ${conn.instanceUrl} in the last ${this.lastNdays} days!`;
       }
 
-      if ((this.argv || []).includes("unusedusers")) {
+      if ((this.argv || []).includes('unusedusers')) {
         process.exitCode = this.statusCode;
       }
     }
@@ -182,21 +182,21 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       // Ask user if interactive mode
       if (!this.licenseTypes && !isCI) {
         const licenseTypesResponse = await prompts({
-          type: "select",
-          name: "licensetypes",
-          message: "Please select the type of licenses you want to detect ",
+          type: 'select',
+          name: 'licensetypes',
+          message: 'Please select the type of licenses you want to detect ',
           choices: [
-            { value: "all", title: "All licenses types" },
-            { value: `all-crm`, title: "Salesforce Licenses" },
-            { value: `all-paying`, title: "Salesforce Licences + Experience + Other paying" },
+            { value: 'all', title: 'All licenses types' },
+            { value: `all-crm`, title: 'Salesforce Licenses' },
+            { value: `all-paying`, title: 'Salesforce Licences + Experience + Other paying' },
           ],
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
       } else if (!this.licenseTypes) {
-        this.licenseTypes = "all-crm";
+        this.licenseTypes = 'all-crm';
       }
       // Get licenseIdentifiers from licenseType
-      this.licenseIdentifiers = this.licenseTypesCorrespondances[this.licenseTypes];
+      this.licenseIdentifiers = this.licenseTypesCorrespondances[this.licenseTypes || ''];
     }
   }
 
@@ -205,9 +205,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       if (!isCI) {
         // If manual mode and days not sent as parameter, prompt user
         const lastNdaysResponse = await prompts({
-          type: "select",
-          name: "days",
-          message: "Please select the period to detect users.",
+          type: 'select',
+          name: 'days',
+          message: 'Please select the period to detect users.',
           choices: [
             { title: `1 day`, value: 1 },
             { title: `2 days`, value: 2 },
@@ -231,16 +231,18 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   private async listUsersFromLicenses(conn) {
     let whereConstraint = this.returnActiveUsers
       ? // Active users
-        `WHERE IsActive = true AND (` + `(LastLoginDate >= LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL)` + `)`
+      `WHERE IsActive = true AND (` +
+      `(LastLoginDate >= LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL)` +
+      `)`
       : // Inactive users
-        `WHERE IsActive = true AND (` +
-        `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
-        `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
-        `)`;
+      `WHERE IsActive = true AND (` +
+      `(LastLoginDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate != NULL) OR ` +
+      `(CreatedDate < LAST_N_DAYS:${this.lastNdays} AND LastLoginDate = NULL)` + // Check also for users never used
+      `)`;
     // Add License constraint only if necessary
-    if (this.licenseTypes !== "all") {
-      const licenseIdentifierValues = this.licenseIdentifiers.split(",");
-      const licenseIdentifierCondition = licenseIdentifierValues.map((value) => `'${value}'`).join(",");
+    if (this.licenseTypes !== 'all') {
+      const licenseIdentifierValues = (this.licenseIdentifiers || '').split(',');
+      const licenseIdentifierCondition = licenseIdentifierValues.map((value) => `'${value}'`).join(',');
       whereConstraint += ` AND Profile.UserLicense.LicenseDefinitionKey IN (${licenseIdentifierCondition})`;
     }
     // Build & call Bulk API Query
@@ -254,26 +256,29 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   }
 
   private async manageNotifications(users: any[]) {
+    const { flags } = await this.parse(DiagnoseUnusedUsers);
     // Build notification
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
-    let notifSeverity: NotifSeverity = "log";
-    let notifText = this.returnActiveUsers ? `No active user has logged in in ${orgMarkdown}` : `No inactive user has been found in ${orgMarkdown}`;
+    let notifSeverity: NotifSeverity = 'log';
+    let notifText = this.returnActiveUsers
+      ? `No active user has logged in in ${orgMarkdown}`
+      : `No inactive user has been found in ${orgMarkdown}`;
     const notifDetailText = ``;
-    let attachments = [];
+    let attachments: any[] = [];
     if (users.length > 0) {
-      notifSeverity = this.returnActiveUsers ? "log" : "warning";
+      notifSeverity = this.returnActiveUsers ? 'log' : 'warning';
       notifText = this.returnActiveUsers
-        ? `${this.users.length} active users have logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`
-        : `${this.users.length} active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
+        ? `*${this.users.length}* active users have logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`
+        : `*${this.users.length}* active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
       attachments = [{ text: notifDetailText }];
     }
     const metrics = this.returnActiveUsers ? { ActiveUsers: this.users.length } : { UnusedUsers: this.users.length };
     /* jscpd:ignore-start */
     // Send notifications
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: this.returnActiveUsers ? "ACTIVE_USERS" : "UNUSED_USERS",
+      type: this.returnActiveUsers ? 'ACTIVE_USERS' : 'UNUSED_USERS',
       text: notifText,
       attachments: attachments,
       buttons: notifButtons,

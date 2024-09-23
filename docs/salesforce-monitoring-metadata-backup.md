@@ -8,7 +8,7 @@ description: Schedule daily metadata backups with sfdx-hardis Monitoring
 
 Adds a new commit in the git branch with the newest updates since latest monitoring run.
 
-Sfdx-hardis command: [sfdx hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
+Sfdx-hardis command: [sf hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
 
 ### Grafana example
 

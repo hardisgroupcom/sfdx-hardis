@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:retrieve:sources:retrofit
 
 ## Description
@@ -56,14 +56,13 @@ Retrieve changes from org link to a ref branch not present in sources
 
 ## Parameters
 
-| Name         |  Type   | Description                                                                    | Default | Required |                        Options                        |
-|:-------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
-| apiversion   | option  | override the api version used for api requests made by this command            |         |          |                                                       |
-| commit       | boolean | If true, a commit will be performed after the retrofit                         |         |          |                                                       |
-| commitmode   | option  | Defines if we commit all retrieved updates, or all updates including creations | updated |          |                    updated<br/>all                    |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                                                |         |          |                                                       |
-| json         | boolean | format output as json                                                          |         |          |                                                       |
-| loglevel     | option  | logging level for this command invocation                                      |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
+| Name         |  Type   | Description                                                                    | Default | Required |     Options     |
+|:-------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:---------------:|
+| commit       | boolean | If true, a commit will be performed after the retrofit                         |         |          |                 |
+| commitmode   | option  | Defines if we commit all retrieved updates, or all updates including creations | updated |          | updated<br/>all |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                                                |         |          |                 |
+| flags-dir    | option  | undefined                                                                      |         |          |                 |
+| json         | boolean | Format output as json.                                                         |         |          |                 |
 |productionbranch|option|Name of the git branch corresponding to the org we want to perform the retrofit on.
 Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |push|boolean|If true, a push will be performed after the retrofit||||
@@ -71,21 +70,21 @@ Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |retrofittargetbranch|option|Name of branch the merge request will have as target
 Can be defined in retrofitBranch property in .sfdx-hardis.yml||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
-|targetusername<br/>-u|option|username or alias for the target org; overrides default target org||||
+|target-org<br/>-o|option|undefined||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sfdx hardis:org:retrieve:sources:retrofit
+sf hardis:org:retrieve:sources:retrofit
 ```
 
 ```shell
-sfdx hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated
+sf hardis:org:retrieve:sources:retrofit --productionbranch master --commit --commitmode updated
 ```
 
 ```shell
-sfdx hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode updated --push --pushmode mergerequest
+sf hardis:org:retrieve:sources:retrofit --productionbranch master  --retrofitbranch preprod --commit --commitmode updated --push --pushmode mergerequest
 ```
 
 

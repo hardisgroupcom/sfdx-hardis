@@ -45,9 +45,8 @@ jobs:
         run: |
           npm install --no-cache @salesforce/cli --global
           sf plugins install @salesforce/plugin-packaging
-          echo 'y' | sfdx plugins:install sfdx-hardis
-          echo 'y' | sfdx plugins:install sfdx-essentials
-          echo 'y' | sfdx plugins:install sfdx-git-delta
+          echo 'y' | sf plugins install sfdx-hardis
+          echo 'y' | sf plugins install sfdx-git-delta
           sf version --verbose --json
       # Login & check deploy with test classes & code coverage
       - name: Login & Simulate deployment
@@ -79,5 +78,5 @@ jobs:
           FORCE_COLOR: "1"
         run: |
           echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
-          sfdx hardis:auth:login
-          sfdx hardis:project:deploy:sources:dx --check
+          sf hardis:auth:login
+          sf hardis:project:deploy:smart --check

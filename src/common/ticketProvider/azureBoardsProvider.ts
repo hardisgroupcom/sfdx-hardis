@@ -1,21 +1,21 @@
 /* jscpd:ignore-start */
 import * as azdev from "azure-devops-node-api";
-import { TicketProviderRoot } from "./ticketProviderRoot";
-import * as c from "chalk";
-import * as sortArray from "sort-array";
-import { Ticket } from ".";
-import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils";
-import { extractRegexMatches, uxLog } from "../utils";
-import { SfdxError } from "@salesforce/core";
-import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces";
-import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces";
-import { getEnvVar } from "../../config";
+import { TicketProviderRoot } from "./ticketProviderRoot.js";
+import c from "chalk";
+import sortArray from "sort-array";
+import { Ticket } from "./index.js";
+import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
+import { extractRegexMatches, uxLog } from "../utils/index.js";
+import { SfError } from "@salesforce/core";
+import { getEnvVar } from "../../config/index.js";
+import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
+import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces.js";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
-  protected serverUrl: string;
+  protected serverUrl: string | null;
   protected azureApi: InstanceType<typeof azdev.WebApi>;
-  protected teamProject: string;
+  protected teamProject: string | null;
 
   constructor() {
     super();
@@ -28,8 +28,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       this.isActive = true;
     }
     if (this.isActive) {
-      const authHandler = azdev.getHandlerFromToken(this.token);
-      this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
+      const authHandler = azdev.getHandlerFromToken(this.token || "");
+      this.azureApi = new azdev.WebApi(this.serverUrl || "", authHandler);
     }
   }
 
@@ -76,7 +76,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       const azureBoardsProvider = new AzureBoardsProvider();
       const azureApi = azureBoardsProvider.azureApi;
       const azureGitApi = await azureApi.getGitApi();
-      const repositoryId = getEnvVar("BUILD_REPOSITORY_ID");
+      const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
       const commitIds = options.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
       const azureCommits: GitCommitRef[] = [];
       for (const commitId of commitIds) {
@@ -88,8 +88,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           if (!tickets.some((ticket) => ticket.id === workItem.id)) {
             tickets.push({
               provider: "AZURE",
-              url: workItem.url,
-              id: workItem.id,
+              url: workItem.url || "",
+              id: workItem.id || "",
             });
           }
         }
@@ -120,12 +120,12 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         this,
         c.cyan(
           `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` +
-            process.env.SYSTEM_COLLECTIONURI +
-            " ...",
+          process.env.SYSTEM_COLLECTIONURI +
+          " ...",
         ),
       );
     }
-    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     for (const ticket of tickets) {
       if (ticket.provider === "AZURE") {
         const ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
@@ -153,7 +153,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
-    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl);
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     for (const ticket of tickets) {
       if (ticket.foundOnServer) {
         let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
@@ -167,14 +167,14 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
         // Post comment
         try {
-          const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, this.teamProject, Number(ticket.id));
-          if (commentPostRes && commentPostRes?.id > 0) {
+          const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, this.teamProject || "", Number(ticket.id));
+          if (commentPostRes?.id && commentPostRes?.id > 0) {
             commentedTickets.push(ticket);
           } else {
-            throw new SfdxError("commentPostRes: " + commentPostRes);
+            throw new SfError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${(e6 as any).message}\n${c.grey((e6 as any).stack)}`));
         }
 
         // Add tag
@@ -186,14 +186,14 @@ export class AzureBoardsProvider extends TicketProviderRoot {
               value: tag,
             },
           ];
-          const workItem = await azureWorkItemApi.updateWorkItem({}, patchDocument, Number(ticket.id), this.teamProject);
-          if (workItem && workItem?.id > 0) {
+          const workItem = await azureWorkItemApi.updateWorkItem({}, patchDocument, Number(ticket.id), this.teamProject || "");
+          if (workItem?.id && workItem?.id > 0) {
             taggedTickets.push(ticket);
           } else {
-            throw new SfdxError("tag workItem: " + workItem);
+            throw new SfError("tag workItem: " + workItem);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${e6.message}\n${c.grey(e6.stack)}`));
+          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${(e6 as any).message} \n${c.grey((e6 as any).stack)} `));
         }
       }
     }

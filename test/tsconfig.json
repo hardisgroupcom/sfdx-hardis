@@ -1,3 +1,7 @@
 {
-  "extends": "../tsconfig"
+  "extends": "@salesforce/dev-config/tsconfig-test-strict-esm",
+  "include": ["./**/*.ts"],
+  "compilerOptions": {
+    "skipLibCheck": true
+  }
 }

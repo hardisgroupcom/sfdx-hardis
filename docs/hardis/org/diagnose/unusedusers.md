@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:org:diagnose:unusedusers
 
 ## Description
@@ -17,44 +17,45 @@ Note: You can see the full list of available license identifiers in [Salesforce 
 
 Use --returnactiveusers to revert the command and retrieve active users that has logged in during the period.
 
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-users/) and can output Grafana, Slack and MsTeams Notifications.
+
 
 ## Parameters
 
-| Name                      |  Type   | Description                                                                                                                                                                                                                            | Default | Required |                        Options                        |
-|:--------------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-----------------------------------------------------:|
-| apiversion                | option  | override the api version used for api requests made by this command                                                                                                                                                                    |         |          |                                                       |
-| days<br/>-t               | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days                                                                                                                                |         |          |                                                       |
-| debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                                                                                                                        |         |          |                                                       |
-| json                      | boolean | format output as json                                                                                                                                                                                                                  |         |          |                                                       |
-| licenseidentifiers<br/>-i | option  | Comma-separated list of license identifiers, in case licensetypes is not used.. Identifiers available at <https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm> |         |          |                                                       |
-| licensetypes<br/>-l       | option  | Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm                                                                                                                                     |         |          |            all<br/>all-crm<br/>all-paying             |
-| loglevel                  | option  | logging level for this command invocation                                                                                                                                                                                              |  warn   |          | trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal |
-| outputfile<br/>-o         | option  | Force the path and name of output report file. Must end with .csv                                                                                                                                                                      |         |          |                                                       |
-| returnactiveusers         | boolean | Inverts the command by returning the active users                                                                                                                                                                                      |         |          |                                                       |
-| skipauth                  | boolean | Skip authentication check when a default username is required                                                                                                                                                                          |         |          |                                                       |
-| targetusername<br/>-u     | option  | username or alias for the target org; overrides default target org                                                                                                                                                                     |         |          |                                                       |
-| websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                              |         |          |                                                       |
+| Name                      |  Type   | Description                                                                                                                                                                                                                            | Default | Required |            Options             |
+|:--------------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:------------------------------:|
+| days<br/>-t               | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days                                                                                                                                |         |          |                                |
+| debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                                                                                                                        |         |          |                                |
+| flags-dir                 | option  | undefined                                                                                                                                                                                                                              |         |          |                                |
+| json                      | boolean | Format output as json.                                                                                                                                                                                                                 |         |          |                                |
+| licenseidentifiers<br/>-i | option  | Comma-separated list of license identifiers, in case licensetypes is not used.. Identifiers available at <https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm> |         |          |                                |
+| licensetypes<br/>-l       | option  | Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm                                                                                                                                     |         |          | all<br/>all-crm<br/>all-paying |
+| outputfile<br/>-o         | option  | Force the path and name of output report file. Must end with .csv                                                                                                                                                                      |         |          |                                |
+| returnactiveusers         | boolean | Inverts the command by returning the active users                                                                                                                                                                                      |         |          |                                |
+| skipauth                  | boolean | Skip authentication check when a default username is required                                                                                                                                                                          |         |          |                                |
+| target-org<br/>-o         | option  | undefined                                                                                                                                                                                                                              |         |          |                                |
+| websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                              |         |          |                                |
 
 ## Examples
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers
+sf hardis:org:diagnose:unusedusers
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers --days 365
+sf hardis:org:diagnose:unusedusers --days 365
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm
+sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1
+sf hardis:org:diagnose:unusedusers --days 60 --licenseidentifiers SFDC,AUL,AUL1
 ```
 
 ```shell
-sfdx hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers
+sf hardis:org:diagnose:unusedusers --days 60 --licensetypes all-crm --returnactiveusers
 ```
 
 

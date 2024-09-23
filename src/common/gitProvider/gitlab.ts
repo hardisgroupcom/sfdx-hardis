@@ -1,18 +1,21 @@
 import { Gitlab } from "@gitbeaker/node";
-import * as c from "chalk";
-import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
-import { getCurrentGitBranch, git, uxLog } from "../utils";
-import { GitProviderRoot } from "./gitProviderRoot";
+import c from "chalk";
+import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
+import { GitProviderRoot } from "./gitProviderRoot.js";
+import { CONSTANTS } from "../../config/index.js";
 
 export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
+  public serverUrl: string;
+  public token: string;
 
   constructor() {
     super();
     // Gitlab URL is always provided by default CI variables
-    this.serverUrl = process.env.CI_SERVER_URL;
+    this.serverUrl = process.env.CI_SERVER_URL || "";
     // It's better to have a project token defined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
-    this.token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN;
+    this.token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "";
     this.gitlabApi = new Gitlab({
       host: this.serverUrl,
       token: this.token,
@@ -25,7 +28,7 @@ export class GitlabProvider extends GitProviderRoot {
   }
 
   // Returns current job URL
-  public async getCurrentJobUrl(): Promise<string> {
+  public async getCurrentJobUrl(): Promise<string | null> {
     if (process.env.CI_JOB_URL) {
       return process.env.CI_JOB_URL;
     }
@@ -33,7 +36,7 @@ export class GitlabProvider extends GitProviderRoot {
   }
 
   // Returns current job URL
-  public async getCurrentBranchUrl(): Promise<string> {
+  public async getCurrentBranchUrl(): Promise<string | null> {
     if (process.env.CI_PROJECT_URL && process.env.CI_COMMIT_REF_NAME) return `${process.env.CI_PROJECT_URL}/-/tree/${process.env.CI_COMMIT_REF_NAME}`;
     return null;
   }
@@ -45,7 +48,7 @@ export class GitlabProvider extends GitProviderRoot {
     const mrNumber = process.env.CI_MERGE_REQUEST_IID || null;
     if (mrNumber !== null) {
       const mergeRequests = await this.gitlabApi.MergeRequests.all({
-        projectId: projectId,
+        projectId: projectId || "",
         iids: [parseInt(mrNumber)],
       });
       if (mergeRequests.length > 0) {
@@ -55,7 +58,7 @@ export class GitlabProvider extends GitProviderRoot {
     // Case when we find MR from a commit
     const sha = await git().revparse(["HEAD"]);
     const latestMergeRequestsOnBranch = await this.gitlabApi.MergeRequests.all({
-      projectId: projectId,
+      projectId: projectId || "",
       state: "merged",
       sort: "desc",
       sha: sha,
@@ -71,11 +74,11 @@ export class GitlabProvider extends GitProviderRoot {
     return null;
   }
 
-  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
+  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId = null;
     const projectId = process.env.CI_PROJECT_ID || null;
     const latestMergeRequestsOnBranch = await this.gitlabApi.MergeRequests.all({
-      projectId: projectId,
+      projectId: projectId || "",
       state: "merged",
       sort: "desc",
       targetBranch: gitBranch,
@@ -83,16 +86,16 @@ export class GitlabProvider extends GitProviderRoot {
     if (latestMergeRequestsOnBranch.length > 0) {
       const latestMergeRequest = latestMergeRequestsOnBranch[0];
       const latestMergeRequestId = latestMergeRequest.iid;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId, latestMergeRequestId, deploymentCheckId, latestMergeRequest);
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", latestMergeRequestId, deploymentCheckId, latestMergeRequest);
     }
     return deploymentCheckId;
   }
 
-  public async getPullRequestDeploymentCheckId(): Promise<string> {
+  public async getPullRequestDeploymentCheckId(): Promise<string | null> {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
       const projectId = process.env.CI_PROJECT_ID || null;
-      return await this.getDeploymentIdFromPullRequest(projectId, pullRequestInfo.iid, null, pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(projectId || "", pullRequestInfo.iid, null, pullRequestInfo);
     }
     return null;
   }
@@ -129,7 +132,7 @@ export class GitlabProvider extends GitProviderRoot {
 
 ${prMessage.message}
 
-_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
+_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
@@ -139,7 +142,7 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${gitlabCi
     // Check for existing note from a previous run
     uxLog(this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
-    let existingNoteId = null;
+    let existingNoteId: number | null = null;
     for (const existingNote of existingNotes) {
       if (existingNote.body.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
         existingNoteId = existingNote.id;

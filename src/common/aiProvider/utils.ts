@@ -1,4 +1,4 @@
-import { getEnvVar } from "../../config";
+import { getEnvVar } from "../../config/index.js";
 
 export class UtilsAi {
   public static isOpenApiAvailable() {

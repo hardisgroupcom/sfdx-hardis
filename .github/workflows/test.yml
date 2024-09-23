@@ -1,38 +1,27 @@
----
-#
-# Documentation:
-# https://help.github.com/en/articles/workflow-syntax-for-github-actions
-#
-
-#######################################
-# Start the job on all push to master #
-#######################################
-name: "Test"
+name: tests
 on:
-  push: # Comment this line to trigger action only on pull-requests (not recommended if you don't pay for GH Actions)
-  pull_request:
-    branches: [master, main]
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
 
-###############
-# Set the Job #
-###############
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository) && !contains(github.event.head_commit.message, 'skip deploy')
-    steps:
-      - uses: actions/checkout@v4
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          registry-url: "https://registry.npmjs.org"
-          # Defaults to the user or organization that owns the workflow file
-          scope: "nvuillam"
-      - run: yarn
-      - run: yarn prepack
-      - run: yarn test
-#      - name: Submitting code coverage to codecov
-#        run: |
-#          ./node_modules/.bin/nyc report --reporter text-lcov > coverage.lcov
-#          curl -s https://codecov.io/bash | bash
+  linux-unit-tests:
+    uses: salesforcecli/github-workflows/.github/workflows/unitTestsLinux.yml@main
+    with:
+      skipTsDepCheck: true
+
+  windows-unit-tests:
+    uses: salesforcecli/github-workflows/.github/workflows/unitTestsWindows.yml@main
+
+  nuts:
+    needs:
+      - linux-unit-tests
+      - windows-unit-tests
+    uses: salesforcecli/github-workflows/.github/workflows/nut.yml@main
+    secrets: inherit
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+      fail-fast: false
+    with:
+      os: ${{ matrix.os }}

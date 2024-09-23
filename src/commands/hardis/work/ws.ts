@@ -1,64 +1,55 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { WebSocketClient } from "../../../common/websocketClient";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { WebSocketClient } from '../../../common/websocketClient.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+export default class WebSocketAction extends SfCommand<any> {
+  public static title = 'WebSocket operations';
 
-export default class WebSocketAction extends SfdxCommand {
-  public static title = "WebSocket operations";
+  public static description = 'Technical calls to WebSocket functions';
 
-  public static description = "Technical calls to WebSocket functions";
-
-  public static examples = ["$ sfdx hardis:work:ws --event refreshStatus"];
+  public static examples = ['$ sf hardis:work:ws --event refreshStatus'];
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
-    event: flags.string({
-      char: "e",
-      description: "WebSocket event",
+  public static flags: any = {
+    event: Flags.string({
+      char: 'e',
+      description: 'WebSocket event',
     }),
-    debug: flags.boolean({
-      char: "d",
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected debugMode = false;
-  protected event = "";
+  protected event = '';
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
-    this.event = this.flags.event || "";
+    const { flags } = await this.parse(WebSocketAction);
+    this.event = flags.event || '';
 
     if (WebSocketClient.isAlive()) {
-      if (this.event === "refreshStatus") {
-        WebSocketClient.sendMessage({ event: "refreshStatus" });
-      } else if (this.event === "refreshPlugins") {
-        WebSocketClient.sendMessage({ event: "refreshPlugins" });
+      if (this.event === 'refreshStatus') {
+        WebSocketClient.sendMessage({ event: 'refreshStatus' });
+      } else if (this.event === 'refreshPlugins') {
+        WebSocketClient.sendMessage({ event: 'refreshPlugins' });
       }
     }
 

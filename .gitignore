@@ -1,38 +1,55 @@
-*-debug.log
-*-error.log
-/.
-/.sfdx
-/dist
-/lib
-/package-lock.json
-/tmp
-node_modules
-report
-sfdx-hardis-*.tgz
+# -- CLEAN
+tmp/
+# use yarn by default, so ignore npm
+package-lock.json
 
 # MacOS system files
 .DS_Store
 
 .nyc_output/
 
-site/
+# never checking npm config
+.npmrc
 
-config/user/
+# debug logs
+npm-error.log
+yarn-error.log
 
-hardis-report/
 
-.nyc_output/
+# compile source
+lib
 
-site/
+# test artifacts
+*xunit.xml
+*checkstyle.xml
+*unitcoverage
+.nyc_output
+coverage
+test_session*
 
-config/user/
+# ignore sfdx-trust files
+*.tgz
+*.sig
+package.json.bak.
 
-megalinter-reports/
 
+npm-shrinkwrap.json
+oclif.manifest.json
+oclif.lock
+
+# -- CLEAN ALL
+*.tsbuildinfo
+.eslintcache
+.wireit
+node_modules
+
+# --
+# put files here you don't want cleaned with sf-clean
+
+# os specific files
+.DS_Store
 .idea
 
-.wireit/
-
-tsconfig.tsbuildinfo
-
-.eslintcache
+hardis-report/
+megalinter-reports/
+config/user/

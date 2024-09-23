@@ -3,9 +3,9 @@
 This class is deprecated and kept for backward compatibility
 Use NotifProvider class instead :)
 */
-import { getCurrentGitBranch } from ".";
-import { GitProvider } from "../gitProvider";
-import { NotifSeverity, UtilsNotifs } from "../notifProvider";
+import { getCurrentGitBranch } from "./index.js";
+import { GitProvider } from "../gitProvider/index.js";
+import { NotifSeverity, UtilsNotifs } from "../notifProvider/index.js";
 
 /**
  * @description This function retrieves the job URL from the GitProvider and creates a notification button if the job URL exists.
@@ -15,7 +15,7 @@ import { NotifSeverity, UtilsNotifs } from "../notifProvider";
  * @returns {Promise<{ text: string; url: string }[]>} - A Promise that resolves to an array of notification buttons.
  */
 export async function getNotificationButtons(): Promise<{ text: string; url: string }[]> {
-  const notifButtons = [];
+  const notifButtons: any[] = [];
   const jobUrl = await GitProvider.getJobUrl();
   if (jobUrl) {
     notifButtons.push({ text: "View Job", url: jobUrl });
@@ -32,7 +32,7 @@ export async function getNotificationButtons(): Promise<{ text: string; url: str
  * @returns {Promise<string>} - A Promise that resolves to a markdown string for the current Git branch.
  */
 export async function getBranchMarkdown(type = "slack"): Promise<string> {
-  const currentGitBranch = await getCurrentGitBranch();
+  const currentGitBranch = await getCurrentGitBranch() || "";
   let branchMd =
     type === "jira"
       ? `{ "label": "${currentGitBranch}"}`

@@ -1,57 +1,50 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import { uxLog } from "../../../../common/utils";
-import { soqlQuery } from "../../../../common/utils/apiUtils";
-import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils";
-import { NotifProvider } from "../../../../common/notifProvider";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { uxLog } from '../../../../common/utils/index.js';
+import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { NotifProvider } from '../../../../common/notifProvider/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
-
-export default class DiagnoseUnusedUsers extends SfdxCommand {
-  public static title = "List licenses subscribed and used in a Salesforce org";
+export default class DiagnoseUnusedUsers extends SfCommand<any> {
+  public static title = 'List licenses subscribed and used in a Salesforce org';
 
   public static description = `Mostly used for monitoring (Grafana) but you can also use it manually :)`;
 
-  public static examples = ["$ sfdx hardis:org:diagnose:licenses"];
+  public static examples = ['$ sf hardis:org:diagnose:licenses'];
 
   //Comment default values to test the prompts
-  protected static flagsConfig = {
-    outputfile: flags.string({
-      char: "o",
-      description: "Force the path and name of output report file. Must end with .csv",
+  public static flags: any = {
+    outputfile: Flags.string({
+      char: 'o',
+      description: 'Force the path and name of output report file. Must end with .csv',
     }),
-    usedonly: flags.boolean({
-      char: "u",
+    usedonly: Flags.boolean({
+      char: 'u',
       default: false,
-      description: "Filter to have only used licenses",
+      description: 'Filter to have only used licenses',
     }),
-    debug: flags.boolean({
-      char: "d",
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected usedOnly = false;
   protected debugMode = false;
@@ -63,16 +56,17 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.usedOnly = this.flags.usedonly || false;
-    this.debugMode = this.flags.debug || false;
-    this.outputFile = this.flags.outputfile || null;
+    const { flags } = await this.parse(DiagnoseUnusedUsers);
+    this.usedOnly = flags.usedonly || false;
+    this.debugMode = flags.debug || false;
+    this.outputFile = flags.outputfile || null;
 
     // Retrieve the list of users who haven't logged in for a while
-    const conn = this.org.getConnection();
-    uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? "(used only)" : ""));
+    const conn = flags['target-org'].getConnection();
+    uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? '(used only)' : ''));
 
     const licensesByKey = {};
-    const usedLicenses = [];
+    const usedLicenses: any[] = [];
 
     // Query User Licenses
     const userLicenseQuery =
@@ -85,7 +79,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
       const userLicenseInfo = Object.assign({}, userLicense);
       delete userLicenseInfo.Id;
       delete userLicenseInfo.attributes;
-      userLicenseInfo.type = "UserLicense";
+      userLicenseInfo.type = 'UserLicense';
       licensesByKey[userLicenseInfo.MasterLabel] = userLicenseInfo.TotalLicenses;
       if (userLicenseInfo.UsedLicenses > 0) {
         usedLicenses.push(userLicenseInfo.MasterLabel);
@@ -110,7 +104,7 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
       delete pslInfo.Id;
       delete pslInfo.attributes;
       delete pslInfo.PermissionSetLicenseKey;
-      pslInfo.type = "PermissionSetLicense";
+      pslInfo.type = 'PermissionSetLicense';
       licensesByKey[pslInfo.MasterLabel] = pslInfo.TotalLicenses;
       if (pslInfo.UsedLicenses > 0) {
         usedLicenses.push(pslInfo.MasterLabel);
@@ -121,17 +115,17 @@ export default class DiagnoseUnusedUsers extends SfdxCommand {
 
     usedLicenses.sort();
     console.table(this.licenses);
-    uxLog(this, c.cyan("Used licenses: " + usedLicenses.join(", ")));
+    uxLog(this, c.cyan('Used licenses: ' + usedLicenses.join(', ')));
 
     // Generate output CSV file
-    this.outputFile = await generateReportPath("licenses", this.outputFile);
+    this.outputFile = await generateReportPath('licenses', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.licenses, this.outputFile);
 
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "LICENSES",
-      text: "",
-      severity: "log",
+      type: 'LICENSES',
+      text: '',
+      severity: 'log',
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.licenses,
       data: {

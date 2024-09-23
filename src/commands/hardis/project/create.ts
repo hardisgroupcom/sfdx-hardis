@@ -1,84 +1,75 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { ensureGitRepository, execCommand, uxLog } from "../../../common/utils";
-import { prompts } from "../../../common/utils/prompts";
-import * as c from "chalk";
-import * as fs from "fs-extra";
-import * as path from "path";
-import { getConfig, setConfig } from "../../../config";
-import { WebSocketClient } from "../../../common/websocketClient";
-import { isSfdxProject } from "../../../common/utils/projectUtils";
-import { PACKAGE_ROOT_DIR } from "../../../settings";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { ensureGitRepository, execCommand, uxLog } from '../../../common/utils/index.js';
+import { prompts } from '../../../common/utils/prompts.js';
+import c from 'chalk';
+import fs from 'fs-extra';
+import * as path from 'path';
+import { CONSTANTS, getConfig, setConfig } from '../../../config/index.js';
+import { WebSocketClient } from '../../../common/websocketClient.js';
+import { isSfdxProject } from '../../../common/utils/projectUtils.js';
+import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+export default class ProjectCreate extends SfCommand<any> {
+  public static title = 'Login';
 
-export default class ProjectCreate extends SfdxCommand {
-  public static title = "Login";
+  public static description = 'Create a new SFDX Project';
 
-  public static description = "Create a new SFDX Project";
+  public static examples = ['$ sf hardis:project:create'];
 
-  public static examples = ["$ sfdx hardis:project:create"];
-
-  protected static flagsConfig = {
-    debug: flags.boolean({
-      char: "d",
+  public static flags: any = {
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected debugMode = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debugMode || false;
+    const { flags } = await this.parse(ProjectCreate);
+    this.debugMode = flags.debug || false;
     // Check git repo
     await ensureGitRepository({ clone: true });
     const devHubPrompt = await prompts({
-      name: "orgType",
-      type: "select",
-      message: "To perform implementation, will your project use scratch org or source tracked sandboxes only ?",
+      name: 'orgType',
+      type: 'select',
+      message: 'To perform implementation, will your project use scratch org or source tracked sandboxes only ?',
       choices: [
         {
-          title: "Scratch orgs only",
-          value: "scratch",
+          title: 'Scratch orgs only',
+          value: 'scratch',
         },
         {
-          title: "Source tracked sandboxes only",
-          value: "sandbox",
+          title: 'Source tracked sandboxes only',
+          value: 'sandbox',
         },
         {
-          title: "Source tracked sandboxes and scratch orgs",
-          value: "sandboxAndScratch",
+          title: 'Source tracked sandboxes and scratch orgs',
+          value: 'sandboxAndScratch',
         },
       ],
     });
-    if (["scratch", "sandboxAndScratch"].includes(devHubPrompt.orgType)) {
+    if (['scratch', 'sandboxAndScratch'].includes(devHubPrompt.orgType)) {
       // Connect to DevHub
-      await this.config.runHook("auth", {
+      await this.config.runHook('auth', {
         checkAuth: true,
         Command: this,
         devHub: true,
@@ -86,21 +77,21 @@ export default class ProjectCreate extends SfdxCommand {
       });
     }
     // Project name
-    let config = await getConfig("project");
+    let config = await getConfig('project');
     let projectName = config.projectName;
     if (projectName == null) {
       // User prompts
       const projectRes = await prompts({
-        type: "text",
-        name: "projectName",
-        message: "What is the name of your project ? (example: MyClient)",
+        type: 'text',
+        name: 'projectName',
+        message: 'What is the name of your project ? (example: MyClient)',
       });
-      projectName = projectRes.projectName.toLowerCase().replace(" ", "_");
+      projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
     }
 
     // Create sfdx project only if not existing
     if (!isSfdxProject()) {
-      const createCommand = "sfdx force:project:create" + ` --projectname "${projectName}"` + " --manifest";
+      const createCommand = 'sf project generate' + ` --name "${projectName}"` + ' --manifest';
       await execCommand(createCommand, this, {
         output: true,
         fail: true,
@@ -114,36 +105,44 @@ export default class ProjectCreate extends SfdxCommand {
       await fs.rm(path.join(process.cwd(), projectName), { recursive: true });
     }
     // Copy default project files
-    uxLog(this, "Copying default files...");
-    await fs.copy(path.join(PACKAGE_ROOT_DIR, "defaults/ci", "."), process.cwd(), { overwrite: false });
+    uxLog(this, 'Copying default files...');
+    await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/ci', '.'), process.cwd(), { overwrite: false });
 
-    config = await getConfig("project");
+    config = await getConfig('project');
     if (config.developmentBranch == null) {
       // User prompts
       const devBranchRes = await prompts({
-        type: "text",
-        name: "devBranch",
+        type: 'text',
+        name: 'devBranch',
         message:
-          "What is the name of your default development branch ? (Examples: if you manage RUN and BUILD, it can be integration. If you manage RUN only, it can be preprod)",
-        initial: "integration",
+          'What is the name of your default development branch ? (Examples: if you manage RUN and BUILD, it can be integration. If you manage RUN only, it can be preprod)',
+        initial: 'integration',
       });
-      await setConfig("project", { developmentBranch: devBranchRes.devBranch });
+      await setConfig('project', { developmentBranch: devBranchRes.devBranch });
     }
 
-    await setConfig("project", { autoCleanTypes: ["destructivechanges"] });
-
+    // Initialize autoCleanTypes
+    const defaultAutoCleanTypes = [
+      'destructivechanges',
+      'flowPositions',
+      'minimizeProfiles'];
+    await setConfig('project', {
+      autoCleanTypes: defaultAutoCleanTypes
+    });
+    uxLog(this, c.yellow(`autoCleanTypes ${defaultAutoCleanTypes.join(",")} has been activated on the new project.`));
+    uxLog(this, c.bold(c.yellow(`If you install CI/CD on an existing org with many rights in Profiles, you might remove "minimizeProfiles" from .sfdx-hardis.yml autoCleanTypes property `)));
     // Message instructions
     uxLog(
       this,
       c.cyan(
-        "SFDX Project has been created. You can continue the steps in documentation at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/",
-      ),
+        `SFDX Project has been created. You can continue the steps in documentation at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-home/`
+      )
     );
 
     // Trigger commands refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: "refreshCommands" });
+    WebSocketClient.sendMessage({ event: 'refreshCommands' });
 
     // Return an object to be displayed with --json
-    return { outputString: "Created SFDX Project" };
+    return { outputString: 'Created SFDX Project' };
   }
 }

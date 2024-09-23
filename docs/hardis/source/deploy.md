@@ -1,4 +1,4 @@
-<!-- This file has been generated with command 'sfdx hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+<!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
 # hardis:source:deploy
 
 ## Description
@@ -20,7 +20,13 @@ You can also have deployment results as pull request comments, on:
 
 ### Deployment pre or post commands
 
-You can define command lines to run before or after a deployment
+You can define command lines to run before or after a deployment, with parameters:
+
+- **id**: Unique Id for the command
+- **label**: Human readable label for the command
+- **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
+- **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
+- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
@@ -34,6 +40,7 @@ commandsPreDeploy:
   - id: knowledgeAssign
     label: Assign Knowledge user to the deployment user
     command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+
 commandsPostDeploy:
   - id: knowledgeUnassign
     label: Remove KnowledgeUser right to the user who has it
@@ -41,6 +48,12 @@ commandsPostDeploy:
   - id: knowledgeAssign
     label: Assign Knowledge user to desired username
     command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
+  - id: someActionToRunJustOneTime
+    label: And to run only if deployment is success
+    command: sf sfdmu:run ...
+    skipIfError: true
+    context: process-deployment-only
+    runOnlyOnceByOrg: true
 ```
 
 Notes:
@@ -52,39 +65,38 @@ Notes:
 
 ## Parameters
 
-| Name                            |  Type   | Description                                                         |  Default   | Required |                                Options                                 |
-|:--------------------------------|:-------:|:--------------------------------------------------------------------|:----------:|:--------:|:----------------------------------------------------------------------:|
-| apiversion                      | option  | override the api version used for api requests made by this command |            |          |                                                                        |
-| checkcoverage                   | boolean | Check Apex org coverage                                             |            |          |                                                                        |
-| checkonly<br/>-c                | boolean | checkonly                                                           |            |          |                                                                        |
-| coverageformatters              | option  | coverageformatters                                                  |            |          |                                                                        |
-| debug                           | boolean | debug                                                               |            |          |                                                                        |
-| forceoverwrite<br/>-f           | boolean | forceoverwrite                                                      |            |          |                                                                        |
-| ignoreerrors<br/>-o             | boolean | ignoreErrors                                                        |            |          |                                                                        |
-| ignorewarnings<br/>-g           | boolean | ignoreWarnings                                                      |            |          |                                                                        |
-| json                            | boolean | format output as json                                               |            |          |                                                                        |
-| junit                           | boolean | junit                                                               |            |          |                                                                        |
-| loglevel                        | option  | logging level for this command invocation                           |    warn    |          |         trace<br/>debug<br/>info<br/>warn<br/>error<br/>fatal          |
-| manifest<br/>-x                 | option  | flagsLong.manifest                                                  |            |          |                                                                        |
-| metadata<br/>-m                 | option  | metadata                                                            |            |          |                                                                        |
-| postdestructivechanges          | option  | postdestructivechanges                                              |            |          |                                                                        |
-| predestructivechanges           | option  | predestructivechanges                                               |            |          |                                                                        |
-| resultsdir                      | option  | resultsdir                                                          |            |          |                                                                        |
-| runtests<br/>-r                 | option  | runTests                                                            |            |          |                                                                        |
-| soapdeploy                      | boolean | soapDeploy                                                          |            |          |                                                                        |
-| sourcepath<br/>-p               | option  | sourcePath                                                          |            |          |                                                                        |
-| targetusername<br/>-u           | option  | username or alias for the target org; overrides default target org  |            |          |                                                                        |
-| testlevel<br/>-l                | option  | testlevel                                                           | NoTestRun  |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| tracksource<br/>-t              | boolean | tracksource                                                         |            |          |                                                                        |
-| validateddeployrequestid<br/>-q | option  | validateDeployRequestId                                             |            |          |                                                                        |
-| verbose                         | boolean | verbose                                                             |            |          |                                                                        |
-| wait<br/>-w                     | option  | wait                                                                | 60 minutes |          |                                                                        |
-| websocket                       | option  | websocket                                                           |            |          |                                                                        |
+| Name                            |  Type   | Description             |  Default  | Required |                                Options                                 |
+|:--------------------------------|:-------:|:------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
+| checkcoverage                   | boolean | Check Apex org coverage |           |          |                                                                        |
+| checkonly<br/>-c                | boolean | checkonly               |           |          |                                                                        |
+| coverageformatters              | option  | coverageformatters      |           |          |                                                                        |
+| debug                           | boolean | debug                   |           |          |                                                                        |
+| flags-dir                       | option  | undefined               |           |          |                                                                        |
+| forceoverwrite<br/>-f           | boolean | forceoverwrite          |           |          |                                                                        |
+| ignoreerrors<br/>-o             | boolean | ignoreErrors            |           |          |                                                                        |
+| ignorewarnings<br/>-g           | boolean | ignoreWarnings          |           |          |                                                                        |
+| json                            | boolean | Format output as json.  |           |          |                                                                        |
+| junit                           | boolean | junit                   |           |          |                                                                        |
+| manifest<br/>-x                 | option  | flagsLong.manifest      |           |          |                                                                        |
+| metadata<br/>-m                 | option  | metadata                |           |          |                                                                        |
+| postdestructivechanges          | option  | postdestructivechanges  |           |          |                                                                        |
+| predestructivechanges           | option  | predestructivechanges   |           |          |                                                                        |
+| resultsdir                      | option  | resultsdir              |           |          |                                                                        |
+| runtests<br/>-r                 | option  | runTests                |           |          |                                                                        |
+| soapdeploy                      | boolean | soapDeploy              |           |          |                                                                        |
+| sourcepath<br/>-p               | option  | sourcePath              |           |          |                                                                        |
+| target-org<br/>-o               | option  | undefined               |           |          |                                                                        |
+| testlevel<br/>-l                | option  | testlevel               | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| tracksource<br/>-t              | boolean | tracksource             |           |          |                                                                        |
+| validateddeployrequestid<br/>-q | option  | validateDeployRequestId |           |          |                                                                        |
+| verbose                         | boolean | verbose                 |           |          |                                                                        |
+| wait<br/>-w                     | option  | wait                    |    60     |          |                                                                        |
+| websocket                       | option  | websocket               |           |          |                                                                        |
 
 ## Examples
 
 ```shell
-sfdx hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --targetusername nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary
+sf hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --target-org nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary
 ```
 
 
