@@ -1,6 +1,9 @@
 {
   "threshold": 0,
-  "reporters": ["html", "markdown"],
+  "reporters": [
+    "html",
+    "markdown"
+  ],
   "ignore": [
     "**/node_modules/**",
     "**/.git/**",
@@ -19,6 +22,7 @@
     "**/apex.ts",
     "**/access.ts",
     "**/audittrail.ts",
+    "**/auth.ts",
     "**/freeze.ts",
     "**/legacyapi.ts",
     "**/unfreeze.ts",

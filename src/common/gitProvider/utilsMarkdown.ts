@@ -1,14 +1,14 @@
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
   for (const err of errorsAndTips) {
-    const errorMessage = err.error.message.trim().includes("Error ")
-      ? err.error.message
-          .trim()
-          .replace("Error ", "")
-          .replace(" ", "<br/>")
-          .trim()
-          .replace(/(.*)<br\/>/gm, `<b>$1</b> `)
-      : err.error.message.trim();
+    const errorMessage = (err as any)?.error?.message?.trim().includes("Error ")
+      ? (err as any)?.error?.message
+        .trim()
+        .replace("Error ", "")
+        .replace(" ", "<br/>")
+        .trim()
+        .replace(/(.*)<br\/>/gm, `<b>$1</b> `)
+      : (err as any)?.error?.message?.trim() || "WE SHOULD NOT GO THERE: PLEASE DECLARE AN ISSUE";
     // sfdx-hardis tip
     if (err.tip) {
       const aiText = err?.tipFromAi?.promptResponse
@@ -18,7 +18,7 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
           : "";
       md += `<details><summary>🛠️ ${errorMessage}</summary>
 
-_${err.tip.label}_
+_[**${err.tip.label}**](${err.tip.docUrl})_
 
 ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 ${aiText}

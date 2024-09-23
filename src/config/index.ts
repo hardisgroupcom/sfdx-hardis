@@ -10,40 +10,77 @@ getConfig(layer) returns:
 - project if layer is project
 */
 
-import { SfdxError } from "@salesforce/core";
-import axios from "axios";
-import * as c from "chalk";
-import { cosmiconfig } from "cosmiconfig";
-import * as fs from "fs-extra";
-import * as yaml from "js-yaml";
-import * as os from "os";
-import * as path from "path";
-import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from "../common/utils";
-import { prompts } from "../common/utils/prompts";
+import { SfError } from '@salesforce/core';
+import axios from 'axios';
+import c from 'chalk';
+import { cosmiconfig } from 'cosmiconfig';
+import fs from 'fs-extra';
+import * as yaml from 'js-yaml';
+import * as os from 'os';
+import * as path from 'path';
+import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
+import { prompts } from '../common/utils/prompts.js';
 
-const moduleName = "sfdx-hardis";
-const projectConfigFiles = ["package.json", `.${moduleName}.yaml`, `.${moduleName}.yml`, `config/.${moduleName}.yaml`, `config/.${moduleName}.yml`];
+const moduleName = 'sfdx-hardis';
+const projectConfigFiles = [
+  'package.json',
+  `.${moduleName}.yaml`,
+  `.${moduleName}.yml`,
+  `config/.${moduleName}.yaml`,
+  `config/.${moduleName}.yml`,
+];
 const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
+
+export const CONSTANTS = {
+  API_VERSION: process.env.SFDX_API_VERSION || '61.0',
+  DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
+  NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES?.split(",") ?? [
+    "Audience",
+    "AuraDefinitionBundle",
+    "Bot",
+    "BotVersion",
+    "ContentAsset",
+    "CustomObjectTranslation",
+    "CustomSite",
+    "CustomTab",
+    "Dashboard",
+    "ExperienceBundle",
+    "Flexipage",
+    "GlobalValueSetTranslation",
+    "Layout",
+    "LightningComponentBundle",
+    "NavigationMenu",
+    "ReportType",
+    "Report",
+    "SiteDotCom",
+    "StandardValueSetTranslation",
+    "StaticResource",
+    "Translations"
+  ]
+};
 
 async function getBranchConfigFiles() {
   if (!isGitRepo()) {
     return [];
   }
   const gitBranchFormatted = process.env.CONFIG_BRANCH || (await getCurrentGitBranch({ formatted: true }));
-  const branchConfigFiles = [`config/branches/.${moduleName}.${gitBranchFormatted}.yaml`, `config/branches/.${moduleName}.${gitBranchFormatted}.yml`];
+  const branchConfigFiles = [
+    `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
+    `config/branches/.${moduleName}.${gitBranchFormatted}.yml`,
+  ];
   return branchConfigFiles;
 }
 
-export const getConfig = async (layer = "user"): Promise<any> => {
+export const getConfig = async (layer = 'user'): Promise<any> => {
   const defaultConfig = await loadFromConfigFile(projectConfigFiles);
-  if (layer === "project") {
+  if (layer === 'project') {
     return defaultConfig;
   }
   let branchConfig = await loadFromConfigFile(await getBranchConfigFiles());
   branchConfig = Object.assign(defaultConfig, branchConfig);
-  if (layer === "branch") {
+  if (layer === 'branch') {
     return branchConfig;
   }
   let userConfig = await loadFromConfigFile(userConfigFiles);
@@ -53,19 +90,21 @@ export const getConfig = async (layer = "user"): Promise<any> => {
 
 // Set data in configuration file
 export const setConfig = async (layer: string, propValues: any): Promise<void> => {
-  if (layer === "user" && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
-    if (process?.argv?.includes("--debug")) {
-      uxLog(this, c.grey("Skip update user config file because current directory is not a salesforce project"));
+  if (layer === 'user' && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
+    if (process?.argv?.includes('--debug')) {
+      uxLog(this, c.grey('Skip update user config file because current directory is not a salesforce project'));
     }
     return;
   }
   const configSearchPlaces =
-    layer === "project" ? projectConfigFiles : layer === "user" ? userConfigFiles : layer === "branch" ? await getBranchConfigFiles() : [];
+    layer === 'project'
+      ? projectConfigFiles
+      : layer === 'user'
+        ? userConfigFiles
+        : layer === 'branch'
+          ? await getBranchConfigFiles()
+          : [];
   await setInConfigFile(configSearchPlaces, propValues);
-};
-
-export const CONSTANTS = {
-  API_VERSION: process.env.SFDX_API_VERSION || "61.0",
 };
 
 // Load configuration from file
@@ -87,7 +126,9 @@ async function loadFromRemoteConfigFile(url) {
   }
   const remoteConfigResp = await axios.get(url);
   if (remoteConfigResp.status !== 200) {
-    throw new SfdxError("[sfdx-hardis] Unable to read remote configuration file at " + url + "\n" + JSON.stringify(remoteConfigResp));
+    throw new SfError(
+      '[sfdx-hardis] Unable to read remote configuration file at ' + url + '\n' + JSON.stringify(remoteConfigResp)
+    );
   }
   const remoteConfig = yaml.load(remoteConfigResp.data);
   REMOTE_CONFIGS[url] = remoteConfig;
@@ -95,33 +136,36 @@ async function loadFromRemoteConfigFile(url) {
 }
 
 // Update configuration file
-export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = null) {
-  let explorer = null;
-  if (configFile == null) {
+export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = '') {
+  let explorer;
+  if (configFile === '') {
     explorer = cosmiconfig(moduleName, { searchPlaces });
     const configExplorer = await explorer.search();
     configFile = configExplorer != null ? configExplorer.filepath : searchPlaces.slice(-1)[0];
   }
-  let doc = {};
+  let doc: any = {};
   if (fs.existsSync(configFile)) {
-    doc = yaml.load(fs.readFileSync(configFile, "utf-8"));
+    doc = yaml.load(fs.readFileSync(configFile, 'utf-8'));
   }
   doc = Object.assign(doc, propValues);
   await fs.ensureDir(path.dirname(configFile));
   await fs.writeFile(configFile, yaml.dump(doc));
-  if (explorer != null) {
+  if (explorer) {
     explorer.clearCaches();
   }
   if (!isCI) {
-    uxLog(this, c.magentaBright(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`));
+    uxLog(
+      this,
+      c.magentaBright(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`)
+    );
   }
 }
 
 // Check configuration of project so it works with sfdx-hardis
 export const checkConfig = async (options: any) => {
   // Skip hooks from other commands than hardis:scratch commands
-  const commandId = options?.Command?.id || options?.id || "";
-  if (!commandId.startsWith("hardis")) {
+  const commandId = options?.Command?.id || options?.id || '';
+  if (!commandId.startsWith('hardis')) {
     return;
   }
 
@@ -134,19 +178,19 @@ export const checkConfig = async (options: any) => {
       options?.flags?.devhub === true ||
       options.devHub === true)
   ) {
-    const configProject = await getConfig("project");
+    const configProject = await getConfig('project');
     let projectName = process.env.PROJECT_NAME || configProject.projectName;
     devHubAliasOk = (process.env.DEVHUB_ALIAS || configProject.devHubAlias) != null;
     // If not found, prompt user project name and store it in user config file
     if (projectName == null) {
       const promptResponse = await prompts({
-        type: "text",
-        name: "value",
-        message: c.cyanBright("Please input your project name without spaces or special characters (ex: MonClient)"),
+        type: 'text',
+        name: 'value',
+        message: c.cyanBright('Please input your project name without spaces or special characters (ex: MonClient)'),
         validate: (value: string) => !value.match(/^[0-9a-z]+$/), // check only alphanumeric
       });
       projectName = promptResponse.value;
-      await setConfig("project", {
+      await setConfig('project', {
         projectName,
         devHubAlias: `DevHub_${projectName}`,
       });
@@ -156,10 +200,10 @@ export const checkConfig = async (options: any) => {
 
   // Set DevHub username if not set
   if (devHubAliasOk === false && options.Command && options.Command.supportsDevhubUsername === true) {
-    const configProject = await getConfig("project");
+    const configProject = await getConfig('project');
     const devHubAlias = process.env.DEVHUB_ALIAS || configProject.devHubAlias;
     if (devHubAlias == null) {
-      await setConfig("project", {
+      await setConfig('project', {
         devHubAlias: `DevHub_${configProject.projectName}`,
       });
     }
@@ -167,8 +211,8 @@ export const checkConfig = async (options: any) => {
 };
 
 export async function getReportDirectory() {
-  const configProject = await getConfig("project");
-  const defaultReportDir = path.join(process.cwd(), "hardis-report");
+  const configProject = await getConfig('project');
+  const defaultReportDir = path.join(process.cwd(), 'hardis-report');
   const reportDir = configProject.reportDirectory || defaultReportDir;
   await fs.ensureDir(reportDir);
   return reportDir;

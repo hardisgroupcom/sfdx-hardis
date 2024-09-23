@@ -1,24 +1,25 @@
 // External Libraries and Node.js Modules
-import * as fs from "fs-extra";
-import * as path from "path";
-import * as c from "chalk";
-import * as fetch from "@adobe/node-fetch-retry";
-import * as split from "split";
-import { PromisePool } from "@supercharge/promise-pool";
+import fs from 'fs-extra';
+import * as path from 'path';
+import c from 'chalk';
+import makeFetchHappen, { FetchOptions } from 'make-fetch-happen';
+import * as split from 'split';
+import { PromisePool } from '@supercharge/promise-pool';
 
 // Salesforce Specific and Other Specific Libraries
-import { Connection, SfdxError } from "@salesforce/core";
-import * as Papa from "papaparse";
-import * as ExcelJS from "exceljs";
+import { Connection, SfError } from '@salesforce/core';
+import Papa from 'papaparse';
+import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
-import { getCurrentGitBranch, isCI, uxLog } from ".";
-import { bulkQuery, soqlQuery } from "./apiUtils";
-import { prompts } from "./prompts";
-import { CONSTANTS, getReportDirectory } from "../../config";
-import { WebSocketClient } from "../websocketClient";
+import { getCurrentGitBranch, isCI, uxLog } from './index.js';
+import { bulkQuery, soqlQuery } from './apiUtils.js';
+import { prompts } from './prompts.js';
+import { CONSTANTS, getReportDirectory } from '../../config/index.js';
+import { WebSocketClient } from '../websocketClient.js';
+import ora from 'ora';
 
-export const filesFolderRoot = path.join(".", "scripts", "files");
+export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
 export class FilesExporter {
   private filesPath: string;
@@ -28,9 +29,9 @@ export class FilesExporter {
   private startChunkNumber: number;
   private commandThis: any;
 
-  private fetchOptions: any;
+  private fetchOptions: FetchOptions;
   private dtl: any = null; // export config
-  private exportedFilesFolder: string;
+  private exportedFilesFolder: string = '';
   private recordsChunk: any[] = [];
   private chunksNumber = 1;
 
@@ -49,14 +50,14 @@ export class FilesExporter {
   private filesErrors = 0;
   private filesIgnoredType = 0;
   private filesIgnoredExisting = 0;
-  private apiUsedBefore = null;
-  private apiLimit = null;
+  private apiUsedBefore: number = 0;
+  private apiLimit: number = 0;
 
   constructor(
     filesPath: string,
     conn: Connection,
     options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number },
-    commandThis: any,
+    commandThis: any
   ) {
     this.filesPath = filesPath;
     this.conn = conn;
@@ -69,10 +70,15 @@ export class FilesExporter {
     }
     // Build fetch options for HTTP calls to retrieve document files
     this.fetchOptions = {
-      method: "GET",
+      method: 'GET',
       headers: {
-        Authorization: "Bearer " + this.conn.accessToken,
-        "Content-Type": "blob",
+        Authorization: 'Bearer ' + this.conn.accessToken,
+        'Content-Type': 'blob',
+      },
+      retry: {
+        retries: 20,
+        factor: 3,
+        randomize: true,
       },
     };
   }
@@ -85,7 +91,7 @@ export class FilesExporter {
     uxLog(this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
     uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
     // Make sure export folder for files is existing
-    this.exportedFilesFolder = path.join(this.filesPath, "export");
+    this.exportedFilesFolder = path.join(this.filesPath, 'export');
     await fs.ensureDir(this.exportedFilesFolder);
 
     await this.calculateApiConsumption();
@@ -97,36 +103,43 @@ export class FilesExporter {
 
   // Calculate API consumption
   private async calculateApiConsumption() {
-    const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, "SELECT COUNT() FROM");
+    const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT COUNT() FROM');
     this.totalSoqlRequests++;
     const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
     this.chunksNumber = Math.round(countSoqlQueryRes.totalSize / this.recordsChunkSize);
     const estimatedApiCalls = Math.round(this.chunksNumber * 2) + 1;
-    this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used ? (this.conn as any).limitInfo.apiUsage.used - 1 : this.apiUsedBefore;
+    this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used
+      ? (this.conn as any).limitInfo.apiUsage.used - 1
+      : this.apiUsedBefore;
     this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
     // Check if there are enough API calls available
     if (this.apiLimit - this.apiUsedBefore < estimatedApiCalls + 1000) {
-      throw new SfdxError(
-        `You don't have enough API calls available (${c.bold(this.apiLimit - this.apiUsedBefore)}) to perform this export that could consume ${c.bold(
-          estimatedApiCalls,
-        )} API calls`,
+      throw new SfError(
+        `You don't have enough API calls available (${c.bold(
+          this.apiLimit - this.apiUsedBefore
+        )}) to perform this export that could consume ${c.bold(estimatedApiCalls)} API calls`
       );
     }
     // Request user confirmation
     if (!isCI) {
       const warningMessage = c.cyanBright(
         `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
-          c.yellow(this.chunksNumber),
+          c.yellow(this.chunksNumber)
         )} chunks, and consume up to ${c.bold(c.yellow(estimatedApiCalls))} API calls on the ${c.bold(
-          c.yellow(this.apiLimit - this.apiUsedBefore),
-        )} remaining API calls. Do you want to proceed ?`,
+          c.yellow(this.apiLimit - this.apiUsedBefore)
+        )} remaining API calls. Do you want to proceed ?`
       );
-      const promptRes = await prompts({ type: "confirm", message: warningMessage });
+      const promptRes = await prompts({ type: 'confirm', message: warningMessage });
       if (promptRes.value !== true) {
-        throw new SfdxError("Command cancelled by user");
+        throw new SfError('Command cancelled by user');
       }
       if (this.startChunkNumber === 0) {
-        uxLog(this, c.yellow(c.italic("Use --startchunknumber command line argument if you do not want to start from first chunk")));
+        uxLog(
+          this,
+          c.yellow(
+            c.italic('Use --startchunknumber command line argument if you do not want to start from first chunk')
+          )
+        );
       }
     }
   }
@@ -140,7 +153,11 @@ export class FilesExporter {
         await this.processRecordsChunk(recordChunk);
         this.recordsChunkQueueRunning = false;
         // Manage last chunk
-      } else if (this.bulkApiRecordsEnded === true && this.recordsChunkQueue.length === 0 && this.recordsChunk.length > 0) {
+      } else if (
+        this.bulkApiRecordsEnded === true &&
+        this.recordsChunkQueue.length === 0 &&
+        this.recordsChunk.length > 0
+      ) {
         const recordsToProcess = [...this.recordsChunk];
         this.recordsChunk = [];
         this.recordsChunkQueue.push(recordsToProcess);
@@ -162,7 +179,7 @@ export class FilesExporter {
           resolve(true);
         }
         if (globalThis.sfdxHardisFatalError === true) {
-          uxLog(this, c.red("Fatal error while processing chunks queue"));
+          uxLog(this, c.red('Fatal error while processing chunks queue'));
           process.exit(1);
         }
       }, 1000);
@@ -173,27 +190,27 @@ export class FilesExporter {
 
   private async processParentRecords() {
     // Query parent records using SOQL defined in export.json file
-    uxLog(this, c.grey("Bulk query: " + c.italic(this.dtl.soqlQuery)));
     this.totalSoqlRequests++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
-    await this.conn.bulk
-      .query(this.dtl.soqlQuery)
-      .on("record", async (record) => {
-        this.totalParentRecords++;
-        const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, record[this.dtl.outputFolderNameField] || record.Id));
-        if (this.dtl.overwriteParentRecords !== true && fs.existsSync(parentRecordFolderForFiles)) {
-          uxLog(this, c.grey(`Skipped record - ${record[this.dtl.outputFolderNameField] || record.Id} - Record files already downloaded`));
-          this.recordsIgnored++;
-          return;
-        }
-        await this.addToRecordsChunk(record);
-      })
-      .on("error", (err) => {
-        throw new SfdxError(c.red("Bulk query error:" + err));
-      })
-      .on("end", () => {
-        this.bulkApiRecordsEnded = true;
-      });
+    const queryRes = await bulkQuery(this.dtl.soqlQuery, this.conn, 3);
+    for (const record of queryRes.records) {
+      this.totalParentRecords++;
+      const parentRecordFolderForFiles = path.resolve(
+        path.join(this.exportedFilesFolder, record[this.dtl.outputFolderNameField] || record.Id)
+      );
+      if (this.dtl.overwriteParentRecords !== true && fs.existsSync(parentRecordFolderForFiles)) {
+        uxLog(
+          this,
+          c.grey(
+            `Skipped record - ${record[this.dtl.outputFolderNameField] || record.Id} - Record files already downloaded`
+          )
+        );
+        this.recordsIgnored++;
+        return;
+      }
+      await this.addToRecordsChunk(record);
+    }
+    this.bulkApiRecordsEnded = true;
   }
 
   private async addToRecordsChunk(record: any) {
@@ -209,22 +226,34 @@ export class FilesExporter {
   private async processRecordsChunk(records: any[]) {
     this.recordChunksNumber++;
     if (this.recordChunksNumber < this.startChunkNumber) {
-      uxLog(this, c.cyan(`Skip parent records chunk #${this.recordChunksNumber} because it is lesser than ${this.startChunkNumber}`));
+      uxLog(
+        this,
+        c.cyan(
+          `Skip parent records chunk #${this.recordChunksNumber} because it is lesser than ${this.startChunkNumber}`
+        )
+      );
       return;
     }
-    uxLog(this, c.cyan(`Processing parent records chunk #${this.recordChunksNumber} on ${this.chunksNumber} (${records.length} records) ...`));
+    uxLog(
+      this,
+      c.cyan(
+        `Processing parent records chunk #${this.recordChunksNumber} on ${this.chunksNumber} (${records.length} records) ...`
+      )
+    );
     // Request all ContentDocumentLink related to all records of the chunk
-    const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(",");
+    const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(',');
     const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
     this.totalSoqlRequests++;
     const contentDocumentLinks = await bulkQuery(linkedEntityInQuery, this.conn);
     if (contentDocumentLinks.records.length === 0) {
-      uxLog(this, c.grey("No ContentDocumentLinks found for the parent records in this chunk"));
+      uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this chunk'));
       return;
     }
 
     // Retrieve all ContentVersion related to ContentDocumentLink
-    const contentDocIdIn = contentDocumentLinks.records.map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`).join(",");
+    const contentDocIdIn = contentDocumentLinks.records
+      .map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`)
+      .join(',');
     const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
     this.totalSoqlRequests++;
     const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
@@ -233,7 +262,7 @@ export class FilesExporter {
     // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
     // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
     // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
-    const versionsAndLinks = [];
+    const versionsAndLinks: any[] = [];
     contentVersions.records.forEach((contentVersion) => {
       contentDocumentLinks.records.forEach((contentDocumentLink) => {
         if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
@@ -250,10 +279,14 @@ export class FilesExporter {
       .for(versionsAndLinks)
       .process(async (versionAndLink: any) => {
         try {
-          await this.downloadContentVersionFile(versionAndLink.contentVersion, records, versionAndLink.contentDocumentLink);
+          await this.downloadContentVersionFile(
+            versionAndLink.contentVersion,
+            records,
+            versionAndLink.contentDocumentLink
+          );
         } catch (e) {
           this.filesErrors++;
-          uxLog(this, c.red("Download file error: " + versionAndLink.contentVersion.Title + "\n" + e));
+          uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
         }
       });
   }
@@ -262,45 +295,63 @@ export class FilesExporter {
     // Retrieve initial record to build output files folder name
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
-    const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(/[/\\?%*:|"<>]/g, "-");
+    const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(
+      /[/\\?%*:|"<>]/g,
+      '-'
+    );
     const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
     // Define name of the file
     let outputFile =
       // Id
-      this.dtl?.outputFileNameFormat === "id"
+      this.dtl?.outputFileNameFormat === 'id'
         ? path.join(parentRecordFolderForFiles, contentVersion.Id)
         : // Title + Id
-          this.dtl?.outputFileNameFormat === "title_id"
-          ? path.join(parentRecordFolderForFiles, `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}_${contentVersion.Id}`)
+        this.dtl?.outputFileNameFormat === 'title_id'
+          ? path.join(
+            parentRecordFolderForFiles,
+            `${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-')}_${contentVersion.Id}`
+          )
           : // Id + Title
-            this.dtl?.outputFileNameFormat === "id_title"
-            ? path.join(parentRecordFolderForFiles, `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-")}`)
+          this.dtl?.outputFileNameFormat === 'id_title'
+            ? path.join(
+              parentRecordFolderForFiles,
+              `${contentVersion.Id}_${contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-')}`
+            )
             : // Title
-              path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, "-"));
+            path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
     // Add file extension if missing in file title, and replace .snote by .html
     if (contentVersion.FileExtension && path.extname(outputFile) !== contentVersion.FileExtension) {
-      outputFile = outputFile + "." + (contentVersion.FileExtension !== "snote" ? contentVersion.FileExtension : "html");
+      outputFile =
+        outputFile + '.' + (contentVersion.FileExtension !== 'snote' ? contentVersion.FileExtension : 'html');
     }
+    const outputFileLabel = path.relative(process.cwd(), outputFile);
     // Check file extension
-    if (this.dtl.fileTypes !== "all" && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
-      uxLog(this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, "")} - File type ignored`));
+    if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
+      uxLog(this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
       this.filesIgnoredType++;
       return;
     }
     // Check file overwrite
     if (this.dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
-      uxLog(this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, "")} - File already existing`));
+      uxLog(this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
       this.filesIgnoredExisting++;
       return;
     }
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
+    const spinnerCustom = ora({
+      text: `(${(this.filesDownloaded + 1)}) Downloading ${outputFileLabel}...`,
+      spinner: 'moon',
+    }).start();
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     try {
-      const fetchRes = await fetch(fetchUrl, this.fetchOptions);
+      this.fetchOptions.onRetry = (cause: unknown) => {
+        spinnerCustom.text = `(${this.filesDownloaded}) Retrying ${outputFileLabel} (${cause})...`;
+      }
+      const fetchRes = await makeFetchHappen(fetchUrl, this.fetchOptions);
       if (fetchRes.ok !== true) {
-        throw new SfdxError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
+        throw new SfError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
       }
       // Wait for file to be written
       const stream = fs.createWriteStream(outputFile);
@@ -311,11 +362,14 @@ export class FilesExporter {
           resolve(true);
         });
       }) */
-      uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
+
+      // uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
       this.filesDownloaded++;
-    } catch (err) {
+      spinnerCustom.succeed(`(${this.filesDownloaded}) Downloaded ${outputFileLabel}`);
+    } catch (err: any) {
       // Download failure
-      uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
+      // uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
+      spinnerCustom.fail(`(${this.filesDownloaded}) Error while downloading ${outputFileLabel}: ${err.message}`);
       this.filesErrors++;
     }
   }
@@ -361,12 +415,17 @@ export class FilesImporter {
   private commandThis: any;
 
   private dtl: any = null; // export config
-  private exportedFilesFolder: string;
+  private exportedFilesFolder: string = '';
   private handleOverwrite = false;
 
-  constructor(filesPath: string, conn: Connection, options: { exportConfig?: any; handleOverwrite?: boolean }, commandThis: any) {
+  constructor(
+    filesPath: string,
+    conn: Connection,
+    options: { exportConfig?: any; handleOverwrite?: boolean },
+    commandThis: any
+  ) {
     this.filesPath = filesPath;
-    this.exportedFilesFolder = path.join(this.filesPath, "export");
+    this.exportedFilesFolder = path.join(this.filesPath, 'export');
     this.handleOverwrite = options?.handleOverwrite === true;
     this.conn = conn;
     this.commandThis = commandThis;
@@ -408,14 +467,16 @@ export class FilesImporter {
         return fs.statSync(path.join(this.exportedFilesFolder, recordFolder, file)).isFile();
       });
       // Find Id of parent object using folder name
-      const parentRecordIds = parentObjects.filter((parentObj) => parentObj[this.dtl.outputFolderNameField] === recordFolder);
+      const parentRecordIds = parentObjects.filter(
+        (parentObj) => parentObj[this.dtl.outputFolderNameField] === recordFolder
+      );
       if (parentRecordIds.length === 0) {
         uxLog(this, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
         continue;
       }
       const parentRecordId = parentRecordIds[0].Id;
 
-      let existingDocuments = [];
+      let existingDocuments: any[] = [];
       // Collect existing documents if we handle file overwrite
       if (this.handleOverwrite) {
         const existingDocsQuery = `SELECT Id, ContentDocumentId, Title FROM ContentVersion WHERE FirstPublishLocationId = '${parentRecordId}'`;
@@ -428,7 +489,7 @@ export class FilesImporter {
         const contentVersionParams: any = {
           Title: file,
           PathOnClient: file,
-          VersionData: fileData.toString("base64"),
+          VersionData: fileData.toString('base64'),
         };
         const matchingExistingDocs = existingDocuments.filter((doc) => doc.Title === file);
         if (matchingExistingDocs.length > 0) {
@@ -439,15 +500,15 @@ export class FilesImporter {
           uxLog(this, c.grey(`Uploading file ${file} ...`));
         }
         try {
-          const insertResult = await this.conn.sobject("ContentVersion").create(contentVersionParams);
-          if (!insertResult.success) {
+          const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
+          if (insertResult.length === 0) {
             uxLog(this, c.red(`Unable to upload file ${file}`));
             errorNb++;
           } else {
             successNb++;
           }
         } catch (e) {
-          uxLog(this, c.red(`Unable to upload file ${file}: ${e.message}`));
+          uxLog(this, c.red(`Unable to upload file ${file}: ${(e as Error).message}`));
           errorNb++;
         }
       }
@@ -471,27 +532,29 @@ export class FilesImporter {
     if (!isCI) {
       const warningMessage = c.cyanBright(
         `Files import consumes one REST API call per uploaded file.
-        (Estimation: ${bulkCallsNb} Bulks calls and ${totalFilesNumber} REST calls) Do you confirm you want to proceed ?`,
+        (Estimation: ${bulkCallsNb} Bulks calls and ${totalFilesNumber} REST calls) Do you confirm you want to proceed ?`
       );
-      const promptRes = await prompts({ type: "confirm", message: warningMessage });
+      const promptRes = await prompts({ type: 'confirm', message: warningMessage });
       if (promptRes.value !== true) {
-        throw new SfdxError("Command cancelled by user");
+        throw new SfError('Command cancelled by user');
       }
     }
   }
 }
 
-export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please select a files folder to export" }) {
+export async function selectFilesWorkspace(opts = { selectFilesLabel: 'Please select a files folder to export' }) {
   if (!fs.existsSync(filesFolderRoot)) {
-    throw new SfdxError("There is no files root folder 'scripts/files' in your workspace. Create it and define a files export configuration");
+    throw new SfError(
+      "There is no files root folder 'scripts/files' in your workspace. Create it and define a files export configuration"
+    );
   }
 
   const filesFolders = fs
     .readdirSync(filesFolderRoot, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => path.join(".", "scripts", "files", dirent.name));
+    .map((dirent) => path.join('.', 'scripts', 'files', dirent.name));
   if (filesFolders.length === 0) {
-    throw new SfdxError("There is no file exports folder in your workspace");
+    throw new SfError('There is no file exports folder in your workspace');
   }
   const choices: any = [];
   for (const filesFolder of filesFolders) {
@@ -505,8 +568,8 @@ export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please se
     }
   }
   const filesDirResult = await prompts({
-    type: "select",
-    name: "value",
+    type: 'select',
+    name: 'value',
     message: c.cyanBright(opts.selectFilesLabel),
     choices: choices,
   });
@@ -514,23 +577,29 @@ export async function selectFilesWorkspace(opts = { selectFilesLabel: "Please se
 }
 
 export async function getFilesWorkspaceDetail(filesWorkspace: string) {
-  const exportFile = path.join(filesWorkspace, "export.json");
+  const exportFile = path.join(filesWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
-    uxLog(this, c.yellow(`Your File export folder ${c.bold(filesWorkspace)} must contain an ${c.bold("export.json")} configuration file`));
+    uxLog(
+      this,
+      c.yellow(
+        `Your File export folder ${c.bold(filesWorkspace)} must contain an ${c.bold('export.json')} configuration file`
+      )
+    );
     return null;
   }
-  const exportFileJson = JSON.parse(await fs.readFile(exportFile, "utf8"));
-  const folderName = filesWorkspace.replace(/\\/g, "/").match(/([^/]*)\/*$/)[1];
+  const exportFileJson = JSON.parse(await fs.readFile(exportFile, 'utf8'));
+  const folderName = (filesWorkspace.replace(/\\/g, '/').match(/([^/]*)\/*$/) || '')[1];
   const hardisLabel = exportFileJson.sfdxHardisLabel || folderName;
   const hardisDescription = exportFileJson.sfdxHardisDescription || filesWorkspace;
-  const soqlQuery = exportFileJson.soqlQuery || "";
-  const fileTypes = exportFileJson.fileTypes || "all";
-  const outputFolderNameField = exportFileJson.outputFolderNameField || "Name";
-  const outputFileNameFormat = exportFileJson.outputFileNameFormat || "title";
-  const overwriteParentRecords = exportFileJson.overwriteParentRecords === false ? false : exportFileJson.overwriteParentRecords || true;
+  const soqlQuery = exportFileJson.soqlQuery || '';
+  const fileTypes = exportFileJson.fileTypes || 'all';
+  const outputFolderNameField = exportFileJson.outputFolderNameField || 'Name';
+  const outputFileNameFormat = exportFileJson.outputFileNameFormat || 'title';
+  const overwriteParentRecords =
+    exportFileJson.overwriteParentRecords === false ? false : exportFileJson.overwriteParentRecords || true;
   const overwriteFiles = exportFileJson.overwriteFiles || false;
   return {
-    full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ""}`,
+    full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ''}`,
     label: hardisLabel,
     description: hardisDescription,
     soqlQuery: soqlQuery,
@@ -543,69 +612,73 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
 }
 
 export async function promptFilesExportConfiguration(filesExportConfig: any, override = false) {
-  const questions = [];
+  const questions: any[] = [];
   if (override === false) {
     questions.push(
       ...[
         {
-          type: "text",
-          name: "filesExportPath",
-          message: c.cyanBright('Please input the files export config folder name (PascalCase format). Ex: "OpportunitiesPDF"'),
+          type: 'text',
+          name: 'filesExportPath',
+          message: c.cyanBright(
+            'Please input the files export config folder name (PascalCase format). Ex: "OpportunitiesPDF"'
+          ),
         },
         {
-          type: "text",
-          name: "sfdxHardisLabel",
-          message: c.cyanBright("Please input a label for the files export configuration"),
+          type: 'text',
+          name: 'sfdxHardisLabel',
+          message: c.cyanBright('Please input a label for the files export configuration'),
           initial: filesExportConfig.sfdxHardisLabel,
         },
         {
-          type: "text",
-          name: "sfdxHardisDescription",
-          message: c.cyanBright("Please input a description of the files export configuration"),
+          type: 'text',
+          name: 'sfdxHardisDescription',
+          message: c.cyanBright('Please input a description of the files export configuration'),
           initial: filesExportConfig.sfdxHardisDescription,
         },
-      ],
+      ]
     );
   }
   questions.push(
     ...[
       {
-        type: "text",
-        name: "soqlQuery",
-        message: "Please input the main SOQL Query to fetch the parent records of files (ContentVersions). Ex: SELECT Id,Name from Opportunity",
+        type: 'text',
+        name: 'soqlQuery',
+        message:
+          'Please input the main SOQL Query to fetch the parent records of files (ContentVersions). Ex: SELECT Id,Name from Opportunity',
         initial: filesExportConfig.soqlQuery,
       },
       {
-        type: "text",
-        name: "outputFolderNameField",
-        message: "Please input the field to use to build the name of the folder containing downloaded files",
+        type: 'text',
+        name: 'outputFolderNameField',
+        message: 'Please input the field to use to build the name of the folder containing downloaded files',
         initial: filesExportConfig.outputFolderNameField,
       },
       {
-        type: "select",
-        name: "outputFileNameFormat",
+        type: 'select',
+        name: 'outputFileNameFormat',
         choices: [
-          { value: "title", title: "title" },
-          { value: "title_id", title: "title_id" },
-          { value: "id_title", title: "id_title" },
-          { value: "id", title: "id" },
+          { value: 'title', title: 'title' },
+          { value: 'title_id', title: 'title_id' },
+          { value: 'id_title', title: 'id_title' },
+          { value: 'id', title: 'id' },
         ],
-        message: "Please select the format of output files names",
+        message: 'Please select the format of output files names',
         initial: filesExportConfig.outputFileNameFormat,
       },
       {
-        type: "confirm",
-        name: "overwriteParentRecords",
-        message: "Do you want to try to download files attached to a parent records whose folder is already existing in local folders ?",
+        type: 'confirm',
+        name: 'overwriteParentRecords',
+        message:
+          'Do you want to try to download files attached to a parent records whose folder is already existing in local folders ?',
         initial: filesExportConfig.overwriteParentRecords,
       },
       {
-        type: "confirm",
-        name: "overwriteFiles",
-        message: "Do you want to overwrite file that has already been previously downloaded ?",
+        type: 'confirm',
+        name: 'overwriteFiles',
+        message: 'Do you want to overwrite file that has already been previously downloaded ?',
         initial: filesExportConfig.overwriteFiles,
       },
-    ],
+    ]
   );
 
   const resp = await prompts(questions);
@@ -628,16 +701,16 @@ export async function countLinesInFile(file: string) {
   return await new Promise((resolve) => {
     fs.createReadStream(file)
       .pipe(split())
-      .on("data", () => {
+      .on('data', () => {
         lineCount++;
       })
-      .on("end", () => {
+      .on('end', () => {
         if (readError) {
           return;
         }
         resolve(lineCount - 1);
       })
-      .on("error", (error) => {
+      .on('error', (error) => {
         readError = true;
         resolve(error);
       });
@@ -657,8 +730,11 @@ export async function countLinesInFile(file: string) {
 export async function generateReportPath(fileNamePrefix: string, outputFile: string): Promise<string> {
   if (outputFile == null) {
     const reportDir = await getReportDirectory();
-    const branchName = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || "Missing CI_COMMIT_REF_NAME variable";
-    return path.join(reportDir, `${fileNamePrefix}-${branchName.split("/").pop()}.csv`);
+    const branchName =
+      process.env.CI_COMMIT_REF_NAME ||
+      (await getCurrentGitBranch({ formatted: true })) ||
+      'Missing CI_COMMIT_REF_NAME variable';
+    return path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
   } else {
     await fs.ensureDir(path.dirname(outputFile));
     return outputFile;
@@ -678,28 +754,31 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
   const result: any = {};
   try {
     const csvContent = Papa.unparse(data);
-    await fs.writeFile(outputPath, csvContent, "utf8");
+    await fs.writeFile(outputPath, csvContent, 'utf8');
     uxLog(this, c.italic(c.cyan(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
     result.csvFile = outputPath;
     WebSocketClient.requestOpenFile(outputPath);
     if (data.length > 0) {
       try {
         // Generate mirror XSLX file
-        const xlsDirName = path.join(path.dirname(outputPath), "xls");
-        const xslFileName = path.basename(outputPath).replace(".csv", ".xlsx");
+        const xlsDirName = path.join(path.dirname(outputPath), 'xls');
+        const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
         const xslxFile = path.join(xlsDirName, xslFileName);
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
         uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
         result.xlsxFile = xslxFile;
       } catch (e2) {
-        uxLog(this, c.yellow("Error while generating XSLX log file:\n" + e2.message + "\n" + e2.stack));
+        uxLog(
+          this,
+          c.yellow('Error while generating XSLX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+        );
       }
     } else {
       uxLog(this, c.grey(`No XLS file generated as ${outputPath} is empty`));
     }
   } catch (e) {
-    uxLog(this, c.yellow("Error while generating CSV log file:\n" + e.message + "\n" + e.stack));
+    uxLog(this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
   }
   return result;
 }
@@ -708,12 +787,12 @@ async function csvToXls(csvFile: string, xslxFile: string) {
   const workbook = new ExcelJS.Workbook();
   const worksheet = await workbook.csv.readFile(csvFile);
   // Set filters
-  worksheet.autoFilter = "A1:Z1";
+  worksheet.autoFilter = 'A1:Z1';
   // Adjust column size (only if the file is not too big, to avoid performances issues)
   if (worksheet.rowCount < 5000) {
     worksheet.columns.forEach((column) => {
-      const lengths = column.values.map((v) => v.toString().length);
-      const maxLength = Math.max(...lengths.filter((v) => typeof v === "number"));
+      const lengths = (column.values || []).map((v) => (v || '').toString().length);
+      const maxLength = Math.max(...lengths.filter((v) => typeof v === 'number'));
       column.width = maxLength;
     });
   }

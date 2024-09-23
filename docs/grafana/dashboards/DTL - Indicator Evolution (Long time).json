@@ -23,7 +23,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "11.1.0-70903"
+      "version": "11.3.0-75420"
     },
     {
       "type": "datasource",
@@ -90,7 +90,6 @@
       "id": 7,
       "panels": [],
       "repeat": "org",
-      "repeatDirection": "h",
       "title": "$org",
       "type": "row"
     },
@@ -218,7 +217,6 @@
           "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
         },
         "definition": "",
-        "hide": 0,
         "includeAll": true,
         "label": "Salesforce Org",
         "multi": true,
@@ -232,7 +230,6 @@
         },
         "refresh": 1,
         "regex": "^[^.]*$",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       },
@@ -243,7 +240,6 @@
           "uid": "${DS_GRAFANACLOUD-CLOUDITY-PROM}"
         },
         "definition": "metrics(_metric)",
-        "hide": 0,
         "includeAll": true,
         "label": "Limit Identifier",
         "multi": true,
@@ -256,8 +252,6 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       }
     ]
@@ -266,10 +260,7 @@
     "from": "now-7d",
     "to": "now"
   },
-  "timeRangeUpdatedDuringEditOrView": false,
-  "timepicker": {
-    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
-  },
+  "timepicker": {},
   "timezone": "browser",
   "title": "DTL - Indicator Evolution (Long time)",
   "uid": "sfdx-hardis-indicator-evol-prom",

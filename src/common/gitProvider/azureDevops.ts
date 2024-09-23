@@ -1,24 +1,22 @@
-import { GitProviderRoot } from "./gitProviderRoot";
+import { GitProviderRoot } from "./gitProviderRoot.js";
 import * as azdev from "azure-devops-node-api";
-import * as c from "chalk";
-import { getCurrentGitBranch, git, uxLog } from "../utils";
-import { PullRequestMessageRequest, PullRequestMessageResult } from ".";
-import {
-  CommentThreadStatus,
-  GitPullRequestCommentThread,
-  PullRequestAsyncStatus,
-  PullRequestStatus,
-} from "azure-devops-node-api/interfaces/GitInterfaces";
+import c from "chalk";
+import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
+import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommentThreadStatus, GitPullRequestCommentThread, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
+import { CONSTANTS } from "../../config/index.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
+  public serverUrl: string;
+  public token: string;
 
   constructor() {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
-    this.serverUrl = process.env.SYSTEM_COLLECTIONURI;
+    this.serverUrl = process.env.SYSTEM_COLLECTIONURI || "";
     // a Personal Access Token must be defined
-    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN;
+    this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || "";
     const authHandler = azdev.getHandlerFromToken(this.token);
     this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
   }
@@ -28,11 +26,10 @@ export class AzureDevopsProvider extends GitProviderRoot {
   }
 
   // Returns current job URL
-  public async getCurrentJobUrl(): Promise<string> {
+  public async getCurrentJobUrl(): Promise<string | null> {
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
-      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${
-        process.env.BUILD_BUILDID
-      }`;
+      const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID
+        }`;
       return jobUrl;
     }
     uxLog(
@@ -46,7 +43,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
   }
 
   // Returns current job URL
-  public async getCurrentBranchUrl(): Promise<string> {
+  public async getCurrentBranchUrl(): Promise<string | null> {
     if (
       process.env.SYSTEM_COLLECTIONURI &&
       process.env.SYSTEM_TEAMPROJECT &&
@@ -84,7 +81,7 @@ ${this.getPipelineVariablesConfig()}
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
       if (pullRequest && pullRequest.targetRefName) {
         // Add references to work items in PR result
-        const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId, pullRequestId);
+        const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId || "", pullRequestId);
         if (!pullRequest.workItemRefs) {
           pullRequest.workItemRefs = pullRequestWorkItemRefs;
         }
@@ -96,7 +93,7 @@ ${this.getPipelineVariablesConfig()}
     }
     // Case when we find PR from a commit
     const sha = await git().revparse(["HEAD"]);
-    const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
+    const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId || "", {
       targetRefName: `refs/heads/${currentGitBranch}`,
       status: PullRequestStatus.Completed,
     });
@@ -106,7 +103,7 @@ ${this.getPipelineVariablesConfig()}
     if (latestMergedPullRequestOnBranch.length > 0) {
       const pullRequest = latestMergedPullRequestOnBranch[0];
       // Add references to work items in PR result
-      const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId, pullRequest.pullRequestId);
+      const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId || "", pullRequest.pullRequestId || 0);
       if (!pullRequest.workItemRefs) {
         pullRequest.workItemRefs = pullRequestWorkItemRefs;
       }
@@ -116,7 +113,7 @@ ${this.getPipelineVariablesConfig()}
     return null;
   }
 
-  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string> {
+  public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId = null;
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
@@ -136,7 +133,7 @@ ${this.getPipelineVariablesConfig()}
       deploymentCheckId = await this.getDeploymentIdFromPullRequest(
         azureGitApi,
         repositoryId,
-        latestPullRequestId,
+        latestPullRequestId || 0,
         deploymentCheckId,
         latestPullRequest,
       );
@@ -144,7 +141,7 @@ ${this.getPipelineVariablesConfig()}
     return deploymentCheckId;
   }
 
-  public async getPullRequestDeploymentCheckId(): Promise<string> {
+  public async getPullRequestDeploymentCheckId(): Promise<string | null> {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
       const azureGitApi = await this.azureApi.getGitApi();
@@ -206,8 +203,8 @@ ${this.getPipelineVariablesConfig()}
     }
     const pullRequestId = Number(pullRequestIdStr);
     const azureJobName = process.env.SYSTEM_JOB_DISPLAY_NAME;
-    const SYSTEM_COLLECTIONURI = process.env.SYSTEM_COLLECTIONURI.replace(/ /g, "%20");
-    const SYSTEM_TEAMPROJECT = process.env.SYSTEM_TEAMPROJECT.replace(/ /g, "%20");
+    const SYSTEM_COLLECTIONURI = (process.env.SYSTEM_COLLECTIONURI || "").replace(/ /g, "%20");
+    const SYSTEM_TEAMPROJECT = (process.env.SYSTEM_TEAMPROJECT || "").replace(/ /g, "%20");
     const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
@@ -217,7 +214,7 @@ ${prMessage.message}
 
 <br/>
 
-_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJobName}](${azureBuildUri})_
+_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](${azureBuildUri})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
@@ -229,9 +226,9 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJob
     // Check for existing threads from a previous run
     uxLog(this, c.grey("[Azure integration] Listing Threads of Pull Request..."));
     const existingThreads = await azureGitApi.getThreads(repositoryId, pullRequestId);
-    let existingThreadId: number = null;
-    let existingThreadComment: GitPullRequestCommentThread = null;
-    let existingThreadCommentId: number = null;
+    let existingThreadId: number | null = null;
+    let existingThreadComment: GitPullRequestCommentThread | null = null;
+    let existingThreadCommentId: number | null | undefined = null;
     for (const existingThread of existingThreads) {
       if (existingThread.isDeleted) {
         continue;
@@ -239,8 +236,8 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJob
       for (const comment of existingThread?.comments || []) {
         if ((comment?.content || "").includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
           existingThreadComment = existingThread;
-          existingThreadCommentId = existingThread.comments[0].id;
-          existingThreadId = existingThread.id;
+          existingThreadCommentId = (existingThread.comments || [])[0].id;
+          existingThreadId = existingThread.id || null;
           break;
         }
       }
@@ -253,7 +250,7 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJob
     if (existingThreadId) {
       // Delete previous comment
       uxLog(this, c.grey("[Azure integration] Deleting previous comment and closing previous thread..."));
-      await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
+      await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId || 0);
       existingThreadComment = await azureGitApi.getPullRequestThread(repositoryId, pullRequestId, existingThreadId);
       // Update existing thread
       existingThreadComment = {
@@ -271,7 +268,7 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJob
     };
     const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId);
     const prResult: PullRequestMessageResult = {
-      posted: azureEditThreadResult.id > 0,
+      posted: (azureEditThreadResult.id || -1) > 0,
       providerResult: azureEditThreadResult,
     };
     uxLog(this, c.grey(`[Azure integration] Posted Pull Request Thread ${azureEditThreadResult.id}`));
@@ -291,8 +288,8 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJob
     const prInfo: any = Object.assign({}, prData);
     prInfo.sourceBranch = (prData.sourceRefName || "").replace("refs/heads/", "");
     prInfo.targetBranch = (prData.targetRefName || "").replace("refs/heads/", "");
-    prInfo.web_url = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_git/${encodeURIComponent(
-      process.env.BUILD_REPOSITORYNAME,
+    prInfo.web_url = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT || "")}/_git/${encodeURIComponent(
+      process.env.BUILD_REPOSITORYNAME || "",
     )}/pullrequest/${prData.pullRequestId}`;
     prInfo.authorName = prData?.createdBy?.displayName || "";
     return prInfo;
@@ -319,5 +316,17 @@ _Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) from job [${azureJob
     BUILD_REPOSITORYNAME: $(Build.Repository.Name)
     BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
     BUILD_BUILD_ID: $(Build.BuildId)`;
+  }
+
+  // Do not make crash the whole process in case there is an issue with integration
+  public async tryPostPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
+    let prResult: PullRequestMessageResult | null = null;
+    try {
+      prResult = await this.postPullRequestMessage(prMessage);
+    } catch (e) {
+      uxLog(this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${(e as Error).stack}`));
+      prResult = { posted: false, providerResult: { error: e } };
+    }
+    return prResult;
   }
 }

@@ -7,13 +7,13 @@ customCommands:
         label: Generate manifest
         icon: file.svg
         tooltip: Generates a manifest package.xml using local sfdx source files
-        command: sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest
+        command: sf project manifest create --source-path force-app --name myNewManifest
         helpUrl: https://megalinter.io/
       - id: list-all-orgs
         label: List all orgs
         icon: salesforce.svg
         tooltip: List all orgs that has already been authenticated using sfdx
-        command: sfdx force:org:list --all
+        command: sf org list --all
   - id: custom-menu-2
     label: Another custom menu
     commands:

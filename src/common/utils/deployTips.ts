@@ -1,15 +1,15 @@
 // Analyze deployment errors to provide tips to user :)
-import * as c from "chalk";
+import c from "chalk";
 import * as format from "string-template";
 
-import { getAllTips } from "./deployTipsList";
-import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown";
-import { stripAnsi, uxLog } from ".";
-import { AiProvider, AiResponse } from "../aiProvider";
+import { getAllTips } from "./deployTipsList.js";
+import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown.js";
+import { stripAnsi, uxLog } from "./index.js";
+import { AiProvider, AiResponse } from "../aiProvider/index.js";
 
-let logRes = null;
-let errorsAndTips = [];
-let alreadyProcessedErrors = [];
+let logRes: string | null = null;
+let errorsAndTips: any[] = [];
+let alreadyProcessedErrors: any[] = [];
 const firstYellowChar = c.yellow("*")[0];
 
 // Checks for deploy tips in a log string
@@ -25,7 +25,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
     }
   }
   // Add default error messages for errors without tips
-  const logResLines = [];
+  const logResLines: any[] = [];
   const updatedLogLines = returnErrorLines(logRes);
   let index = 0;
   for (const logLine of updatedLogLines) {
@@ -65,15 +65,15 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   }
 
   // Extract failed test classes
-  const failedTests = [];
+  const failedTests: any[] = [];
   const logRaw = stripAnsi(log);
   const regexFailedTests = /Test Failures([\S\s]*?)Test Success/gm;
   if (logRaw.match(regexFailedTests)) {
-    const failedTestsLines = regexFailedTests
-      .exec(logRaw)[1]
+    const failedTestsLines = (regexFailedTests
+      .exec(logRaw) || [])[1]
       .split("\n")
       .map((s) => s.trim());
-    let failedTest = null;
+    let failedTest: any = null;
     // Parse strings to extract main error line then stack
     for (const line of failedTestsLines) {
       const regex = /^(\w+[\d_]*)\s+(\w+[\d_]*)\s*(.*)$/;
@@ -87,7 +87,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
         failedTest = {
           class: match[1],
           method: match[2],
-          error: errSplit.shift().trim(),
+          error: (errSplit.shift() || "").trim(),
         };
         if (errSplit.length > 0) {
           failedTest.stack = "Class." + errSplit.join("\nClass.");
@@ -103,12 +103,12 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
 // Checks if the error string or regex is found in the log
 // Adds the fix tip under the line if includeInLog is true
 async function matchesTip(tipDefinition: any, includeInLog = true): Promise<boolean | any> {
-  const newLogLines = [];
+  const newLogLines: any[] = [];
   // string matching
   if (
     tipDefinition.expressionString &&
     tipDefinition.expressionString.filter((expressionString: any) => {
-      return logRes.includes(expressionString);
+      return (logRes || "").includes(expressionString);
     }).length > 0
   ) {
     if (includeInLog) {
@@ -162,7 +162,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
     }).length > 0
   ) {
     if (includeInLog) {
-      const newLogLines = [];
+      const newLogLines: any[] = [];
       const logLines = returnErrorLines(logRes);
       for (const line of logLines) {
         newLogLines.push(line);
@@ -248,7 +248,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
       const aiResponse = await AiProvider.promptAi(prompt);
       return aiResponse;
     } catch (e) {
-      uxLog(this, c.yellow("[AI] Error while calling OpenAI: " + e.message));
+      uxLog(this, c.yellow("[AI] Error while calling OpenAI: " + (e as Error).message));
     }
   }
   return null;

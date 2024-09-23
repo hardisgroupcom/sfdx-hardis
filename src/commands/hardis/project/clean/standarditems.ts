@@ -1,73 +1,64 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import * as fs from "fs-extra";
-import { glob } from "glob";
-import * as path from "path";
-import { uxLog } from "../../../../common/utils";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import fs from 'fs-extra';
+import { glob } from 'glob';
+import * as path from 'path';
+import { uxLog } from '../../../../common/utils/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+export default class CleanStandardItems extends SfCommand<any> {
+  public static title = 'Clean retrieved standard items in dx sources';
 
-export default class CleanStandardItems extends SfdxCommand {
-  public static title = "Clean retrieved standard items in dx sources";
+  public static description = 'Remove unwanted standard items within sfdx project sources';
 
-  public static description = "Remove unwanted standard items within sfdx project sources";
+  public static examples = ['$ sf hardis:project:clean:standarditems'];
 
-  public static examples = ["$ sfdx hardis:project:clean:standarditems"];
-
-  protected static flagsConfig = {
-    debug: flags.boolean({
-      char: "d",
+  public static flags: any = {
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected debugMode = false;
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    const { flags } = await this.parse(CleanStandardItems);
+    this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Removing unwanted standard dx source files...`));
     /* jscpd:ignore-end */
-    const sourceRootFolder = path.join(process.cwd() + "/force-app/main/default");
-    const objectsFolder = path.join(sourceRootFolder + "/objects");
+    const sourceRootFolder = path.join(process.cwd() + '/force-app/main/default');
+    const objectsFolder = path.join(sourceRootFolder + '/objects');
     const objectsFolderContent = await fs.readdir(objectsFolder);
     for (const objectDirName of objectsFolderContent) {
-      const objectDir = objectsFolder + "/" + objectDirName;
+      const objectDir = objectsFolder + '/' + objectDirName;
       // Process only standard objects
-      if (fs.lstatSync(objectDir).isDirectory() && !objectDir.includes("__")) {
+      if (fs.lstatSync(objectDir).isDirectory() && !objectDir.includes('__')) {
         const findCustomFieldsPattern = `${objectDir}/fields/*__*`;
         const matchingCustomFiles = await glob(findCustomFieldsPattern, { cwd: process.cwd() });
         if (matchingCustomFiles.length === 0) {
           // Remove the whole folder
           await fs.remove(objectDir);
           uxLog(this, c.cyan(`Removed folder ${c.yellow(objectDir)}`));
-          const sharingRuleFile = path.join(sourceRootFolder, "sharingRules", objectDirName + ".sharingRules-meta.xml");
+          const sharingRuleFile = path.join(sourceRootFolder, 'sharingRules', objectDirName + '.sharingRules-meta.xml');
           if (fs.existsSync(sharingRuleFile)) {
             // Remove sharingRule if existing
             await fs.remove(sharingRuleFile);
@@ -78,7 +69,7 @@ export default class CleanStandardItems extends SfdxCommand {
           const findAllFieldsPattern = `${objectDir}/fields/*.field-meta.xml`;
           const matchingAllFields = await glob(findAllFieldsPattern, { cwd: process.cwd() });
           for (const field of matchingAllFields) {
-            if (!field.includes("__")) {
+            if (!field.includes('__')) {
               await fs.remove(field);
               uxLog(this, c.cyan(`  - removed standard field ${c.yellow(field)}`));
             }
@@ -90,6 +81,6 @@ export default class CleanStandardItems extends SfdxCommand {
     }
 
     // Return an object to be displayed with --json
-    return { outputString: "Cleaned standard items from sfdx project" };
+    return { outputString: 'Cleaned standard items from sfdx project' };
   }
 }

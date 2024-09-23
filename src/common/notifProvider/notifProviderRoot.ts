@@ -1,12 +1,12 @@
-import { SfdxError } from "@salesforce/core";
-import { uxLog } from "../utils";
-import { NotifMessage } from ".";
+import { SfError } from "@salesforce/core";
+import { uxLog } from "../utils/index.js";
+import { NotifMessage } from "./index.js";
 
 export abstract class NotifProviderRoot {
   protected token: string;
 
   public getLabel(): string {
-    throw new SfdxError("getLabel should be implemented on this call");
+    throw new SfError("getLabel should be implemented on this call");
   }
 
   // By default, we don't send logs to other notif targets than API to avoid noise

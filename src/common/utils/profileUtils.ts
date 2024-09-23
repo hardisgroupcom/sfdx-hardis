@@ -1,8 +1,8 @@
-import * as c from "chalk";
+import c from "chalk";
 import * as path from "path";
-import { uxLog } from ".";
-import { getConfig } from "../../config";
-import { parseXmlFile, writeXmlFile } from "./xmlUtils";
+import { uxLog } from "./index.js";
+import { getConfig } from "../../config/index.js";
+import { parseXmlFile, writeXmlFile } from "./xmlUtils.js";
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -21,7 +21,7 @@ export async function minimizeProfile(profileFile: string) {
   const config = await getConfig("branch");
   const nodesToRemove = config.minimizeProfilesNodesToRemove || nodesToRemoveDefault;
   // Remove nodes
-  const removed = [];
+  const removed: any[] = [];
   for (const node of nodesToRemove) {
     if (profileXml.Profile[node]) {
       delete profileXml.Profile[node];
@@ -31,7 +31,7 @@ export async function minimizeProfile(profileFile: string) {
   // Keep only default values or false values
   const isAdmin = path.basename(profileFile) === "Admin.profile-meta.xml";
   let updatedDefaults = false;
-  const partiallyRemoved = [];
+  const partiallyRemoved: any[] = [];
   const nodesHavingDefaultOrFalse = ["applicationVisibilities", "recordTypeVisibilities", "userPermissions"];
   for (const node of nodesHavingDefaultOrFalse) {
     if (profileXml.Profile[node]) {

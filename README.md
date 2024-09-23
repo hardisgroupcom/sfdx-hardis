@@ -1,9 +1,10 @@
 <!-- markdownlint-disable MD034 -->
+
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
 # sfdx-hardis
 
-[_Presented at Dreamforce 23!_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl)
+_Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) **_and soon at [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_**
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
@@ -16,25 +17,29 @@
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Toolbox for Salesforce DX, by [Cloudity](https://cloudity.com/), natively compliant with most platforms and tools
+Toolbox for Salesforce DX, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most platforms and tools.
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
 It will allow you to:
 
 - Do with simple commands what could be done manually in minutes/hours
-- [Define a complete CI/CD Pipeline for your Salesforce project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
-- [Backup Metadatas and monitor any Salesforce org](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
+- [Define a **ready to use CI/CD Pipeline** for your Salesforce project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- [**Backup Metadatas** and **monitor any Salesforce org**](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
 
-[**Please see the full list of commands in Online documentation**](https://sfdx-hardis.cloudity.com)
+[_Please see the full list of commands in Online documentation_](https://sfdx-hardis.cloudity.com)
+
+___
 
 **sfdx-hardis** commands are also available with UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 [![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
+___
+
 _See Dreamforce presentation_
 
-[![See Dreamforce presentation](https://img.youtube.com/vi/o0Mm9F07UFs/0.jpg)](https://www.youtube.com/watch?v=o0Mm9F07UFs)
+[![See Dreamforce presentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-dreamforce-session.png)](https://www.youtube.com/watch?v=o0Mm9F07UFs)
 
 ## Installation
 
@@ -44,7 +49,9 @@ You can install [Visual Studio Code](https://code.visualstudio.com/) extension [
 
 Once installed, click on ![Hardis Group button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in VsCode left bar, and follow the additional installation instructions
 
-[![Installation tutorial](https://img.youtube.com/vi/LA8m-t7CjHA/0.jpg)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
+[![Installation tutorial](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-install-tuto.png)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
+
+___
 
 ### As SFDX Plugin
 
@@ -56,26 +63,28 @@ Once installed, click on ![Hardis Group button](https://github.com/hardisgroupco
 #### Plugin installation
 
 ```sh-session
-sfdx plugins:install sfdx-hardis
+sf plugins install sfdx-hardis
 ```
 
 For advanced use, please also install dependencies
 
 ```sh-session
 sf plugins install @salesforce/plugin-packaging
-sfdx plugins:install sfdmu
-sfdx plugins:install sfdx-git-delta
-sfdx plugins:install sfdx-essentials
-sfdx plugins:install texei-sfdx-plugin
+sf plugins install sfdmu
+sf plugins install sfdx-git-delta
+sf plugins install texei-sfdx-plugin
 ```
 
-If you are using CI/CD scripts, use `echo y | sfdx plugins:install ...` to bypass prompt.
+If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
+
+___
 
 ### Docker
 
 You can use sfdx-hardis docker images to run in CI
 
 - Docker Hub
+
   - [**hardisgroupcom/sfdx-hardis:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with latest @salesforce/cli version)
   - [**hardisgroupcom/sfdx-hardis:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis) (with recommended @salesforce/cli version, in case the latest version of @salesforce/cli is buggy)
 
@@ -88,7 +97,7 @@ _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Docker
 ## Usage
 
 ```sh-session
-sfdx hardis:<COMMAND> <OPTIONS>
+sf hardis:<COMMAND> <OPTIONS>
 ```
 
 ## Articles
@@ -116,7 +125,7 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 ## Contributing
 
-Anyone is welcome to contribute to this sfdx-hardis
+Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you !)
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
 - Install typescript by running `npm install typescript --global`
@@ -127,14 +136,13 @@ Anyone is welcome to contribute to this sfdx-hardis
   - Run `yarn` to install dependencies
   - Run `sf plugins link` to link the local sfdx-hardis to SFDX CLI
   - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
-- Debug commands using `NODE_OPTIONS=--inspect-brk sfdx hardis:somecommand -someparameter somevalue`
+- Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand -someparameter somevalue`
 
 ## Dependencies
 
 **sfdx-hardis** partially relies on the following SFDX Open-Source packages
 
 - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
-- [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 
@@ -146,10 +154,6 @@ Anyone is welcome to contribute to this sfdx-hardis
 
 ## Commands
 
-[**Read Online Documentation**](https://sfdx-hardis.cloudity.com)
-
-
-
-
+[**Read Online Documentation to see everything you can do with SFDX Hardis :)**](https://sfdx-hardis.cloudity.com)
 
 <!-- commands -->

@@ -1,4 +1,15 @@
+import { CONSTANTS } from "../../config/index.js";
+
 export function getAllTips() {
+  const allTips = listAllTips().map((tip: any) => {
+    tip.docUrl = `${CONSTANTS.DOC_URL_ROOT}/sf-deployment-assistant/${tip.label.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}.md`
+    return tip;
+  });
+
+  return allTips;
+}
+
+function listAllTips() {
   return [
     {
       name: "api-version-error",
@@ -6,7 +17,7 @@ export function getAllTips() {
       expressionRegex: [/Error (.*) The (.*) apiVersion can't be "([0-9]+)"/gm],
       tip: `{1} metadata has probably been created/updated in a sandbox already upgraded to next platform version (ex: Sandbox in Summer'23 and Production in Spring'23)
 - First, try to update the api version in the XML of {1} metadata file (decrement the number in <apiVersion>{3}.0</apiVersion>)
-- If it still doesn't work because the metadata structure has changed between version, you may try a force:source:retrieve of the metadata by forcing --apiversion at the end of the command.
+- If it still doesn't work because the metadata structure has changed between version, you may try a sf project:retrieve:start of the metadata by forcing --api-version at the end of the command.
       `,
     },
     {
@@ -67,7 +78,7 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
       expressionRegex: [/Error (.*) Cannot find folder:(.*)/gm],
       tip: `Folder {2} is missing.
 - If folder {2} is existing in sources, add it in related package.xml
-- If folder {2} is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders to retrieve it
+- If folder {2} is not existing in DX sources, please use sf hardis:project:clean:retrievefolders to retrieve it
 - If both previous solutions did not work, go create manually folder {2} in target org
 `,
     },
@@ -106,7 +117,12 @@ Example of XML you have to remove in {1}:
 - Delete field {1} in target org: it will be recreated after deployment (but you will loose data on existing records, so be careful if your target is a production org)
 - Create another field with desired type and manage data recovery if the target is a production org`,
     },
-
+    {
+      name: "change-matching-rule",
+      label: "Change Matching Rule",
+      expressionRegex: [/Error (.*) Before you change a matching rule, you must deactivate it/gm],
+      tip: `To be able to deploy, you must go in target org setup to manually deactivate matching rule {1}`,
+    },
     {
       name: "condition-missing-reference",
       label: "Condition missing reference",
@@ -124,7 +140,7 @@ Example of XML you have to remove in {1}:
 - If you renamed the custom object, do a search/replace in sources with previous object name and new object name
 - If you deleted the custom object, or if you don't want to deploy it, do a search on the custom object name, and remove XML elements referencing it
 - If the object should exist, make sure it is in force-app/main/default/objects and that the object name is in manifest/package.xml in CustomObject section
-You may also have a look to command sfdx hardis:project:clean:references
+You may also have a look to command sf hardis:project:clean:references
 `,
     },
     {
@@ -136,9 +152,12 @@ You may also have a look to command sfdx hardis:project:clean:references
 - If you deleted {3}.{4}, or if you don't want to deploy it, do a search on {4} in all sources, and remove all XML elements referring to {3}.{4} (except in destructiveChanges.xml)
 - If {3}.{4} should exist, make sure it is in force-app/main/default/objects/{3}/fields and that {3}.{4} is in manifest/package.xml in CustomField section
 - If {3}.{4} is standard, the error is because {3}.{4} is not available in the org you are trying to deploy to. You can:
-  - Remove the reference to {4} in the XML of {1} ( maybe sfdx hardis:project:clean:references can clean automatically for you ! )
+  - Remove the reference to {4} in the XML of {1} ( maybe sf hardis:project:clean:references can clean automatically for you ! )
   - Activate the required features/license in the target org
 `,
+      examples: [
+        "Error PS_Admin In field: field - no CustomField named User.expcloud__Portal_Username__c found"
+      ]
     },
     {
       name: "custom-field-rights-mandatory",
@@ -162,6 +181,12 @@ Example of element to delete:
 - Are you sure you deployed {3} ?
 - If you use a package.xml, is {3} present within type CustomMetadata ?
 `,
+    },
+    {
+      name: "expired-access-token",
+      label: "Expired Access / Refresh Token",
+      expressionString: ["expired access/refresh token"],
+      tip: `Run command "Select another org" from Status panel (or sf hardis:org:select) to authenticate again to your org`,
     },
     {
       name: "missingDataCategoryGroup",
@@ -196,7 +221,7 @@ Example of element to delete:
       label: "Missing e-mail template",
       expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
       tip: `An email template should be present in the sources. To retrieve it, you can run:
-sfdx force:source:retrieve -m EmailTemplate:{1} -u YOUR_ORG_USERNAME`,
+sf project retrieve start -m EmailTemplate:{1} -o YOUR_ORG_USERNAME`,
     },
     {
       name: "empty-item",
@@ -219,7 +244,7 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
     {
       name: "error-parsing-file",
       label: "Error parsing file",
-      expressionRegex: [/Error (.*) Error parsing file: (.*) /gm],
+      expressionRegex: [/Error (.*) Error parsing file: (.*)/gm],
       tip: `There has been an error parsing the XML file of {1}: {2}
 - Open file {1} and look where the error can be ! (merge issue, typo, XML tag not closed...)`,
     },
@@ -278,7 +303,7 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
       expressionString: ["Invalid scope:Mine, not allowed"],
       tip: `Replace Mine by Everything in the list view SFDX source XML.
 Have a look at this command to manage that automatically :)
-https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/
+${CONSTANTS.DOC_URL_ROOT}/hardis/org/fix/listviewmine/ 
 `,
     },
     {
@@ -418,7 +443,7 @@ If it is already done, you may manually check "MarketingUser" field on the scrat
       expressionString: ["ProductRequest"],
       tip: `ProductRequest object is not available in the target org.
 Maybe you would like to clean its references within Profiles / PS using the following command ?
-sfdx hardis:project:clean:references , then select "ProductRequest references"`,
+sf hardis:project:clean:references , then select "ProductRequest references"`,
     },
     {
       name: "missing-feature-social-customer-service",
@@ -490,7 +515,7 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
       label: "Missing report",
       expressionRegex: [/Error (.*) The (.*) report chart has a problem with the "reportName" field/gm],
       tip: `{1} is referring to unknown report {2}. To retrieve it, you can run:
-- sfdx force:source:retrieve -m Report:{2} -u YOUR_ORG_USERNAME
+- sf project retrieve start -m Report:{2} -o YOUR_ORG_USERNAME
 - If it fails, looks for the report folder and add it before report name to the retrieve command (ex: MYFOLDER/MYREPORTNAME)
 `,
     },
@@ -512,7 +537,7 @@ sfdx hardis:project:clean:references , then select "ProductRequest references"`,
       expressionString: ["sharing operation already in progress"],
       tip: `You can not deploy multiple SharingRules at the same time. You can either:
 - Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
-- Use sfdx hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json,
+- Use sf hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json,
 - If you are trying to create a scratch org, add DeferSharingCalc in features in project-scratch-def.json
 `,
     },
@@ -553,7 +578,7 @@ Go manually make the change in the target org, so the deployment will pass
       label: "Picklist value not found",
       expressionRegex: [/Picklist value: (.*) in picklist: (.*) not found/gm],
       tip: `Sources have references to value {1} of picklist {2}
-- If picklist {2} is standard, add the picklist to sfdx sources by using "sfdx force:source:retrieve -m StandardValueSet:{2}", then save again
+- If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
 `,
     },
@@ -585,8 +610,8 @@ Go manually make the change in the target org, so the deployment will pass
       label: "CRM Analytics: A Recipe must specify a DataFlow",
       expressionRegex: [/Error (.*) A Recipe must specify a Dataflow/gm],
       tip: `You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
-To retrieve it, run: sfdx force:source:retrieve -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
-You can also retrieve all analytics sources in one shot using sfdx hardis:org:retrieve:source:analytics -u SOURCE_ORG_USERNAME
+To retrieve it, run: sf project retrieve start -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
+You can also retrieve all analytics sources in one shot using sf hardis:org:retrieve:source:analytics -u SOURCE_ORG_USERNAME
   - https://salesforce.stackexchange.com/a/365453/33522
   - https://help.salesforce.com/s/articleView?id=000319274&type=1`,
     },
@@ -714,3 +739,4 @@ If you see two {2} XML blocks with {3}, please decide which one you keep and rem
     },
   ];
 }
+

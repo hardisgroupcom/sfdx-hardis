@@ -1,14 +1,14 @@
-import { SfdxError } from "@salesforce/core";
-import * as c from "chalk";
-import { Ticket } from ".";
-import { getCurrentGitBranch, uxLog } from "../utils";
+import { SfError } from "@salesforce/core";
+import c from "chalk";
+import { Ticket } from "./index.js";
+import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 
 export abstract class TicketProviderRoot {
   public isActive = false;
-  protected token: string;
+  protected token: string | null;
 
   public getLabel(): string {
-    throw new SfdxError("getLabel should be implemented on this call");
+    throw new SfError("getLabel should be implemented on this call");
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {
@@ -23,7 +23,7 @@ export abstract class TicketProviderRoot {
   }
 
   public async getDeploymentTag(): Promise<string> {
-    const currentGitBranch = await getCurrentGitBranch();
+    const currentGitBranch = await getCurrentGitBranch() || "";
     let tag = currentGitBranch.toUpperCase() + "_DEPLOYED";
     if (process.env?.DEPLOYED_TAG_TEMPLATE && !(process.env?.DEPLOYED_TAG_TEMPLATE || "").includes("$(")) {
       tag = process.env?.DEPLOYED_TAG_TEMPLATE.replace("{BRANCH}", currentGitBranch.toUpperCase());

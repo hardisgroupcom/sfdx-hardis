@@ -21,7 +21,7 @@ This feature controls that they are not reached, and will send notifications:
 - Warning > 75%
 - Error > 100%
 
-Sfdx-hardis command: [sfdx hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/)
+Sfdx-hardis command: [sf hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/)
 
 Key: **ORG_LIMITS**
 

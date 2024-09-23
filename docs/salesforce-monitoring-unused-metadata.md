@@ -13,7 +13,7 @@ Today working with:
 - Custom Labels
 - Custom Permissions
 
-Sfdx-hardis command: [sfdx hardis:lint:unusedmetadatas](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/)
+Sfdx-hardis command: [sf hardis:lint:unusedmetadatas](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/)
 
 Key: **UNUSED_METADATAS**
 

@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+yarn lint # && yarn pretty-quick --staged # Removed because it destroys markdowns table data
+node build.cjs

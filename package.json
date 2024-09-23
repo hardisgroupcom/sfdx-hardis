@@ -1,99 +1,93 @@
 {
   "name": "sfdx-hardis",
-  "description": "Swiss-army-knife Toolbox for Salesforce\nAllows you to define a complete CD/CD Pipeline\nOrchestrate base commands and assist users with interactive wizards",
-  "version": "4.53.0",
+  "description": "Swiss-army-knife Toolbox for Salesforce.\n Allows you to define a complete CD/CD Pipeline.\n Orchestrate base commands and assist users with interactive wizards",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
+  "version": "5.0.0",
   "dependencies": {
-    "@actions/github": "^5.1.1",
-    "@adobe/node-fetch-retry": "^1.1.2",
-    "@amplitude/node": "^1.3.2",
-    "@gitbeaker/node": "^35.8.0",
-    "@keyv/redis": "^2.1.2",
-    "@oclif/command": "^1",
-    "@oclif/config": "^1.18.3",
-    "@oclif/errors": "^1",
-    "@salesforce/command": "^4.2.1",
-    "@salesforce/core": "^2.33.1",
-    "@salesforce/ts-sinon": "^1.2.4",
-    "@salesforce/ts-types": "^1.5.20",
-    "@slack/web-api": "^6.9.0",
+    "@actions/github": "^6.0.0",
+    "@gitbeaker/node": "^35.8.1",
+    "@oclif/core": "^4.0.21",
+    "@salesforce/core": "^8.5.3",
+    "@salesforce/sf-plugins-core": "^11.3.7",
+    "@slack/types": "^2.12.0",
+    "@slack/web-api": "^7.3.4",
     "@supercharge/promise-pool": "^3.2.0",
-    "@types/mocha": "^8.2.1",
-    "@types/ws": "^7.4.0",
-    "@typescript-eslint/eslint-plugin": "^4.17.0",
-    "@typescript-eslint/parser": "^4.17.0",
-    "@xmldom/xmldom": "^0.8.6",
-    "axios": "^1.7.4",
-    "azure-devops-node-api": "^12.0.0",
-    "bitbucket": "^2.11.0",
-    "chalk": "^4.1.0",
-    "columnify": "^1.5.4",
-    "cosmiconfig": "^7.0.0",
+    "@xmldom/xmldom": "^0.8.10",
+    "axios": "^1.7.5",
+    "azure-devops-node-api": "^14.0.2",
+    "bitbucket": "^2.12.0",
+    "chalk": "^5.3.0",
+    "columnify": "^1.6.0",
+    "cosmiconfig": "^9.0.0",
     "cross-spawn": "^7.0.3",
-    "csv-stringify": "^5.6.1",
-    "debug": "^4.3.4",
+    "csv-stringify": "^6.5.1",
+    "debug": "^4.3.6",
     "email-validator": "^2.0.4",
-    "eslint": "^7.21.0",
     "exceljs": "^4.4.0",
     "extract-zip": "^2.0.1",
-    "find-package-json": "^1.2.0",
-    "fs-extra": "^9.1.0",
+    "fs-extra": "^11.2.0",
     "fs-readdir-recursive": "^1.1.0",
     "glob": "^11.0.0",
     "he": "^1.2.0",
     "inquirer": "^10.1.8",
-    "isomorphic-dompurify": "^2.3.0",
+    "isomorphic-dompurify": "^2.15.0",
     "jira-client": "^8.2.2",
-    "js-yaml": "^4.0.0",
-    "jsforce": "^1.11.0",
-    "keyv": "^4.0.3",
+    "js-yaml": "^4.1.0",
+    "keyv": "^5.0.1",
+    "make-fetch-happen": "^13.0.1",
     "markdown-toc": "^1.2.0",
-    "marked": "^12.0.0",
-    "mega-linter-runner": "^4.39.0",
+    "marked": "^14.1.0",
+    "mega-linter-runner": "^8.0.0",
     "moment": "^2.30.1",
-    "node-fetch": "^3.2.10",
-    "open": "8.4.2",
-    "openai": "^4.52.0",
-    "ora": "5.4.1",
-    "papaparse": "^5.3.1",
-    "pascalcase": "^1.0.0",
-    "psl": "^1.8.0",
-    "puppeteer": "^13.5.2",
-    "read-pkg-up": "^7.0.1",
-    "semver": "^7.6.0",
-    "set-value": "^4.0.0",
-    "simple-git": "^3.20.0",
-    "sort-array": "^4.1.3",
+    "open": "^10.1.0",
+    "openai": "^4.56.1",
+    "ora": "^8.1.0",
+    "papaparse": "^5.4.1",
+    "pascalcase": "^2.0.0",
+    "psl": "^1.9.0",
+    "puppeteer-core": "^23.3.0",
+    "read-package-up": "^11.0.0",
+    "semver": "^7.6.3",
+    "set-value": "^4.1.0",
+    "simple-git": "^3.25.0",
+    "sort-array": "^4.1.5",
     "split": "^1.0.1",
     "string-template": "^1.0.0",
-    "tslib": "^2.1.0",
-    "update-notifier": "^5.1.0",
-    "which": "^2.0.2",
-    "ws": "^7.4.4",
-    "xml2js": "^0.5.0",
-    "xpath": "^0.0.32"
+    "update-notifier": "^7.3.0",
+    "which": "^4.0.0",
+    "ws": "^8.18.0",
+    "xml2js": "^0.6.2",
+    "xpath": "^0.0.34"
   },
   "devDependencies": {
-    "@oclif/dev-cli": "^1.26.0",
-    "@oclif/plugin-help": "^3.2.2",
-    "@oclif/test": "^1",
-    "@salesforce/dev-config": "^2.1.0",
-    "@types/chai": "^4",
-    "@types/dompurify": "^3.0.5",
+    "@oclif/plugin-command-snapshot": "^5.1.9",
+    "@salesforce/cli-plugins-testkit": "^5.3.28",
+    "@salesforce/dev-config": "^4.3.1",
+    "@salesforce/dev-scripts": "^10",
+    "@types/columnify": "^1.5.4",
+    "@types/cosmiconfig": "^6.0.0",
+    "@types/cross-spawn": "^6.0.6",
+    "@types/extract-zip": "^2.0.1",
+    "@types/fs-extra": "^11.0.4",
+    "@types/fs-readdir-recursive": "^1.1.3",
+    "@types/glob": "^8.1.0",
+    "@types/inquirer": "^9.0.7",
     "@types/jira-client": "^7.1.9",
-    "@types/node": "^14.14.32",
-    "chai": "^4",
-    "globby": "^11.0.2",
-    "mocha": "^8.3.1",
-    "nyc": "^15.1.0",
-    "rimraf": "^3.0.2",
-    "ts-node": "^10.7.0",
-    "typescript": "^5.5.2",
-    "yarn-audit-fix": "^9.3.7"
-  },
-  "resolutions": {
-    "graceful-fs": "^4.2.4"
+    "@types/js-yaml": "^4.0.9",
+    "@types/make-fetch-happen": "^10.0.4",
+    "@types/papaparse": "^5.3.14",
+    "@types/psl": "^1.1.3",
+    "@types/set-value": "^4.0.3",
+    "@types/sort-array": "^4.1.2",
+    "@types/update-notifier": "^6.0.8",
+    "@types/which": "^3.0.4",
+    "@types/ws": "^8.5.12",
+    "@types/xml2js": "^0.4.14",
+    "eslint-plugin-sf-plugin": "^1.18.6",
+    "oclif": "^4.14.31",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -102,12 +96,16 @@
     "/lib",
     "/messages",
     "/defaults",
-    "/npm-shrinkwrap.json",
-    "/oclif.manifest.json"
+    "/oclif.manifest.json",
+    "/oclif.lock"
   ],
   "homepage": "https://sfdx-hardis.cloudity.com",
   "keywords": [
+    "force",
     "salesforce",
+    "salesforcedx",
+    "sf",
+    "sf-plugin",
     "sfdx",
     "devops",
     "automation",
@@ -132,7 +130,20 @@
   "license": "AGPL-3.0",
   "oclif": {
     "commands": "./lib/commands",
-    "bin": "sfdx",
+    "bin": "sf",
+    "topicSeparator": " ",
+    "devPlugins": [
+      "@oclif/plugin-help"
+    ],
+    "topics": {
+      "hello": {
+        "description": "Commands to say hello."
+      },
+      "hardis": {
+        "description": "Hardis tools by Cloudity"
+      }
+    },
+    "flexibleTaxonomy": true,
     "hooks": {
       "init": [
         "./lib/hooks/init/log",
@@ -145,36 +156,148 @@
         "./lib/hooks/prerun/check-dependencies"
       ],
       "auth": [
-        "./lib/hooks/prerun/auth"
+        "./lib/hooks/auth/auth"
       ],
       "postrun": [
         "./lib/hooks/postrun/notify",
         "./lib/hooks/postrun/store-cache"
       ]
-    },
-    "topics": {
-      "hardis": {
-        "description": "Hardis tools"
-      }
-    },
-    "devPlugins": [
-      "@oclif/plugin-help"
-    ]
+    }
   },
   "repository": "https://github.com/hardisgroupcom/sfdx-hardis",
-  "prettier": {
-    "printWidth": 150
-  },
   "scripts": {
-    "build": "tsc -b && node build.js && generate-schema-doc config/sfdx-hardis.jsonschema.json docs/schema/sfdx-hardis-json-schema-parameters.html --config minify=false --config link_to_reused_ref=false || echo 'Please run \"pip install json-schema-for-humans\" (you need python installed on your computer)'",
-    "build:doc": "sfdx hardis:doc:plugin:generate",
-    "compile": "tsc --watch",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "postpack": "rimraf oclif.manifest.json",
-    "posttest": "npm run lint",
-    "prepack": "rimraf lib && tsc -b && oclif-dev manifest && oclif-dev readme || true && yarn build",
-    "test": "exit 0 && nyc --extension .ts mocha --forbid-only \"test/**/*.test.ts\"",
-    "version": "yarn build && git add docs/* && oclif-dev readme || true && git add README.md"
-  }
+    "build": "wireit",
+    "build:doc": "sf hardis:doc:plugin:generate",
+    "clean": "sf-clean",
+    "clean-all": "sf-clean all",
+    "compile": "wireit",
+    "docs": "sf-docs",
+    "format": "wireit",
+    "link-check": "wireit",
+    "lint": "wireit",
+    "postinstall": "yarn husky install || echo \"Unable to install Husky. If you are in a CI/CD job, that's ok !\"",
+    "postpack": "sf-clean --ignore-signing-artifacts",
+    "prepack": "sf-prepack",
+    "test": "wireit",
+    "test:nuts": "nyc mocha \"**/*.nut.ts\" --slow 4500 --timeout 600000 --parallel",
+    "test:only": "wireit",
+    "version": "oclif readme"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "wireit": {
+    "build": {
+      "command": "node build.cjs && generate-schema-doc config/sfdx-hardis.jsonschema.json docs/schema/sfdx-hardis-json-schema-parameters.html --config minify=false --config link_to_reused_ref=false || echo 'Please run \"pip install json-schema-for-humans\" (you need python installed on your computer)'",
+      "dependencies": [
+        "compile",
+        "lint"
+      ]
+    },
+    "compile": {
+      "command": "tsc -p . --pretty --incremental",
+      "files": [
+        "src/**/*.ts",
+        "**/tsconfig.json",
+        "messages/**"
+      ],
+      "output": [
+        "lib/**",
+        "*.tsbuildinfo"
+      ],
+      "clean": "if-file-deleted"
+    },
+    "format": {
+      "command": "prettier --write \"+(src|test|schemas)/**/*.+(ts|js|json)|command-snapshot.json\"",
+      "files": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "schemas/**/*.json",
+        "command-snapshot.json",
+        ".prettier*"
+      ],
+      "output": []
+    },
+    "lint": {
+      "command": "eslint src test --color --cache --cache-location .eslintcache",
+      "files": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "messages/**",
+        "**/.eslint*",
+        "**/tsconfig.json"
+      ],
+      "output": []
+    },
+    "test:compile": {
+      "command": "tsc -p \"./test\" --pretty",
+      "files": [
+        "test/**/*.ts",
+        "**/tsconfig.json"
+      ],
+      "output": []
+    },
+    "test": {
+      "dependencies": [
+        "test:compile",
+        "test:only",
+        "lint"
+      ]
+    },
+    "test:only": {
+      "command": "nyc mocha \"test/**/*.test.ts\"",
+      "env": {
+        "FORCE_COLOR": "2"
+      },
+      "files": [
+        "test/**/*.ts",
+        "src/**/*.ts",
+        "**/tsconfig.json",
+        ".mocha*",
+        "!*.nut.ts",
+        ".nycrc"
+      ],
+      "output": []
+    },
+    "test:command-reference": {
+      "command": "node --loader ts-node/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" commandreference:generate --erroronwarnings",
+      "files": [
+        "src/**/*.ts",
+        "messages/**",
+        "package.json"
+      ],
+      "output": [
+        "tmp/root"
+      ]
+    },
+    "test:deprecation-policy": {
+      "command": "node --loader ts-node/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" snapshot:compare",
+      "files": [
+        "src/**/*.ts"
+      ],
+      "output": [],
+      "dependencies": [
+        "compile"
+      ]
+    },
+    "test:json-schema": {
+      "command": "node --loader ts-node/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" schema:compare",
+      "files": [
+        "src/**/*.ts",
+        "schemas"
+      ],
+      "output": []
+    },
+    "link-check": {
+      "command": "node -e \"process.exit(process.env.CI ? 0 : 1)\" || linkinator \"**/*.md\" --skip \"CHANGELOG.md|node_modules|test/|confluence.internal.salesforce.com|my.salesforce.com|%s\" --markdown --retry --directory-listing --verbosity error",
+      "files": [
+        "./*.md",
+        "./!(CHANGELOG).md",
+        "messages/**/*.md"
+      ],
+      "output": []
+    }
+  },
+  "exports": "./lib/index.js",
+  "type": "module"
 }

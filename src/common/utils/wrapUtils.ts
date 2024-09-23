@@ -1,9 +1,9 @@
-import { SfdxCommand } from "@salesforce/command";
-import * as c from "chalk";
-import { execCommand, uxLog } from ".";
-import { analyzeDeployErrorLogs } from "./deployTips";
+import { SfCommand } from "@salesforce/sf-plugins-core";
+import c from "chalk";
+import { execCommand, uxLog } from "./index.js";
+import { analyzeDeployErrorLogs } from "./deployTips.js";
 
-export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfdxCommand, debug = false): Promise<any> {
+export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfCommand<any>, debug = false): Promise<any> {
   const endArgs = [...argv].map((arg) => {
     // Add quotes to avoid problems if arguments contain spaces
     if (!arg.startsWith("-") && !arg.startsWith(`"`) && !arg.startsWith(`'`)) {
@@ -45,7 +45,7 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
     });
   } catch (e) {
     // Add deployment tips in error logs
-    const { errLog } = await analyzeDeployErrorLogs(e.stdout + e.stderr, true, { check: endArgs.includes("--checkonly") });
+    const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, { check: endArgs.includes("--checkonly") });
     uxLog(commandThis, c.red(c.bold("Sadly there has been error(s)")));
     if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === "false") {
       uxLog(this, "\n" + errLog);
@@ -53,8 +53,8 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
       uxLog(this, c.red("\n" + errLog));
     }
     deployRes = errLog;
-    if (e.code) {
-      process.exitCode = e.code;
+    if ((e as any).code) {
+      process.exitCode = (e as any).code;
     } else {
       process.exitCode = 1;
     }

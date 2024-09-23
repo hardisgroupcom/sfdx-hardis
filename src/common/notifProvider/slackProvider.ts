@@ -1,17 +1,17 @@
-import { SfdxError } from "@salesforce/core";
-import * as c from "chalk";
-import { NotifProviderRoot } from "./notifProviderRoot";
+import { SfError } from "@salesforce/core";
+import c from "chalk";
+import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
-import { getCurrentGitBranch, uxLog } from "../utils";
-import { NotifMessage, UtilsNotifs } from ".";
-import { getEnvVar } from "../../config";
+import { getCurrentGitBranch, uxLog } from "../utils/index.js";
+import { NotifMessage, UtilsNotifs } from "./index.js";
+import { getEnvVar } from "../../config/index.js";
 
 export class SlackProvider extends NotifProviderRoot {
   private slackClient: InstanceType<typeof WebClient>;
 
   constructor() {
     super();
-    this.token = process.env.SLACK_TOKEN;
+    this.token = process.env.SLACK_TOKEN || "";
     this.slackClient = new WebClient(this.token);
   }
 
@@ -23,15 +23,15 @@ export class SlackProvider extends NotifProviderRoot {
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const mainNotifsChannelId = getEnvVar("SLACK_CHANNEL_ID");
     if (mainNotifsChannelId == null) {
-      throw new SfdxError(
+      throw new SfError(
         "[SlackProvider] You need to define a variable SLACK_CHANNEL_ID to use sfdx-hardis Slack Integration. Otherwise, remove variable SLACK_TOKEN",
       );
     }
     const slackChannelsIds = mainNotifsChannelId.split(",");
     // Add branch custom slack channel if defined
-    const customSlackChannelVariable = `SLACK_CHANNEL_ID_${(await getCurrentGitBranch()).toUpperCase()}`;
+    const customSlackChannelVariable = `SLACK_CHANNEL_ID_${(await getCurrentGitBranch() || "").toUpperCase()}`;
     if (getEnvVar(customSlackChannelVariable)) {
-      slackChannelsIds.push(...getEnvVar(customSlackChannelVariable).split(","));
+      slackChannelsIds.push(...(getEnvVar(customSlackChannelVariable) || "").split(","));
     }
     // Handle specific channel for Warnings and errors
     const warningsErrorsChannelId = getEnvVar("SLACK_CHANNEL_ID_ERRORS_WARNINGS");
@@ -58,8 +58,8 @@ export class SlackProvider extends NotifProviderRoot {
     } */
     blocks.push(block);
     // Add action blocks
-    if (notifMessage.buttons?.length > 0) {
-      const actionElements = [];
+    if (notifMessage.buttons?.length && notifMessage.buttons?.length > 0) {
+      const actionElements: any[] = [];
       for (const button of notifMessage.buttons) {
         // Url button
         if (button.url) {
@@ -96,7 +96,7 @@ export class SlackProvider extends NotifProviderRoot {
         uxLog(this, c.cyan(`[SlackProvider] Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
       } catch (error) {
         uxLog(this, c.gray("[SlackProvider] Failed slack message content: \n" + JSON.stringify(slackMessage, null, 2)));
-        uxLog(this, c.red(`[SlackProvider] Error while sending message to channel ${mainNotifsChannelId}\n${error.message}`));
+        uxLog(this, c.red(`[SlackProvider] Error while sending message to channel ${mainNotifsChannelId}\n${(error as any).message}`));
       }
     }
     return;

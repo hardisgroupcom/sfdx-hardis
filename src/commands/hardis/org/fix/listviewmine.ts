@@ -1,21 +1,17 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { uxLog } from "../../../../common/utils";
-import { restoreListViewMine } from "../../../../common/utils/orgConfigUtils";
-import { getConfig } from "../../../../config";
-import * as c from "chalk";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { uxLog } from '../../../../common/utils/index.js';
+import { restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
+import { getConfig } from '../../../../config/index.js';
+import c from 'chalk';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
-
-export default class FixListViewMine extends SfdxCommand {
-  public static title = "Fix listviews with ";
+export default class FixListViewMine extends SfCommand<any> {
+  public static title = 'Fix listviews with ';
 
   public static description = `Fix listviews whose scope Mine has been replaced by Everything
 
@@ -69,38 +65,31 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 `;
 
   public static examples = [
-    "$ sfdx hardis:org:fix:listviewmine",
-    "$ sfdx hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners",
+    '$ sf hardis:org:fix:listviewmine',
+    '$ sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners',
   ];
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
-    listviews: flags.string({
-      char: "l",
+  public static flags: any = {
+    listviews: Flags.string({
+      char: 'l',
       description: `Comma-separated list of listviews following format Object:ListViewName\nExample: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportunities`,
     }),
-    debug: flags.boolean({
-      char: "d",
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
-
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
-  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected debugMode = false;
 
@@ -108,21 +97,24 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    const { flags } = await this.parse(FixListViewMine);
+    this.debugMode = flags.debug || false;
 
-    uxLog(this, c.cyan("Setting back listviews to Mine instead of Everything..."));
+    uxLog(this, c.cyan('Setting back listviews to Mine instead of Everything...'));
 
     // Identify listviews to process
-    if (this.flags.listviews) {
+    if (flags.listviews) {
       // Use input flag
-      this.listViewsStrings = this.flags.listviews.split(",");
+      this.listViewsStrings = flags.listviews.split(',');
     } else {
       // Use property listViewsToSetToMine from .sfdx-hardis.yml config file
-      const config = await getConfig("project");
+      const config = await getConfig('project');
       this.listViewsStrings = config.listViewsToSetToMine || [];
     }
 
-    const result = await restoreListViewMine(this.listViewsStrings, this.org.getConnection(), { debug: this.debugMode });
+    const result = await restoreListViewMine(this.listViewsStrings, flags['target-org'].getConnection(), {
+      debug: this.debugMode,
+    });
     return result;
   }
 }

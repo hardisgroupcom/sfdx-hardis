@@ -12,7 +12,7 @@ And what about this **deactivated Validation** Rule ?
 
 Maybe it's time to remove them !
 
-Sfdx-hardis command: [sfdx hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
+Sfdx-hardis command: [sf hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
 
 Key: **METADATA_STATUS**
 

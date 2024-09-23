@@ -1,54 +1,46 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import { MetadataUtils } from "../../../../common/metadata-utils";
-import { uxLog } from "../../../../common/utils";
-import { managePackageConfig, promptOrg } from "../../../../common/utils/orgUtils";
-import { prompts } from "../../../../common/utils/prompts";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
+import { uxLog } from '../../../../common/utils/index.js';
+import { managePackageConfig, promptOrg } from '../../../../common/utils/orgUtils.js';
+import { prompts } from '../../../../common/utils/prompts.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+export default class RetrievePackageConfig extends SfCommand<any> {
+  public static title = 'Retrieve package configuration from an org';
 
-export default class RetrievePackageConfig extends SfdxCommand {
-  public static title = "Retrieve package configuration from an org";
+  public static description = 'Retrieve package configuration from an org';
 
-  public static description = "Retrieve package configuration from an org";
+  public static examples = ['$ sf hardis:org:retrieve:packageconfig', 'sf hardis:org:retrieve:packageconfig -u myOrg'];
 
-  public static examples = ["$ sfdx hardis:org:retrieve:packageconfig", "sfdx hardis:org:retrieve:packageconfig -u myOrg"];
-
-  protected static flagsConfig = {
-    debug: flags.boolean({
-      char: "d",
+  public static flags: any = {
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static supportsUsername = true;
-  protected static requiresUsername = false;
-  // Comment this out if your command does not support a hub org username
-  // protected static requiresDevhubUsername = true;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    let targetUsername = this.flags.targetusername || null;
+    const { flags } = await this.parse(RetrievePackageConfig);
+    let targetUsername = flags['target-org'].getUsername() || null;
 
     // Prompt for organization if not sent
     if (targetUsername == null) {
@@ -57,13 +49,13 @@ export default class RetrievePackageConfig extends SfdxCommand {
     }
 
     // Retrieve list of installed packages
-    const installedPackages = await MetadataUtils.listInstalledPackages(targetUsername, this);
+    const installedPackages = await MetadataUtils.listInstalledPackages(targetUsername || '', this);
 
     // Store list in config
     const updateConfigRes = await prompts({
-      type: "confirm",
-      name: "value",
-      message: c.cyanBright("Do you want to update your project configuration with this list of packages ?"),
+      type: 'confirm',
+      name: 'value',
+      message: c.cyanBright('Do you want to update your project configuration with this list of packages ?'),
     });
     if (updateConfigRes.value === true) {
       await managePackageConfig(installedPackages, installedPackages);
@@ -71,6 +63,6 @@ export default class RetrievePackageConfig extends SfdxCommand {
 
     const message = `[sfdx-hardis] Successfully retrieved package config`;
     uxLog(this, c.green(message));
-    return { orgId: this.org.getOrgId(), outputString: message };
+    return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 }

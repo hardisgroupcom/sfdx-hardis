@@ -1,63 +1,54 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import axios from "axios";
-import * as moment from "moment";
-import * as c from "chalk";
-import { uxLog } from "../../../../common/utils";
-import { soqlQuery } from "../../../../common/utils/apiUtils";
-import { NotifProvider, NotifSeverity } from "../../../../common/notifProvider";
-import { getNotificationButtons, getOrgMarkdown } from "../../../../common/utils/notifUtils";
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import axios from 'axios';
+import moment from 'moment';
+import c from 'chalk';
+import { uxLog } from '../../../../common/utils/index.js';
+import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
-
-export default class DiagnoseInstanceUpgrade extends SfdxCommand {
-  public static title = "Get Instance Upgrade date";
+export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
+  public static title = 'Get Instance Upgrade date';
 
   public static description = `Get the date when the org instance will be upgraded (to Spring, Summer or Winter)
   `;
 
-  public static examples = ["$ sfdx hardis:org:diagnose:instanceupgrade"];
+  public static examples = ['$ sf hardis:org:diagnose:instanceupgrade'];
 
-  protected static flagsConfig = {
-    debug: flags.boolean({
-      char: "d",
+  public static flags: any = {
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = true;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
-  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = false;
+  public static requiresProject = false;
 
   protected debugMode = false;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    this.debugMode = this.flags.debug || false;
+    const { flags } = await this.parse(DiagnoseInstanceUpgrade);
+    this.debugMode = flags.debug || false;
 
     // Get instance name
-    const orgQuery = "SELECT FIELDS(all) FROM Organization LIMIT 1";
-    const orgQueryRes = await soqlQuery(orgQuery, this.org.getConnection());
+    const orgQuery = 'SELECT FIELDS(all) FROM Organization LIMIT 1';
+    const orgQueryRes = await soqlQuery(orgQuery, flags['target-org'].getConnection());
     const orgInfo = orgQueryRes.records[0];
     const instanceName = orgInfo.InstanceName;
 
@@ -68,7 +59,11 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
     const maintenances = instanceInfo.Maintenances || [];
     orgInfo.maintenanceNextUpgrade = {};
     for (const maintenance of maintenances) {
-      if (maintenance.isCore && maintenance.releaseType === "Major" && maintenance.serviceKeys.includes("coreService")) {
+      if (
+        maintenance.isCore &&
+        maintenance.releaseType === 'Major' &&
+        maintenance.serviceKeys.includes('coreService')
+      ) {
         orgInfo.maintenanceNextUpgrade = maintenance;
         break;
       }
@@ -76,30 +71,30 @@ export default class DiagnoseInstanceUpgrade extends SfdxCommand {
 
     // Get number of days before next major upgrade
     const nextUpgradeDate = moment(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
-    const nextMajorUpgradeDateStr = nextUpgradeDate.format();
+    const nextMajorUpgradeDateStr = nextUpgradeDate.format("ll");
     const today = moment();
-    const daysBeforeUpgrade = nextUpgradeDate.diff(today, "days");
+    const daysBeforeUpgrade = today.diff(nextUpgradeDate, 'days');
 
     // Manage notifications
-    const orgMarkdown = await getOrgMarkdown(this.org?.getConnection()?.instanceUrl);
+    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
-    let notifSeverity: NotifSeverity = "log";
-    const notifText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
+    let notifSeverity: NotifSeverity = 'log';
+    const notifText = `Salesforce instance *${instanceName}* of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (*${daysBeforeUpgrade} days*) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
 
     // Change severity according to number of days
     if (daysBeforeUpgrade <= 15) {
-      notifSeverity = "warning";
+      notifSeverity = 'warning';
       uxLog(this, c.yellow(notifText));
     } else if (daysBeforeUpgrade <= 30) {
-      notifSeverity = "info";
+      notifSeverity = 'info';
       uxLog(this, c.green(notifText));
     } else {
       uxLog(this, c.green(notifText));
     }
 
-    globalThis.jsForceConn = this?.org?.getConnection(); // Required for some notifications providers like Email
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
     NotifProvider.postNotifications({
-      type: "ORG_INFO",
+      type: 'ORG_INFO',
       text: notifText,
       attachments: [],
       buttons: notifButtons,

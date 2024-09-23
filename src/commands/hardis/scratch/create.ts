@@ -1,15 +1,23 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { AuthInfo, Messages, SfdxError } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import { assert } from "console";
-import * as fs from "fs-extra";
-import * as moment from "moment";
-import * as os from "os";
-import * as path from "path";
-import { clearCache } from "../../../common/cache";
-import { elapseEnd, elapseStart, execCommand, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from "../../../common/utils";
+import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { AuthInfo, Messages, SfError } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { assert } from 'console';
+import fs from 'fs-extra';
+import moment from 'moment';
+import * as os from 'os';
+import * as path from 'path';
+import { clearCache } from '../../../common/cache/index.js';
+import {
+  elapseEnd,
+  elapseStart,
+  execCommand,
+  execSfdxJson,
+  getCurrentGitBranch,
+  isCI,
+  uxLog,
+} from '../../../common/utils/index.js';
 import {
   initApexScripts,
   initOrgData,
@@ -17,21 +25,17 @@ import {
   initPermissionSetAssignments,
   installPackages,
   promptUserEmail,
-} from "../../../common/utils/orgUtils";
-import { addScratchOrgToPool, fetchScratchOrg } from "../../../common/utils/poolUtils";
-import { prompts } from "../../../common/utils/prompts";
-import { WebSocketClient } from "../../../common/websocketClient";
-import { getConfig, setConfig } from "../../../config";
+} from '../../../common/utils/orgUtils.js';
+import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
+import { prompts } from '../../../common/utils/prompts.js';
+import { WebSocketClient } from '../../../common/websocketClient.js';
+import { getConfig, setConfig } from '../../../config/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
-
-export default class ScratchCreate extends SfdxCommand {
-  public static title = "Create and initialize scratch org";
+export default class ScratchCreate extends SfCommand<any> {
+  public static title = 'Create and initialize scratch org';
 
   public static description = `Create and initialize a scratch org or a source-tracked sandbox (config can be defined using \`config/.sfdx-hardis.yml\`):
 
@@ -46,45 +50,40 @@ export default class ScratchCreate extends SfdxCommand {
   - Use property \`dataPackages\`
   `;
 
-  public static examples = ["$ sfdx hardis:scratch:create"];
+  public static examples = ['$ sf hardis:scratch:create'];
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
-    forcenew: flags.boolean({
-      char: "n",
+  public static flags: any = {
+    forcenew: Flags.boolean({
+      char: 'n',
       default: false,
-      description: messages.getMessage("forceNewScratch"),
+      description: messages.getMessage('forceNewScratch'),
     }),
-    pool: flags.boolean({
-      char: "d",
+    pool: Flags.boolean({
+      char: 'd',
       default: false,
-      description: "Creates the scratch org for a scratch org pool",
+      description: 'Creates the scratch org for a scratch org pool',
     }),
-    debug: flags.boolean({
-      char: "d",
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = true;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ["sfdmu", "texei-sfdx-plugin"];
+  protected static requiresSfdxPlugins = ['sfdmu', 'texei-sfdx-plugin'];
 
   protected forceNew = false;
 
@@ -103,43 +102,56 @@ export default class ScratchCreate extends SfdxCommand {
   protected scratchOrgInfo: any;
   protected scratchOrgUsername: string;
   protected scratchOrgPassword: string;
-  protected scratchOrgSfdxAuthUrl: string;
+  protected scratchOrgSfdxAuthUrl: string | null;
   protected authFileJson: any;
   protected projectName: string;
   protected scratchOrgFromPool: any;
 
   public async run(): Promise<AnyJson> {
-    this.pool = this.flags.pool || false;
-    this.debugMode = this.flags.debug || false;
-    this.forceNew = this.flags.forcenew || false;
+    const { flags } = await this.parse(ScratchCreate);
+    this.pool = flags.pool || false;
+    this.debugMode = flags.debug || false;
+    this.forceNew = flags.forcenew || false;
     elapseStart(`Create and initialize scratch org`);
     await this.initConfig();
-    await this.createScratchOrg();
+    await this.createScratchOrg(flags);
     try {
       await this.updateScratchOrgUser();
       await installPackages(this.configInfo.installedPackages || [], this.scratchOrgAlias);
       if (this.pool === false) {
-        await initOrgMetadatas(this.configInfo, this.scratchOrgUsername, this.scratchOrgAlias, this.projectScratchDef, this.debugMode, {
-          scratch: true,
-        });
+        await initOrgMetadatas(
+          this.configInfo,
+          this.scratchOrgUsername,
+          this.scratchOrgAlias,
+          this.projectScratchDef,
+          this.debugMode,
+          {
+            scratch: true,
+          }
+        );
         await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.scratchOrgUsername);
         await initApexScripts(this.configInfo.scratchOrgInitApexScripts || [], this.scratchOrgUsername);
-        await initOrgData(path.join(".", "scripts", "data", "ScratchInit"), this.scratchOrgUsername);
+        await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), this.scratchOrgUsername);
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      uxLog(this, c.grey("Error: " + e.message + "\n" + e.stack));
+      uxLog(this, c.grey('Error: ' + (e as Error).message + '\n' + (e as Error).stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
-        uxLog(this, "[pool] " + c.yellow("Put back scratch org in the scratch orgs pool. ") + c.grey({ result: this.scratchOrgFromPool }));
-        await addScratchOrgToPool(this.scratchOrgFromPool, { position: "first" });
+        uxLog(
+          this,
+          '[pool] ' +
+          c.yellow('Put back scratch org in the scratch orgs pool. ') +
+          c.grey({ result: this.scratchOrgFromPool })
+        );
+        await addScratchOrgToPool(this.scratchOrgFromPool, { position: 'first' });
       } else if (isCI && this.scratchOrgUsername) {
-        await execCommand(`sfdx force:org:delete --noprompt --targetusername ${this.scratchOrgUsername}`, this, {
+        await execCommand(`sf org delete scratch --no-prompt --target-org ${this.scratchOrgUsername}`, this, {
           fail: false,
           output: true,
         });
-        uxLog(this, c.red("Deleted scratch org as we are in CI and its creation has failed"));
+        uxLog(this, c.red('Deleted scratch org as we are in CI and its creation has failed'));
       }
       throw e;
     }
@@ -148,7 +160,11 @@ export default class ScratchCreate extends SfdxCommand {
     if (this.scratchOrgPassword) {
       uxLog(
         this,
-        c.cyan(`You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(this.scratchOrgPassword)}`),
+        c.cyan(
+          `You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(
+            this.scratchOrgPassword
+          )}`
+        )
       );
     }
     elapseEnd(`Create and initialize scratch org`);
@@ -161,32 +177,41 @@ export default class ScratchCreate extends SfdxCommand {
       scratchOrgPassword: this.scratchOrgPassword,
       scratchOrgSfdxAuthUrl: this.scratchOrgSfdxAuthUrl,
       authFileJson: this.authFileJson,
-      outputString: "Created and initialized scratch org",
+      outputString: 'Created and initialized scratch org',
     };
   }
 
   // Initialize configuration from .sfdx-hardis.yml + .gitbranch.sfdx-hardis.yml + .username.sfdx-hardis.yml
   public async initConfig() {
-    this.configInfo = await getConfig("user");
-    this.gitBranch = await getCurrentGitBranch({ formatted: true });
-    const newScratchName = os.userInfo().username + "-" + this.gitBranch.split("/").pop().slice(0, 15) + "_" + moment().format("YYYYMMDD_hhmm");
+    this.configInfo = await getConfig('user');
+    this.gitBranch = (await getCurrentGitBranch({ formatted: true })) || '';
+    const newScratchName =
+      os.userInfo().username +
+      '-' +
+      (this.gitBranch.split('/').pop() || '').slice(0, 15) +
+      '_' +
+      moment().format('YYYYMMDD_hhmm');
     this.scratchOrgAlias =
-      process.env.SCRATCH_ORG_ALIAS || (!this.forceNew && this.pool === false ? this.configInfo.scratchOrgAlias : null) || newScratchName;
-    if (isCI && !this.scratchOrgAlias.startsWith("CI-")) {
-      this.scratchOrgAlias = "CI-" + this.scratchOrgAlias;
+      process.env.SCRATCH_ORG_ALIAS ||
+      (!this.forceNew && this.pool === false ? this.configInfo.scratchOrgAlias : null) ||
+      newScratchName;
+    if (isCI && !this.scratchOrgAlias.startsWith('CI-')) {
+      this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
     }
     if (this.pool === true) {
-      this.scratchOrgAlias = "PO-" + Math.random().toString(36).substr(2, 2) + this.scratchOrgAlias;
+      this.scratchOrgAlias = 'PO-' + Math.random().toString(36).substr(2, 2) + this.scratchOrgAlias;
     }
     // Verify that the user wants to resume scratch org creation
     if (!isCI && this.scratchOrgAlias !== newScratchName && this.pool === false) {
       const checkRes = await prompts({
-        type: "confirm",
-        name: "value",
+        type: 'confirm',
+        name: 'value',
         message: c.cyanBright(
-          `You are about to reuse scratch org ${c.green(this.scratchOrgAlias)}. Are you sure that's what you want to do ?\n${c.grey(
-            "(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)",
-          )}`,
+          `You are about to reuse scratch org ${c.green(
+            this.scratchOrgAlias
+          )}. Are you sure that's what you want to do ?\n${c.grey(
+            '(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)'
+          )}`
         ),
         default: false,
       });
@@ -210,29 +235,29 @@ export default class ScratchCreate extends SfdxCommand {
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
       if (this.pool === true) {
-        throw new SfdxError(c.red("You need to define userEmail property in .sfdx-hardis.yml"));
+        throw new SfError(c.red('You need to define userEmail property in .sfdx-hardis.yml'));
       }
       this.userEmail = await promptUserEmail();
     }
   }
 
   // Create a new scratch org or reuse existing one
-  public async createScratchOrg() {
+  public async createScratchOrg(flags) {
     // Build project-scratch-def-branch-user.json
-    uxLog(this, c.cyan("Building custom project-scratch-def.json..."));
-    this.projectScratchDef = JSON.parse(fs.readFileSync("./config/project-scratch-def.json", "utf-8"));
+    uxLog(this, c.cyan('Building custom project-scratch-def.json...'));
+    this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json', 'utf-8'));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
-    this.projectScratchDef.username = `${this.userEmail.split("@")[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
+    this.projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
     // Check current scratch org
-    const orgListResult = await execSfdxJson("sfdx force:org:list", this);
-    const hubOrgUsername = this.hubOrg.getUsername();
+    const orgListResult = await execSfdxJson('sf org list', this);
+    const hubOrgUsername = flags['target-dev-hub'].getUsername();
     const matchingScratchOrgs =
       orgListResult?.result?.scratchOrgs?.filter((org: any) => {
-        return org.alias === this.scratchOrgAlias && org.status === "Active" && org.devHubUsername === hubOrgUsername;
+        return org.alias === this.scratchOrgAlias && org.status === 'Active' && org.devHubUsername === hubOrgUsername;
       }) || [];
     // Reuse existing scratch org
     if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool === false) {
@@ -243,82 +268,96 @@ export default class ScratchCreate extends SfdxCommand {
     }
     // Try to fetch a scratch org from the pool
     if (this.pool === false && this.configInfo.poolConfig) {
-      this.scratchOrgFromPool = await fetchScratchOrg({ devHubConn: this.hubOrg.getConnection(), devHubUsername: this.hubOrg.getUsername() });
+      this.scratchOrgFromPool = await fetchScratchOrg({
+        devHubConn: flags['target-dev-hub'].getConnection(),
+        devHubUsername: flags['target-dev-hub'].getUsername(),
+      });
       if (this.scratchOrgFromPool) {
         this.scratchOrgAlias = this.scratchOrgFromPool.scratchOrgAlias;
         this.scratchOrgInfo = this.scratchOrgFromPool.scratchOrgInfo;
         this.scratchOrgUsername = this.scratchOrgFromPool.scratchOrgUsername;
         this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
-        await setConfig("user", { scratchOrgAlias: this.scratchOrgAlias });
-        uxLog(this, "[pool] " + c.cyan(`Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`));
+        await setConfig('user', { scratchOrgAlias: this.scratchOrgAlias });
+        uxLog(
+          this,
+          '[pool] ' +
+          c.cyan(
+            `Fetched org ${c.green(this.scratchOrgAlias)} from pool with user ${c.green(this.scratchOrgUsername)}`
+          )
+        );
         if (!isCI) {
-          uxLog(this, c.cyan("Now opening org...") + " " + c.yellow("(The org is not ready to work in until this script is completed !)"));
-          await execSfdxJson("sf org open", this, {
+          uxLog(
+            this,
+            c.cyan('Now opening org...') +
+            ' ' +
+            c.yellow('(The org is not ready to work in until this script is completed !)')
+          );
+          await execSfdxJson('sf org open', this, {
             fail: true,
             output: false,
             debug: this.debugMode,
           });
           // Trigger a status refresh on VsCode WebSocket Client
-          WebSocketClient.sendMessage({ event: "refreshStatus" });
+          WebSocketClient.sendMessage({ event: 'refreshStatus' });
         }
         return;
       }
     }
 
     // Fix @salesforce/cli bug: remove shape.zip if found
-    const tmpShapeFolder = path.join(os.tmpdir(), "shape");
+    const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
     if (fs.existsSync(tmpShapeFolder) && this.pool === false) {
       await fs.remove(tmpShapeFolder);
-      uxLog(this, c.grey("Deleted " + tmpShapeFolder));
+      uxLog(this, c.grey('Deleted ' + tmpShapeFolder));
     }
 
     // Create new scratch org
-    uxLog(this, c.cyan("Creating new scratch org..."));
-    const waitTime = process.env.SCRATCH_ORG_WAIT || "15";
+    uxLog(this, c.cyan('Creating new scratch org...'));
+    const waitTime = process.env.SCRATCH_ORG_WAIT || '15';
     const createCommand =
-      "sfdx force:org:create --setdefaultusername " +
-      `--definitionfile ${projectScratchDefLocal} ` +
-      `--setalias ${this.scratchOrgAlias} ` +
+      'sf org create scratch --set-default ' +
+      `--definition-file ${projectScratchDefLocal} ` +
+      `--alias ${this.scratchOrgAlias} ` +
       `--wait ${waitTime} ` +
-      `--targetdevhubusername ${this.devHubAlias} ` +
-      `-d ${this.scratchOrgDuration}`;
+      `--target-org ${this.devHubAlias} ` +
+      `--duration-days ${this.scratchOrgDuration}`;
     const createResult = await execSfdxJson(createCommand, this, {
       fail: false,
       output: false,
       debug: this.debugMode,
     });
-    await clearCache("force:org:list");
+    await clearCache('sf org list');
     assert(createResult.status === 0 && createResult.result, this.buildScratchCreateErrorMessage(createResult));
     this.scratchOrgInfo = createResult.result;
     this.scratchOrgUsername = this.scratchOrgInfo.username;
-    await setConfig("user", {
+    await setConfig('user', {
       scratchOrgAlias: this.scratchOrgAlias,
       scratchOrgUsername: this.scratchOrgUsername,
     });
     // Generate password
-    const passwordCommand = `sfdx force:user:password:generate --targetusername ${this.scratchOrgUsername}`;
+    const passwordCommand = `sf org generate password --target-org ${this.scratchOrgUsername}`;
     const passwordResult = await execSfdxJson(passwordCommand, this, {
       fail: true,
       output: false,
       debug: this.debugMode,
     });
     this.scratchOrgPassword = passwordResult.result.password;
-    await setConfig("user", {
+    await setConfig('user', {
       scratchOrgPassword: this.scratchOrgPassword,
     });
     // Trigger a status refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: "refreshStatus" });
+    WebSocketClient.sendMessage({ event: 'refreshStatus' });
 
     if (isCI || this.pool === true) {
       // Try to store sfdxAuthUrl for scratch org reuse during CI
-      const displayOrgCommand = `sfdx force:org:display -u ${this.scratchOrgAlias} --verbose`;
+      const displayOrgCommand = `sf org display -o ${this.scratchOrgAlias} --verbose`;
       const displayResult = await execSfdxJson(displayOrgCommand, this, {
         fail: true,
         output: false,
         debug: this.debugMode,
       });
       if (displayResult.result.sfdxAuthUrl) {
-        await setConfig("user", {
+        await setConfig('user', {
           scratchOrgSfdxAuthUrl: displayResult.result.sfdxAuthUrl,
         });
         this.scratchOrgSfdxAuthUrl = displayResult.result.sfdxAuthUrl;
@@ -328,7 +367,7 @@ export default class ScratchCreate extends SfdxCommand {
           const authInfo = await AuthInfo.create({ username: displayResult.result.username });
           this.scratchOrgSfdxAuthUrl = authInfo.getSfdxAuthUrl();
           displayResult.result.sfdxAuthUrl = this.scratchOrgSfdxAuthUrl;
-          await setConfig("user", {
+          await setConfig('user', {
             scratchOrgSfdxAuthUrl: this.scratchOrgSfdxAuthUrl,
           });
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -336,20 +375,20 @@ export default class ScratchCreate extends SfdxCommand {
           uxLog(
             this,
             c.yellow(
-              `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using auth:sfdxurl or auth:web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sfdx hardis:scratch:pool:refresh`,
-            ),
+              `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using sf org login sfdx-url or sf org login web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sf hardis:scratch:pool:refresh`
+            )
           );
           this.scratchOrgSfdxAuthUrl = null;
         }
       }
       if (this.pool) {
-        await setConfig("user", {
+        await setConfig('user', {
           authFileJson: displayResult,
         });
         this.authFileJson = displayResult;
       }
       // Display org URL
-      const openRes = await execSfdxJson("sf org open --url-only", this, {
+      const openRes = await execSfdxJson('sf org open --url-only', this, {
         fail: true,
         output: false,
         debug: this.debugMode,
@@ -357,60 +396,75 @@ export default class ScratchCreate extends SfdxCommand {
       uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     } else {
       // Open scratch org for user if not in CI
-      await execSfdxJson("sf org open", this, {
+      await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
         debug: this.debugMode,
       });
     }
-    uxLog(this, c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
+    uxLog(
+      this,
+      c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`)
+    );
   }
 
   public buildScratchCreateErrorMessage(createResult) {
     if (createResult.status === 0 && createResult.result) {
-      return c.green("Scratch create OK");
-    } else if (createResult.status === 1 && createResult.errorMessage.includes("Socket timeout occurred while listening for results")) {
+      return c.green('Scratch create OK');
+    } else if (
+      createResult.status === 1 &&
+      createResult.errorMessage.includes('Socket timeout occurred while listening for results')
+    ) {
       return c.red(
         `[sfdx-hardis] Error creating scratch org. ${c.bold(
-          "This is probably a Salesforce error, try again manually or launch again CI job",
-        )}\n${JSON.stringify(createResult, null, 2)}`,
+          'This is probably a Salesforce error, try again manually or launch again CI job'
+        )}\n${JSON.stringify(createResult, null, 2)}`
       );
-    } else if (createResult.status === 1 && createResult.errorMessage.includes("LIMIT_EXCEEDED")) {
+    } else if (createResult.status === 1 && createResult.errorMessage.includes('LIMIT_EXCEEDED')) {
       return c.red(
         `[sfdx-hardis] Error creating scratch org. ${c.bold(
-          'It seems you have no more scratch orgs available, go delete some in "Active Scratch Orgs" tab in the Dev Hub org',
-        )}\n${JSON.stringify(createResult, null, 2)}`,
+          'It seems you have no more scratch orgs available, go delete some in "Active Scratch Orgs" tab in the Dev Hub org'
+        )}\n${JSON.stringify(createResult, null, 2)}`
       );
     }
     return c.red(
-      `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(c.bold("sfdx hardis:scratch:create --forcenew"))} ?\n${JSON.stringify(
-        createResult,
-        null,
-        2,
-      )}`,
+      `[sfdx-hardis] Error creating scratch org. Maybe try ${c.yellow(
+        c.bold('sf hardis:scratch:create --forcenew')
+      )} ?\n${JSON.stringify(createResult, null, 2)}`
     );
   }
 
   // Update scratch org user
   public async updateScratchOrgUser() {
-    const config = await getConfig("user");
+    const config = await getConfig('user');
     // Update scratch org main user
-    uxLog(this, c.cyan("Update / fix scratch org user " + this.scratchOrgUsername));
-    const userQueryCommand = `sfdx force:data:record:get -s User -w "Username=${this.scratchOrgUsername}" -u ${this.scratchOrgAlias}`;
-    const userQueryRes = await execSfdxJson(userQueryCommand, this, { fail: true, output: false, debug: this.debugMode });
+    uxLog(this, c.cyan('Update / fix scratch org user ' + this.scratchOrgUsername));
+    const userQueryCommand = `sf data get record --sobject User --where "Username=${this.scratchOrgUsername}" --target-org ${this.scratchOrgAlias}`;
+    const userQueryRes = await execSfdxJson(userQueryCommand, this, {
+      fail: true,
+      output: false,
+      debug: this.debugMode,
+    });
     let updatedUserValues = `LastName='SFDX-HARDIS' FirstName='Scratch Org'`;
     if (config.userEmail !== userQueryRes.result.CountryCode) {
       updatedUserValues += ` Email='${config.userEmail}'`;
     }
     // Fix country value is State & Country picklist activated
-    if ((this.projectScratchDef.features || []).includes("StateAndCountryPicklist") && userQueryRes.result.CountryCode == null) {
-      updatedUserValues += ` CountryCode='${config.defaultCountryCode || "FR"}' Country='${config.defaultCountry || "France"}'`;
+    if (
+      (this.projectScratchDef.features || []).includes('StateAndCountryPicklist') &&
+      userQueryRes.result.CountryCode == null
+    ) {
+      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${config.defaultCountry || 'France'
+        }'`;
     }
-    if ((this.projectScratchDef.features || []).includes("MarketingUser") && userQueryRes.result.UserPermissionsMarketingUser === false) {
+    if (
+      (this.projectScratchDef.features || []).includes('MarketingUser') &&
+      userQueryRes.result.UserPermissionsMarketingUser === false
+    ) {
       // Make sure MarketingUser is checked on scratch org user if it is supposed to be
-      updatedUserValues += " UserPermissionsMarketingUser=true";
+      updatedUserValues += ' UserPermissionsMarketingUser=true';
     }
-    const userUpdateCommand = `sfdx force:data:record:update -s User -i ${userQueryRes.result.Id} -v "${updatedUserValues}" -u ${this.scratchOrgAlias}`;
+    const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.scratchOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
   }
 }

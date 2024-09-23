@@ -6,7 +6,7 @@ description: Learn how to retrieve updated metadatas when force:source:pull forg
 
 ## Automated force retrieve
 
-It happens that when calling [sfdx hardis:scratch:pull](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/), some elements are not retrieved.
+It happens that when calling [sf hardis:scratch:pull](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/), some elements are not retrieved.
 
 The most usual cases are updates on:
 

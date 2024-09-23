@@ -22,7 +22,7 @@ ___
 
 Salesforce CI/CD Pipelines does not natively work without many manual operations to update the XML... so the deployments passes !
 
-sfdx-hardis provides a set of commands to automate those boring XML updates that can be called every time a user [prepares a merge request](salesforce-ci-cd-publish-task.md#prepare-merge-request) using command [sfdx hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
+sfdx-hardis provides a set of commands to automate those boring XML updates that can be called every time a user [prepares a merge request](salesforce-ci-cd-publish-task.md#prepare-merge-request) using command [sf hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)
 
 Here is the list of available automated cleanings, that can also be called manually using command ![](assets/images/btn-clean-sources.jpg)
 

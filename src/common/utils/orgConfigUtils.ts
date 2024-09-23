@@ -1,17 +1,19 @@
-import * as c from "chalk";
-import * as fs from "fs-extra";
-import { glob } from "glob";
-import * as puppeteer from "puppeteer";
-import * as yaml from "js-yaml";
-import { uxLog } from ".";
+import c from 'chalk';
+import fs from 'fs-extra';
+import { glob } from 'glob';
+import puppeteer from 'puppeteer-core';
+import * as yaml from 'js-yaml';
+import { uxLog } from './index.js';
+import { Connection, SfError } from '@salesforce/core';
+import { DescribeSObjectResult } from '@jsforce/jsforce-node';
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 
 export async function restoreListViewMine(listViewStrings: Array<string>, conn: any, options: any = { debug: false }) {
-  const listViewItems = [];
+  const listViewItems: any[] = [];
   for (const listViewStr of listViewStrings) {
     // Format Object:ListViewName
-    const splits = listViewStr.split(":");
+    const splits = listViewStr.split(':');
     if (splits.length === 2) {
       listViewItems.push({ object: splits[0], listViewName: splits[1] });
     } else {
@@ -22,10 +24,10 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
         uxLog(
           this,
           c.red(
-            `Unable to find list view object and name from ${listViewStr}. Use format ${c.bold("Object:ListViewName")} , or ${c.bold(
-              ".../objects/OBJECT/listViews/LISTVIEWNAME.listview-meta.xml",
-            )}`,
-          ),
+            `Unable to find list view object and name from ${listViewStr}. Use format ${c.bold(
+              'Object:ListViewName'
+            )} , or ${c.bold('.../objects/OBJECT/listViews/LISTVIEWNAME.listview-meta.xml')}`
+          )
         );
         continue;
       }
@@ -39,17 +41,17 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
 
   // Start puppeteer
   const browser = await puppeteer.launch({
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
     headless: !(options.debug === true),
   });
   const page = await browser.newPage();
 
   // Process login page
-  await page.goto(loginUrl, { waitUntil: ["domcontentloaded", "networkidle0"] });
+  await page.goto(loginUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
 
-  const success = [];
-  const failed = [];
-  const unnecessary = [];
+  const success: any[] = [];
+  const failed: any[] = [];
+  const unnecessary: any[] = [];
 
   // Restore list views with Mine option
   for (const listView of listViewItems) {
@@ -67,40 +69,67 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       await navigationPromise;
 
       // Open ListView settings
-      const filterButton = await page.waitForSelector(".filterButton");
-      await filterButton.click();
+      const filterButton = await page.waitForSelector('.filterButton');
+      if (filterButton) {
+        await filterButton.click();
+      } else {
+        throw new SfError('Puppeteer: .filterButton not found');
+      }
 
       // Open Filter by owner popup
-      const filterByOwnerButtons = await page.waitForXPath("//div[contains(text(), 'Filter by Owner')]");
-      await filterByOwnerButtons.click();
+      const filterByOwnerButtons = await page.waitForSelector("xpath///div[contains(text(), 'Filter by Owner')]");
+      if (filterByOwnerButtons) {
+        await filterByOwnerButtons.click();
+      } else {
+        throw new SfError('Puppeteer: .filterByOwnerButtons not found');
+      }
 
       // Select Mine value
       const mineValue = await page.waitForSelector('input[value="mine"]');
-      const mineValueClickableLabel = await mineValue.$x("following-sibling::*");
-      await mineValueClickableLabel[0].click();
+      if (mineValue) {
+        const mineValueClickableLabel = await mineValue.$('following-sibling::*');
+        if (mineValueClickableLabel) {
+          await mineValueClickableLabel[0].click();
+        }
+      } else {
+        throw new SfError('Puppeteer: input[value="mine"] not found');
+      }
 
       // Click done
-      const doneButtons = await page.waitForXPath("//span[contains(text(), 'Done')]");
-      await doneButtons.click();
+      const doneButtons = await page.waitForSelector("xpath///span[contains(text(), 'Done')]");
+      if (doneButtons) {
+        await doneButtons.click();
+      } else {
+        throw new SfError('Puppeteer: Done button not found');
+      }
 
       // Save
       try {
-        const saveButton = await page.waitForSelector(".saveButton", { timeout: 3000 });
-        await saveButton.click();
+        const saveButton = await page.waitForSelector('.saveButton', { timeout: 3000 });
+        if (saveButton) {
+          await saveButton.click();
+        } else {
+          throw new SfError('Puppeteer: .saveButton not found');
+        }
       } catch {
         unnecessary.push(`${objectName}:${listViewName}`);
-        uxLog(this, c.yellow(`Unable to hit save button, but it's probably because ${objectName}.${listViewName} was already set to "Mine"`));
+        uxLog(
+          this,
+          c.yellow(
+            `Unable to hit save button, but it's probably because ${objectName}.${listViewName} was already set to "Mine"`
+          )
+        );
         continue;
       }
 
       // Confirmed saved toast
-      await page.waitForXPath("//span[contains(text(), 'List view updated.')]");
+      await page.waitForSelector("xpath///span[contains(text(), 'List view updated.')]");
       success.push(`${objectName}:${listViewName}`);
       uxLog(this, c.green(`Successfully set ${objectName}.${listViewName} as "Mine"`));
     } catch (e) {
       // Unexpected puppeteer error
       failed.push(`${objectName}:${listViewName}`);
-      uxLog(this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${e.message}`));
+      uxLog(this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${(e as Error).message}`));
     }
   }
   // Close puppeteer browser
@@ -110,11 +139,11 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
 
 // List all yml files in config/branches and build list of major orgs from them
 export async function listMajorOrgs() {
-  const majorOrgs = [];
-  const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
+  const majorOrgs: any[] = [];
+  const branchConfigPattern = '**/config/branches/.sfdx-hardis.*.yml';
   const configFiles = await glob(branchConfigPattern);
   for (const configFile of configFiles) {
-    const props = yaml.load(fs.readFileSync(configFile, "utf-8")) || {};
+    const props = (yaml.load(fs.readFileSync(configFile, 'utf-8')) || {}) as any;
     listViewRegex.lastIndex = 0;
     const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
     const m = branchNameRegex.exec(configFile);
@@ -124,4 +153,20 @@ export async function listMajorOrgs() {
     majorOrgs.push(props);
   }
   return majorOrgs;
+}
+
+export async function checkSfdxHardisTraceAvailable(conn: Connection) {
+  let traceObject: DescribeSObjectResult;
+  try {
+    traceObject = await conn.sobject("SfdxHardisTrace__c").describe();
+  } catch (e: any) {
+    throw new SfError("You need a Custom Setting of type List (activate through Schema Settings), named SfdxHardisTrace__c, with Type__c and Key__c fields (both string, length 80)\n" + e.message);
+  }
+  const traceObjectFields = traceObject.fields;
+  if (traceObjectFields.filter(field => field.name === "Type__c").length === 0) {
+    throw new SfError("You need a field Type__c (string, length 80) on SfdxHardisTrace__c in target org");
+  }
+  if (traceObjectFields.filter(field => field.name === "Key__c").length === 0) {
+    throw new SfError("You need a field Key__c (string, length 80) on SfdxHardisTrace__c in target org");
+  }
 }

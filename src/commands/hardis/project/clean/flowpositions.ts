@@ -1,22 +1,18 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import * as c from "chalk";
-import { glob } from "glob";
-import * as path from "path";
-import * as fs from "fs-extra";
-import { uxLog } from "../../../../common/utils";
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
+import { glob } from 'glob';
+import * as path from 'path';
+import fs from 'fs-extra';
+import { uxLog } from '../../../../common/utils/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
-
-export default class CleanListViews extends SfdxCommand {
-  public static title = "Clean Flow Positions";
+export default class CleanFlowPositions extends SfCommand<any> {
+  public static title = 'Clean Flow Positions';
 
   public static description = `Replace all positions in Auto-Layout Flows by 0 to simplify conflicts management
 
@@ -47,42 +43,37 @@ autoCleanTypes:
 \`\`\`
 `;
 
-  public static examples = ["$ sfdx hardis:project:clean:flowpositions"];
+  public static examples = ['$ sf hardis:project:clean:flowpositions'];
 
-  protected static flagsConfig = {
-    folder: flags.string({
-      char: "f",
-      default: "force-app",
-      description: "Root folder",
+  public static flags: any = {
+    folder: Flags.string({
+      char: 'f',
+      default: 'force-app',
+      description: 'Root folder',
     }),
-    debug: flags.boolean({
-      char: "d",
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = false;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   protected folder: string;
   protected debugMode = false;
 
   public async run(): Promise<AnyJson> {
-    this.folder = this.flags.folder || "./force-app";
-    this.debugMode = this.flags.debug || false;
+    const { flags } = await this.parse(CleanFlowPositions);
+    this.folder = flags.folder || './force-app';
+    this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
     uxLog(this, c.cyan(`Setting flows as Auto Layout and remove positions...`));
@@ -92,10 +83,10 @@ autoCleanTypes:
     const matchingFlows = await glob(findManagedPattern, { cwd: process.cwd() });
     let counter = 0;
     for (const flowMetadataFile of matchingFlows) {
-      const flowXml = await fs.readFile(flowMetadataFile, "utf8");
-      if (flowXml.includes("<stringValue>AUTO_LAYOUT_CANVAS</stringValue>")) {
-        let updatedFlowXml = flowXml.replace(/<locationX>([0-9]*)<\/locationX>/gm, "<locationX>0</locationX>");
-        updatedFlowXml = updatedFlowXml.replace(/<locationY>([0-9]*)<\/locationY>/gm, "<locationY>0</locationY>");
+      const flowXml = await fs.readFile(flowMetadataFile, 'utf8');
+      if (flowXml.includes('<stringValue>AUTO_LAYOUT_CANVAS</stringValue>')) {
+        let updatedFlowXml = flowXml.replace(/<locationX>([0-9]*)<\/locationX>/gm, '<locationX>0</locationX>');
+        updatedFlowXml = updatedFlowXml.replace(/<locationY>([0-9]*)<\/locationY>/gm, '<locationY>0</locationY>');
         if (updatedFlowXml !== flowXml) {
           await fs.writeFile(flowMetadataFile, updatedFlowXml);
           counter++;

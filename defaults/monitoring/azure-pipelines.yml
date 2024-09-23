@@ -49,8 +49,7 @@ jobs:
   - script: |
       npm install @salesforce/cli -g
       sf plugins install @salesforce/plugin-packaging
-      echo y | sfdx plugins:install sfdx-hardis
-      echo y | sfdx plugins:install sfdx-essentials
+      echo y | sf plugins install sfdx-hardis
       sf version --verbose --json
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: Install @salesforce/cli & sfdx-hardis
@@ -62,8 +61,8 @@ jobs:
       CI: "true"
 
   - script: |
-      sfdx hardis:auth:login
-      sfdx hardis:org:monitor:backup
+      sf hardis:auth:login
+      sf hardis:org:monitor:backup
     displayName: sfdx-hardis login & Backup
     env:
       # MANUAL: Add your branch related variables here
@@ -130,8 +129,7 @@ jobs:
   - script: |
       npm install @salesforce/cli -g
       sf plugins install @salesforce/plugin-packaging
-      echo y | sfdx plugins:install sfdx-hardis
-      echo y | sfdx plugins:install sfdx-essentials
+      echo y | sf plugins install sfdx-hardis
       sf version --verbose --json
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: Install @salesforce/cli & sfdx-hardis
@@ -143,8 +141,8 @@ jobs:
       CI: "true"
 
   - script: |
-      sfdx hardis:auth:login
-      sfdx hardis:org:test:apex
+      sf hardis:auth:login
+      sf hardis:org:test:apex
     continueOnError: "true"
     displayName: sfdx-hardis login & Apex tests
     env:
@@ -248,8 +246,7 @@ jobs:
   - script: |
       npm install @salesforce/cli -g
       sf plugins install @salesforce/plugin-packaging
-      echo y | sfdx plugins:install sfdx-hardis
-      echo y | sfdx plugins:install sfdx-essentials
+      echo y | sf plugins install sfdx-hardis
       sf version --verbose --json
     workingDirectory: $(System.DefaultWorkingDirectory)
     displayName: Install @salesforce/cli & sfdx-hardis
@@ -263,8 +260,8 @@ jobs:
       CI: "true"
 
   - script: |
-      sfdx hardis:auth:login
-      sfdx hardis:org:monitor:all
+      sf hardis:auth:login
+      sf hardis:org:monitor:all
     displayName: sfdx-hardis login & other checks
     continueOnError: "true"
     env:

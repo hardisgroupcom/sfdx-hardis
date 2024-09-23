@@ -5,6 +5,11 @@
       <members>*</members>
       <name>ApprovalProcess</name>
   </types>
+    <!-- Certificates are a very sensitive data. If should not be visible from git sources -->
+  <types>
+      <members>*</members>
+      <name>Certificate</name>
+  </types>
   <!-- Connected apps contain org unique auth info so must never be overwritten -->
   <types>
       <members>*</members>

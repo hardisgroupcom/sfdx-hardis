@@ -12,25 +12,29 @@ See how to [setup sfdx-hardis deployment assistant](salesforce-deployment-assist
 
 If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)
 
-## API Version error
+## [API Version error](sf-deployment-assistant/API-Version-error.md)
 
-- `Error (.*) The (.*) apiVersion can't be "([0-9]+)"`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) The (.*) apiVersion can't be "([0-9]+)"`
+
+**Resolution**
 
 ```shell
 {1} metadata has probably been created/updated in a sandbox already upgraded to next platform version (ex: Sandbox in Summer'23 and Production in Spring'23)
 - First, try to update the api version in the XML of {1} metadata file (decrement the number in <apiVersion>{3}.0</apiVersion>)
-- If it still doesn't work because the metadata structure has changed between version, you may try a force:source:retrieve of the metadata by forcing --apiversion at the end of the command.
+- If it still doesn't work because the metadata structure has changed between version, you may try a sf project:retrieve:start of the metadata by forcing --api-version at the end of the command.
       
 ```
 
 ---
-## Allow deployment with pending Apex Jobs
+## [Allow deployment with pending Apex Jobs](sf-deployment-assistant/Allow-deployment-with-pending-Apex-Jobs.md)
 
-- `You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup.`
+**Detection**
 
-**Resolution tip**
+- String: `You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup.`
+
+**Resolution**
 
 ```shell
 Go to target org, in Setup -> Deployment Settings -> Activate option "Allow deployments of components when corresponding Apex jobs are pending or in progress."
@@ -38,11 +42,13 @@ Go to target org, in Setup -> Deployment Settings -> Activate option "Allow depl
 ```
 
 ---
-## Can not change field type to a formula field
+## [Can not change field type to a formula field](sf-deployment-assistant/Can-not-change-field-type-to-a-formula-field.md)
 
-- `Error (.*) Cannot update a field from a Formula to something else`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Cannot update a field from a Formula to something else`
+
+**Resolution**
 
 ```shell
 You need to manually delete or rename the field in the target org to allow the deployment to pass
@@ -51,11 +57,13 @@ You need to manually delete or rename the field in the target org to allow the d
 ```
 
 ---
-## Can not change type due to existing data
+## [Can not change type due to existing data](sf-deployment-assistant/Can-not-change-type-due-to-existing-data.md)
 
-- `Error (.*) Cannot change type due to existing data`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Cannot change type due to existing data`
+
+**Resolution**
 
 ```shell
 It is usually not recommended to change types of fields, but if it's really necessary you can:
@@ -67,11 +75,13 @@ It is usually not recommended to change types of fields, but if it's really nece
 ```
 
 ---
-## Can not change field type with picklist
+## [Can not change field type with picklist](sf-deployment-assistant/Can-not-change-field-type-with-picklist.md)
 
-- `Error (.*) Cannot change which global value set this picklist uses`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Cannot change which global value set this picklist uses`
+
+**Resolution**
 
 ```shell
 You probably updated the type of field {1}, and Salesforce does not allows that with deployments. You can:
@@ -81,12 +91,14 @@ You probably updated the type of field {1}, and Salesforce does not allows that 
 ```
 
 ---
-## Can not delete custom field
+## [Can not delete custom field](sf-deployment-assistant/Can-not-delete-custom-field.md)
 
-- `This (.*) is referenced elsewhere in salesforce.com`
-- `Le champ personnalisé (.*) est utilisé dans (.*)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `This (.*) is referenced elsewhere in salesforce.com`
+- RegExp: `Le champ personnalisé (.*) est utilisé dans (.*)`
+
+**Resolution**
 
 ```shell
 Custom field {1} can not be deleted because it is used elsewhere. Remove its references ans try again
@@ -94,11 +106,13 @@ THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destruct
 ```
 
 ---
-## Can not delete record type
+## [Can not delete record type](sf-deployment-assistant/Can-not-delete-record-type.md)
 
-- `Error (.*) Cannot delete record type through API`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Cannot delete record type through API`
+
+**Resolution**
 
 ```shell
 You need to manually delete record type {1} in target org
@@ -107,26 +121,30 @@ You need to manually delete record type {1} in target org
 ```
 
 ---
-## Can not find folder
+## [Can not find folder](sf-deployment-assistant/Can-not-find-folder.md)
 
-- `Error (.*) Cannot find folder:(.*)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Cannot find folder:(.*)`
+
+**Resolution**
 
 ```shell
 Folder {2} is missing.
 - If folder {2} is existing in sources, add it in related package.xml
-- If folder {2} is not existing in DX sources, please use sfdx hardis:project:clean:retrievefolders to retrieve it
+- If folder {2} is not existing in DX sources, please use sf hardis:project:clean:retrievefolders to retrieve it
 - If both previous solutions did not work, go create manually folder {2} in target org
 
 ```
 
 ---
-## Can not find user
+## [Can not find user](sf-deployment-assistant/Can-not-find-user.md)
 
-- `Error (.*) Cannot find a user that matches any of the following usernames`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Cannot find a user that matches any of the following usernames`
+
+**Resolution**
 
 ```shell
 You made reference to username(s) in {1}, and those users probably do not exist in target org.
@@ -144,11 +162,13 @@ Example of XML you have to remove in {1}:
 ```
 
 ---
-## Can not find user (2)
+## [Can not find user (2)](sf-deployment-assistant/Can-not-find-user--2-.md)
 
-- `Error (.*) In field: (.*) - no User named (.*) found`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) In field: (.*) - no User named (.*) found`
+
+**Resolution**
 
 ```shell
 You made reference to username {3} in {1}, and it probably does not exist in the target org.
@@ -158,11 +178,13 @@ You made reference to username {3} in {1}, and it probably does not exist in the
 ```
 
 ---
-## Cannot update a field to a Summary from something else
+## [Cannot update a field to a Summary from something else](sf-deployment-assistant/Cannot-update-a-field-to-a-Summary-from-something-else.md)
 
-- `Error (.*) Cannot update a field to a (.*) from something else`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Cannot update a field to a (.*) from something else`
+
+**Resolution**
 
 ```shell
 You probably updated the type of field {1} to type {2}, and Salesforce does not allows that with deployments. You can:
@@ -172,11 +194,26 @@ You probably updated the type of field {1} to type {2}, and Salesforce does not 
 ```
 
 ---
-## Condition missing reference
+## [Change Matching Rule](sf-deployment-assistant/Change-Matching-Rule.md)
 
-- `Error (.*) field integrity exception: unknown \(A condition has a reference to (.*), which doesn't exist.\)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Before you change a matching rule, you must deactivate it`
+
+**Resolution**
+
+```shell
+To be able to deploy, you must go in target org setup to manually deactivate matching rule {1}
+```
+
+---
+## [Condition missing reference](sf-deployment-assistant/Condition-missing-reference.md)
+
+**Detection**
+
+- RegExp: `Error (.*) field integrity exception: unknown \(A condition has a reference to (.*), which doesn't exist.\)`
+
+**Resolution**
 
 ```shell
 There is a reference to {2} in {1}, and {2} is not found. You can either:
@@ -186,27 +223,35 @@ There is a reference to {2} in {1}, and {2} is not found. You can either:
 ```
 
 ---
-## Custom object not found
+## [Custom object not found](sf-deployment-assistant/Custom-object-not-found.md)
 
-- `Error (.*) In field: field - no CustomObject named (.*) found`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) In field: field - no CustomObject named (.*) found`
+
+**Resolution**
 
 ```shell
 A reference to a custom object {2} is not found in {1}:
 - If you renamed the custom object, do a search/replace in sources with previous object name and new object name
 - If you deleted the custom object, or if you don't want to deploy it, do a search on the custom object name, and remove XML elements referencing it
 - If the object should exist, make sure it is in force-app/main/default/objects and that the object name is in manifest/package.xml in CustomObject section
-You may also have a look to command sfdx hardis:project:clean:references
+You may also have a look to command sf hardis:project:clean:references
 
 ```
 
 ---
-## Custom field not found
+## [Custom field not found](sf-deployment-assistant/Custom-field-not-found.md)
 
-- `Error (.*) In field: (.*) - no CustomField named (.*)\.(.*) found`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) In field: (.*) - no CustomField named (.*)\.(.*) found`
+
+**Examples**
+
+- `Error PS_Admin In field: field - no CustomField named User.expcloud__Portal_Username__c found`
+
+**Resolution**
 
 ```shell
 A reference to a custom field {3}.{4} is not found in {1}:
@@ -214,17 +259,19 @@ A reference to a custom field {3}.{4} is not found in {1}:
 - If you deleted {3}.{4}, or if you don't want to deploy it, do a search on {4} in all sources, and remove all XML elements referring to {3}.{4} (except in destructiveChanges.xml)
 - If {3}.{4} should exist, make sure it is in force-app/main/default/objects/{3}/fields and that {3}.{4} is in manifest/package.xml in CustomField section
 - If {3}.{4} is standard, the error is because {3}.{4} is not available in the org you are trying to deploy to. You can:
-  - Remove the reference to {4} in the XML of {1} ( maybe sfdx hardis:project:clean:references can clean automatically for you ! )
+  - Remove the reference to {4} in the XML of {1} ( maybe sf hardis:project:clean:references can clean automatically for you ! )
   - Activate the required features/license in the target org
 
 ```
 
 ---
-## Mandatory custom field can not be in a profile/permission set
+## [Mandatory custom field can not be in a profile/permission set](sf-deployment-assistant/Mandatory-custom-field-can-not-be-in-a-profile-permission-set.md)
 
-- `Error (.*) You cannot deploy to a required field: (.*)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) You cannot deploy to a required field: (.*)`
+
+**Resolution**
 
 ```shell
 
@@ -239,11 +286,13 @@ Example of element to delete:
 ```
 
 ---
-## Custom metadata entry not found
+## [Custom metadata entry not found](sf-deployment-assistant/Custom-metadata-entry-not-found.md)
 
-- `Error (.*) In field: (.*) - no CustomMetadata named (.*) found`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) In field: (.*) - no CustomMetadata named (.*) found`
+
+**Resolution**
 
 ```shell
 A reference to a custom metadata {3} of type {2} is not found in {1}:
@@ -253,11 +302,26 @@ A reference to a custom metadata {3} of type {2} is not found in {1}:
 ```
 
 ---
-## Missing Data Category Group
+## [Expired Access / Refresh Token](sf-deployment-assistant/Expired-Access---Refresh-Token.md)
 
-- `Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found`
+**Detection**
 
-**Resolution tip**
+- String: `expired access/refresh token`
+
+**Resolution**
+
+```shell
+Run command "Select another org" from Status panel (or sf hardis:org:select) to authenticate again to your org
+```
+
+---
+## [Missing Data Category Group](sf-deployment-assistant/Missing-Data-Category-Group.md)
+
+**Detection**
+
+- RegExp: `Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found`
+
+**Resolution**
 
 ```shell
 If Data Category Group {2} is not existing yet in target org, you might need to:
@@ -267,11 +331,13 @@ If Data Category Group {2} is not existing yet in target org, you might need to:
 ```
 
 ---
-## Dependent class is invalid and needs recompilation
+## [Dependent class is invalid and needs recompilation](sf-deployment-assistant/Dependent-class-is-invalid-and-needs-recompilation.md)
 
-- `Error (.*) Dependent class is invalid and needs recompilation`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Dependent class is invalid and needs recompilation`
+
+**Resolution**
 
 ```shell
 Solve the other errors and this one will disappear !
@@ -279,47 +345,55 @@ Solve the other errors and this one will disappear !
 ```
 
 ---
-## Duplicate value Platform Action Id List
+## [Duplicate value Platform Action Id List](sf-deployment-assistant/Duplicate-value-Platform-Action-Id-List.md)
 
-- `duplicate value found: PlatformActionListId duplicates value on record with id`
+**Detection**
 
-**Resolution tip**
+- String: `duplicate value found: PlatformActionListId duplicates value on record with id`
+
+**Resolution**
 
 ```shell
 There are probably issue with conflict management. Open the XML of the source item, and replace all <sortOrder> numbers to make an ascending order, starting with 0
 ```
 
 ---
-## Duplicate label
+## [Duplicate label](sf-deployment-assistant/Duplicate-label.md)
 
-- `Error (.*) Duplicate label: (.*)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Duplicate label: (.*)`
+
+**Resolution**
 
 ```shell
 You probably renamed the picklist API name for {2}. Please update manually the picklist {1} in the target org to avoid to have a duplicate label
 ```
 
 ---
-## Missing e-mail template
+## [Missing e-mail template](sf-deployment-assistant/Missing-e-mail-template.md)
 
-- `In field: template - no EmailTemplate named (.*) found`
+**Detection**
 
-**Resolution tip**
+- RegExp: `In field: template - no EmailTemplate named (.*) found`
+
+**Resolution**
 
 ```shell
 An email template should be present in the sources. To retrieve it, you can run:
-sfdx force:source:retrieve -m EmailTemplate:{1} -u YOUR_ORG_USERNAME
+sf project retrieve start -m EmailTemplate:{1} -o YOUR_ORG_USERNAME
 ```
 
 ---
-## Empty source items
+## [Empty source items](sf-deployment-assistant/Empty-source-items.md)
 
-- `Required field is missing: sharingOwnerRules`
-- `Required field is missing: standardValue`
-- `Required field is missing: valueTranslation`
+**Detection**
 
-**Resolution tip**
+- String: `Required field is missing: sharingOwnerRules`
+- String: `Required field is missing: standardValue`
+- String: `Required field is missing: valueTranslation`
+
+**Resolution**
 
 ```shell
 You probably retrieved empty items, that must not be included within the SFDX project
@@ -327,11 +401,13 @@ To remove them, please run sfdx:hardis:project:clean:emptyitems
 ```
 
 ---
-## Enable CRM Analytics
+## [Enable CRM Analytics](sf-deployment-assistant/Enable-CRM-Analytics.md)
 
-- `It should be created by enabling the CRM Analytics Cloud preference`
+**Detection**
 
-**Resolution tip**
+- String: `It should be created by enabling the CRM Analytics Cloud preference`
+
+**Resolution**
 
 ```shell
 You must enable CRM Analytics (ex Wave, Einstein Analytics & Tableau CRM) in the target org.
@@ -339,11 +415,13 @@ You probably also need to add CRM Analytics Admin Permission Set assignment to t
 ```
 
 ---
-## Error parsing file
+## [Error parsing file](sf-deployment-assistant/Error-parsing-file.md)
 
-- `Error (.*) Error parsing file: (.*) `
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Error parsing file: (.*)`
+
+**Resolution**
 
 ```shell
 There has been an error parsing the XML file of {1}: {2}
@@ -351,11 +429,13 @@ There has been an error parsing the XML file of {1}: {2}
 ```
 
 ---
-## Formula picklist field issue
+## [Formula picklist field issue](sf-deployment-assistant/Formula-picklist-field-issue.md)
 
-- `Field:(.*) must not be Required`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Field:(.*) must not be Required`
+
+**Resolution**
 
 ```shell
 You probably made read only field {1} that was required before.
@@ -363,11 +443,13 @@ Find field {1} in the layout source XML, then replace Required by Readonly
 ```
 
 ---
-## Field not available for element
+## [Field not available for element](sf-deployment-assistant/Field-not-available-for-element.md)
 
-- `Field (.*) is not available for`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Field (.*) is not available for`
+
+**Resolution**
 
 ```shell
 You probably changed the type of field {1}.
@@ -375,11 +457,13 @@ Find field {1} in the source XML, and remove the section using it
 ```
 
 ---
-## Formula picklist field issue
+## [Formula picklist field issue](sf-deployment-assistant/Formula-picklist-field-issue.md)
 
-- `Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions.`
+**Detection**
 
-**Resolution tip**
+- String: `Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions.`
+
+**Resolution**
 
 ```shell
 You probably changed the type of a field that is used in a formula.
@@ -388,22 +472,26 @@ More details at https://help.salesforce.com/articleView?id=sf.tips_on_building_f
 ```
 
 ---
-## Flow must be deleted manually
+## [Flow must be deleted manually](sf-deployment-assistant/Flow-must-be-deleted-manually.md)
 
-- `.flow (.*) insufficient access rights on cross-reference id`
+**Detection**
 
-**Resolution tip**
+- RegExp: `.flow (.*) insufficient access rights on cross-reference id`
+
+**Resolution**
 
 ```shell
 Flow {1} can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
 ```
 
 ---
-## Insufficient access rights on cross-reference id
+## [Insufficient access rights on cross-reference id](sf-deployment-assistant/Insufficient-access-rights-on-cross-reference-id.md)
 
-- `Error (.*) insufficient access rights on cross-reference id`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) insufficient access rights on cross-reference id`
+
+**Resolution**
 
 ```shell
 - If {1} is a Flow, it can not be deleted using deployments, please delete it manually in the target org using menu Setup -> Flows , context menu on {1} -> View details and versions -> Deactivate all versions -> Delete flow
@@ -411,22 +499,26 @@ Flow {1} can not be deleted using deployments, please delete it manually in the 
 ```
 
 ---
-## Invalid formula grouping context
+## [Invalid formula grouping context](sf-deployment-assistant/Invalid-formula-grouping-context.md)
 
-- `Invalid custom summary formula definition: You must select a grouping context to use any report summary function`
+**Detection**
 
-**Resolution tip**
+- String: `Invalid custom summary formula definition: You must select a grouping context to use any report summary function`
+
+**Resolution**
 
 ```shell
 You need to update your Report definition. See workaround here -> https://salesforce.stackexchange.com/questions/294850/grouping-error-with-prevgroupval-function
 ```
 
 ---
-## Invalid report type
+## [Invalid report type](sf-deployment-assistant/Invalid-report-type.md)
 
-- `Error (.*) invalid report type`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) invalid report type`
+
+**Resolution**
 
 ```shell
 Report type is missing for report {1}
@@ -435,25 +527,29 @@ Report type is missing for report {1}
 ```
 
 ---
-## Invalid scope:Mine, not allowed
+## [Invalid scope:Mine, not allowed](sf-deployment-assistant/Invalid-scope-Mine--not-allowed.md)
 
-- `Invalid scope:Mine, not allowed`
+**Detection**
 
-**Resolution tip**
+- String: `Invalid scope:Mine, not allowed`
+
+**Resolution**
 
 ```shell
 Replace Mine by Everything in the list view SFDX source XML.
 Have a look at this command to manage that automatically :)
-https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/
+https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/ 
 
 ```
 
 ---
-## Invalid field in related list
+## [Invalid field in related list](sf-deployment-assistant/Invalid-field-in-related-list.md)
 
-- `Error (.*) Invalid field:(.*) in related list:(.*)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Invalid field:(.*) in related list:(.*)`
+
+**Resolution**
 
 ```shell
 Field {2} is unknown. You can:
@@ -472,11 +568,13 @@ Example of XML to remove:
 ```
 
 ---
-## Invalid field for upsert
+## [Invalid field for upsert](sf-deployment-assistant/Invalid-field-for-upsert.md)
 
-- `Error (.*) Invalid field for upsert, must be an External Id custom or standard indexed field: (.*) \((.*)\)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Invalid field for upsert, must be an External Id custom or standard indexed field: (.*) \((.*)\)`
+
+**Resolution**
 
 ```shell
 You tried to use field {2} for an upsert call in {1}.
@@ -487,22 +585,26 @@ You tried to use field {2} for an upsert call in {1}.
 ```
 
 ---
-## Invalid type
+## [Invalid type](sf-deployment-assistant/Invalid-type.md)
 
-- `Error (.*) Invalid type: (.*) \((.*)\)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Invalid type: (.*) \((.*)\)`
+
+**Resolution**
 
 ```shell
 Apex error in {1} with unknown type {2} at position {3}. If {2} is a class name, try to fix it, or maybe it is missing in the files or in package.xml !
 ```
 
 ---
-## Campaign can not be updated
+## [Campaign can not be updated](sf-deployment-assistant/Campaign-can-not-be-updated.md)
 
-- `The object "Campaign" can't be updated`
+**Detection**
 
-**Resolution tip**
+- String: `The object "Campaign" can't be updated`
+
+**Resolution**
 
 ```shell
 Add "MarketingUser" in project-scratch-def.json features
@@ -510,12 +612,14 @@ If it is already done, you may manually check "MarketingUser" field on the scrat
 ```
 
 ---
-## Missing field MiddleName
+## [Missing field MiddleName](sf-deployment-assistant/Missing-field-MiddleName.md)
 
-- `field MiddleName`
-- `Variable does not exist: MiddleName`
+**Detection**
 
-**Resolution tip**
+- String: `field MiddleName`
+- String: `Variable does not exist: MiddleName`
+
+**Resolution**
 
 ```shell
 MiddleNames must be activated in the target org.
@@ -527,11 +631,13 @@ MiddleNames must be activated in the target org.
 ```
 
 ---
-## Missing field Suffix
+## [Missing field Suffix](sf-deployment-assistant/Missing-field-Suffix.md)
 
-- `field Suffix`
+**Detection**
 
-**Resolution tip**
+- String: `field Suffix`
+
+**Resolution**
 
 ```shell
 Suffix must be activated in the target org.
@@ -543,13 +649,15 @@ Suffix must be activated in the target org.
 ```
 
 ---
-## Missing field SyncedQuoteId
+## [Missing field SyncedQuoteId](sf-deployment-assistant/Missing-field-SyncedQuoteId.md)
 
-- `field SyncedQuoteId`
-- `Error  force-app/main/default/objects/Quote/Quote.object-meta.xml`
-- `Error  force-app/main/default/objects/Opportunity/fields/SyncedQuoteId.field-meta.xml`
+**Detection**
 
-**Resolution tip**
+- String: `field SyncedQuoteId`
+- String: `Error  force-app/main/default/objects/Quote/Quote.object-meta.xml`
+- String: `Error  force-app/main/default/objects/Opportunity/fields/SyncedQuoteId.field-meta.xml`
+
+**Resolution**
 
 ```shell
 Quotes must be activated in the target org.
@@ -561,12 +669,14 @@ Quotes must be activated in the target org.
 ```
 
 ---
-## Missing feature ContactToMultipleAccounts
+## [Missing feature ContactToMultipleAccounts](sf-deployment-assistant/Missing-feature-ContactToMultipleAccounts.md)
 
-- `no CustomObject named AccountContactRelation found`
-- `Invalid field:ACCOUNT.NAME in related list:RelatedContactAccountRelationList`
+**Detection**
 
-**Resolution tip**
+- String: `no CustomObject named AccountContactRelation found`
+- String: `Invalid field:ACCOUNT.NAME in related list:RelatedContactAccountRelationList`
+
+**Resolution**
 
 ```shell
 Contacts to multiple accounts be activated in the target org.
@@ -576,11 +686,13 @@ Contacts to multiple accounts be activated in the target org.
 ```
 
 ---
-## Missing feature Chatter Collaboration Group
+## [Missing feature Chatter Collaboration Group](sf-deployment-assistant/Missing-feature-Chatter-Collaboration-Group.md)
 
-- `CollaborationGroup`
+**Detection**
 
-**Resolution tip**
+- String: `CollaborationGroup`
+
+**Resolution**
 
 ```shell
 Quotes must be activated in the target org.
@@ -592,11 +704,13 @@ Quotes must be activated in the target org.
 ```
 
 ---
-## Missing feature Enhanced notes
+## [Missing feature Enhanced notes](sf-deployment-assistant/Missing-feature-Enhanced-notes.md)
 
-- `FeedItem.ContentNote`
+**Detection**
 
-**Resolution tip**
+- String: `FeedItem.ContentNote`
+
+**Resolution**
 
 ```shell
 Enhanced Notes must be activated in the target org.
@@ -608,11 +722,13 @@ Enhanced Notes must be activated in the target org.
 ```
 
 ---
-## Missing feature Ideas notes
+## [Missing feature Ideas notes](sf-deployment-assistant/Missing-feature-Ideas-notes.md)
 
-- `Idea.InternalIdeasIdeaRecordType`
+**Detection**
 
-**Resolution tip**
+- String: `Idea.InternalIdeasIdeaRecordType`
+
+**Resolution**
 
 ```shell
 Ideas must be activated in the target org.
@@ -624,11 +740,13 @@ Ideas must be activated in the target org.
 ```
 
 ---
-## Missing feature Live Agent
+## [Missing feature Live Agent](sf-deployment-assistant/Missing-feature-Live-Agent.md)
 
-- `FeedItem.ContentNote`
+**Detection**
 
-**Resolution tip**
+- String: `FeedItem.ContentNote`
+
+**Resolution**
 
 ```shell
 Live Agent must be activated in the target org.
@@ -637,24 +755,28 @@ Live Agent must be activated in the target org.
 ```
 
 ---
-## Missing feature Product Request
+## [Missing feature Product Request](sf-deployment-assistant/Missing-feature-Product-Request.md)
 
-- `ProductRequest`
+**Detection**
 
-**Resolution tip**
+- String: `ProductRequest`
+
+**Resolution**
 
 ```shell
 ProductRequest object is not available in the target org.
 Maybe you would like to clean its references within Profiles / PS using the following command ?
-sfdx hardis:project:clean:references , then select "ProductRequest references"
+sf hardis:project:clean:references , then select "ProductRequest references"
 ```
 
 ---
-## Missing feature Social Customer Service
+## [Missing feature Social Customer Service](sf-deployment-assistant/Missing-feature-Social-Customer-Service.md)
 
-- `SocialPersona.AreWeFollowing`
+**Detection**
 
-**Resolution tip**
+- String: `SocialPersona.AreWeFollowing`
+
+**Resolution**
 
 ```shell
 Social Custom Service must be activated in the target org.
@@ -663,11 +785,13 @@ Social Custom Service must be activated in the target org.
 ```
 
 ---
-## Missing feature Translation Workbench
+## [Missing feature Translation Workbench](sf-deployment-assistant/Missing-feature-Translation-Workbench.md)
 
-- `report-meta.xml(.*)filterlanguage`
+**Detection**
 
-**Resolution tip**
+- RegExp: `report-meta.xml(.*)filterlanguage`
+
+**Resolution**
 
 ```shell
 Translation workbench must be activated in the target org.
@@ -680,11 +804,13 @@ Translation workbench must be activated in the target org.
 ```
 
 ---
-## Missing feature Opportunity Teams
+## [Missing feature Opportunity Teams](sf-deployment-assistant/Missing-feature-Opportunity-Teams.md)
 
-- `OpportunityTeam`
+**Detection**
 
-**Resolution tip**
+- String: `OpportunityTeam`
+
+**Resolution**
 
 ```shell
 Opportunity Teams must be activated in the target org.
@@ -696,11 +822,13 @@ Opportunity Teams must be activated in the target org.
 ```
 
 ---
-## Missing Feature Work.Com
+## [Missing Feature Work.Com](sf-deployment-assistant/Missing-Feature-Work-Com.md)
 
-- `WorkBadgeDefinition`
+**Detection**
 
-**Resolution tip**
+- String: `WorkBadgeDefinition`
+
+**Resolution**
 
 ```shell
 Work.com feature must be activated in the target org.
@@ -708,22 +836,26 @@ Work.com feature must be activated in the target org.
 ```
 
 ---
-## Missing multi-currency field
+## [Missing multi-currency field](sf-deployment-assistant/Missing-multi-currency-field.md)
 
-- `A reference to a custom field (.*)CurrencyIsoCode`
+**Detection**
 
-**Resolution tip**
+- RegExp: `A reference to a custom field (.*)CurrencyIsoCode`
+
+**Resolution**
 
 ```shell
 You probably need to activate MultiCurrency (from Setup -> Company information)
 ```
 
 ---
-## Missing object referenced in package.xml
+## [Missing object referenced in package.xml](sf-deployment-assistant/Missing-object-referenced-in-package-xml.md)
 
-- `An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory`
+**Detection**
 
-**Resolution tip**
+- RegExp: `An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory`
+
+**Resolution**
 
 ```shell
 You can either:
@@ -732,11 +864,13 @@ You can either:
 ```
 
 ---
-## Missing Quick Action
+## [Missing Quick Action](sf-deployment-assistant/Missing-Quick-Action.md)
 
-- `Error (.*) In field: QuickAction - no QuickAction named (.*) found`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) In field: QuickAction - no QuickAction named (.*) found`
+
+**Resolution**
 
 ```shell
 QuickAction {2} referred in {1} is unknown. You can either:
@@ -750,25 +884,29 @@ QuickAction {2} referred in {1} is unknown. You can either:
 ```
 
 ---
-## Missing report
+## [Missing report](sf-deployment-assistant/Missing-report.md)
 
-- `Error (.*) The (.*) report chart has a problem with the "reportName" field`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) The (.*) report chart has a problem with the "reportName" field`
+
+**Resolution**
 
 ```shell
 {1} is referring to unknown report {2}. To retrieve it, you can run:
-- sfdx force:source:retrieve -m Report:{2} -u YOUR_ORG_USERNAME
+- sf project retrieve start -m Report:{2} -o YOUR_ORG_USERNAME
 - If it fails, looks for the report folder and add it before report name to the retrieve command (ex: MYFOLDER/MYREPORTNAME)
 
 ```
 
 ---
-## Missing Sales Team
+## [Missing Sales Team](sf-deployment-assistant/Missing-Sales-Team.md)
 
-- `related list:RelatedAccountSalesTeam`
+**Detection**
 
-**Resolution tip**
+- String: `related list:RelatedAccountSalesTeam`
+
+**Resolution**
 
 ```shell
 Account Teams must be activated in the target org.
@@ -781,27 +919,31 @@ Account Teams must be activated in the target org.
 ```
 
 ---
-## sharing operation already in progress
+## [sharing operation already in progress](sf-deployment-assistant/sharing-operation-already-in-progress.md)
 
-- `sharing operation already in progress`
+**Detection**
 
-**Resolution tip**
+- String: `sharing operation already in progress`
+
+**Resolution**
 
 ```shell
 You can not deploy multiple SharingRules at the same time. You can either:
 - Remove SharingOwnerRules and SharingRule from package.xml (so it becomes a manual operation)
-- Use sfdx hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json,
+- Use sf hardis:work:save to generate a deploymentPlan in .sfdx-hardis.json,
 - If you are trying to create a scratch org, add DeferSharingCalc in features in project-scratch-def.json
 
 ```
 
 ---
-## Network issue
+## [Network issue](sf-deployment-assistant/Network-issue.md)
 
-- `ECONNABORTED`
-- `ECONNRESET`
+**Detection**
 
-**Resolution tip**
+- String: `ECONNABORTED`
+- String: `ECONNRESET`
+
+**Resolution**
 
 ```shell
 The network connection has been aborted, this is a purely technical issue.
@@ -809,11 +951,13 @@ Try again, and if you still see errors, check the status of Salesforce instance 
 ```
 
 ---
-## Not available for deploy for this organization
+## [Not available for deploy for this organization](sf-deployment-assistant/Not-available-for-deploy-for-this-organization.md)
 
-- `Error (.*) Not available for deploy for this organization`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Not available for deploy for this organization`
+
+**Resolution**
 
 ```shell
 The user you use for deployments probably lacks of the rights (Profiles, Permission sets...) to manage {1}.
@@ -821,11 +965,13 @@ The user you use for deployments probably lacks of the rights (Profiles, Permiss
 ```
 
 ---
-## Not valid sharing model
+## [Not valid sharing model](sf-deployment-assistant/Not-valid-sharing-model.md)
 
-- `Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)`
+
+**Resolution**
 
 ```shell
 It seems that Sharing Models of {1} and {4} are not compatible in target org.
@@ -836,11 +982,13 @@ It seems that Sharing Models of {1} and {4} are not compatible in target org.
 ```
 
 ---
-## Picklist sharing is not supported
+## [Picklist sharing is not supported](sf-deployment-assistant/Picklist-sharing-is-not-supported.md)
 
-- `Picklist sharing is not supported`
+**Detection**
 
-**Resolution tip**
+- String: `Picklist sharing is not supported`
+
+**Resolution**
 
 ```shell
 You probably changed the type of a field.
@@ -849,25 +997,29 @@ Go manually make the change in the target org, so the deployment will pass
 ```
 
 ---
-## Picklist value not found
+## [Picklist value not found](sf-deployment-assistant/Picklist-value-not-found.md)
 
-- `Picklist value: (.*) in picklist: (.*) not found`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Picklist value: (.*) in picklist: (.*) not found`
+
+**Resolution**
 
 ```shell
 Sources have references to value {1} of picklist {2}
-- If picklist {2} is standard, add the picklist to sfdx sources by using "sfdx force:source:retrieve -m StandardValueSet:{2}", then save again
+- If picklist {2} is standard, add the picklist to sfdx sources by using "sf project retrieve start -m StandardValueSet:{2}", then save again
 - Else, perform a search in all code of {1}, then remove XML tags referring to {1} (for example in record types metadatas)
 
 ```
 
 ---
-## Please choose a different name
+## [Please choose a different name](sf-deployment-assistant/Please-choose-a-different-name.md)
 
-- `Error (.*) This (.*) already exists or has been previously used(.*)Please choose a different name.`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) This (.*) already exists or has been previously used(.*)Please choose a different name.`
+
+**Resolution**
 
 ```shell
 - Rename {1} in the target org, then try again the deployment. if it succeeds, delete the renamed item.
@@ -876,11 +1028,13 @@ Sources have references to value {1} of picklist {2}
 ```
 
 ---
-## Missing profile default application
+## [Missing profile default application](sf-deployment-assistant/Missing-profile-default-application.md)
 
-- `You can't remove the only default app from the profile.`
+**Detection**
 
-**Resolution tip**
+- String: `You can't remove the only default app from the profile.`
+
+**Resolution**
 
 ```shell
 You must have a default application for a profile. You can:
@@ -895,26 +1049,30 @@ You must have a default application for a profile. You can:
 ```
 
 ---
-## CRM Analytics: A Recipe must specify a DataFlow
+## [CRM Analytics: A Recipe must specify a DataFlow](sf-deployment-assistant/CRM-Analytics--A-Recipe-must-specify-a-DataFlow.md)
 
-- `Error (.*) A Recipe must specify a Dataflow`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) A Recipe must specify a Dataflow`
+
+**Resolution**
 
 ```shell
 You must include related WaveDataFlow {1} in sources (and probably in package.xml too).
-To retrieve it, run: sfdx force:source:retrieve -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
-You can also retrieve all analytics sources in one shot using sfdx hardis:org:retrieve:source:analytics -u SOURCE_ORG_USERNAME
+To retrieve it, run: sf project retrieve start -m WaveDataFlow:{1} -u SOURCE_ORG_USERNAME
+You can also retrieve all analytics sources in one shot using sf hardis:org:retrieve:source:analytics -u SOURCE_ORG_USERNAME
   - https://salesforce.stackexchange.com/a/365453/33522
   - https://help.salesforce.com/s/articleView?id=000319274&type=1
 ```
 
 ---
-## Record Type not found
+## [Record Type not found](sf-deployment-assistant/Record-Type-not-found.md)
 
-- `Error (.*) In field: recordType - no RecordType named (.*) found`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) In field: recordType - no RecordType named (.*) found`
+
+**Resolution**
 
 ```shell
 An unknown record type {2} is referenced in {1}
@@ -924,11 +1082,13 @@ An unknown record type {2} is referenced in {1}
 ```
 
 ---
-## Objects rights on a role is below org default
+## [Objects rights on a role is below org default](sf-deployment-assistant/Objects-rights-on-a-role-is-below-org-default.md)
 
-- `access level below organization default`
+**Detection**
 
-**Resolution tip**
+- String: `access level below organization default`
+
+**Resolution**
 
 ```shell
 Your org wide settings default must be lower than the level defined in roles:
@@ -938,11 +1098,13 @@ Your org wide settings default must be lower than the level defined in roles:
 ```
 
 ---
-## Unsupported sharing configuration
+## [Unsupported sharing configuration](sf-deployment-assistant/Unsupported-sharing-configuration.md)
 
-- `not supported for (.*) since it's org wide default is`
+**Detection**
 
-**Resolution tip**
+- RegExp: `not supported for (.*) since it's org wide default is`
+
+**Resolution**
 
 ```shell
 Consistency error between {1} sharing settings and {1} object configuration
@@ -951,46 +1113,54 @@ If you already did that, please try again to run the job
 ```
 
 ---
-## A sharing rule may be useless
+## [A sharing rule may be useless](sf-deployment-assistant/A-sharing-rule-may-be-useless.md)
 
-- `Required field is missing: sharingCriteriaRules`
+**Detection**
 
-**Resolution tip**
+- String: `Required field is missing: sharingCriteriaRules`
+
+**Resolution**
 
 ```shell
 Are you sure you need this sharing rule ? You may remove it from the sfdx project
 ```
 
 ---
-## Sharing recalculation lock
+## [Sharing recalculation lock](sf-deployment-assistant/Sharing-recalculation-lock.md)
 
-- `because it interferes with another operation already in progress`
-- `Le calcul de partage demandé ne peut être traité maintenant car il interfère avec une autre opération en cours`
+**Detection**
 
-**Resolution tip**
+- String: `because it interferes with another operation already in progress`
+- String: `Le calcul de partage demandé ne peut être traité maintenant car il interfère avec une autre opération en cours`
+
+**Resolution**
 
 ```shell
 If you changed a field from MasterDetail to Lookup, you must do it manually in the target org before being able to deploy
 ```
 
 ---
-## Send email is disabled
+## [Send email is disabled](sf-deployment-assistant/Send-email-is-disabled.md)
 
-- `Send Email is disabled or activities are not allowed`
-- `Unknown user permission: SendExternalEmailAvailable`
+**Detection**
 
-**Resolution tip**
+- String: `Send Email is disabled or activities are not allowed`
+- String: `Unknown user permission: SendExternalEmailAvailable`
+
+**Resolution**
 
 ```shell
 Go to Email -> Deliverability -> Select value "All emails"
 ```
 
 ---
-## Sort order must be in sequential order
+## [Sort order must be in sequential order](sf-deployment-assistant/Sort-order-must-be-in-sequential-order.md)
 
-- `Error (.*) SortOrder must be in sequential order from`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) SortOrder must be in sequential order from`
+
+**Resolution**
 
 ```shell
 You probably have a default DuplicateRule in the target org. Retrieve it from target org, or delete it manually in target org, so you can deploy.
@@ -998,11 +1168,13 @@ Ref: https://developer.salesforce.com/forums/?id=9060G000000I6SoQAK
 ```
 
 ---
-## Async exception in test class
+## [Async exception in test class](sf-deployment-assistant/Async-exception-in-test-class.md)
 
-- `System.AsyncException: (.*) Apex`
+**Detection**
 
-**Resolution tip**
+- RegExp: `System.AsyncException: (.*) Apex`
+
+**Resolution**
 
 ```shell
 This may be a test class implementation issue in {1}.
@@ -1010,22 +1182,26 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 ```
 
 ---
-## Test classes with 0% coverage
+## [Test classes with 0% coverage](sf-deployment-assistant/Test-classes-with-0--coverage.md)
 
-- ` 0%`
+**Detection**
 
-**Resolution tip**
+- RegExp: `0%`
+
+**Resolution**
 
 ```shell
 Please make sure that none of the test classes are 0% covered
 ```
 
 ---
-## Can not test item deployment in simulation mode
+## [Can not test item deployment in simulation mode](sf-deployment-assistant/Can-not-test-item-deployment-in-simulation-mode.md)
 
-- `Test only deployment cannot update`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Test only deployment cannot update`
+
+**Resolution**
 
 ```shell
 THIS IS A FALSE POSITIVE
@@ -1033,11 +1209,13 @@ When effective deployment will happen, it should pass
 ```
 
 ---
-## Unknown user permission: CreateAuditFields
+## [Unknown user permission: CreateAuditFields](sf-deployment-assistant/Unknown-user-permission--CreateAuditFields.md)
 
-- `Unknown user permission: CreateAuditFields`
+**Detection**
 
-**Resolution tip**
+- String: `Unknown user permission: CreateAuditFields`
+
+**Resolution**
 
 ```shell
 You need to enable the "Create audit field" permission in the target org
@@ -1045,11 +1223,13 @@ Please check https://help.salesforce.com/articleView?id=000334139&type=1&mode=1
 ```
 
 ---
-## Unknown user permission: FieldServiceAccess
+## [Unknown user permission: FieldServiceAccess](sf-deployment-assistant/Unknown-user-permission--FieldServiceAccess.md)
 
-- `Unknown user permission: FieldServiceAccess`
+**Detection**
 
-**Resolution tip**
+- String: `Unknown user permission: FieldServiceAccess`
+
+**Resolution**
 
 ```shell
 You need to enable the "Field Service Access" permission in the target org
@@ -1057,11 +1237,13 @@ Please check https://help.salesforce.com/articleView?id=sf.fs_enable.htm&type=5
 ```
 
 ---
-## Unknown user permission
+## [Unknown user permission](sf-deployment-assistant/Unknown-user-permission.md)
 
-- `Unknown user permission:`
+**Detection**
 
-**Resolution tip**
+- String: `Unknown user permission:`
+
+**Resolution**
 
 ```shell
 You can:
@@ -1070,44 +1252,52 @@ You can:
 ```
 
 ---
-## Variable does not exist
+## [Variable does not exist](sf-deployment-assistant/Variable-does-not-exist.md)
 
-- `Error (.*) Variable does not exist: (.*) \((.*)\)`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Variable does not exist: (.*) \((.*)\)`
+
+**Resolution**
 
 ```shell
 Apex error in {1} with unknown variable {2} at position {3}. If {2} is a class name, try to fix it, or maybe it is missing in the files or in package.xml !
 ```
 
 ---
-## Visibility is not allowed for type
+## [Visibility is not allowed for type](sf-deployment-assistant/Visibility-is-not-allowed-for-type.md)
 
-- `Error (.*) set the visibility for a (.*) to Protected unless you are in a developer`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) set the visibility for a (.*) to Protected unless you are in a developer`
+
+**Resolution**
 
 ```shell
 Update the visibility of {1} to "Public"
 ```
 
 ---
-## Tableau CRM / Wave digest error
+## [Tableau CRM / Wave digest error](sf-deployment-assistant/Tableau-CRM---Wave-digest-error.md)
 
-- `Fix the sfdcDigest node errors and then upload the file again`
+**Detection**
 
-**Resolution tip**
+- String: `Fix the sfdcDigest node errors and then upload the file again`
+
+**Resolution**
 
 ```shell
 Go to the target org, open profile "Analytics Cloud Integration User" and add READ rights to the missing object fields 
 ```
 
 ---
-## XML item appears more than once
+## [XML item appears more than once](sf-deployment-assistant/XML-item-appears-more-than-once.md)
 
-- `Error (.*) Field:(.*), value:(.*) appears more than once`
+**Detection**
 
-**Resolution tip**
+- RegExp: `Error (.*) Field:(.*), value:(.*) appears more than once`
+
+**Resolution**
 
 ```shell
 You probably made an error while merging conflicts

@@ -1,59 +1,51 @@
 /* jscpd:ignore-start */
-import { flags, SfdxCommand } from "@salesforce/command";
-import { Messages } from "@salesforce/core";
-import { AnyJson } from "@salesforce/ts-types";
-import { execCommand } from "../../../../common/utils";
+import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { execCommand } from '../../../../common/utils/index.js';
 
-// Initialize Messages with the current plugin directory
-Messages.importMessagesDirectory(__dirname);
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-// Load the specific messages for this file. Messages from @salesforce/command, @salesforce/core,
-// or any library that is using the messages framework can also be loaded this way.
-const messages = Messages.loadMessages("sfdx-hardis", "org");
+export default class PackageVersionList extends SfCommand<any> {
+  public static title = 'Create a new version of a package';
 
-export default class PackageVersionCreate extends SfdxCommand {
-  public static title = "Create a new version of a package";
+  public static description = messages.getMessage('packageVersionList');
 
-  public static description = messages.getMessage("packageVersionList");
-
-  public static examples = ["$ sfdx hardis:package:version:list"];
+  public static examples = ['$ sf hardis:package:version:list'];
 
   // public static args = [{name: 'file'}];
 
-  protected static flagsConfig = {
-    debug: flags.boolean({
-      char: "d",
+  public static flags: any = {
+    debug: Flags.boolean({
+      char: 'd',
       default: false,
-      description: messages.getMessage("debugMode"),
+      description: messages.getMessage('debugMode'),
     }),
-    websocket: flags.string({
-      description: messages.getMessage("websocket"),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
     }),
-    skipauth: flags.boolean({
-      description: "Skip authentication check when a default username is required",
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
+    'target-dev-hub': requiredHubFlagWithDeprecations,
   };
 
-  // Comment this out if your command does not require an org username
-  protected static requiresUsername = false;
-
-  // Comment this out if your command does not support a hub org username
-  protected static requiresDevhubUsername = true;
-
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
-  protected static requiresProject = true;
+  public static requiresProject = true;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const debugMode = this.flags.debug || false;
-    const createCommand = "sfdx force:package:version:list";
+    const { flags } = await this.parse(PackageVersionList);
+    const debugMode = flags.debug || false;
+    const createCommand = 'sf package version list';
     await execCommand(createCommand, this, {
       fail: true,
       output: true,
       debug: debugMode,
     });
     // Return an object to be displayed with --json
-    return { outputString: "Listed package versions" };
+    return { outputString: 'Listed package versions' };
   }
 }

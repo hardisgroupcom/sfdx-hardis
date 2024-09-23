@@ -37,7 +37,6 @@ _See tutorial_
 > - Salesforce DX plugins
 >   - [sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis)
 >   - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
->   - [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
 >   - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 >   - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 

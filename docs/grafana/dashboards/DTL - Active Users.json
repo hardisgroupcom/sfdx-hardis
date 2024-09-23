@@ -29,7 +29,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "11.1.0-70903"
+      "version": "11.3.0-75420"
     },
     {
       "type": "datasource",
@@ -92,6 +92,7 @@
   ],
   "panels": [
     {
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -101,7 +102,6 @@
       "id": 6,
       "panels": [],
       "repeat": "org",
-      "repeatDirection": "h",
       "title": "$org",
       "type": "row"
     },
@@ -147,8 +147,11 @@
         "graphMode": "area",
         "justifyMode": "center",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -156,7 +159,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -209,6 +212,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 20,
             "gradientMode": "none",
@@ -268,7 +272,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.1.0-69950",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -340,8 +344,11 @@
         "graphMode": "area",
         "justifyMode": "center",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "/^_dateTime$/",
           "values": false
         },
@@ -352,7 +359,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -627,7 +634,9 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
@@ -638,7 +647,7 @@
           }
         ]
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -681,7 +690,9 @@
             "includeTimeField": false,
             "labelsToFields": false,
             "mode": "seriesToRows",
-            "reducers": ["allValues"]
+            "reducers": [
+              "allValues"
+            ]
           }
         },
         {
@@ -710,7 +721,9 @@
                 "aggregations": []
               },
               "Profile.UserLicense.LicenseDefinitionKey": {
-                "aggregations": ["count"],
+                "aggregations": [
+                  "count"
+                ],
                 "operation": "aggregate"
               },
               "Profile.UserLicense.Name": {
@@ -750,7 +763,7 @@
             "cellOptions": {
               "type": "auto"
             },
-            "inspect": false
+            "inspect": true
           },
           "mappings": [],
           "thresholds": {
@@ -974,7 +987,9 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
@@ -985,7 +1000,7 @@
           }
         ]
       },
-      "pluginVersion": "11.1.0-70903",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -1028,7 +1043,9 @@
             "includeTimeField": false,
             "labelsToFields": false,
             "mode": "seriesToRows",
-            "reducers": ["allValues"]
+            "reducers": [
+              "allValues"
+            ]
           }
         },
         {
@@ -1096,7 +1113,6 @@
           "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
         },
         "definition": "",
-        "hide": 0,
         "includeAll": true,
         "label": "Salesforce Org",
         "multi": true,
@@ -1110,7 +1126,6 @@
         },
         "refresh": 1,
         "regex": "^(?!.*\\..*)(?!.*sandbox.*).*$",
-        "skipUrlSync": false,
         "sort": 1,
         "type": "query"
       },
@@ -1119,7 +1134,7 @@
         "label": "Type",
         "name": "type",
         "query": "${VAR_TYPE}",
-        "skipUrlSync": false,
+        "skipUrlSync": true,
         "type": "constant",
         "current": {
           "value": "${VAR_TYPE}",
@@ -1136,10 +1151,9 @@
       },
       {
         "hide": 2,
-        "label": "",
         "name": "indicatorLabel",
         "query": "${VAR_INDICATORLABEL}",
-        "skipUrlSync": false,
+        "skipUrlSync": true,
         "type": "constant",
         "current": {
           "value": "${VAR_INDICATORLABEL}",
@@ -1160,13 +1174,10 @@
     "from": "now-7d",
     "to": "now"
   },
-  "timeRangeUpdatedDuringEditOrView": false,
-  "timepicker": {
-    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
-  },
+  "timepicker": {},
   "timezone": "browser",
   "title": "DTL - Active Users",
   "uid": "sfdx-hardis-dtl-active-users",
-  "version": 5,
+  "version": 7,
   "weekStart": ""
 }

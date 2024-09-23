@@ -8,7 +8,7 @@ description: Learn how to initialize a Salesforce DX Project for CI/CD
 
 - Create a new git branch named **cicd** under your lower major branch (usually **integration**)
 
-- Run command **Configuration ->** ![Create new sfdx project](assets/images/btn-create-project.jpg) (`sfdx hardis:project:create`) and select options to create a new sfdx-hardis project.
+- Run command **Configuration ->** ![Create new sfdx project](assets/images/btn-create-project.jpg) (`sf hardis:project:create`) and select options to create a new sfdx-hardis project.
 
 - Open file **manifest/package.xml** and replace the content by the following code
 
