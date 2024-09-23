@@ -285,6 +285,7 @@ export async function smartDeploy(
         (check ? ' --dry-run' : '') +
         ` --manifest "${deployment.packageXmlFile}"` +
         ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff for example
+        ' --ignore-conflicts' + // With CICD we are supposed to ignore them
         ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +

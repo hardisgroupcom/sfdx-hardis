@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.0.3] 2024-09-23
+
+- Add --ignore-conflicts to smartDeploy
+
 ## [5.0.2] 2024-09-23
 
 - Always use `project deploy start --dry-run` for deployment validation, until command `project deploy validate` works with --ignore-warnings & NoTestRun
