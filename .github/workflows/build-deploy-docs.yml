@@ -18,7 +18,7 @@ jobs:
       - run: yarn
       - run: yarn prepack
       - run: npm i @salesforce/cli -g
-      - run: echo y|sf plugins install sfdx-hardis@alpha
+      - run: echo y|sf plugins install sfdx-hardis
       - run: sf hardis:doc:plugin:generate
       # Deploy docs with mkdocs-material
       - uses: actions/setup-python@v5
