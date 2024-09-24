@@ -221,7 +221,7 @@ export async function smartDeploy(
     }
     // Deployment of type package.xml file
     if (deployment.packageXmlFile) {
-      const nbDeployedItems = countPackageXmlItems(deployment.packageXmlFile);
+      const nbDeployedItems = await countPackageXmlItems(deployment.packageXmlFile);
       uxLog(
         commandThis,
         c.cyan(
