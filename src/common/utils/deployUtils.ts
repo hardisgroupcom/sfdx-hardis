@@ -26,7 +26,7 @@ import { callSfdxGitDelta } from './gitUtils.js';
 import { createBlankSfdxProject, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
-import { isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
+import { countPackageXmlItems, isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { soqlQuery } from './apiUtils.js';
@@ -221,11 +221,12 @@ export async function smartDeploy(
     }
     // Deployment of type package.xml file
     if (deployment.packageXmlFile) {
+      const nbDeployedItems = await countPackageXmlItems(deployment.packageXmlFile);
       uxLog(
         commandThis,
         c.cyan(
           `${check ? 'Simulating deployment of' : 'Deploying'} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile
-          } ...`
+          } (${nbDeployedItems} items)...`
         )
       );
       // Try QuickDeploy

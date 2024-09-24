@@ -44,6 +44,15 @@ export async function parsePackageXmlFile(packageXmlFile: string) {
   return targetOrgContent;
 }
 
+export async function countPackageXmlItems(packageXmlFile: string): Promise<number> {
+  const packageXmlParsed = await parsePackageXmlFile(packageXmlFile);
+  let counter = 0;
+  for (const type of Object.keys(packageXmlParsed)) {
+    counter += packageXmlParsed[type].length || 0;
+  }
+  return counter;
+}
+
 export async function writePackageXmlFile(packageXmlFile: string, packageXmlObject: any) {
   let packageXmlContent: any = { Package: { types: [], version: [CONSTANTS.API_VERSION] } };
   if (fs.existsSync(packageXmlFile)) {
@@ -334,8 +343,8 @@ export async function applyReplacementDefinition(
           return replacementDefinition.type === 'code'
             ? '// ' + line + ' // Commented by sfdx-hardis purge-references'
             : replacementDefinition.type === 'xml'
-            ? '<!-- ' + line + ' Commented by sfdx-hardis purge-references --> '
-            : line;
+              ? '<!-- ' + line + ' Commented by sfdx-hardis purge-references --> '
+              : line;
         }
         return line;
       });
