@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.0.4] 2024-09-24
+
+- Fix errors collection during deployment check
+- Display in deployment check summary when **useSmartDeploymentTests** has been activated
+- Do not send coverage formatters options when test level is NoTestRun
+
 ## [5.0.3] 2024-09-23
 
 - Add --ignore-conflicts to smartDeploy
