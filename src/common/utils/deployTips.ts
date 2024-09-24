@@ -67,7 +67,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   // Extract failed test classes
   const logRaw = stripAnsi(log);
   const failedTests: any[] = [];
-  // sf project deplot output
+  // sf project deploy output
   extractFailedTestsInfoForSfCommand(logRaw, failedTests);
   if (failedTests.length === 0) {
     // Legacy sfdx force:source:deploy output
