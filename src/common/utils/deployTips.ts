@@ -65,8 +65,19 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   }
 
   // Extract failed test classes
-  const failedTests: any[] = [];
   const logRaw = stripAnsi(log);
+  const failedTests: any[] = [];
+  // sf project deploy output
+  extractFailedTestsInfoForSfCommand(logRaw, failedTests);
+  if (failedTests.length === 0) {
+    // Legacy sfdx force:source:deploy output
+    extractFailedTestsInfoForSfdxCommand(logRaw, failedTests);
+  }
+  await updatePullRequestResult(errorsAndTips, failedTests, options);
+  return { tips, errorsAndTips, failedTests, errLog: logResLines.join("\n") };
+}
+
+function extractFailedTestsInfoForSfdxCommand(logRaw: string, failedTests: any[]) {
   const regexFailedTests = /Test Failures([\S\s]*?)Test Success/gm;
   if (logRaw.match(regexFailedTests)) {
     const failedTestsLines = (regexFailedTests
@@ -96,8 +107,28 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
       }
     }
   }
-  updatePullRequestResult(errorsAndTips, failedTests, options);
-  return { tips, errorsAndTips, failedTests, errLog: logResLines.join("\n") };
+}
+
+function extractFailedTestsInfoForSfCommand(logRaw: string, failedTests: any[]) {
+  const regexFailedTests = /Test Failures([\S\s]*?)Test Success/gm;
+  if (logRaw.match(regexFailedTests)) {
+    const failedTestsString = (regexFailedTests.exec(logRaw) || [])[1].split(/\r?\n/).join("\n") + "\n•";
+    // Parse strings to extract main error line then stack
+    // eslint-disable-next-line no-regex-spaces, no-useless-escape
+    const regex = /^• (.*)\n  message: (.*)\n  stacktrace: ([\s\S]*?)(?=\n•|\z)/gm;
+    const matches = [...failedTestsString.matchAll(regex)];
+    for (const match of matches || []) {
+      const failedTest: any = {
+        class: match[1].split(".")[0],
+        method: match[1].split(".")[1],
+        error: match[2].trim(),
+      };
+      if (match[3]) {
+        failedTest.stack = match[3];
+      }
+      failedTests.push(failedTest);
+    }
+  }
 }
 
 // Checks if the error string or regex is found in the log

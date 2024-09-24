@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.0.5] 2024-09-24
+
+- When git add / stash failure, display a message explaining to run `git config --system core.longpaths true` to solve the issue.
+- Improve test classes errors collection during deployment check
+- Display the number of elements deployed within a package.xml
+
 ## [5.0.4] 2024-09-24
 
 - Fix errors collection during deployment check
