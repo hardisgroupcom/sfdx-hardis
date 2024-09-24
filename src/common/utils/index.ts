@@ -371,8 +371,14 @@ export async function checkGitClean(options: any) {
       })
       .join('\n');
     if (options.allowStash) {
-      await execCommand('git add --all', this, { output: true, fail: true });
-      await execCommand('git stash', this, { output: true, fail: true });
+      try {
+        await execCommand('git add --all', this, { output: true, fail: true });
+        await execCommand('git stash', this, { output: true, fail: true });
+      } catch (e) {
+        uxLog(this, c.yellow(c.bold("You might need to run the following command in Powershell launched as Administrator")));
+        uxLog(this, c.yellow(c.bold("git config --system core.longpaths true")));
+        throw e;
+      }
     } else {
       throw new SfError(
         `[sfdx-hardis] Branch ${c.bold(gitStatus.current)} is not clean. You must ${c.bold(
