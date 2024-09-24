@@ -291,7 +291,7 @@ export async function smartDeploy(
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
         (options.postDestructiveChanges ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
-        (branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
+        (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
         ' --verbose' +
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '60'}` +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
@@ -328,9 +328,11 @@ export async function smartDeploy(
           messageKey: existingPrData.messageKey ?? 'deployment',
           title: existingPrData.title ?? check ? '✅ Deployment check success' : '✅ Deployment success',
           codeCoverageMarkdownBody:
-            branchConfig?.skipCodeCoverage === true
-              ? '✅⚠️ Code coverage has been skipped for this level'
-              : '✅ No code coverage: It seems there is not Apex in this project',
+            testlevel === 'NoTestRun'
+              ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
+              branchConfig?.skipCodeCoverage === true
+                ? '✅⚠️ Code coverage has been skipped for this level'
+                : '✅ No code coverage: It seems there is not Apex in this project',
           deployStatus: 'valid',
         };
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
@@ -439,7 +441,8 @@ export function truncateProgressLogLines(rawLog: string) {
   const rawLogCleaned = rawLog
     .replace(/(SOURCE PROGRESS \|.*\n)/gm, '')
     .replace(/(MDAPI PROGRESS \|.*\n)/gm, '')
-    .replace(/(DEPLOY PROGRESS \|.*\n)/gm, '');
+    .replace(/(DEPLOY PROGRESS \|.*\n)/gm, '')
+    .replace(/(Status: In Progress \|.*\n)/gm, '');
   return rawLogCleaned;
 }
 

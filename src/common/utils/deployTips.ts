@@ -1,6 +1,6 @@
 // Analyze deployment errors to provide tips to user :)
 import c from "chalk";
-import * as format from "string-template";
+import format from "string-template";
 
 import { getAllTips } from "./deployTipsList.js";
 import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown.js";
@@ -214,7 +214,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
 }
 
 function returnErrorLines(strIn) {
-  return strIn.split(/\r?\n/).filter((str) => str.startsWith("Error") || str.startsWith(" Error") || str.startsWith(firstYellowChar));
+  return strIn.split(/\r?\n/).filter((str) => str.startsWith("Error") || str.startsWith(" Error") || str.startsWith("| Error") || str.startsWith(firstYellowChar));
 }
 
 // This data will be caught later to build a pull request message
