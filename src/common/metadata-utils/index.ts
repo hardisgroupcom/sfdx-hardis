@@ -752,7 +752,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
       let fileHuman = "" + file;
       for (const metadataDesc of metadataList) {
         if (file.includes(metadataDesc.directoryName || "THEREISNOT")) {
-          const endOfPath = file.split(metadataDesc.directoryName + "/")[1];
+          const splits = file.split(metadataDesc.directoryName + "/");
+          const endOfPath = splits[1] || splits[0] || "";
           const suffix = metadataDesc.suffix ?? "THEREISNOT";
           let metadataName = endOfPath.includes("." + suffix + "-meta.xml") ?
             endOfPath.replace("." + suffix + "-meta.xml", "") :
