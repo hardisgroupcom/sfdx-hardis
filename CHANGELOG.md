@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.0.7] 2024-09-25
+
+- hardis:org:monitoring:backup : fix issue when metadata type is unknown
+
 ## [5.0.6] 2024-09-25
 
 - Allow to purge flows & flow interviews using `--no-prompt` option
