@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.0.6] 2024-09-25
+
+- Allow to purge flows & flow interviews using `--no-prompt` option
+- Fix duplicate `-f` short option by replacing `delete-flow-interviews` short by `-w`
+
 ## [5.0.5] 2024-09-24
 
 - When git add / stash failure, display a message explaining to run `git config --system core.longpaths true` to solve the issue.
@@ -93,7 +98,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
   - Rename command **hardis:project:deploy:source:dx** into **hardis:project:deploy:smart** (previous command alias remains, no need to update your pipelines !)
 - **commandsPreDeploy** and **commandsPostDeploy**
   - New option **context** for a command, defining when it is run and when it is not: **all** (default), **check-deployment-only** or **process-deployment-only**
-  - New option **runOnlyOnceByOrg**: If set to `true`, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+  - New option **runOnlyOnceByOrg**: If set to `true`, the command will be run only one time per org. A record of SfdxHardisTrace\_\_c is stored to make that possible (it needs to be existing in target org)
 - New commands
   - **hardis:project:deploy:simulate** to validate the deployment of a single metadata (used by VsCode extension)
   - **hardis:org:diagnose:releaseupdates** to check for org Release Updates from Monitoring or locally
