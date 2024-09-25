@@ -17,27 +17,9 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   public static description = messages.getMessage('orgPurgeFlow');
 
   public static examples = [
-    `$ sf hardis:org:purge:flow --no-prompt`,
-    `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com
-  Found 1 records:
-  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
-  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
-  Are you sure you want to delete this list of records (y/n)?: y
-  Successfully deleted record: 30109000000kX7uAAE.
-  Deleted the following list of records:
-  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
-  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
-  `,
-    `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft --name TestFlow"
-  Found 4 records:
-  ID                 MASTERLABEL VERSIONNUMBER DESCRIPTION  STATUS
-  30109000000kX7uAAE TestFlow    2             test flowwww Obsolete
-  30109000000kX8EAAU TestFlow    6             test flowwww InvalidDraft
-  30109000000kX8AAAU TestFlow    5             test flowwww InvalidDraft
-  30109000000kX89AAE TestFlow    4             test flowwww Draft
-  Are you sure you want to delete this list of records (y/n)?: n
-  No record deleted
-  `,
+    `$ sf hardis:org:purge:flow`,
+    `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --no-prompt --delete-flow-interviews`,
+    `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft" --name TestFlow`,
   ];
 
   // public static args = [{name: 'file'}];
@@ -58,8 +40,8 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       char: 's',
       description: messages.getMessage('statusFilter'),
     }),
-    "delete-flow-interviews": Flags.boolean({
-      char: 'f',
+    'delete-flow-interviews': Flags.boolean({
+      char: 'w',
       default: false,
       description: `If the presence of Flow interviews prevent to delete flows versions, delete them before retrying to delete flow versions`,
     }),
@@ -95,6 +77,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   protected statusFilter: string[] = [];
   protected nameFilter: string | null = null;
   protected username: string;
+  protected promptUser = true;
   protected deleteFlowInterviews: boolean;
   protected allowPurgeFailure: boolean;
   protected flowRecordsRaw: any[];
@@ -105,10 +88,10 @@ export default class OrgPurgeFlow extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgPurgeFlow);
-    const prompt = flags.prompt === false ? false : true;
+    this.promptUser = flags.prompt === false ? false : true;
     this.nameFilter = flags.name || null;
     this.allowPurgeFailure = flags.allowpurgefailure === false ? false : true;
-    this.deleteFlowInterviews = flags["delete-flow-interviews"] || false;
+    this.deleteFlowInterviews = flags['delete-flow-interviews'] || false;
     this.debugMode = flags.debug || false;
     this.username = flags['target-org'].getUsername();
 
@@ -134,7 +117,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     this.formatFlowRecords();
 
     // Confirm deletion
-    if (prompt) {
+    if (this.promptUser) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
@@ -171,18 +154,26 @@ export default class OrgPurgeFlow extends SfCommand<any> {
         this.deletedErrors.push(deleteRes);
       }
     }
-    if (this.deletedErrors.length > 0 && (this.deleteFlowInterviews === true || !isCI) && tryDeleteInterviews === true) {
+    if (
+      this.deletedErrors.length > 0 &&
+      (this.deleteFlowInterviews === true || !isCI) &&
+      tryDeleteInterviews === true
+    ) {
       await this.manageDeleteFlowInterviews(conn);
     }
 
     if (this.deletedErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There have been errors while deleting ${this.deletedErrors.length} record(s): \n${JSON.stringify(this.deletedErrors)}`;
+      const errMsg = `[sfdx-hardis] There have been errors while deleting ${
+        this.deletedErrors.length
+      } record(s): \n${JSON.stringify(this.deletedErrors)}`;
       if (this.allowPurgeFailure) {
         uxLog(this, c.yellow(errMsg));
       } else {
         throw new SfError(
           c.yellow(
-            `There have been errors while deleting ${this.deletedErrors.length} record(s): \n${JSON.stringify(this.deletedErrors)}`
+            `There have been errors while deleting ${this.deletedErrors.length} record(s): \n${JSON.stringify(
+              this.deletedErrors
+            )}`
           )
         );
       }
@@ -204,7 +195,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     }
     // Display flows & Prompt user if not in CI
     await this.displayFlowInterviewToDelete(flowInterviewsIds, conn);
-    if (!isCI) {
+    if (!isCI && this.promptUser === true) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
@@ -217,7 +208,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     }
     // Delete flow interviews
     const deleteInterviewResults = await bulkDelete('FlowInterview', flowInterviewsIds, conn);
-    this.deletedRecords.push(deleteInterviewResults?.successfulResults || [])
+    this.deletedRecords.push(deleteInterviewResults?.successfulResults || []);
     this.deletedErrors = deleteInterviewResults?.failedResults || [];
     // Try to delete flow versions again
     uxLog(this, c.cyan(`Trying again to delete flow versions after deleting flow interviews...`));
@@ -236,7 +227,10 @@ export default class OrgPurgeFlow extends SfCommand<any> {
         Description: record.Description,
       };
     });
-    uxLog(this, `[sfdx-hardis] Found ${c.bold(this.flowRecords.length)} records:\n${c.yellow(columnify(this.flowRecords))}`);
+    uxLog(
+      this,
+      `[sfdx-hardis] Found ${c.bold(this.flowRecords.length)} records:\n${c.yellow(columnify(this.flowRecords))}`
+    );
   }
 
   private async listFlowVersionsToDelete(manageableConstraint: string) {
@@ -248,7 +242,8 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     }
     query += ' ORDER BY Definition.DeveloperName,VersionNumber';
 
-    const flowQueryCommand = 'sf data query ' + ` --query "${query}"` + ` --target-org ${this.username}` + ' --use-tooling-api';
+    const flowQueryCommand =
+      'sf data query ' + ` --query "${query}"` + ` --target-org ${this.username}` + ' --use-tooling-api';
     const flowQueryRes = await execSfdxJson(flowQueryCommand, this, {
       output: false,
       debug: this.debugMode,
@@ -262,12 +257,13 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     if (flags.status) {
       // Input parameter used
       this.statusFilter = flags.status.split(',');
-    } else if (isCI) {
+    } else if (isCI || this.promptUser === false) {
       // Obsolete by default for CI
       this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
-      const allFlowQueryCommand = 'sf data query ' +
+      const allFlowQueryCommand =
+        'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
         ` --target-org ${this.username}` +
         ' --use-tooling-api';
@@ -309,10 +305,14 @@ export default class OrgPurgeFlow extends SfCommand<any> {
   }
 
   private async displayFlowInterviewToDelete(flowVInterviewIds: string[], conn: any) {
-    const query = "SELECT Name,InterviewLabel,InterviewStatus,CreatedBy.Username,CreatedDate,LastModifiedDate " +
+    const query =
+      'SELECT Name,InterviewLabel,InterviewStatus,CreatedBy.Username,CreatedDate,LastModifiedDate ' +
       `FROM FlowInterview WHERE Id IN ('${flowVInterviewIds.join("','")}')` +
-      " ORDER BY Name";
+      ' ORDER BY Name';
     const flowsInterviewsToDelete = (await bulkQuery(query, conn)).records;
-    uxLog(this, c.yellow(`Flow interviews to be deleted would be the following:\n${columnify(flowsInterviewsToDelete)}`));
+    uxLog(
+      this,
+      c.yellow(`Flow interviews to be deleted would be the following:\n${columnify(flowsInterviewsToDelete)}`)
+    );
   }
 }
