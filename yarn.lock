@@ -4558,13 +4558,13 @@ axios@^1.7.4, axios@^1.7.7:
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
-azure-devops-node-api@^14.0.2:
-  version "14.0.2"
-  resolved "https://registry.npmjs.org/azure-devops-node-api/-/azure-devops-node-api-14.0.2.tgz"
-  integrity sha512-TwjAEnWnOSZ2oypkDyqppgvJw43qArEfPiJtEWLL3NBgdvAuOuB0xgFz/Eiz4H6Dk0Yv52wCodZxtZvAMhJXwQ==
+azure-devops-node-api@^14.1.0:
+  version "14.1.0"
+  resolved "https://registry.yarnpkg.com/azure-devops-node-api/-/azure-devops-node-api-14.1.0.tgz#ec5393de9fa146399deaab6904e41da03edce180"
+  integrity sha512-QhpgjH1LQ+vgDJ7oBwcmsZ3+o4ZpjLVilw0D3oJQpYpRzN+L39lk5jZDLJ464hLUgsDzWn/Ksv7zLLMKLfoBzA==
   dependencies:
     tunnel "0.0.6"
-    typed-rest-client "^2.0.1"
+    typed-rest-client "2.1.0"
 
 b4a@^1.6.4, b4a@^1.6.6:
   version "1.6.6"
@@ -12048,10 +12048,10 @@ typed-query-selector@^2.12.0:
   resolved "https://registry.npmjs.org/typed-query-selector/-/typed-query-selector-2.12.0.tgz"
   integrity sha512-SbklCd1F0EiZOyPiW192rrHZzZ5sBijB6xM+cpmrwDqObvdtunOHHIk9fCGsoK5JVIYXoyEp4iEdE3upFH3PAg==
 
-typed-rest-client@^2.0.1:
-  version "2.0.2"
-  resolved "https://registry.npmjs.org/typed-rest-client/-/typed-rest-client-2.0.2.tgz"
-  integrity sha512-rmAQM2gZw/PQpK5+5aSs+I6ZBv4PFC2BT1o+0ADS1SgSejA+14EmbI2Lt8uXwkX7oeOMkwFmg0pHKwe8D9IT5A==
+typed-rest-client@2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/typed-rest-client/-/typed-rest-client-2.1.0.tgz#f04c6cfcabc6012c2d036b806eaac455604f1598"
+  integrity sha512-Nel9aPbgSzRxfs1+4GoSB4wexCF+4Axlk7OSGVQCMa+4fWcyxIsN/YNmkp0xTT2iQzMD98h8yFLav/cNaULmRA==
   dependencies:
     des.js "^1.1.0"
     js-md4 "^0.3.2"
