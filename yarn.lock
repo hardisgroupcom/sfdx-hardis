@@ -3734,24 +3734,17 @@
     "@types/node" "*"
     form-data "^4.0.0"
 
-"@types/node@*":
-  version "20.12.7"
-  resolved "https://registry.npmjs.org/@types/node/-/node-20.12.7.tgz"
-  integrity sha512-wq0cICSkRLVaf3UGLMGItu/PtdY7oaXaI/RVU+xliKVOtRna3PRY57ZDfztpDL0n11vfymMUnXv8QwYCO7L1wg==
+"@types/node@*", "@types/node@>=18.0.0", "@types/node@^22.1.0", "@types/node@^22.5.2":
+  version "22.5.4"
+  resolved "https://registry.npmjs.org/@types/node/-/node-22.5.4.tgz"
+  integrity sha512-FDuKUJQm/ju9fT/SeX/6+gBzoPzlVCzfzmGkwKvRHQVxi4BntVbyIwf6a4Xn62mrvndLiml6z/UBXIdEVjQLXg==
   dependencies:
-    undici-types "~5.26.4"
+    undici-types "~6.19.2"
 
 "@types/node@20.5.1":
   version "20.5.1"
   resolved "https://registry.npmjs.org/@types/node/-/node-20.5.1.tgz"
   integrity sha512-4tT2UrL5LBqDwoed9wZ6N3umC4Yhz3W3FloMmiiG4JwmUJWpie0c7lcnUNd4gtMKuDEO4wRVS8B6Xa0uMRsMKg==
-
-"@types/node@>=18.0.0", "@types/node@^22.1.0":
-  version "22.5.0"
-  resolved "https://registry.npmjs.org/@types/node/-/node-22.5.0.tgz"
-  integrity sha512-DkFrJOe+rfdHTqqMg0bSNlGlQ85hSoh2TPzZyhHsXnMtligRWpxUySiyw8FY14ITt24HVCiQPWxS3KO/QlGmWg==
-  dependencies:
-    undici-types "~6.19.2"
 
 "@types/node@^14.0.1":
   version "14.18.63"
@@ -3763,17 +3756,10 @@
   resolved "https://registry.npmjs.org/@types/node/-/node-16.18.106.tgz"
   integrity sha512-YTgQUcpdXRc7iiEMutkkXl9WUx5lGUCVYvnfRg9CV+IA4l9epctEhCTbaw4KgzXaKYv8emvFJkEM65+MkNUhsQ==
 
-"@types/node@^18.11.18", "@types/node@^18.18.5":
+"@types/node@^18.11.18", "@types/node@^18.18.5", "@types/node@^18.19.32":
   version "18.19.47"
   resolved "https://registry.npmjs.org/@types/node/-/node-18.19.47.tgz"
   integrity sha512-1f7dB3BL/bpd9tnDJrrHb66Y+cVrhxSOTGorRNdHwYTUlTay3HuTDPKo9a/4vX9pMQkhYBcAbL4jQdNlhCFP9A==
-  dependencies:
-    undici-types "~5.26.4"
-
-"@types/node@^18.19.32":
-  version "18.19.34"
-  resolved "https://registry.npmjs.org/@types/node/-/node-18.19.34.tgz"
-  integrity sha512-eXF4pfBNV5DAMKGbI02NnDtWrQ40hAN558/2vvS4gMpMIxaf6JmD7YjnZbq0Q9TDSSkKBamime8ewRoomHdt4g==
   dependencies:
     undici-types "~5.26.4"
 
@@ -3781,13 +3767,6 @@
   version "20.16.2"
   resolved "https://registry.npmjs.org/@types/node/-/node-20.16.2.tgz"
   integrity sha512-91s/n4qUPV/wg8eE9KHYW1kouTfDk2FPGjXbBMfRWP/2vg1rCXNQL1OCabwGs0XSdukuK+MwCDXE30QpSeMUhQ==
-  dependencies:
-    undici-types "~6.19.2"
-
-"@types/node@^22.5.2":
-  version "22.5.4"
-  resolved "https://registry.npmjs.org/@types/node/-/node-22.5.4.tgz"
-  integrity sha512-FDuKUJQm/ju9fT/SeX/6+gBzoPzlVCzfzmGkwKvRHQVxi4BntVbyIwf6a4Xn62mrvndLiml6z/UBXIdEVjQLXg==
   dependencies:
     undici-types "~6.19.2"
 
@@ -9657,10 +9636,10 @@ open@^10.0.2, open@^10.1.0:
     is-inside-container "^1.0.0"
     is-wsl "^3.1.0"
 
-openai@^4.56.1:
-  version "4.56.1"
-  resolved "https://registry.npmjs.org/openai/-/openai-4.56.1.tgz"
-  integrity sha512-XMsxdjrWBYgbP6EsDIwbhkQEgeyL2C41te/QrJm8kdfho22exhTUJ/cFJSmCTToam/RSOC1BlOylHvD6i/bmsA==
+openai@^4.65.0:
+  version "4.65.0"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-4.65.0.tgz#97878efc00013b13b946b1be15a586bb4b125c62"
+  integrity sha512-LfA4KUBpH/8rA3vjCQ74LZtdK/8wx9W6Qxq8MHqEdImPsN1XPQ2ompIuJWkKS6kXt5Cs5i8Eb65IIo4M7U+yeQ==
   dependencies:
     "@types/node" "^18.11.18"
     "@types/node-fetch" "^2.6.4"
