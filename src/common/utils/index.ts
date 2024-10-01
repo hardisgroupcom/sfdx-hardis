@@ -18,7 +18,7 @@ import { CONSTANTS, getConfig, getReportDirectory, setConfig } from '../../confi
 import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, truncateProgressLogLines } from './deployUtils.js';
-import { promptProfiles, promptUserEmail } from './orgUtils.js';
+import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import moment from 'moment';
 import { writeXmlFile } from './xmlUtils.js';
@@ -1213,9 +1213,10 @@ export async function generateSSLCertificate(
           } ...`
         )
       );
+      const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
       const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
-        testlevel: branchName.includes('production') ? 'RunLocalTests' : 'NoTestRun',
+        testlevel: isProduction ? 'RunLocalTests' : 'NoTestRun',
         targetUsername: options.targetUsername ? options.targetUsername : null,
       });
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
