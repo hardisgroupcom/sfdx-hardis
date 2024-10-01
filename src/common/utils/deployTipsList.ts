@@ -133,6 +133,15 @@ Example of XML you have to remove in {1}:
 `,
     },
     {
+      name: "could-not-retrieve-field-info",
+      label: "Couldn't retrieve or load information on the field",
+      expressionRegex: [/Error (.*) Something went wrong. We couldn't retrieve or load the information on the field: (.*)\./gm],
+      tip: `There is a reference to {2} in {1}, and {2} is not found. You can either:
+- Commit {2} in your deployment sources and make sure it is named in package.xml
+- Remove the reference to {2} in {1}
+`,
+    },
+    {
       name: "custom-object-not-found",
       label: "Custom object not found",
       expressionRegex: [/Error (.*) In field: field - no CustomObject named (.*) found/gm],

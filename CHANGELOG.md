@@ -7,6 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [5.0.8] 2024-10-01
 
 - Monitoring config: Fix way to define how to upload connected app
+- New deployment tip: Couldn't retrieve or load information on the field
+- Fix parsing of errors when they are unknown
 
 ## [5.0.7] 2024-09-25
 
