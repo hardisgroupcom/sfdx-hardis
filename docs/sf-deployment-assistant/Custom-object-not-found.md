@@ -1,5 +1,5 @@
 ---
-title: : Custom object not found (Deployment assistant)
+title: Custom object not found (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) In field: field - no CustomObject named (.*) found/gm
 ---
 <!-- markdownlint-disable MD013 -->

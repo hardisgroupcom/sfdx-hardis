@@ -1,5 +1,5 @@
 ---
-title: : Can not delete custom field (Deployment assistant)
+title: Can not delete custom field (Deployment assistant)
 description: How to solve Salesforce deployment error /This (.*) is referenced elsewhere in salesforce.com/gm
 ---
 <!-- markdownlint-disable MD013 -->

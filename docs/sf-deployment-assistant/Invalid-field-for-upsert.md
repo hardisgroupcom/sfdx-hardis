@@ -1,5 +1,5 @@
 ---
-title: : Invalid field for upsert (Deployment assistant)
+title: Invalid field for upsert (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Invalid field for upsert, must be an External Id custom or standard indexed field: (.*) \((.*)\)/gm
 ---
 <!-- markdownlint-disable MD013 -->

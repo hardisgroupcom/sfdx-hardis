@@ -223,6 +223,22 @@ There is a reference to {2} in {1}, and {2} is not found. You can either:
 ```
 
 ---
+## [Couldn't retrieve or load information on the field](sf-deployment-assistant/Couldn-t-retrieve-or-load-information-on-the-field.md)
+
+**Detection**
+
+- RegExp: `Error (.*) Something went wrong. We couldn't retrieve or load the information on the field: (.*)\.`
+
+**Resolution**
+
+```shell
+There is a reference to {2} in {1}, and {2} is not found. You can either:
+- Commit {2} in your deployment sources and make sure it is named in package.xml
+- Remove the reference to {2} in {1}
+
+```
+
+---
 ## [Custom object not found](sf-deployment-assistant/Custom-object-not-found.md)
 
 **Detection**
@@ -1186,7 +1202,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 
 **Detection**
 
-- RegExp: `0%`
+- RegExp: ` 0%`
 
 **Resolution**
 

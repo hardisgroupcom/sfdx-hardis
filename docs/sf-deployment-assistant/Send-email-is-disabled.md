@@ -1,5 +1,5 @@
 ---
-title: : Send email is disabled (Deployment assistant)
+title: Send email is disabled (Deployment assistant)
 description: How to solve Salesforce deployment error Send Email is disabled or activities are not allowed
 ---
 <!-- markdownlint-disable MD013 -->

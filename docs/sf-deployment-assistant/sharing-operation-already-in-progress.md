@@ -1,5 +1,5 @@
 ---
-title: : sharing operation already in progress (Deployment assistant)
+title: sharing operation already in progress (Deployment assistant)
 description: How to solve Salesforce deployment error sharing operation already in progress
 ---
 <!-- markdownlint-disable MD013 -->

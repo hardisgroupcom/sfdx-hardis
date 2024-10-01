@@ -1,5 +1,5 @@
 ---
-title: : Can not change field type with picklist (Deployment assistant)
+title: Can not change field type with picklist (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Cannot change which global value set this picklist uses/gm
 ---
 <!-- markdownlint-disable MD013 -->

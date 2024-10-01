@@ -1,5 +1,5 @@
 ---
-title: : Tableau CRM / Wave digest error (Deployment assistant)
+title: Tableau CRM / Wave digest error (Deployment assistant)
 description: How to solve Salesforce deployment error Fix the sfdcDigest node errors and then upload the file again
 ---
 <!-- markdownlint-disable MD013 -->

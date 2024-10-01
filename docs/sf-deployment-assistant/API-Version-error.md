@@ -1,5 +1,5 @@
 ---
-title: : API Version error (Deployment assistant)
+title: API Version error (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) The (.*) apiVersion can't be "([0-9]+)"/gm
 ---
 <!-- markdownlint-disable MD013 -->

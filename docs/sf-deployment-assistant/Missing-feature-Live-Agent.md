@@ -1,5 +1,5 @@
 ---
-title: : Missing feature Live Agent (Deployment assistant)
+title: Missing feature Live Agent (Deployment assistant)
 description: How to solve Salesforce deployment error FeedItem.ContentNote
 ---
 <!-- markdownlint-disable MD013 -->

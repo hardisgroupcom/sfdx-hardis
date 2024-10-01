@@ -1,5 +1,5 @@
 ---
-title: : Can not find folder (Deployment assistant)
+title: Can not find folder (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Cannot find folder:(.*)/gm
 ---
 <!-- markdownlint-disable MD013 -->
