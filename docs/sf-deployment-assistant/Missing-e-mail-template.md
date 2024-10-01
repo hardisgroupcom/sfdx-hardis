@@ -1,5 +1,5 @@
 ---
-title: : Missing e-mail template (Deployment assistant)
+title: Missing e-mail template (Deployment assistant)
 description: How to solve Salesforce deployment error /In field: template - no EmailTemplate named (.*) found/gm
 ---
 <!-- markdownlint-disable MD013 -->

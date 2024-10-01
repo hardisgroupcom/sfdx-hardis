@@ -1,5 +1,5 @@
 ---
-title: : Missing multi-currency field (Deployment assistant)
+title: Missing multi-currency field (Deployment assistant)
 description: How to solve Salesforce deployment error /A reference to a custom field (.*)CurrencyIsoCode/gm
 ---
 <!-- markdownlint-disable MD013 -->

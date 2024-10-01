@@ -1,5 +1,5 @@
 ---
-title: : Missing feature Translation Workbench (Deployment assistant)
+title: Missing feature Translation Workbench (Deployment assistant)
 description: How to solve Salesforce deployment error /report-meta.xml(.*)filterlanguage/gm
 ---
 <!-- markdownlint-disable MD013 -->

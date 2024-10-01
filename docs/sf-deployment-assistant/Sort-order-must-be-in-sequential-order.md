@@ -1,5 +1,5 @@
 ---
-title: : Sort order must be in sequential order (Deployment assistant)
+title: Sort order must be in sequential order (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) SortOrder must be in sequential order from/gm
 ---
 <!-- markdownlint-disable MD013 -->

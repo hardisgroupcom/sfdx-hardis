@@ -1,5 +1,5 @@
 ---
-title: : Custom metadata entry not found (Deployment assistant)
+title: Custom metadata entry not found (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) In field: (.*) - no CustomMetadata named (.*) found/gm
 ---
 <!-- markdownlint-disable MD013 -->

@@ -1,5 +1,5 @@
 ---
-title: : Not valid sharing model (Deployment assistant)
+title: Not valid sharing model (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)/gm
 ---
 <!-- markdownlint-disable MD013 -->

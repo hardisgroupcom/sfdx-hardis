@@ -1,5 +1,5 @@
 ---
-title: : Can not change field type to a formula field (Deployment assistant)
+title: Can not change field type to a formula field (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Cannot update a field from a Formula to something else/gm
 ---
 <!-- markdownlint-disable MD013 -->

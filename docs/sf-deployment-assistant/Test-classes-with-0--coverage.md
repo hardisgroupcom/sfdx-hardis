@@ -1,5 +1,5 @@
 ---
-title: : Test classes with 0% coverage (Deployment assistant)
+title: Test classes with 0% coverage (Deployment assistant)
 description: How to solve Salesforce deployment error / 0%/gm
 ---
 <!-- markdownlint-disable MD013 -->

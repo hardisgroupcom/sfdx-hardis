@@ -1,5 +1,5 @@
 ---
-title: : Invalid field in related list (Deployment assistant)
+title: Invalid field in related list (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Invalid field:(.*) in related list:(.*)/gm
 ---
 <!-- markdownlint-disable MD013 -->

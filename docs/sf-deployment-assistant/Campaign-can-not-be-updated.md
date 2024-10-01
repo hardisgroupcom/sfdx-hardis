@@ -1,5 +1,5 @@
 ---
-title: : Campaign can not be updated (Deployment assistant)
+title: Campaign can not be updated (Deployment assistant)
 description: How to solve Salesforce deployment error The object "Campaign" can't be updated
 ---
 <!-- markdownlint-disable MD013 -->

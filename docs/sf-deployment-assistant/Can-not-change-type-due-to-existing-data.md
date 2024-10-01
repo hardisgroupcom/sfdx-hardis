@@ -1,5 +1,5 @@
 ---
-title: : Can not change type due to existing data (Deployment assistant)
+title: Can not change type due to existing data (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Cannot change type due to existing data/gm
 ---
 <!-- markdownlint-disable MD013 -->
