@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix link to tip doc from Pull Request / Merge Request comments
+
 ## [5.0.8] 2024-10-01
 
 - Monitoring config: Fix way to define how to upload connected app

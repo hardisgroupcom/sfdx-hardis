@@ -162,6 +162,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
               tip: {
                 label: tipDefinition.label,
                 message: tipDefinition.tip,
+                docUrl: tipDefinition.docUrl
               },
             });
           }
@@ -217,6 +218,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
               error: { message: stripAnsi(format(line, replacementsMarkdown)).replace(/\*\*.\*\*/gm, ".") },
               tip: {
                 label: tipDefinition.label,
+                docUrl: tipDefinition.docUrl,
                 message: stripAnsi(format(tipDefinition.tip, replacementsMarkdown).replace(/\*\*.\*\*/gm, ".")),
               },
             });
