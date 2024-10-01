@@ -1,5 +1,5 @@
 ---
-title: : Field not available for element (Deployment assistant)
+title: Field not available for element (Deployment assistant)
 description: How to solve Salesforce deployment error /Field (.*) is not available for/gm
 ---
 <!-- markdownlint-disable MD013 -->

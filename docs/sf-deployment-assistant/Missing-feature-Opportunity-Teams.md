@@ -1,5 +1,5 @@
 ---
-title: : Missing feature Opportunity Teams (Deployment assistant)
+title: Missing feature Opportunity Teams (Deployment assistant)
 description: How to solve Salesforce deployment error OpportunityTeam
 ---
 <!-- markdownlint-disable MD013 -->

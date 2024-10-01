@@ -1,5 +1,5 @@
 ---
-title: : Missing Feature Work.Com (Deployment assistant)
+title: Missing Feature Work.Com (Deployment assistant)
 description: How to solve Salesforce deployment error WorkBadgeDefinition
 ---
 <!-- markdownlint-disable MD013 -->

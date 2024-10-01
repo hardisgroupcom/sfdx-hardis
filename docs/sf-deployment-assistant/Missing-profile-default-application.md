@@ -1,5 +1,5 @@
 ---
-title: : Missing profile default application (Deployment assistant)
+title: Missing profile default application (Deployment assistant)
 description: How to solve Salesforce deployment error You can't remove the only default app from the profile.
 ---
 <!-- markdownlint-disable MD013 -->

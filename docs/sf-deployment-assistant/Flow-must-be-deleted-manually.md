@@ -1,5 +1,5 @@
 ---
-title: : Flow must be deleted manually (Deployment assistant)
+title: Flow must be deleted manually (Deployment assistant)
 description: How to solve Salesforce deployment error /.flow (.*) insufficient access rights on cross-reference id/gm
 ---
 <!-- markdownlint-disable MD013 -->

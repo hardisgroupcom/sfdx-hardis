@@ -1,5 +1,5 @@
 ---
-title: : Missing object referenced in package.xml (Deployment assistant)
+title: Missing object referenced in package.xml (Deployment assistant)
 description: How to solve Salesforce deployment error /An object (.*) of type (.*) was named in package.xml, but was not found in zipped directory/gm
 ---
 <!-- markdownlint-disable MD013 -->

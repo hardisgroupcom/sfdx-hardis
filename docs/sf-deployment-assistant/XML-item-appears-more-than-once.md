@@ -1,5 +1,5 @@
 ---
-title: : XML item appears more than once (Deployment assistant)
+title: XML item appears more than once (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Field:(.*), value:(.*) appears more than once/gm
 ---
 <!-- markdownlint-disable MD013 -->

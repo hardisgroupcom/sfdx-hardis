@@ -1,5 +1,5 @@
 ---
-title: : Can not find user (Deployment assistant)
+title: Can not find user (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Cannot find a user that matches any of the following usernames/gm
 ---
 <!-- markdownlint-disable MD013 -->

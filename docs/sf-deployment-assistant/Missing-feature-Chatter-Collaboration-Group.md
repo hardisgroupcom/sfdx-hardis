@@ -1,5 +1,5 @@
 ---
-title: : Missing feature Chatter Collaboration Group (Deployment assistant)
+title: Missing feature Chatter Collaboration Group (Deployment assistant)
 description: How to solve Salesforce deployment error CollaborationGroup
 ---
 <!-- markdownlint-disable MD013 -->

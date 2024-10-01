@@ -1,5 +1,5 @@
 ---
-title: : Missing report (Deployment assistant)
+title: Missing report (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) The (.*) report chart has a problem with the "reportName" field/gm
 ---
 <!-- markdownlint-disable MD013 -->

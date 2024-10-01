@@ -1,5 +1,5 @@
 ---
-title: : Duplicate value Platform Action Id List (Deployment assistant)
+title: Duplicate value Platform Action Id List (Deployment assistant)
 description: How to solve Salesforce deployment error duplicate value found: PlatformActionListId duplicates value on record with id
 ---
 <!-- markdownlint-disable MD013 -->

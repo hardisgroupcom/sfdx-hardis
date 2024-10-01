@@ -1,5 +1,5 @@
 ---
-title: : CRM Analytics: A Recipe must specify a DataFlow (Deployment assistant)
+title: CRM Analytics: A Recipe must specify a DataFlow (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) A Recipe must specify a Dataflow/gm
 ---
 <!-- markdownlint-disable MD013 -->

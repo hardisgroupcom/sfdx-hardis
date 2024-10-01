@@ -1,5 +1,5 @@
 ---
-title: : Unknown user permission: CreateAuditFields (Deployment assistant)
+title: Unknown user permission: CreateAuditFields (Deployment assistant)
 description: How to solve Salesforce deployment error Unknown user permission: CreateAuditFields
 ---
 <!-- markdownlint-disable MD013 -->

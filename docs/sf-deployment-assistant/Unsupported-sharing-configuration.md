@@ -1,5 +1,5 @@
 ---
-title: : Unsupported sharing configuration (Deployment assistant)
+title: Unsupported sharing configuration (Deployment assistant)
 description: How to solve Salesforce deployment error /not supported for (.*) since it's org wide default is/gm
 ---
 <!-- markdownlint-disable MD013 -->

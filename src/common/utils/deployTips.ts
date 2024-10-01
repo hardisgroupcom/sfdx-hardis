@@ -34,7 +34,10 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
       index++;
       continue;
     }
-    if (logLine.trim().startsWith("Error") && !(updatedLogLines[index + 1] && !updatedLogLines[index + 1].trim().startsWith("Error"))) {
+    if ((logLine.trim().startsWith("Error") || logLine.trim().startsWith("| Error")) &&
+      !(updatedLogLines[index + 1] &&
+        (!updatedLogLines[index + 1].trim().startsWith("Error") || !updatedLogLines[index + 1].trim().startsWith("| Error"))
+      )) {
       const aiTip = await findAiTip(logLine.trim());
       // Complete with AI if possible
       if (aiTip && aiTip.success) {

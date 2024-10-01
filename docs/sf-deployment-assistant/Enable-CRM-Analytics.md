@@ -1,5 +1,5 @@
 ---
-title: : Enable CRM Analytics (Deployment assistant)
+title: Enable CRM Analytics (Deployment assistant)
 description: How to solve Salesforce deployment error It should be created by enabling the CRM Analytics Cloud preference
 ---
 <!-- markdownlint-disable MD013 -->

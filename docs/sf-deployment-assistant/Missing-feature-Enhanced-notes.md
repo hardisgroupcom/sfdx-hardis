@@ -1,5 +1,5 @@
 ---
-title: : Missing feature Enhanced notes (Deployment assistant)
+title: Missing feature Enhanced notes (Deployment assistant)
 description: How to solve Salesforce deployment error FeedItem.ContentNote
 ---
 <!-- markdownlint-disable MD013 -->

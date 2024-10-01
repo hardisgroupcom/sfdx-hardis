@@ -1,5 +1,5 @@
 ---
-title: : Invalid report type (Deployment assistant)
+title: Invalid report type (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) invalid report type/gm
 ---
 <!-- markdownlint-disable MD013 -->

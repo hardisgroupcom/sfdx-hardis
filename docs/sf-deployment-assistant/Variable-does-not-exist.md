@@ -1,5 +1,5 @@
 ---
-title: : Variable does not exist (Deployment assistant)
+title: Variable does not exist (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Variable does not exist: (.*) \((.*)\)/gm
 ---
 <!-- markdownlint-disable MD013 -->

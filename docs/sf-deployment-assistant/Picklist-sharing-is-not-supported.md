@@ -1,5 +1,5 @@
 ---
-title: : Picklist sharing is not supported (Deployment assistant)
+title: Picklist sharing is not supported (Deployment assistant)
 description: How to solve Salesforce deployment error Picklist sharing is not supported
 ---
 <!-- markdownlint-disable MD013 -->

@@ -1,5 +1,5 @@
 ---
-title: : Picklist value not found (Deployment assistant)
+title: Picklist value not found (Deployment assistant)
 description: How to solve Salesforce deployment error /Picklist value: (.*) in picklist: (.*) not found/gm
 ---
 <!-- markdownlint-disable MD013 -->

@@ -1,5 +1,5 @@
 ---
-title: : Change Matching Rule (Deployment assistant)
+title: Change Matching Rule (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) Before you change a matching rule, you must deactivate it/gm
 ---
 <!-- markdownlint-disable MD013 -->

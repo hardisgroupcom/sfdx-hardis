@@ -1,5 +1,5 @@
 ---
-title: : Missing feature ContactToMultipleAccounts (Deployment assistant)
+title: Missing feature ContactToMultipleAccounts (Deployment assistant)
 description: How to solve Salesforce deployment error no CustomObject named AccountContactRelation found
 ---
 <!-- markdownlint-disable MD013 -->

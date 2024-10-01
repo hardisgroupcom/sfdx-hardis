@@ -1,5 +1,5 @@
 ---
-title: : Record Type not found (Deployment assistant)
+title: Record Type not found (Deployment assistant)
 description: How to solve Salesforce deployment error /Error (.*) In field: recordType - no RecordType named (.*) found/gm
 ---
 <!-- markdownlint-disable MD013 -->

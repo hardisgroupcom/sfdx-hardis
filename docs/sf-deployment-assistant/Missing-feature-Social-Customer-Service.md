@@ -1,5 +1,5 @@
 ---
-title: : Missing feature Social Customer Service (Deployment assistant)
+title: Missing feature Social Customer Service (Deployment assistant)
 description: How to solve Salesforce deployment error SocialPersona.AreWeFollowing
 ---
 <!-- markdownlint-disable MD013 -->

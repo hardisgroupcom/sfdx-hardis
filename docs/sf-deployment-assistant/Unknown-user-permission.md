@@ -1,5 +1,5 @@
 ---
-title: : Unknown user permission (Deployment assistant)
+title: Unknown user permission (Deployment assistant)
 description: How to solve Salesforce deployment error Unknown user permission:
 ---
 <!-- markdownlint-disable MD013 -->

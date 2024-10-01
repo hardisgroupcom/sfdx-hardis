@@ -1,5 +1,5 @@
 ---
-title: : Sharing recalculation lock (Deployment assistant)
+title: Sharing recalculation lock (Deployment assistant)
 description: How to solve Salesforce deployment error because it interferes with another operation already in progress
 ---
 <!-- markdownlint-disable MD013 -->
