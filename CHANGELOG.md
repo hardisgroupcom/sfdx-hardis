@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.0.10] 2024-10-03
+
 - hardis:project:deploy:smart : Fix parsing of error strings
+- hardis:project:deploy:smart : Fix markdown display on PR summary
 
 ## [5.0.9] 2024-10-03
 

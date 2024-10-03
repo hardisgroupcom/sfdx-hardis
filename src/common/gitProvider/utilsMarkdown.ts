@@ -4,6 +4,7 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
     const errorMessage = (err as any)?.error?.message?.trim().includes("Error ")
       ? (err as any)?.error?.message
         .trim()
+        .replace("| Error ", "")
         .replace("Error ", "")
         .replace(" ", "<br/>")
         .trim()
