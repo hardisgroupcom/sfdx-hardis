@@ -34,7 +34,8 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
       index++;
       continue;
     }
-    if (isErrorLine(logLine) && updatedLogLines[index + 1] && isErrorLine(updatedLogLines[index + 1])
+    if (isErrorLine(logLine) &&
+      (updatedLogLines[index + 1] && isErrorLine(updatedLogLines[index + 1]) || !updatedLogLines[index])
     ) {
       const aiTip = await findAiTip(logLine.trim());
       // Complete with AI if possible
