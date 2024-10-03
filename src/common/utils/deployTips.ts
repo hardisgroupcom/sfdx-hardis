@@ -34,10 +34,8 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
       index++;
       continue;
     }
-    if ((logLine.trim().startsWith("Error") || logLine.trim().startsWith("| Error")) &&
-      !(updatedLogLines[index + 1] &&
-        (!updatedLogLines[index + 1].trim().startsWith("Error") || !updatedLogLines[index + 1].trim().startsWith("| Error"))
-      )) {
+    if (isErrorLine(logLine) && updatedLogLines[index + 1] && isErrorLine(updatedLogLines[index + 1])
+    ) {
       const aiTip = await findAiTip(logLine.trim());
       // Complete with AI if possible
       if (aiTip && aiTip.success) {
@@ -78,6 +76,14 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   }
   await updatePullRequestResult(errorsAndTips, failedTests, options);
   return { tips, errorsAndTips, failedTests, errLog: logResLines.join("\n") };
+}
+
+function isErrorLine(str: string) {
+  const strTrim = str.trim();
+  if (strTrim.startsWith("Error") || strTrim.startsWith("| Error")) {
+    return true;
+  }
+  return false;
 }
 
 function extractFailedTestsInfoForSfdxCommand(logRaw: string, failedTests: any[]) {
@@ -250,7 +256,7 @@ async function matchesTip(tipDefinition: any, includeInLog = true): Promise<bool
 }
 
 function returnErrorLines(strIn) {
-  return strIn.split(/\r?\n/).filter((str) => str.startsWith("Error") || str.startsWith(" Error") || str.startsWith("| Error") || str.startsWith(firstYellowChar));
+  return strIn.split(/\r?\n/).filter((str) => isErrorLine(str) || str.startsWith(firstYellowChar));
 }
 
 // This data will be caught later to build a pull request message

@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- hardis:project:deploy:smart : Fix parsing of error strings
+
 ## [5.0.9] 2024-10-03
 
 - Fix link to tip doc from Pull Request / Merge Request comments
