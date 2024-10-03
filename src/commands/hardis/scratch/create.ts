@@ -193,7 +193,7 @@ export default class ScratchCreate extends SfCommand<any> {
       moment().format('YYYYMMDD_hhmm');
     this.scratchOrgAlias =
       process.env.SCRATCH_ORG_ALIAS ||
-      (!this.forceNew && this.pool === false ? this.configInfo.scratchOrgAlias : null) ||
+      (!this.forceNew && this.pool == false ? this.configInfo.scratchOrgAlias : null) ||
       newScratchName;
     if (isCI && !this.scratchOrgAlias.startsWith('CI-')) {
       this.scratchOrgAlias = 'CI-' + this.scratchOrgAlias;
@@ -260,7 +260,7 @@ export default class ScratchCreate extends SfCommand<any> {
         return org.alias === this.scratchOrgAlias && org.status === 'Active' && org.devHubUsername === hubOrgUsername;
       }) || [];
     // Reuse existing scratch org
-    if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool === false) {
+    if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool == false) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
       uxLog(this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
@@ -319,7 +319,7 @@ export default class ScratchCreate extends SfCommand<any> {
       `--definition-file ${projectScratchDefLocal} ` +
       `--alias ${this.scratchOrgAlias} ` +
       `--wait ${waitTime} ` +
-      `--target-org ${this.devHubAlias} ` +
+      `--target-dev-hub ${this.devHubAlias} ` +
       `--duration-days ${this.scratchOrgDuration}`;
     const createResult = await execSfdxJson(createCommand, this, {
       fail: false,
