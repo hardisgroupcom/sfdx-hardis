@@ -7,7 +7,7 @@
   "dependencies": {
     "@actions/github": "^6.0.0",
     "@gitbeaker/node": "^35.8.1",
-    "@oclif/core": "^4.0.21",
+    "@oclif/core": "^4.0.27",
     "@salesforce/core": "^8.5.3",
     "@salesforce/sf-plugins-core": "^11.3.10",
     "@slack/types": "^2.14.0",
