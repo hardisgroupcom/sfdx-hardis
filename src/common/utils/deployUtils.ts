@@ -405,9 +405,9 @@ async function handleDeployError(
   if (
     check === true &&
     branchConfig?.testCoverageNotBlocking === true &&
-    output.includes('=== Test Success') &&
+    (output.includes('=== Test Success') || output.includes('Test Success [')) &&
     !output.includes('Test Failures') &&
-    output.includes('=== Apex Code Coverage')
+    (output.includes('=== Apex Code Coverage') || output.includes("Failing: 0"))
   ) {
     uxLog(commandThis, c.yellow(c.bold('Deployment status: Deploy check success & Ignored test coverage error')));
     return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
