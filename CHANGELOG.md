@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- hardis:project:deploy:smart: Fix to adapt stdout checks to output of `sf project deploy start` in case code coverage is ignored
+
 ## [5.0.10] 2024-10-03
 
 - hardis:project:deploy:smart : Fix parsing of error strings
