@@ -153,7 +153,6 @@ async function getHardisForceIgnoreContent() {
     '**/.eslintrc.json',
 
     '**/__tests__/**',
-    '**/pubsub/**',
     '**SfdxHardisDeferSharingRecalc**',
   ];
   return forceIgnoreContent;
