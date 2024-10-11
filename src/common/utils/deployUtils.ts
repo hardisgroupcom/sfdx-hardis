@@ -237,7 +237,7 @@ export async function smartDeploy(
             `sf project deploy quick` +
             ` --job-id ${deploymentCheckId} ` +
             (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
-            ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '60'}` +
+            ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
             ` --verbose` +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
           const quickDeployRes = await execSfdxJson(quickDeployCommand, commandThis, {
@@ -294,7 +294,7 @@ export async function smartDeploy(
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
         (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
         ' --verbose' +
-        ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '60'}` +
+        ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
       let deployRes;
       try {
@@ -773,7 +773,7 @@ export async function deployDestructiveChanges(
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
   const deployDelete =
     `sf project deploy ${options.check ? 'validate' : 'start'} --metadata-dir ${tmpDir}` +
-    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '60'}` +
+    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
     ` --test-level ${options.testLevel || 'NoTestRun'}` +
     ' --ignore-warnings' + // So it does not fail in case metadata is already deleted
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
@@ -826,7 +826,7 @@ export async function deployMetadatas(
   const deployCommand =
     `sf project deploy ${options.check ? 'validate' : 'start'}` +
     ` --metadata-dir ${options.deployDir || '.'}` +
-    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '60'}` +
+    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
     ` --api-version ${options.apiVersion || CONSTANTS.API_VERSION}` +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
