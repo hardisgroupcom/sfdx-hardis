@@ -138,7 +138,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     uxLog(this, c.cyan(`Run the retrieve command for retrieving filtered metadatas ...`));
     try {
       await execCommand(
-        `sf project retrieve start -x ${packageXmlBackUpItemsFile} -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
+        `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
         this,
         {
           fail: true,
