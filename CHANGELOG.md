@@ -4,9 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.1.0] 2024-10-11
+
 - hardis:project:deploy:smart: Fix to adapt stdout checks to output of `sf project deploy start` in case code coverage is ignored
 - hardis:org:monitor:backup: Allow spaces in folders
 - Remove pubsub from default .forceignore
+- Change default deployment waiting time from 60mn to 120mn
+- Display explicit warning message before ConnectedApp deployment so users don't forget to manually create the connected app with the certificate
 
 ## [5.0.10] 2024-10-03
 

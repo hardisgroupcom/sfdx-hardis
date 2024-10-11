@@ -1213,6 +1213,12 @@ export async function generateSSLCertificate(
           } ...`
         )
       );
+      uxLog(
+        commandThis,
+        c.yellow(
+          `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file :)`
+        )
+      );
       const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
       const deployRes = await deployMetadatas({
         deployDir: tmpDirMd,
