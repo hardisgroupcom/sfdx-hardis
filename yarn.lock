@@ -2000,10 +2000,10 @@
     proc-log "^4.0.0"
     which "^4.0.0"
 
-"@oclif/core@^4", "@oclif/core@^4.0.19", "@oclif/core@^4.0.21", "@oclif/core@^4.0.27":
-  version "4.0.27"
-  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.0.27.tgz#686079df278e681e3097cea301d5558fdb490e88"
-  integrity sha512-9j92jHr6k2tjQ6/mIwNi46Gqw+qbPFQ02mxT5T8/nxO2fgsPL3qL0kb9SR1il5AVfqpgLIG3uLUcw87rgaioUg==
+"@oclif/core@^4", "@oclif/core@^4.0.19", "@oclif/core@^4.0.27", "@oclif/core@^4.0.28":
+  version "4.0.28"
+  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.0.28.tgz#63b16cc0fa06e02374fad3432a0422a43f118d6d"
+  integrity sha512-lKM1W2glLJmVxZrnb+k3NaudzG9V2yoKJZcW+lmfMf/yPlx6bT/N+DELUsSwdm1VfJAXaQmpLV4+AfEX5qq3mA==
   dependencies:
     ansi-escapes "^4.3.2"
     ansis "^3.3.2"
@@ -8934,17 +8934,10 @@ minimatch@^5.0.1, minimatch@^5.1.0:
   dependencies:
     brace-expansion "^2.0.1"
 
-minimatch@^9.0.0, minimatch@^9.0.5:
+minimatch@^9.0.0, minimatch@^9.0.1, minimatch@^9.0.3, minimatch@^9.0.4, minimatch@^9.0.5:
   version "9.0.5"
   resolved "https://registry.npmjs.org/minimatch/-/minimatch-9.0.5.tgz"
   integrity sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==
-  dependencies:
-    brace-expansion "^2.0.1"
-
-minimatch@^9.0.1, minimatch@^9.0.3, minimatch@^9.0.4:
-  version "9.0.4"
-  resolved "https://registry.npmjs.org/minimatch/-/minimatch-9.0.4.tgz"
-  integrity sha512-KqWh+VchfxcMNRAJjj2tnsSJdNbHsVgnkBhTNrW7AjVo6OvLtxw8zfT9oLw1JSohlFzJ8jCoTgaoXvJ+kHt6fw==
   dependencies:
     brace-expansion "^2.0.1"
 
