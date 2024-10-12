@@ -30,7 +30,7 @@
     "fs-readdir-recursive": "^1.1.0",
     "glob": "^11.0.0",
     "he": "^1.2.0",
-    "inquirer": "^10.1.8",
+    "inquirer": "^10.2.2",
     "isomorphic-dompurify": "^2.16.0",
     "jira-client": "^8.2.2",
     "js-yaml": "^4.1.0",
