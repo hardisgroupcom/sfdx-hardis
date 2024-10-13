@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Improve [BUILD & RUN documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-hotfixes/)
+
 ## [5.1.0] 2024-10-11
 
 - hardis:project:deploy:smart: Fix to adapt stdout checks to output of `sf project deploy start` in case code coverage is ignored
