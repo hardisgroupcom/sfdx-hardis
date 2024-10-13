@@ -314,7 +314,7 @@ jobs:
         run: |
           echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
           git pull origin ${{ matrix.branch }}
-          sf hardis:th:login
+          sf hardis:auth:login
           sf hardis:org:monitor:all
 
       - name: Upload artifacts
