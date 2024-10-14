@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Improve [BUILD & RUN documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-hotfixes/)
 - 21 hardis commands: rename `-o` short into `-f` when possible, or other short letter, to avoid collision with `-o` (`--target-org`) option
+- Fix GitHub Org Monitoring workflow (remove push event + fix command typo)
 
 ## [5.1.0] 2024-10-11
 
