@@ -18,7 +18,6 @@
 # Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
 
 on:
-  push:
   # Automatically run every day at midnight
   schedule:
     - cron: "0 0 * * *" # Cron format -> https://crontab.cronhub.io/
@@ -315,7 +314,7 @@ jobs:
         run: |
           echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
           git pull origin ${{ matrix.branch }}
-          sf hardis:th:login
+          sf hardis:auth:login
           sf hardis:org:monitor:all
 
       - name: Upload artifacts
