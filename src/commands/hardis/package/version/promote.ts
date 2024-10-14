@@ -20,7 +20,7 @@ export default class PackageVersionPromote extends SfCommand<any> {
 
   public static flags: any = {
     auto: Flags.boolean({
-      char: 'd',
+      char: 'f',
       default: false,
       description: 'Auto-detect which versions of which packages need to be promoted',
     }),
