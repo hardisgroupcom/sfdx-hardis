@@ -105,7 +105,6 @@ Notes:
       multiple: true,
     }),
     ignoreerrors: Flags.boolean({
-      char: 'o',
       description: 'ignoreErrors',
     }),
     ignorewarnings: Flags.boolean({

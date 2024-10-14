@@ -12,7 +12,7 @@ export class PackageXmlAppend extends SfCommand<any> {
       required: true
     }),
     outputfile: Flags.string({
-      char: "o",
+      char: "f",
       description: "package.xml output file",
       required: true
     }),

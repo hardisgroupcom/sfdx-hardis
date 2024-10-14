@@ -50,7 +50,7 @@ export default class Toml2Csv extends SfCommand<any> {
       description: 'Do not apply transformation to input data',
     }),
     outputdir: Flags.string({
-      char: 'o',
+      char: 'z',
       description: 'Output directory',
     }),
     debug: Flags.boolean({
