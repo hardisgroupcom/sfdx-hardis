@@ -61,7 +61,6 @@ export default class ScratchCreate extends SfCommand<any> {
       description: messages.getMessage('forceNewScratch'),
     }),
     pool: Flags.boolean({
-      char: 'd',
       default: false,
       description: 'Creates the scratch org for a scratch org pool',
     }),
