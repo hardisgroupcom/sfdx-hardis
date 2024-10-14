@@ -32,7 +32,7 @@ This script requires a filter-config.json file`;
       description: 'Input folder (default: "." )',
     }),
     outputfolder: Flags.string({
-      char: 'o',
+      char: 'f',
       description: 'Output folder (default: parentFolder + _xml_content_filtered)',
     }),
     debug: Flags.boolean({

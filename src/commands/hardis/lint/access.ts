@@ -57,7 +57,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       description: 'Root folder',
     }),
     outputfile: Flags.string({
-      char: 'o',
+      char: 'x',
       description: 'Force the path and name of output report file. Must end with .csv',
     }),
     debug: Flags.boolean({

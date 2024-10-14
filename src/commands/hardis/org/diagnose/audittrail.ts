@@ -135,7 +135,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       description: 'Number of days to extract from today (included)',
     }),
     outputfile: Flags.string({
-      char: 'o',
+      char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
     }),
     debug: Flags.boolean({

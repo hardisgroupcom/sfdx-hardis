@@ -28,7 +28,7 @@ See article below to see how to Export them.
       description: 'Path to the file export project',
     }),
     overwrite: Flags.boolean({
-      char: 'o',
+      char: 'f',
       description: 'Override existing files (doubles the number of API calls)',
     }),
     debug: Flags.boolean({

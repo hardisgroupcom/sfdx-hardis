@@ -38,7 +38,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   public static flags: any = {
     outputfile: Flags.string({
-      char: 'o',
+      char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
     }),
     debug: Flags.boolean({

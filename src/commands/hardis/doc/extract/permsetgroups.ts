@@ -24,7 +24,7 @@ export default class ExtractPermSetGroups extends SfCommand<any> {
 
   public static flags: any = {
     outputfile: Flags.string({
-      char: 'o',
+      char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
     }),
     debug: Flags.boolean({
