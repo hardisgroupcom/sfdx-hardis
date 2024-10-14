@@ -44,7 +44,7 @@ export default class DxSources extends SfCommand<any> {
       description: messages.getMessage('filteredMetadatas'),
     }),
     shape: Flags.boolean({
-      char: 'o',
+      char: 's',
       default: false,
       description: messages.getMessage('createOrgShape'),
     }),

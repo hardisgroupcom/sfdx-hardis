@@ -21,7 +21,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
   //Comment default values to test the prompts
   public static flags: any = {
     outputfile: Flags.string({
-      char: 'o',
+      char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
     }),
     usedonly: Flags.boolean({

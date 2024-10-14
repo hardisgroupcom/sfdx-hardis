@@ -33,7 +33,7 @@ export default class MetadataStatus extends SfCommand<any> {
       description: messages.getMessage('debugMode'),
     }),
     outputfile: Flags.string({
-      char: 'o',
+      char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
     }),
     websocket: Flags.string({
