@@ -26,7 +26,7 @@ Used by VsCode Extension`;
 
   public static flags: any = {
     "source-dir": Flags.string({
-      char: "d",
+      char: "f",
       description: "Source file or directory to simulate the deployment",
       multiple: true,
       required: true
