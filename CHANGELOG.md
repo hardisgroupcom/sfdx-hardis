@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Change default `.mega-linter.yml` config
+
 ## [5.2.2] 2024-10-14
 
 - Fix doubling -d option in hardis:scratch:create
