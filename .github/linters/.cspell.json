@@ -147,6 +147,7 @@
         "Rypple",
         "SAST",
         "SEMGREP",
+        "SHELLCHECK",
         "SOMENAMESPACE",
         "SOURCEBRANCHNAME",
         "STYLELINT",
