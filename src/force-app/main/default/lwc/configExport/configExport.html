@@ -1,0 +1,26 @@
+<template>
+    <lightning-card class="slds-text-align_center">
+        <div class="row slds-m-top_small slds-m-bottom_medium">
+            <h2 class="header">Mention Filter criteria below to get exact configuration you are looking for:</h2>
+            
+            <lightning-textarea name="filterCr" label="Optional Filter Criteria" placeholder="where LastModifiedDate=:TODAY AND CreatedBy.Name=''..."
+            value={filterCritera} onchange={handleFilterChange}>
+
+            </lightning-textarea>
+        </div>
+        <div if:true={isLoaded} class="slds-is-relative">
+            <lightning-spinner
+                alternative-text="Loading..." variant="brand">
+            </lightning-spinner>
+        </div>
+        <div class="slds-m-top_small slds-m-bottom_medium">
+            <h2 class="slds-text-heading_small slds-m-bottom_small">
+                Click the buttons to export the org configuration for BAO.
+            </h2>
+            <lightning-button disabled={isLoaded} variant="brand" label="Export" title="Primary action" onclick={handleClick} class="slds-m-left_x-small downloadArea">
+
+            </lightning-button>
+        </div>
+
+    </lightning-card>
+</template>
