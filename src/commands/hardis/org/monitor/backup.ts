@@ -13,7 +13,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
-import { parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { countPackageXmlItems, parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -135,7 +135,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     });
 
     // Retrieve sfdx sources in local git repo
-    uxLog(this, c.cyan(`Run the retrieve command for retrieving filtered metadatas ...`));
+    const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
+    uxLog(this, c.cyan(`Run the retrieve command for retrieving ${c.bold(nbRetrievedItems)} filtered metadatas...`));
     try {
       await execCommand(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
