@@ -1049,6 +1049,8 @@ export async function buildOrgManifest(
     await writeXmlFile(packageXmlFull, parsedPackageXml);
   }
 
+  const nbRetrievedItems = await countPackageXmlItems(packageXmlFull);
+  uxLog(this, c.cyan(`Full org package.xml contains ${c.bold(nbRetrievedItems)} items`))
   return packageXmlFull;
 }
 

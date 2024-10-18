@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.2.3] 2024-10-19
+
 - Change default `.mega-linter.yml` config
+- Display number of package.xml items before or after retrieving them
+- Doc: Update youtube preview images
 
 ## [5.2.2] 2024-10-14
 

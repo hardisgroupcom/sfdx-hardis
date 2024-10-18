@@ -24,7 +24,7 @@ description: Learn how to configure a monitoring repository for a Salesforce Org
 
 All you need to configure sfdx-hardis Org Monitoring is a **GitHub** , **Gitlab**, **Azure** or **BitBucket** repository.
 
-- Create and clone a git repository
+- Create and clone a git repository (initialize it with README)
 - Open it with Visual Studio Code, then open [VsCode SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) extension menu.
   - If you need installations instructions, please [visit documentation page](salesforce-ci-cd-use-install.md)
 
