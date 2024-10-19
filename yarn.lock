@@ -1429,13 +1429,6 @@
     strip-ansi "^6.0.0"
     xml2js "^0.6.2"
 
-"@keyv/serialize@*":
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/@keyv/serialize/-/serialize-1.0.1.tgz"
-  integrity sha512-kKXeynfORDGPUEEl2PvTExM2zs+IldC6ZD8jPcfvI351MDNtfMlw9V9s4XZXuJNDK2qR5gbEKxRyoYx3quHUVQ==
-  dependencies:
-    buffer "^6.0.3"
-
 "@kwsites/file-exists@^1.1.1":
   version "1.1.1"
   resolved "https://registry.npmjs.org/@kwsites/file-exists/-/file-exists-1.1.1.tgz"
@@ -7574,13 +7567,6 @@ keyv@^4.0.0, keyv@^4.5.3:
   integrity sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==
   dependencies:
     json-buffer "3.0.1"
-
-keyv@^5.0.1:
-  version "5.0.1"
-  resolved "https://registry.npmjs.org/keyv/-/keyv-5.0.1.tgz"
-  integrity sha512-NH+3ditq1O5uTSQiiHrGOTkwUniRox/lZ8tHARdsu5Skyv0AhZca0OCycWfR1fTECvSRftMQnXqx7cBpxo8G1g==
-  dependencies:
-    "@keyv/serialize" "*"
 
 kind-of@^3.0.2:
   version "3.2.2"
