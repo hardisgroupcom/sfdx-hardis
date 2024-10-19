@@ -8,7 +8,7 @@
     "@actions/github": "^6.0.0",
     "@gitbeaker/node": "^35.8.1",
     "@oclif/core": "^4.0.28",
-    "@salesforce/core": "^8.5.3",
+    "@salesforce/core": "^8.6.2",
     "@salesforce/sf-plugins-core": "^11.3.10",
     "@slack/types": "^2.14.0",
     "@slack/web-api": "^7.3.4",
