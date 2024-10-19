@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Remove keyv dependency
+
 ## [5.2.3] 2024-10-19
 
 - Change default `.mega-linter.yml` config
