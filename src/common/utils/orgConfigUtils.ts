@@ -1,7 +1,8 @@
 import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
-import puppeteer from 'puppeteer-core';
+import puppeteer, { Browser } from 'puppeteer-core';
+import * as chromeLauncher from 'chrome-launcher';
 import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';
 import { Connection, SfError } from '@salesforce/core';
@@ -39,11 +40,29 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   const instanceUrl = conn.instanceUrl;
   const loginUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${conn.accessToken}`;
 
+  // Get chrome/chromium executable path
+  let chromeExecutablePath = process.env?.PUPPETEER_EXECUTABLE_PATH || "";
+  if (chromeExecutablePath === "" || !fs.existsSync(chromeExecutablePath)) {
+    const chromePaths = chromeLauncher.Launcher.getInstallations();
+    if (chromePaths && chromePaths.length > 0) {
+      chromeExecutablePath = chromePaths[0];
+    }
+  }
+
   // Start puppeteer
-  const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    headless: !(options.debug === true),
-  });
+  let browser: Browser;
+  try {
+    browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: !(options.debug === true),
+      executablePath: chromeExecutablePath
+    });
+  } catch (e: any) {
+    uxLog(this, c.red("List View with Mine has not been restored: Error while trying to launch puppeteer (Browser simulator)"));
+    uxLog(this, c.red(e.message));
+    uxLog(this, c.red("You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser"));
+    return { error: e };
+  }
   const page = await browser.newPage();
 
   // Process login page
