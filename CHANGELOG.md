@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix hardis:org:fix:listviewmine: Use chrome-launcher to find chrome executable to use with puppeteer-core
 - Remove keyv dependency
 
 ## [5.2.3] 2024-10-19
