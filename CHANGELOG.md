@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update default Monitoring workflow for GitHub
+
 ## [5.2.4] 2024-10-21
 
 - Fix hardis:org:fix:listviewmine: Use chrome-launcher to find chrome executable to use with puppeteer-core
