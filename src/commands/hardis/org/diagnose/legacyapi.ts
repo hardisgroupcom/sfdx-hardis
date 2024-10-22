@@ -1,17 +1,22 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
+import fs from 'fs-extra';
+import * as path from 'path';
+import makeFetchHappen, { FetchOptions } from 'make-fetch-happen';
 import sortArray from 'sort-array';
-import { uxLog } from '../../../../common/utils/index.js';
+import { createTempDir, uxLog } from '../../../../common/utils/index.js';
 import * as dns from 'dns';
+import Papa from 'papaparse';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
+import ora from 'ora';
 const dnsPromises = dns.promises;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -103,8 +108,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected ipResultsSorted: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
-
   /* jscpd:ignore-end */
+  private fetchOptions: FetchOptions;
+  private tempDir: string;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(LegacyApi);
@@ -120,6 +126,21 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     const limitConstraint = limit ? ` LIMIT ${limit}` : '';
     const conn = flags['target-org'].getConnection();
+    this.tempDir = await createTempDir();
+
+    // Build fetch options for HTTP calls to retrieve document files
+    this.fetchOptions = {
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer ' + conn.accessToken,
+        'Content-Type': 'blob',
+      },
+      retry: {
+        retries: 20,
+        factor: 3,
+        randomize: true,
+      },
+    };
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
     const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
@@ -271,7 +292,7 @@ See article to solve issue before it's too late:
   // GET csv log file and check for legacy API calls within
   private async collectDeprecatedApiCalls(logFileUrl: string, conn: any) {
     uxLog(this, c.grey(`- Request info for ${logFileUrl} ...`));
-    const logEntries = await conn.request(logFileUrl);
+    const logEntries = await this.fetchLogEntries(logFileUrl, conn);
     uxLog(this, c.grey(`-- Processing ${logEntries.length} returned entries...`));
     const severityIconError = getSeverityIcon('error');
     const severityIconWarning = getSeverityIcon('warning');
@@ -305,6 +326,65 @@ See article to solve issue before it's too late:
         }
       }
     }
+  }
+
+  private async fetchLogEntries(logFileUrl: string, conn: any) {
+    const spinnerCustom = ora({
+      text: `Downloading ${logFileUrl}...`,
+      spinner: 'moon',
+    }).start();
+    const fetchUrl = `${conn.instanceUrl}${logFileUrl}`;
+    const outputFile = path.join(this.tempDir, Math.random().toString(36).substring(7) + ".csv");
+    try {
+      this.fetchOptions.onRetry = (cause: unknown) => {
+        spinnerCustom.text = `Retrying ${logFileUrl} (${cause})...`;
+      }
+      const fetchRes = await makeFetchHappen(fetchUrl, this.fetchOptions);
+      if (fetchRes.ok !== true) {
+        throw new SfError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
+      }
+      // Wait for file to be written
+      const stream = fs.createWriteStream(outputFile);
+      fetchRes.body.pipe(stream);
+      const totalSize = Number(fetchRes.headers.get('content-length'));
+      // Track the number of bytes downloaded
+      let downloadedSize = 0;
+      // Listen to the data event to track progress
+      fetchRes.body.on('data', (chunk) => {
+        downloadedSize += chunk.length;
+        if (totalSize) {
+          const percentComplete = (downloadedSize / totalSize * 100).toFixed(2);
+          spinnerCustom.text = `Downloaded ${downloadedSize} bytes of ${totalSize} bytes (${percentComplete}%) of ${logFileUrl}`;
+        } else {
+          spinnerCustom.text = `Downloaded ${downloadedSize} bytes of ${logFileUrl}`;
+        }
+      });
+      // Handle end of download, or error
+      await new Promise((resolve, reject) => {
+        fetchRes.body.on("end", () => {
+          resolve(true);
+        })
+        fetchRes.body.on("error", (error) => {
+          reject(error);
+        })
+      });
+      spinnerCustom.succeed(`Downloaded ${logFileUrl}`);
+    } catch (err: any) {
+      // Download failure
+      spinnerCustom.fail(`Error while downloading ${logFileUrl}: ${err.message}`);
+    }
+    const outputFileData = await fs.readFile(outputFile, "utf-8");
+    const csvLines = await new Promise((resolve, reject) => {
+      Papa.parse(outputFileData, {
+        complete: function (results) {
+          resolve(results.data);
+        },
+        error: function (error) {
+          reject(error);
+        },
+      });
+    });
+    return csvLines as any[];
   }
 
   private async generateSummaryLog(errors, severity) {

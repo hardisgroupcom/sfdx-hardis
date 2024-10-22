@@ -5,6 +5,10 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Update default Monitoring workflow for GitHub
+- Refactor file download code
+  - Display progress
+  - If CSV, parse using papaparse
+  - Better error handling
 
 ## [5.2.4] 2024-10-21
 
