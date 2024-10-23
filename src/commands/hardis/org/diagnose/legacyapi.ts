@@ -275,9 +275,9 @@ See article to solve issue before it's too late:
 
   // GET csv log file and check for legacy API calls within
   private async collectDeprecatedApiCalls(logFileUrl: string, conn: any) {
-    uxLog(this, c.grey(`- Request info for ${logFileUrl} ...`));
+    uxLog(this, c.grey(`- request info for ${logFileUrl} ...`));
     const logEntries = await this.fetchLogEntries(logFileUrl, conn);
-    uxLog(this, c.grey(`-- Processing ${logEntries.length} returned entries...`));
+    uxLog(this, c.grey(`-- processing ${logEntries.length} returned entries...`));
     const severityIconError = getSeverityIcon('error');
     const severityIconWarning = getSeverityIcon('warning');
     const severityIconInfo = getSeverityIcon('info');
@@ -317,12 +317,18 @@ See article to solve issue before it's too late:
     const outputFile = path.join(this.tempDir, Math.random().toString(36).substring(7) + ".csv");
     const downloadResult = await new FileDownloader(fetchUrl, { conn: conn, outputFile: outputFile }).download();
     if (downloadResult.success) {
-      const outputFileData = await fs.readFile(outputFile, "utf-8");
+      uxLog(this, c.grey(`-- parsing downloaded CSV from ${outputFile}...`));
+      // const outputFileStream = fs.createReadStream(outputFile, { encoding: 'utf8' });
+      const outputFileStr = await fs.readFile(outputFile, { encoding: 'utf8' });
       const csvLines = await new Promise((resolve, reject) => {
-        Papa.parse(outputFileData, {
+        const csvLines: any[] = [];
+        Papa.parse(outputFileStr, {
           header: true,
-          complete: function (results) {
-            resolve(results.data);
+          chunk: function(result) {
+            csvLines.push(...result.data);
+          },
+          complete: function () {
+            resolve(true);
           },
           error: function (error) {
             reject(error);
@@ -331,7 +337,7 @@ See article to solve issue before it's too late:
       });
       return csvLines as any[];
     }
-    uxLog(this, c.yellow(`Warning: Unable to process logs of ${logFileUrl}`))
+    uxLog(this, c.yellow(`Warning: Unable to process logs of ${logFileUrl}`));
     return [];
   }
 

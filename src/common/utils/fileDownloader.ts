@@ -51,11 +51,10 @@ export class FileDownloader {
       }
       const fetchRes = await makeFetchHappen(this.downloadUrl, this.fetchOptions);
       if (fetchRes.ok !== true) {
-        throw new SfError(`Fetch error - ${this.downloadUrl} - + ${JSON.stringify(fetchRes.body)}`);
+        throw new SfError(`Fetch error: ${JSON.stringify(fetchRes.body)}`);
       }
       // Wait for file to be written
       const stream = fs.createWriteStream(this.outputFile);
-      fetchRes.body.pipe(stream);
       const totalSize = Number(fetchRes.headers.get('content-length'));
       // Track the number of bytes downloaded
       let downloadedSize = 0;
@@ -69,16 +68,22 @@ export class FileDownloader {
           spinnerCustom.text = `Downloaded ${downloadedSize} bytes of ${this.downloadUrl}`;
         }
       });
+      fetchRes.body.pipe(stream);
       // Handle end of download, or error
       await new Promise((resolve, reject) => {
         fetchRes.body.on("error", (error) => {
           reject(error);
         })
-        fetchRes.body.on("end", (xxxx) => {
-          resolve(xxxx);
+        fetchRes.body.on("end", () => {
+          resolve(true);
         })
       });
+      const fileExists = await fs.exists(this.outputFile);
+      if (!fileExists) {
+        throw new SfError(`Download error: Download stream ok but no created file at ${this.outputFile}`);
+      }
       spinnerCustom.succeed(`Downloaded ${this.downloadUrl}`);
+      stream.destroy();
     } catch (err: any) {
       // Download failure
       spinnerCustom.fail(`Error while downloading ${this.downloadUrl}: ${err.message}`);
