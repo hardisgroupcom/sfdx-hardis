@@ -7,8 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Update default Monitoring workflow for GitHub
 - Refactor file download code
   - Display progress
-  - If CSV, parse using papaparse
   - Better error handling
+- hardis:org:diagnose:legacyapi: Fix issue with big log files: Use stream to parse CSV and perform checks
 
 ## [5.2.4] 2024-10-21
 

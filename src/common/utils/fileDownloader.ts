@@ -11,22 +11,29 @@ export class FileDownloader {
   downloadUrl: string;
   outputFile: string | null = null;
   fetchOptions: any = {};
+  label: string;
 
   constructor(downloadUrl: string, options: {
     conn?: any,
     outputFile?: string,
     fetchOptions?: FetchOptions
+    label?: 'url' | 'file' | 'both'
   }) {
     this.conn = options.conn || null;
     this.downloadUrl = downloadUrl;
     this.outputFile = options.outputFile || null;
+    this.label = options?.label === 'file'
+      ? (path.relative(process.cwd(), this.outputFile || "")) || this.downloadUrl
+      : options?.label === 'both'
+        ? `${this.outputFile} from ${this.downloadUrl}`
+        : this.downloadUrl;
     // Build fetch options for HTTP calls to retrieve document files
     this.fetchOptions = options.fetchOptions || {
       method: 'GET',
       headers: {
         Authorization: 'Bearer ' + this.conn.accessToken,
         'Content-Type': 'blob',
-        "X-PrettyPrint": '1'
+        // "X-PrettyPrint": '1'
       },
       retry: {
         retries: 20,
@@ -38,7 +45,7 @@ export class FileDownloader {
 
   public async download(): Promise<{ success: boolean, outputFile: string, error?: any }> {
     const spinnerCustom = ora({
-      text: `Downloading ${this.downloadUrl}...`,
+      text: `Downloading ${this.label}...`,
       spinner: 'moon',
     }).start();
 
@@ -49,7 +56,7 @@ export class FileDownloader {
 
     try {
       this.fetchOptions.onRetry = (cause: unknown) => {
-        spinnerCustom.text = `Retrying ${this.downloadUrl} (${cause})...`;
+        spinnerCustom.text = `Retrying ${this.label} (${cause})...`;
       };
 
       const fetchRes = await makeFetchHappen(this.downloadUrl, this.fetchOptions);
@@ -69,8 +76,8 @@ export class FileDownloader {
         downloadedSize += chunk.length;
         const percentComplete = totalSize ? (downloadedSize / totalSize * 100).toFixed(2) : null;
         spinnerCustom.text = totalSize
-          ? `Downloaded ${downloadedSize} bytes of ${totalSize} bytes (${percentComplete}%) of ${this.downloadUrl}`
-          : `Downloaded ${downloadedSize} bytes of ${this.downloadUrl}`;
+          ? `Downloaded ${downloadedSize} bytes of ${totalSize} bytes (${percentComplete}%) of ${this.label}`
+          : `Downloaded ${downloadedSize} bytes of ${this.label}`;
       });
 
       // Handle end of download, or error
@@ -85,7 +92,7 @@ export class FileDownloader {
         throw new SfError(`Download error: Download stream ok but no created file at ${this.outputFile}`);
       }
 
-      spinnerCustom.succeed(`Downloaded ${this.downloadUrl}`);
+      spinnerCustom.succeed(`Downloaded ${this.label}`);
       stream.destroy();
 
     } catch (err: any) {
