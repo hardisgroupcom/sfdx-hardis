@@ -13,17 +13,20 @@ export class FileDownloader {
   fetchOptions: any = {};
 
   constructor(downloadUrl: string, options: {
-     conn?:any, 
-     outputFile?: string,
-      fetchOptions?: FetchOptions}) {
-    this.conn = options.conn || null ;
+    conn?: any,
+    outputFile?: string,
+    fetchOptions?: FetchOptions
+  }) {
+    this.conn = options.conn || null;
     this.downloadUrl = downloadUrl;
-    this.outputFile = options.outputFile || null ;
+    this.outputFile = options.outputFile || null;
     // Build fetch options for HTTP calls to retrieve document files
     this.fetchOptions = options.fetchOptions || {
       method: 'GET',
       headers: {
-        Authorization: 'Bearer ' + this.conn.accessToken
+        Authorization: 'Bearer ' + this.conn.accessToken,
+        'Content-Type': 'blob',
+        "X-PrettyPrint": '1'
       },
       retry: {
         retries: 20,
@@ -32,64 +35,64 @@ export class FileDownloader {
       },
     };
   }
-  
-  public async download(): Promise<{ success: boolean, outputFile: string, error?: any}> {
-    // Initialize spinner
+
+  public async download(): Promise<{ success: boolean, outputFile: string, error?: any }> {
     const spinnerCustom = ora({
       text: `Downloading ${this.downloadUrl}...`,
       spinner: 'moon',
     }).start();
-    // Define default Outputfile if not send as option
+
     if (this.outputFile == null) {
       const tempDir = await createTempDir();
       this.outputFile = path.join(tempDir, Math.random().toString(36).substring(7));
     }
-    // Make the call
+
     try {
       this.fetchOptions.onRetry = (cause: unknown) => {
         spinnerCustom.text = `Retrying ${this.downloadUrl} (${cause})...`;
-      }
+      };
+
       const fetchRes = await makeFetchHappen(this.downloadUrl, this.fetchOptions);
-      if (fetchRes.ok !== true) {
+      if (!fetchRes.ok) {
         throw new SfError(`Fetch error: ${JSON.stringify(fetchRes.body)}`);
       }
-      // Wait for file to be written
+
       const stream = fs.createWriteStream(this.outputFile);
       const totalSize = Number(fetchRes.headers.get('content-length'));
-      // Track the number of bytes downloaded
+
       let downloadedSize = 0;
-      // Listen to the data event to track progress
+
+      // Set up piping first
+      fetchRes.body.pipe(stream);
+
       fetchRes.body.on('data', (chunk) => {
         downloadedSize += chunk.length;
-        if (totalSize) {
-          const percentComplete = (downloadedSize / totalSize * 100).toFixed(2);
-          spinnerCustom.text = `Downloaded ${downloadedSize} bytes of ${totalSize} bytes (${percentComplete}%) of ${this.downloadUrl}`;
-        } else {
-          spinnerCustom.text = `Downloaded ${downloadedSize} bytes of ${this.downloadUrl}`;
-        }
+        const percentComplete = totalSize ? (downloadedSize / totalSize * 100).toFixed(2) : null;
+        spinnerCustom.text = totalSize
+          ? `Downloaded ${downloadedSize} bytes of ${totalSize} bytes (${percentComplete}%) of ${this.downloadUrl}`
+          : `Downloaded ${downloadedSize} bytes of ${this.downloadUrl}`;
       });
-      fetchRes.body.pipe(stream);
+
       // Handle end of download, or error
       await new Promise((resolve, reject) => {
-        fetchRes.body.on("error", (error) => {
-          reject(error);
-        })
-        fetchRes.body.on("end", () => {
-          resolve(true);
-        })
+        fetchRes.body.on("error", reject);
+        stream.on("error", reject);
+        stream.on("finish", resolve);
       });
+
       const fileExists = await fs.exists(this.outputFile);
       if (!fileExists) {
         throw new SfError(`Download error: Download stream ok but no created file at ${this.outputFile}`);
       }
+
       spinnerCustom.succeed(`Downloaded ${this.downloadUrl}`);
       stream.destroy();
-    } catch (err: any) {
-      // Download failure
-      spinnerCustom.fail(`Error while downloading ${this.downloadUrl}: ${err.message}`);
-      return { success: false, outputFile: this.outputFile, error: err}
-    }
-    return { success: true, outputFile: this.outputFile};
-  }
 
+    } catch (err: any) {
+      spinnerCustom.fail(`Error while downloading ${this.downloadUrl}: ${err.message}`);
+      return { success: false, outputFile: this.outputFile, error: err };
+    }
+
+    return { success: true, outputFile: this.outputFile };
+  }
 }

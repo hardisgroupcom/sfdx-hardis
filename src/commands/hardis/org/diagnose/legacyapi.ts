@@ -145,7 +145,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Fetch EventLogFiles with ApiTotalUsage entries
     const logCollectQuery =
-      `SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY CreatedDate DESC` + limitConstraint;
+      `SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY LogDate DESC` + limitConstraint;
     uxLog(this, c.grey('Query: ' + c.italic(logCollectQuery)));
     const eventLogRes: any = await soqlQuery(logCollectQuery, conn);
 
@@ -275,57 +275,52 @@ See article to solve issue before it's too late:
 
   // GET csv log file and check for legacy API calls within
   private async collectDeprecatedApiCalls(logFileUrl: string, conn: any) {
-    uxLog(this, c.grey(`- request info for ${logFileUrl} ...`));
-    const logEntries = await this.fetchLogEntries(logFileUrl, conn);
-    uxLog(this, c.grey(`-- processing ${logEntries.length} returned entries...`));
+    // Load icons
     const severityIconError = getSeverityIcon('error');
     const severityIconWarning = getSeverityIcon('warning');
     const severityIconInfo = getSeverityIcon('info');
-    for (const logEntry of logEntries) {
-      const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : parseFloat('999.0');
-      // const apiType = logEntry.API_TYPE || null ;
-      const apiFamily = logEntry.API_FAMILY || null;
 
-      for (const legacyApiDescriptor of this.legacyApiDescriptors) {
-        if (
-          legacyApiDescriptor.apiFamily.includes(apiFamily) &&
-          legacyApiDescriptor.minApiVersion <= apiVersion &&
-          legacyApiDescriptor.maxApiVersion >= apiVersion
-        ) {
-          logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease;
-          logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
-          if (legacyApiDescriptor.severity === 'ERROR') {
-            logEntry.severity = 'error';
-            logEntry.severityIcon = severityIconError;
-          } else if (legacyApiDescriptor.severity === 'WARNING') {
-            logEntry.severity = 'warning';
-            logEntry.severityIcon = severityIconWarning;
-          } else {
-            // severity === 'INFO'
-            logEntry.severity = 'info';
-            logEntry.severityIcon = severityIconInfo;
-          }
-          legacyApiDescriptor.errors.push(logEntry);
-          break;
-        }
-      }
-    }
-  }
-
-  private async fetchLogEntries(logFileUrl: string, conn: any) {
+    // Download file as stream, and process chuck by chuck
+    uxLog(this, c.grey(`- processing ${logFileUrl}...`));
     const fetchUrl = `${conn.instanceUrl}${logFileUrl}`;
     const outputFile = path.join(this.tempDir, Math.random().toString(36).substring(7) + ".csv");
     const downloadResult = await new FileDownloader(fetchUrl, { conn: conn, outputFile: outputFile }).download();
     if (downloadResult.success) {
-      uxLog(this, c.grey(`-- parsing downloaded CSV from ${outputFile}...`));
-      // const outputFileStream = fs.createReadStream(outputFile, { encoding: 'utf8' });
-      const outputFileStr = await fs.readFile(outputFile, { encoding: 'utf8' });
-      const csvLines = await new Promise((resolve, reject) => {
-        const csvLines: any[] = [];
-        Papa.parse(outputFileStr, {
+      uxLog(this, c.grey(`-- parsing downloaded CSV from ${outputFile} and check for deprecated calls...`));
+      const outputFileStream = fs.createReadStream(outputFile, { encoding: 'utf8' });
+      await new Promise((resolve, reject) => {
+        Papa.parse(outputFileStream, {
           header: true,
-          chunk: function(result) {
-            csvLines.push(...result.data);
+          worker: true,
+          chunk: (results) => {
+            // Look in check the entries that match a deprecation description
+            for (const logEntry of results.data as any[]) {
+              const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : parseFloat('999.0');
+              const apiFamily = logEntry.API_FAMILY || null;
+              for (const legacyApiDescriptor of this.legacyApiDescriptors) {
+                if (
+                  legacyApiDescriptor.apiFamily.includes(apiFamily) &&
+                  legacyApiDescriptor.minApiVersion <= apiVersion &&
+                  legacyApiDescriptor.maxApiVersion >= apiVersion
+                ) {
+                  logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease;
+                  logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
+                  if (legacyApiDescriptor.severity === 'ERROR') {
+                    logEntry.severity = 'error';
+                    logEntry.severityIcon = severityIconError;
+                  } else if (legacyApiDescriptor.severity === 'WARNING') {
+                    logEntry.severity = 'warning';
+                    logEntry.severityIcon = severityIconWarning;
+                  } else {
+                    // severity === 'INFO'
+                    logEntry.severity = 'info';
+                    logEntry.severityIcon = severityIconInfo;
+                  }
+                  legacyApiDescriptor.errors.push(logEntry);
+                  break;
+                }
+              }
+            }
           },
           complete: function () {
             resolve(true);
@@ -335,10 +330,10 @@ See article to solve issue before it's too late:
           },
         });
       });
-      return csvLines as any[];
     }
-    uxLog(this, c.yellow(`Warning: Unable to process logs of ${logFileUrl}`));
-    return [];
+    else {
+      uxLog(this, c.yellow(`Warning: Unable to process logs of ${logFileUrl}`));
+    }
   }
 
   private async generateSummaryLog(errors, severity) {
