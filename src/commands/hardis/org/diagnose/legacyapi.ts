@@ -1,11 +1,10 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import makeFetchHappen, { FetchOptions } from 'make-fetch-happen';
 import sortArray from 'sort-array';
 import { createTempDir, uxLog } from '../../../../common/utils/index.js';
 import * as dns from 'dns';
@@ -16,7 +15,7 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
-import ora from 'ora';
+import { FileDownloader } from '../../../../common/utils/fileDownloader.js';
 const dnsPromises = dns.promises;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -109,7 +108,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected outputFile;
   protected outputFilesRes: any = {};
   /* jscpd:ignore-end */
-  private fetchOptions: FetchOptions;
   private tempDir: string;
 
   public async run(): Promise<AnyJson> {
@@ -127,20 +125,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const limitConstraint = limit ? ` LIMIT ${limit}` : '';
     const conn = flags['target-org'].getConnection();
     this.tempDir = await createTempDir();
-
-    // Build fetch options for HTTP calls to retrieve document files
-    this.fetchOptions = {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + conn.accessToken,
-        'Content-Type': 'blob',
-      },
-      retry: {
-        retries: 20,
-        factor: 3,
-        randomize: true,
-      },
-    };
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
     const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
@@ -329,62 +313,26 @@ See article to solve issue before it's too late:
   }
 
   private async fetchLogEntries(logFileUrl: string, conn: any) {
-    const spinnerCustom = ora({
-      text: `Downloading ${logFileUrl}...`,
-      spinner: 'moon',
-    }).start();
     const fetchUrl = `${conn.instanceUrl}${logFileUrl}`;
     const outputFile = path.join(this.tempDir, Math.random().toString(36).substring(7) + ".csv");
-    try {
-      this.fetchOptions.onRetry = (cause: unknown) => {
-        spinnerCustom.text = `Retrying ${logFileUrl} (${cause})...`;
-      }
-      const fetchRes = await makeFetchHappen(fetchUrl, this.fetchOptions);
-      if (fetchRes.ok !== true) {
-        throw new SfError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
-      }
-      // Wait for file to be written
-      const stream = fs.createWriteStream(outputFile);
-      fetchRes.body.pipe(stream);
-      const totalSize = Number(fetchRes.headers.get('content-length'));
-      // Track the number of bytes downloaded
-      let downloadedSize = 0;
-      // Listen to the data event to track progress
-      fetchRes.body.on('data', (chunk) => {
-        downloadedSize += chunk.length;
-        if (totalSize) {
-          const percentComplete = (downloadedSize / totalSize * 100).toFixed(2);
-          spinnerCustom.text = `Downloaded ${downloadedSize} bytes of ${totalSize} bytes (${percentComplete}%) of ${logFileUrl}`;
-        } else {
-          spinnerCustom.text = `Downloaded ${downloadedSize} bytes of ${logFileUrl}`;
-        }
+    const downloadResult = await new FileDownloader(fetchUrl, { conn: conn, outputFile: outputFile }).download();
+    if (downloadResult.success) {
+      const outputFileData = await fs.readFile(outputFile, "utf-8");
+      const csvLines = await new Promise((resolve, reject) => {
+        Papa.parse(outputFileData, {
+          header: true,
+          complete: function (results) {
+            resolve(results.data);
+          },
+          error: function (error) {
+            reject(error);
+          },
+        });
       });
-      // Handle end of download, or error
-      await new Promise((resolve, reject) => {
-        fetchRes.body.on("end", () => {
-          resolve(true);
-        })
-        fetchRes.body.on("error", (error) => {
-          reject(error);
-        })
-      });
-      spinnerCustom.succeed(`Downloaded ${logFileUrl}`);
-    } catch (err: any) {
-      // Download failure
-      spinnerCustom.fail(`Error while downloading ${logFileUrl}: ${err.message}`);
+      return csvLines as any[];
     }
-    const outputFileData = await fs.readFile(outputFile, "utf-8");
-    const csvLines = await new Promise((resolve, reject) => {
-      Papa.parse(outputFileData, {
-        complete: function (results) {
-          resolve(results.data);
-        },
-        error: function (error) {
-          reject(error);
-        },
-      });
-    });
-    return csvLines as any[];
+    uxLog(this, c.yellow(`Warning: Unable to process logs of ${logFileUrl}`))
+    return [];
   }
 
   private async generateSummaryLog(errors, severity) {
