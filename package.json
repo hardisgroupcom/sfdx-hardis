@@ -35,7 +35,7 @@
     "isomorphic-dompurify": "^2.16.0",
     "jira-client": "^8.2.2",
     "js-yaml": "^4.1.0",
-    "make-fetch-happen": "^13.0.1",
+    "make-fetch-happen": "^14.0.3",
     "markdown-toc": "^1.2.0",
     "marked": "^14.1.2",
     "mega-linter-runner": "^8.0.0",
