@@ -90,6 +90,17 @@ New work task
 
 Freeze mass users in org for maintenance or go live purpose
 
+# orgCommunityUpdate
+
+Update a community status.
+
+# orgCommunityUpdateDesc
+
+Activate or deactivate a community by changing it's status:
+
+- Live
+- DownForMaintenance
+
 # orgDataExport
 
 Export data from org using sfdmu
