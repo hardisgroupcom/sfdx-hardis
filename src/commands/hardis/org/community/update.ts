@@ -55,7 +55,6 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
     if (networkNames.length === 0) {
       uxLog(this, c.red(`Error: No network name(s) provided.`));
     } else if (networkNames.length > 0) {
-      // Use includenetworks argument
       const networksConstraintIn = networkNames.map((networkName) => `'${networkName}'`).join(',');
       const networksQuery = `SELECT Id, Name, Status FROM Network WHERE Name IN (${networksConstraintIn})`;
       const networksQueryRes = await soqlQuery(networksQuery, conn);
