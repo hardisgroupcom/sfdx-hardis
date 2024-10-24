@@ -106,8 +106,8 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
       // Return an object to be displayed with --json
       return {
         orgId: flags['target-org'].getOrgId(),
-        freezeSuccess: updateSuccessNb,
-        freezeErrors: updateErrorsNb,
+        communityUpdatesSuccess: updateSuccessNb,
+        communityUpdatesErrors: updateErrorsNb,
         outputString: `${updateSuccessNb} network(s) were updated`,
       };
     }
