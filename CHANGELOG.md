@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Display progress
   - Better error handling
 - hardis:org:diagnose:legacyapi: Fix issue with big log files: Use stream to parse CSV and perform checks
+- Update default API version toto 62.0 (Winter 25 release)
 
 ## [5.2.4] 2024-10-21
 
