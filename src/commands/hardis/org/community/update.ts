@@ -51,7 +51,6 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
 
     const conn = flags['target-org'].getConnection();
 
-    // Select networks that we want to update
     let networkIds: any[] = [];
     if (networkNames.length === 0) {
       uxLog(this, c.red(`Error: No network name(s) provided.`));
