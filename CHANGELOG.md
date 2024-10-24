@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.3.0] 2024-10-24
+
 - Update default Monitoring workflow for GitHub
 - Refactor file download code
   - Display progress
