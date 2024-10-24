@@ -14,14 +14,19 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
   public static readonly description = messages.getMessage('orgCommunityUpdateDesc');
 
   public static examples = [
-    `$ sf hardis:org:community:update --name 'MyNetworkName' --active true`,
-    `$ sf hardis:org:community:update --name 'MyNetworkName,MySecondNetworkName' --active false`
+    `$ sf hardis:org:community:update --name 'MyNetworkName' --status DownForMaintenance`,
+    `$ sf hardis:org:community:update --name 'MyNetworkName,MySecondNetworkName' --status Live`
   ];
 
   public static readonly flags = {
     name: Flags.string({
       description: 'List of Networks Names that you want to update, separated by comma',
       char: 'n',
+      required: true,
+    }),
+    status: Flags.string({
+      description: 'New status for the community, available values are: Live, DownForMaintenance',
+      char:'s',
       required: true,
     }),
     active: Flags.string({
@@ -41,8 +46,7 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(HardisOrgCommunityUpdate);
     const networkNames = flags.name ? flags.name.split(',') : [];
-    //Network status depending on the active flag
-    const status = flags.active ? 'Live' : 'DownForMaintenance';
+    const status = flags.status ? flags.status : '';
     this.debugMode = flags.debug || false;
 
     const conn = flags['target-org'].getConnection();
@@ -73,7 +77,7 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
           name: 'value',
           initial: true,
           message: c.cyanBright(
-            `Are you sure you want to update these ${c.bold(networkIds.length)} networks to ${status} in org ${c.green(
+            `Are you sure you want to update these ${c.bold(networkIds.length)} networks's status to '${status}' in org ${c.green(
               flags['target-org'].getUsername()
             )} (y/n)?`
           ),
