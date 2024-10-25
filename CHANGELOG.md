@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- hardis:doc:packagexml2markdown: Generate markdown documentation from a package.xml file
+
 ## [5.3.0] 2024-10-24
 
 - Update default Monitoring workflow for GitHub
