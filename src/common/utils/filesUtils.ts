@@ -2,7 +2,6 @@
 import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
-import makeFetchHappen, { FetchOptions } from 'make-fetch-happen';
 import * as split from 'split';
 import { PromisePool } from '@supercharge/promise-pool';
 
@@ -17,7 +16,7 @@ import { bulkQuery, soqlQuery } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
-import ora from 'ora';
+import { FileDownloader } from './fileDownloader.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -29,7 +28,6 @@ export class FilesExporter {
   private startChunkNumber: number;
   private commandThis: any;
 
-  private fetchOptions: FetchOptions;
   private dtl: any = null; // export config
   private exportedFilesFolder: string = '';
   private recordsChunk: any[] = [];
@@ -68,19 +66,6 @@ export class FilesExporter {
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
     }
-    // Build fetch options for HTTP calls to retrieve document files
-    this.fetchOptions = {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + this.conn.accessToken,
-        'Content-Type': 'blob',
-      },
-      retry: {
-        retries: 20,
-        factor: 3,
-        randomize: true,
-      },
-    };
   }
 
   async processExport() {
@@ -324,7 +309,6 @@ export class FilesExporter {
       outputFile =
         outputFile + '.' + (contentVersion.FileExtension !== 'snote' ? contentVersion.FileExtension : 'html');
     }
-    const outputFileLabel = path.relative(process.cwd(), outputFile);
     // Check file extension
     if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
       uxLog(this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
@@ -340,36 +324,11 @@ export class FilesExporter {
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
-    const spinnerCustom = ora({
-      text: `(${(this.filesDownloaded + 1)}) Downloading ${outputFileLabel}...`,
-      spinner: 'moon',
-    }).start();
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
-    try {
-      this.fetchOptions.onRetry = (cause: unknown) => {
-        spinnerCustom.text = `(${this.filesDownloaded}) Retrying ${outputFileLabel} (${cause})...`;
-      }
-      const fetchRes = await makeFetchHappen(fetchUrl, this.fetchOptions);
-      if (fetchRes.ok !== true) {
-        throw new SfError(`Fetch error - ${fetchUrl} - + ${JSON.stringify(fetchRes.body)}`);
-      }
-      // Wait for file to be written
-      const stream = fs.createWriteStream(outputFile);
-      fetchRes.body.pipe(stream);
-      /*
-      await new Promise(resolve => {
-        stream.on('finish', function() {
-          resolve(true);
-        });
-      }) */
-
-      // uxLog(this, c.green(`Success - ${path.relative(process.cwd(), outputFile)}`));
+    const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
+    if (downloadResult.success) {
       this.filesDownloaded++;
-      spinnerCustom.succeed(`(${this.filesDownloaded}) Downloaded ${outputFileLabel}`);
-    } catch (err: any) {
-      // Download failure
-      // uxLog(this, c.red(`Error   - ${path.relative(process.cwd(), outputFile)} - ${err}`));
-      spinnerCustom.fail(`(${this.filesDownloaded}) Error while downloading ${outputFileLabel}: ${err.message}`);
+    } else {
       this.filesErrors++;
     }
   }

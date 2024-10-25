@@ -4,6 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.3.0] 2024-10-24
+
+- Update default Monitoring workflow for GitHub
+- Refactor file download code
+  - Display progress
+  - Better error handling
+- hardis:org:diagnose:legacyapi: Fix issue with big log files: Use stream to parse CSV and perform checks
+- Update default API version toto 62.0 (Winter 25 release)
+
 ## [5.2.4] 2024-10-21
 
 - Fix hardis:org:fix:listviewmine: Use chrome-launcher to find chrome executable to use with puppeteer-core
