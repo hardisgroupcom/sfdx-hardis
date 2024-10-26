@@ -46,7 +46,7 @@
     "papaparse": "^5.4.1",
     "pascalcase": "^2.0.0",
     "psl": "^1.9.0",
-    "puppeteer-core": "^23.4.1",
+    "puppeteer-core": "^23.6.0",
     "read-package-up": "^11.0.0",
     "semver": "^7.6.3",
     "set-value": "^4.1.0",
