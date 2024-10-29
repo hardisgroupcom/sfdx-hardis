@@ -1,14 +1,9 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import c from 'chalk';
-import fs from 'fs-extra';
-import * as path from 'path';
-import { countPackageXmlItems, parsePackageXmlFile } from '../../../common/utils/xmlUtils.js';
-import { CONSTANTS } from '../../../config/index.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { uxLog } from '../../../common/utils/index.js';
+import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -56,50 +51,8 @@ export default class PackageXml2Markdown extends SfCommand<any> {
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
-    // Calculate input & output files if not defined
-    await this.handleOptionDefaults();
-
-    uxLog(this, c.cyan(this, `Generating markdown doc from ${this.inputFile} to ${this.outputFile}...`));
-
-    // Read content
-    const packageXmlContent = await parsePackageXmlFile(this.inputFile);
-    const metadataTypes = Object.keys(packageXmlContent);
-    metadataTypes.sort();
-    const nbItems = await countPackageXmlItems(this.inputFile);
-
-    const mdLines: string[] = []
-
-    // Header
-    mdLines.push(...[
-      `## Content of ${path.basename(this.inputFile)}`,
-      '',
-      `Metadatas: ${nbItems}`,
-      ''
-    ]);
-
-    // Generate package.xml markdown
-    for (const metadataType of metadataTypes) {
-      const members = packageXmlContent[metadataType];
-      members.sort();
-      const memberLengthLabel = members.length === 1 && members[0] === "*" ? "*" : members.length;
-      mdLines.push(`<details><summary>${metadataType} (${memberLengthLabel})</summary>`);
-      for (const member of members) {
-        const memberLabel = member === "*" ? "ALL (wildcard *)" : member;
-        mdLines.push(`  • ${memberLabel}<br/>`);
-      }
-      mdLines.push("</details>");
-      mdLines.push("");
-      mdLines.push("<br/>");
-    }
-    mdLines.push("");
-
-    // Footer
-    mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`);
-
-    // Write output file
-    await fs.writeFile(this.outputFile, mdLines.join("\n") + "\n");
-
-    uxLog(this, c.green(`Successfully generated package.xml documentation into ${this.outputFile}`));
+    // Generate markdown for package.xml
+    await generatePackageXmlMarkdown(this.inputFile, this.outputFile);
 
     // Open file in a new VsCode tab if available
     WebSocketClient.requestOpenFile(this.outputFile);
@@ -108,19 +61,4 @@ export default class PackageXml2Markdown extends SfCommand<any> {
     return { outputFile: this.outputFile };
   }
 
-  private async handleOptionDefaults() {
-    // Find packageXml to parse
-    if (this.inputFile == null) {
-      this.inputFile = path.join(process.cwd(), "manifest", "package.xml");
-      if (!fs.existsSync(this.inputFile)) {
-        throw new SfError("No package.xml found. You need to send the path to a package.xml file in --inputfile option");
-      }
-    }
-    // Build output file if not defined
-    if (this.outputFile == null) {
-      const packageXmlFileName = path.basename(this.inputFile);
-      this.outputFile = path.join(process.cwd(), "docs", `${packageXmlFileName}.md`);
-    }
-    await fs.ensureDir(path.dirname(this.outputFile));
-  }
 }
