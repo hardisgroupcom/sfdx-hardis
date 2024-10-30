@@ -13,7 +13,10 @@ export default class PackageXml2Markdown extends SfCommand<any> {
 
   public static description = `Generates a markdown documentation from a package.xml file`;
 
-  public static examples = ['$ sf hardis:doc:packagexml2markdown'];
+  public static examples = [
+    '$ sf hardis:doc:packagexml2markdown',
+    '$ sf hardis:doc:packagexml2markdown --inputfile manifest/package-all.xml'
+  ];
 
   public static flags: any = {
     inputfile: Flags.string({
@@ -52,7 +55,7 @@ export default class PackageXml2Markdown extends SfCommand<any> {
     this.debugMode = flags.debug || false;
 
     // Generate markdown for package.xml
-    await generatePackageXmlMarkdown(this.inputFile, this.outputFile);
+    this.outputFile = await generatePackageXmlMarkdown(this.inputFile, this.outputFile);
 
     // Open file in a new VsCode tab if available
     WebSocketClient.requestOpenFile(this.outputFile);

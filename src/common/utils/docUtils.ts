@@ -62,4 +62,6 @@ export async function generatePackageXmlMarkdown(inputFile: string, outputFile: 
   await fs.writeFile(outputFile, mdLines.join("\n") + "\n");
 
   uxLog(this, c.green(`Successfully generated package.xml documentation into ${outputFile}`));
+
+  return outputFile;
 }
