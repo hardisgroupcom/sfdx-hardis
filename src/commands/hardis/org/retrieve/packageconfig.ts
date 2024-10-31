@@ -58,7 +58,7 @@ export default class RetrievePackageConfig extends SfCommand<any> {
       message: c.cyanBright('Do you want to update your project configuration with this list of packages ?'),
     });
     if (updateConfigRes.value === true) {
-      await managePackageConfig(installedPackages, installedPackages);
+      await managePackageConfig(installedPackages, installedPackages, true);
     }
 
     const message = `[sfdx-hardis] Successfully retrieved package config`;

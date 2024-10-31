@@ -6,7 +6,7 @@ import { countPackageXmlItems, parsePackageXmlFile } from "./xmlUtils.js";
 import { CONSTANTS } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 
-export async function generatePackageXmlMarkdown(inputFile: string, outputFile: string) {
+export async function generatePackageXmlMarkdown(inputFile: string|null, outputFile: string|null= null, packageXmlDefinition: any = null) {
   // Find packageXml to parse if not defined
   if (inputFile == null) {
     inputFile = path.join(process.cwd(), "manifest", "package.xml");
@@ -31,6 +31,18 @@ export async function generatePackageXmlMarkdown(inputFile: string, outputFile: 
 
   const mdLines: string[] = []
 
+if (packageXmlDefinition && packageXmlDefinition.description) {
+  // Header
+  mdLines.push(...[
+    `## Content of ${path.basename(inputFile)}`,
+    '',
+    packageXmlDefinition.description,
+    '',
+    `Metadatas: ${nbItems}`,
+    ''
+  ]);
+}
+else {
   // Header
   mdLines.push(...[
     `## Content of ${path.basename(inputFile)}`,
@@ -38,6 +50,7 @@ export async function generatePackageXmlMarkdown(inputFile: string, outputFile: 
     `Metadatas: ${nbItems}`,
     ''
   ]);
+}
 
   // Generate package.xml markdown
   for (const metadataType of metadataTypes) {
@@ -61,7 +74,7 @@ export async function generatePackageXmlMarkdown(inputFile: string, outputFile: 
   // Write output file
   await fs.writeFile(outputFile, mdLines.join("\n") + "\n");
 
-  uxLog(this, c.green(`Successfully generated package.xml documentation into ${outputFile}`));
+  uxLog(this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
 
   return outputFile;
 }
