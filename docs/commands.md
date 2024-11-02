@@ -51,6 +51,7 @@
 
 | Command                                                                               | Title |
 |:--------------------------------------------------------------------------------------|:------|
+| [**hardis:org:community:update**](hardis/org/community/update.md)                     |       |
 | [**hardis:org:configure:data**](hardis/org/configure/data.md)                         |       |
 | [**hardis:org:configure:files**](hardis/org/configure/files.md)                       |       |
 | [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)             |       |
@@ -73,6 +74,7 @@
 | [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                               |       |
 | [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                         |       |
 | [**hardis:org:monitor:limits**](hardis/org/monitor/limits.md)                         |       |
+| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                       |       |
 | [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                           |       |
 | [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                 |       |
 | [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         |       |

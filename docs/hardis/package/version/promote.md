@@ -9,7 +9,7 @@ Promote package(s) version(s): convert it from beta to released
 
 | Name                  |  Type   | Description                                                      | Default | Required | Options |
 |:----------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
-| auto<br/>-d           | boolean | Auto-detect which versions of which packages need to be promoted |         |          |         |
+| auto<br/>-f           | boolean | Auto-detect which versions of which packages need to be promoted |         |          |         |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                  |         |          |         |
 | flags-dir             | option  | undefined                                                        |         |          |         |
 | json                  | boolean | Format output as json.                                           |         |          |         |

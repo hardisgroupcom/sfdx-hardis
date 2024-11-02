@@ -5,7 +5,9 @@
 
 # sfdx-hardis
 
-_Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) **_and soon at [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_**
+_Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) _and [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_
+
+[**Upgrade now to sfdx-hardis v5 !**](https://github.com/hardisgroupcom/sfdx-hardis/releases/tag/v5.0.1)
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
@@ -208,6 +210,7 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you
 
 | Command                                                                               | Title |
 |:--------------------------------------------------------------------------------------|:------|
+| [**hardis:org:community:update**](hardis/org/community/update.md)                     |       |
 | [**hardis:org:configure:data**](hardis/org/configure/data.md)                         |       |
 | [**hardis:org:configure:files**](hardis/org/configure/files.md)                       |       |
 | [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)             |       |
@@ -230,6 +233,7 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you
 | [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                               |       |
 | [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                         |       |
 | [**hardis:org:monitor:limits**](hardis/org/monitor/limits.md)                         |       |
+| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                       |       |
 | [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                           |       |
 | [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                 |       |
 | [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         |       |

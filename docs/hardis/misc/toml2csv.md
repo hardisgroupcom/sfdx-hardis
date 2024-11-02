@@ -13,7 +13,7 @@ Split TOML file into distinct CSV files
 | filtersections<br/>-l | option  | List of sections to process (if not set, all sections will be processed) |         |          |         |
 | flags-dir             | option  | undefined                                                                |         |          |         |
 | json                  | boolean | Format output as json.                                                   |         |          |         |
-| outputdir<br/>-o      | option  | Output directory                                                         |         |          |         |
+| outputdir<br/>-z      | option  | Output directory                                                         |         |          |         |
 | skipauth              | boolean | Skip authentication check when a default username is required            |         |          |         |
 | skiptransfo<br/>-s    | boolean | Do not apply transformation to input data                                |         |          |         |
 | target-org<br/>-o     | option  | undefined                                                                |         |          |         |

@@ -18,8 +18,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 | folder<br/>-f          | option  | Root folder                                                       | force-app |          |         |
 | ignorerights<br/>-i    | option  | Ignore permission sets or profiles                                |           |          |         |
 | json                   | boolean | Format output as json.                                            |           |          |         |
-| outputfile<br/>-o      | option  | Force the path and name of output report file. Must end with .csv |           |          |         |
+| outputfile<br/>-x      | option  | Force the path and name of output report file. Must end with .csv |           |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required     |           |          |         |
+| target-org<br/>-o      | option  | undefined                                                         |           |          |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |           |          |         |
 
 ## Examples

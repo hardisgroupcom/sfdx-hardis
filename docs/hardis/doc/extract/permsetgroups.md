@@ -12,7 +12,7 @@ Generate markdown files with project documentation
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
 | flags-dir         | option  | undefined                                                         |         |          |         |
 | json              | boolean | Format output as json.                                            |         |          |         |
-| outputfile<br/>-o | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required     |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
 
