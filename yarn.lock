@@ -9684,10 +9684,10 @@ pupa@^3.1.0:
   dependencies:
     escape-goat "^4.0.0"
 
-puppeteer-core@^23.6.0:
-  version "23.6.0"
-  resolved "https://registry.yarnpkg.com/puppeteer-core/-/puppeteer-core-23.6.0.tgz#a3e1e09c05f47fb8ca2bc9d4ca200d18e3704303"
-  integrity sha512-se1bhgUpR9C529SgHGr/eyT92mYyQPAhA2S9pGtGrVG2xob9qE6Pbp7TlqiSPlnnY1lINqhn6/67EwkdzOmKqQ==
+puppeteer-core@^23.6.1:
+  version "23.6.1"
+  resolved "https://registry.yarnpkg.com/puppeteer-core/-/puppeteer-core-23.6.1.tgz#0f74d74ba02fbec79606b0b112b6dd930395cea4"
+  integrity sha512-DoNLAzQfGklPauEn33N4h9cM9GubJSINEn+AUMwAXwW159Y9JLk5y34Jsbv4c7kG8P0puOYWV9leu2siMZ/QpQ==
   dependencies:
     "@puppeteer/browsers" "2.4.0"
     chromium-bidi "0.8.0"
