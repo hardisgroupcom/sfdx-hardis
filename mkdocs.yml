@@ -76,6 +76,8 @@ nav:
           purge-references: hardis/misc/purge-references.md
           toml2csv: hardis/misc/toml2csv.md
         org:
+          community:
+            update: hardis/org/community/update.md
           configure:
             data: hardis/org/configure/data.md
             files: hardis/org/configure/files.md
@@ -105,6 +107,7 @@ nav:
             all: hardis/org/monitor/all.md
             backup: hardis/org/monitor/backup.md
             limits: hardis/org/monitor/limits.md
+          multi-org-query: hardis/org/multi-org-query.md
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md

@@ -73,7 +73,7 @@ Notes:
 | debug                           | boolean | debug                   |           |          |                                                                        |
 | flags-dir                       | option  | undefined               |           |          |                                                                        |
 | forceoverwrite<br/>-f           | boolean | forceoverwrite          |           |          |                                                                        |
-| ignoreerrors<br/>-o             | boolean | ignoreErrors            |           |          |                                                                        |
+| ignoreerrors                    | boolean | ignoreErrors            |           |          |                                                                        |
 | ignorewarnings<br/>-g           | boolean | ignoreWarnings          |           |          |                                                                        |
 | json                            | boolean | Format output as json.  |           |          |                                                                        |
 | junit                           | boolean | junit                   |           |          |                                                                        |
