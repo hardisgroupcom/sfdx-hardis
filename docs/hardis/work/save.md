@@ -39,28 +39,28 @@ autoRemoveUserPermissions:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                           | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| auto              | boolean | No user prompts (when called from CI for example)                                     |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                       |         |          |         |
-| flags-dir         | option  | undefined                                                                             |         |          |         |
-| json              | boolean | Format output as json.                                                                |         |          |         |
-| noclean<br/>-c    | boolean | No cleaning of local sources                                                          |         |          |         |
-| nogit<br/>-g      | boolean | No automated git operations                                                           |         |          |         |
-| nopull<br/>-n     | boolean | No scratch pull before save                                                           |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                         |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                             |         |          |         |
-| targetbranch      | option  | Name of the Merge Request target branch. Will be guessed or prompted if not provided. |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|auto|boolean|No user prompts (when called from CI for example)||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|noclean<br/>-c|boolean|No cleaning of local sources||||
+|nogit<br/>-g|boolean|No automated git operations||||
+|nopull<br/>-n|boolean|No scratch pull before save||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|targetbranch|option|Name of the Merge Request target branch. Will be guessed or prompted if not provided.||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:work:task:save
+$ sf hardis:work:task:save
 ```
 
 ```shell
-sf hardis:work:task:save --nopull --nogit --noclean
+$ sf hardis:work:task:save --nopull --nogit --noclean
 ```
 
 

@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.4.1] 2024-11-02
+
+- hardis:org:multi-org-query : Improve doc + allow to use --query-template as option to use one of the predefined templates via command line
+
 ## [5.4.0] 2024-11-02
 
 - New command hardis:org:multi-org-query allowing to execute a SOQL Bulk Query in multiple orgs and aggregate the results in a single CSV / XLS report

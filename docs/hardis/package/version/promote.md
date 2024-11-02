@@ -7,24 +7,24 @@ Promote package(s) version(s): convert it from beta to released
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                      | Default | Required | Options |
-|:----------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
-| auto<br/>-d           | boolean | Auto-detect which versions of which packages need to be promoted |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                  |         |          |         |
-| flags-dir             | option  | undefined                                                        |         |          |         |
-| json                  | boolean | Format output as json.                                           |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required    |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                        |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration        |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|auto<br/>-f|boolean|Auto-detect which versions of which packages need to be promoted||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:package:version:promote
+$ sf hardis:package:version:promote
 ```
 
 ```shell
-sf hardis:package:version:promote --auto
+$ sf hardis:package:version:promote --auto
 ```
 
 
