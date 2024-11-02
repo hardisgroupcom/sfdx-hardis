@@ -17,7 +17,7 @@ See article below to see how to Export them.
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | flags-dir         | option  | undefined                                                     |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
-| overwrite<br/>-o  | boolean | Override existing files (doubles the number of API calls)     |         |          |         |
+| overwrite<br/>-f  | boolean | Override existing files (doubles the number of API calls)     |         |          |         |
 | path<br/>-p       | option  | Path to the file export project                               |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
 | target-org<br/>-o | option  | undefined                                                     |         |          |         |

@@ -7,6 +7,19 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - hardis:doc:packagexml2markdown: Generate markdown documentation from a package.xml file
 - hardis:org:retrieve:packageconfig: Ignore standard Salesforce packages
 
+## [5.4.1] 2024-11-02
+
+- hardis:org:multi-org-query enhancements
+  - Improve documentation
+  - Allow to use --query-template as option to use one of the predefined templates via command line
+  - Handle errors if issues when the command is called via a CI/CD job
+- Upgrade dependencies
+
+## [5.4.0] 2024-11-02
+
+- New command hardis:org:multi-org-query allowing to execute a SOQL Bulk Query in multiple orgs and aggregate the results in a single CSV / XLS report
+- New command hardis:org:community:update to Activate / Deactivate communities from command line
+
 ## [5.3.0] 2024-10-24
 
 - Update default Monitoring workflow for GitHub

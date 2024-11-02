@@ -24,7 +24,7 @@ Create and initialize a scratch org or a source-tracked sandbox (config can be d
 | flags-dir             | option  | undefined                                                               |         |          |         |
 | forcenew<br/>-n       | boolean | If an existing scratch org exists, do not reuse it but create a new one |         |          |         |
 | json                  | boolean | Format output as json.                                                  |         |          |         |
-| pool<br/>-d           | boolean | Creates the scratch org for a scratch org pool                          |         |          |         |
+| pool                  | boolean | Creates the scratch org for a scratch org pool                          |         |          |         |
 | skipauth              | boolean | Skip authentication check when a default username is required           |         |          |         |
 | target-dev-hub<br/>-v | option  | undefined                                                               |         |          |         |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration               |         |          |         |

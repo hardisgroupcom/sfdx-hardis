@@ -20,7 +20,7 @@ This script requires a filter-config.json file
 | flags-dir           | option  | undefined                                                     |         |          |         |
 | inputfolder<br/>-i  | option  | Input folder (default: "." )                                  |         |          |         |
 | json                | boolean | Format output as json.                                        |         |          |         |
-| outputfolder<br/>-o | option  | Output folder (default: parentFolder + _xml_content_filtered) |         |          |         |
+| outputfolder<br/>-f | option  | Output folder (default: parentFolder + _xml_content_filtered) |         |          |         |
 | websocket           | option  | websocket                                                     |         |          |         |
 
 ## Examples

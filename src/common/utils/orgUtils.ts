@@ -152,6 +152,7 @@ export async function promptOrg(
   }
 
   // Prompt user
+  /* jscpd:ignore-start */
   const orgResponse = await prompts({
     type: 'select',
     name: 'org',
@@ -168,6 +169,7 @@ export async function promptOrg(
       };
     }),
   });
+  /* jscpd:ignore-end */
 
   let org = orgResponse.org;
 
@@ -245,14 +247,42 @@ export async function promptOrg(
   return orgResponse.org;
 }
 
+export async function promptOrgList(options: { promptMessage?: string } = {}) {
+  const orgListResult = await MetadataUtils.listLocalOrgs('any');
+  const orgListSorted = sortArray(orgListResult?.nonScratchOrgs || [], {
+    by: ['username', 'alias', 'instanceUrl'],
+    order: ['asc', 'asc', 'asc'],
+  });
+  // Prompt user
+  const orgResponse = await prompts({
+    type: 'multiselect',
+    name: 'orgs',
+    message: c.cyanBright(options.promptMessage || 'Please select orgs'),
+    choices: orgListSorted.map((org: any) => {
+      const title = org.username || org.alias || org.instanceUrl;
+      const description =
+        (title !== org.instanceUrl ? org.instanceUrl : '') +
+        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '-');
+      return {
+        title: c.cyan(title),
+        description: org.descriptionForUi ? org.descriptionForUi : description || '-',
+        value: org,
+      };
+    }),
+  });
+  return orgResponse.orgs;
+}
+
 export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Get connected Status and instance URL
   let connectedStatus;
   let instanceUrl;
+  let orgResult: any;
   if (typeof targetOrg !== 'string') {
     instanceUrl = targetOrg.instanceUrl;
     connectedStatus = targetOrg.connectedStatus;
     targetOrg = targetOrg.username;
+    orgResult = targetOrg;
   }
   else {
     const displayOrgCommand = `sf org display --target-org ${targetOrg}`;
@@ -262,17 +292,18 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     });
     connectedStatus = displayResult?.result?.connectedStatus || "error";
     instanceUrl = displayResult?.result?.instanceUrl || "error";
+    orgResult = displayResult.result
   }
   // Org is connected
   if (connectedStatus === "Connected") {
-    return;
+    return orgResult;
   }
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
     uxLog(this, c.yellow("Your auth token is expired, you need to authenticate again"));
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
-    await execSfdxJson(loginCommand, this, { fail: true, output: false });
-    return;
+    const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
+    return loginRes.result;
   }
   // We shouldn't be here :)
   uxLog(this, c.yellow("What are we doing here ? Please declare an issue with the following text: " + instanceUrl + ":" + connectedStatus));

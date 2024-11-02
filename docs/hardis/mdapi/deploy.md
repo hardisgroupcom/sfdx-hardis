@@ -19,7 +19,7 @@ sfdx-hardis wrapper for sfdx force:mdapi:deploy that displays tips to solve depl
 | debug                           | boolean | debug                    |           |          |                                                                        |
 | deploydir<br/>-d                | option  | deployDir                |           |          |                                                                        |
 | flags-dir                       | option  | undefined                |           |          |                                                                        |
-| ignoreerrors<br/>-o             | boolean | ignoreErrors             |           |          |                                                                        |
+| ignoreerrors                    | boolean | ignoreErrors             |           |          |                                                                        |
 | ignorewarnings<br/>-g           | boolean | ignoreWarnings           |           |          |                                                                        |
 | json                            | boolean | Format output as json.   |           |          |                                                                        |
 | purgeondelete                   | boolean | purgeOnDelete            |           |          |                                                                        |

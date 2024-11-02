@@ -12,7 +12,7 @@ Removes the content of a package.xml file matching another package.xml file
 | debug                   | boolean | debug                                                           |         |          |         |
 | flags-dir               | option  | undefined                                                       |         |          |         |
 | json                    | boolean | Format output as json.                                          |         |          |         |
-| outputfile<br/>-o       | option  | package.xml output file                                         |         |          |         |
+| outputfile<br/>-f       | option  | package.xml output file                                         |         |          |         |
 | packagexml<br/>-p       | option  | package.xml file to reduce                                      |         |          |         |
 | removedonly<br/>-z      | boolean | Use this flag to generate a package.xml with only removed items |         |          |         |
 | removepackagexml<br/>-r | option  | package.xml file to use to filter input package.xml             |         |          |         |

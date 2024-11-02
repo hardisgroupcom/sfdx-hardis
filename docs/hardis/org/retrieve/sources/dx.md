@@ -16,7 +16,7 @@ Retrieve Salesforce DX project from org
 | instanceurl<br/>-r       | option  | URL of org instance                                                                |         |          |         |
 | json                     | boolean | Format output as json.                                                             |         |          |         |
 | keepmetadatatypes<br/>-k | option  | Comma separated list of metadatas types that will be the only ones to be retrieved |         |          |         |
-| shape<br/>-o             | boolean | Updates project-scratch-def.json from org shape                                    |         |          |         |
+| shape<br/>-s             | boolean | Updates project-scratch-def.json from org shape                                    |         |          |         |
 | skipauth                 | boolean | Skip authentication check when a default username is required                      |         |          |         |
 | target-org<br/>-o        | option  | undefined                                                                          |         |          |         |
 | tempfolder<br/>-t        | option  | Temporary folder                                                                   |  ./tmp  |          |         |
