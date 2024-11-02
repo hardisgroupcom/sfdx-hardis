@@ -29,12 +29,6 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
       char: 's',
       required: true,
     }),
-    active: Flags.boolean({
-      description: 'Activate or deactivate community, available values are: true, false',
-      char: 'a',
-      default: true,
-      required: true,
-    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
