@@ -1644,10 +1644,10 @@
     proc-log "^4.0.0"
     which "^4.0.0"
 
-"@oclif/core@^4", "@oclif/core@^4.0.19", "@oclif/core@^4.0.28":
-  version "4.0.28"
-  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.0.28.tgz#63b16cc0fa06e02374fad3432a0422a43f118d6d"
-  integrity sha512-lKM1W2glLJmVxZrnb+k3NaudzG9V2yoKJZcW+lmfMf/yPlx6bT/N+DELUsSwdm1VfJAXaQmpLV4+AfEX5qq3mA==
+"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.0.28":
+  version "4.0.31"
+  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.0.31.tgz#3f7ac806f27de6a87a7ee7caab8826687ce50412"
+  integrity sha512-7oyIZv/C1TP+fPc2tSzVPYqG1zU+nel1QvJxjAWyVhud0J8B5SpKZnryedxs3nlSVPJ6K1MT31C9esupCBYgZw==
   dependencies:
     ansi-escapes "^4.3.2"
     ansis "^3.3.2"
@@ -1658,7 +1658,7 @@
     get-package-type "^0.1.0"
     globby "^11.1.0"
     indent-string "^4.0.0"
-    is-wsl "^3"
+    is-wsl "^2.2.0"
     lilconfig "^3.1.2"
     minimatch "^9.0.5"
     semver "^7.6.3"
@@ -2070,16 +2070,16 @@
   resolved "https://registry.npmjs.org/@salesforce/schemas/-/schemas-1.9.0.tgz"
   integrity sha512-LiN37zG5ODT6z70sL1fxF7BQwtCX9JOWofSU8iliSNIM+WDEeinnoFtVqPInRSNt8I0RiJxIKCrqstsmQRBNvA==
 
-"@salesforce/sf-plugins-core@^11.3.10":
-  version "11.3.10"
-  resolved "https://registry.yarnpkg.com/@salesforce/sf-plugins-core/-/sf-plugins-core-11.3.10.tgz#22dcb645e24110a5a50a5ee2602c62d855e85de6"
-  integrity sha512-Gvj6OM57cs1R/M/U8tWCo0srTyLNAsSOVtRWie8nz6x/qp6212ewkVgwwHBmP8XJsfuzjNvbzGcCjrCgwBzmCQ==
+"@salesforce/sf-plugins-core@^11.3.12":
+  version "11.3.12"
+  resolved "https://registry.yarnpkg.com/@salesforce/sf-plugins-core/-/sf-plugins-core-11.3.12.tgz#18b3a553688428bcffea9d36abc72847497f06ae"
+  integrity sha512-hi8EcSoRHRxj4sm/V5YDtzq9bPr/cKpM4fC6abo/jRzpXygwizinc2gVQkXfVdhjK7NGMskVRQB1N+0TThG7bA==
   dependencies:
     "@inquirer/confirm" "^3.1.22"
     "@inquirer/password" "^2.2.0"
-    "@oclif/core" "^4.0.19"
+    "@oclif/core" "^4.0.27"
     "@salesforce/core" "^8.5.1"
-    "@salesforce/kit" "^3.2.2"
+    "@salesforce/kit" "^3.2.3"
     "@salesforce/ts-types" "^2.0.12"
     ansis "^3.3.2"
     cli-progress "^3.12.0"
@@ -7226,7 +7226,7 @@ is-wsl@^2.2.0:
   dependencies:
     is-docker "^2.0.0"
 
-is-wsl@^3, is-wsl@^3.1.0:
+is-wsl@^3.1.0:
   version "3.1.0"
   resolved "https://registry.npmjs.org/is-wsl/-/is-wsl-3.1.0.tgz"
   integrity sha512-UcVfVfaK4Sc4m7X3dUSoHoozQGBEFeDC+zVo06t98xe8CzHSZZBekNXH+tu0NalHolcJ/QAGqS46Hef7QXBIMw==
