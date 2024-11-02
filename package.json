@@ -41,7 +41,7 @@
     "mega-linter-runner": "^8.0.0",
     "moment": "^2.30.1",
     "open": "^10.1.0",
-    "openai": "^4.68.4",
+    "openai": "^4.70.2",
     "ora": "^8.1.0",
     "papaparse": "^5.4.1",
     "pascalcase": "^2.0.0",
