@@ -6,7 +6,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [5.4.1] 2024-11-02
 
-- hardis:org:multi-org-query : Improve doc + allow to use --query-template as option to use one of the predefined templates via command line
+- hardis:org:multi-org-query enhancements
+  - Improve documentation
+  - Allow to use --query-template as option to use one of the predefined templates via command line
+  - Handle errors if issues when the command is called via a CI/CD job
 
 ## [5.4.0] 2024-11-02
 

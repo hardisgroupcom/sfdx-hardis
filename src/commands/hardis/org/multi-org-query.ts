@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { AuthInfo, Connection, Messages } from '@salesforce/core';
+import { AuthInfo, Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import { makeSureOrgIsConnected, promptOrgList } from '../../../common/utils/orgUtils.js';
@@ -180,6 +180,9 @@ If you use the command from a CI/CD job, you must previously authenticate to the
 
   private async manageSelectOrgs() {
     if (this.targetOrgsIds.length === 0) {
+      if (isCI) {
+        throw new SfError("You must provide a list of org usernames or aliases in --target-orgs")
+      }
       this.targetOrgs = await promptOrgList();
       this.targetOrgsIds = this.targetOrgs.map(org => org.alias || org.username);
     }
@@ -188,6 +191,9 @@ If you use the command from a CI/CD job, you must previously authenticate to the
     for (const orgId of this.targetOrgsIds) {
       const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.accessToken && org.connectedStatus === 'Connected');
       if (matchOrgs.length === 0) {
+        if (isCI) {
+          throw new SfError(`${orgId} must be authenticated using Salesforce CLI before calling this command`);
+        }
         const orgRes = await makeSureOrgIsConnected(orgId);
         this.targetOrgs.push(orgRes);
       }
@@ -199,7 +205,10 @@ If you use the command from a CI/CD job, you must previously authenticate to the
     if (this.queryTemplate) {
       this.query = this.allQueryTemplates[this.queryTemplate].query;
     }
-    if (this.query == null && !isCI) {
+    if (this.query == null) {
+      if (isCI) {
+        throw new SfError("You must provide a valid value in --query or --query-template");
+      }
       const baseQueryPromptRes = await prompts({
         type: "select",
         message: "Please select a predefined query, or custom SOQL option",
