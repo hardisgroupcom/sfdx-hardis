@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New command hardis:org:multi-org-query allowing to execute a SOQL Bulk Query in multiple orgs and aggregate the results in a single CSV / XLS report
+
 ## [5.3.0] 2024-10-24
 
 - Update default Monitoring workflow for GitHub
