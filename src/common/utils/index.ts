@@ -1040,6 +1040,10 @@ export function uxLog(commandThis: any, text: string) {
   }
 }
 
+export function bool2emoji(bool: boolean): string {
+  return bool ? "✅" : "⬜"
+}
+
 // Caching methods
 const SFDX_LOCAL_FOLDER = '/root/.sfdx';
 const TMP_COPY_FOLDER = '.cache/sfdx-hardis/.sfdx';

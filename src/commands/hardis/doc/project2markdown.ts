@@ -8,7 +8,9 @@ import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems } from '../../../common/utils/xmlUtils.js';
-import { execSfdxJson, uxLog } from '../../../common/utils/index.js';
+import { bool2emoji, execSfdxJson, uxLog } from '../../../common/utils/index.js';
+import { getConfig } from '../../../config/index.js';
+import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -42,6 +44,7 @@ export default class Project2Markdown extends SfCommand<any> {
   protected packageXmlCandidates: any[];
   protected outputMarkdownIndexFile = "docs/index.md"
   protected mdLines: string[] = [];
+  protected sfdxHardisConfig: any = {};
   protected outputPackageXmlMarkdownFiles: any[] = [];
   protected debugMode = false;
   /* jscpd:ignore-end */
@@ -51,25 +54,28 @@ export default class Project2Markdown extends SfCommand<any> {
     this.debugMode = flags.debug || false;
     this.packageXmlCandidates = this.listPackageXmlCandidates();
 
-    // General configuration
-    const packageDirs = this.project?.getPackageDirectories();
-    if (!(packageDirs?.length === 1 && packageDirs[0].name === "force-app" && fs.existsSync("manifest/package.xml"))) {
-      for (const packageDir of packageDirs || []) {
-        // Generate manifest from package folder
-        const packageManifestFile = path.join("manifest", packageDir.name + '-package.xml');
-        await ensureDir(path.dirname(packageManifestFile));
-        await execSfdxJson("sf project generate manifest" +
-          ` --source-dir ${packageDir.path}` +
-          ` --name ${packageManifestFile}`, this, {});
-        // Add package in available packages list
-        this.packageXmlCandidates.push({
-          path: packageManifestFile,
-          description: `Package.xml generated from content of package ${packageDir.name} (folder ${packageDir.path})`
-        });
-      }
+    if (fs.existsSync("config/.sfdx-hardis.yml")) {
+      this.sfdxHardisConfig = await getConfig("project");
+      this.mdLines.push(...[
+        `## ${this.sfdxHardisConfig?.projectName?.toUpperCase() || "SFDX Project"} CI/CD configuration`,
+        "",
+        "| Parameter  | Value | Description & doc link |",
+        "| :--------- | :---- | :---------- |"
+      ]);
+      const useDeltaDeployment = this.sfdxHardisConfig?.useDeltaDeployment ?? false;
+      this.mdLines.push(`| useDeltaDeployment | ${bool2emoji(useDeltaDeployment)} ${useDeltaDeployment} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/) |`);
+      const useSmartDeploymentTests = this.sfdxHardisConfig?.useSmartDeploymentTests ?? false;
+      this.mdLines.push(`| useSmartDeploymentTests | ${bool2emoji(useSmartDeploymentTests)} ${useSmartDeploymentTests} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
+      this.mdLines.push("");
+
+      await this.buildMajorBranchesAndOrgs();
+
     }
 
 
+
+    // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
+    await this.manageLocalPackages();
     // List all packageXml files and generate related markdown
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates);
     await this.writePackagesInIndex();
@@ -79,7 +85,53 @@ export default class Project2Markdown extends SfCommand<any> {
     await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n");
     uxLog(this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
 
+    // Open file in a new VsCode tab if available
+    WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
+
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
+  }
+
+  private async buildMajorBranchesAndOrgs() {
+    const majorOrgs = await listMajorOrgs();
+    if (majorOrgs.length > 0) {
+      this.mdLines.push(...[
+        "## Major branches and orgs",
+        "",
+        "| Git branch | Salesforce Org | Deployment Username |",
+        "| :--------- | :------------- | :------------------ |"
+      ]);
+      for (const majorOrg of majorOrgs) {
+        const majorOrgLine = `| ${majorOrg.branchName} | ${majorOrg.instanceUrl} | ${majorOrg.targetUsername} |`;
+        this.mdLines.push(majorOrgLine);
+      }
+      this.mdLines.push("");
+    }
+  }
+
+  private async manageLocalPackages() {
+    const packageDirs = this.project?.getPackageDirectories();
+    if (!(packageDirs?.length === 1 && packageDirs[0].name === "force-app" && fs.existsSync("manifest/package.xml"))) {
+      for (const packageDir of packageDirs || []) {
+        // Generate manifest from package folder
+        const packageManifestFile = path.join("manifest", packageDir.name + '-package.xml');
+        await ensureDir(path.dirname(packageManifestFile));
+        await execSfdxJson("sf project generate manifest" +
+          ` --source-dir ${packageDir.path}` +
+          ` --name ${packageManifestFile}`, this,
+          {
+            fail: true,
+            output: true,
+            debug: this.debugMode,
+          }
+        );
+        // Add package in available packages list
+        this.packageXmlCandidates.push({
+          path: packageManifestFile,
+          name: packageDir.name,
+          description: `Package.xml generated from content of SFDX package ${packageDir.name} (folder ${packageDir.path})`
+        });
+      }
+    }
   }
 
   private async writePackagesInIndex() {
@@ -93,7 +145,8 @@ export default class Project2Markdown extends SfCommand<any> {
     for (const outputPackageXmlDef of this.outputPackageXmlMarkdownFiles) {
       const metadataNb = await countPackageXmlItems(outputPackageXmlDef.path);
       const packageMdFile = path.basename(outputPackageXmlDef.path) + ".md";
-      const packageTableLine = `| [${path.basename(outputPackageXmlDef.path)}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
+      const label = outputPackageXmlDef.name ? `Package folder: ${outputPackageXmlDef.name}` : path.basename(outputPackageXmlDef.path);
+      const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
       this.mdLines.push(packageTableLine);
     }
   }
