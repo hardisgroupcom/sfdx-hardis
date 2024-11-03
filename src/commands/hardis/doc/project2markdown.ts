@@ -3,13 +3,14 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import fs, { ensureDir } from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
+import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems } from '../../../common/utils/xmlUtils.js';
-import { bool2emoji, execSfdxJson, uxLog } from '../../../common/utils/index.js';
-import { getConfig } from '../../../config/index.js';
+import { bool2emoji, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
+import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -58,21 +59,18 @@ export default class Project2Markdown extends SfCommand<any> {
       this.sfdxHardisConfig = await getConfig("project");
       this.mdLines.push(...[
         `## ${this.sfdxHardisConfig?.projectName?.toUpperCase() || "SFDX Project"} CI/CD configuration`,
-        "",
-        "| Parameter  | Value | Description & doc link |",
-        "| :--------- | :---- | :---------- |"
-      ]);
-      const useDeltaDeployment = this.sfdxHardisConfig?.useDeltaDeployment ?? false;
-      this.mdLines.push(`| useDeltaDeployment | ${bool2emoji(useDeltaDeployment)} ${useDeltaDeployment} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/) |`);
-      const useSmartDeploymentTests = this.sfdxHardisConfig?.useSmartDeploymentTests ?? false;
-      this.mdLines.push(`| useSmartDeploymentTests | ${bool2emoji(useSmartDeploymentTests)} ${useSmartDeploymentTests} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
-      this.mdLines.push("");
-
+        ""]);
+      this.buildSfdxHardisParams();
       await this.buildMajorBranchesAndOrgs();
-
     }
-
-
+    else {
+      const repoName = await getGitRepoName() || "";
+      const branchName = await getCurrentGitBranch() || ""
+      this.mdLines.push(...[
+        `## ${repoName}/${branchName} SFDX Project Content`,
+        "",
+      ]);
+    }
 
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
     await this.manageLocalPackages();
@@ -80,6 +78,11 @@ export default class Project2Markdown extends SfCommand<any> {
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates);
     await this.writePackagesInIndex();
 
+    // List managed packages
+    this.writeInstalledPackages();
+
+    // Footer
+    this.mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n");
@@ -89,6 +92,41 @@ export default class Project2Markdown extends SfCommand<any> {
     WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
 
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
+  }
+
+  private writeInstalledPackages() {
+    if (this.sfdxHardisConfig.installedPackages && this.sfdxHardisConfig.installedPackages.length > 0) {
+      this.mdLines.push(...[
+        "## Installed packages",
+        "",
+        "| Name  | Namespace | Version | Version Name |",
+        "| :---- | :-------- | :------ | :----------: | "
+      ]);
+      for (const pckg of sortArray(this.sfdxHardisConfig.installedPackages, { by: ['SubscriberPackageNamespace', 'SubscriberPackageName'], order: ['asc', 'asc'] }) as any[]) {
+        this.mdLines.push(...[
+          `| ${pckg.SubscriberPackageName} | ${pckg.SubscriberPackageNamespace || ""} | [${pckg.SubscriberPackageVersionNumber}](https://test.salesforce.com/packaging/installPackage.apexp?p0=${pckg.SubscriberPackageVersionId}) | ${pckg.SubscriberPackageVersionName} |`
+        ]);
+      }
+      this.mdLines.push("");
+      this.mdLines.push("___");
+      this.mdLines.push("");
+    }
+  }
+
+  private buildSfdxHardisParams() {
+    this.mdLines.push(...[
+      "| Sfdx-hardis Parameter | Value | Description & doc link |",
+      "| :--------- | :---- | :---------- |"
+    ]);
+    const installPackagesDuringCheckDeploy = this.sfdxHardisConfig?.installPackagesDuringCheckDeploy ?? false;
+    this.mdLines.push(`| installPackagesDuringCheckDeploy | ${bool2emoji(installPackagesDuringCheckDeploy)} ${installPackagesDuringCheckDeploy} | [Install 1GP & 2GP packages during deployment check CI/CD job](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#packages-installation) |`);
+    const useDeltaDeployment = this.sfdxHardisConfig?.useDeltaDeployment ?? false;
+    this.mdLines.push(`| useDeltaDeployment | ${bool2emoji(useDeltaDeployment)} ${useDeltaDeployment} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode) |`);
+    const useSmartDeploymentTests = this.sfdxHardisConfig?.useSmartDeploymentTests ?? false;
+    this.mdLines.push(`| useSmartDeploymentTests | ${bool2emoji(useSmartDeploymentTests)} ${useSmartDeploymentTests} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
+    this.mdLines.push("");
+    this.mdLines.push("___");
+    this.mdLines.push("");
   }
 
   private async buildMajorBranchesAndOrgs() {
@@ -104,6 +142,8 @@ export default class Project2Markdown extends SfCommand<any> {
         const majorOrgLine = `| ${majorOrg.branchName} | ${majorOrg.instanceUrl} | ${majorOrg.targetUsername} |`;
         this.mdLines.push(majorOrgLine);
       }
+      this.mdLines.push("");
+      this.mdLines.push("___");
       this.mdLines.push("");
     }
   }
@@ -149,6 +189,9 @@ export default class Project2Markdown extends SfCommand<any> {
       const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
       this.mdLines.push(packageTableLine);
     }
+    this.mdLines.push("");
+    this.mdLines.push("___");
+    this.mdLines.push("");
   }
 
   private async generatePackageXmlMarkdown(packageXmlCandidates) {
