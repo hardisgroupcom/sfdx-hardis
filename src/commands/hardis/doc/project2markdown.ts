@@ -89,6 +89,17 @@ export default class Project2Markdown extends SfCommand<any> {
     await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n");
     uxLog(this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
 
+    const readmeFile = path.join(process.cwd(), "README.md");
+    if (fs.existsSync(readmeFile)) {
+      let readme = await fs.readFile(readmeFile, "utf8");
+      if (!readme.includes("docs/index.md")) {
+        readme += "\n\n## Documentation\n\n[Read auto-generated documentation of the SFDX project](docs/index.md)\n";
+        await fs.writeFile(readmeFile, readme);
+        uxLog(this, c.green(`Updated README.md to add link to docs/index.md`));
+      }
+    }
+
+
     // Open file in a new VsCode tab if available
     WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
 
