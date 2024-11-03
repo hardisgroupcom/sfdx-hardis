@@ -5,7 +5,9 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - hardis:doc:packagexml2markdown: Generate markdown documentation from a package.xml file
+- hardis:doc:project2markdown: Generate markdown documentation from any SFDX project (CI/CD, monitoring, projects not using sfdx-hardis...)
 - hardis:org:retrieve:packageconfig: Ignore standard Salesforce packages
+- Update CI/CD home documentation
 
 ## [5.4.1] 2024-11-02
 
