@@ -12,6 +12,7 @@ import { countPackageXmlItems } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
+import { glob } from 'glob';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -64,7 +65,7 @@ export default class Project2Markdown extends SfCommand<any> {
       await this.buildMajorBranchesAndOrgs();
     }
     else {
-      const repoName = await getGitRepoName() || "";
+      const repoName = (await getGitRepoName() || "").replace(".git", "");
       const branchName = await getCurrentGitBranch() || ""
       this.mdLines.push(...[
         `## ${repoName}/${branchName} SFDX Project Content`,
@@ -79,7 +80,7 @@ export default class Project2Markdown extends SfCommand<any> {
     await this.writePackagesInIndex();
 
     // List managed packages
-    this.writeInstalledPackages();
+    await this.writeInstalledPackages();
 
     // Footer
     this.mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
@@ -94,15 +95,32 @@ export default class Project2Markdown extends SfCommand<any> {
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
   }
 
-  private writeInstalledPackages() {
-    if (this.sfdxHardisConfig.installedPackages && this.sfdxHardisConfig.installedPackages.length > 0) {
+  private async writeInstalledPackages() {
+    // CI/CD context
+    const packages = this.sfdxHardisConfig.installedPackages || [];
+    // Monitoring context
+    const packageFolder = path.join(process.cwd(), 'installedPackages');
+    if (packages.length === 0 && fs.existsSync(packageFolder)) {
+      const findManagedPattern = "**/*.json";
+      const matchingPackageFiles = await glob(findManagedPattern, { cwd: packageFolder });
+      for (const packageFile of matchingPackageFiles) {
+        const packageFileFull = path.join(packageFolder, packageFile);
+        if (!fs.existsSync(packageFileFull)) {
+          continue;
+        }
+        const pckg = await fs.readJSON(packageFileFull);
+        packages.push(pckg);
+      }
+    }
+    // Write packages table
+    if (packages && packages.length > 0) {
       this.mdLines.push(...[
         "## Installed packages",
         "",
         "| Name  | Namespace | Version | Version Name |",
         "| :---- | :-------- | :------ | :----------: | "
       ]);
-      for (const pckg of sortArray(this.sfdxHardisConfig.installedPackages, { by: ['SubscriberPackageNamespace', 'SubscriberPackageName'], order: ['asc', 'asc'] }) as any[]) {
+      for (const pckg of sortArray(packages, { by: ['SubscriberPackageNamespace', 'SubscriberPackageName'], order: ['asc', 'asc'] }) as any[]) {
         this.mdLines.push(...[
           `| ${pckg.SubscriberPackageName} | ${pckg.SubscriberPackageNamespace || ""} | [${pckg.SubscriberPackageVersionNumber}](https://test.salesforce.com/packaging/installPackage.apexp?p0=${pckg.SubscriberPackageVersionId}) | ${pckg.SubscriberPackageVersionName} |`
         ]);
@@ -238,7 +256,7 @@ export default class Project2Markdown extends SfCommand<any> {
       },
       {
         path: "manifest/package-skip-items.xml",
-        description: "Contains the list of metadatas that are excluded from the backup.\n\nOther metadata types might be skipped using environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES"
+        description: "Contains the list of metadatas that are excluded from the backup.<br/>Other metadata types might be skipped using environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES"
       },
     ];
   }
