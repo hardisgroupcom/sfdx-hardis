@@ -20,7 +20,21 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class Project2Markdown extends SfCommand<any> {
   public static title = 'SFDX Project to Markdown';
 
-  public static description = `Generates a markdown documentation from a SFDX project`;
+  public static description = `Generates a markdown documentation from a SFDX project
+
+- Package.xml files
+- Source Packages
+- sfdx-hardis configuration
+- Installed packages
+
+Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
+
+Generated markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
+
+![Screenshot project documentation](assets/images/screenshot-project-doc.jpg)
+
+![Screenshot project documentation](assets/images/screenshot-project-doc-2.jpg)
+`;
 
   public static examples = [
     '$ sf hardis:doc:project2markdown',
