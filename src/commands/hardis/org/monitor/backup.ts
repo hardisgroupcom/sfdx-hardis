@@ -14,6 +14,7 @@ import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { countPackageXmlItems, parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
+import Project2Markdown from '../../doc/project2markdown.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -257,6 +258,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         UpdatedMetadatas: this.diffFilesSimplified.length,
       },
     });
+
+    // Run project documentation generation
+    try {
+      await Project2Markdown.run();
+    } catch (e: any) {
+      uxLog(this, c.yellow("Error while generating project documentation " + e.message));
+    }
 
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
   }

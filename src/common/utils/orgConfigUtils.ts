@@ -2,6 +2,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import puppeteer, { Browser } from 'puppeteer-core';
+import sortArray from 'sort-array';
 import * as chromeLauncher from 'chrome-launcher';
 import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';
@@ -171,7 +172,39 @@ export async function listMajorOrgs() {
     }
     majorOrgs.push(props);
   }
-  return majorOrgs;
+  // Clumsy sorting but not other way :/
+  const majorOrgsSorted: any = [];
+  // Main
+  for (const majorOrg of majorOrgs) {
+    if (majorOrg?.branchName?.toLowerCase().startsWith("main") || majorOrg?.branchName?.toLowerCase().startsWith("prod")) {
+      majorOrgsSorted.push(majorOrg);
+    }
+  }
+  // Preprod
+  for (const majorOrg of majorOrgs) {
+    if (majorOrg?.branchName?.toLowerCase().startsWith("preprod") || majorOrg?.branchName?.toLowerCase().startsWith("staging")) {
+      majorOrgsSorted.push(majorOrg);
+    }
+  }
+  // uat
+  for (const majorOrg of majorOrgs) {
+    if (majorOrg?.branchName?.toLowerCase().startsWith("uat") || majorOrg?.branchName?.toLowerCase().startsWith("recette")) {
+      majorOrgsSorted.push(majorOrg);
+    }
+  }
+  // integration
+  for (const majorOrg of majorOrgs) {
+    if (majorOrg?.branchName?.toLowerCase().startsWith("integ")) {
+      majorOrgsSorted.push(majorOrg);
+    }
+  }
+  // Add remaining major branches
+  for (const majorOrg of sortArray(majorOrgs, { by: ['branchName'], order: ['asc'] }) as any[]) {
+    if (majorOrgsSorted.filter(org => org.branchName === majorOrg.branchName).length === 0) {
+      majorOrgsSorted.push(majorOrg);
+    }
+  }
+  return majorOrgsSorted;
 }
 
 export async function checkSfdxHardisTraceAvailable(conn: Connection) {
