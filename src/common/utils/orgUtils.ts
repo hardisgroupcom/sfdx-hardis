@@ -356,11 +356,12 @@ export async function authenticateWithSfdxUrlStore(org: any) {
 }
 
 // Add package installation to project .sfdx-hardis.yml
-export async function managePackageConfig(installedPackages, packagesToInstallCompleted) {
+export async function managePackageConfig(installedPackages, packagesToInstallCompleted, filterStandard = false) {
   const config = await getConfig('project');
   let projectPackages = config.installedPackages || [];
   let updated = false;
   for (const installedPackage of installedPackages) {
+    // Filter standard packages
     const matchInstalled = packagesToInstallCompleted.filter(
       (pckg) => pckg.SubscriberPackageId === installedPackage.SubscriberPackageId
     );
@@ -389,6 +390,21 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
       );
       updated = true;
     } else if (matchInstalled.length > 0 && matchLocal.length === 0) {
+      // Check if not filtered package
+      if (filterStandard &&
+        ["Salesforce Connected Apps",
+          "Salesforce Mobile Apps",
+          "Trail Tracker",
+          "SalesforceA Connected Apps",
+          "Salesforce Adoption Dashboards",
+          "Salesforce.com CRM Dashboards",
+          "Sales Insights"
+        ].includes(installedPackage.SubscriberPackageName)
+      ) {
+        uxLog(this, c.grey(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
+        continue;
+      }
+
       // Request user about automatic installation during scratch orgs and deployments
       const installResponse = await prompts({
         type: 'select',

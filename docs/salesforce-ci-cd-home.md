@@ -19,12 +19,15 @@ There are many ways to do DevOps with Salesforce, each of them have their advant
 
 You can setup and use a full CI/CD pipeline for your Salesforce projects using sfdx-hardis, with advanced features:
 
-- [Overwrite Management](salesforce-ci-cd-config-overwrite.md)
-- [Delta Deployments](salesforce-ci-cd-config-delta-deployment.md)
-- [Automated sources cleaning](salesforce-ci-cd-config-cleaning.md)
-- [Messaging platforms integrations](salesforce-ci-cd-setup-integrations-home.md) (Slack, Microsoft Teams)
+- **Admins** are autonomous to [build their pull requests](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/) **with clicks on VsCode Extension, no command lines**
+- [Delta Deployments](salesforce-ci-cd-config-delta-deployment.md): Improve performances by deploying only updated metadatas
+- [Overwrite Management](salesforce-ci-cd-config-overwrite.md): Define which metadatas will never be overwritten if they are already existing in the target org of a deployment
+- [Smart Apex Test Runs](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests): If your Pull Request to a sandbox can not break Apex Tests, just don't run them to improve performances.
+- [Automated sources cleaning](salesforce-ci-cd-config-cleaning.md): Clean profiles from attributes existing on permission sets, clean flow positions...
+- [Integration with Messaging platforms](salesforce-ci-cd-setup-integrations-home.md): Receive detailed deployment notifications on Slack, Microsoft Teams and Emails
+- Integration with **ticketing systems**: [JIRA](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jira/), [Azure Boards](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure-boards/), or [any other tool](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-generic-ticketing/)
 
-We provide ready to use CI/CD pipelines for the following Git platforms:
+We provide ready to use CI/CD pipelines for the following Git platforms, with results of Deployment simulation jobs as comments on Pull Requests:
 
 - [Gitlab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml)
 - [Azure](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml)

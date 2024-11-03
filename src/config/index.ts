@@ -73,7 +73,7 @@ async function getBranchConfigFiles() {
   return branchConfigFiles;
 }
 
-export const getConfig = async (layer = 'user'): Promise<any> => {
+export const getConfig = async (layer: "project" | "branch" | "user" = 'user'): Promise<any> => {
   const defaultConfig = await loadFromConfigFile(projectConfigFiles);
   if (layer === 'project') {
     return defaultConfig;
