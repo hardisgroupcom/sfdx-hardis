@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.5.0] 2024-11-03
+
 - hardis:doc:packagexml2markdown: Generate markdown documentation from a package.xml file
 - hardis:doc:project2markdown: Generate markdown documentation from any SFDX project (CI/CD, monitoring, projects not using sfdx-hardis...) in `docs` folder and add a link in README.md if existing.
 - hardis:org:monitor:backup: Call hardis:doc:project2markdown after backup
