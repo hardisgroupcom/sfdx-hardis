@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- hardis:doc:project2markdown: Update documentation
+- Polish CI/CD home doc
+
 ## [5.5.0] 2024-11-03
 
 - hardis:doc:packagexml2markdown: Generate markdown documentation from a package.xml file
