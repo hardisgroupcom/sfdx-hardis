@@ -95,6 +95,7 @@ export interface NotifMessage {
   | "MISSING_ATTRIBUTES"
   | "UNUSED_LICENSES"
   | "UNUSED_USERS"
+  | 'UNUSED_APEX_CLASSES'
   | "ORG_INFO"
   | "ORG_LIMITS"
   | "RELEASE_UPDATES";

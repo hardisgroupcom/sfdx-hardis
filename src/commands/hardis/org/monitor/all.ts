@@ -152,6 +152,12 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
         frequency: 'weekly',
       },
       {
+        key: 'UNUSED_APEX_CLASSES',
+        title: 'Detect unused Apex classes in an org',
+        command: 'sf hardis:org:diagnose:unused-apex-classes',
+        frequency: 'weekly',
+      },
+      {
         key: 'METADATA_STATUS',
         title: 'Detect inactive metadata',
         command: 'sf hardis:lint:metadatastatus',
