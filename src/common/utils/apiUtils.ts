@@ -18,7 +18,7 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
 }
 
 // Perform simple SOQL query with Tooling API
-export function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
+export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
     this,
     c.grey(
@@ -28,7 +28,15 @@ export function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<a
       conn.instanceUrl
     )
   );
-  return Promise.resolve(conn.tooling.query(soqlQuery));
+  // First query
+  const res = await conn.tooling.query(soqlQuery);
+  let pageRes = Object.assign({}, res);
+  // Get all page results
+  while (pageRes.done === false && pageRes.nextRecordsUrl) {
+    pageRes = await conn.tooling.queryMore(pageRes.nextRecordsUrl || "");
+    res.records.push(...pageRes.records);
+  }
+  return res;
 }
 
 let spinnerQ;
