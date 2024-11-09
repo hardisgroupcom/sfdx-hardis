@@ -21,18 +21,18 @@ Generated markdown files will be written in **docs** folder (except README.md wh
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                   | Default | Required | Options |
+|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir    | option  | undefined                                                     |         |          |         |
+| json         | boolean | Format output as json.                                        |         |          |         |
+| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:doc:project2markdown
+sf hardis:doc:project2markdown
 ```
 
 
