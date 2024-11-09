@@ -167,7 +167,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         const today = moment();
         apexClass.latestJobRunDays = today.diff(apexClass.latestJobDate, 'days');
         if (apexClass.latestJobRunDays > this.lastNdays && apexClass.nextJobDate === "") {
-          apexClass.severity = "error";
+          apexClass.severity = "warning";
           this.unusedNumber++;
         }
         else {
