@@ -7,28 +7,28 @@ Generates full org package.xml, including managed items
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |           Default           | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:---------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                             |          |         |
-| flags-dir         | option  | undefined                                                     |                             |          |         |
-| json              | boolean | Format output as json.                                        |                             |          |         |
-| outputfile        | option  | Output package.xml file                                       |                             |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                             |          |         |
-| target-org<br/>-o | option  | undefined                                                     | <synefo@advisopartners.com> |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                             |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile|option|Output package.xml file||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:org:generate:packagexmlfull
+$ sf hardis:org:generate:packagexmlfull
 ```
 
 ```shell
-sf hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml
+$ sf hardis:org:generate:packagexmlfull --outputfile /tmp/packagexmlfull.xml
 ```
 
 ```shell
-sf hardis:org:generate:packagexmlfull --target-org nico@example.com
+$ sf hardis:org:generate:packagexmlfull --target-org nico@example.com
 ```
 
 

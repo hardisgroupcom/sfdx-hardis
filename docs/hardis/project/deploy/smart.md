@@ -202,49 +202,49 @@ If you need notifications to be sent using the current Pull Request and not the 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                             | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org            |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                         |         |          |         |
-| delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes |         |          |         |
-| flags-dir         | option  | undefined                                                               |         |          |         |
-| json              | boolean | Format output as json.                                                  |         |          |         |
-| packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org    |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|check<br/>-c|boolean|Only checks the deployment, there is no impact on target org||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|delta|boolean|Applies sfdx-git-delta to package.xml before other deployment processes||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|packagexml<br/>-p|option|Path to package.xml containing what you want to deploy in target org||||
 |runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined|<synefo@advisopartners.com>|||
+|target-org<br/>-o|option|undefined||||
 |testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:project:deploy:smart
+$ sf hardis:project:deploy:smart
 ```
 
 ```shell
-sf hardis:project:deploy:smart --check
+$ sf hardis:project:deploy:smart --check
 ```
 
 ```shell
-sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests
+$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests
 ```
 
 ```shell
-sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'
+$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'
 ```
 
 ```shell
-sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData
+$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData
 ```
 
 ```shell
-sf hardis:project:deploy:smart
+$ sf hardis:project:deploy:smart
 ```
 
 ```shell
-FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod
+$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod
 ```
 
 

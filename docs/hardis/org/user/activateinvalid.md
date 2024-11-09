@@ -14,28 +14,28 @@ See article below
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                  |           Default           | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:---------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |                             |          |         |
-| flags-dir         | option  | undefined                                                                                                    |                             |          |         |
-| json              | boolean | Format output as json.                                                                                       |                             |          |         |
-| profiles<br/>-p   | option  | Comma-separated list of profiles names that you want to reactive users assigned to and with a .invalid email |                             |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                |                             |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                    | <synefo@advisopartners.com> |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |                             |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|profiles<br/>-p|option|Comma-separated list of profiles names that you want to reactive users assigned to and with a .invalid email||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:org:user:activateinvalid
+$ sf hardis:org:user:activateinvalid
 ```
 
 ```shell
-sf hardis:org:user:activateinvalid --target-org myuser@myorg.com
+$ sf hardis:org:user:activateinvalid --target-org myuser@myorg.com
 ```
 
 ```shell
-sf hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --target-org myuser@myorg.com
+$ sf hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --target-org myuser@myorg.com
 ```
 
 
