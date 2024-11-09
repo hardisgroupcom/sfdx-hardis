@@ -12,6 +12,93 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class MonitorAll extends SfCommand<any> {
   public static title = 'Monitor org';
 
+  public static monitoringCommandsDefault = [
+    {
+      key: 'AUDIT_TRAIL',
+      title: 'Detect suspect setup actions in major org',
+      command: 'sf hardis:org:diagnose:audittrail',
+      frequency: 'daily',
+    },
+    {
+      key: 'LEGACY_API',
+      title: 'Detect calls to deprecated API versions',
+      command: 'sf hardis:org:diagnose:legacyapi',
+      frequency: 'daily',
+    },
+    {
+      key: 'ORG_LIMITS',
+      title: 'Detect if org limits are close to be reached',
+      command: 'sf hardis:org:monitor:limits',
+      frequency: 'daily',
+    },
+    {
+      key: 'LICENSES',
+      title: 'Extract licenses information',
+      command: 'sf hardis:org:diagnose:licenses',
+      frequency: 'weekly',
+    },
+    {
+      key: 'LINT_ACCESS',
+      title: 'Detect custom elements with no access rights defined in permission sets',
+      command: 'sf hardis:lint:access',
+      frequency: 'weekly',
+    },
+    {
+      key: 'UNUSED_LICENSES',
+      title: 'Detect permission set licenses that are assigned to users that do not need them',
+      command: 'sf hardis:org:diagnose:unusedlicenses',
+      frequency: 'weekly',
+    },
+    {
+      key: 'UNUSED_USERS',
+      title: 'Detect active users without recent logins',
+      command: 'sf hardis:org:diagnose:unusedusers',
+      frequency: 'weekly',
+    },
+    {
+      key: 'ACTIVE_USERS',
+      title: 'Detect active users with recent logins',
+      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers',
+      frequency: 'weekly',
+    },
+    {
+      key: 'ORG_INFO',
+      title: 'Get org info + SF instance info + next major upgrade date',
+      command: 'sf hardis:org:diagnose:instanceupgrade',
+      frequency: 'weekly',
+    },
+    {
+      key: 'RELEASE_UPDATES',
+      title: 'Gather warnings about incoming and overdue Release Updates',
+      command: 'sf hardis:org:diagnose:releaseupdates',
+      frequency: 'weekly',
+    },
+    {
+      key: 'UNUSED_METADATAS',
+      title: 'Detect custom labels and custom permissions that are not in use',
+      command: 'sf hardis:lint:unusedmetadatas',
+      frequency: 'weekly',
+    },
+    {
+      key: 'UNUSED_APEX_CLASSES',
+      title: 'Detect unused Apex classes in an org',
+      command: 'sf hardis:org:diagnose:unused-apex-classes',
+      frequency: 'weekly',
+    },
+    {
+      key: 'METADATA_STATUS',
+      title: 'Detect inactive metadata',
+      command: 'sf hardis:lint:metadatastatus',
+      frequency: 'weekly',
+    },
+    {
+      key: 'MISSING_ATTRIBUTES',
+      title: 'Detect missing description on custom field',
+      command: 'sf hardis:lint:missingattributes',
+      frequency: 'weekly',
+    },
+  ];
+
   public static description = `Monitor org, generate reports and sends notifications
 
 You can disable some commands defining either a **monitoringDisable** property in \`.sfdx-hardis.yml\`, or a comma separated list in env variable **MONITORING_DISABLE**
@@ -45,6 +132,10 @@ monitoringCommands:
 
 You can force the daily run of all commands by defining env var \`MONITORING_IGNORE_FREQUENCY=true\`
 
+The default list of commands is the following:
+
+${this.getDefaultCommandsMarkdown()}
+
 `;
 
   public static examples = ['$ sf hardis:org:monitor:all'];
@@ -74,6 +165,19 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
 
   /* jscpd:ignore-end */
 
+  public static getDefaultCommandsMarkdown() {
+    const mdLines = [
+      "| Key | Description | Command | Frequency |",
+      "| :---: | :---- | :---- | :-----: |",
+
+    ];
+    for (const cmd of MonitorAll.monitoringCommandsDefault) {
+      const commandDocUrl = `${CONSTANTS.DOC_URL_ROOT}/${cmd.command.split(" ")[1].replaceAll(":", "/")}`;
+      mdLines.push(`| [${cmd.key}](${commandDocUrl}) | ${cmd.title} | [${cmd.command}](${commandDocUrl}) | ${cmd.frequency} |`);
+    }
+    return mdLines.join("\n");
+  }
+
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MonitorAll);
     this.debugMode = flags.debug || false;
@@ -84,88 +188,8 @@ You can force the daily run of all commands by defining env var \`MONITORING_IGN
       c.cyan('Running monitoring scripts for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
     );
 
-    const monitoringCommandsDefault = [
-      {
-        key: 'AUDIT_TRAIL',
-        title: 'Detect suspect setup actions in major org',
-        command: 'sf hardis:org:diagnose:audittrail',
-        frequency: 'daily',
-      },
-      {
-        key: 'LEGACY_API',
-        title: 'Detect calls to deprecated API versions',
-        command: 'sf hardis:org:diagnose:legacyapi',
-        frequency: 'daily',
-      },
-      {
-        key: 'ORG_LIMITS',
-        title: 'Detect if org limits are close to be reached',
-        command: 'sf hardis:org:monitor:limits',
-        frequency: 'daily',
-      },
-      {
-        key: 'LICENSES',
-        title: 'Extract licenses information',
-        command: 'sf hardis:org:diagnose:licenses',
-        frequency: 'weekly',
-      },
-      {
-        key: 'LINT_ACCESS',
-        title: 'Detect custom elements with no access rights defined in permission sets',
-        command: 'sf hardis:lint:access',
-        frequency: 'weekly',
-      },
-      {
-        key: 'UNUSED_LICENSES',
-        title: 'Detect permission set licenses that are assigned to users that do not need them',
-        command: 'sf hardis:org:diagnose:unusedlicenses',
-        frequency: 'weekly',
-      },
-      {
-        key: 'UNUSED_USERS',
-        title: 'Detect active users without recent logins',
-        command: 'sf hardis:org:diagnose:unusedusers',
-        frequency: 'weekly',
-      },
-      {
-        key: 'ACTIVE_USERS',
-        title: 'Detect active users with recent logins',
-        command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers',
-        frequency: 'weekly',
-      },
-      {
-        key: 'ORG_INFO',
-        title: 'Get org info + SF instance info + next major upgrade date',
-        command: 'sf hardis:org:diagnose:instanceupgrade',
-        frequency: 'weekly',
-      },
-      {
-        key: 'RELEASE_UPDATES',
-        title: 'Gather warnings about incoming and overdue Release Updates',
-        command: 'sf hardis:org:diagnose:releaseupdates',
-        frequency: 'weekly',
-      },
-      {
-        key: 'UNUSED_METADATAS',
-        title: 'Detect custom labels and custom permissions that are not in use',
-        command: 'sf hardis:lint:unusedmetadatas',
-        frequency: 'weekly',
-      },
-      {
-        key: 'METADATA_STATUS',
-        title: 'Detect inactive metadata',
-        command: 'sf hardis:lint:metadatastatus',
-        frequency: 'weekly',
-      },
-      {
-        key: 'MISSING_ATTRIBUTES',
-        title: 'Detect missing description on custom field',
-        command: 'sf hardis:lint:missingattributes',
-        frequency: 'weekly',
-      },
-    ];
     const config = await getConfig('user');
-    const commands = monitoringCommandsDefault.concat(config.monitoringCommands || []);
+    const commands = MonitorAll.monitoringCommandsDefault.concat(config.monitoringCommands || []);
     const monitoringDisable =
       config.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(',') : []);
 
