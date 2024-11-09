@@ -7,7 +7,7 @@ description: How to solve Salesforce deployment error / 0%/gm
 
 ## Detection
 
-- RegExp: ` 0%`
+- RegExp: `0%`
 
 ## Resolution
 
