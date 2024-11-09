@@ -16,14 +16,14 @@ import sortArray from 'sort-array';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class DianoseUnusedApexClasses extends SfCommand<any> {
+export default class DiagnoseUnusedApexClasses extends SfCommand<any> {
   public static title = 'Detect unused Apex classes in an org';
 
-  public static description = `List all async Apex classes (Batch,Queuable,Schedulable) that has not been called for more than 365 days.
+  public static description = `List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
   
 The result class list probably can be removed from the project, and that will improve your test classes performances :)
 
-The number of unused day is overriddable using --days option. 
+The number of unused day is overridable using --days option. 
 
 The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
 
@@ -74,7 +74,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(DianoseUnusedApexClasses);
+    const { flags } = await this.parse(DiagnoseUnusedApexClasses);
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     this.lastNdays = Number(flags.days || 365);
@@ -82,7 +82,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Calculate lastNdays to use
     const conn = flags['target-org'].getConnection();
 
-    // Retrieve the list of Apex classs that are BatchApex, ScheduledApex or Queueable
+    // Retrieve the list of Apex class that are BatchApex, ScheduledApex or Queueable
     await this.listAsyncApexClasses(conn);
 
     // Find latest AsyncJob for each class
@@ -210,7 +210,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         this.asyncClassList.push({ Id: classItem.Id, Name: classItem.Name, AsyncType: "Database.Batchable" });
       }
       else if (classItem.Body.includes("implements Queueable")) {
-        this.asyncClassList.push({ Id: classItem.Id, Name: classItem.Name, AsyncType: "Queuable" });
+        this.asyncClassList.push({ Id: classItem.Id, Name: classItem.Name, AsyncType: "Queueable" });
       }
       else if (classItem.Body.includes("implements Schedulable")) {
         this.asyncClassList.push({ Id: classItem.Id, Name: classItem.Name, AsyncType: "Schedulable" });
@@ -219,7 +219,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async manageNotifications() {
-    const { flags } = await this.parse(DianoseUnusedApexClasses);
+    const { flags } = await this.parse(DiagnoseUnusedApexClasses);
     // Build notification
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();

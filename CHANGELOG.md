@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- New command hardis:org:diagnose:unused-apex-classes, to detect Apex classes (Batch,Queuable,Schedulable) that has not been called for more than 365 days, that might be deleted to improve apex tests performances
+- New command hardis:org:diagnose:unused-apex-classes, to detect Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days, that might be deleted to improve apex tests performances
 - hardis:doc:project2markdown: Update documentation
 - Polish CI/CD home doc
 - Refactor the build of [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/) documentation

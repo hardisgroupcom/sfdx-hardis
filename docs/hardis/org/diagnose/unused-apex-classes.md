@@ -3,11 +3,11 @@
 
 ## Description
 
-List all async Apex classes (Batch,Queuable,Schedulable) that has not been called for more than 365 days.
+List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
   
 The result class list probably can be removed from the project, and that will improve your test classes performances :)
 
-The number of unused day is overriddable using --days option. 
+The number of unused day is overridable using --days option. 
 
 The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
 
