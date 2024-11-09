@@ -63,8 +63,10 @@ nav:
         doc:
           extract:
             permsetgroups: hardis/doc/extract/permsetgroups.md
+          packagexml2markdown: hardis/doc/packagexml2markdown.md
           plugin:
             generate: hardis/doc/plugin/generate.md
+          project2markdown: hardis/doc/project2markdown.md
         lint:
           access: hardis/lint/access.md
           metadatastatus: hardis/lint/metadatastatus.md
@@ -94,6 +96,7 @@ nav:
             legacyapi: hardis/org/diagnose/legacyapi.md
             licenses: hardis/org/diagnose/licenses.md
             releaseupdates: hardis/org/diagnose/releaseupdates.md
+            unused-apex-classes: hardis/org/diagnose/unused-apex-classes.md
             unusedlicenses: hardis/org/diagnose/unusedlicenses.md
             unusedusers: hardis/org/diagnose/unusedusers.md
           files:
