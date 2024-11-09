@@ -21,9 +21,11 @@ export default class DianoseUnusedApexClasses extends SfCommand<any> {
 
   public static description = `List all async Apex classes (Batch,Queuable,Schedulable) that has not been called for more than 365 days.
   
-The result class list probably can be removed from the project, and that will improve your test classes capabilities :)
+The result class list probably can be removed from the project, and that will improve your test classes performances :)
 
 The number of unused day is overriddable using --days option. 
+
+The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-apex-classes/) and can output Grafana, Slack and MsTeams Notifications.
 `;
