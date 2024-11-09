@@ -28,6 +28,8 @@ The number of unused day is overridable using --days option.
 The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-apex-classes/) and can output Grafana, Slack and MsTeams Notifications.
+
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-monitoring-unused-apex-grafana.jpg)
 `;
 
   public static examples = [
