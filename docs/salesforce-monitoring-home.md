@@ -41,7 +41,9 @@ Installation and usage are **admin-friendly**, and **notifications** can be sent
 
 _Example of visualization in Grafana_
 
-![](assets/images/grafana-screenshot.png)
+![](assets/images/grafana-screenshot.jpg)
+
+![](assets/images/grafana-screenshot-1.jpg)
 
 ![](assets/images/grafana-screenshot-2.png)
 

@@ -28,6 +28,8 @@ The number of unused day is overridable using --days option.
 The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-apex-classes/) and can output Grafana, Slack and MsTeams Notifications.
+
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-monitoring-unused-apex-grafana.jpg)
 `;
 
   public static examples = [
@@ -126,7 +128,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   private displaySummaryOutput() {
     let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
     if (this.unusedNumber > 0) {
-      summary = `${this.unusedNumber} apex classes might be not used anymore.`;
+      summary = `${this.unusedNumber} apex classes might not be used anymore.`;
       const summaryClasses = this.asyncClassList.map(apexClass => {
         return {
           name: apexClass.Name,
@@ -228,7 +230,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     let attachments: any[] = [];
     if (this.unusedNumber > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.unusedNumber} apex classes might be not used anymore.`;
+      notifText = `${this.unusedNumber} apex classes might not be used anymore.`;
       const notifDetailText = this.asyncClassList
         .filter(apexClass => ["warning", "error"].includes(apexClass.severity))
         .map(apexClass => {

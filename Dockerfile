@@ -2,7 +2,7 @@
 
 FROM alpine:3.20
 
-LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@hardis-group.com>"
+LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
 RUN apk add --update --no-cache \
             chromium \

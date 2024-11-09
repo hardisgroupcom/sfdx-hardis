@@ -14,12 +14,12 @@ The command uses queries on AsyncApexJob and CronTrigger technical tables to bui
 
 Sfdx-hardis command: [sf hardis:org:diagnose:unused-apex-classes](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-apex-classes/)
 
-Key: **UNUSED_APEX_CLASSES***
+Key: **UNUSED_APEX_CLASSES**
 
 ### Grafana example
 
-TODO
+![](assets/images/screenshot-monitoring-unused-apex-grafana.jpg)
 
 ### Slack example
 
-TODO
+![](assets/images/screenshot-monitoring-unused-apex.jpg)
