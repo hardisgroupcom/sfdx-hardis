@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update Dockerfile email address
+- Upgrade default Grafana Dashboards to add Unused Apex Classes indicator
+- Update hardis:org:diagnose:unused-apex-classes and hardis:doc:packagexml2markdown documentation
+
 ## [5.6.0] 2024-11-09
 
 - New command hardis:org:diagnose:unused-apex-classes, to detect Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days, that might be deleted to improve apex tests performances

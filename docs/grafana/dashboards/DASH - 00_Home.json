@@ -21,7 +21,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "11.3.0-75420"
+      "version": "11.4.0-78571"
     },
     {
       "type": "datasource",
@@ -135,7 +135,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -230,7 +230,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -359,7 +359,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -488,7 +488,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -617,7 +617,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -746,7 +746,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -880,7 +880,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -974,7 +974,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1062,7 +1062,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1154,7 +1154,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1242,7 +1242,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1344,7 +1344,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1450,7 +1450,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1558,7 +1558,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1637,7 +1637,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1740,7 +1740,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1843,7 +1843,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -1962,7 +1962,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -2068,6 +2068,93 @@
           "color": {
             "mode": "thresholds"
           },
+          "displayName": "Unused Apex Classes",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=UNUSED_APEX_CLASSES&﻿﻿${__url_time_range}&var-indicatorLabel=Unused Apex Classes"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 20
+      },
+      "id": 35,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"UNUSED_APEX_CLASSES\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "displayName": "Deactivated Flows & VR",
           "links": [
             {
@@ -2080,8 +2167,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -2098,8 +2184,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 0,
+        "w": 5,
+        "x": 5,
         "y": 20
       },
       "id": 6,
@@ -2120,7 +2206,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -2172,8 +2258,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -2190,8 +2275,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
+        "w": 5,
+        "x": 10,
         "y": 20
       },
       "id": 4,
@@ -2212,7 +2297,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -2264,8 +2349,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -2282,8 +2366,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
+        "w": 4,
+        "x": 15,
         "y": 20
       },
       "id": 3,
@@ -2304,7 +2388,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -2356,8 +2440,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -2370,8 +2453,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 19,
         "y": 20
       },
       "id": 5,
@@ -2392,7 +2475,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -2457,8 +2540,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
-                "value": null
+                "color": "blue"
               }
             ]
           }
@@ -2551,7 +2633,7 @@
           }
         ]
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -2676,8 +2758,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
-                "value": null
+                "color": "blue"
               }
             ]
           }
@@ -2770,7 +2851,7 @@
           }
         ]
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -2895,8 +2976,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
-                "value": null
+                "color": "blue"
               }
             ]
           }
@@ -3013,7 +3093,7 @@
           }
         ]
       },
-      "pluginVersion": "11.3.0-75420",
+      "pluginVersion": "11.4.0-78571",
       "targets": [
         {
           "datasource": {
@@ -3107,7 +3187,7 @@
     }
   ],
   "refresh": "",
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [
     "sfdx-hardis",
     "salesforce",
@@ -3147,6 +3227,6 @@
   "timezone": "browser",
   "title": "DASH - 00_Home",
   "uid": "sfdx-hardis-today-summary",
-  "version": 107,
+  "version": 109,
   "weekStart": ""
 }
