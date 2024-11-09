@@ -133,6 +133,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           latestJobDate: apexClass.latestJobDate ? moment(apexClass.latestJobDate).format('YYYY-MM-DD hh:mm') : "Not found",
           latestJobRunDays: apexClass.latestJobRunDays,
           nextJobDate: apexClass.nextJobDate ? moment(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm') : "None",
+          queued: apexClass.queued,
           AsyncType: apexClass.AsyncType,
           severity: `${apexClass.severityIcon} ${apexClass.severity}`
         };
@@ -152,11 +153,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.asyncClassList = this.asyncClassList.map(apexClass => {
       const futureJobs = cronTriggers.filter(cronJob => apexClass.Name === cronJob.CronJobDetail.Name);
       apexClass.nextJobDate = "";
+      apexClass.queued = false;
       if (futureJobs.length > 0) {
         apexClass.nextJobDate = futureJobs[0].NextFireTime;
       }
-      const latestJobs = latestJobsAll.filter(job => job.ApexClassId === apexClass.Id);
-      if (latestJobs.length === 0) {
+      const relatedJobs = latestJobsAll.filter(job => job.ApexClassId === apexClass.Id);
+      if (relatedJobs.length === 0) {
         apexClass.latestJobDate = "";
         apexClass.latestJobRunDays = 99999;
         if (apexClass.nextJobDate === "") {
@@ -165,10 +167,14 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         }
       }
       else {
-        apexClass.latestJobDate = latestJobs[0].expr0;
+        const queuedJobs = relatedJobs.filter(job => job.Status === "Queued");
+        if (queuedJobs.length > 0) {
+          apexClass.queued = true;
+        }
+        apexClass.latestJobDate = relatedJobs[0].expr0;
         const today = moment();
         apexClass.latestJobRunDays = today.diff(apexClass.latestJobDate, 'days');
-        if (apexClass.latestJobRunDays > this.lastNdays && apexClass.nextJobDate === "") {
+        if (apexClass.latestJobRunDays > this.lastNdays && apexClass.nextJobDate === "" && apexClass.queued === false) {
           apexClass.severity = "warning";
           this.unusedNumber++;
         }
@@ -228,6 +234,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         .map(apexClass => {
           if (apexClass.nextJobDate) {
             return `• *${apexClass.Name}*: Will run on ${moment(apexClass.nextJobDate.format('YYYY-MM-DD hh:mm'))}`
+          }
+          else if (apexClass.queued) {
+            return `• *${apexClass.Name}*: A future job is queued`
           }
           else if (apexClass.latestJobRunDays < 99999) {
             return `• *${apexClass.Name}*: ${apexClass.latestJobRunDays} days`
