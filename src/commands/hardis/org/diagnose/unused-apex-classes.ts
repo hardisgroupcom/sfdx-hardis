@@ -86,8 +86,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Find latest AsyncJob for each class
     const latestJobs = await this.findLatestApexJobsForEachClass(conn);
 
+    const jobTriggers = await this.findCronTriggers(conn);
+
     // Aggregate results
-    this.matchClassesWithJobs(latestJobs);
+    this.matchClassesWithJobs(latestJobs, jobTriggers);
 
     // Generate output CSV file
     this.outputFile = await generateReportPath('unused-apex-classes', this.outputFile);
@@ -113,6 +115,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     };
   }
 
+  private async findCronTriggers(conn: any) {
+    const cronTriggersQuery = `SELECT Id, CronJobDetail.JobType, CronJobDetail.Name, State, NextFireTime FROM CronTrigger  WHERE State IN ('WAITING', 'ACQUIRED')`;
+    const cronTriggersResult = await soqlQuery(cronTriggersQuery, conn);
+    return cronTriggersResult.records;
+  }
+
   private displaySummaryOutput() {
     let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
     if (this.unusedNumber > 0) {
@@ -122,8 +130,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           name: apexClass.Name,
           latestJobDate: apexClass.latestJobDate ? moment(apexClass.latestJobDate).format('YYYY-MM-DD hh:mm') : "Not found",
           latestJobRunDays: apexClass.latestJobRunDays,
+          nextJobDate: apexClass.nextJobDate ? moment(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm') : "None",
           AsyncType: apexClass.AsyncType,
-          severity: `${apexClass.severityIcon} ${apexClass.severity}`,
+          severity: `${apexClass.severityIcon} ${apexClass.severity}`
         };
       });
       uxLog(this, c.yellow("\n" + columnify(summaryClasses)));
@@ -137,20 +146,27 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     return summary;
   }
 
-  private matchClassesWithJobs(latestJobs: any) {
+  private matchClassesWithJobs(latestJobsAll: any[], cronTriggers: any[]) {
     this.asyncClassList = this.asyncClassList.map(apexClass => {
-      const latestJob = latestJobs.filter(job => job.ApexClassId === apexClass.Id);
-      if (latestJob.length === 0) {
+      const futureJobs = cronTriggers.filter(cronJob => apexClass.Name === cronJob.CronJobDetail.Name);
+      apexClass.nextJobDate = "";
+      if (futureJobs.length > 0) {
+        apexClass.nextJobDate = futureJobs[0].NextFireTime;
+      }
+      const latestJobs = latestJobsAll.filter(job => job.ApexClassId === apexClass.Id);
+      if (latestJobs.length === 0) {
         apexClass.latestJobDate = "";
         apexClass.latestJobRunDays = 99999;
-        apexClass.severity = "error";
-        this.unusedNumber++;
+        if (apexClass.nextJobDate === "") {
+          apexClass.severity = "error";
+          this.unusedNumber++;
+        }
       }
       else {
-        apexClass.latestJobDate = latestJob[0].expr0;
+        apexClass.latestJobDate = latestJobs[0].expr0;
         const today = moment();
         apexClass.latestJobRunDays = today.diff(apexClass.latestJobDate, 'days');
-        if (apexClass.latestJobRunDays > this.lastNdays) {
+        if (apexClass.latestJobRunDays > this.lastNdays && apexClass.nextJobDate === "") {
           apexClass.severity = "error";
           this.unusedNumber++;
         }
@@ -208,7 +224,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const notifDetailText = this.asyncClassList
         .filter(apexClass => ["warning", "error"].includes(apexClass.severity))
         .map(apexClass => {
-          if (apexClass.latestJobRunDays < 99999) {
+          if (apexClass.nextJobDate) {
+            return `• *${apexClass.Name}*: Will run on ${moment(apexClass.nextJobDate.format('YYYY-MM-DD hh:mm'))}`
+          }
+          else if (apexClass.latestJobRunDays < 99999) {
             return `• *${apexClass.Name}*: ${apexClass.latestJobRunDays} days`
           }
           else {
