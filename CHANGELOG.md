@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.6.1] 2024-11-11
+
+- Fix hardis:org:user:activateinvalid interactive mode
 - Update Dockerfile email address
 - Upgrade default Grafana Dashboards to add Unused Apex Classes indicator
 - Update hardis:org:diagnose:unused-apex-classes and hardis:doc:packagexml2markdown documentation

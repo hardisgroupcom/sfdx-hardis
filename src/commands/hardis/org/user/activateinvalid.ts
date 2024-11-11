@@ -65,7 +65,7 @@ See article below
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgUserActiveInvalid);
     this.profiles = flags.profiles ? flags.profiles.split(',') : [];
-    const hasProfileConstraint = this.profiles !== null;
+    const hasProfileConstraint = this.profiles !== null && this.profiles.length > 0;
     this.debugMode = flags.debug || false;
 
     const conn = flags['target-org'].getConnection();
