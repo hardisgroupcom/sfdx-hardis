@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.6.2] 2024-11-12
+
+- hardis:org:diagnose:unused-apex-classes
+  - Display class created by and created name MIN(date from org,date from git)
+  - Replace errors by warnings, and add a message so users double-check before removing a class
+  - Reorder console log
+- Remove unused code from MetadataUtils class
+
 ## [5.6.1] 2024-11-11
 
 - Fix hardis:org:user:activateinvalid interactive mode
