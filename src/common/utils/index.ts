@@ -28,7 +28,7 @@ let pluginsStdout: string | null = null;
 
 export const isCI = process.env.CI != null;
 
-export function git(options: any = { output: false }): SimpleGit {
+export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
   const simpleGitInstance = simpleGit();
   // Hack to be able to display executed git command (and it still doesn't work...)
   // cf: https://github.com/steveukx/git-js/issues/593
@@ -51,7 +51,9 @@ export function git(options: any = { output: false }): SimpleGit {
         first = false;
         const gitArgsStr = (gitArgs || []).join(' ');
         if (!(gitArgsStr.includes('branch -v') || gitArgsStr.includes('config --list --show-origin --null'))) {
-          uxLog(this, `[command] ${c.bold(c.bgWhite(c.grey(command + ' ' + gitArgsStr)))}`);
+          if (options.displayCommand) {
+            uxLog(this, `[command] ${c.bold(c.bgWhite(c.grey(command + ' ' + gitArgsStr)))}`);
+          }
         }
       }
     }

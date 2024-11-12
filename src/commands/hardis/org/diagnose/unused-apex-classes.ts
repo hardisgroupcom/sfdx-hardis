@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog } from '../../../../common/utils/index.js';
+import { git, isGitRepo, uxLog } from '../../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -12,6 +12,7 @@ import { CONSTANTS } from '../../../../config/index.js';
 import moment from 'moment';
 import columnify from 'columnify';
 import sortArray from 'sort-array';
+import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -26,6 +27,8 @@ The result class list probably can be removed from the project, and that will im
 The number of unused day is overridable using --days option. 
 
 The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
+
+Apex Classes CreatedBy and CreatedOn fields are calculated from MIN(date from git, date from org)
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-apex-classes/) and can output Grafana, Slack and MsTeams Notifications.
 
@@ -95,19 +98,20 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Aggregate results
     this.matchClassesWithJobs(latestJobs, jobTriggers);
 
+    // Build result text
+    const summary = this.displaySummaryOutput();
+
     // Generate output CSV file
     this.outputFile = await generateReportPath('unused-apex-classes', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.asyncClassList, this.outputFile);
 
+    // Exit code
     if ((this.argv || []).includes('unused-apex-classes')) {
       process.exitCode = this.statusCode;
     }
 
     // Manage notifications
     await this.manageNotifications();
-
-    // Build result text
-    const summary = this.displaySummaryOutput();
 
     // Return an object to be displayed with --json
     return {
@@ -120,7 +124,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async findCronTriggers(conn: any) {
-    const cronTriggersQuery = `SELECT Id, CronJobDetail.JobType, CronJobDetail.Name, State, NextFireTime FROM CronTrigger  WHERE State IN ('WAITING', 'ACQUIRED')`;
+    const cronTriggersQuery = `SELECT Id, CronJobDetail.JobType, CronJobDetail.Name, State, NextFireTime FROM CronTrigger  WHERE State IN ('WAITING', 'ACQUIRED', 'EXECUTING', 'PAUSED', 'BLOCKED', 'PAUSED_BLOCKED')`;
     const cronTriggersResult = await soqlQuery(cronTriggersQuery, conn);
     return cronTriggersResult.records;
   }
@@ -128,16 +132,20 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   private displaySummaryOutput() {
     let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
     if (this.unusedNumber > 0) {
-      summary = `${this.unusedNumber} apex classes might not be used anymore.`;
+      summary = `${this.unusedNumber} apex classes might not be used anymore.
+Note: Salesforce does not provide all info to be 100% sure that a class is not used, so double-check before deleting them :)`
+        ;
       const summaryClasses = this.asyncClassList.map(apexClass => {
         return {
+          severity: `${apexClass.severityIcon}`,
           name: apexClass.Name,
+          AsyncType: apexClass.AsyncType,
           latestJobDate: apexClass.latestJobDate ? moment(apexClass.latestJobDate).format('YYYY-MM-DD hh:mm') : "Not found",
           latestJobRunDays: apexClass.latestJobRunDays,
           nextJobDate: apexClass.nextJobDate ? moment(apexClass.nextJobDate).format('YYYY-MM-DD hh:mm') : "None",
           queued: apexClass.queued,
-          AsyncType: apexClass.AsyncType,
-          severity: `${apexClass.severityIcon} ${apexClass.severity}`
+          classCreatedOn: moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD'),
+          classCreatedBy: apexClass.ClassCreatedBy
         };
       });
       uxLog(this, c.yellow("\n" + columnify(summaryClasses)));
@@ -164,7 +172,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         apexClass.latestJobDate = "";
         apexClass.latestJobRunDays = 99999;
         if (apexClass.nextJobDate === "") {
-          apexClass.severity = "error";
+          apexClass.severity = "warning";
           this.unusedNumber++;
         }
       }
@@ -218,6 +226,38 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         this.asyncClassList.push({ Id: classItem.Id, Name: classItem.Name, AsyncType: "Schedulable" });
       }
     }
+    const classIds = this.asyncClassList.map(apexClass => apexClass.Id);
+    const classDtlRes = await soqlQueryTooling(`SELECT Id, Name, CreatedDate, CreatedBy.Name FROM ApexClass WHERE Id IN ('${classIds.join("','")}')`, conn);
+    const classDtlResRecords: any[] = classDtlRes.records || [];
+    const isRepo = isGitRepo();
+    this.asyncClassList = await Promise.all(this.asyncClassList.map(async (cls) => {
+      const matchingClass = classDtlResRecords.filter(classDtl => classDtl.Id === cls.Id)[0];
+      // Use date & user found in org by default
+      cls.ClassCreatedDate = moment(matchingClass.CreatedDate).format('YYYY-MM-DD');
+      cls.ClassCreatedBy = `${matchingClass.CreatedBy.Name} (org)`;
+      // If file found in git, and if git date is lower than org date, use git date and user
+      if (isRepo) {
+        const gitInstance = git({ output: false, displayCommand: false });
+        const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("ApexClass", cls.Name);
+        if (fileMetadata) {
+          const log = await gitInstance.log({
+            file: fileMetadata,
+            '--diff-filter': 'A', // Filter to include only commits that added the file
+            '--max-count': 1,     // Limit to the first commit
+          });
+          if (log && log.all.length === 1) {
+            const orgCreatedDate = moment(cls.ClassCreatedDate);
+            const gitCreatedDate = moment(log.all[0].date);
+            // Use date from git only if it is before date from org
+            if (gitCreatedDate.isBefore(orgCreatedDate)) {
+              cls.ClassCreatedDate = moment(log.all[0].date).format('YYYY-MM-DD');
+              cls.ClassCreatedBy = `${log.all[0].author_name} (git)`;
+            }
+          }
+        }
+      }
+      return cls;
+    }))
   }
 
   private async manageNotifications() {
@@ -241,10 +281,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
             return `• *${apexClass.Name}*: A future job is queued`
           }
           else if (apexClass.latestJobRunDays < 99999) {
-            return `• *${apexClass.Name}*: ${apexClass.latestJobRunDays} days`
+            return `• *${apexClass.Name}*: ${apexClass.latestJobRunDays} days (created on ${moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
           }
           else {
-            return `• *${apexClass.Name}*: No job found`
+            return `• *${apexClass.Name}*: No past or future job found (created on ${moment(apexClass.ClassCreatedDate).format('YYYY-MM-DD')} by ${apexClass.ClassCreatedBy})`
           }
         }).join("\n");
       attachments = [{ text: notifDetailText }];
