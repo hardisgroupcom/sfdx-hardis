@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- MegaLinter config: disable APPLY_FIXES by default
+
 ## [5.6.2] 2024-11-12
 
 - hardis:org:diagnose:unused-apex-classes
