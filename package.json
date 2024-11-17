@@ -21,7 +21,7 @@
     "chrome-launcher": "^1.1.2",
     "columnify": "^1.6.0",
     "cosmiconfig": "^9.0.0",
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.5",
     "csv-stringify": "^6.5.1",
     "debug": "^4.3.6",
     "email-validator": "^2.0.4",
