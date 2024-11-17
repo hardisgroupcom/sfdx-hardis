@@ -151,7 +151,7 @@
     "@smithy/util-waiter" "^3.1.8"
     tslib "^2.6.2"
 
-"@aws-sdk/client-s3@^3.688.0":
+"@aws-sdk/client-s3@^3.693.0":
   version "3.693.0"
   resolved "https://registry.yarnpkg.com/@aws-sdk/client-s3/-/client-s3-3.693.0.tgz#188b621498ffaeb7b1ea5794f61e3e8d9a4bcac2"
   integrity sha512-vgGI2e0Q6pzyhqfrSysi+sk/i+Nl+lMon67oqj/57RcCw9daL1/inpS+ADuwHpiPWkrg+U0bOXnmHjkLeTslJg==
@@ -8991,13 +8991,13 @@ object.values@^1.1.7:
     define-properties "^1.2.0"
     es-abstract "^1.22.1"
 
-oclif@^4.15.24:
-  version "4.15.24"
-  resolved "https://registry.yarnpkg.com/oclif/-/oclif-4.15.24.tgz#a29003ce6472c4a4f6bc63bdd60bae245b8f7376"
-  integrity sha512-wjDhmwYUhK+OamLJGEHY3x2hf0/d6XAntfIfWFr1zTe9w+iw7R//2uzNrYTChZV+BQSlBP4bBkVKOCc3XG3Oww==
+oclif@^4.15.26:
+  version "4.15.26"
+  resolved "https://registry.yarnpkg.com/oclif/-/oclif-4.15.26.tgz#37aee350f7d3c78f89578a60018f992ae7c6c208"
+  integrity sha512-QWS6E4vqhO6p7VMCWnOGq5Mk8zmKQmUyWVVRTtPdjjYoHdvksWs6i3HxHQoYg0sXBL2UNpyR06My61PH4iefFw==
   dependencies:
     "@aws-sdk/client-cloudfront" "^3.687.0"
-    "@aws-sdk/client-s3" "^3.688.0"
+    "@aws-sdk/client-s3" "^3.693.0"
     "@inquirer/confirm" "^3.1.22"
     "@inquirer/input" "^2.2.4"
     "@inquirer/select" "^2.5.0"
