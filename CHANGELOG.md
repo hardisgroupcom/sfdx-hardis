@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.6.3] 2024-11-17
+
 - MegaLinter config: disable APPLY_FIXES by default
+- Upgrade npm dependencies
 
 ## [5.6.2] 2024-11-12
 
