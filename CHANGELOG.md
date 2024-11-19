@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Make markdown-links-check not blocking by default in MegaLinter base config
+- Make yamllint  not blocking by default in MegaLinter base config
 
 ## [5.6.3] 2024-11-17
 
