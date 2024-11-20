@@ -7,10 +7,11 @@ import { GitProviderRoot } from "./gitProviderRoot.js";
 import { BitbucketProvider } from "./bitbucket.js";
 import Debug from "debug";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
+import { prompts } from "../utils/prompts.js";
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
-  static getInstance(): GitProviderRoot | null {
+  static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
     // Azure
     if (process.env.SYSTEM_ACCESSTOKEN) {
       const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
@@ -58,7 +59,13 @@ export abstract class GitProvider {
         return null;
       }
       return new BitbucketProvider();
-    } else if (isCI) {
+    }
+    // If prompt allowed and no vars found, request to user
+    else if (prompt && !isCI) {
+      await GitProvider.handleManualGitServerAuth();
+      return this.getInstance(false);
+    }
+    else if (isCI) {
       uxLog(
         this,
         c.grey(
@@ -69,8 +76,27 @@ export abstract class GitProvider {
     return null;
   }
 
+  private static async handleManualGitServerAuth() {
+    const promptRes = await prompts({
+      message: "Please select your Git Service Provider",
+      type: "select",
+      choices: [
+        { title: "Azure DevOps", value: "azure" },
+        { title: "GitHub", value: "github" },
+        { title: "Gitlab", value: "gitlab" },
+        { title: "Bitbucket", value: "bitbucket" },
+      ]
+    });
+    if (promptRes.value === "azure") {
+      await AzureDevopsProvider.handleLocalIdentification();
+    }
+    else {
+      uxLog(this, c.yellow(`[GitProvider] Local authentification is not yet implemented for ${promptRes.value}`));
+    }
+  }
+
   static async managePostPullRequestComment(): Promise<void> {
-    const gitProvider = GitProvider.getInstance();
+    const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       uxLog(this, c.yellow("[Git Provider] WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
       uxLog(
@@ -110,7 +136,7 @@ export abstract class GitProvider {
   }
 
   static async getDeploymentCheckId(): Promise<string | null> {
-    const gitProvider = GitProvider.getInstance();
+    const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       return null;
     }
@@ -129,7 +155,7 @@ export abstract class GitProvider {
   }
 
   static async getCurrentBranchUrl(): Promise<string | null> {
-    const gitProvider = GitProvider.getInstance();
+    const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       return null;
     }
@@ -137,7 +163,7 @@ export abstract class GitProvider {
   }
 
   static async getJobUrl(): Promise<string | null> {
-    const gitProvider = GitProvider.getInstance();
+    const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       return null;
     }
@@ -145,7 +171,7 @@ export abstract class GitProvider {
   }
 
   static async getPullRequestInfo(): Promise<any> {
-    const gitProvider = GitProvider.getInstance();
+    const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       debug("[PR Info] No GitProvider instance found");
       return null;
