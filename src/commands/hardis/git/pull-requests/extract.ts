@@ -3,10 +3,11 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog } from '../../../../common/utils/index.js';
+import { isCI, selectGitBranch, uxLog } from '../../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import moment from 'moment';
+import { prompts } from '../../../../common/utils/prompts.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -89,6 +90,9 @@ export default class GitPullRequestsExtract extends SfCommand<any> {
       throw new SfError("Unable to identifer a GitProvider")
     }
 
+    // Prompt branch & PR status if not sent
+    await this.handleUserInput();
+
     // Build constraint
     const prConstraint: any = {};
     if (this.targetBranch) {
@@ -98,11 +102,11 @@ export default class GitPullRequestsExtract extends SfCommand<any> {
       prConstraint.minDate = this.minDate;
     }
     if (this.prStatus) {
-      prConstraint.prStatus = this.prStatus;
+      prConstraint.pullRequestStatus = this.prStatus;
     }
 
     // Process call to git provider API
-    this.pullRequests = await gitProvider.listPullRequests(prConstraint);
+    this.pullRequests = await gitProvider.listPullRequests(prConstraint, { formatted: true });
 
     this.outputFile = await generateReportPath('pull-requests', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.pullRequests, this.outputFile);
@@ -111,5 +115,35 @@ export default class GitPullRequestsExtract extends SfCommand<any> {
       outputString: `Extracted ${this.pullRequests.length} Pull Requests`,
       pullRequests: this.pullRequests,
     };
+  }
+
+  private async handleUserInput() {
+    if (!isCI && !this.targetBranch) {
+      const gitBranch = await selectGitBranch({
+        remote: true,
+        checkOutPull: false,
+        allowAll: true,
+        message: "Please select the target branch of PUll Requests"
+      });
+      if (gitBranch && gitBranch !== "ALL BRANCHES") {
+        this.targetBranch = gitBranch;
+      }
+    }
+
+    if (!isCI && !this.prStatus) {
+      const statusRes = await prompts({
+        message: "Please select a status criteria, or all",
+        type: "select",
+        choices: [
+          { title: "All status", value: "all" },
+          { title: "Merged", value: "merged" },
+          { title: "Open", value: "open" },
+          { title: "Abandoned", value: "abandoned" }
+        ]
+      });
+      if (statusRes && statusRes.value !== "all") {
+        this.prStatus = statusRes.value;
+      }
+    }
   }
 }

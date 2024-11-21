@@ -42,7 +42,10 @@ export abstract class GitProviderRoot {
     status?: string,
     targetBranch?: string,
     minDate?: Date
-  } = {}): Promise<any> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } = {}, options: {
+    formatted?: boolean
+  } = { formatted: false }): Promise<any> {
     uxLog(this, `Method listPullRequests is not implemented yet on ${this.getLabel()}`);
     return null;
   }

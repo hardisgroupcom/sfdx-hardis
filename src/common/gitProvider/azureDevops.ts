@@ -149,7 +149,11 @@ ${this.getPipelineVariablesConfig()}
     pullRequestStatus?: "open" | "merged" | "abandoned",
     targetBranch?: string,
     minDate?: Date
-  } = {}): Promise<GitPullRequest[]> {
+  } = {},
+    options: {
+      formatted?: boolean
+    } = { formatted: false }
+  ): Promise<GitPullRequest[] | any[]> {
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
@@ -173,7 +177,10 @@ ${this.getPipelineVariablesConfig()}
       if (azurePrStatusValue == null) {
         throw new SfError(`[Azure Integration] No matching status for ${filters.pullRequestStatus} in ${JSON.stringify(PullRequestStatus)}`);
       }
-      queryConstraint.status = PullRequestStatus[filters.pullRequestStatus]
+      queryConstraint.status = azurePrStatusValue
+    }
+    else {
+      queryConstraint.status = PullRequestStatus.All
     }
     if (filters.targetBranch) {
       queryConstraint.targetRefName = `refs/heads/${filters.targetBranch}`
@@ -182,8 +189,61 @@ ${this.getPipelineVariablesConfig()}
       queryConstraint.minTime = filters.minDate
     }
     // Process request
+    uxLog(this, c.cyan("Calling Azure API to list Pull Requests..."));
+    uxLog(this, c.grey(`Constraint:\n${JSON.stringify(queryConstraint, null, 2)}`));
+
+    // List pull requests
     const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
-    return pullRequests;
+
+    // Complete results with PR comments
+    const pullRequestsWithComments: any[] = [];
+    for (const pullRequest of pullRequests) {
+      const pr: any = Object.assign({}, pullRequest);
+      uxLog(this, c.grey(`Getting threads for PR ${pullRequest.pullRequestId}...`));
+      const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
+      pr.threads = existingThreads.filter(thread => !thread.isDeleted);
+      pullRequestsWithComments.push(pr);
+    }
+
+    // Format if requested
+    if (options.formatted) {
+      uxLog(this, c.cyan(`Formatting ${pullRequestsWithComments.length} results...`));
+      const pullRequestsFormatted = pullRequestsWithComments.map(pr => {
+        const prFormatted: any = {};
+        let tickets = "";
+        // Find sfdx-hardis deployment simulation status comment and extract tickets part
+        for (const thread of pr.threads) {
+          for (const comment of thread?.comments || []) {
+            if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
+              const ticketsSplit = comment.content.split("## Tickets");
+              if (ticketsSplit.length === 2) {
+                tickets = ticketsSplit[1].split("## Commits summary")[0].trim();
+              }
+              break;
+            }
+            if (tickets !== "") {
+              break;
+            }
+          }
+        }
+        prFormatted.pullRequestId = pr.pullRequestId;
+        prFormatted.targetRefName = (pr.targetRefName || "").replace("refs/heads/", "");
+        prFormatted.sourceRefName = (pr.sourceRefName || "").replace("refs/heads/", "");
+        prFormatted.status = PullRequestStatus[pr.status || 0]
+        prFormatted.mergeStatus = PullRequestAsyncStatus[pr.mergeStatus || 0];
+        prFormatted.title = pr.title;
+        prFormatted.description = pr.description;
+        prFormatted.tickets = tickets;
+        prFormatted.closedBy = pr.closedBy?.uniqueName || pr.closedBy?.displayName;
+        prFormatted.closedDate = pr.closedDate;
+        prFormatted.createdBy = pr.createdBy?.uniqueName || pr.createdBy?.displayName;
+        prFormatted.creationDate = pr.creationDate;
+        prFormatted.reviewers = (pr.reviewers || []).map(reviewer => reviewer.uniqueName || reviewer.displayName).join(",");
+        return prFormatted;
+      });
+      return pullRequestsFormatted;
+    }
+    return pullRequestsWithComments;
   }
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
