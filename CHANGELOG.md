@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.7.1] 2024-11-22
+
+- In case a prompt is requested during CI and makes a command fail, display the content of the prompt
+
 ## [5.7.0] 2024-11-22
 
 - New command **hardis:git:pull-requests:extract**: Extract Pull Requests from Git Server into CSV/XLS (Azure only for now)
