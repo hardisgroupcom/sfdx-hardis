@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.7.0] 2024-11-22
+
 - New command **hardis:git:pull-requests:extract**: Extract Pull Requests from Git Server into CSV/XLS (Azure only for now)
+- Fix bug when scratch org username is > 80 chars
 - Make markdown-links-check not blocking by default in MegaLinter base config
 - Make yamllint  not blocking by default in MegaLinter base config
 

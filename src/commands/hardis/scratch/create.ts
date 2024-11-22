@@ -247,7 +247,9 @@ export default class ScratchCreate extends SfCommand<any> {
     this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json', 'utf-8'));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
-    this.projectScratchDef.username = `${this.userEmail.split('@')[0]}@hardis-scratch-${this.scratchOrgAlias}.com`;
+    // Keep only first 15 and last 15 chars if scratch org alias is too long
+    const aliasForUsername = this.scratchOrgAlias.length > 30 ? this.scratchOrgAlias.slice(0, 15) + this.scratchOrgAlias.slice(-15) : this.scratchOrgAlias;
+    this.projectScratchDef.username = `${this.userEmail.split('@')[0].slice(0, 20)}@hardis-scratch-${aliasForUsername}.com`;
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
