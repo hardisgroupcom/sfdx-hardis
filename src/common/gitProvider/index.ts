@@ -91,7 +91,7 @@ export abstract class GitProvider {
       await AzureDevopsProvider.handleLocalIdentification();
     }
     else {
-      uxLog(this, c.yellow(`[GitProvider] Local authentification is not yet implemented for ${promptRes.value}`));
+      uxLog(this, c.yellow(`[GitProvider] Local authentication is not yet implemented for ${promptRes.value}`));
     }
   }
 

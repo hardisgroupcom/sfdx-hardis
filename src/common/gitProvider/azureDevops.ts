@@ -486,6 +486,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
         return { collectionUri, teamProject, repositoryId };
       }
     } else if (remoteUrl.startsWith("git@")) {
+      /* jscpd:ignore-start */
       // Handle SSH URLs
       const sshRegex = /git@ssh\.dev\.azure\.com:v3\/([^/]+)\/([^/]+)\/([^/]+)/;
       const match = remoteUrl.match(sshRegex);
@@ -496,6 +497,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
         collectionUri = `https://dev.azure.com/${organization}/`;
         return { collectionUri, teamProject, repositoryId };
       }
+      /* jscpd:ignore-end */
     }
 
     // Return null if the URL doesn't match expected patterns

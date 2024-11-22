@@ -87,7 +87,7 @@ export default class GitPullRequestsExtract extends SfCommand<any> {
 
     const gitProvider = await GitProvider.getInstance(true);
     if (gitProvider == null) {
-      throw new SfError("Unable to identifer a GitProvider")
+      throw new SfError("Unable to identify a GitProvider")
     }
 
     // Prompt branch & PR status if not sent
