@@ -293,24 +293,27 @@ export async function getLatestGitCommit() {
 
 // Select git branch and checkout & pull if requested
 export async function selectGitBranch(
-  options: { remote: true; checkOutPull: boolean } = { remote: true, checkOutPull: false }
+  options: { remote: true; checkOutPull: boolean; message?: string; allowAll?: boolean } = { remote: true, checkOutPull: false }
 ) {
   const gitBranchOptions = ['--list'];
   if (options.remote) {
     gitBranchOptions.push('-r');
   }
   const branches = await git().branch(gitBranchOptions);
+  if (options.allowAll) {
+    branches.all.unshift("ALL BRANCHES")
+  }
   const branchResp = await prompts({
     type: 'select',
     name: 'value',
-    message: 'Please select a Git branch',
+    message: options.message || 'Please select a Git branch',
     choices: branches.all.map((branchName) => {
       return { title: branchName.replace('origin/', ''), value: branchName.replace('origin/', '') };
     }),
   });
   const branch = branchResp.value;
   // Checkout & pull if requested
-  if (options.checkOutPull) {
+  if (options.checkOutPull && branch !== "ALL BRANCHES") {
     await gitCheckOutRemote(branch);
     WebSocketClient.sendMessage({ event: 'refreshStatus' });
   }

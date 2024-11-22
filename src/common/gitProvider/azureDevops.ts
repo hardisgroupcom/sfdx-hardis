@@ -1,10 +1,12 @@
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
-import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
+import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { CommentThreadStatus, GitPullRequestCommentThread, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
+import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { CONSTANTS } from "../../config/index.js";
+import { SfError } from "@salesforce/core";
+import { prompts } from "../utils/prompts.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -19,6 +21,38 @@ export class AzureDevopsProvider extends GitProviderRoot {
     this.token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || "";
     const authHandler = azdev.getHandlerFromToken(this.token);
     this.azureApi = new azdev.WebApi(this.serverUrl, authHandler);
+  }
+
+  public static async handleLocalIdentification() {
+    if (!isGitRepo()) {
+      uxLog(this, c.yellow("[Azure Integration] You must be in a git repository context"));
+      return;
+    }
+    if (!process.env.SYSTEM_COLLECTIONURI) {
+      const repoUrl = await getGitRepoUrl() || "";
+      if (!repoUrl) {
+        uxLog(this, c.yellow("[Azure Integration] An git origin must be set"));
+        return;
+      }
+      const parseUrlRes = this.parseAzureRepoUrl(repoUrl);
+      if (!parseUrlRes) {
+        uxLog(this, c.yellow(`[Azure Integration] Unable to parse ${repoUrl} to get SYSTEM_COLLECTIONURI and BUILD_REPOSITORY_ID`));
+        return;
+      }
+      process.env.SYSTEM_COLLECTIONURI = parseUrlRes.collectionUri;
+      process.env.SYSTEM_TEAMPROJECT = parseUrlRes.teamProject;
+      process.env.BUILD_REPOSITORY_ID = parseUrlRes.repositoryId;
+    }
+    if (!process.env.SYSTEM_ACCESSTOKEN) {
+      uxLog(this, c.yellow("If you need an Azure Personal Access Token, create one following this documentation: https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows"));
+      uxLog(this, c.yellow("Then please save it in a secured password tracker !"));
+      const accessTokenResp = await prompts({
+        name: "token",
+        message: "Please input an Azure Personal Access Token (it won't be stored)",
+        type: "text"
+      });
+      process.env.SYSTEM_ACCESSTOKEN = accessTokenResp.token;
+    }
   }
 
   public getLabel(): string {
@@ -111,6 +145,107 @@ ${this.getPipelineVariablesConfig()}
     }
     uxLog(this, c.grey(`[Azure Integration] Unable to find related Pull Request Info`));
     return null;
+  }
+
+  public async listPullRequests(filters: {
+    pullRequestStatus?: "open" | "merged" | "abandoned",
+    targetBranch?: string,
+    minDate?: Date
+  } = {},
+    options: {
+      formatted?: boolean
+    } = { formatted: false }
+  ): Promise<GitPullRequest[] | any[]> {
+    // Get Azure Git API
+    const azureGitApi = await this.azureApi.getGitApi();
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    if (repositoryId == null) {
+      uxLog(this, c.yellow("[Azure Integration] Unable to find BUILD_REPOSITORY_ID"));
+      return [];
+    }
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (teamProject == null) {
+      uxLog(this, c.yellow("[Azure Integration] Unable to find SYSTEM_TEAMPROJECT"));
+      return [];
+    }
+    // Build search criteria
+    const queryConstraint: GitPullRequestSearchCriteria = {};
+    if (filters.pullRequestStatus) {
+      const azurePrStatusValue =
+        filters.pullRequestStatus === "open" ? PullRequestStatus.Active :
+          filters.pullRequestStatus === "abandoned" ? PullRequestStatus.Abandoned :
+            filters.pullRequestStatus === "merged" ? PullRequestStatus.Completed :
+              null;
+      if (azurePrStatusValue == null) {
+        throw new SfError(`[Azure Integration] No matching status for ${filters.pullRequestStatus} in ${JSON.stringify(PullRequestStatus)}`);
+      }
+      queryConstraint.status = azurePrStatusValue
+    }
+    else {
+      queryConstraint.status = PullRequestStatus.All
+    }
+    if (filters.targetBranch) {
+      queryConstraint.targetRefName = `refs/heads/${filters.targetBranch}`
+    }
+    if (filters.minDate) {
+      queryConstraint.minTime = filters.minDate
+    }
+    // Process request
+    uxLog(this, c.cyan("Calling Azure API to list Pull Requests..."));
+    uxLog(this, c.grey(`Constraint:\n${JSON.stringify(queryConstraint, null, 2)}`));
+
+    // List pull requests
+    const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
+
+    // Complete results with PR comments
+    const pullRequestsWithComments: any[] = [];
+    for (const pullRequest of pullRequests) {
+      const pr: any = Object.assign({}, pullRequest);
+      uxLog(this, c.grey(`Getting threads for PR ${pullRequest.pullRequestId}...`));
+      const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
+      pr.threads = existingThreads.filter(thread => !thread.isDeleted);
+      pullRequestsWithComments.push(pr);
+    }
+
+    // Format if requested
+    if (options.formatted) {
+      uxLog(this, c.cyan(`Formatting ${pullRequestsWithComments.length} results...`));
+      const pullRequestsFormatted = pullRequestsWithComments.map(pr => {
+        const prFormatted: any = {};
+        let tickets = "";
+        // Find sfdx-hardis deployment simulation status comment and extract tickets part
+        for (const thread of pr.threads) {
+          for (const comment of thread?.comments || []) {
+            if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
+              const ticketsSplit = comment.content.split("## Tickets");
+              if (ticketsSplit.length === 2) {
+                tickets = ticketsSplit[1].split("## Commits summary")[0].trim();
+              }
+              break;
+            }
+            if (tickets !== "") {
+              break;
+            }
+          }
+        }
+        prFormatted.pullRequestId = pr.pullRequestId;
+        prFormatted.targetRefName = (pr.targetRefName || "").replace("refs/heads/", "");
+        prFormatted.sourceRefName = (pr.sourceRefName || "").replace("refs/heads/", "");
+        prFormatted.status = PullRequestStatus[pr.status || 0]
+        prFormatted.mergeStatus = PullRequestAsyncStatus[pr.mergeStatus || 0];
+        prFormatted.title = pr.title;
+        prFormatted.description = pr.description;
+        prFormatted.tickets = tickets;
+        prFormatted.closedBy = pr.closedBy?.uniqueName || pr.closedBy?.displayName;
+        prFormatted.closedDate = pr.closedDate;
+        prFormatted.createdBy = pr.createdBy?.uniqueName || pr.createdBy?.displayName;
+        prFormatted.creationDate = pr.creationDate;
+        prFormatted.reviewers = (pr.reviewers || []).map(reviewer => reviewer.uniqueName || reviewer.displayName).join(",");
+        return prFormatted;
+      });
+      return pullRequestsFormatted;
+    }
+    return pullRequestsWithComments;
   }
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
@@ -328,5 +463,44 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
       prResult = { posted: false, providerResult: { error: e } };
     }
     return prResult;
+  }
+
+  public static parseAzureRepoUrl(remoteUrl: string): {
+    collectionUri: string;
+    teamProject: string;
+    repositoryId: string;
+  } | null {
+    let collectionUri: string;
+    let repositoryId: string;
+    let teamProject: string;
+
+    if (remoteUrl.startsWith("https://")) {
+      // Handle HTTPS URLs with or without username
+      const httpsRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
+      const match = remoteUrl.match(httpsRegex);
+      if (match) {
+        const organization = match[1];
+        teamProject = decodeURIComponent(match[2]); // Decode URL-encoded project name
+        repositoryId = decodeURIComponent(match[3]); // Decode URL-encoded repository name
+        collectionUri = `https://dev.azure.com/${organization}/`;
+        return { collectionUri, teamProject, repositoryId };
+      }
+    } else if (remoteUrl.startsWith("git@")) {
+      /* jscpd:ignore-start */
+      // Handle SSH URLs
+      const sshRegex = /git@ssh\.dev\.azure\.com:v3\/([^/]+)\/([^/]+)\/([^/]+)/;
+      const match = remoteUrl.match(sshRegex);
+      if (match) {
+        const organization = match[1];
+        teamProject = decodeURIComponent(match[2]); // Decode URL-encoded project name
+        repositoryId = decodeURIComponent(match[3]); // Decode URL-encoded repository name
+        collectionUri = `https://dev.azure.com/${organization}/`;
+        return { collectionUri, teamProject, repositoryId };
+      }
+      /* jscpd:ignore-end */
+    }
+
+    // Return null if the URL doesn't match expected patterns
+    return null;
   }
 }
