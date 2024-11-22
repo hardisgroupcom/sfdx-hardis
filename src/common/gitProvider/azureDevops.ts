@@ -44,6 +44,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
       process.env.BUILD_REPOSITORY_ID = parseUrlRes.repositoryId;
     }
     if (!process.env.SYSTEM_ACCESSTOKEN) {
+      uxLog(this, c.yellow("If you need an Azure Personal Access Token, create one following this documentation: https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows"));
+      uxLog(this, c.yellow("Then please save it in a secured password tracker !"));
       const accessTokenResp = await prompts({
         name: "token",
         message: "Please input an Azure Personal Access Token (it won't be stored)",
