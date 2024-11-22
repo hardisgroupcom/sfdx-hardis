@@ -19,6 +19,7 @@ export interface PromptsQuestion {
 // Centralized prompts function
 export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   if (isCI) {
+    uxLog(this, c.grey(JSON.stringify(options, null, 2)));
     throw new SfError("Nothing should be prompted during CI !");
   }
   const questionsRaw = Array.isArray(options) ? options : [options];
