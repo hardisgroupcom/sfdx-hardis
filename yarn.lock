@@ -4916,15 +4916,10 @@ csv-parse@^5.5.2:
   resolved "https://registry.npmjs.org/csv-parse/-/csv-parse-5.5.5.tgz"
   integrity sha512-erCk7tyU3yLWAhk6wvKxnyPtftuy/6Ak622gOO7BCJ05+TYffnPCJF905wmOQm+BpkX54OdAl8pveJwUdpnCXQ==
 
-csv-stringify@^6.4.4:
-  version "6.4.6"
-  resolved "https://registry.npmjs.org/csv-stringify/-/csv-stringify-6.4.6.tgz"
-  integrity sha512-h2V2XZ3uOTLilF5dPIptgUfN/o2ia/80Ie0Lly18LAnw5s8Eb7kt8rfxSUy24AztJZas9f6DPZpVlzDUtFt/ag==
-
-csv-stringify@^6.5.1:
-  version "6.5.1"
-  resolved "https://registry.npmjs.org/csv-stringify/-/csv-stringify-6.5.1.tgz"
-  integrity sha512-+9lpZfwpLntpTIEpFbwQyWuW/hmI/eHuJZD1XzeZpfZTqkf1fyvBbBLXTJJMsBuuS11uTShMqPwzx4A6ffXgRQ==
+csv-stringify@^6.4.4, csv-stringify@^6.5.2:
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.5.2.tgz#b51d61cd949906d5b5b790463f3055d95915193e"
+  integrity sha512-RFPahj0sXcmUyjrObAK+DOWtMvMIFV328n4qZJhgX3x2RqkQgOTU2mCUmiFR0CzM6AzChlRSUErjiJeEt8BaQA==
 
 dargs@^7.0.0:
   version "7.0.0"
