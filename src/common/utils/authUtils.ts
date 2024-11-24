@@ -23,6 +23,7 @@ export async function authOrg(orgAlias: string, options: any) {
   const isDevHub = orgAlias.includes('DevHub');
 
   let doConnect = true;
+  let alias = null;
   if (!options.checkAuth) {
     // Check if we are already authenticated
     let orgDisplayCommand = 'sf org display';
@@ -44,8 +45,13 @@ export async function authOrg(orgAlias: string, options: any) {
               ? options.argv.indexOf('--targetusername') + 1
               : options.argv.indexOf('-o') > -1
                 ? options.argv.indexOf('-o') + 1
-                : options.argv.indexOf('-u') > -1;
-        orgDisplayCommand += ' --target-org ' + options.argv[posUsername];
+                : options.argv.indexOf('-u') > -1
+                  ? options.argv.indexOf('-u') + 1 : null;
+        if (posUsername === null) {
+          throw new SfError("Unable to find alias (authUtils.authOrg)")
+        }
+        alias = options.argv[posUsername];
+        orgDisplayCommand += ' --target-org ' + alias;
       }
     }
     const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {
@@ -85,7 +91,7 @@ export async function authOrg(orgAlias: string, options: any) {
         );
       }
       if (setDefaultOrg) {
-        const setDefaultOrgCommand = `sf config set ${isDevHub ? 'target-dev-hub' : 'target-org'}=${orgInfoResult.result.username
+        const setDefaultOrgCommand = `sf config set ${alias ? alias : isDevHub ? 'target-dev-hub' : 'target-org'}=${orgInfoResult.result.username
           }`;
         await execSfdxJson(setDefaultOrgCommand, this, { fail: false });
       }
@@ -93,6 +99,7 @@ export async function authOrg(orgAlias: string, options: any) {
     }
   }
   // Perform authentication
+  let updateSfCliCommandOrg = false;
   if (doConnect) {
     let logged = false;
     const config = await getConfig('user');
@@ -246,7 +253,7 @@ export async function authOrg(orgAlias: string, options: any) {
       if (loginResult == null) {
         const loginCommand =
           'sf org login web' +
-          (options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
+          (alias ? ` --alias ${alias}` : options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
           ` --instance-url ${instanceUrl}` +
           (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
         try {
@@ -271,32 +278,43 @@ export async function authOrg(orgAlias: string, options: any) {
       logged = loginResult.status === 0;
       username = loginResult?.username || 'err';
       instanceUrl = loginResult?.instanceUrl || instanceUrl;
+      updateSfCliCommandOrg = true;
     } else {
       console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} with browser. Please try again :)`));
     }
     if (logged) {
       // Retrieve default username or dev hub username if not returned by command
       if (username === 'err') {
-        const configGetRes = await execSfdxJson('sf config get ' + (isDevHub ? 'target-dev-hub' : 'target-org'), this, {
-          output: false,
-          fail: false,
-        });
-        username = configGetRes?.result[0]?.value || '';
+        // Using alias
+        if (alias) {
+          const configGetRes = await execSfdxJson(`sf org display --target-org ${alias}`, this, {
+            output: false,
+            fail: false,
+          });
+          username = configGetRes?.result?.username || '';
+        } else {
+          // Using default org
+          const configGetRes = await execSfdxJson('sf config get ' + (isDevHub ? 'target-dev-hub' : 'target-org'), this, {
+            output: false,
+            fail: false,
+          });
+          username = configGetRes?.result[0]?.value || '';
+        }
       }
       uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
       WebSocketClient.sendMessage({ event: 'refreshStatus' });
       // Assign org to SfCommands
-      if (isDevHub) {
-        options.Command.flags.targetdevhubusername = username;
-        // options.Command.assignHubOrg(); // seems to be automatically done by SfCommand under the hook
-      } else {
-        options.Command.flags.targetusername = username;
-        // options.Command.assignOrg(); // seems to be automatically done by SfCommand under the hook
-      }
-      // Display warning message in case of local usage (not CI), and not login command
-      // if (!(options?.Command?.id || "").startsWith("hardis:auth:login")) {
-      //   console.warn(c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
+      // if (isDevHub) {
+      // options.Command.flags["target-org"] = username;
+      // options.Command.assignHubOrg(); // seems to be automatically done by SfCommand under the hook
+      // } else {
+      // options.Command.flags["target-dev-hub"] = username;
+      // options.Command.assignOrg(); // seems to be automatically done by SfCommand under the hook
       // }
+      // Display warning message in case of local usage (not CI), and not login command
+      if (!(options?.Command?.id || "").startsWith("hardis:auth:login") && updateSfCliCommandOrg === true) {
+        uxLog(this, c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
+      }
     } else {
       console.error(c.red('[sfdx-hardis][ERROR] You must be logged to an org to perform this action'));
       process.exit(1); // Exit because we should succeed to connect
