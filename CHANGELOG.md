@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Fix issue with auth just before running a command (ask to run again the same command meanwhile we find a way to avoid that using SF CLI architecture)
+
 ## [5.7.1] 2024-11-22
 
 - In case a prompt is requested during CI and makes a command fail, display the content of the prompt
