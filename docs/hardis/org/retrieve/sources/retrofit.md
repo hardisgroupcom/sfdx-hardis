@@ -9,36 +9,36 @@ Retrieve changes from org link to a ref branch not present in sources
 
   Define the following properties in **.sfdx-hardis.yml**
 
-- **productionBranch** : Name of the git branch that is corresponding to production org
-- **retrofitBranch** : Name of the git branch that will be used as merge request target
+  - **productionBranch** : Name of the git branch that is corresponding to production org
+  - **retrofitBranch** : Name of the git branch that will be used as merge request target
 
   List of metadata to retrieve can be set in three way, in order of priority :
 
-- `CI_SOURCES_TO_RETROFIT`: env variable (can be defined in CI context)
-- `sourcesToRetrofit` property in `.sfdx-hardis.yml`
-- Default list:
+  - `CI_SOURCES_TO_RETROFIT`: env variable (can be defined in CI context)
+  - `sourcesToRetrofit` property in `.sfdx-hardis.yml`
+  - Default list:
 
-  - CompactLayout
-  - CustomApplication
-  - CustomField
-  - CustomLabel
-  - CustomLabels
-  - CustomMetadata
-  - CustomObject
-  - CustomObjectTranslation
-  - CustomTab
-  - DuplicateRule
-  - EmailTemplate
-  - FlexiPage
-  - GlobalValueSet
-  - Layout
-  - ListView
-  - MatchingRules
-  - PermissionSet
-  - RecordType
-  - StandardValueSet
-  - Translations
-  - ValidationRule
+    - CompactLayout
+    - CustomApplication
+    - CustomField
+    - CustomLabel
+    - CustomLabels
+    - CustomMetadata
+    - CustomObject
+    - CustomObjectTranslation
+    - CustomTab
+    - DuplicateRule
+    - EmailTemplate
+    - FlexiPage
+    - GlobalValueSet
+    - Layout
+    - ListView
+    - MatchingRules
+    - PermissionSet
+    - RecordType
+    - StandardValueSet
+    - Translations
+    - ValidationRule
 
   You can also ignore some files even if they have been updated in production. To do that, define property **retrofitIgnoredFiles** in .sfdx-hardis.yml
 
@@ -56,13 +56,13 @@ Retrieve changes from org link to a ref branch not present in sources
 
 ## Parameters
 
-| Name         |  Type   | Description                                                                    | Default | Required |     Options     |
-|:-------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:---------------:|
-| commit       | boolean | If true, a commit will be performed after the retrofit                         |         |          |                 |
-| commitmode   | option  | Defines if we commit all retrieved updates, or all updates including creations | updated |          | updated<br/>all |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                                                |         |          |                 |
-| flags-dir    | option  | undefined                                                                      |         |          |                 |
-| json         | boolean | Format output as json.                                                         |         |          |                 |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|commit|boolean|If true, a commit will be performed after the retrofit||||
+|commitmode|option|Defines if we commit all retrieved updates, or all updates including creations|updated||updated<br/>all|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
 |productionbranch|option|Name of the git branch corresponding to the org we want to perform the retrofit on.
 Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |push|boolean|If true, a push will be performed after the retrofit||||
@@ -70,13 +70,13 @@ Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |retrofittargetbranch|option|Name of branch the merge request will have as target
 Can be defined in retrofitBranch property in .sfdx-hardis.yml||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined|<nicolas.vuillamy@cloudity.com>|||
+|target-org<br/>-o|option|undefined||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:org:retrieve:sources:retrofit
+$ sf hardis:org:retrieve:sources:retrofit
 ```
 
 ```shell
