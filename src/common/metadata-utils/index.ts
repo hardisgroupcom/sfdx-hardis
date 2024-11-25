@@ -437,7 +437,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const metadataType = metadataTypes[0];
 
     // Look for matching file in sources
-    const globExpression = `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}-meta.xml`;
+    const globExpression = `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}`;
     for (const packageDirectory of packageDirectories) {
       const sourceFiles = await glob(globExpression, {
         cwd: packageDirectory.fullPath,
