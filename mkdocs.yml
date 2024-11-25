@@ -67,6 +67,9 @@ nav:
           plugin:
             generate: hardis/doc/plugin/generate.md
           project2markdown: hardis/doc/project2markdown.md
+        git:
+          pull-requests:
+            extract: hardis/git/pull-requests/extract.md
         lint:
           access: hardis/lint/access.md
           metadatastatus: hardis/lint/metadatastatus.md
@@ -97,6 +100,7 @@ nav:
             licenses: hardis/org/diagnose/licenses.md
             releaseupdates: hardis/org/diagnose/releaseupdates.md
             unused-apex-classes: hardis/org/diagnose/unused-apex-classes.md
+            unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
             unusedlicenses: hardis/org/diagnose/unusedlicenses.md
             unusedusers: hardis/org/diagnose/unusedusers.md
           files:

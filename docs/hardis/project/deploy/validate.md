@@ -50,32 +50,32 @@ commandsPostDeploy:
 
 ## Parameters
 
-| Name                     |  Type   | Description              | Default | Required | Options |
-|:-------------------------|:-------:|:-------------------------|:-------:|:--------:|:-------:|
-| api-version<br/>-a       | option  | api-version              |         |          |         |
-| async                    | boolean | async                    |         |          |         |
-| coverage-formatters      | option  | coverage-formatters      |         |          |         |
-| debug                    | boolean | debug                    |         |          |         |
-| dry-run                  | boolean | dry-run                  |         |          |         |
-| flags-dir                | option  | undefined                |         |          |         |
-| ignore-conflicts<br/>-c  | boolean | ignore-conflicts         |         |          |         |
-| ignore-errors<br/>-r     | boolean | ignore-errors            |         |          |         |
-| ignore-warnings<br/>-g   | boolean | ignore-warnings          |         |          |         |
-| json                     | boolean | Format output as json.   |         |          |         |
-| junit                    | boolean | junit                    |         |          |         |
-| manifest<br/>-x          | option  | manifest                 |         |          |         |
-| metadata<br/>-m          | option  | metadata                 |         |          |         |
-| metadata-dir             | option  | metadata-dir             |         |          |         |
-| post-destructive-changes | option  | post-destructive-changes |         |          |         |
-| pre-destructive-changes  | option  | pre-destructive-changes  |         |          |         |
-| purge-on-delete          | boolean | purge-on-delete          |         |          |         |
-| results-dir              | option  | results-dir              |         |          |         |
-| single-package           | boolean | single-package           |         |          |         |
-| source-dir<br/>-d        | option  | source-dir               |         |          |         |
-| target-org<br/>-o        | option  | undefined                |         |          |         |
-| test-level               | option  | test-level               |         |          |         |
-| tests                    | option  | tests                    |         |          |         |
-| wait<br/>-w              | option  | wait                     |   33    |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|api-version<br/>-a|option|api-version||||
+|async|boolean|async||||
+|coverage-formatters|option|coverage-formatters||||
+|debug|boolean|debug||||
+|dry-run|boolean|dry-run||||
+|flags-dir|option|undefined||||
+|ignore-conflicts<br/>-c|boolean|ignore-conflicts||||
+|ignore-errors<br/>-r|boolean|ignore-errors||||
+|ignore-warnings<br/>-g|boolean|ignore-warnings||||
+|json|boolean|Format output as json.||||
+|junit|boolean|junit||||
+|manifest<br/>-x|option|manifest||||
+|metadata<br/>-m|option|metadata||||
+|metadata-dir|option|metadata-dir||||
+|post-destructive-changes|option|post-destructive-changes||||
+|pre-destructive-changes|option|pre-destructive-changes||||
+|purge-on-delete|boolean|purge-on-delete||||
+|results-dir|option|results-dir||||
+|single-package|boolean|single-package||||
+|source-dir<br/>-d|option|source-dir||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com|||
+|test-level|option|test-level||||
+|tests|option|tests||||
+|wait<br/>-w|option|wait|33|||
 
 ## Examples
 
