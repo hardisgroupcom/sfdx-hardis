@@ -66,12 +66,17 @@ export async function createTempDir() {
   return tmpDir;
 }
 
+let isGitRepoCache: boolean | null = null;
 export function isGitRepo() {
+  if (isGitRepoCache !== null) {
+    return isGitRepoCache;
+  }
   const isInsideWorkTree = child.spawnSync('git', ['rev-parse', '--is-inside-work-tree'], {
     encoding: 'utf8',
     windowsHide: true,
   });
-  return isInsideWorkTree.status === 0;
+  isGitRepoCache = isInsideWorkTree.status === 0
+  return isGitRepoCache;
 }
 
 export async function getGitRepoName() {
@@ -231,6 +236,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
     if (options.init) {
       await exec('git init -b main');
       console.info(c.yellow(c.bold(`[sfdx-hardis] Initialized git repository in ${process.cwd()}`)));
+      isGitRepoCache = null;
     } else if (options.clone) {
       // Clone repo
       let cloneUrl = options.cloneUrl;
@@ -273,7 +279,7 @@ export async function getGitRepoRoot() {
 
 // Get local git branch name
 export async function getCurrentGitBranch(options: any = { formatted: false }) {
-  if (git == null) {
+  if (!isGitRepo()) {
     return null;
   }
   const gitBranch = process.env.CI_COMMIT_REF_NAME || (await git().branchLocal()).current;
@@ -284,7 +290,7 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
 }
 
 export async function getLatestGitCommit() {
-  if (git == null) {
+  if (!isGitRepo()) {
     return null;
   }
   const log = await git().log(['-1']);
@@ -327,9 +333,10 @@ export async function gitCheckOutRemote(branchName: string) {
 
 // Get local git branch name
 export async function ensureGitBranch(branchName: string, options: any = { init: false, parent: 'current' }) {
-  if (git == null) {
+  if (!isGitRepo()) {
     if (options.init) {
       await ensureGitRepository({ init: true });
+      isGitRepoCache = null;
     } else {
       return false;
     }
@@ -365,7 +372,7 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
 
 // Checks that current git status is clean.
 export async function checkGitClean(options: any) {
-  if (git == null) {
+  if (!isGitRepo()) {
     throw new SfError('[sfdx-hardis] You must be within a git repository');
   }
   const gitStatus = await git({ output: true }).status();
@@ -396,7 +403,7 @@ export async function checkGitClean(options: any) {
 
 // Interactive git add
 export async function interactiveGitAdd(options: any = { filter: [], groups: [] }) {
-  if (git == null) {
+  if (!isGitRepo()) {
     throw new SfError('[sfdx-hardis] You must be within a git repository');
   }
   // List all files and arrange their format
@@ -544,10 +551,11 @@ export async function gitAddCommitPush(
     branch: null,
   }
 ) {
-  if (git == null) {
+  if (!isGitRepo()) {
     if (options.init) {
       // Initialize git repo
       await execCommand('git init -b main', this);
+      isGitRepoCache = null;
       await git().checkoutBranch(options.branch || 'dev', 'main');
     }
   }

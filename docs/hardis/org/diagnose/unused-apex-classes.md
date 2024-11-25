@@ -11,7 +11,11 @@ The number of unused day is overridable using --days option.
 
 The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
 
+Apex Classes CreatedBy and CreatedOn fields are calculated from MIN(date from git, date from org)
+
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-apex-classes/) and can output Grafana, Slack and MsTeams Notifications.
+
+![](https://sfdx-hardis.cloudity.com/assets/images/screenshot-monitoring-unused-apex-grafana.jpg)
 
 
 ## Parameters
