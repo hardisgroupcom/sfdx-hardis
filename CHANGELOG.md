@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.8.0] 2024-11-25
+
+- New monitoring command [hardis:org:diagnose:unused-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/) to detect Connected Apps that are not used anymore and might be disabled or deleted.
+
 ## [5.7.2] 2024-11-25
 
 - Fix issue with auth just before running a command (ask to run again the same command meanwhile we find a way to avoid that using SF CLI architecture)
