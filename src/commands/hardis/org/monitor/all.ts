@@ -86,6 +86,13 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'weekly',
     },
     {
+      key: 'CONNECTED_APPS',
+      title: 'Detect unused Connected Apps in an org',
+      command: 'sf hardis:org:diagnose:unused-connected-apps',
+      frequency: 'weekly',
+    },
+
+    {
       key: 'METADATA_STATUS',
       title: 'Detect inactive metadata',
       command: 'sf hardis:lint:metadatastatus',

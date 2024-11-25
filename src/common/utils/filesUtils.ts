@@ -11,7 +11,7 @@ import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
-import { getCurrentGitBranch, isCI, uxLog } from './index.js';
+import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
 import { bulkQuery, soqlQuery } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../config/index.js';
@@ -690,9 +690,10 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
   if (outputFile == null) {
     const reportDir = await getReportDirectory();
     const branchName =
-      process.env.CI_COMMIT_REF_NAME ||
-      (await getCurrentGitBranch({ formatted: true })) ||
-      'Missing CI_COMMIT_REF_NAME variable';
+      (!isGitRepo()) ? 'no-git' :
+        process.env.CI_COMMIT_REF_NAME ||
+        (await getCurrentGitBranch({ formatted: true })) ||
+        'branch-not-found';
     return path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
   } else {
     await fs.ensureDir(path.dirname(outputFile));

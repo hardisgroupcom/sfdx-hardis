@@ -67,6 +67,9 @@ nav:
           plugin:
             generate: hardis/doc/plugin/generate.md
           project2markdown: hardis/doc/project2markdown.md
+        git:
+          pull-requests:
+            extract: hardis/git/pull-requests/extract.md
         lint:
           access: hardis/lint/access.md
           metadatastatus: hardis/lint/metadatastatus.md
@@ -97,6 +100,7 @@ nav:
             licenses: hardis/org/diagnose/licenses.md
             releaseupdates: hardis/org/diagnose/releaseupdates.md
             unused-apex-classes: hardis/org/diagnose/unused-apex-classes.md
+            unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
             unusedlicenses: hardis/org/diagnose/unusedlicenses.md
             unusedusers: hardis/org/diagnose/unusedusers.md
           files:
@@ -274,6 +278,8 @@ nav:
           - Calls to deprecated API versions: salesforce-monitoring-deprecated-api-calls.md
           - Inactive users: salesforce-monitoring-inactive-users.md
           - Unused licenses: salesforce-monitoring-unused-licenses.md
+          - Unused Apex Classes: salesforce-monitoring-unused-apex-classes.md
+          - Unused Connected Apps: salesforce-monitoring-unused-connected-apps.md
           - Metadatas without access: salesforce-monitoring-missing-access.md
           - Unused Custom Labels: salesforce-monitoring-unused-metadata.md
           - Inactive metadata: salesforce-monitoring-inactive-metadata.md

@@ -27,4 +27,5 @@ export async function createBlankSfdxProject(cwd = process.cwd(), debug = false)
     debug: debug,
     output: true,
   });
+  return path.join(cwd, "sfdx-hardis-blank-project");
 }
