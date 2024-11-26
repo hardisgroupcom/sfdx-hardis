@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.8.1] 2024-11-26
+
+- Fix [hardis:org:diagnose:unused-apex-classes](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-apex-classes/): Use .cls file, not cls-meta.xml file to get creation date from git
+
 ## [5.8.0] 2024-11-25
 
 - New monitoring command [hardis:org:diagnose:unused-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/) to detect Connected Apps that are not used anymore and might be disabled or deleted.

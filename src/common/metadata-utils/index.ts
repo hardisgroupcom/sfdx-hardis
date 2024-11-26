@@ -437,14 +437,19 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const metadataType = metadataTypes[0];
 
     // Look for matching file in sources
-    const globExpression = `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}-meta.xml`;
+    const globExpressions = [
+      `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}`, // Works for not-xml files
+      `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}-meta.xml` // Works for all XML files
+    ]
     for (const packageDirectory of packageDirectories) {
-      const sourceFiles = await glob(globExpression, {
-        cwd: packageDirectory.fullPath,
-      });
-      if (sourceFiles.length > 0) {
-        const metaFile = path.join(packageDirectory.path, sourceFiles[0]);
-        return metaFile;
+      for (const globExpression of globExpressions) {
+        const sourceFiles = await glob(globExpression, {
+          cwd: packageDirectory.fullPath,
+        });
+        if (sourceFiles.length > 0) {
+          const metaFile = path.join(packageDirectory.path, sourceFiles[0]);
+          return metaFile;
+        }
       }
     }
     return null;
