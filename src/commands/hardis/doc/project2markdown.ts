@@ -1,8 +1,9 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import fs, { ensureDir } from 'fs-extra';
+import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
+import { parseFlow } from 'salesforce-flow-visualiser';
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -58,7 +59,8 @@ Generated markdown files will be written in **docs** folder (except README.md wh
   public static requiresProject = true;
 
   protected packageXmlCandidates: any[];
-  protected outputMarkdownIndexFile = "docs/index.md"
+  protected outputMarkdownRoot = "docs"
+  protected outputMarkdownIndexFile = path.join(this.outputMarkdownRoot, "index.md")
   protected mdLines: string[] = [];
   protected sfdxHardisConfig: any = {};
   protected outputPackageXmlMarkdownFiles: any[] = [];
@@ -96,6 +98,9 @@ Generated markdown files will be written in **docs** folder (except README.md wh
     // List managed packages
     await this.writeInstalledPackages();
 
+    // List flows & generate doc
+    await this.generateFlowsDocumentation();
+
     // Footer
     this.mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
     // Write output index file
@@ -118,6 +123,28 @@ Generated markdown files will be written in **docs** folder (except README.md wh
     WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
 
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
+  }
+
+  private async generateFlowsDocumentation() {
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
+    const packageDirs = this.project?.getPackageDirectories();
+    for (const packageDir of packageDirs || []) {
+      const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path });
+      for (const flowMetadata of flowMetadatas) {
+        const flowFile = path.join(packageDir.path, flowMetadata);
+        uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
+        const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
+        try {
+          const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
+          const flowMarkdownDoc = flowDocGenResult.uml;
+          const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
+          await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
+          uxLog(this, c.grey(`Written ${flowFile} documentation in ${outputFlowMdFile}`));
+        } catch (e: any) {
+          uxLog(this, c.yellow(`Error generating Flow ${flowFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+        }
+      }
+    }
   }
 
   private async writeInstalledPackages() {
@@ -197,7 +224,7 @@ Generated markdown files will be written in **docs** folder (except README.md wh
       for (const packageDir of packageDirs || []) {
         // Generate manifest from package folder
         const packageManifestFile = path.join("manifest", packageDir.name + '-package.xml');
-        await ensureDir(path.dirname(packageManifestFile));
+        await fs.ensureDir(path.dirname(packageManifestFile));
         await execSfdxJson("sf project generate manifest" +
           ` --source-dir ${packageDir.path}` +
           ` --name ${packageManifestFile}`, this,

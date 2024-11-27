@@ -48,6 +48,7 @@
     "psl": "^1.9.0",
     "puppeteer-core": "^23.9.0",
     "read-package-up": "^11.0.0",
+    "salesforce-flow-visualiser": "^1.0.0",
     "semver": "^7.6.3",
     "set-value": "^4.1.0",
     "simple-git": "^3.27.0",
