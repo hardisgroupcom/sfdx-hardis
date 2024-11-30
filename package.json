@@ -13,7 +13,7 @@
     "@slack/types": "^2.14.0",
     "@slack/web-api": "^7.7.0",
     "@supercharge/promise-pool": "^3.2.0",
-    "@xmldom/xmldom": "^0.8.10",
+    "@xmldom/xmldom": "^0.9.5",
     "axios": "^1.7.8",
     "azure-devops-node-api": "^14.1.0",
     "bitbucket": "^2.12.0",
