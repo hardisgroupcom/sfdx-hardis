@@ -8703,10 +8703,10 @@ math-random@^1.0.1:
   resolved "https://registry.npmjs.org/math-random/-/math-random-1.0.4.tgz"
   integrity sha512-rUxjysqif/BZQH2yhd5Aaq7vXMSx9NdEsQcyA07uEzIvxgI7zIr33gGsh+RU0/XjmQpCW7RsVof1vlkvQVCK5A==
 
-mega-linter-runner@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-8.1.0.tgz#ec7c2a32d0133e0a0ec56fe278652a678b8c827c"
-  integrity sha512-V2qDr6MWAWpJZ/Ans2XMZG/mRlETnjWfOp59lFDnldtcK7xgOl3pegDHzOPo3cuv6TEXVfe1n4drOGc6yq+0fw==
+mega-linter-runner@^8.3.0:
+  version "8.3.0"
+  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-8.3.0.tgz#1339e546686f58f000fbcdff3ed83a19dbd3de1e"
+  integrity sha512-gBKQ3e6U2PnTa62mQJ+nQ9SnCJKLySpXV1ERaDve2Dz9um/apadeNLC5MgtNrzcrSBcYd3ySFzE4PgO9VDI7Ew==
   dependencies:
     chalk "^5.3.0"
     find-package-json "^1.2.0"
@@ -8716,7 +8716,7 @@ mega-linter-runner@^8.1.0:
     open "^10.0.2"
     optionator "^0.9.3"
     prompts "^2.4.2"
-    uuid "^10.0.0"
+    uuid "^11.0.0"
     which "^5.0.0"
     yeoman-environment "^4.0.0"
     yeoman-generator "^7.1.0"
@@ -12066,10 +12066,10 @@ util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   resolved "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
 
-uuid@^10.0.0:
-  version "10.0.0"
-  resolved "https://registry.npmjs.org/uuid/-/uuid-10.0.0.tgz"
-  integrity sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==
+uuid@^11.0.0:
+  version "11.0.3"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.0.3.tgz#248451cac9d1a4a4128033e765d137e2b2c49a3d"
+  integrity sha512-d0z310fCWv5dJwnX1Y/MncBAqGMKEzlBb1AOf7z9K8ALnd0utBX/msg/fA0+sbyN1ihbMsLhrBlnl1ak7Wa0rg==
 
 uuid@^8.3.0, uuid@^8.3.2:
   version "8.3.2"
