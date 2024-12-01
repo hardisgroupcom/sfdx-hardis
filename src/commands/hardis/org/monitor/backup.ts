@@ -24,6 +24,10 @@ export default class MonitorBackup extends SfCommand<any> {
 
   public static description = `Retrieve sfdx sources in the context of a monitoring backup
 
+The command exists in 2 modes: filtered(default & recommended) and full.
+
+## Filtered mode (default, better performances)
+
 Automatically skips metadatas from installed packages with namespace.  
 
 You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
@@ -32,14 +36,32 @@ You can remove more metadata types from backup, especially in case you have too 
 
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
 
+## Full mode
+
+Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
+
+Ignores filters (namespaces items & manifest/package-skip-items.xm) to retrieve ALL metadatas, including those you might not care about (reports, translations...)
+
+As we can retrieve only 10000 files by call, the list of all metadatas will be chunked to make multiple calls (and take more time than filtered mode)
+
+## In CI/CD
+
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
-  public static examples = ['$ sf hardis:org:monitor:backup'];
+  public static examples = [
+    '$ sf hardis:org:monitor:backup',
+    '$ sf hardis:org:monitor:backup --full'
+  ];
 
   public static flags: any = {
     full: Flags.boolean({
       description: 'Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower !',
+    }),
+    "max-by-chunk": Flags.integer({
+      char: "m",
+      default: 3000,
+      description: 'If mode --full is activated, maximum number of metadatas in a package.xml chunk',
     }),
     outputfile: Flags.string({
       char: 'f',
@@ -68,6 +90,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected diffFiles: any[] = [];
   protected diffFilesSimplified: any[] = [];
   protected full: boolean = false;
+  protected maxByChunk: number = 3000;
   protected namespaces: string[];
   protected installedPackages: any[];
   protected outputFile;
@@ -78,10 +101,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MonitorBackup);
-    this.full = flags.full || false;
+    this.full = flags.full || (process.env?.MONITORING_BACKUP_MODE_FULL === "true" ? true : false);
+    this.maxByChunk = flags["max-by-chunk"] || 3000;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
-
 
     // Build target org full manifest
     uxLog(
@@ -208,7 +231,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
-    const MAX_LEN = 5000;
+    // Build packageXml chunks
     const extractPackageXmlChunks: any[] = [];
     let currentPackage: any = {};
     let currentPackageLen = 0;
@@ -216,16 +239,16 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     for (const metadataType of Object.keys(packageElements)) {
       const members = packageElements[metadataType];
       // If current chunk would be too big, store it then create a new one
-      if ((currentPackageLen + members.length) > MAX_LEN) {
+      if ((currentPackageLen + members.length) > this.maxByChunk && Object.keys(currentPackage).length > 0) {
         extractPackageXmlChunks.push(Object.assign({}, currentPackage));
         currentPackage = {};
         currentPackageLen = 0;
       }
       // If a metadata type has too many members for a single chunk: split it into chunks !
-      if (members.length > MAX_LEN) {
-        const memberChunks = Array.from({ length: Math.ceil(members.length / MAX_LEN) }, (_, i) => members.slice(i * MAX_LEN, (i + 1) * MAX_LEN));
+      if (members.length > this.maxByChunk) {
+        const memberChunks = Array.from({ length: Math.ceil(members.length / this.maxByChunk) }, (_, i) => members.slice(i * this.maxByChunk, (i + 1) * this.maxByChunk));
         for (const memberChunk of memberChunks) {
-          extractPackageXmlChunks.push({ metadataType: memberChunk });
+          extractPackageXmlChunks[metadataType] = memberChunk;
         }
         currentPackage = {};
         currentPackageLen = 0;
@@ -241,15 +264,28 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       extractPackageXmlChunks.push(currentPackage);
     }
 
+    // Write chunks into package.xml files
     let pos = 0;
     const packageXmlChunkFiles: string[] = [];
+    const chunksFolder = path.join("manifest", "chunks");
+    await fs.ensureDir(chunksFolder);
     for (const packageChunk of extractPackageXmlChunks) {
-      const packageChunkFileName = path.join("manifest", "chunk-" + pos);
+      const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
       await writePackageXmlFile(packageChunkFileName, packageChunk);
       packageXmlChunkFiles.push(packageChunkFileName);
       pos++;
     }
 
+    // Retrieve metadatas for each chunk
+    uxLog(this, c.cyan(`${packageXmlChunkFiles.length} chunks will be retrieved.`))
+    for (const packageXmlChunkFile of packageXmlChunkFiles) {
+      const packageXmlChunk = await parsePackageXmlFile(packageXmlChunkFile);
+      uxLog(this, c.cyan(`Run the retrieve command for retrieving chunk of metadatas, containing the following content`));
+      for (const mdType of Object.keys(packageXmlChunk)) {
+        uxLog(this, c.cyan(`- ${mdType} (${packageXmlChunk[mdType].length} elements)`));
+      }
+      await this.retrievePackageXml(packageXmlChunkFile, flags);
+    }
   }
 
   private async extractMetadatasFiltered(packageXmlFullFile: string, flags) {
@@ -298,6 +334,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Retrieve sfdx sources in local git repo
     const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
     uxLog(this, c.cyan(`Run the retrieve command for retrieving ${c.bold(nbRetrievedItems)} filtered metadatas...`));
+    await this.retrievePackageXml(packageXmlBackUpItemsFile, flags);
+  }
+
+  private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
     try {
       await execCommand(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
@@ -311,14 +351,26 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     } catch (e) {
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
       uxLog(this, c.yellow('BackUp package.xml that failed to be retrieved:\n' + c.grey(failedPackageXmlContent)));
-      uxLog(
-        this,
-        c.red(
-          c.bold(
-            'Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable NOTIFICATIONS_DISABLE'
+      if (this.full) {
+        uxLog(
+          this,
+          c.red(
+            c.bold(
+              'This should not happen: Please report the issue on sfdx-hardis repository: https://github.com/hardisgroupcom/sfdx-hardis/issues'
+            )
           )
-        )
-      );
+        );
+      }
+      else {
+        uxLog(
+          this,
+          c.red(
+            c.bold(
+              'Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable MONITORING_BACKUP_SKIP_METADATA_TYPES'
+            )
+          )
+        );
+      }
       uxLog(
         this,
         c.yellow(
