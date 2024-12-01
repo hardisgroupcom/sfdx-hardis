@@ -269,21 +269,22 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const packageXmlChunkFiles: string[] = [];
     const chunksFolder = path.join("manifest", "chunks");
     await fs.ensureDir(chunksFolder);
+    uxLog(this, c.cyan(`Building package.xml files for ${packageXmlChunkFiles.length} chunks...`));
     for (const packageChunk of extractPackageXmlChunks) {
       const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
       await writePackageXmlFile(packageChunkFileName, packageChunk);
       packageXmlChunkFiles.push(packageChunkFileName);
+      uxLog(this, c.grey(`Chunk ${pos} -> ${packageChunkFileName}:`))
+      for (const mdType of Object.keys(packageChunk)) {
+        uxLog(this, c.grey(`- ${mdType} (${packageChunk[mdType].length} elements)`));
+      }
+      uxLog(this, "");
       pos++;
     }
 
     // Retrieve metadatas for each chunk
-    uxLog(this, c.cyan(`${packageXmlChunkFiles.length} chunks will be retrieved.`))
+    uxLog(this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
     for (const packageXmlChunkFile of packageXmlChunkFiles) {
-      const packageXmlChunk = await parsePackageXmlFile(packageXmlChunkFile);
-      uxLog(this, c.cyan(`Run the retrieve command for retrieving chunk of metadatas, containing the following content`));
-      for (const mdType of Object.keys(packageXmlChunk)) {
-        uxLog(this, c.cyan(`- ${mdType} (${packageXmlChunk[mdType].length} elements)`));
-      }
       await this.retrievePackageXml(packageXmlChunkFile, flags);
     }
   }
@@ -332,12 +333,16 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     });
 
     // Retrieve sfdx sources in local git repo
-    const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
-    uxLog(this, c.cyan(`Run the retrieve command for retrieving ${c.bold(nbRetrievedItems)} filtered metadatas...`));
     await this.retrievePackageXml(packageXmlBackUpItemsFile, flags);
   }
 
   private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
+    const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
+    const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
+    uxLog(this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
+    for (const mdType of Object.keys(packageXml)) {
+      uxLog(this, c.cyan(`- ${mdType} (${packageXml[mdType].length} elements)`));
+    }
     try {
       await execCommand(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
