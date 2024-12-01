@@ -241,6 +241,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       extractPackageXmlChunks.push(currentPackage);
     }
 
+    let pos = 0;
+    const packageXmlChunkFiles: string[] = [];
+    for (const packageChunk of extractPackageXmlChunks) {
+      const packageChunkFileName = path.join("manifest", "chunk-" + pos);
+      await writePackageXmlFile(packageChunkFileName, packageChunk);
+      packageXmlChunkFiles.push(packageChunkFileName);
+      pos++;
+    }
+
   }
 
   private async extractMetadatasFiltered(packageXmlFullFile: string, flags) {
