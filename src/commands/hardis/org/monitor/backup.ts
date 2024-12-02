@@ -91,6 +91,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected diffFilesSimplified: any[] = [];
   protected full: boolean = false;
   protected maxByChunk: number = 3000;
+
+  protected extractPackageXmlChunks: any[] = [];
+  protected currentPackage: any = {};
+  protected currentPackageLen = 0;
+
   protected namespaces: string[];
   protected installedPackages: any[];
   protected outputFile;
@@ -232,37 +237,52 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
     // Build packageXml chunks
-    const extractPackageXmlChunks: any[] = [];
-    let currentPackage: any = {};
-    let currentPackageLen = 0;
     const packageElements = await parsePackageXmlFile(packageXmlFullFile);
+
+    // Handle predefined chunks
+    const predefinedChunkTypes = [
+      { types: ["CustomLabel"], memberMode: "*" },
+      { types: ["SharingRules", "SharingOwnerRule", "SharingCriteriaRule"] },
+      { types: ["Workflow", "WorkflowAlert", "WorkflowFieldUpdate", "WorkflowRule"] }
+    ]
+    for (const predefinedChunkType of predefinedChunkTypes) {
+      if (predefinedChunkType.types.some(mdType => Object.keys(packageElements).includes(mdType))) {
+        for (const mdType of predefinedChunkType.types) {
+          if (predefinedChunkType.memberMode === "*") {
+            this.currentPackage[mdType] = "*";
+          }
+          else {
+            this.currentPackage[mdType] = packageElements[mdType];
+          }
+          delete packageElements[mdType];
+        }
+        this.manageAddCurrentPackageInChunks();
+      }
+    }
+
+    // Handle other chunks
     for (const metadataType of Object.keys(packageElements)) {
       const members = packageElements[metadataType];
       // If current chunk would be too big, store it then create a new one
-      if ((currentPackageLen + members.length) > this.maxByChunk && Object.keys(currentPackage).length > 0) {
-        extractPackageXmlChunks.push(Object.assign({}, currentPackage));
-        currentPackage = {};
-        currentPackageLen = 0;
+      if ((this.currentPackageLen + members.length) > this.maxByChunk) {
+        this.manageAddCurrentPackageInChunks();
       }
       // If a metadata type has too many members for a single chunk: split it into chunks !
       if (members.length > this.maxByChunk) {
+        this.manageAddCurrentPackageInChunks();
         const memberChunks = Array.from({ length: Math.ceil(members.length / this.maxByChunk) }, (_, i) => members.slice(i * this.maxByChunk, (i + 1) * this.maxByChunk));
         for (const memberChunk of memberChunks) {
-          extractPackageXmlChunks[metadataType] = memberChunk;
+          this.currentPackage[metadataType] = memberChunk;
+          this.manageAddCurrentPackageInChunks();
         }
-        currentPackage = {};
-        currentPackageLen = 0;
       }
       // Add to current chunk
       else {
-        currentPackage[metadataType] = members;
-        currentPackageLen += members.length
+        this.currentPackage[metadataType] = members;
+        this.currentPackageLen += members.length
       }
     }
-    // Last current package
-    if (Object.keys(currentPackage).length > 0) {
-      extractPackageXmlChunks.push(currentPackage);
-    }
+    this.manageAddCurrentPackageInChunks();
 
     // Write chunks into package.xml files
     let pos = 0;
@@ -270,7 +290,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const chunksFolder = path.join("manifest", "chunks");
     await fs.ensureDir(chunksFolder);
     uxLog(this, c.cyan(`Building package.xml files for ${packageXmlChunkFiles.length} chunks...`));
-    for (const packageChunk of extractPackageXmlChunks) {
+    for (const packageChunk of this.extractPackageXmlChunks) {
       const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
       await writePackageXmlFile(packageChunkFileName, packageChunk);
       packageXmlChunkFiles.push(packageChunkFileName);
@@ -286,6 +306,14 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     uxLog(this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
     for (const packageXmlChunkFile of packageXmlChunkFiles) {
       await this.retrievePackageXml(packageXmlChunkFile, flags);
+    }
+  }
+
+  private manageAddCurrentPackageInChunks() {
+    if (Object.keys(this.currentPackage).length > 0) {
+      this.extractPackageXmlChunks.push(Object.assign({}, this.currentPackage));
+      this.currentPackage = {};
+      this.currentPackageLen = 0;
     }
   }
 
@@ -341,7 +369,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
     uxLog(this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
     for (const mdType of Object.keys(packageXml)) {
-      uxLog(this, c.cyan(`- ${mdType} (${packageXml[mdType].length} elements)`));
+      uxLog(this, c.cyan(`- ${mdType} (${packageXml[mdType].length})`));
     }
     try {
       await execCommand(
