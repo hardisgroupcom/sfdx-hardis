@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [5.9.0] 2024-12-01
+## [5.9.0] 2024-12-02
 
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): New mode **--full**, much slower than default filtered one, but that can retrieve ALL metadatas of an org
 
