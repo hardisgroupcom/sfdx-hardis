@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.9.0] 2024-12-01
+
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): New mode **--full**, much slower than default filtered one, but that can retrieve ALL metadatas of an org
+
 ## [5.8.1] 2024-11-26
 
 - Fix [hardis:org:diagnose:unused-apex-classes](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-apex-classes/): Use .cls file, not cls-meta.xml file to get creation date from git

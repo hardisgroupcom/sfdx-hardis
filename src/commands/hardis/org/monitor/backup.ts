@@ -24,6 +24,10 @@ export default class MonitorBackup extends SfCommand<any> {
 
   public static description = `Retrieve sfdx sources in the context of a monitoring backup
 
+The command exists in 2 modes: filtered(default & recommended) and full.
+
+## Filtered mode (default, better performances)
+
 Automatically skips metadatas from installed packages with namespace.  
 
 You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
@@ -32,12 +36,33 @@ You can remove more metadata types from backup, especially in case you have too 
 
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
 
+## Full mode
+
+Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
+
+Ignores filters (namespaces items & manifest/package-skip-items.xm) to retrieve ALL metadatas, including those you might not care about (reports, translations...)
+
+As we can retrieve only 10000 files by call, the list of all metadatas will be chunked to make multiple calls (and take more time than filtered mode)
+
+## In CI/CD
+
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
-  public static examples = ['$ sf hardis:org:monitor:backup'];
+  public static examples = [
+    '$ sf hardis:org:monitor:backup',
+    '$ sf hardis:org:monitor:backup --full'
+  ];
 
   public static flags: any = {
+    full: Flags.boolean({
+      description: 'Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower !',
+    }),
+    "max-by-chunk": Flags.integer({
+      char: "m",
+      default: 3000,
+      description: 'If mode --full is activated, maximum number of metadatas in a package.xml chunk',
+    }),
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
@@ -64,6 +89,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   protected diffFiles: any[] = [];
   protected diffFilesSimplified: any[] = [];
+  protected full: boolean = false;
+  protected maxByChunk: number = 3000;
+
+  protected extractPackageXmlChunks: any[] = [];
+  protected currentPackage: any = {};
+  protected currentPackageLen = 0;
+
+  protected namespaces: string[];
+  protected installedPackages: any[];
   protected outputFile;
   protected outputFilesRes: any = {};
   protected debugMode = false;
@@ -72,6 +106,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MonitorBackup);
+    this.full = flags.full || (process.env?.MONITORING_BACKUP_MODE_FULL === "true" ? true : false);
+    this.maxByChunk = flags["max-by-chunk"] || 3000;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
@@ -83,91 +119,21 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const packageXmlFullFile = 'manifest/package-all-org-items.xml';
     await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
 
-    // Check if we have package-skip_items.xml
-    const packageXmlBackUpItemsFile = 'manifest/package-backup-items.xml';
-    const packageXmlSkipItemsFile = 'manifest/package-skip-items.xml';
-    let packageXmlToRemove: string | null = null;
-    if (fs.existsSync(packageXmlSkipItemsFile)) {
-      uxLog(
-        this,
-        c.grey(
-          `${packageXmlSkipItemsFile} has been found and will be use to reduce the content of ${packageXmlFullFile} ...`
-        )
-      );
-      packageXmlToRemove = packageXmlSkipItemsFile;
-    }
-
-    // Add more metadata types to ignore using global variable MONITORING_BACKUP_SKIP_METADATA_TYPES
-    const additionalSkipMetadataTypes = process.env?.MONITORING_BACKUP_SKIP_METADATA_TYPES;
-    if (additionalSkipMetadataTypes) {
-      uxLog(
-        this,
-        c.grey(
-          `En var MONITORING_BACKUP_SKIP_METADATA_TYPES has been found and will also be used to reduce the content of ${packageXmlFullFile} ...`
-        )
-      );
-      let packageSkipItems = {};
-      if (fs.existsSync(packageXmlToRemove || '')) {
-        packageSkipItems = await parsePackageXmlFile(packageXmlToRemove || '');
-      }
-      for (const metadataType of additionalSkipMetadataTypes.split(',')) {
-        packageSkipItems[metadataType] = ['*'];
-      }
-      packageXmlToRemove = 'manifest/package-skip-items-dynamic-do-not-update-manually.xml';
-      await writePackageXmlFile(packageXmlToRemove, packageSkipItems);
-    }
-
     // List namespaces used in the org
-    const namespaces: any[] = [];
-    const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-    for (const installedPackage of installedPackages) {
+    this.namespaces = [];
+    this.installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+    for (const installedPackage of this.installedPackages) {
       if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
-        namespaces.push(installedPackage.SubscriberPackageNamespace);
+        this.namespaces.push(installedPackage.SubscriberPackageNamespace);
       }
     }
 
-    // Apply filters to package.xml
-    uxLog(this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
-    await filterPackageXml(packageXmlFullFile, packageXmlBackUpItemsFile, {
-      removeNamespaces: namespaces,
-      removeStandard: true,
-      removeFromPackageXmlFile: packageXmlToRemove,
-      updateApiVersion: CONSTANTS.API_VERSION,
-    });
-
-    // Retrieve sfdx sources in local git repo
-    const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
-    uxLog(this, c.cyan(`Run the retrieve command for retrieving ${c.bold(nbRetrievedItems)} filtered metadatas...`));
-    try {
-      await execCommand(
-        `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
-        this,
-        {
-          fail: true,
-          output: true,
-          debug: this.debugMode,
-        }
-      );
-    } catch (e) {
-      const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
-      uxLog(this, c.yellow('BackUp package.xml that failed to be retrieved:\n' + c.grey(failedPackageXmlContent)));
-      uxLog(
-        this,
-        c.red(
-          c.bold(
-            'Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable NOTIFICATIONS_DISABLE'
-          )
-        )
-      );
-      uxLog(
-        this,
-        c.yellow(
-          c.bold(
-            `See troubleshooting doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#troubleshooting`
-          )
-        )
-      );
-      throw e;
+    // Check if we have package-skip_items.xml
+    if (this.full) {
+      await this.extractMetadatasFull(packageXmlFullFile, flags);
+    }
+    else {
+      await this.extractMetadatasFiltered(packageXmlFullFile, flags);
     }
 
     // Write installed packages
@@ -175,7 +141,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const installedPackagesLog: any[] = [];
     const packageFolder = path.join(process.cwd(), 'installedPackages');
     await fs.ensureDir(packageFolder);
-    for (const installedPackage of installedPackages) {
+    for (const installedPackage of this.installedPackages) {
       const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
       const fileNameNoSep = fileName.replace(/\//g, '_').replace(/:/g, '_'); // Handle case when package name contains slashes or colon
       delete installedPackage.Id; // Not needed for diffs
@@ -269,4 +235,184 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
   }
 
+  private async extractMetadatasFull(packageXmlFullFile: string, flags) {
+    // Build packageXml chunks
+    const packageElements = await parsePackageXmlFile(packageXmlFullFile);
+
+    // Handle predefined chunks
+    const predefinedChunkTypes = [
+      { types: ["CustomLabel"], memberMode: "*" },
+      { types: ["SharingRules", "SharingOwnerRule", "SharingCriteriaRule"] },
+      { types: ["Workflow", "WorkflowAlert", "WorkflowFieldUpdate", "WorkflowRule"] }
+    ]
+    for (const predefinedChunkType of predefinedChunkTypes) {
+      if (predefinedChunkType.types.some(mdType => Object.keys(packageElements).includes(mdType))) {
+        for (const mdType of predefinedChunkType.types) {
+          if (predefinedChunkType.memberMode === "*") {
+            this.currentPackage[mdType] = "*";
+          }
+          else {
+            this.currentPackage[mdType] = packageElements[mdType];
+          }
+          delete packageElements[mdType];
+        }
+        this.manageAddCurrentPackageInChunks();
+      }
+    }
+
+    // Handle other chunks
+    for (const metadataType of Object.keys(packageElements)) {
+      const members = packageElements[metadataType];
+      // If current chunk would be too big, store it then create a new one
+      if ((this.currentPackageLen + members.length) > this.maxByChunk) {
+        this.manageAddCurrentPackageInChunks();
+      }
+      // If a metadata type has too many members for a single chunk: split it into chunks !
+      if (members.length > this.maxByChunk) {
+        this.manageAddCurrentPackageInChunks();
+        const memberChunks = Array.from({ length: Math.ceil(members.length / this.maxByChunk) }, (_, i) => members.slice(i * this.maxByChunk, (i + 1) * this.maxByChunk));
+        for (const memberChunk of memberChunks) {
+          this.currentPackage[metadataType] = memberChunk;
+          this.manageAddCurrentPackageInChunks();
+        }
+      }
+      // Add to current chunk
+      else {
+        this.currentPackage[metadataType] = members;
+        this.currentPackageLen += members.length
+      }
+    }
+    this.manageAddCurrentPackageInChunks();
+
+    // Write chunks into package.xml files
+    let pos = 0;
+    const packageXmlChunkFiles: string[] = [];
+    const chunksFolder = path.join("manifest", "chunks");
+    await fs.ensureDir(chunksFolder);
+    uxLog(this, c.cyan(`Building package.xml files for ${packageXmlChunkFiles.length} chunks...`));
+    for (const packageChunk of this.extractPackageXmlChunks) {
+      const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
+      await writePackageXmlFile(packageChunkFileName, packageChunk);
+      packageXmlChunkFiles.push(packageChunkFileName);
+      uxLog(this, c.grey(`Chunk ${pos} -> ${packageChunkFileName}:`))
+      for (const mdType of Object.keys(packageChunk)) {
+        uxLog(this, c.grey(`- ${mdType} (${packageChunk[mdType].length} elements)`));
+      }
+      uxLog(this, "");
+      pos++;
+    }
+
+    // Retrieve metadatas for each chunk
+    uxLog(this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
+    for (const packageXmlChunkFile of packageXmlChunkFiles) {
+      await this.retrievePackageXml(packageXmlChunkFile, flags);
+    }
+  }
+
+  private manageAddCurrentPackageInChunks() {
+    if (Object.keys(this.currentPackage).length > 0) {
+      this.extractPackageXmlChunks.push(Object.assign({}, this.currentPackage));
+      this.currentPackage = {};
+      this.currentPackageLen = 0;
+    }
+  }
+
+  private async extractMetadatasFiltered(packageXmlFullFile: string, flags) {
+    const packageXmlBackUpItemsFile = 'manifest/package-backup-items.xml';
+    const packageXmlSkipItemsFile = 'manifest/package-skip-items.xml';
+    let packageXmlToRemove: string | null = null;
+    if (fs.existsSync(packageXmlSkipItemsFile)) {
+      uxLog(
+        this,
+        c.grey(
+          `${packageXmlSkipItemsFile} has been found and will be use to reduce the content of ${packageXmlFullFile} ...`
+        )
+      );
+      packageXmlToRemove = packageXmlSkipItemsFile;
+    }
+
+    // Add more metadata types to ignore using global variable MONITORING_BACKUP_SKIP_METADATA_TYPES
+    const additionalSkipMetadataTypes = process.env?.MONITORING_BACKUP_SKIP_METADATA_TYPES;
+    if (additionalSkipMetadataTypes) {
+      uxLog(
+        this,
+        c.grey(
+          `En var MONITORING_BACKUP_SKIP_METADATA_TYPES has been found and will also be used to reduce the content of ${packageXmlFullFile} ...`
+        )
+      );
+      let packageSkipItems = {};
+      if (fs.existsSync(packageXmlToRemove || '')) {
+        packageSkipItems = await parsePackageXmlFile(packageXmlToRemove || '');
+      }
+      for (const metadataType of additionalSkipMetadataTypes.split(',')) {
+        packageSkipItems[metadataType] = ['*'];
+      }
+      packageXmlToRemove = 'manifest/package-skip-items-dynamic-do-not-update-manually.xml';
+      await writePackageXmlFile(packageXmlToRemove, packageSkipItems);
+    }
+
+    // Apply filters to package.xml
+    uxLog(this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
+    await filterPackageXml(packageXmlFullFile, packageXmlBackUpItemsFile, {
+      removeNamespaces: this.namespaces,
+      removeStandard: true,
+      removeFromPackageXmlFile: packageXmlToRemove,
+      updateApiVersion: CONSTANTS.API_VERSION,
+    });
+
+    // Retrieve sfdx sources in local git repo
+    await this.retrievePackageXml(packageXmlBackUpItemsFile, flags);
+  }
+
+  private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
+    const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
+    const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
+    uxLog(this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
+    for (const mdType of Object.keys(packageXml)) {
+      uxLog(this, c.cyan(`- ${mdType} (${packageXml[mdType].length})`));
+    }
+    try {
+      await execCommand(
+        `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
+        this,
+        {
+          fail: true,
+          output: true,
+          debug: this.debugMode,
+        }
+      );
+    } catch (e) {
+      const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
+      uxLog(this, c.yellow('BackUp package.xml that failed to be retrieved:\n' + c.grey(failedPackageXmlContent)));
+      if (this.full) {
+        uxLog(
+          this,
+          c.red(
+            c.bold(
+              'This should not happen: Please report the issue on sfdx-hardis repository: https://github.com/hardisgroupcom/sfdx-hardis/issues'
+            )
+          )
+        );
+      }
+      else {
+        uxLog(
+          this,
+          c.red(
+            c.bold(
+              'Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable MONITORING_BACKUP_SKIP_METADATA_TYPES'
+            )
+          )
+        );
+      }
+      uxLog(
+        this,
+        c.yellow(
+          c.bold(
+            `See troubleshooting doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#troubleshooting`
+          )
+        )
+      );
+      throw e;
+    }
+  }
 }
