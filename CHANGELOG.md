@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Fix issue that generates valid Pull Request comment whereas there is 1 error
 - Add TS test case
+- Upgrade NPM dependencies
 
 ## [5.9.0] 2024-12-02
 
