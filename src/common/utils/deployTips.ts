@@ -75,6 +75,17 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
     // Legacy sfdx force:source:deploy output
     extractFailedTestsInfoForSfdxCommand(logRaw, failedTests);
   }
+  // Fallback in case we have not been able to identify errors
+  if (errorsAndTips.length === 0 && failedTests.length === 0) {
+    errorsAndTips.push(({
+      error: { message: "There has been an issue parsing errors, probably because of a SF CLI output format update. Please check console logs." },
+      tip: {
+        label: "SfdxHardisParseError",
+        message: "If you are in CI/CD, please check at the bottom of deployment check job logs. The issue will be fixed ASAP.",
+      },
+    }))
+  }
+
   await updatePullRequestResult(errorsAndTips, failedTests, options);
   return { tips, errorsAndTips, failedTests, errLog: logResLines.join("\n") };
 }

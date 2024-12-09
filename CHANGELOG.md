@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.9.2] 2024-12-10
+
+- Fallback message in case sfdx-hardis is not able to parse newest SF CLI errors format.
+
 ## [5.9.1] 2024-12-09
 
 - Fix issue that generates valid Pull Request comment whereas there is 1 error
