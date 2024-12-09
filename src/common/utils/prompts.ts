@@ -106,7 +106,7 @@ async function terminalPrompts(questions: PromptsQuestion[]) {
     inquirerQuestions.push(inquirerQuestion);
   }
   try {
-    const answers = await inquirer.prompt(inquirerQuestions);
+    const answers = await (inquirer as any).prompt(inquirerQuestions);
     return answers;
   } catch (e) {
     throw new SfError("Error while prompting: " + (e as Error).message);

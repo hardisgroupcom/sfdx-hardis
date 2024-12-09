@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { OpenAI } from "openai";
 import { AiResponse } from "./index.js";
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import c from "chalk";
