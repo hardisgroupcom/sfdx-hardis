@@ -103,7 +103,7 @@ Elapsed time: 14.39s
 Component Failures [2]
  Type               Name                                                     Problem                                                            Line:Column 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
- MatchingRule       Lead.Regle_correspondance_Regle_duplication_Pistes_OXXO  Before you change a matching rule, you must deactivate it. (3:20)  3:20        
+ MatchingRule       Lead.Rule_correspondance_Rule_duplication_Pistes_Sample  Before you change a matching rule, you must deactivate it. (3:20)  3:20        
  CustomApplication  Sales_Leader                                             FormFactors must be Large for Salesforce Classic apps.                         
 Test Results Summary
 Passing: 0
