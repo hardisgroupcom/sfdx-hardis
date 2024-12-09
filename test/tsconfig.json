@@ -1,7 +1,12 @@
 {
   "extends": "@salesforce/dev-config/tsconfig-test-strict-esm",
-  "include": ["./**/*.ts"],
+  "include": [
+    "./**/*.ts"
+  ],
   "compilerOptions": {
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "strictPropertyInitialization": false,
     "skipLibCheck": true
   }
 }
