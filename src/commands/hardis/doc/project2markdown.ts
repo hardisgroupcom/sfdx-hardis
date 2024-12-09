@@ -10,11 +10,11 @@ import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems } from '../../../common/utils/xmlUtils.js';
-import { bool2emoji, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
+import { bool2emoji, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
-import { run } from '@mermaid-js/mermaid-cli';
+import which from 'which';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -127,6 +127,7 @@ Generated markdown files will be written in **docs** folder (except README.md wh
   }
 
   private async generateFlowsDocumentation() {
+    const isMmdAvailable = await which("mmdc", { nothrow: true });
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
     for (const packageDir of packageDirs || []) {
@@ -146,8 +147,9 @@ Generated markdown files will be written in **docs** folder (except README.md wh
           continue;
         }
         uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
+        const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}"`;
         try {
-          await run(outputFlowMdFile, outputFlowMdFile as `${string}.md`);
+          await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false })
         } catch (e: any) {
           uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
           continue;
