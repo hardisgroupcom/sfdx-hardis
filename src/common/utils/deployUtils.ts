@@ -43,7 +43,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     arrangedFiles = await arrangeFilesBefore(commandThis, options);
   }
   try {
-    const pushCommand = `sf project deploy start --ignore-warnings --ignore-conflicts -o ${scratchOrgAlias} --wait 60`;
+    const pushCommand = `sf project deploy start --ignore-warnings --ignore-conflicts -o ${scratchOrgAlias} --wait 60 --json`;
     await execCommand(pushCommand, commandThis, {
       fail: true,
       output: !isCI,
@@ -88,7 +88,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
 export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
   let pullCommandResult: any;
   try {
-    const pullCommand = `sf project retrieve start --ignore-conflicts -o ${scratchOrgAlias} --wait 60`;
+    const pullCommand = `sf project retrieve start --ignore-conflicts -o ${scratchOrgAlias} --wait 60 --json`;
     pullCommandResult = await execCommand(pullCommand, this, {
       fail: true,
       output: true,
@@ -295,7 +295,8 @@ export async function smartDeploy(
         (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
         ' --verbose' +
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
-        (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
+        (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
+        ` --json`;
       let deployRes;
       try {
         deployRes = await execCommand(deployCommand, commandThis, {
@@ -777,7 +778,8 @@ export async function deployDestructiveChanges(
     ` --test-level ${options.testLevel || 'NoTestRun'}` +
     ' --ignore-warnings' + // So it does not fail in case metadata is already deleted
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
-    (options.debug ? ' --verbose' : '');
+    (options.debug ? ' --verbose' : '') +
+    ' --json';
   // Deploy destructive changes
   let deployDeleteRes: any = {};
   try {
@@ -830,7 +832,8 @@ export async function deployMetadatas(
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
     ` --api-version ${options.apiVersion || CONSTANTS.API_VERSION}` +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
-    ' --verbose';
+    ' --verbose' +
+    ' --json';
   let deployRes;
   try {
     deployRes = await execCommand(deployCommand, this, {

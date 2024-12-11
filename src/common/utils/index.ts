@@ -1330,3 +1330,17 @@ const ansiRegex = new RegExp(ansiPattern, 'g');
 export function stripAnsi(str: string) {
   return str.replace(ansiRegex, '');
 }
+
+export function findJsonInString(inputString: string) {
+  // Regular expression to match a JSON object
+  const jsonMatch = stripAnsi(inputString).match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if (jsonMatch) {
+    try {
+      const jsonObject = JSON.parse(jsonMatch[0]); // Extract and parse JSON
+      return jsonObject;
+    } catch (error) {
+      return null;
+    }
+  }
+  return null;
+}
