@@ -1,15 +1,13 @@
 # Docker image to run sfdx-hardis
 
-FROM alpine:3.21
+FROM node:22-alpine
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
 RUN apk add --update --no-cache \
             chromium \
             git \
-            bash \
-            nodejs=20.16.0-r0 \
-            npm
+            bash
 
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
