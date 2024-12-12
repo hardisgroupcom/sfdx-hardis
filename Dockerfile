@@ -8,7 +8,7 @@ RUN apk add --update --no-cache \
             chromium \
             git \
             bash \
-            nodejs==20.16.0-r0 \
+            nodejs=20.16.0-r0 \
             npm
 
 # Do not use puppeteer embedded chromium
