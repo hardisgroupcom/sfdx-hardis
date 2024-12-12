@@ -1,0 +1,3232 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_GRAFANACLOUD-CLOUDITY-LOGS",
+      "label": "grafanacloud-cloudity-logs",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "loki",
+      "pluginName": "Loki"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.4.0-78571"
+    },
+    {
+      "type": "datasource",
+      "id": "loki",
+      "name": "Loki",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 12,
+      "panels": [],
+      "title": "Org Limits",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Org limits issues",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-limits-details/50-limits-details?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\", source=\"sfdx-hardis\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Data Storage",
+          "fieldMinMax": false,
+          "links": [
+            {
+              "title": "Show History",
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 6,
+        "y": 1
+      },
+      "id": 15,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "limit": 1,
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "limits.DataStorageMB"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "",
+                "path": "percentUsed"
+              },
+              {
+                "alias": "limitName",
+                "path": "name"
+              },
+              {
+                "alias": "displayName",
+                "path": "label"
+              }
+            ],
+            "replace": true,
+            "source": "limits.DataStorageMB"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "percentUsed"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Files Storage",
+          "fieldMinMax": false,
+          "links": [
+            {
+              "title": "Show History",
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 9,
+        "y": 1
+      },
+      "id": 16,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "limit": 1,
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "limits.FileStorageMB"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "",
+                "path": "percentUsed"
+              },
+              {
+                "alias": "limitName",
+                "path": "name"
+              },
+              {
+                "alias": "displayName",
+                "path": "label"
+              }
+            ],
+            "replace": true,
+            "source": "limits.FileStorageMB"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "percentUsed"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Daily Api Requests",
+          "fieldMinMax": false,
+          "links": [
+            {
+              "title": "Show History",
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 1
+      },
+      "id": 17,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "limit": 1,
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "limits.DailyApiRequests"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "",
+                "path": "percentUsed"
+              },
+              {
+                "alias": "limitName",
+                "path": "name"
+              },
+              {
+                "alias": "displayName",
+                "path": "label"
+              }
+            ],
+            "replace": true,
+            "source": "limits.DailyApiRequests"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "percentUsed"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Daily Bulk API Batches",
+          "fieldMinMax": false,
+          "links": [
+            {
+              "title": "Show History",
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 1
+      },
+      "id": 18,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "limit": 1,
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "limits.DailyBulkApiBatches"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "",
+                "path": "percentUsed"
+              },
+              {
+                "alias": "limitName",
+                "path": "name"
+              },
+              {
+                "alias": "displayName",
+                "path": "label"
+              }
+            ],
+            "replace": true,
+            "source": "limits.DailyBulkApiBatches"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "percentUsed"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Daily Platform Events (Standard Volume)",
+          "fieldMinMax": false,
+          "links": [
+            {
+              "title": "Show History",
+              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}﻿﻿&﻿﻿${__url_time_range}&var-limitId=${__data.fields.limitName}"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 1
+      },
+      "id": 20,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "limit": 1,
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "limits.DailyStandardVolumePlatformEvents"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "",
+                "path": "percentUsed"
+              },
+              {
+                "alias": "limitName",
+                "path": "name"
+              },
+              {
+                "alias": "displayName",
+                "path": "label"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "limits.DailyStandardVolumePlatformEvents"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "percentUsed"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 9,
+      "panels": [],
+      "title": "Org Activity",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Updated metadatas",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=BACKUP&﻿﻿${__url_time_range}&var-indicatorLabel=Updated metadatas in org"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 6
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"BACKUP\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "keepTime": false,
+            "replace": false,
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Suspiscious Updates",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=AUDIT_TRAIL&﻿﻿${__url_time_range}&var-indicatorLabel=Suspect Setup Actions"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 6
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"AUDIT_TRAIL\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Inactive Users",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-dtl-inactive-users/dtl-inactive-users?${org:queryparam}﻿﻿&var-type=UNUSED_USERS&﻿﻿${__url_time_range}&var-indicatorLabel=Inactive Users"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 9,
+        "y": 6
+      },
+      "id": 21,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"UNUSED_USERS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Weekly Users",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-dtl-active-users/dtl-active-users?${org:queryparam}﻿﻿&var-type=ACTIVE_USERS&﻿﻿${__url_time_range}&var-indicatorLabel=Weekly Active Users"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "green",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 6
+      },
+      "id": 22,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "vertical",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ACTIVE_USERS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Legacy API Calls",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=LEGACY_API&﻿﻿${__url_time_range}&var-indicatorLabel=Legacy API calls"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 6
+      },
+      "id": 19,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"LEGACY_API\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 11,
+      "panels": [],
+      "title": "Apex Tests",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Failing tests",
+          "fieldMinMax": false,
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=APEX_TESTS&﻿﻿${__url_time_range}&var-indicatorLabel=Failing test classes"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 11
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"APEX_TESTS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Coverage Value",
+                "path": "metric"
+              }
+            ],
+            "keepTime": false,
+            "replace": false,
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Apex code coverage",
+          "links": [
+            {
+              "title": "",
+              "url": "/d/sfdx-hardis-dtl-apex/DTL-Apex?${org:queryparam}﻿﻿&var-type=APEX_TESTS&﻿﻿${__url_time_range}"
+            }
+          ],
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 75
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "light-green",
+                "value": 85
+              },
+              {
+                "color": "semi-dark-green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 11
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"APEX_TESTS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Coverage Value",
+                "path": "coverageValue"
+              }
+            ],
+            "keepTime": false,
+            "replace": false,
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 27,
+      "panels": [],
+      "title": "Org Info",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Release Updates to check",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=RELEASE_UPDATES&﻿﻿${__url_time_range}&var-indicatorLabel=Release Updates to check"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 5,
+        "x": 0,
+        "y": 16
+      },
+      "id": 34,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"RELEASE_UPDATES\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "days"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 5,
+        "y": 16
+      },
+      "id": 29,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^InstanceName$/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_INFO\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "SF Instance",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "InstanceName"
+              }
+            ],
+            "replace": true,
+            "source": "0"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "days"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 9,
+        "y": 16
+      },
+      "id": 33,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^OrganizationType$/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_INFO\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Org Type",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "OrganizationType"
+              }
+            ],
+            "replace": true,
+            "source": "0"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "days"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 5,
+        "x": 13,
+        "y": 16
+      },
+      "id": 32,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_INFO\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Next Version",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "maintenanceNextUpgrade"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Next Version",
+                "path": "name"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "maintenanceNextUpgrade"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "days"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 5,
+        "x": 18,
+        "y": 16
+      },
+      "id": 31,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"ORG_INFO\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Next Upgrade",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "maintenanceNextUpgrade"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Upgrade Date",
+                "path": "plannedStartTime"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "maintenanceNextUpgrade"
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "dateFormat": "",
+                "destinationType": "time",
+                "targetField": "Upgrade Date"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "id": 10,
+      "panels": [],
+      "title": "Technical Debt",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Unused Apex Classes",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=UNUSED_APEX_CLASSES&﻿﻿${__url_time_range}&var-indicatorLabel=Unused Apex Classes"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 20
+      },
+      "id": 35,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"UNUSED_APEX_CLASSES\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Deactivated Flows & VR",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=METADATA_STATUS&﻿﻿${__url_time_range}&var-indicatorLabel=Deactivated Flow & VR"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 20
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"METADATA_STATUS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Attributes without permissions",
+          "links": [
+            {
+              "title": "Show detailsl",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=LINT_ACCESS&﻿﻿${__url_time_range}&var-indicatorLabel=Attributes without permissions"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 20
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"LINT_ACCESS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Unused Metadatas",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=UNUSED_METADATAS&﻿﻿${__url_time_range}&var-indicatorLabel=Unused Metadatas"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 15,
+        "y": 20
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"UNUSED_METADATAS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Fields without description",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=MISSING_ATTRIBUTES&﻿﻿${__url_time_range}&var-indicatorLabel=Fields without description"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 19,
+        "y": 20
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"MISSING_ATTRIBUTES\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 23,
+      "panels": [],
+      "title": "Licenses & Packages",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MasterLabel"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 248
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UsedLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TotalLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total available"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 220
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Used"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 181
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "id": 25,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Used"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "keepTime": false,
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "allValues"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "All values"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "PermissionSetLicense"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Name": true,
+              "type": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
+            },
+            "renameByName": {
+              "MasterLabel": "Permission Set License",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MasterLabel"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 248
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UsedLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TotalLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total available"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 199
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Used"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "id": 24,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Used"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{orgIdentifier=\"$org\", type=\"LICENSES\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "_logElements"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "keepTime": false,
+            "replace": true,
+            "source": "_logElements"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "allValues"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "All values"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "UserLicense"
+                  }
+                },
+                "fieldName": "type"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Name": true,
+              "type": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
+            },
+            "renameByName": {
+              "MasterLabel": "User License",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue"
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MasterLabel"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 248
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UsedLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TotalLicenses"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 160
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Package name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 276
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Namespace"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 338
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Version Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 284
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Installed package"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 431
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 36
+      },
+      "id": 26,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Installed package"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0-78571",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{orgIdentifier=\"$org\", type=\"BACKUP\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "installedPackages"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "keepTime": false,
+            "replace": true,
+            "source": "installedPackages"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "labelsToFields": false,
+            "reducers": [
+              "allValues"
+            ]
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "auto",
+            "replace": true,
+            "source": "All values"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Name": true,
+              "SubscriberPackageVersionId": true,
+              "type": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "MasterLabel": 0,
+              "Name": 3,
+              "TotalLicenses": 2,
+              "UsedLicenses": 1,
+              "type": 4
+            },
+            "renameByName": {
+              "MasterLabel": "User License",
+              "SubscriberPackageName": "Installed package",
+              "SubscriberPackageNamespace": "Namespace",
+              "SubscriberPackageVersionId": "Version Id",
+              "SubscriberPackageVersionName": "Version Name",
+              "SubscriberPackageVersionNumber": "Version Number",
+              "TotalLicenses": "Total available",
+              "UsedLicenses": "Used"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 40,
+  "tags": [
+    "sfdx-hardis",
+    "salesforce",
+    "monitoring"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "loki",
+          "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        },
+        "definition": "",
+        "includeAll": false,
+        "label": "Salesforce Org",
+        "name": "org",
+        "options": [],
+        "query": {
+          "label": "orgIdentifier",
+          "refId": "LokiVariableQueryEditor-VariableQuery",
+          "stream": "{source=\"sfdx-hardis\"}",
+          "type": 1
+        },
+        "refresh": 1,
+        "regex": "^[^.]*$",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "DASH - 00_Home",
+  "uid": "sfdx-hardis-today-summary",
+  "version": 109,
+  "weekStart": ""
+}
