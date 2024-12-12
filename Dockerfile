@@ -18,7 +18,7 @@ ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 # hadolint ignore=DL3044
 ENV PATH="/node_modules/.bin:${PATH}"
 
-ARG SFDX_CLI_VERSION=latest
+ARG SFDX_CLI_VERSION=2.68.6
 ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
