@@ -23,13 +23,14 @@ ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
-    sf plugins install @salesforce/plugin-packaging && \
-    echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
-    echo 'y' | sf plugins install sfdmu && \
-    echo 'y' | sf plugins install sfdx-git-delta && \
-    echo 'y' | sf plugins install texei-sfdx-plugin && \
+    # sf plugins install @salesforce/plugin-packaging && \
+    # echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
+    # echo 'y' | sf plugins install sfdmu && \
+    # echo 'y' | sf plugins install sfdx-git-delta && \
+    # echo 'y' | sf plugins install texei-sfdx-plugin && \
     sf version --verbose --json && \
-    rm -rf /root/.npm/_cacache
+    rm -rf /root/.npm/_cacache && \
+    exit 1
 
 # Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
 COPY ref/workarounds/dateUtil.js /usr/local/lib/node_modules/@salesforce/cli/node_modules/@salesforce/apex-node/lib/src/utils/dateUtil.js
