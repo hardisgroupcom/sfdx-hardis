@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.10.1] 2024-12-12
+
+- Fix sfdx-hardis docker image build by adding coreutils in dependencies
+
 ## [5.10.0] 2024-12-12
 
 - Update Docker base image to alpine to 3.21
