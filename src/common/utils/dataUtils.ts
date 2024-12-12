@@ -27,7 +27,8 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     ` --targetusername ${targetUsername}` + // Keep targetusername until sfdmu switches to target-org
     ` -p ${sfdmuPath}` +
     ' --noprompt' +
-    (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : '');
+    // Needed for production orgs
+    (config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY ? ` --canmodify ${config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY}` : '');
   /* jscpd:ignore-end */
   elapseStart(`import ${dtl?.full_label}`);
   await execCommand(dataImportCommand, commandThis, {
