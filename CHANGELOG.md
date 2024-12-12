@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.9.3] 2024-12-12
+
+- [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/): Allow to run the command in production using, by either:
+  - Define **sfdmuCanModify** in your .sfdx-hardis.yml config file. (Example: `sfdmuCanModify: prod-instance.my.salesforce.com`)
+  - Define an environment variable SFDMU_CAN_MODIFY. (Example: `SFDMU_CAN_MODIFY=prod-instance.my.salesforce.com`)
+
 ## [5.9.2] 2024-12-10
 
 - Fallback message in case sfdx-hardis is not able to parse newest SF CLI errors format.
