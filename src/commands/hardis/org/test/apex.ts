@@ -162,8 +162,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   private async processApexTestsFailure() {
     this.notifSeverity = 'error';
-    this.statusMessage = `Org apex tests failure (Outcome: ${this.testRunOutcome})`;
-    this.notifText = `Org apex tests failure in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
     const reportDir = await getReportDirectory();
     // Parse log from external file
     const sfReportFile = path.join(reportDir, '/test-result.txt');
@@ -186,6 +184,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           .join('\n'),
       },
     ];
+    this.statusMessage = `Apex tests failed (${this.failingTestClasses.length}). (Outcome: ${this.testRunOutcome})`;
+    this.notifText = `Apex tests failed (${this.failingTestClasses.length}) in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
     console.table(this.failingTestClasses);
   }
 
