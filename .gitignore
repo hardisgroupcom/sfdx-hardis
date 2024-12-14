@@ -50,6 +50,9 @@ node_modules
 .DS_Store
 .idea
 
+# .sfdx files
+.sfdx
+
 hardis-report/
 megalinter-reports/
 config/user/
