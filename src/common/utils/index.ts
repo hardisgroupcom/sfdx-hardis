@@ -1041,7 +1041,7 @@ export async function generateReports(
   ];
 }
 
-export function uxLog(commandThis: any, text: string) {
+export function uxLog(commandThis: any, text: string, sensitive = false) {
   text = text.includes('[sfdx-hardis]') ? text : '[sfdx-hardis]' + (text.startsWith('[') ? '' : ' ') + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
@@ -1049,7 +1049,12 @@ export function uxLog(commandThis: any, text: string) {
     console.log(text);
   }
   if (globalThis.hardisLogFileStream) {
-    globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
+    if (sensitive) {
+      globalThis.hardisLogFileStream.write('OBFUSCATED LOG LINE\n');
+    }
+    else {
+      globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
+    }
   }
 }
 
@@ -1145,7 +1150,8 @@ export async function generateSSLCertificate(
         `You must configure CI variable ${c.green(
           c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
         )} with value ${c.bold(c.green(consumerKey))}`
-      )
+      ),
+      true
     );
     uxLog(
       commandThis,
@@ -1153,7 +1159,8 @@ export async function generateSSLCertificate(
         `You must configure CI variable ${c.green(
           c.bold(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)
         )} with value ${c.bold(c.green(encryptionKey))}`
-      )
+      ),
+      true
     );
     uxLog(
       commandThis,

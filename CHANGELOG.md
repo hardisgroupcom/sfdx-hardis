@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Display the number of failed tests in messages and notifications
+- Obfuscate some data from text log files
 
 ## [5.10.1] 2024-12-12
 
