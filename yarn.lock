@@ -3468,17 +3468,9 @@
   resolved "https://registry.npmjs.org/@types/http-cache-semantics/-/http-cache-semantics-4.0.4.tgz"
   integrity sha512-1m0bIFVc7eJWyve9S0RnuRgcQqF/Xd5QsUZAZeQFr1Q3/p9JWoQQEqmVy+DPTNpGXwhgIetAoYF8JSc33q29QA==
 
-"@types/inquirer@^9.0.3":
+"@types/inquirer@^9.0.3", "@types/inquirer@^9.0.7":
   version "9.0.7"
   resolved "https://registry.npmjs.org/@types/inquirer/-/inquirer-9.0.7.tgz"
-  integrity sha512-Q0zyBupO6NxGRZut/JdmqYKOnN95Eg5V8Csg3PGKkP+FnvsUZx1jAyK7fztIszxxMuoBA6E3KXWvdZVXIpx60g==
-  dependencies:
-    "@types/through" "*"
-    rxjs "^7.2.0"
-
-"@types/inquirer@^9.0.7":
-  version "9.0.7"
-  resolved "https://registry.yarnpkg.com/@types/inquirer/-/inquirer-9.0.7.tgz#61bb8d0e42f038b9a1738b08fba7fa98ad9b4b24"
   integrity sha512-Q0zyBupO6NxGRZut/JdmqYKOnN95Eg5V8Csg3PGKkP+FnvsUZx1jAyK7fztIszxxMuoBA6E3KXWvdZVXIpx60g==
   dependencies:
     "@types/through" "*"
@@ -5664,10 +5656,10 @@ domhandler@^5.0.2, domhandler@^5.0.3:
   dependencies:
     domelementtype "^2.3.0"
 
-dompurify@^3.2.2:
-  version "3.2.2"
-  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-3.2.2.tgz#6c0518745e81686c74a684f5af1e5613e7cc0246"
-  integrity sha512-YMM+erhdZ2nkZ4fTNRTSI94mb7VG7uVF5vj5Zde7tImgnhZE3R6YW/IACGIHb2ux+QkEXMhe591N+5jWOmL4Zw==
+dompurify@^3.2.3:
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-3.2.3.tgz#05dd2175225324daabfca6603055a09b2382a4cd"
+  integrity sha512-U1U5Hzc2MO0oW3DF+G9qYN0aT7atAou4AgI0XjWz061nyBPbdxkfdhfy5uMgGn6+oLFCfn44ZGbdDqCzVmlOWA==
   optionalDependencies:
     "@types/trusted-types" "^2.0.7"
 
@@ -7839,12 +7831,12 @@ isobject@^3.0.1:
   resolved "https://registry.npmjs.org/isobject/-/isobject-3.0.1.tgz"
   integrity sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==
 
-isomorphic-dompurify@^2.18.0:
-  version "2.18.0"
-  resolved "https://registry.yarnpkg.com/isomorphic-dompurify/-/isomorphic-dompurify-2.18.0.tgz#ab043055f4140818122a352cf7d21f2330469866"
-  integrity sha512-e0AaROtWPy6ofSTCnUuBvXFidt1eFmrwEbi+Acpz0du6v2H+fq+3svPBn0g/AfBXz24FTWA9ccle7HSFT3HG7A==
+isomorphic-dompurify@^2.19.0:
+  version "2.19.0"
+  resolved "https://registry.yarnpkg.com/isomorphic-dompurify/-/isomorphic-dompurify-2.19.0.tgz#e55493bf8ae4d57bcde7336ee61ef0063227eefe"
+  integrity sha512-ppcgeRlEwOQ+v/JDctcjnOsBwEoJlAWVDH5+LisLHphQFeWCrBiVvK6XF4wF0MJM5tJA6RxJSlpbmthnmonxOQ==
   dependencies:
-    dompurify "^3.2.2"
+    dompurify "^3.2.3"
     jsdom "^25.0.1"
 
 isstream@~0.1.2:
