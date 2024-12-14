@@ -277,7 +277,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     /* jscpd:ignore-start */
     // Send notifications
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-    NotifProvider.postNotifications({
+    await NotifProvider.postNotifications({
       type: this.returnActiveUsers ? 'ACTIVE_USERS' : 'UNUSED_USERS',
       text: notifText,
       attachments: attachments,

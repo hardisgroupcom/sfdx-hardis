@@ -93,7 +93,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
     }
 
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-    NotifProvider.postNotifications({
+    await NotifProvider.postNotifications({
       type: 'ORG_INFO',
       text: notifText,
       attachments: [],

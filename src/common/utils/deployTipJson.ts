@@ -17,6 +17,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
     .map(error => {
       error.messageInitial = `Error ${error.fullName} ${error.problem}`;
       error.messageInitialDisplay = `${error.componentType} ${error.fullName}: ${error.problem}`;
+      error.tips = [];
       return error;
     });
 
@@ -50,20 +51,20 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
     if (error.tips.length > 0) {
       for (const errorTip of error.tips) {
         detailedErrorLines.push(...[
-          c.italic(c.bold(errorTip.tip.label)),
+          c.yellow(c.italic("Error " + c.bold(errorTip.tip.label)) + ":"),
           c.yellow(errorTip.tip.messageConsole),
           c.yellow(`Documentation: ${errorTip.tip.docUrl}`)
         ])
       }
     }
     else {
-      detailedErrorLines.push(...["No tip found for error. Try asking ChatGPT or Google :)"])
+      detailedErrorLines.push(...["No tip found for error. Try asking ChatGPT, Google or a Release Manager :)"])
     }
   }
   detailedErrorLines.push("");
 
-  const failedTests: any[] = [];
-
+  // Gather failing tests
+  const failedTests = [];// extractFailedTestsInfo(resultJson?.result?.details?.tests || [])
 
   // Build output list of errors & tips
   const errorsAndTips: any[] = [];
@@ -79,7 +80,6 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
 }
 
 async function matchesTip(tipDefinition: any, error: any) {
-  error.tips = [];
   matchStringBasedTip(tipDefinition, error);
   matchRegExpBasedTip(tipDefinition, error);
 }
@@ -134,6 +134,32 @@ function matchRegExpBasedTip(tipDefinition: any, error: any) {
     }
   }
 }
+
+/*
+function extractFailedTestsInfo(logRaw: string) {
+  const failedTests: any[] = [];
+  const regexFailedTests = /Test Failures([\S\s]*?)Test Success/gm;
+  if (logRaw.match(regexFailedTests)) {
+    const failedTestsString = (regexFailedTests.exec(logRaw) || [])[1].split(/\r?\n/).join("\n") + "\n•";
+    // Parse strings to extract main error line then stack
+    // eslint-disable-next-line no-regex-spaces, no-useless-escape
+    const regex = /^• (.*)\n  message: (.*)\n  stacktrace: ([\s\S]*?)(?=\n•|\z)/gm;
+    const matches = [...failedTestsString.matchAll(regex)];
+    for (const match of matches || []) {
+      const failedTest: any = {
+        class: match[1].split(".")[0],
+        method: match[1].split(".")[1],
+        error: match[2].trim(),
+      };
+      if (match[3]) {
+        failedTest.stack = match[3];
+      }
+      failedTests.push(failedTest);
+    }
+  }
+  return failedTests;
+}
+  */
 
 async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<AiResponse | null> {
   if (alreadyProcessedErrors.includes(error.message)) {
