@@ -73,8 +73,8 @@ class SfdxHardisBuilder {
         tip.expressionRegex[0]
     const tipFileMd = [
       "---",
-      `title: ${tip.label} (Deployment assistant)`,
-      `description: How to solve Salesforce deployment error ${errorDescription}`,
+      `title: "${tip.label} (Deployment assistant)"`,
+      `description: "How to solve Salesforce deployment error ${errorDescription}"`,
       "---",
       "<!-- markdownlint-disable MD013 -->"
     ];
