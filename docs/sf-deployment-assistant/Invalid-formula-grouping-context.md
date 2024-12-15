@@ -1,6 +1,6 @@
 ---
-title: Invalid formula grouping context (Deployment assistant)
-description: How to solve Salesforce deployment error Invalid custom summary formula definition: You must select a grouping context to use any report summary function
+title: "Invalid formula grouping context (Deployment assistant)"
+description: "How to solve Salesforce deployment error Invalid custom summary formula definition: You must select a grouping context to use any report summary function"
 ---
 <!-- markdownlint-disable MD013 -->
 # Invalid formula grouping context

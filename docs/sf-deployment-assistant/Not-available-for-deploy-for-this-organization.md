@@ -1,6 +1,6 @@
 ---
-title: Not available for deploy for this organization (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) Not available for deploy for this organization/gm
+title: "Not available for deploy for this organization (Deployment assistant)"
+description: "How to solve Salesforce deployment error /Error (.*) Not available for deploy for this organization/gm"
 ---
 <!-- markdownlint-disable MD013 -->
 # Not available for deploy for this organization

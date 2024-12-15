@@ -1,6 +1,6 @@
 ---
-title: Invalid type (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) Invalid type: (.*) \((.*)\)/gm
+title: "Invalid type (Deployment assistant)"
+description: "How to solve Salesforce deployment error /Error (.*) Invalid type: (.*) \((.*)\)/gm"
 ---
 <!-- markdownlint-disable MD013 -->
 # Invalid type

@@ -1,6 +1,6 @@
 ---
-title: Missing Quick Action (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) In field: QuickAction - no QuickAction named (.*) found/gm
+title: "Missing Quick Action (Deployment assistant)"
+description: "How to solve Salesforce deployment error /Error (.*) In field: QuickAction - no QuickAction named (.*) found/gm"
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing Quick Action

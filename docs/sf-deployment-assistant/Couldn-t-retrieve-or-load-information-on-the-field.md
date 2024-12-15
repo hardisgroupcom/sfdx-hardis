@@ -1,6 +1,6 @@
 ---
-title: Couldn't retrieve or load information on the field (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) Something went wrong. We couldn't retrieve or load the information on the field: (.*)\./gm
+title: "Couldn't retrieve or load information on the field (Deployment assistant)"
+description: "How to solve Salesforce deployment error /Error (.*) Something went wrong. We couldn't retrieve or load the information on the field: (.*)\./gm"
 ---
 <!-- markdownlint-disable MD013 -->
 # Couldn't retrieve or load information on the field

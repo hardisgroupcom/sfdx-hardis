@@ -1,6 +1,6 @@
 ---
-title: Condition missing reference (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) field integrity exception: unknown \(A condition has a reference to (.*), which doesn't exist.\)/gm
+title: "Condition missing reference (Deployment assistant)"
+description: "How to solve Salesforce deployment error /Error (.*) field integrity exception: unknown \(A condition has a reference to (.*), which doesn't exist.\)/gm"
 ---
 <!-- markdownlint-disable MD013 -->
 # Condition missing reference

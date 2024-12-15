@@ -1,6 +1,6 @@
 ---
-title: Duplicate label (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) Duplicate label: (.*)/gm
+title: "Duplicate label (Deployment assistant)"
+description: "How to solve Salesforce deployment error /Error (.*) Duplicate label: (.*)/gm"
 ---
 <!-- markdownlint-disable MD013 -->
 # Duplicate label

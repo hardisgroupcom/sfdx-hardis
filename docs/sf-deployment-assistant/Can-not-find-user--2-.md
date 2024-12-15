@@ -1,6 +1,6 @@
 ---
-title: Can not find user (2) (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) In field: (.*) - no User named (.*) found/gm
+title: "Can not find user (2) (Deployment assistant)"
+description: "How to solve Salesforce deployment error /Error (.*) In field: (.*) - no User named (.*) found/gm"
 ---
 <!-- markdownlint-disable MD013 -->
 # Can not find user (2)

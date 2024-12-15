@@ -1,6 +1,6 @@
 ---
-title: Network issue (Deployment assistant)
-description: How to solve Salesforce deployment error ECONNABORTED
+title: "Network issue (Deployment assistant)"
+description: "How to solve Salesforce deployment error ECONNABORTED"
 ---
 <!-- markdownlint-disable MD013 -->
 # Network issue

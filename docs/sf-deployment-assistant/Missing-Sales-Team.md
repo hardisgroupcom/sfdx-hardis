@@ -1,6 +1,6 @@
 ---
-title: Missing Sales Team (Deployment assistant)
-description: How to solve Salesforce deployment error related list:RelatedAccountSalesTeam
+title: "Missing Sales Team (Deployment assistant)"
+description: "How to solve Salesforce deployment error related list:RelatedAccountSalesTeam"
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing Sales Team

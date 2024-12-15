@@ -70,7 +70,7 @@ class SfdxHardisBuilder {
   buildIndividualMarkdownPageForTip(tip, tipFile) {
     const errorDescription = tip?.examples?.length > 0 ? tip.examples[0] :
       tip?.expressionString?.length > 0 ? tip?.expressionString[0] :
-        tip.expressionRegex[0]
+        tip.expressionRegex[0].toString().replace("/gm", "")
     const tipFileMd = [
       "---",
       `title: "${tip.label} (Deployment assistant)"`,

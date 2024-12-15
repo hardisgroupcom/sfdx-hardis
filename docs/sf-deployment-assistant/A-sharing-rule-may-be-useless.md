@@ -1,6 +1,6 @@
 ---
-title: A sharing rule may be useless (Deployment assistant)
-description: How to solve Salesforce deployment error Required field is missing: sharingCriteriaRules
+title: "A sharing rule may be useless (Deployment assistant)"
+description: "How to solve Salesforce deployment error Required field is missing: sharingCriteriaRules"
 ---
 <!-- markdownlint-disable MD013 -->
 # A sharing rule may be useless
