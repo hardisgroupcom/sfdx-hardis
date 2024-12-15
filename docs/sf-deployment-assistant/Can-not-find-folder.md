@@ -1,6 +1,6 @@
 ---
 title: "Can not find folder (Deployment assistant)"
-description: "How to solve Salesforce deployment error "Error (.*) Cannot find folder:(.*)""
+description: "How to solve Salesforce deployment error \"Error (.*) Cannot find folder:(.*)\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Can not find folder

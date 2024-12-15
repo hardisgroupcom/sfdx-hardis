@@ -1,6 +1,6 @@
 ---
 title: "Missing field Suffix (Deployment assistant)"
-description: "How to solve Salesforce deployment error "field Suffix""
+description: "How to solve Salesforce deployment error \"field Suffix\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing field Suffix

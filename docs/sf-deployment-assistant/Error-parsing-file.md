@@ -1,6 +1,6 @@
 ---
 title: "Error parsing file (Deployment assistant)"
-description: "How to solve Salesforce deployment error "Error (.*) Error parsing file: (.*)""
+description: "How to solve Salesforce deployment error \"Error (.*) Error parsing file: (.*)\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Error parsing file

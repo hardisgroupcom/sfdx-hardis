@@ -1,6 +1,6 @@
 ---
 title: "Mandatory custom field can not be in a profile/permission set (Deployment assistant)"
-description: "How to solve Salesforce deployment error "Error (.*) You cannot deploy to a required field: (.*)""
+description: "How to solve Salesforce deployment error \"Error (.*) You cannot deploy to a required field: (.*)\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Mandatory custom field can not be in a profile/permission set

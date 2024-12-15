@@ -1,6 +1,6 @@
 ---
 title: "Invalid scope:Mine, not allowed (Deployment assistant)"
-description: "How to solve Salesforce deployment error "Invalid scope:Mine, not allowed""
+description: "How to solve Salesforce deployment error \"Invalid scope:Mine, not allowed\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Invalid scope:Mine, not allowed

@@ -1,6 +1,6 @@
 ---
 title: "Missing report (Deployment assistant)"
-description: "How to solve Salesforce deployment error "Error (.*) The (.*) report chart has a problem with the "reportName" field""
+description: "How to solve Salesforce deployment error \"Error (.*) The (.*) report chart has a problem with the \"reportName\" field\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing report

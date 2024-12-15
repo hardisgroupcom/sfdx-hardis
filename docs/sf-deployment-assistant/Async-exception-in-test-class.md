@@ -1,6 +1,6 @@
 ---
 title: "Async exception in test class (Deployment assistant)"
-description: "How to solve Salesforce deployment error "/System.AsyncException: (.*) Apex""
+description: "How to solve Salesforce deployment error \"/System.AsyncException: (.*) Apex\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Async exception in test class

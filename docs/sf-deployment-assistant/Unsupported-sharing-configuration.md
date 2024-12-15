@@ -1,6 +1,6 @@
 ---
 title: "Unsupported sharing configuration (Deployment assistant)"
-description: "How to solve Salesforce deployment error "/not supported for (.*) since it's org wide default is""
+description: "How to solve Salesforce deployment error \"/not supported for (.*) since it's org wide default is\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Unsupported sharing configuration
