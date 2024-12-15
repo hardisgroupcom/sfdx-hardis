@@ -75,6 +75,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     uxLog(commandThis, c.red('Sadly there has been push error(s)'));
     uxLog(this, c.red('\n' + errLog));
     elapseEnd('project:deploy:start');
+    killBoringExitHandlers();
     throw new SfError('Deployment failure. Check messages above');
   }
 }
@@ -121,6 +122,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         return await forceSourcePull(scratchOrgAlias, debug);
       }
     }
+    killBoringExitHandlers();
     throw new SfError('Pull failure. Check messages above');
   }
 
@@ -307,6 +309,7 @@ export async function smartDeploy(
           if (check) {
             await GitProvider.managePostPullRequestComment();
           }
+          killBoringExitHandlers();
           throw errCoverage;
         }
       } else {
@@ -787,6 +790,7 @@ export async function deployDestructiveChanges(
         )
       )
     );
+    killBoringExitHandlers();
     throw new SfError('Error while deploying destructive changes');
   }
   await fs.remove(tmpDir);
@@ -852,6 +856,7 @@ export async function deployMetadatas(
             }
           );
         } else {
+          killBoringExitHandlers();
           throw e2;
         }
       }
@@ -1162,10 +1167,12 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
     '75.00';
   const minCoverage = parseFloat(minCoverageConf);
   if (isNaN(minCoverage)) {
+    killBoringExitHandlers();
     throw new SfError(`[sfdx-hardis] Invalid minimum coverage configuration: ${minCoverageConf}`);
   }
 
   if (minCoverage < 75.0) {
+    killBoringExitHandlers();
     throw new SfError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% :)`);
   }
 
@@ -1174,6 +1181,7 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
       await updatePullRequestResultCoverage('invalid_ignored', orgCoverage, minCoverage, options);
     } else {
       await updatePullRequestResultCoverage('invalid', orgCoverage, minCoverage, options);
+      killBoringExitHandlers();
       throw new SfError(
         `[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverage}%`
       );
@@ -1200,6 +1208,7 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
   if (options.check) {
     await GitProvider.managePostPullRequestComment();
   }
+  killBoringExitHandlers();
   throw new SfError('Metadata deployment failure. Check messages above');
 }
 
