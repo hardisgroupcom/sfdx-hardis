@@ -1,4 +1,4 @@
-import { uxLog } from "../utils/index.js";
+import { isCI, uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
@@ -38,7 +38,7 @@ export abstract class NotifProvider {
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
     uxLog(this, c.gray(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
     const notifProviders = this.getInstances();
-    if (notifProviders.length === 0) {
+    if (notifProviders.length === 0 && isCI) {
       uxLog(
         this,
         c.gray(

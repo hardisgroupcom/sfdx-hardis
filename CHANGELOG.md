@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Obfuscate some data from text log files
 - Kill some exit handlers in case they are making the app crash after a throw SfError
 - Trigger notifications during the command execcution, not after
+- Do not display warning in case no notification has been configured in case we are running locally
 
 ## [5.10.1] 2024-12-12
 
