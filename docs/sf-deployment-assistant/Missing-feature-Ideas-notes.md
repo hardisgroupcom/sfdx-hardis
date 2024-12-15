@@ -1,6 +1,6 @@
 ---
-title: Missing feature Ideas notes (Deployment assistant)
-description: How to solve Salesforce deployment error Idea.InternalIdeasIdeaRecordType
+title: "Missing feature Ideas notes (Deployment assistant)"
+description: "How to solve Salesforce deployment error \"Idea.InternalIdeasIdeaRecordType\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing feature Ideas notes

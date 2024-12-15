@@ -424,7 +424,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
     }
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-    NotifProvider.postNotifications({
+    await NotifProvider.postNotifications({
       type: 'DEPLOYMENT',
       text: notifMessage,
       buttons: notifButtons,

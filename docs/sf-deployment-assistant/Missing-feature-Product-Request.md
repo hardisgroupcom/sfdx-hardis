@@ -1,6 +1,6 @@
 ---
-title: Missing feature Product Request (Deployment assistant)
-description: How to solve Salesforce deployment error ProductRequest
+title: "Missing feature Product Request (Deployment assistant)"
+description: "How to solve Salesforce deployment error \"ProductRequest\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing feature Product Request

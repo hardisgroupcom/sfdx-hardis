@@ -1,4 +1,4 @@
-import { uxLog } from "../utils/index.js";
+import { isCI, uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
@@ -32,39 +32,38 @@ export abstract class NotifProvider {
 
   // Post notifications to all configured channels
   // This method is sync to allow the command to continue and not negatively impact performances
-  static postNotifications(notifMessage: NotifMessage) {
-    getConfig("user").then((config) => {
-      const notificationsDisable =
-        config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
-      uxLog(this, c.gray(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
-      const notifProviders = this.getInstances();
-      if (notifProviders.length === 0) {
+  static async postNotifications(notifMessage: NotifMessage) {
+    const config = await getConfig("user");
+    const notificationsDisable =
+      config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
+    uxLog(this, c.gray(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
+    const notifProviders = this.getInstances();
+    if (notifProviders.length === 0 && isCI) {
+      uxLog(
+        this,
+        c.gray(
+          `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+        ),
+      );
+    }
+    for (const notifProvider of notifProviders) {
+      uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
+      // Skip if matching NOTIFICATIONS_DISABLE except for Api
+      if (notificationsDisable.includes(notifMessage.type) && notifProvider.isUserNotifProvider()) {
         uxLog(
           this,
-          c.gray(
-            `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+          c.yellow(
+            `[NotifProvider] Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
           ),
         );
       }
-      for (const notifProvider of notifProviders) {
-        uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
-        // Skip if matching NOTIFICATIONS_DISABLE except for Api
-        if (notificationsDisable.includes(notifMessage.type) && notifProvider.isUserNotifProvider()) {
-          uxLog(
-            this,
-            c.yellow(
-              `[NotifProvider] Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
-            ),
-          );
-        }
-        // Do not send notifs for level "log" to Users, but just to logs/metrics API
-        else if (notifProvider.isApplicableForNotif(notifMessage)) {
-          notifProvider.postNotification(notifMessage);
-        } else {
-          uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
-        }
+      // Do not send notifs for level "log" to Users, but just to logs/metrics API
+      else if (notifProvider.isApplicableForNotif(notifMessage)) {
+        await notifProvider.postNotification(notifMessage);
+      } else {
+        uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
       }
-    });
+    }
   }
 
   public getLabel(): string {
