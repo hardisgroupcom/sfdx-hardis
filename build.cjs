@@ -74,7 +74,7 @@ class SfdxHardisBuilder {
     const tipFileMd = [
       "---",
       `title: "${tip.label} (Deployment assistant)"`,
-      `description: "How to solve Salesforce deployment error ${errorDescription}"`,
+      `description: "How to solve Salesforce deployment error \"${errorDescription}\""`,
       "---",
       "<!-- markdownlint-disable MD013 -->"
     ];

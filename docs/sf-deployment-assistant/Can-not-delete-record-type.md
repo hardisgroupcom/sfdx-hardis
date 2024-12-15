@@ -1,6 +1,6 @@
 ---
 title: "Can not delete record type (Deployment assistant)"
-description: "How to solve Salesforce deployment error /Error (.*) Cannot delete record type through API/gm"
+description: "How to solve Salesforce deployment error /Error (.*) Cannot delete record type through API"
 ---
 <!-- markdownlint-disable MD013 -->
 # Can not delete record type
