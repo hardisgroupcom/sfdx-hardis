@@ -10,10 +10,12 @@ import {
   elapseStart,
   execCommand,
   execSfdxJson,
+  findJsonInString,
   getCurrentGitBranch,
   git,
   gitHasLocalUpdates,
   isCI,
+  killBoringExitHandlers,
   uxLog,
 } from './index.js';
 import { CONSTANTS, getConfig, setConfig } from '../../config/index.js';
@@ -43,7 +45,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     arrangedFiles = await arrangeFilesBefore(commandThis, options);
   }
   try {
-    const pushCommand = `sf project deploy start --ignore-warnings --ignore-conflicts -o ${scratchOrgAlias} --wait 60`;
+    const pushCommand = `sf project deploy start --ignore-warnings --ignore-conflicts -o ${scratchOrgAlias} --wait 60 --json`;
     await execCommand(pushCommand, commandThis, {
       fail: true,
       output: !isCI,
@@ -69,18 +71,11 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       uxLog(this, c.red(c.bold('The error has been caused by your unstable internet connection. Please Try again !')));
     }
     // Analyze errors
-    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
+    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(commandThis, c.red('Sadly there has been push error(s)'));
     uxLog(this, c.red('\n' + errLog));
-    uxLog(
-      commandThis,
-      c.yellow(
-        c.bold(
-          `You may${tips.length > 0 ? ' also' : ''} copy-paste errors on google to find how to solve the push issues :)`
-        )
-      )
-    );
     elapseEnd('project:deploy:start');
+    killBoringExitHandlers();
     throw new SfError('Deployment failure. Check messages above');
   }
 }
@@ -88,7 +83,7 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
 export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
   let pullCommandResult: any;
   try {
-    const pullCommand = `sf project retrieve start --ignore-conflicts -o ${scratchOrgAlias} --wait 60`;
+    const pullCommand = `sf project retrieve start --ignore-conflicts -o ${scratchOrgAlias} --wait 60 --json`;
     pullCommandResult = await execCommand(pullCommand, this, {
       fail: true,
       output: true,
@@ -98,7 +93,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
     // Manage beta/legacy boza
     const stdOut = (e as any).stdout + (e as any).stderr;
     // Analyze errors
-    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
+    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(this, c.red('Sadly there has been pull error(s)'));
     uxLog(this, c.red('\n' + errLog));
     // List unknown elements from output
@@ -127,14 +122,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         return await forceSourcePull(scratchOrgAlias, debug);
       }
     }
-    uxLog(
-      this,
-      c.yellow(
-        c.bold(
-          `You may${tips.length > 0 ? ' also' : ''} copy-paste errors on google to find how to solve the pull issues :)`
-        )
-      )
-    );
+    killBoringExitHandlers();
     throw new SfError('Pull failure. Check messages above');
   }
 
@@ -295,7 +283,8 @@ export async function smartDeploy(
         (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
         ' --verbose' +
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
-        (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
+        (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
+        ` --json`;
       let deployRes;
       try {
         deployRes = await execCommand(deployCommand, commandThis, {
@@ -320,6 +309,7 @@ export async function smartDeploy(
           if (check) {
             await GitProvider.managePostPullRequestComment();
           }
+          killBoringExitHandlers();
           throw errCoverage;
         }
       } else {
@@ -413,28 +403,20 @@ async function handleDeployError(
     return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
   }
   // Handle Effective error
-  const { tips, errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
+  const { errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
   uxLog(commandThis, c.red(c.bold('Sadly there has been Deployment error(s)')));
   if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === 'false') {
     uxLog(this, '\n' + errLog);
   } else {
     uxLog(this, c.red('\n' + errLog));
   }
-  uxLog(
-    commandThis,
-    c.yellow(
-      c.bold(
-        `You may${tips.length > 0 ? ' also' : ''
-        } copy-paste errors on google to find how to solve the deployment issues :)`
-      )
-    )
-  );
   await displayDeploymentLink(output, options);
   elapseEnd(`deploy ${deployment.label}`);
   if (check) {
     await GitProvider.managePostPullRequestComment();
   }
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
+  killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
 }
 
@@ -448,6 +430,15 @@ export function truncateProgressLogLines(rawLog: string) {
 }
 
 async function getDeploymentId(rawLog: string) {
+  // JSON Mode
+  const jsonLog = findJsonInString(rawLog);
+  if (jsonLog) {
+    const deploymentId = jsonLog?.result?.id || null;
+    if (deploymentId) {
+      return deploymentId;
+    }
+  }
+  // Text mode
   const regex = /Deploy ID: (.*)/gm;
   if (rawLog && rawLog.match(regex)) {
     const deploymentId = (regex.exec(rawLog) || [])[1];
@@ -777,7 +768,8 @@ export async function deployDestructiveChanges(
     ` --test-level ${options.testLevel || 'NoTestRun'}` +
     ' --ignore-warnings' + // So it does not fail in case metadata is already deleted
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
-    (options.debug ? ' --verbose' : '');
+    (options.debug ? ' --verbose' : '') +
+    ' --json';
   // Deploy destructive changes
   let deployDeleteRes: any = {};
   try {
@@ -798,6 +790,7 @@ export async function deployDestructiveChanges(
         )
       )
     );
+    killBoringExitHandlers();
     throw new SfError('Error while deploying destructive changes');
   }
   await fs.remove(tmpDir);
@@ -830,7 +823,8 @@ export async function deployMetadatas(
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
     ` --api-version ${options.apiVersion || CONSTANTS.API_VERSION}` +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
-    ' --verbose';
+    ' --verbose' +
+    ' --json';
   let deployRes;
   try {
     deployRes = await execCommand(deployCommand, this, {
@@ -862,6 +856,7 @@ export async function deployMetadatas(
             }
           );
         } else {
+          killBoringExitHandlers();
           throw e2;
         }
       }
@@ -1172,10 +1167,12 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
     '75.00';
   const minCoverage = parseFloat(minCoverageConf);
   if (isNaN(minCoverage)) {
+    killBoringExitHandlers();
     throw new SfError(`[sfdx-hardis] Invalid minimum coverage configuration: ${minCoverageConf}`);
   }
 
   if (minCoverage < 75.0) {
+    killBoringExitHandlers();
     throw new SfError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% :)`);
   }
 
@@ -1184,6 +1181,7 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
       await updatePullRequestResultCoverage('invalid_ignored', orgCoverage, minCoverage, options);
     } else {
       await updatePullRequestResultCoverage('invalid', orgCoverage, minCoverage, options);
+      killBoringExitHandlers();
       throw new SfError(
         `[sfdx-hardis][apextest] Test run ${codeCoverageText} ${orgCoverage}% should be greater than ${minCoverage}%`
       );
@@ -1202,23 +1200,15 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { tips, errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, options);
+  const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, options);
   uxLog(commandThis, c.red(c.bold('Sadly there has been Metadata deployment error(s)...')));
   uxLog(this, c.red('\n' + errLog));
-  uxLog(
-    commandThis,
-    c.yellow(
-      c.bold(
-        `You may${tips.length > 0 ? ' also' : ''
-        } copy-paste errors on google to find how to solve the metadata deployment issues :)`
-      )
-    )
-  );
   await displayDeploymentLink((e as any).stdout + (e as any).stderr, options);
   // Post pull requests comments if necessary
   if (options.check) {
     await GitProvider.managePostPullRequestComment();
   }
+  killBoringExitHandlers();
   throw new SfError('Metadata deployment failure. Check messages above');
 }
 

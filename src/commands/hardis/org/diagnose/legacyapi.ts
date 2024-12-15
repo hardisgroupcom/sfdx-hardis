@@ -242,7 +242,7 @@ See article to solve issue before it's too late:
     }
     // Post notifications
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-    NotifProvider.postNotifications({
+    await NotifProvider.postNotifications({
       type: 'LEGACY_API',
       text: notifText,
       attachments: [{ text: notifDetailText }],

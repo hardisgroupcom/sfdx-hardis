@@ -4,6 +4,32 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Refactor deployment errors parsing: use JSON output instead of text output
+- [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Display the number of failed tests in messages and notifications
+- Obfuscate some data from text log files
+- Kill some exit handlers in case they are making the app crash after a throw SfError
+- Trigger notifications during the command execution, not after
+- Do not display warning in case no notification has been configured in case we are running locally
+- Fix Individual deployment tips markdown docs by adding quotes to YML properties
+
+## [5.10.1] 2024-12-12
+
+- Fix sfdx-hardis docker image build by adding coreutils in dependencies
+
+## [5.10.0] 2024-12-12
+
+- Update Docker base image to alpine to 3.21
+
+## [5.9.3] 2024-12-12
+
+- [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/): Allow to run the command in production using, by either:
+  - Define **sfdmuCanModify** in your .sfdx-hardis.yml config file. (Example: `sfdmuCanModify: prod-instance.my.salesforce.com`)
+  - Define an environment variable SFDMU_CAN_MODIFY. (Example: `SFDMU_CAN_MODIFY=prod-instance.my.salesforce.com`)
+
+## [5.9.2] 2024-12-10
+
+- Fallback message in case sfdx-hardis is not able to parse newest SF CLI errors format.
+
 ## [5.9.1] 2024-12-09
 
 - Fix issue that generates valid Pull Request comment whereas there is 1 error

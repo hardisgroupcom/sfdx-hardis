@@ -4,8 +4,9 @@ import format from "string-template";
 
 import { getAllTips } from "./deployTipsList.js";
 import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown.js";
-import { stripAnsi, uxLog } from "./index.js";
+import { findJsonInString, stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
+import { analyzeDeployErrorLogsJson } from "./deployTipJson.js";
 
 let logRes: string | null = null;
 let errorsAndTips: any[] = [];
@@ -15,6 +16,14 @@ const firstYellowChar = c.yellow("*")[0];
 // Checks for deploy tips in a log string
 // returns formatted and completed error log
 export async function analyzeDeployErrorLogs(log: string, includeInLog = true, options: any): Promise<any> {
+  // New way using json: should be always be used
+  const jsonResult = findJsonInString(log);
+  if (jsonResult) {
+    const resultsFromJson = await analyzeDeployErrorLogsJson(jsonResult, log, includeInLog, options);
+    if (resultsFromJson && (resultsFromJson?.errorsAndTips.length > 0 || resultsFromJson?.failedTests?.length > 0)) {
+      return resultsFromJson;
+    }
+  }
   errorsAndTips = []; // reset
   alreadyProcessedErrors = []; // reset
   logRes = returnErrorLines(log).join("\n"); // reset
@@ -75,6 +84,17 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
     // Legacy sfdx force:source:deploy output
     extractFailedTestsInfoForSfdxCommand(logRaw, failedTests);
   }
+  // Fallback in case we have not been able to identify errors
+  if (errorsAndTips.length === 0 && failedTests.length === 0) {
+    errorsAndTips.push(({
+      error: { message: "There has been an issue parsing errors, probably because of a SF CLI output format update. Please check console logs." },
+      tip: {
+        label: "SfdxHardisParseError",
+        message: "If you are in CI/CD, please check at the bottom of deployment check job logs. The issue will be fixed ASAP.",
+      },
+    }))
+  }
+
   await updatePullRequestResult(errorsAndTips, failedTests, options);
   return { tips, errorsAndTips, failedTests, errLog: logResLines.join("\n") };
 }
@@ -261,7 +281,7 @@ function returnErrorLines(strIn) {
 }
 
 // This data will be caught later to build a pull request message
-async function updatePullRequestResult(errorsAndTips: Array<any>, failedTests: Array<any>, options: any) {
+export async function updatePullRequestResult(errorsAndTips: Array<any>, failedTests: Array<any>, options: any) {
   const prData: any = {
     messageKey: "deployment",
     title: options.check ? "✅ Deployment check success" : "✅ Deployment success",

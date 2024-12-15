@@ -1,6 +1,6 @@
 ---
-title: Cannot update a field to a Summary from something else (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) Cannot update a field to a (.*) from something else/gm
+title: "Cannot update a field to a Summary from something else (Deployment assistant)"
+description: "How to solve Salesforce deployment error \"Error (.*) Cannot update a field to a (.*) from something else\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Cannot update a field to a Summary from something else

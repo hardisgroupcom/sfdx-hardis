@@ -81,7 +81,7 @@ export default class MetadataStatus extends SfCommand<any> {
     }
     // Post notifications
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-    NotifProvider.postNotifications({
+    await NotifProvider.postNotifications({
       type: 'MISSING_ATTRIBUTES',
       text: notifText,
       attachments: attachments,
