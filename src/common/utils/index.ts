@@ -1351,3 +1351,15 @@ export function findJsonInString(inputString: string) {
   }
   return null;
 }
+
+// Ugly hack but no choice
+// It happens that in case of huge logs, process.exit triggers a blocking error.
+// Remove them, as anyway we want to stop the process.
+export function killBoringExitHandlers() {
+  const listeners = process.listeners('exit');
+  for (const listener of listeners) {
+    if (listener.toString().includes("function onExit ()")) {
+      process.removeListener('exit', listener);
+    }
+  }
+}

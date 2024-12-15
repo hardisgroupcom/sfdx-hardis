@@ -10,10 +10,12 @@ import {
   elapseStart,
   execCommand,
   execSfdxJson,
+  findJsonInString,
   getCurrentGitBranch,
   git,
   gitHasLocalUpdates,
   isCI,
+  killBoringExitHandlers,
   uxLog,
 } from './index.js';
 import { CONSTANTS, getConfig, setConfig } from '../../config/index.js';
@@ -69,17 +71,9 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
       uxLog(this, c.red(c.bold('The error has been caused by your unstable internet connection. Please Try again !')));
     }
     // Analyze errors
-    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
+    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(commandThis, c.red('Sadly there has been push error(s)'));
     uxLog(this, c.red('\n' + errLog));
-    uxLog(
-      commandThis,
-      c.yellow(
-        c.bold(
-          `You may${tips.length > 0 ? ' also' : ''} copy-paste errors on google to find how to solve the push issues :)`
-        )
-      )
-    );
     elapseEnd('project:deploy:start');
     throw new SfError('Deployment failure. Check messages above');
   }
@@ -98,7 +92,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
     // Manage beta/legacy boza
     const stdOut = (e as any).stdout + (e as any).stderr;
     // Analyze errors
-    const { tips, errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
+    const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
     uxLog(this, c.red('Sadly there has been pull error(s)'));
     uxLog(this, c.red('\n' + errLog));
     // List unknown elements from output
@@ -127,14 +121,6 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         return await forceSourcePull(scratchOrgAlias, debug);
       }
     }
-    uxLog(
-      this,
-      c.yellow(
-        c.bold(
-          `You may${tips.length > 0 ? ' also' : ''} copy-paste errors on google to find how to solve the pull issues :)`
-        )
-      )
-    );
     throw new SfError('Pull failure. Check messages above');
   }
 
@@ -414,28 +400,20 @@ async function handleDeployError(
     return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
   }
   // Handle Effective error
-  const { tips, errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
+  const { errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
   uxLog(commandThis, c.red(c.bold('Sadly there has been Deployment error(s)')));
   if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === 'false') {
     uxLog(this, '\n' + errLog);
   } else {
     uxLog(this, c.red('\n' + errLog));
   }
-  uxLog(
-    commandThis,
-    c.yellow(
-      c.bold(
-        `You may${tips.length > 0 ? ' also' : ''
-        } copy-paste errors on google to find how to solve the deployment issues :)`
-      )
-    )
-  );
   await displayDeploymentLink(output, options);
   elapseEnd(`deploy ${deployment.label}`);
   if (check) {
     await GitProvider.managePostPullRequestComment();
   }
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
+  killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
 }
 
@@ -449,6 +427,15 @@ export function truncateProgressLogLines(rawLog: string) {
 }
 
 async function getDeploymentId(rawLog: string) {
+  // JSON Mode
+  const jsonLog = findJsonInString(rawLog);
+  if (jsonLog) {
+    const deploymentId = jsonLog?.result?.id || null;
+    if (deploymentId) {
+      return deploymentId;
+    }
+  }
+  // Text mode
   const regex = /Deploy ID: (.*)/gm;
   if (rawLog && rawLog.match(regex)) {
     const deploymentId = (regex.exec(rawLog) || [])[1];
@@ -1205,18 +1192,9 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {
-  const { tips, errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, options);
+  const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, options);
   uxLog(commandThis, c.red(c.bold('Sadly there has been Metadata deployment error(s)...')));
   uxLog(this, c.red('\n' + errLog));
-  uxLog(
-    commandThis,
-    c.yellow(
-      c.bold(
-        `You may${tips.length > 0 ? ' also' : ''
-        } copy-paste errors on google to find how to solve the metadata deployment issues :)`
-      )
-    )
-  );
   await displayDeploymentLink((e as any).stdout + (e as any).stderr, options);
   // Post pull requests comments if necessary
   if (options.check) {

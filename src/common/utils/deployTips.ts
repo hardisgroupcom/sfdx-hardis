@@ -20,7 +20,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   const jsonResult = findJsonInString(log);
   if (jsonResult) {
     const resultsFromJson = await analyzeDeployErrorLogsJson(jsonResult, log, includeInLog, options);
-    if (resultsFromJson && resultsFromJson?.errorsAndTips.length > 0) {
+    if (resultsFromJson && (resultsFromJson?.errorsAndTips.length > 0 || resultsFromJson?.failedTests?.length > 0)) {
       return resultsFromJson;
     }
   }

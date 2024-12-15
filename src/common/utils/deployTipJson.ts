@@ -44,10 +44,31 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
     }
   }
 
-  // Create output log
+  // Gather failing tests
+  const failedTests = extractFailedTestsInfo(resultJson?.result?.details?.runTestResult?.failures || []);
+
+  // Build output list of errors & tips
+  const errorsAndTips: any[] = [];
+  for (const error of errors) {
+    for (const errorTip of error.tips)
+      errorsAndTips.push(errorTip);
+  }
+
+  // Fallback in case we have not been able to identify errors
+  if (errorsAndTips.length === 0 && failedTests.length === 0) {
+    errorsAndTips.push(({
+      error: { message: "There has been an issue parsing errors, please notify sfdx-hardis maintainers" },
+      tip: {
+        label: "SfdxHardisInternalError",
+        message: "Declare issue on https://github.com/hardisgroupcom/sfdx-hardis/issues",
+      },
+    }))
+  }
+
+  // Create output log for errors
   const detailedErrorLines: string[] = [];
   for (const error of errors) {
-    detailedErrorLines.push(...["", c.red(c.bold(error.messageInitialDisplay))]);
+    detailedErrorLines.push(...["", c.red(c.bold(error.messageInitialDisplay)), ""]);
     if (error.tips.length > 0) {
       for (const errorTip of error.tips) {
         detailedErrorLines.push(...[
@@ -63,15 +84,18 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   }
   detailedErrorLines.push("");
 
-  // Gather failing tests
-  const failedTests = [];// extractFailedTestsInfo(resultJson?.result?.details?.tests || [])
-
-  // Build output list of errors & tips
-  const errorsAndTips: any[] = [];
-  for (const error of errors) {
-    for (const errorTip of error.tips)
-      errorsAndTips.push(errorTip);
+  // Create output log for test failures
+  if (failedTests.length > 0) {
+    detailedErrorLines.push(...["", c.red(c.bold("Test failures:"))], "");
+    for (const failedTest of failedTests) {
+      detailedErrorLines.push(...[
+        c.red(`${c.bold(failedTest.class)}.${c.bold(failedTest.method)}: ${failedTest.error}`),
+        c.grey(`Stack: ${failedTest.stack || "none"}`),
+        ""
+      ]);
+    }
   }
+
   // Update data that will be used for Pull Request comment
   await updatePullRequestResult(errorsAndTips, failedTests, options);
   // Return results
@@ -135,31 +159,22 @@ function matchRegExpBasedTip(tipDefinition: any, error: any) {
   }
 }
 
-/*
-function extractFailedTestsInfo(logRaw: string) {
+function extractFailedTestsInfo(failedTestsIn: any[]) {
   const failedTests: any[] = [];
-  const regexFailedTests = /Test Failures([\S\s]*?)Test Success/gm;
-  if (logRaw.match(regexFailedTests)) {
-    const failedTestsString = (regexFailedTests.exec(logRaw) || [])[1].split(/\r?\n/).join("\n") + "\n•";
-    // Parse strings to extract main error line then stack
-    // eslint-disable-next-line no-regex-spaces, no-useless-escape
-    const regex = /^• (.*)\n  message: (.*)\n  stacktrace: ([\s\S]*?)(?=\n•|\z)/gm;
-    const matches = [...failedTestsString.matchAll(regex)];
-    for (const match of matches || []) {
-      const failedTest: any = {
-        class: match[1].split(".")[0],
-        method: match[1].split(".")[1],
-        error: match[2].trim(),
-      };
-      if (match[3]) {
-        failedTest.stack = match[3];
-      }
-      failedTests.push(failedTest);
+  for (const failedTestIn of failedTestsIn || []) {
+    const failedTestRes: any = {
+      class: (failedTestIn.namespace ? failedTestIn.namespace + "__" : '') + failedTestIn.name,
+      method: failedTestIn.methodName,
+      error: failedTestIn.message,
+    };
+    if (failedTestIn?.error?.stacktrace) {
+      failedTestRes.stack = failedTestIn.error.stacktrace;
     }
+    failedTests.push(failedTestRes);
   }
   return failedTests;
 }
-  */
+
 
 async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<AiResponse | null> {
   if (alreadyProcessedErrors.includes(error.message)) {
