@@ -70,11 +70,11 @@ class SfdxHardisBuilder {
   buildIndividualMarkdownPageForTip(tip, tipFile) {
     const errorDescription = tip?.examples?.length > 0 ? tip.examples[0] :
       tip?.expressionString?.length > 0 ? tip?.expressionString[0] :
-        tip.expressionRegex[0].toString().replace("/Error", "Error").replace("/gm", "")
+        tip.expressionRegex[0].toString().replace("/Error", "Error").replace("/gm", "").replace(/\"/gm, '\\\"');
     const tipFileMd = [
       "---",
       `title: "${tip.label} (Deployment assistant)"`,
-      `description: "How to solve Salesforce deployment error \"${errorDescription}\""`,
+      `description: "How to solve Salesforce deployment error \\\"${errorDescription}\\\""`,
       "---",
       "<!-- markdownlint-disable MD013 -->"
     ];

@@ -1,6 +1,6 @@
 ---
 title: "Please choose a different name (Deployment assistant)"
-description: "How to solve Salesforce deployment error "/Error (.*) This (.*) already exists or has been previously used(.*)Please choose a different name.""
+description: "How to solve Salesforce deployment error "Error (.*) This (.*) already exists or has been previously used(.*)Please choose a different name.""
 ---
 <!-- markdownlint-disable MD013 -->
 # Please choose a different name

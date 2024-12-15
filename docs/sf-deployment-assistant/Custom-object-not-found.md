@@ -1,6 +1,6 @@
 ---
 title: "Custom object not found (Deployment assistant)"
-description: "How to solve Salesforce deployment error "/Error (.*) In field: field - no CustomObject named (.*) found""
+description: "How to solve Salesforce deployment error "Error (.*) In field: field - no CustomObject named (.*) found""
 ---
 <!-- markdownlint-disable MD013 -->
 # Custom object not found

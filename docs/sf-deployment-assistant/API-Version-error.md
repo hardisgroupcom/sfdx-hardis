@@ -1,6 +1,6 @@
 ---
 title: "API Version error (Deployment assistant)"
-description: "How to solve Salesforce deployment error "/Error (.*) The (.*) apiVersion can't be "([0-9]+)"""
+description: "How to solve Salesforce deployment error "Error (.*) The (.*) apiVersion can't be "([0-9]+)"""
 ---
 <!-- markdownlint-disable MD013 -->
 # API Version error
