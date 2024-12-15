@@ -1345,7 +1345,8 @@ export function findJsonInString(inputString: string) {
     try {
       const jsonObject = JSON.parse(jsonMatch[0]); // Extract and parse JSON
       return jsonObject;
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
       return null;
     }
   }

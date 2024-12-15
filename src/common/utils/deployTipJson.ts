@@ -199,7 +199,7 @@ function buildPrompt(error: any) {
     `How to solve the following Salesforce deployment error ?\n` +
     "- Please answer using sfdx source format, not metadata format. \n" +
     "- Please provide XML example if applicable. \n" +
-    "- Please skip the part of the response about how to retrie or deploy the changes with Salesforce CLI.\n" +
+    "- Please skip the part of the response about how to retrieve or deploy the changes with Salesforce CLI.\n" +
     `The error is: \n${JSON.stringify(error, null, 2)}`;
   return prompt;
 }
