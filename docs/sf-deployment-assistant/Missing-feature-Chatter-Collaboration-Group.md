@@ -1,6 +1,6 @@
 ---
 title: "Missing feature Chatter Collaboration Group (Deployment assistant)"
-description: "How to solve Salesforce deployment error CollaborationGroup"
+description: "How to solve Salesforce deployment error "CollaborationGroup""
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing feature Chatter Collaboration Group

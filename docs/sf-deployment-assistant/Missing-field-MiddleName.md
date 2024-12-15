@@ -1,6 +1,6 @@
 ---
 title: "Missing field MiddleName (Deployment assistant)"
-description: "How to solve Salesforce deployment error field MiddleName"
+description: "How to solve Salesforce deployment error "field MiddleName""
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing field MiddleName

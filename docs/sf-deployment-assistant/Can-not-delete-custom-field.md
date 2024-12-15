@@ -1,6 +1,6 @@
 ---
 title: "Can not delete custom field (Deployment assistant)"
-description: "How to solve Salesforce deployment error /This (.*) is referenced elsewhere in salesforce.com"
+description: "How to solve Salesforce deployment error "/This (.*) is referenced elsewhere in salesforce.com""
 ---
 <!-- markdownlint-disable MD013 -->
 # Can not delete custom field

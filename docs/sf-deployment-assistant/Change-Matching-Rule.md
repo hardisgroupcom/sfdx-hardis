@@ -1,6 +1,6 @@
 ---
 title: "Change Matching Rule (Deployment assistant)"
-description: "How to solve Salesforce deployment error /Error (.*) Before you change a matching rule, you must deactivate it"
+description: "How to solve Salesforce deployment error "/Error (.*) Before you change a matching rule, you must deactivate it""
 ---
 <!-- markdownlint-disable MD013 -->
 # Change Matching Rule

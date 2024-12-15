@@ -1,6 +1,6 @@
 ---
 title: "Sort order must be in sequential order (Deployment assistant)"
-description: "How to solve Salesforce deployment error /Error (.*) SortOrder must be in sequential order from"
+description: "How to solve Salesforce deployment error "/Error (.*) SortOrder must be in sequential order from""
 ---
 <!-- markdownlint-disable MD013 -->
 # Sort order must be in sequential order

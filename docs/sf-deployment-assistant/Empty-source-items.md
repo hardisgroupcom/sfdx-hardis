@@ -1,6 +1,6 @@
 ---
 title: "Empty source items (Deployment assistant)"
-description: "How to solve Salesforce deployment error Required field is missing: sharingOwnerRules"
+description: "How to solve Salesforce deployment error "Required field is missing: sharingOwnerRules""
 ---
 <!-- markdownlint-disable MD013 -->
 # Empty source items

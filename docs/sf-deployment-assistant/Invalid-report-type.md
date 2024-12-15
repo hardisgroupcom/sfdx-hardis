@@ -1,6 +1,6 @@
 ---
 title: "Invalid report type (Deployment assistant)"
-description: "How to solve Salesforce deployment error /Error (.*) invalid report type"
+description: "How to solve Salesforce deployment error "/Error (.*) invalid report type""
 ---
 <!-- markdownlint-disable MD013 -->
 # Invalid report type

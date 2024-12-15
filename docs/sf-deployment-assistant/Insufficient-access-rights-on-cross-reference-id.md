@@ -1,6 +1,6 @@
 ---
 title: "Insufficient access rights on cross-reference id (Deployment assistant)"
-description: "How to solve Salesforce deployment error /Error (.*) insufficient access rights on cross-reference id"
+description: "How to solve Salesforce deployment error "/Error (.*) insufficient access rights on cross-reference id""
 ---
 <!-- markdownlint-disable MD013 -->
 # Insufficient access rights on cross-reference id

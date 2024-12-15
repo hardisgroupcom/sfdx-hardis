@@ -1,6 +1,6 @@
 ---
 title: "Formula picklist field issue (Deployment assistant)"
-description: "How to solve Salesforce deployment error Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions."
+description: "How to solve Salesforce deployment error "Les champs de liste de sélection sont pris en charge uniquement dans certaines fonctions.""
 ---
 <!-- markdownlint-disable MD013 -->
 # Formula picklist field issue

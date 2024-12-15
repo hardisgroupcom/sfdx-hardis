@@ -1,6 +1,6 @@
 ---
 title: "Can not test item deployment in simulation mode (Deployment assistant)"
-description: "How to solve Salesforce deployment error /Test only deployment cannot update"
+description: "How to solve Salesforce deployment error "/Test only deployment cannot update""
 ---
 <!-- markdownlint-disable MD013 -->
 # Can not test item deployment in simulation mode

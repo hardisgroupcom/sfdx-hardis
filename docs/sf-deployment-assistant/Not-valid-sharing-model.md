@@ -1,6 +1,6 @@
 ---
 title: "Not valid sharing model (Deployment assistant)"
-description: "How to solve Salesforce deployment error /Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)"
+description: "How to solve Salesforce deployment error "/Error (.*) (.*) is not a valid sharing model for (.*) when (.*) sharing model is (.*)""
 ---
 <!-- markdownlint-disable MD013 -->
 # Not valid sharing model

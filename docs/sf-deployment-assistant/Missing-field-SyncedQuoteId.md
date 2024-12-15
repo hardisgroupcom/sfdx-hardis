@@ -1,6 +1,6 @@
 ---
 title: "Missing field SyncedQuoteId (Deployment assistant)"
-description: "How to solve Salesforce deployment error field SyncedQuoteId"
+description: "How to solve Salesforce deployment error "field SyncedQuoteId""
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing field SyncedQuoteId

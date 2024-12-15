@@ -1,6 +1,6 @@
 ---
 title: "Test classes with 0% coverage (Deployment assistant)"
-description: "How to solve Salesforce deployment error / 0%"
+description: "How to solve Salesforce deployment error "/ 0%""
 ---
 <!-- markdownlint-disable MD013 -->
 # Test classes with 0% coverage
