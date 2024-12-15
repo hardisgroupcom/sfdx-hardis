@@ -1,6 +1,6 @@
 ---
-title: Allow deployment with pending Apex Jobs (Deployment assistant)
-description: How to solve Salesforce deployment error You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup.
+title: "Allow deployment with pending Apex Jobs (Deployment assistant)"
+description: "How to solve Salesforce deployment error \"You can bypass this error by allowing deployments with Apex jobs in the Deployment Settings page in Setup.\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Allow deployment with pending Apex Jobs

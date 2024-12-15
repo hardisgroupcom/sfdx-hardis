@@ -122,7 +122,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
     this.outputFilesRes = await generateCsvFile(this.licenses, this.outputFile);
 
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-    NotifProvider.postNotifications({
+    await NotifProvider.postNotifications({
       type: 'LICENSES',
       text: '',
       severity: 'log',

@@ -5,20 +5,20 @@ import { TestContext } from '@salesforce/core/testSetup';
 
 describe('Deployment Tips', () => {
 
-  const $$ = new TestContext();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  //let sfCommandStubs: ReturnType<typeof stubSfCommandUx>;
+   const $$ = new TestContext();
+   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   //let sfCommandStubs: ReturnType<typeof stubSfCommandUx>;
 
-  beforeEach(() => {
-    //  sfCommandStubs = stubSfCommandUx($$.SANDBOX);
-  });
+   beforeEach(() => {
+      //  sfCommandStubs = stubSfCommandUx($$.SANDBOX);
+   });
 
-  afterEach(() => {
-    $$.restore();
-  });
+   afterEach(() => {
+      $$.restore();
+   });
 
-  it('Finds a single issue in deployment output log', async () => {
-    const sampleOutput = `
+   it('Finds a single issue in deployment output log', async () => {
+      const sampleOutput = `
 ───── Deploying Metadata (dry-run) ─────
 Stages:
 1. Preparing
@@ -63,12 +63,12 @@ Dry-run complete.
 Warning: GlobalValueSet, SousFamille__gvs, returned from org, but not found in the local project
 Warning: GlobalValueSet, Fonction__gvs, returned from org, but not found in the local project    
     `;
-    const { errorsAndTips } = await analyzeDeployErrorLogs(sampleOutput, true, { check: true });
-    expect(errorsAndTips).to.be.length.greaterThanOrEqual(1);
-  });
+      const { errorsAndTips } = await analyzeDeployErrorLogs(sampleOutput, true, { check: true });
+      expect(errorsAndTips).to.be.length.greaterThanOrEqual(1);
+   });
 
-  it('Add default issue in case of problem parsing error output', async () => {
-    const sampleOutput = `───── Deploying Metadata (dry-run) ─────
+   it('Add default issue in case of problem parsing error output', async () => {
+      const sampleOutput = `───── Deploying Metadata (dry-run) ─────
 Stages:
 1. Preparing
 2. Waiting for the org to respond
@@ -111,8 +111,8 @@ Failing: 0
 Total: 0
 Code Coverage formats, [json-summary], written to coverage/coverage/
 Dry-run complete.`;
-    const { errorsAndTips } = await analyzeDeployErrorLogs(sampleOutput, true, { check: true });
-    expect(errorsAndTips).to.be.length.greaterThanOrEqual(1);
-  });
+      const { errorsAndTips } = await analyzeDeployErrorLogs(sampleOutput, true, { check: true });
+      expect(errorsAndTips).to.be.length.greaterThanOrEqual(1);
+   });
 
 });

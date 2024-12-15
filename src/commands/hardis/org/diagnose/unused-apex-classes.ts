@@ -292,7 +292,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
     /* jscpd:ignore-start */
     // Send notifications
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-    NotifProvider.postNotifications({
+    await NotifProvider.postNotifications({
       type: 'UNUSED_APEX_CLASSES',
       text: notifText,
       attachments: attachments,

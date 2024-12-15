@@ -153,7 +153,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif
       globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-      NotifProvider.postNotifications({
+      await NotifProvider.postNotifications({
         type: 'CONNECTED_APPS',
         text: notifText,
         attachments: notifAttachments,

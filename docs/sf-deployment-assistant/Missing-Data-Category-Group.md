@@ -1,6 +1,6 @@
 ---
-title: Missing Data Category Group (Deployment assistant)
-description: How to solve Salesforce deployment error /Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found/gm
+title: "Missing Data Category Group (Deployment assistant)"
+description: "How to solve Salesforce deployment error \"Error (.*) In field: DeveloperName - no DataCategoryGroup named (.*) found\""
 ---
 <!-- markdownlint-disable MD013 -->
 # Missing Data Category Group

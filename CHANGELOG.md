@@ -4,7 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Refactor deployment errors parsing: use JSON output instead of text output
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Display the number of failed tests in messages and notifications
+- Obfuscate some data from text log files
+- Kill some exit handlers in case they are making the app crash after a throw SfError
+- Trigger notifications during the command execution, not after
+- Do not display warning in case no notification has been configured in case we are running locally
+- Fix Individual deployment tips markdown docs by adding quotes to YML properties
 
 ## [5.10.1] 2024-12-12
 

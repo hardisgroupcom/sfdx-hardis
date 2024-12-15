@@ -1041,7 +1041,7 @@ export async function generateReports(
   ];
 }
 
-export function uxLog(commandThis: any, text: string) {
+export function uxLog(commandThis: any, text: string, sensitive = false) {
   text = text.includes('[sfdx-hardis]') ? text : '[sfdx-hardis]' + (text.startsWith('[') ? '' : ' ') + text;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
@@ -1049,7 +1049,12 @@ export function uxLog(commandThis: any, text: string) {
     console.log(text);
   }
   if (globalThis.hardisLogFileStream) {
-    globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
+    if (sensitive) {
+      globalThis.hardisLogFileStream.write('OBFUSCATED LOG LINE\n');
+    }
+    else {
+      globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
+    }
   }
 }
 
@@ -1145,7 +1150,8 @@ export async function generateSSLCertificate(
         `You must configure CI variable ${c.green(
           c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
         )} with value ${c.bold(c.green(consumerKey))}`
-      )
+      ),
+      true
     );
     uxLog(
       commandThis,
@@ -1153,7 +1159,8 @@ export async function generateSSLCertificate(
         `You must configure CI variable ${c.green(
           c.bold(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)
         )} with value ${c.bold(c.green(encryptionKey))}`
-      )
+      ),
+      true
     );
     uxLog(
       commandThis,
@@ -1329,4 +1336,31 @@ const ansiRegex = new RegExp(ansiPattern, 'g');
 
 export function stripAnsi(str: string) {
   return str.replace(ansiRegex, '');
+}
+
+export function findJsonInString(inputString: string) {
+  // Regular expression to match a JSON object
+  const jsonMatch = stripAnsi(inputString).match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if (jsonMatch) {
+    try {
+      const jsonObject = JSON.parse(jsonMatch[0]); // Extract and parse JSON
+      return jsonObject;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      return null;
+    }
+  }
+  return null;
+}
+
+// Ugly hack but no choice
+// It happens that in case of huge logs, process.exit triggers a blocking error.
+// Remove them, as anyway we want to stop the process.
+export function killBoringExitHandlers() {
+  const listeners = process.listeners('exit');
+  for (const listener of listeners) {
+    if (listener.toString().includes("function onExit ()")) {
+      process.removeListener('exit', listener);
+    }
+  }
 }
