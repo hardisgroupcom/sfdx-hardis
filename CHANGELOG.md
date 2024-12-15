@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Display the number of failed tests in messages and notifications
 - Obfuscate some data from text log files
 - Kill some exit handlers in case they are making the app crash after a throw SfError
+- Trigger notifications during the command execcution, not after
 
 ## [5.10.1] 2024-12-12
 
