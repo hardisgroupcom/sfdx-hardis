@@ -36,6 +36,9 @@ export async function writeXmlFileFormatted(xmlFile: string, xmlString: string) 
 export async function parsePackageXmlFile(packageXmlFile: string) {
   const targetOrgPackage = await parseXmlFile(packageXmlFile);
   const targetOrgContent: any = {};
+  if (!targetOrgPackage?.Package?.types) {
+    uxLog(this, c.yellow(`File ${packageXmlFile} doesn't seem to respect package.xml format.`))
+  }
   for (const type of targetOrgPackage.Package.types || []) {
     const mdType = type.name[0];
     const members = type.members || [];

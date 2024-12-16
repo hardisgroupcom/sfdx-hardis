@@ -11,6 +11,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Trigger notifications during the command execution, not after
 - Do not display warning in case no notification has been configured in case we are running locally
 - Fix Individual deployment tips markdown docs by adding quotes to YML properties
+- Fix init sfdx-hardis project commands and docs
+- Display warning message in case package.xml has wrong format
 
 ## [5.10.1] 2024-12-12
 
