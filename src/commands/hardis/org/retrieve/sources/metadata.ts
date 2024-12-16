@@ -92,6 +92,7 @@ export default class DxSources extends SfCommand<any> {
         [],
         { filterManagedItems: filterManagedItems },
         this,
+        flags['target-org'].getUsername(),
         this.debugMode
       );
 
