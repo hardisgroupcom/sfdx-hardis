@@ -29,7 +29,7 @@ If you want to go for a **full init setup**, follow the steps below !
 - In case you get an error:
   - Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
   - Clean up the generated package created by removing the unnecessary metadatas
-  - Run retrieve metadata command : [hardis:source:retrieve](https://sfdx-hardis.cloudity.com/hardis/source/retrieve/)
+  - Run retrieve metadata command : [sf project:retrieve:start](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_retrieve_start_unified)
 
 Example :
   
@@ -43,10 +43,7 @@ Example :
           <name>Document</name>
       </types>
   ```
-- `sf hardis:source:retrieve -x ./packagexmlfull.xml`
-
-
-
+- `sf project:retrieve:start -x ./packagexmlfull.xml --ignore-conflicts`
 
 ## Automated Metadatas Cleaning
 

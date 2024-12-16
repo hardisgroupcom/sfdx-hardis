@@ -271,13 +271,14 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     filteredMetadatas: string[],
     options: any = {},
     commandThis: any,
+    orgUsername: string,
     debug: boolean
   ) {
     // Create output folder if not existing
     await fs.ensureDir(metadataFolder);
 
     // Build package.xml for all org
-    await buildOrgManifest(commandThis.org.getUsername(), 'package-full.xml');
+    await buildOrgManifest(orgUsername, 'package-full.xml');
     await fs.copyFile('package-full.xml', 'package.xml');
     // Filter managed items if requested
     if (options.filterManagedItems) {
@@ -286,7 +287,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
       let namespaces: any[] = [];
       if (isSfdxProject()) {
         // Use sfdx command if possible
-        const installedPackages = await this.listInstalledPackages(null, commandThis);
+        const installedPackages = await this.listInstalledPackages(orgUsername, commandThis);
         for (const installedPackage of installedPackages) {
           if (
             installedPackage?.SubscriberPackageNamespace !== '' &&

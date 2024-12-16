@@ -107,6 +107,7 @@ export default class DxSources extends SfCommand<any> {
       filteredMetadatas,
       retrieveOptions,
       this,
+      flags['target-org'].getUsername(),
       debug
     );
 
