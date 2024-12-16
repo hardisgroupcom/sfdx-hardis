@@ -15,6 +15,7 @@ import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
 import which from 'which';
+import { listFlowFiles } from '../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -130,30 +131,30 @@ Generated markdown files will be written in **docs** folder (except README.md wh
     const isMmdAvailable = await which("mmdc", { nothrow: true });
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
-    for (const packageDir of packageDirs || []) {
-      const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path });
-      for (const flowMetadata of flowMetadatas) {
-        const flowFile = path.join(packageDir.path, flowMetadata);
-        uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
-        const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
-        const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
-        try {
-          const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
-          const flowMarkdownDoc = flowDocGenResult.uml;
-          await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
-          uxLog(this, c.grey(`Written ${flowFile} documentation in ${outputFlowMdFile}`));
-        } catch (e: any) {
-          uxLog(this, c.yellow(`Error generating Flow ${flowFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
-          continue;
-        }
-        uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
-        const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}"`;
-        try {
-          await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false })
-        } catch (e: any) {
-          uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
-          continue;
-        }
+    const flowFiles = await listFlowFiles(packageDirs)
+    for (const flowFile of flowFiles) {
+      uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
+      const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
+      const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
+      try {
+        const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
+        const flowMarkdownDoc = flowDocGenResult.uml;
+        await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
+        uxLog(this, c.grey(`Written ${flowFile} documentation in ${outputFlowMdFile}`));
+      } catch (e: any) {
+        uxLog(this, c.yellow(`Error generating Flow ${flowFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+        continue;
+      }
+      if (this.debugMode) {
+        await fs.copyFile(outputFlowMdFile, outputFlowMdFile + ".mermaid.md");
+      }
+      uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
+      const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}"`;
+      try {
+        await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false })
+      } catch (e: any) {
+        uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+        continue;
       }
     }
   }
