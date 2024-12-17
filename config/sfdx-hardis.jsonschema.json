@@ -1141,6 +1141,17 @@
       "title": "Disabled notification types",
       "type": "array"
     },
+    "packageNoOverwritePath": {
+      "$id": "#/properties/packageNoOverwritePath",
+      "default": "",
+      "description": "Path to a custom package-no-overwrite XML file (used in smartDeploy command)",
+      "examples": [
+        "manifest/package-no-overwrite-main.xml",
+        "manifest/package-no-overwrite-custom.xml"
+      ],
+      "title": "Package-No-Overwrite path",
+      "type": "string"
+    },
     "poolConfig": {
       "$id": "#/properties/poolConfig",
       "description": "Configuration allowing to generate and fetch scratch orgs from scratch org pool",
