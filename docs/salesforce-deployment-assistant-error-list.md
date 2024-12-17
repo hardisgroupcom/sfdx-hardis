@@ -1202,7 +1202,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 
 **Detection**
 
-- RegExp: ` 0%`
+- RegExp: `0%`
 
 **Resolution**
 
