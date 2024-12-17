@@ -596,9 +596,18 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     );
     return null;
   }
+  // Get default package-no-overwrite
   let packageNoOverwrite = path.resolve('./manifest/package-no-overwrite.xml');
   if (!fs.existsSync(packageNoOverwrite)) {
     packageNoOverwrite = path.resolve('./manifest/packageDeployOnce.xml');
+  }
+  const config = await getConfig("branch");
+  if (process.env?.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath) {
+    packageNoOverwrite = process.env.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath;
+    if (!fs.existsSync(packageNoOverwrite)) {
+      throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
+    }
+    uxLog(this, c.grey(`Using custom package-no-overwrite file defined at ${packageNoOverwrite}`));
   }
   if (fs.existsSync(packageNoOverwrite)) {
     uxLog(this, c.cyan('Handling package-no-overwrite.xml...'));
