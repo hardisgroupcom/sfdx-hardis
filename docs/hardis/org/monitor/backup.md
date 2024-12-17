@@ -5,6 +5,10 @@
 
 Retrieve sfdx sources in the context of a monitoring backup
 
+The command exists in 2 modes: filtered(default & recommended) and full.
+
+## Filtered mode (default, better performances)
+
 Automatically skips metadatas from installed packages with namespace.  
 
 You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
@@ -13,25 +17,41 @@ You can remove more metadata types from backup, especially in case you have too 
 
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: `MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation`): that will be applied to all monitoring branches.
 
+## Full mode
+
+Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
+
+Ignores filters (namespaces items & manifest/package-skip-items.xm) to retrieve ALL metadatas, including those you might not care about (reports, translations...)
+
+As we can retrieve only 10000 files by call, the list of all metadatas will be chunked to make multiple calls (and take more time than filtered mode)
+
+## In CI/CD
+
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| flags-dir         | option  | undefined                                                         |         |          |         |
-| json              | boolean | Format output as json.                                            |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |         |          |         |
-| target-org<br/>-o | option  | undefined                                                         |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|full|boolean|Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower !||||
+|json|boolean|Format output as json.||||
+|max-by-chunk<br/>-m|option|If mode --full is activated, maximum number of metadatas in a package.xml chunk|3000|||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|hardis@cityone.fr.intfluxne2|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:org:monitor:backup
+$ sf hardis:org:monitor:backup
+```
+
+```shell
+$ sf hardis:org:monitor:backup --full
 ```
 
 

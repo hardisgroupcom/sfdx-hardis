@@ -65,38 +65,38 @@ Notes:
 
 ## Parameters
 
-| Name                            |  Type   | Description             |  Default  | Required |                                Options                                 |
-|:--------------------------------|:-------:|:------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
-| checkcoverage                   | boolean | Check Apex org coverage |           |          |                                                                        |
-| checkonly<br/>-c                | boolean | checkonly               |           |          |                                                                        |
-| coverageformatters              | option  | coverageformatters      |           |          |                                                                        |
-| debug                           | boolean | debug                   |           |          |                                                                        |
-| flags-dir                       | option  | undefined               |           |          |                                                                        |
-| forceoverwrite<br/>-f           | boolean | forceoverwrite          |           |          |                                                                        |
-| ignoreerrors                    | boolean | ignoreErrors            |           |          |                                                                        |
-| ignorewarnings<br/>-g           | boolean | ignoreWarnings          |           |          |                                                                        |
-| json                            | boolean | Format output as json.  |           |          |                                                                        |
-| junit                           | boolean | junit                   |           |          |                                                                        |
-| manifest<br/>-x                 | option  | flagsLong.manifest      |           |          |                                                                        |
-| metadata<br/>-m                 | option  | metadata                |           |          |                                                                        |
-| postdestructivechanges          | option  | postdestructivechanges  |           |          |                                                                        |
-| predestructivechanges           | option  | predestructivechanges   |           |          |                                                                        |
-| resultsdir                      | option  | resultsdir              |           |          |                                                                        |
-| runtests<br/>-r                 | option  | runTests                |           |          |                                                                        |
-| soapdeploy                      | boolean | soapDeploy              |           |          |                                                                        |
-| sourcepath<br/>-p               | option  | sourcePath              |           |          |                                                                        |
-| target-org<br/>-o               | option  | undefined               |           |          |                                                                        |
-| testlevel<br/>-l                | option  | testlevel               | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| tracksource<br/>-t              | boolean | tracksource             |           |          |                                                                        |
-| validateddeployrequestid<br/>-q | option  | validateDeployRequestId |           |          |                                                                        |
-| verbose                         | boolean | verbose                 |           |          |                                                                        |
-| wait<br/>-w                     | option  | wait                    |    60     |          |                                                                        |
-| websocket                       | option  | websocket               |           |          |                                                                        |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|checkcoverage|boolean|Check Apex org coverage||||
+|checkonly<br/>-c|boolean|checkonly||||
+|coverageformatters|option|coverageformatters||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|forceoverwrite<br/>-f|boolean|forceoverwrite||||
+|ignoreerrors|boolean|ignoreErrors||||
+|ignorewarnings<br/>-g|boolean|ignoreWarnings||||
+|json|boolean|Format output as json.||||
+|junit|boolean|junit||||
+|manifest<br/>-x|option|flagsLong.manifest||||
+|metadata<br/>-m|option|metadata||||
+|postdestructivechanges|option|postdestructivechanges||||
+|predestructivechanges|option|predestructivechanges||||
+|resultsdir|option|resultsdir||||
+|runtests<br/>-r|option|runTests||||
+|soapdeploy|boolean|soapDeploy||||
+|sourcepath<br/>-p|option|sourcePath||||
+|target-org<br/>-o|option|undefined|hardis@cityone.fr.intfluxne2|||
+|testlevel<br/>-l|option|testlevel|NoTestRun||NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg|
+|tracksource<br/>-t|boolean|tracksource||||
+|validateddeployrequestid<br/>-q|option|validateDeployRequestId||||
+|verbose|boolean|verbose||||
+|wait<br/>-w|option|wait|60|||
+|websocket|option|websocket||||
 
 ## Examples
 
 ```shell
-sf hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --target-org nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary
+$ sf hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --target-org nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary
 ```
 
 

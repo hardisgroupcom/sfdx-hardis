@@ -50,18 +50,18 @@ commandsPostDeploy:
 
 ## Parameters
 
-| Name                     |  Type   | Description            | Default | Required | Options |
-|:-------------------------|:-------:|:-----------------------|:-------:|:--------:|:-------:|
-| --job-id<br/>-i          | option  | job-id                 |         |          |         |
-| --use-most-recent<br/>-r | boolean | use-most-recent        |         |          |         |
-| api-version<br/>-a       | option  | api-version            |         |          |         |
-| async                    | boolean | async                  |         |          |         |
-| debug                    | boolean | debug                  |         |          |         |
-| flags-dir                | option  | undefined              |         |          |         |
-| json                     | boolean | Format output as json. |         |          |         |
-| target-org<br/>-o        | option  | undefined              |         |          |         |
-| tests                    | option  | tests                  |         |          |         |
-| wait<br/>-w              | option  | wait                   |   33    |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|--job-id<br/>-i|option|job-id||||
+|--use-most-recent<br/>-r|boolean|use-most-recent||||
+|api-version<br/>-a|option|api-version||||
+|async|boolean|async||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|target-org<br/>-o|option|undefined|hardis@cityone.fr.intfluxne2|||
+|tests|option|tests||||
+|wait<br/>-w|option|wait|33|||
 
 ## Examples
 
