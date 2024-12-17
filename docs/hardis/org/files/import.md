@@ -12,21 +12,21 @@ See article below to see how to Export them.
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |           Default            | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:----------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                              |          |         |
-| flags-dir         | option  | undefined                                                     |                              |          |         |
-| json              | boolean | Format output as json.                                        |                              |          |         |
-| overwrite<br/>-f  | boolean | Override existing files (doubles the number of API calls)     |                              |          |         |
-| path<br/>-p       | option  | Path to the file export project                               |                              |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                              |          |         |
-| target-org<br/>-o | option  | undefined                                                     | hardis@cityone.fr.intfluxne2 |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                              |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|overwrite<br/>-f|boolean|Override existing files (doubles the number of API calls)||||
+|path<br/>-p|option|Path to the file export project||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:org:files:import
+$ sf hardis:org:files:import
 ```
 
 
