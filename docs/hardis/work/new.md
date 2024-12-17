@@ -16,7 +16,7 @@ Under the hood, it can:
 - Create and initialize a scratch org or a source-tracked sandbox (config can be defined using `config/.sfdx-hardis.yml`):
 - (and for scratch org only for now):
   - **Install packages**
-      - Use property `installedPackages`
+    - Use property `installedPackages`
     - **Push sources**
     - **Assign permission sets**
       - Use property `initPermissionSets`
@@ -28,20 +28,20 @@ Under the hood, it can:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-dev-hub<br/>-v|option|undefined||||
-|target-org<br/>-o|option|undefined|hardis@cityone.fr.intfluxne2|||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                  |  Type   | Description                                                   |           Default            | Required | Options |
+|:----------------------|:-------:|:--------------------------------------------------------------|:----------------------------:|:--------:|:-------:|
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |                              |          |         |
+| flags-dir             | option  | undefined                                                     |                              |          |         |
+| json                  | boolean | Format output as json.                                        |                              |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required |                              |          |         |
+| target-dev-hub<br/>-v | option  | undefined                                                     |                              |          |         |
+| target-org<br/>-o     | option  | undefined                                                     | hardis@cityone.fr.intfluxne2 |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                              |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:work:task:new
+sf hardis:work:task:new
 ```
 
 

@@ -7,7 +7,7 @@ List all async Apex classes (Batch,Queueable,Schedulable) that has not been call
   
 The result class list probably can be removed from the project, and that will improve your test classes performances :)
 
-The number of unused day is overridable using --days option. 
+The number of unused day is overridable using --days option.
 
 The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
 
@@ -20,25 +20,25 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|days<br/>-t|option|Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined|hardis@cityone.fr.intfluxne2|||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                                             |           Default            | Required | Options |
+|:------------------|:-------:|:--------------------------------------------------------------------------------------------------------|:----------------------------:|:--------:|:-------:|
+| days<br/>-t       | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days |                              |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                         |                              |          |         |
+| flags-dir         | option  | undefined                                                                                               |                              |          |         |
+| json              | boolean | Format output as json.                                                                                  |                              |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                       |                              |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                           |                              |          |         |
+| target-org<br/>-o | option  | undefined                                                                                               | hardis@cityone.fr.intfluxne2 |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                               |                              |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:org:diagnose:unused-apex-classes
+sf hardis:org:diagnose:unused-apex-classes
 ```
 
 ```shell
-$ sf hardis:org:diagnose:unused-apex-classes --days 700
+sf hardis:org:diagnose:unused-apex-classes --days 700
 ```
 
 

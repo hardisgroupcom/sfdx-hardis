@@ -12,17 +12,17 @@ sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deplo
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug|boolean|debug||||
-|flags-dir|option|undefined||||
-|forceoverwrite<br/>-f|boolean|forceoverwrite||||
-|ignorewarnings<br/>-g|boolean|ignorewarnings||||
-|json|boolean|Format output as json.||||
-|quiet|boolean|quiet||||
-|target-org<br/>-o|option|undefined|hardis@cityone.fr.intfluxne2|||
-|wait<br/>-w|option|wait|60|||
-|websocket|option|websocket||||
+| Name                  |  Type   | Description            |           Default            | Required | Options |
+|:----------------------|:-------:|:-----------------------|:----------------------------:|:--------:|:-------:|
+| debug                 | boolean | debug                  |                              |          |         |
+| flags-dir             | option  | undefined              |                              |          |         |
+| forceoverwrite<br/>-f | boolean | forceoverwrite         |                              |          |         |
+| ignorewarnings<br/>-g | boolean | ignorewarnings         |                              |          |         |
+| json                  | boolean | Format output as json. |                              |          |         |
+| quiet                 | boolean | quiet                  |                              |          |         |
+| target-org<br/>-o     | option  | undefined              | hardis@cityone.fr.intfluxne2 |          |         |
+| wait<br/>-w           | option  | wait                   |              60              |          |         |
+| websocket             | option  | websocket              |                              |          |         |
 
 ## Examples
 
