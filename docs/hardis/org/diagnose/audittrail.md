@@ -106,34 +106,34 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|excludeusers<br/>-e|option|Comma-separated list of usernames to exclude||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|lastndays<br/>-t|option|Number of days to extract from today (included)||||
-|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                |  Type   | Description                                                       | Default | Required | Options |
+|:--------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                   |         |          |         |
+| excludeusers<br/>-e | option  | Comma-separated list of usernames to exclude                      |         |          |         |
+| flags-dir           | option  | undefined                                                         |         |          |         |
+| json                | boolean | Format output as json.                                            |         |          |         |
+| lastndays<br/>-t    | option  | Number of days to extract from today (included)                   |         |          |         |
+| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required     |         |          |         |
+| target-org<br/>-o   | option  | undefined                                                         |         |          |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:org:diagnose:audittrail
+sf hardis:org:diagnose:audittrail
 ```
 
 ```shell
-$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com
+sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com
 ```
 
 ```shell
-$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com
+sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com
 ```
 
 ```shell
-$ sf hardis:org:diagnose:audittrail --lastndays 5
+sf hardis:org:diagnose:audittrail --lastndays 5
 ```
 
 

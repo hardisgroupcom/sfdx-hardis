@@ -13,13 +13,13 @@ metadataDuplicateFindKeys :
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|files<br/>-f|option|XML metadata files path||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                   | Default | Required | Options |
+|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| files<br/>-f | option  | XML metadata files path                                       |         |          |         |
+| flags-dir    | option  | undefined                                                     |         |          |         |
+| json         | boolean | Format output as json.                                        |         |          |         |
+| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 
