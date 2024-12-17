@@ -296,6 +296,9 @@ export async function smartDeploy(
       } catch (e) {
         deployRes = await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
       }
+      if (typeof deployRes === 'object') {
+        deployRes.stdout = JSON.stringify(deployRes);
+      }
 
       // Set deployment id
       await getDeploymentId(deployRes.stdout + deployRes.stderr || '');
@@ -1105,6 +1108,22 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
 
 export async function extractOrgCoverageFromLog(stdout) {
   let orgCoverage: number | null = null;
+
+  // JSON Mode
+  const jsonLog = findJsonInString(stdout);
+  if (jsonLog && jsonLog?.result?.details?.runTestResult?.codeCoverage?.length > 0) {
+    let numLocationsNb = 0;
+    let coveredLocationsNb = 0;
+    for (const coverageRes of jsonLog.result.details.runTestResult.codeCoverage) {
+      numLocationsNb = numLocationsNb + coverageRes.numLocations;
+      if (coverageRes?.numLocationsNotCovered > 0) {
+        coveredLocationsNb = coveredLocationsNb + (coverageRes.numLocations - coverageRes.numLocationsNotCovered);
+      }
+    }
+    orgCoverage = (coveredLocationsNb / numLocationsNb) * 100;
+    return orgCoverage.toFixed(2);
+  }
+
   // Get from output text
   const fromTest = /Org Wide Coverage *(.*)/.exec(stdout);
   if (fromTest && fromTest[1]) {
