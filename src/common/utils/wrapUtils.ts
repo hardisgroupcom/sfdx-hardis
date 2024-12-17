@@ -59,5 +59,8 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
       process.exitCode = 1;
     }
   }
+  if (typeof deployRes === 'object') {
+    deployRes.stdout = JSON.stringify(deployRes);
+  }
   return { outputstring: deployRes };
 }
