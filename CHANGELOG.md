@@ -4,8 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Refactor deployment errors parsing: use JSON output instead of text output
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Refactor deployment errors parsing: use JSON output instead of text output
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Display the number of failed tests in messages and notifications
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): New option **--exclude-namespaces** that can be used with **--full** option
 - Obfuscate some data from text log files
 - Kill some exit handlers in case they are making the app crash after a throw SfError
 - Trigger notifications during the command execution, not after
