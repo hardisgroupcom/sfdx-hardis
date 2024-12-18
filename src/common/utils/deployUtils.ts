@@ -596,9 +596,18 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     );
     return null;
   }
+  // Get default package-no-overwrite
   let packageNoOverwrite = path.resolve('./manifest/package-no-overwrite.xml');
   if (!fs.existsSync(packageNoOverwrite)) {
     packageNoOverwrite = path.resolve('./manifest/packageDeployOnce.xml');
+  }
+  const config = await getConfig("branch");
+  if (process.env?.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath) {
+    packageNoOverwrite = process.env.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath;
+    if (!fs.existsSync(packageNoOverwrite)) {
+      throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
+    }
+    uxLog(this, c.grey(`Using custom package-no-overwrite file defined at ${packageNoOverwrite}`));
   }
   if (fs.existsSync(packageNoOverwrite)) {
     uxLog(this, c.cyan('Handling package-no-overwrite.xml...'));
@@ -1109,21 +1118,6 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
 export async function extractOrgCoverageFromLog(stdout) {
   let orgCoverage: number | null = null;
 
-  // JSON Mode
-  const jsonLog = findJsonInString(stdout);
-  if (jsonLog && jsonLog?.result?.details?.runTestResult?.codeCoverage?.length > 0) {
-    let numLocationsNb = 0;
-    let coveredLocationsNb = 0;
-    for (const coverageRes of jsonLog.result.details.runTestResult.codeCoverage) {
-      numLocationsNb = numLocationsNb + coverageRes.numLocations;
-      if (coverageRes?.numLocationsNotCovered > 0) {
-        coveredLocationsNb = coveredLocationsNb + (coverageRes.numLocations - coverageRes.numLocationsNotCovered);
-      }
-    }
-    orgCoverage = (coveredLocationsNb / numLocationsNb) * 100;
-    return orgCoverage.toFixed(2);
-  }
-
   // Get from output text
   const fromTest = /Org Wide Coverage *(.*)/.exec(stdout);
   if (fromTest && fromTest[1]) {
@@ -1139,24 +1133,38 @@ export async function extractOrgCoverageFromLog(stdout) {
     uxLog(this, c.gray((e as Error).message));
   }
   /* jscpd:ignore-end */
-  // Get from output file
+  // Get from output file whose name has been found in text output
   const writtenToPath = /written to (.*coverage)/.exec(stdout);
   if (writtenToPath && writtenToPath[1]) {
     const jsonFile = path
       .resolve(process.cwd() + path.sep + writtenToPath[1].replace(/\\/g, '/') + path.sep + 'coverage-summary.json')
       .replace(/\\/g, '/');
-    if (fs.existsSync(jsonFile)) {
-      const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, 'utf-8'));
-      orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
-      try {
-        if (orgCoverage && Number(orgCoverage.toFixed(2)) > 0.0) {
-          return orgCoverage.toFixed(2);
-        }
-      } catch (e) {
-        uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
-        uxLog(this, c.gray((e as Error).message));
+    const result = getCoverageFromJsonFile(jsonFile);
+    if (result) {
+      return result;
+    }
+  }
+  // Get from output file whose name has been found in text output
+  const defaultCoverageOutputJsonFile = path.join(process.cwd(), "coverage", "coverage", "coverage-summary.json");
+  const resultFromDefaultFile = getCoverageFromJsonFile(defaultCoverageOutputJsonFile);
+  if (resultFromDefaultFile) {
+    return resultFromDefaultFile;
+  }
+
+  // Get from JSON Mode (might be best to use output file)
+  const jsonLog = findJsonInString(stdout);
+  if (jsonLog && jsonLog?.result?.details?.runTestResult?.codeCoverage?.length > 0) {
+    let numLocationsNb = 0;
+    let coveredLocationsNb = 0;
+    for (const coverageRes of jsonLog.result.details.runTestResult.codeCoverage) {
+      numLocationsNb = numLocationsNb + coverageRes.numLocations;
+      if (coverageRes?.numLocationsNotCovered > 0) {
+        coveredLocationsNb = coveredLocationsNb + (coverageRes.numLocations - coverageRes.numLocationsNotCovered);
       }
     }
+    orgCoverage = (coveredLocationsNb / numLocationsNb) * 100;
+    uxLog(this, c.yellow("Code coverage has been calculated manually, if the number seems strange to you, you better use option \"--coverage-formatters json-summary\""));
+    return orgCoverage.toFixed(2);
   }
   uxLog(
     this,
@@ -1166,6 +1174,22 @@ export async function extractOrgCoverageFromLog(stdout) {
       )
     )
   );
+  return null;
+}
+
+function getCoverageFromJsonFile(jsonFile) {
+  if (fs.existsSync(jsonFile)) {
+    const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, 'utf-8'));
+    const orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
+    try {
+      if (orgCoverage && Number(orgCoverage.toFixed(2)) > 0.0) {
+        return orgCoverage.toFixed(2);
+      }
+    } catch (e) {
+      uxLog(this, c.yellow(`Warning: unable to convert ${orgCoverage} into string`));
+      uxLog(this, c.gray((e as Error).message));
+    }
+  }
   return null;
 }
 
