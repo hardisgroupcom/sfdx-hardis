@@ -63,6 +63,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       default: 3000,
       description: 'If mode --full is activated, maximum number of metadatas in a package.xml chunk',
     }),
+    "exclude-namespaces": Flags.boolean({
+      char: "e",
+      default: false,
+      description: 'If mode --full is activated, exclude namespaced metadatas',
+    }),
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
@@ -91,6 +96,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected diffFilesSimplified: any[] = [];
   protected full: boolean = false;
   protected maxByChunk: number = 3000;
+  protected excludeNamespaces: boolean = false;
 
   protected extractPackageXmlChunks: any[] = [];
   protected currentPackage: any = {};
@@ -108,6 +114,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const { flags } = await this.parse(MonitorBackup);
     this.full = flags.full || (process.env?.MONITORING_BACKUP_MODE_FULL === "true" ? true : false);
     this.maxByChunk = flags["max-by-chunk"] || 3000;
+    this.excludeNamespaces = flags["exclude-namespaces"] === true ? true : false;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
@@ -236,8 +243,20 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
+    let packageXmlToExtract = packageXmlFullFile;
+    // Filter namespaces if requested in the command
+    if (this.excludeNamespaces || process.env?.SFDX_HARDIS_BACKUP_EXCLUDE_NAMESPACES === "true") {
+      const packageXmlFullFileWithoutNamespace = 'manifest/package-all-org-items-except-namespaces.xml';
+      await filterPackageXml(packageXmlFullFile, packageXmlFullFileWithoutNamespace, {
+        removeNamespaces: this.namespaces,
+        removeStandard: false,
+        updateApiVersion: CONSTANTS.API_VERSION,
+      });
+      packageXmlToExtract = packageXmlFullFileWithoutNamespace;
+    }
+
     // Build packageXml chunks
-    const packageElements = await parsePackageXmlFile(packageXmlFullFile);
+    const packageElements = await parsePackageXmlFile(packageXmlToExtract);
 
     // Handle predefined chunks
     const predefinedChunkTypes = [
