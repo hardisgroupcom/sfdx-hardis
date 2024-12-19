@@ -340,7 +340,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       try {
         const pullRequestInfo = await GitProvider.getPullRequestInfo();
         const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
-        const prDataCommitsSummary = { commitsSummary: commitsSummary.markdown };
+        const prDataCommitsSummary = {
+          commitsSummary: commitsSummary.markdown,
+          flowDiffSummary: commitsSummary.flowDiffMarkdown
+        };
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
       } catch (e3) {
         uxLog(this, c.yellow('Unable to compute git summary:\n' + e3));
@@ -464,11 +467,11 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       uxLog(this, c.cyan('[DeltaDeployment] Generating git delta package.xml and destructiveChanges.xml ...'));
       const tmpDir = await createTempDir();
       await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
-
-      // Update package.xml
       const packageXmlFileDeltaDeploy = path.join(tmpDir, 'package', 'packageDelta.xml');
       await fs.copy(this.packageXmlFile, packageXmlFileDeltaDeploy);
       this.packageXmlFile = packageXmlFileDeltaDeploy;
+
+      // Update package.xml
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
       await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {
         debugMode: this.debugMode,
