@@ -19,7 +19,7 @@ export async function isMermaidAvailable() {
   const isMmdAvailable = await which("mmdc", { nothrow: true });
   IS_MERMAID_AVAILABLE = isMmdAvailable !== null
   if (IS_MERMAID_AVAILABLE === false) {
-    uxLog(this, c.yellow("MermaidJs is not available. Please install it by running `npm install @mermaid-js/mermaid-cli --global`"));
+    uxLog(this, c.yellow("MermaidJs is not available. To improve performances, please install it by running `npm install @mermaid-js/mermaid-cli --global`"));
   }
   return IS_MERMAID_AVAILABLE;
 }
