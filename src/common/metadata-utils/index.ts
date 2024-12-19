@@ -449,7 +449,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         });
         if (sourceFiles.length > 0) {
           const metaFile = path.join(packageDirectory.path, sourceFiles[0]);
-          return metaFile;
+          return metaFile.replace(/\\/g, "/");
         }
       }
     }

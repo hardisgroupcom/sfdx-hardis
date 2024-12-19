@@ -340,7 +340,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       try {
         const pullRequestInfo = await GitProvider.getPullRequestInfo();
         const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
-        const prDataCommitsSummary = { commitsSummary: commitsSummary.markdown };
+        const prDataCommitsSummary = {
+          commitsSummary: commitsSummary.markdown,
+          flowDiffSummary: commitsSummary.flowDiffMarkdown
+        };
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
       } catch (e3) {
         uxLog(this, c.yellow('Unable to compute git summary:\n' + e3));

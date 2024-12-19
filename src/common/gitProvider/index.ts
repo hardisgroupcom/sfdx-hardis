@@ -119,8 +119,8 @@ export abstract class GitProvider {
       if (prData.commitsSummary) {
         markdownBody += "\n\n" + prData.commitsSummary;
       }
-      if (prData.flowDiffFilesSummary) {
-        markdownBody += "\n\n" + prData.flowDiffFilesSummary;
+      if (prData.flowDiffSummary) {
+        markdownBody += "\n\n" + prData.flowDiffSummary;
       }
       const prMessageRequest: PullRequestMessageRequest = {
         title: prData.title,

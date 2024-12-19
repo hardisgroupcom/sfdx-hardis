@@ -1,6 +1,7 @@
 import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import c from 'chalk';
+import * as path from "path";
 import sortArray from 'sort-array';
 import {
   arrayUniqueByKey,
@@ -16,6 +17,7 @@ import {
 import { GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
+import { flowDiffToMarkdown } from '../gitProvider/utilsMarkdown.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -37,11 +39,11 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return {
-              title: branch.includes(',') ? branch.split(',').join(' - ') : branch,
-              value: branch.includes(',') ? branch.split(',')[0] : branch,
-            };
-          })
+          return {
+            title: branch.includes(',') ? branch.split(',').join(' - ') : branch,
+            value: branch.includes(',') ? branch.split(',')[0] : branch,
+          };
+        })
         : [],
       initial: config.developmentBranch || 'integration',
     },
@@ -58,7 +60,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
       this,
       c.gray(
         `[Warning] Unable to fetch target branch ${targetBranch} to prepare call to sfdx-git-delta\n` +
-          JSON.stringify(e)
+        JSON.stringify(e)
       )
     );
   }
@@ -69,7 +71,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
       this,
       c.gray(
         `[Warning] Unable to fetch current branch ${currentBranch} to prepare call to sfdx-git-delta\n` +
-          JSON.stringify(e)
+        JSON.stringify(e)
       )
     );
   }
@@ -170,11 +172,29 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     commitsSummary = ticketsMarkdown + '\n\n' + commitsSummary;
   }
 
+  // Add Flow diff in Markdown
+  let flowDiffMarkdown = "";
+  if (checkOnly || GitProvider.isDeployBeforeMerge()) {
+    const flowList: string[] = [];
+    for (const logResult of logResults) {
+      const updatedFiles = await getCommitUpdatedFiles(logResult.hash);
+      for (const updatedFile of updatedFiles) {
+        if (updatedFile.endsWith(".flow-meta.xml")) {
+          const flowName = path.basename(updatedFile, ".flow-meta.xml");
+          flowList.push(flowName);
+        }
+      }
+    }
+    const flowListUnique = [...new Set(flowList)].sort();
+    flowDiffMarkdown = await flowDiffToMarkdown(flowListUnique, logResults[0].hash, (logResults.at(-1) || { hash: "" }).hash);
+  }
+
   return {
     markdown: commitsSummary,
     logResults: logResults,
     manualActions: manualActionsSorted,
     tickets: ticketsSorted,
+    flowDiffMarkdown: flowDiffMarkdown
   };
 }
 
@@ -185,4 +205,11 @@ async function collectTicketsAndManualActions(str: string, tickets: Ticket[], ma
   const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
   const manualActionsMatches = await extractRegexMatches(manualActionsRegex, str);
   manualActions.push(...manualActionsMatches);
+}
+
+export async function getCommitUpdatedFiles(commitHash) {
+  const result = await git().show(["--name-only", commitHash]);
+  // Split the result into lines (file paths) and remove empty lines
+  const files = result.split('\n').filter(file => file.trim() !== '');
+  return files;
 }

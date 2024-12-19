@@ -75,9 +75,9 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
   }
 }
 
-export async function flowDiffToMarkdown(flowNames: string[], fromCommit: string, toCommit: string) {
+export async function flowDiffToMarkdown(flowNames: string[], fromCommit: string, toCommit: string): Promise<string> {
   if (flowNames.length === 0) {
-    return;
+    return "";
   }
   let flowDiffFilesSummary = "## Flow changes\n\n";
   for (const flowName of flowNames) {
@@ -85,7 +85,7 @@ export async function flowDiffToMarkdown(flowNames: string[], fromCommit: string
     try {
       const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, true);
       if (diffMdFile) {
-        const flowDiffMarkdownMermaid = await fs.readFile(diffMdFile + "mermaid.md", "utf8");
+        const flowDiffMarkdownMermaid = await fs.readFile(diffMdFile + ".mermaid.md", "utf8");
         const flowSection = `<details><summary>🤖 <b>${flowName}</b> 🤖</summary>
 
 ${flowDiffMarkdownMermaid}
@@ -107,7 +107,7 @@ Unable to generate Flow diff: ${e.message}
       flowDiffFilesSummary += flowSection
     }
   }
-  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, { flowDiffFilesSummary: flowDiffFilesSummary });
+  return flowDiffFilesSummary;
 }
 
 function getAiPromptResponseMarkdown(title, message) {
