@@ -21,9 +21,6 @@ ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 # hadolint ignore=DL3044
 ENV PATH="/node_modules/.bin:${PATH}"
 
-RUN adduser -D sfdxhardis
-USER sfdxhardis
-
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest
 

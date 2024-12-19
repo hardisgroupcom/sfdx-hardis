@@ -8,6 +8,7 @@ import { parseFlow } from "./flowVisualiser/flowParser.js";
 import { getReportDirectory } from "../../config/index.js";
 import moment from "moment";
 import { SfError } from "@salesforce/core";
+import { PACKAGE_ROOT_DIR } from "../../settings.js";
 
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
@@ -40,7 +41,8 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
 export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string): Promise<boolean> {
   const isMmdAvailable = await isMermaidAvailable();
   uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
-  const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}" --puppeteer-config '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}'`;
+  const puppeteerConfigPath = path.join(PACKAGE_ROOT_DIR, 'defaults', 'puppeteer-config.json');
+  const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}" --puppeteerConfigFile "${puppeteerConfigPath}"`;
   try {
     await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false });
     return true;
