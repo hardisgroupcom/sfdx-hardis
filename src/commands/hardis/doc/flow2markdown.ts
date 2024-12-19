@@ -6,7 +6,7 @@ import fs from "fs-extra";
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { isCI, killBoringExitHandlers, uxLog } from '../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../common/utils/index.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { generateFlowMarkdownFile, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 
@@ -84,7 +84,6 @@ export default class Flow2Markdown extends SfCommand<any> {
     WebSocketClient.requestOpenFile(this.outputFile);
 
     // Return an object to be displayed with --json
-    killBoringExitHandlers();
     return { outputFile: this.outputFile };
   }
 
