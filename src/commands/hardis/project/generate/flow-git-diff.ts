@@ -177,12 +177,24 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       isMermaid = false;
     }
     let styledLine = currentLine;
-    // Normal lines (can be tables lines)
-    if (!isMermaid && status === "removed") {
-      styledLine = styledLine.split("|").map((col: string) => `<span style="color: red;">${col}</span>`).join("|");
+    // Remove next diff line if not relevant
+    if (styledLine.startsWith("|") && mixedLines.length > 1 && mixedLines[0][1] === '' && mixedLines[1][1].startsWith("|")) {
+      mixedLines.shift();
     }
-    else if (!isMermaid && status === "added") {
-      styledLine = styledLine.split("|").map((col: string) => `<span style="color: green;">${col}</span>`).join("|");
+
+    // Tables lines
+    if (!isMermaid && status === "removed" && styledLine.startsWith("|")) {
+      styledLine = "|" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: red;">${col}</span>`).join("|") + "|";
+    }
+    else if (!isMermaid && status === "added" && styledLine.startsWith("|")) {
+      styledLine = "|" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: green;">${col}</span>`).join("|") + "|";
+    }
+    // Normal lines
+    else if (!isMermaid && status === "removed" && styledLine !== "") {
+      styledLine = `<span style="background-color: red;">${styledLine}</span>`;
+    }
+    else if (!isMermaid && status === "added" && styledLine !== "") {
+      styledLine = `<span style="background-color: green;">${styledLine}</span>`;
     }
     // Boxes lines
     else if (isMermaid === true && status === "removed" && currentLine.split(":::").length === 2) {

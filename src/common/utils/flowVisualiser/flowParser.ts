@@ -193,16 +193,17 @@ Status: **${flowMap['status']}**
 
 `;
     const variables = getVariablesMd(flowMap.variables) + "\n";
+    const textTemplates = getTemplatesMd(flowMap.textTemplates || []) + "\n";
     const mdStart = "## Flow\n\n```mermaid\n";
     const nodeDefStr = await getNodeDefStr(flowMap) + "\n\n";
     const mdClasses = getMermaidClasses() + "\n\n";
     const mdBody = await getMermaidBody(flowMap) + "\n\n";
-    const mdEnd = "```\n";
+    const mdEnd = "```\n\n";
     const mdDiagram = "flowchart TB\n" + nodeDefStr + mdBody + mdClasses
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {
-        return (title + variables + mdStart + mdDiagram + mdEnd);
+        return (title + mdStart + mdDiagram + mdEnd + variables + textTemplates);
     }
 }
 
@@ -315,10 +316,21 @@ async function getNodeDefStr(flowMap: FlowMap): Promise<string> {
 }
 
 function getVariablesMd(vars: any[]): string {
-    let vStr = "## Variables\n\n|Name|Datatype|Collection|Input|Output|objectType|\n|-|-|-|-|-|-|\n";
+    let vStr = "## Variables\n\n|Name|Datatype|Collection|Input|Output|objectType|\n|:-|:-:|:-:|:-:|:-:|:-|\n";
     if (!vars) vars = [];
     for (const v of vars) {
         vStr += "|" + v.name + "|" + v.dataType + "|" + v.isCollection + "|" + v.isInput + "|" + v.isOutput + "|" + ((v.objectType) ? v.objectType : "") + "\n";
+    }
+    return vStr;
+}
+
+function getTemplatesMd(textTemplates: any[]): string {
+    if (textTemplates.length === 0) {
+        return "";
+    }
+    let vStr = "## Text Templates\n\n|Name|Text|\n|:-|:-|\n";
+    for (const v of textTemplates) {
+        vStr += "|" + v.name + "|" + v.text + "|\n";
     }
     return vStr;
 }
