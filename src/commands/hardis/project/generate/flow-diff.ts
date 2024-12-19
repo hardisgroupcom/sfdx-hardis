@@ -4,6 +4,8 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import * as Diff from "diff";
+import fs from "fs-extra";
+import * as path from "path";
 import {
   ensureGitRepository,
   git,
@@ -14,6 +16,8 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { listFlowFiles } from '../../../../common/utils/projectUtils.js';
 import moment from 'moment';
 import { parseFlow } from 'salesforce-flow-visualiser';
+import { getReportDirectory } from '../../../../config/index.js';
+import { generateMarkdownFileWithMermaid, getMermaidExtraClasses } from '../../../../common/utils/mermaidUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -21,7 +25,12 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class GenerateFlowDiff extends SfCommand<any> {
   public static title = 'Generate Flow Diff';
 
-  public static description = 'Generate Flow Diff markdown between 2 commits';
+  public static description = `Generate Flow Diff markdown between 2 commits
+
+This command requires @mermaid-js/mermaid-cli to be installed.
+
+Run \`npm install @mermaid-js/mermaid-cli --global\`
+  `;
 
   public static examples = ['$ sf hardis:project:generate:flow-diff'];
 
@@ -46,6 +55,7 @@ export default class GenerateFlowDiff extends SfCommand<any> {
   public static requiresProject = true;
 
   protected flowFile: string;
+  protected flowLabel: string;
   protected debugMode = false;
 
   /* jscpd:ignore-end */
@@ -69,6 +79,7 @@ export default class GenerateFlowDiff extends SfCommand<any> {
       });
       this.flowFile = flowSelectRes.value.replace(/\\/g, "/");
     }
+    this.flowLabel = path.basename(this.flowFile, ".flow-meta.xml");
 
     // List states of flow file using git
     const fileHistory = await git().log({ file: this.flowFile });
@@ -131,12 +142,67 @@ export default class GenerateFlowDiff extends SfCommand<any> {
         mixedLines.push(...line.value.split(/\r?\n/).map(lineSplit => { return ["unchanged", lineSplit] }));
       }
     }
+    // uxLog(this, JSON.stringify(mixedLines, null, 2));
+    const compareMdLines: string[] = [];
+    this.buildFinalCompareMarkdown(mixedLines, compareMdLines, false);
 
-    uxLog(this, JSON.stringify(mixedLines, null, 2));
+    // Write markdown with diff in a file
+    const reportDir = await getReportDirectory();
+    const diffMdFile = path.join(reportDir, `flow_diff_${this.flowLabel}_${commitBefore}_${commitAfter}.md`);
+    await fs.writeFile(diffMdFile, compareMdLines.join("\n"));
+    if (this.debugMode) {
+      await fs.copyFile(diffMdFile, diffMdFile + ".mermaid.md");
+    }
+
+    // Generate final markdown with mermaid SVG
+    const finalRes = await generateMarkdownFileWithMermaid(diffMdFile);
+    if (finalRes) {
+      uxLog(this, c.green(`Successfull generated visual diff for flow: ${diffMdFile}`));
+    }
 
     // Return an object to be displayed with --json
     return {
     };
+  }
+
+  private buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid) {
+    if (mixedLines.length === 0) {
+      return;
+    }
+    // Take line to process
+    const [status, currentLine] = mixedLines.shift();
+    // Update mermaid state
+    if (isMermaid === false && currentLine.includes("```mermaid")) {
+      isMermaid = true;
+    } else if (isMermaid === true && currentLine.includes("```")) {
+      compareMdLines.push(...getMermaidExtraClasses().split("\n"));
+      isMermaid = false;
+    }
+    let styledLine = currentLine;
+    if (!isMermaid && status === "removed") {
+      styledLine = styledLine.split("|").map((col: string) => `<span style="color: red;">${col}</span>`).join("|");
+    }
+    else if (!isMermaid && status === "added") {
+      styledLine = styledLine.split("|").map((col: string) => `<span style="color: green;">${col}</span>`).join("|");
+    }
+    else if (isMermaid === true && status === "removed" && currentLine.split(":::").length === 2) {
+      styledLine = styledLine + "Removed"
+    }
+    else if (isMermaid === true && status === "added" && currentLine.split(":::").length === 2) {
+      styledLine = styledLine + "Added"
+    }
+    else if (isMermaid === true && status === "removed" && currentLine.includes('-->')) {
+      styledLine = styledLine.replace("-->", "-.->") + ":::removedLink"
+    }
+    else if (isMermaid === true && status === "added" && currentLine.includes('-->')) {
+      styledLine = styledLine.replace("-->", "==>") + ":::addedLink"
+    }
+    // Skip lines in error
+    if (!styledLine.includes("Unknown (no targetReference")) {
+      compareMdLines.push(styledLine);
+    }
+
+    this.buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid)
   }
 
   private async buildMermaidMarkdown(commit) {
@@ -148,4 +214,5 @@ export default class GenerateFlowDiff extends SfCommand<any> {
       throw new SfError(`Unable to build Graph for flow ${this.flowFile}: ${err.message}`)
     }
   }
+
 }
