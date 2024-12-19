@@ -14,11 +14,11 @@ import {
 } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import moment from 'moment';
-import { parseFlow } from 'salesforce-flow-visualiser';
 import { getReportDirectory } from '../../../../config/index.js';
 import { generateMarkdownFileWithMermaid, getMermaidExtraClasses } from '../../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { parseFlow } from '../../../../common/utils/flowVisualiser/flowParser.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -142,7 +142,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     // Write markdown with diff in a file
     const reportDir = await getReportDirectory();
     await fs.ensureDir(path.join(reportDir, "flow-diff"));
-    const diffMdFile = path.join(reportDir, 'flow-diff', `${this.flowLabel}_${commitBefore}_${commitAfter}.md`);
+    const diffMdFile = path.join(reportDir, 'flow-diff', `${this.flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
     await fs.writeFile(diffMdFile, compareMdLines.join("\n"));
     if (this.debugMode) {
       await fs.copyFile(diffMdFile, diffMdFile + ".mermaid.md");
@@ -151,7 +151,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     // Generate final markdown with mermaid SVG
     const finalRes = await generateMarkdownFileWithMermaid(diffMdFile);
     if (finalRes) {
-      uxLog(this, c.green(`Successfull generated visual diff for flow: ${diffMdFile}`));
+      uxLog(this, c.green(`Successfull generated visual git diff for flow: ${diffMdFile}`));
     }
 
     // Open file in a new VsCode tab if available
@@ -177,29 +177,40 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       isMermaid = false;
     }
     let styledLine = currentLine;
+    // Normal lines (can be tables lines)
     if (!isMermaid && status === "removed") {
       styledLine = styledLine.split("|").map((col: string) => `<span style="color: red;">${col}</span>`).join("|");
     }
     else if (!isMermaid && status === "added") {
       styledLine = styledLine.split("|").map((col: string) => `<span style="color: green;">${col}</span>`).join("|");
     }
+    // Boxes lines
     else if (isMermaid === true && status === "removed" && currentLine.split(":::").length === 2) {
       styledLine = styledLine + "Removed"
     }
     else if (isMermaid === true && status === "added" && currentLine.split(":::").length === 2) {
       styledLine = styledLine + "Added"
     }
+    else if (isMermaid === true && currentLine.includes(":::")) {
+      // Detect if link line does not change, but its content did
+      const splits = currentLine.split(/[[({]/);
+      if (splits.length > 1) {
+        const boxName = splits[0];
+        const changed = mixedLines.filter(([lineStatus, line]) => { return line.startsWith(`click ${boxName}`) && ["added", "changed"].includes(lineStatus) }).length;
+        if (changed > 0) {
+          styledLine = styledLine + "Changed"
+        }
+      }
+    }
+    // Link lines
     else if (isMermaid === true && status === "removed" && currentLine.includes('-->')) {
       styledLine = styledLine.replace("-->", "-.->") + ":::removedLink"
     }
     else if (isMermaid === true && status === "added" && currentLine.includes('-->')) {
       styledLine = styledLine.replace("-->", "==>") + ":::addedLink"
     }
-    // Skip lines in error
-    if (!styledLine.includes("Unknown (no targetReference")) {
-      compareMdLines.push(styledLine);
-    }
-
+    compareMdLines.push(styledLine);
+    // Continue processing next lines
     this.buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid)
   }
 

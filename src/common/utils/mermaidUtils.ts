@@ -2,7 +2,7 @@ import c from "chalk"
 import fs from 'fs-extra';
 import which from "which";
 import { execCommand, uxLog } from "./index.js";
-import { parseFlow } from "salesforce-flow-visualiser";
+import { parseFlow } from "./flowVisualiser/flowParser.js";
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 
@@ -70,6 +70,19 @@ classDef recordLookupsRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-wid
 classDef recordUpdatesRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
 classDef screensRemoved fill:#1B96FF,color:white,stroke:#ff0000,stroke-width:12px;
 classDef subflowsRemoved fill:#032D60,color:white,stroke:#ff0000,stroke-width:12px;
+
+classDef actionCallsChanged fill:#344568,color:white,stroke:#edaa18,stroke-width:12px;
+classDef assignmentsChanged fill:#F97924,color:white,stroke:#edaa18,stroke-width:12px;
+classDef collectionProcessorsChanged fill:#DD7A00,color:white,stroke:#edaa18,stroke-width:12px;
+classDef customErrorsChanged fill:#032D60,color:white,stroke:#edaa18,stroke-width:12px;
+classDef decisionsChanged fill:#DD7A00,color:white,stroke:#edaa18,stroke-width:12px;
+classDef loopsChanged fill:#E07D1C,color:undefined,stroke:#edaa18,stroke-width:12px;
+classDef recordCreatesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
+classDef recordDeletesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
+classDef recordLookupsChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
+classDef recordUpdatesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
+classDef screensChanged fill:#1B96FF,color:white,stroke:#edaa18,stroke-width:12px;
+classDef subflowsChanged fill:#032D60,color:white,stroke:#edaa18,stroke-width:12px;
 
 classDef addedLink stroke:#00ff00,stroke-width:3px;
 classDef removedLink stroke:#ff0000,stroke-width:3px;
