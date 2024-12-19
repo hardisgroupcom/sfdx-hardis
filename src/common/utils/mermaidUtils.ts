@@ -40,7 +40,7 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
 export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string): Promise<boolean> {
   const isMmdAvailable = await isMermaidAvailable();
   uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
-  const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}"`;
+  const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}" --puppeteer-config '{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}'`;
   try {
     await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false });
     return true;
@@ -100,13 +100,15 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   const mermaidMdAfter = await buildMermaidMarkdown(commitAfter, flowFile);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
 
+  /*
   if (debugMode) {
     uxLog(this, c.grey("FLOW DOC BEFORE:\n" + mermaidMdBefore) + "\n");
     uxLog(this, c.grey("FLOW DOC AFTER:\n" + mermaidMdAfter) + "\n");
   }
+  */
 
   const flowDiffs = Diff.diffLines(mermaidMdBefore, mermaidMdAfter);
-  uxLog(this, JSON.stringify(flowDiffs, null, 2));
+  // uxLog(this, JSON.stringify(flowDiffs, null, 2));
 
   const mixedLines: any[] = [];
   for (const line of flowDiffs) {
