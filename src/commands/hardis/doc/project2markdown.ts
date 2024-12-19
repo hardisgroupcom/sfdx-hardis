@@ -3,19 +3,18 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
-import { parseFlow } from 'salesforce-flow-visualiser';
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems } from '../../../common/utils/xmlUtils.js';
-import { bool2emoji, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
+import { bool2emoji, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
-import which from 'which';
 import { listFlowFiles } from '../../../common/utils/projectUtils.js';
+import { generateFlowMarkdownFile, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -32,7 +31,11 @@ export default class Project2Markdown extends SfCommand<any> {
 
 Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
-Generated markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
+Generates markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
+
+This command requires @mermaid-js/mermaid-cli to be installed.
+
+Run \`npm install @mermaid-js/mermaid-cli --global\`
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc.jpg)
 
@@ -128,34 +131,31 @@ Generated markdown files will be written in **docs** folder (except README.md wh
   }
 
   private async generateFlowsDocumentation() {
-    const isMmdAvailable = await which("mmdc", { nothrow: true });
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
-    const flowFiles = await listFlowFiles(packageDirs)
+    const flowFiles = await listFlowFiles(packageDirs);
+    const flowErrors: string[] = [];
     for (const flowFile of flowFiles) {
       uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
-      try {
-        const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
-        const flowMarkdownDoc = flowDocGenResult.uml;
-        await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
-        uxLog(this, c.grey(`Written ${flowFile} documentation in ${outputFlowMdFile}`));
-      } catch (e: any) {
-        uxLog(this, c.yellow(`Error generating Flow ${flowFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile);
+      if (!genRes) {
+        flowErrors.push(flowFile);
         continue;
       }
       if (this.debugMode) {
         await fs.copyFile(outputFlowMdFile, outputFlowMdFile + ".mermaid.md");
       }
-      uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
-      const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}"`;
-      try {
-        await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false })
-      } catch (e: any) {
-        uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+      const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile);
+      if (!gen2res) {
+        flowErrors.push(flowFile);
         continue;
       }
+    }
+    uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowErrors.length} Flows documentation`));
+    if (flowErrors.length > 0) {
+      uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${flowErrors.join(", ")}`));
     }
   }
 
