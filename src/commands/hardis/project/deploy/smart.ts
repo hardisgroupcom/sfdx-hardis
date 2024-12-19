@@ -37,7 +37,6 @@ import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from '../..
 import { MessageAttachment } from '@slack/web-api';
 import { TicketProvider } from '../../../../common/ticketProvider/index.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
-import { generateFlowVisualGitDiff } from '../../../../common/utils/mermaidUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -468,24 +467,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       const packageXmlFileDeltaDeploy = path.join(tmpDir, 'package', 'packageDelta.xml');
       await fs.copy(this.packageXmlFile, packageXmlFileDeltaDeploy);
       this.packageXmlFile = packageXmlFileDeltaDeploy;
-
-      // Get Visual Git Diff for flows
-      if (this.checkOnly) {
-        const deltaPackageContent = await parsePackageXmlFile(packageXmlFileDeltaDeploy);
-        if (deltaPackageContent["Flow"]) {
-          const flowDiffFiles: any[] = [];
-          for (const flowName of deltaPackageContent["Flow"]) {
-            const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
-            try {
-              const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, this.debugMode);
-              flowDiffFiles.push({ name: flowName, markdownFile: diffMdFile });
-            } catch (e: any) {
-              uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff: ${e.message}`));
-            }
-          }
-          globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, { flowDiffFiles: flowDiffFiles });
-        }
-      }
 
       // Update package.xml
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
