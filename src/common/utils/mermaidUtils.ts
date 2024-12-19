@@ -136,7 +136,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   // Generate final markdown with mermaid SVG
   const finalRes = await generateMarkdownFileWithMermaid(diffMdFile);
   if (finalRes) {
-    uxLog(this, c.green(`Successfull generated visual git diff for flow: ${diffMdFile}`));
+    uxLog(this, c.green(`Successfully generated visual git diff for flow: ${diffMdFile}`));
   }
   return diffMdFile;
 }

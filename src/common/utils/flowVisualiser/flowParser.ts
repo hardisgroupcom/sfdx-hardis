@@ -175,7 +175,7 @@ function getFlowType(flowMap: FlowMap): string {
             case "PlatformEvent":
                 return "PlatformEvent triggered flow (" + flowMap.start.object + ")";
             default:
-                return "Autolanuched flow - No trigger";
+                return "AutoLaunched flow - No trigger";
         }
     }
 }
@@ -400,7 +400,7 @@ function getPlantUMLNodeStr(node: any, flowMap: FlowMap) {
 
 function processDecisions(node: any, flowMap: FlowMap) {
     const START_STR = "switch (" + node.label + ")\n"
-    const DEFATAULT_STR = "\ncase (" + node.nextNodeLabel + ")\n";
+    const DEFAULT_STR = "\ncase (" + node.nextNodeLabel + ")\n";
 
     let nextNode;
     let end;
@@ -420,5 +420,5 @@ function processDecisions(node: any, flowMap: FlowMap) {
         }
     }
     const END_STR = "endswitch\n";
-    return START_STR + rulesStr + DEFATAULT_STR + END_STR;
+    return START_STR + rulesStr + DEFAULT_STR + END_STR;
 }

@@ -79,30 +79,25 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     }
 
     // Prompt commits
+    const allChoices = fileHistory.all.map(log => {
+      return {
+        value: log.hash,
+        title: `${moment(log.date).format("ll")}: ${log.message}`,
+        description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
+      }
+    })
     const commitSelectRes = await prompts([
       {
         type: 'select',
         name: 'before',
         message: 'Please select BEFORE UPDATE commit',
-        choices: fileHistory.all.map(log => {
-          return {
-            value: log.hash,
-            title: `${moment(log.date).format("ll")}: ${log.message}`,
-            description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
-          }
-        })
+        choices: allChoices
       },
       {
         type: 'select',
         name: 'after',
         message: 'Please select AFTER UPDATE commit',
-        choices: fileHistory.all.map(log => {
-          return {
-            value: log.hash,
-            title: `${moment(log.date).format("ll")}: ${log.message}`,
-            description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
-          }
-        })
+        choices: allChoices
       }
     ])
 
