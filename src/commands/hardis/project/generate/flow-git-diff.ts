@@ -13,26 +13,27 @@ import {
   uxLog,
 } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { listFlowFiles } from '../../../../common/utils/projectUtils.js';
 import moment from 'moment';
 import { parseFlow } from 'salesforce-flow-visualiser';
 import { getReportDirectory } from '../../../../config/index.js';
 import { generateMarkdownFileWithMermaid, getMermaidExtraClasses } from '../../../../common/utils/mermaidUtils.js';
+import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class GenerateFlowDiff extends SfCommand<any> {
-  public static title = 'Generate Flow Diff';
+export default class GenerateFlowGitDiff extends SfCommand<any> {
+  public static title = 'Generate Flow Visual Gif Diff';
 
-  public static description = `Generate Flow Diff markdown between 2 commits
+  public static description = `Generate Flow Visual Git Diff markdown between 2 commits
 
 This command requires @mermaid-js/mermaid-cli to be installed.
 
 Run \`npm install @mermaid-js/mermaid-cli --global\`
   `;
 
-  public static examples = ['$ sf hardis:project:generate:flow-diff'];
+  public static examples = ['$ sf hardis:project:generate:flow-git-diff'];
 
   public static flags: any = {
     flow: Flags.string({
@@ -61,7 +62,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(GenerateFlowDiff);
+    const { flags } = await this.parse(GenerateFlowGitDiff);
     this.flowFile = flags.flow || "";
     this.debugMode = flags.debug || false;
     // Check git repo
@@ -69,15 +70,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
     // Prompt flow file if not send as input param
     if (this.flowFile == "" && !isCI) {
-      const flowFiles = await listFlowFiles(this.project?.getPackageDirectories() || [])
-      const flowSelectRes = await prompts({
-        type: 'select',
-        message: 'Please select the Flow you want to visually compare',
-        choices: flowFiles.map(flowFile => {
-          return { value: flowFile, title: flowFile }
-        })
-      });
-      this.flowFile = flowSelectRes.value.replace(/\\/g, "/");
+      this.flowFile = await MetadataUtils.promptFlow();
     }
     this.flowLabel = path.basename(this.flowFile, ".flow-meta.xml");
 
@@ -148,7 +141,8 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
     // Write markdown with diff in a file
     const reportDir = await getReportDirectory();
-    const diffMdFile = path.join(reportDir, `flow_diff_${this.flowLabel}_${commitBefore}_${commitAfter}.md`);
+    await fs.ensureDir(path.join(reportDir, "flow-diff"));
+    const diffMdFile = path.join(reportDir, 'flow-diff', `${this.flowLabel}_${commitBefore}_${commitAfter}.md`);
     await fs.writeFile(diffMdFile, compareMdLines.join("\n"));
     if (this.debugMode) {
       await fs.copyFile(diffMdFile, diffMdFile + ".mermaid.md");
@@ -160,8 +154,12 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       uxLog(this, c.green(`Successfull generated visual diff for flow: ${diffMdFile}`));
     }
 
+    // Open file in a new VsCode tab if available
+    WebSocketClient.requestOpenFile(path.relative(process.cwd(), diffMdFile));
+
     // Return an object to be displayed with --json
     return {
+      diffMdFile: diffMdFile
     };
   }
 

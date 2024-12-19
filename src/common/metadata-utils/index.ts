@@ -455,6 +455,19 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     }
     return null;
   }
+
+  public static async promptFlow() {
+    const flowFiles = await glob("**/*.flow-meta.xml", { cwd: "force-app/main/default" });
+    const flowSelectRes = await prompts({
+      type: 'select',
+      message: 'Please select the Flow you want to visually compare',
+      choices: flowFiles.map(flowFile => {
+        return { value: flowFile, title: flowFile }
+      })
+    });
+    return flowSelectRes.value.replace(/\\/g, "/");
+  }
+
 }
 
 export { MetadataUtils };
