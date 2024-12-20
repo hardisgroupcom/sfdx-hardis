@@ -192,7 +192,7 @@ Type: **${getFlowType(flowMap)}**
 Status: **${flowMap['status']}**
 
 `;
-    const variables = getVariablesMd(flowMap.variables) + "\n";
+    const variables = getVariablesMd(flowMap.variables || []) + "\n";
     const textTemplates = getTemplatesMd(flowMap.textTemplates || []) + "\n";
     const mdStart = "## Flow\n\n```mermaid\n";
     const nodeDefStr = await getNodeDefStr(flowMap) + "\n\n";
@@ -316,23 +316,25 @@ async function getNodeDefStr(flowMap: FlowMap): Promise<string> {
 }
 
 function getVariablesMd(vars: any[]): string {
-    let vStr = "## Variables\n\n|Name|Datatype|Collection|Input|Output|objectType|\n|:-|:-:|:-:|:-:|:-:|:-|\n";
-    if (!vars) vars = [];
-    for (const v of vars) {
-        vStr += "|" + v.name + "|" + v.dataType + "|" + v.isCollection + "|" + v.isInput + "|" + v.isOutput + "|" + ((v.objectType) ? v.objectType : "") + "\n";
+    if (vars && vars.length > 0) {
+        let vStr = "## Variables\n\n|Name|Datatype|Collection|Input|Output|objectType|\n|:-|:-:|:-:|:-:|:-:|:-|\n";
+        for (const v of vars) {
+            vStr += "|" + v.name + "|" + v.dataType + "|" + v.isCollection + "|" + v.isInput + "|" + v.isOutput + "|" + ((v.objectType) ? v.objectType : "") + "\n";
+        }
+        return vStr;
     }
-    return vStr;
+    return "";
 }
 
 function getTemplatesMd(textTemplates: any[]): string {
-    if (textTemplates.length === 0) {
-        return "";
+    if (textTemplates && textTemplates.length > 0) {
+        let vStr = "## Text Templates\n\n|Name|Text|\n|:-|:-|\n";
+        for (const v of textTemplates) {
+            vStr += "|" + v.name + "|" + v.text + "|\n";
+        }
+        return vStr;
     }
-    let vStr = "## Text Templates\n\n|Name|Text|\n|:-|:-|\n";
-    for (const v of textTemplates) {
-        vStr += "|" + v.name + "|" + v.text + "|\n";
-    }
-    return vStr;
+    return "";
 }
 
 function getMermaidClasses(): string {
