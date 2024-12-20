@@ -26,7 +26,7 @@ ARG SFDX_HARDIS_VERSION=latest
 
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
-    npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} @mermaid-js/mermaid-cli -g && \
+    npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
     sf plugins install @salesforce/plugin-packaging && \
     echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
     echo 'y' | sf plugins install sfdmu && \
