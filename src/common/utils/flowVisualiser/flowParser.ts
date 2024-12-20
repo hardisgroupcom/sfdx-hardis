@@ -195,7 +195,7 @@ Status: **${flowMap['status']}**
     const variables = getVariablesMd(flowMap.variables || []) + "\n";
     const textTemplates = getTemplatesMd(flowMap.textTemplates || []) + "\n";
     const mdStart = "## Flow\n\n```mermaid\n";
-    const nodeDefStr = await getNodeDefStr(flowMap) + "\n\n";
+    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap);
     const mdClasses = getMermaidClasses() + "\n\n";
     const mdBody = await getMermaidBody(flowMap) + "\n\n";
     const mdEnd = "```\n\n";
@@ -203,7 +203,7 @@ Status: **${flowMap['status']}**
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {
-        return (title + mdStart + mdDiagram + mdEnd + variables + textTemplates);
+        return (title + mdStart + mdDiagram + mdEnd + variables + textTemplates + nodeDetailMd);
     }
 }
 
@@ -271,7 +271,8 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
     return (bodyStr);
 }
 
-async function getNodeDefStr(flowMap: FlowMap): Promise<string> {
+async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
+    let nodeDetailMd = "## Nodes Content\n\n"
     let nodeDefStr = "START(( START ))\n";
     for (const property in flowMap) {
         const type = flowMap[property].type;
@@ -308,11 +309,15 @@ async function getNodeDefStr(flowMap: FlowMap): Promise<string> {
                 }
             }
             nodeText = JSON.stringify(nodeCopy, null, 2);
-            tooltipClassMermaid = `click ${property} "#" "${nodeText.replace(/"/gm, "").split("\n").join("<br/>")}"`;
+            tooltipClassMermaid = `click ${property} "#${property}" "${nodeText.replace(/["{}]/gm, "").split("\n").join("<br/>")}"`;
+            nodeDetailMd += `### ${property}\n\n${nodeText.replace(/["{}]/gm, "").split("\n").join("<br/>")}\n\n`
             nodeDefStr += tooltipClassMermaid + "\n\n"
         }
     }
-    return (nodeDefStr + "END(( END ))\n");
+    return {
+        nodeDefStr: (nodeDefStr + "END(( END ))\n\n"),
+        nodeDetailMd: nodeDetailMd
+    };
 }
 
 function getVariablesMd(vars: any[]): string {
