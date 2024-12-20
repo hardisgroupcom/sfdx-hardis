@@ -342,7 +342,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
         const prDataCommitsSummary = {
           commitsSummary: commitsSummary.markdown,
-          flowDiffSummary: commitsSummary.flowDiffMarkdown
+          flowDiffMarkdown: commitsSummary.flowDiffMarkdown
         };
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
       } catch (e3) {

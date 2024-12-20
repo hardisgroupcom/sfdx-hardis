@@ -75,39 +75,34 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
   }
 }
 
-export async function flowDiffToMarkdown(flowNames: string[], fromCommit: string, toCommit: string): Promise<string> {
+export async function flowDiffToMarkdown(flowNames: string[], fromCommit: string, toCommit: string): Promise<any> {
   if (flowNames.length === 0) {
     return "";
   }
+  const flowDiffMarkdownList: any = [];
   let flowDiffFilesSummary = "## Flow changes\n\n";
   for (const flowName of flowNames) {
+    flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
     try {
       const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
       if (diffMdFile) {
         const flowDiffMarkdownMermaid = await fs.readFile(diffMdFile + ".mermaid.md", "utf8");
-        const flowSection = `<details><summary>🤖 <b>${flowName}</b> 🤖</summary>
-
-${flowDiffMarkdownMermaid}
-
-</details>
-<br/>
-`
-        flowDiffFilesSummary += flowSection
+        flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid });
       }
     } catch (e: any) {
       uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff: ${e.message}`));
-      const flowSection = `<details><summary>🤖 <b>${flowName}</b> 🤖</summary>
+      const flowGenErrorMd = `# ${flowName}
 
-Unable to generate Flow diff: ${e.message}
-
-</details>
-<br/>
-`
-      flowDiffFilesSummary += flowSection
+Error while generating Flows visual git diff
+`;
+      flowDiffMarkdownList.push({ name: flowName, markdown: flowGenErrorMd });
     }
   }
-  return flowDiffFilesSummary;
+  return {
+    markdownSummary: flowDiffFilesSummary,
+    flowDiffMarkdownList: flowDiffMarkdownList
+  }
 }
 
 function getAiPromptResponseMarkdown(title, message) {

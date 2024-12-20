@@ -173,7 +173,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   }
 
   // Add Flow diff in Markdown
-  let flowDiffMarkdown = "";
+  let flowDiffMarkdown: any = {};
   if (checkOnly || GitProvider.isDeployBeforeMerge()) {
     const flowList: string[] = [];
     for (const logResult of logResults) {
