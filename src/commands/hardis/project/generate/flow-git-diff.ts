@@ -104,7 +104,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     const commitAfter = commitSelectRes.after;
     const commitBefore = commitSelectRes.before;
 
-    const diffMdFile = await generateFlowVisualGitDiff(this.flowFile, commitBefore, commitAfter, this.debugMode)
+    const diffMdFile = await generateFlowVisualGitDiff(this.flowFile, commitBefore, commitAfter, { svgMd: true, mermaidMd: this.debugMode, debug: this.debugMode })
 
     // Open file in a new VsCode tab if available
     WebSocketClient.requestOpenFile(path.relative(process.cwd(), diffMdFile));

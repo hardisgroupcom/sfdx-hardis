@@ -97,17 +97,16 @@ classDef removedLink stroke:#ff0000,stroke-width:3px;
 `
 }
 
-export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string, debugMode = false): Promise<string> {
+export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
+  options: { mermaidMd: boolean, svgMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, debug: false }): Promise<string> {
   const mermaidMdBefore = await buildMermaidMarkdown(commitBefore, flowFile);
   const mermaidMdAfter = await buildMermaidMarkdown(commitAfter, flowFile);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
 
-  /*
-  if (debugMode) {
+  if (options.debug) {
     uxLog(this, c.grey("FLOW DOC BEFORE:\n" + mermaidMdBefore) + "\n");
     uxLog(this, c.grey("FLOW DOC AFTER:\n" + mermaidMdAfter) + "\n");
   }
-  */
 
   const flowDiffs = Diff.diffLines(mermaidMdBefore, mermaidMdAfter);
   // uxLog(this, JSON.stringify(flowDiffs, null, 2));
@@ -133,10 +132,12 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   await fs.ensureDir(path.join(reportDir, "flow-diff"));
   const diffMdFile = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
   await fs.writeFile(diffMdFile, compareMdLines.join("\n"));
-  if (debugMode) {
+  if (options.mermaidMd) {
     await fs.copyFile(diffMdFile, diffMdFile + ".mermaid.md");
   }
-
+  if (!options.svgMd) {
+    return diffMdFile;
+  }
   // Generate final markdown with mermaid SVG
   const finalRes = await generateMarkdownFileWithMermaid(diffMdFile);
   if (finalRes) {

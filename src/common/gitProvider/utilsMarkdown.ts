@@ -83,7 +83,7 @@ export async function flowDiffToMarkdown(flowNames: string[], fromCommit: string
   for (const flowName of flowNames) {
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
     try {
-      const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, true);
+      const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
       if (diffMdFile) {
         const flowDiffMarkdownMermaid = await fs.readFile(diffMdFile + ".mermaid.md", "utf8");
         const flowSection = `<details><summary>🤖 <b>${flowName}</b> 🤖</summary>
