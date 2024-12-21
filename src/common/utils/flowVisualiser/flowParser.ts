@@ -80,7 +80,7 @@ async function createFlowMap(flowObj: any): Promise<FlowMap> {
     const flowMap: FlowMap = {};
     for (const property in flowObj) {
         // Common first descriptive elements
-        if (['constants', 'description', 'environments', 'formulas', 'interviewLabel', 'label', 'processType', 'status', 'textTemplates'].includes(property)) {
+        if (['description', 'environments', 'formulas', 'interviewLabel', 'label', 'processType', 'status', 'textTemplates'].includes(property)) {
             flowMap[property] = flowObj[property];
         }
         // Start element
@@ -142,6 +142,8 @@ async function createFlowMap(flowObj: any): Promise<FlowMap> {
                         flowMap[el.name] = mappedEl;
                     } else if (property === 'variables') {
                         flowMap.variables = flowObj[property];
+                    } else if (property === 'constants') {
+                        flowMap.constants = flowObj[property];
                     }
                 }
             }
@@ -189,6 +191,7 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
 
 `;
     const variables = getVariablesMd(flowMap.variables || []) + "\n";
+    const constants = getConstantsMd(flowMap.constants || []) + "\n";
     const formulas = getFormulasMd(flowMap.formulas || []) + "\n";
     const textTemplates = getTemplatesMd(flowMap.textTemplates || []) + "\n";
     const mdStart = "## Flow diagram\n\n```mermaid\n";
@@ -202,7 +205,7 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {
-        return (title + mdStart + mdDiagram + mdEnd + variables + formulas + textTemplates + nodeDetailMd + footer);
+        return (title + mdStart + mdDiagram + mdEnd + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
     }
 }
 
@@ -319,7 +322,7 @@ async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
 
 function getVariablesMd(vars: any[]): string {
     if (vars && vars.length > 0) {
-        let vStr = "## Variables\n\n|Name|Datatype|Collection|Input|Output|objectType|\n|:-|:-:|:-:|:-:|:-:|:-|\n";
+        let vStr = "## Variables\n\n|Name|DataType|Collection|Input|Output|objectType|\n|:-|:-:|:-:|:-:|:-:|:-|\n";
         for (const v of vars) {
             vStr += "|" + v.name + "|" + v.dataType + "|" + v.isCollection + "|" + v.isInput + "|" + v.isOutput + "|" + ((v.objectType) ? v.objectType : "") + "\n";
         }
@@ -328,9 +331,21 @@ function getVariablesMd(vars: any[]): string {
     return "";
 }
 
+function getConstantsMd(constants: any[]): string {
+    if (constants && constants.length > 0) {
+        let vStr = "## Constants\n\n|Name|DataType|Value|\n|:-|:-:|:-|\n";
+        for (const v of constants) {
+            const val = v?.value?.stringValue || v?.value?.numberValue || v?.value?.booleanValue || JSON.stringify(v.value)
+            vStr += "|" + v.name + "|" + v.dataType + "|" + val + "|\n";
+        }
+        return vStr;
+    }
+    return "";
+}
+
 function getFormulasMd(formulas: any[]): string {
     if (formulas && formulas.length > 0) {
-        let vStr = "## Formulas\n\n|Name|Datatype|Expression|\n|:-|:-:|:-|\n";
+        let vStr = "## Formulas\n\n|Name|DataType|Expression|\n|:-|:-:|:-|\n";
         for (const f of formulas) {
             vStr += "|" + f.name + "|" + f.dataType + "|" + f.expression.replace(/"/gm, "\"").split("\n").join("<br/>") + "|\n";
         }
