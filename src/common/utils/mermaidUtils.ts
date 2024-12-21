@@ -125,7 +125,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   }
   // uxLog(this, JSON.stringify(mixedLines, null, 2));
   const compareMdLines: string[] = [];
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, false);
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false);
 
   // Write markdown with diff in a file
   const reportDir = await getReportDirectory();
@@ -146,7 +146,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   return diffMdFile;
 }
 
-function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid) {
+function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted) {
   if (mixedLines.length === 0) {
     return;
   }
@@ -180,7 +180,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted);
       return;
     }
   }
@@ -200,9 +200,30 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted);
       return;
     }
+  }
+  // Skip table lines that have not been updated
+  else if (!isMermaid && styledLine.startsWith("|") && isTableStarted === false) {
+    isTableStarted = true;
+    const tableFilteredLines: any[] = [];
+    let endTablePos = 0;
+    for (const nextLine of mixedLines) {
+      if (!nextLine[1].startsWith("|") && nextLine[1] !== "") {
+        break;
+      }
+      if (nextLine[0] === "removed" || nextLine[0] === "added" || endTablePos === 0) {
+        tableFilteredLines.push(nextLine);
+      }
+      endTablePos++;
+    }
+    compareMdLines.push(styledLine);
+    const mixedLinesStartingFromEndOfTable = mixedLines.slice(endTablePos);
+    const newMixedLines = [...tableFilteredLines, ...mixedLinesStartingFromEndOfTable];
+    // Continue processing next lines
+    buildFinalCompareMarkdown(newMixedLines, compareMdLines, isMermaid, true);
+    return;
   }
 
   // Tables lines
@@ -273,7 +294,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
   }
   compareMdLines.push(styledLine);
   // Continue processing next lines
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid)
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted));
 }
 
 async function buildMermaidMarkdown(commit, flowFile) {
