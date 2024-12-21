@@ -185,6 +185,7 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
 
 `;
     const variables = getVariablesMd(flowMap.variables || []) + "\n";
+    const formulas = getFormulasMd(flowMap.formulas || []) + "\n";
     const textTemplates = getTemplatesMd(flowMap.textTemplates || []) + "\n";
     const mdStart = "## Flow\n\n```mermaid\n";
     const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap);
@@ -195,7 +196,7 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {
-        return (title + mdStart + mdDiagram + mdEnd + variables + textTemplates + nodeDetailMd);
+        return (title + mdStart + mdDiagram + mdEnd + variables + formulas + textTemplates + nodeDetailMd);
     }
 }
 
@@ -315,6 +316,17 @@ function getVariablesMd(vars: any[]): string {
         let vStr = "## Variables\n\n|Name|Datatype|Collection|Input|Output|objectType|\n|:-|:-:|:-:|:-:|:-:|:-|\n";
         for (const v of vars) {
             vStr += "|" + v.name + "|" + v.dataType + "|" + v.isCollection + "|" + v.isInput + "|" + v.isOutput + "|" + ((v.objectType) ? v.objectType : "") + "\n";
+        }
+        return vStr;
+    }
+    return "";
+}
+
+function getFormulasMd(formulas: any[]): string {
+    if (formulas && formulas.length > 0) {
+        let vStr = "## Formulas\n\n|Name|Datatype|Expression|\n|:-|:-:|:-|\n";
+        for (const f of formulas) {
+            vStr += "|" + f.name + "|" + f.dataType + "|" + f.expression.replace(/"/gm, "\"").split("\n").join("<br/>") + "|\n";
         }
         return vStr;
     }
