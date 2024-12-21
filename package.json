@@ -11,7 +11,7 @@
     "@salesforce/core": "^8.8.0",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",
-    "@slack/web-api": "^7.7.0",
+    "@slack/web-api": "^7.8.0",
     "@supercharge/promise-pool": "^3.2.0",
     "@xmldom/xmldom": "^0.8.10",
     "axios": "^1.7.8",
@@ -47,8 +47,8 @@
     "ora": "^8.1.1",
     "papaparse": "^5.4.1",
     "pascalcase": "^2.0.0",
-    "psl": "^1.9.0",
-    "puppeteer-core": "^23.10.1",
+    "psl": "^1.15.0",
+    "puppeteer-core": "^23.11.1",
     "read-package-up": "^11.0.0",
     "semver": "^7.6.3",
     "set-value": "^4.1.0",
@@ -63,7 +63,7 @@
     "xpath": "^0.0.34"
   },
   "devDependencies": {
-    "@oclif/plugin-command-snapshot": "^5.2.21",
+    "@oclif/plugin-command-snapshot": "^5.2.23",
     "@salesforce/cli-plugins-testkit": "^5.3.38",
     "@salesforce/dev-config": "^4.3.1",
     "@salesforce/dev-scripts": "^10",
