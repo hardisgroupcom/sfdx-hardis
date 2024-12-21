@@ -4,7 +4,6 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
-import { killBoringExitHandlers } from '../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -62,7 +61,6 @@ export default class PackageXml2Markdown extends SfCommand<any> {
     WebSocketClient.requestOpenFile(this.outputFile);
 
     // Return an object to be displayed with --json
-    killBoringExitHandlers();
     return { outputFile: this.outputFile };
   }
 

@@ -15,22 +15,20 @@ const hook: Hook<'postrun'> = async (options) => {
   if (!commandId.startsWith('hardis')) {
     return;
   }
-  elapseEnd(`${options?.Command?.id} execution time`);
-  if (commandId.startsWith('hardis:doc')) {
-    return;
-  }
 
   // Close WebSocketClient if existing
   if (globalThis.webSocketClient) {
     try {
       globalThis.webSocketClient.dispose();
     } catch (e) {
-      if (options.Command.flags.debug) {
+      if (options?.Command?.flags?.debug) {
         uxLog(this, c.yellow('Unable to close websocketClient.js') + '\n' + (e as Error).message);
       }
     }
     globalThis.webSocketClient = null;
   }
+
+  elapseEnd(`${options?.Command?.id} execution time`);
 };
 
 export default hook;
