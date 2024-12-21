@@ -8,6 +8,7 @@
 
 import { NODE_CONFIG } from "./renderConfig.js";
 
+import * as yaml from 'js-yaml';
 import { XMLParser } from "fast-xml-parser";
 
 interface FlowMap {
@@ -42,7 +43,7 @@ interface FlowObj {
  * E X P O R T E D
  *=================================================================*/
 
-export async function parseFlow(xml: string, renderAs: "plantuml" | "mermaid" = "mermaid", options: any = {}): Promise<{ flowMap: FlowMap, uml: string }> {
+export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = "mermaid", options: any = {}): Promise<{ flowMap: FlowMap, uml: string }> {
     try {
         const parser = new XMLParser();
         const flowObj = parser.parse(xml).Flow;
@@ -51,27 +52,24 @@ export async function parseFlow(xml: string, renderAs: "plantuml" | "mermaid" = 
         if (Object.keys(flowMap).length === 0) {
             throw new Error("no-renderable-content-found");
         }
-
-        switch (renderAs) {
-            case 'mermaid':
-                return {
-                    flowMap: flowMap,
-                    uml: await generateMermaidContent(flowMap, options)
-                };
-            case 'plantuml':
-                return {
-                    flowMap: flowMap,
-                    uml: await generatePlantUMLContent(flowMap)
-                };
-            default:
-                throw new Error("unknown-renderAs-" + renderAs);
+        if (renderAs === "mermaid") {
+            return {
+                flowMap: flowMap,
+                uml: await generateMermaidContent(flowMap, options)
+            };
         }
+        else if (renderAs === 'plantuml') {
+            return {
+                flowMap: flowMap,
+                uml: await generatePlantUMLContent(flowMap)
+            };
+        }
+        throw new Error("unknown-renderAs-" + renderAs);
     } catch (error) {
         console.error("salesforce-flow-visualiser", error);
         throw (error);
     }
 }
-
 
 
 /*===================================================================
@@ -80,78 +78,71 @@ export async function parseFlow(xml: string, renderAs: "plantuml" | "mermaid" = 
 async function createFlowMap(flowObj: any): Promise<FlowMap> {
     const flowMap: FlowMap = {};
     for (const property in flowObj) {
-        switch (property) {
-            case 'constants':
-            case 'description':
-            case 'formulas':
-            case 'label':
-            case 'processType':
-            case 'status':
-            case 'textTemplates':
-                flowMap[property] = flowObj[property];
-                break;
-            case 'start':
-                flowMap[property] = flowObj[property];
-                flowMap[property].type = property;
-                flowMap[property].nextNode = flowObj[property].connector?.targetReference;
-                flowMap[property].scheduledPaths = (!flowMap[property].scheduledPaths) ? [] : (flowMap[property].scheduledPaths.length) ? flowMap[property].scheduledPaths : [flowMap[property].scheduledPaths];
-                break;
-            default:
-                // If only one entry (e.g one loop) then it will be an object, not an Array, so make it an Array of one
-                if (!flowObj[property].length) {
-                    flowObj[property] = [flowObj[property]]
-                }
-                // Loop through array and create an mapped entry for each
-                for (const el of flowObj[property]) {
-                    if (el.name) {
-                        let nextNode;
-                        let tmpRules;
-                        switch (property) {
-                            case 'decisions':
-                                nextNode = (el.defaultConnector) ? el.defaultConnector.targetReference : "END";
-                                tmpRules = (el.rules.length) ? el.rules : [el.rules];
-                                el.rules2 = tmpRules.map((ruleEl: any) => {
-                                    return {
-                                        name: ruleEl.name,
-                                        label: ruleEl.label,
-                                        nextNode: ruleEl.connector,
-                                        nextNodeLabel: el.defaultConnectorLabel,
-                                    }
-                                });
-                                break;
-                            case 'loops':
-                                nextNode = (el.noMoreValuesConnector) ? el.noMoreValuesConnector.targetReference : "END";
-                                break;
-                            default:
-                                if (el.connector) {
-                                    nextNode = el.connector.targetReference;
+        // Common first discriptive elements
+        if (['constants', 'description', 'environments', 'formulas', 'interviewLabel', 'label', 'processType', 'status', 'textTemplates'].includes(property)) {
+            flowMap[property] = flowObj[property];
+        }
+        // Start lement
+        else if (property === 'start') {
+            flowMap[property] = flowObj[property];
+            flowMap[property].type = property;
+            flowMap[property].nextNode = flowObj[property].connector?.targetReference;
+            flowMap[property].scheduledPaths = (!flowMap[property].scheduledPaths) ? [] : (flowMap[property].scheduledPaths.length) ? flowMap[property].scheduledPaths : [flowMap[property].scheduledPaths];
+        }
+        else {
+            // If only one entry (e.g one loop) then it will be an object, not an Array, so make it an Array of one
+            if (!flowObj[property].length) {
+                flowObj[property] = [flowObj[property]]
+            }
+            // Loop through array and create an mapped entry for each
+            for (const el of flowObj[property]) {
+                if (el.name) {
+                    let nextNode;
+                    let tmpRules;
+                    switch (property) {
+                        case 'decisions':
+                            nextNode = (el.defaultConnector) ? el.defaultConnector.targetReference : "END";
+                            tmpRules = (el.rules.length) ? el.rules : [el.rules];
+                            el.rules2 = tmpRules.map((ruleEl: any) => {
+                                return {
+                                    name: ruleEl.name,
+                                    label: ruleEl.label,
+                                    nextNode: ruleEl.connector,
+                                    nextNodeLabel: el.defaultConnectorLabel,
                                 }
-                                break;
-                        }
-
-                        if ((<any>NODE_CONFIG)[property]) {
-                            const mappedEl = {
-                                name: el.name,
-                                label: el.label,
-                                type: property,
-                                nextNode: nextNode,
-                                faultPath: el.faultConnector?.targetReference,
-                                nextNodeLabel: el.defaultConnectorLabel,
-                                nextValueConnector: (el.nextValueConnector) ?
-                                    el.nextValueConnector.targetReference : null,
-                                rules: el.rules2,
-                                elementSubtype: el.elementSubtype,
-                                actionType: el.actionType
+                            });
+                            break;
+                        case 'loops':
+                            nextNode = (el.noMoreValuesConnector) ? el.noMoreValuesConnector.targetReference : "END";
+                            break;
+                        default:
+                            if (el.connector) {
+                                nextNode = el.connector.targetReference;
                             }
-                            flowMap[el.name] = mappedEl;
-                        } else if (property === 'variables') {
-                            flowMap.variables = flowObj[property];
+                            break;
+                    }
+
+                    if ((<any>NODE_CONFIG)[property]) {
+                        const mappedEl = {
+                            name: el.name,
+                            label: el.label,
+                            type: property,
+                            nextNode: nextNode,
+                            faultPath: el.faultConnector?.targetReference,
+                            nextNodeLabel: el.defaultConnectorLabel,
+                            nextValueConnector: (el.nextValueConnector) ?
+                                el.nextValueConnector.targetReference : null,
+                            rules: el.rules2,
+                            elementSubtype: el.elementSubtype,
+                            actionType: el.actionType
                         }
+                        flowMap[el.name] = mappedEl;
+                    } else if (property === 'variables') {
+                        flowMap.variables = flowObj[property];
                     }
                 }
-                break;
+            }
         }
-
     }
     return (flowMap);
 }
@@ -173,7 +164,7 @@ function getFlowType(flowMap: FlowMap): string {
             case "RecordBeforeSave":
                 return "Record triggered flow: Before Save (" + flowMap.start.object + ")";
             case "PlatformEvent":
-                return "PlatformEvent triggered flow (" + flowMap.start.object + ")";
+                return "Platform Event triggered flow (" + flowMap.start.object + ")";
             default:
                 return "AutoLaunched flow - No trigger";
         }
@@ -187,9 +178,10 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
     console.log("options", options)
     const title = `# ${flowMap['label']}
 
-Type: **${getFlowType(flowMap)}**
-
-Status: **${flowMap['status']}**
+- Type: **${getFlowType(flowMap)}**
+- Description: **${flowMap['description'] || "None"}**
+- Environment: **${flowMap['environments']}**
+- Status: **${flowMap['status']}**
 
 `;
     const variables = getVariablesMd(flowMap.variables || []) + "\n";
@@ -272,14 +264,13 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
 }
 
 async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
-    let nodeDetailMd = "## Nodes Content\n\n"
+    let nodeDetailMd = "<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
     let nodeDefStr = "START(( START ))\n";
     for (const property in flowMap) {
         const type = flowMap[property].type;
         let label: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].label : "";
         let icon: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].mermaidIcon : null;
         let nodeCopy;
-        let nodeText;
         let tooltipClassMermaid;
         if (type === 'actionCalls') {
             icon = ((<any>NODE_CONFIG)[type].mermaidIcon[flowMap[property].actionType]) ?
@@ -308,15 +299,14 @@ async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
                     delete nodeCopy[nodeKey]
                 }
             }
-            nodeText = JSON.stringify(nodeCopy, null, 2);
-            tooltipClassMermaid = `click ${property} "#${property}" "${nodeText.replace(/["{}]/gm, "").split("\n").join("<br/>")}"`;
-            nodeDetailMd += `### ${property}\n\n${nodeText.replace(/["{}]/gm, "").split("\n").join("<br/>")}\n\n`
+            tooltipClassMermaid = `click ${property} "#${property}" "${yaml.dump(nodeCopy).replace(/"/gm, "").split("\n").join("<br/>")}"`;
+            nodeDetailMd += `### ${property}\n\n${yaml.dump(nodeCopy).replace(/"/gm, "").replace(/^(\s+)/gm, match => '&nbsp;'.repeat(match.length)).split("\n").join("<br/>\n")}\n\n`
             nodeDefStr += tooltipClassMermaid + "\n\n"
         }
     }
     return {
         nodeDefStr: (nodeDefStr + "END(( END ))\n\n"),
-        nodeDetailMd: nodeDetailMd
+        nodeDetailMd: nodeDetailMd + "</details>\n\n"
     };
 }
 

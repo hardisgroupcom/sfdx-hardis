@@ -167,31 +167,31 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
 
   // Tables lines
   if (!isMermaid && status === "removed" && styledLine.startsWith("|")) {
-    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: red;">${col}</span>`).join("|") + "|";
+    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: red;"><i>${col}</i></span>`).join("|") + "|";
   }
   else if (!isMermaid && status === "added" && styledLine.startsWith("|")) {
-    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: green;">${col}</span>`).join("|") + "|";
+    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: green;"><b>${col}</b></span>`).join("|") + "|";
   }
   // Normal lines
   else if (!isMermaid && status === "removed" && styledLine !== "") {
-    styledLine = `<span style="background-color: red;">🟥${styledLine}</span>`;
+    styledLine = `<span style="background-color: red;"><i>🟥${styledLine}</i></span>`;
   }
   else if (!isMermaid && status === "added" && styledLine !== "") {
-    styledLine = `<span style="background-color: green;">🟩${styledLine}</span>`;
+    styledLine = `<span style="background-color: green;"><b>🟩${styledLine}</b></span>`;
   }
   // Boxes lines
   else if (isMermaid === true && status === "removed" && currentLine.split(":::").length === 2) {
     styledLine = styledLine + "Removed"
     if (styledLine.split('"').length === 3) {
       const splits = styledLine.split('"');
-      styledLine = splits[0] + '"🟥' + splits[1] + '"' + splits[2]
+      styledLine = splits[0] + '"🟥<i>' + splits[1] + '</i>"' + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.split(":::").length === 2) {
     styledLine = styledLine + "Added"
     if (styledLine.split('"').length === 3) {
       const splits = styledLine.split('"');
-      styledLine = splits[0] + '"🟩' + splits[1] + '"' + splits[2]
+      styledLine = splits[0] + '"🟩<b>' + splits[1] + '</b>"' + splits[2]
     }
   }
   else if (isMermaid === true && currentLine.includes(":::")) {
@@ -204,7 +204,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
         styledLine = styledLine + "Changed"
         if (styledLine.split('"').length === 3) {
           const splits = styledLine.split('"');
-          styledLine = splits[0] + '"🟧' + splits[1] + '"' + splits[2]
+          styledLine = splits[0] + '"🟧<b>' + splits[1] + '</b>"' + splits[2]
         }
       }
     }
@@ -214,14 +214,14 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
     styledLine = styledLine.replace("-->", "-.->") + ":::removedLink"
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟥" + splits[1] + "|" + splits[2]
+      styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('-->')) {
     styledLine = styledLine.replace("-->", "==>") + ":::addedLink"
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟩" + splits[1] + "|" + splits[2]
+      styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
     }
   }
   compareMdLines.push(styledLine);
