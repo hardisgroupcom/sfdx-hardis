@@ -8,7 +8,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
-import { countPackageXmlItems } from '../../../common/utils/xmlUtils.js';
+import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
@@ -135,9 +135,17 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     const packageDirs = this.project?.getPackageDirectories();
     const flowFiles = await listFlowFiles(packageDirs);
     const flowErrors: string[] = [];
+    const flowDescriptions: any[] = [];
     for (const flowFile of flowFiles) {
       uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
+      const flowContent = await parseXmlFile(flowFile);
+      flowDescriptions.push({
+        name: path.basename(flowFile).replace(".flow-meta.xml", ""),
+        description: flowContent?.Flow?.description?.[0] || "",
+        type: flowContent?.Flow?.processType?.[0] === "Flow" ? "ScreenFlow" : flowContent?.Flow?.start?.[0]?.triggerType?.[0] ?? (flowContent?.Flow?.processType?.[0] || "ERROR (Unknown)"),
+        object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || ""
+      });
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
       const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile);
       if (!genRes) {
@@ -157,6 +165,25 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     if (flowErrors.length > 0) {
       uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${flowErrors.join(", ")}`));
     }
+
+    await this.writeFlowsTable(flowDescriptions);
+  }
+
+  private async writeFlowsTable(flowDescriptions: any[]) {
+    this.mdLines.push(...[
+      "## Flows",
+      "",
+      "| Object | Name      | Type | Description |",
+      "| :----  | :-------- | :--: | :---------- | "
+    ]);
+    for (const flow of sortArray(flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]) {
+      this.mdLines.push(...[
+        `| ${flow.object} | [${flow.name}](flows/${flow.name}.md) | ${flow.type} | ${flow.description} |`
+      ]);
+    }
+    this.mdLines.push("");
+    this.mdLines.push("___");
+    this.mdLines.push("");
   }
 
   private async writeInstalledPackages() {
