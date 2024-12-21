@@ -4,6 +4,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
 import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
+import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 
 export default class ProjectDeployStart extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy start** that displays tips to solve deployment errors.
@@ -146,6 +147,10 @@ commandsPostDeploy:
     const { flags } = await this.parse(ProjectDeployStart);
     const conn = flags["target-org"].getConnection();
     const checkOnly = flags["dry-run"] === true;
+    // Compute data for PR comments & flow diffs
+    if (checkOnly) {
+      await buildCheckDeployCommitSummary()
+    }
     // Run pre deployment commands if defined
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: checkOnly, conn: conn });
     const result = await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
@@ -163,7 +168,14 @@ commandsPostDeploy:
     }
     // Run post deployment commands if defined
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
-    await GitProvider.managePostPullRequestComment();
+    // Post comment if deployment check success
+    if (checkOnly) {
+      await GitProvider.managePostPullRequestComment();
+    }
+    // Post success deployment notifications
+    if (process.exitCode === 0 && !checkOnly) {
+      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, flags["debug"]);
+    }
     return result;
   }
 }

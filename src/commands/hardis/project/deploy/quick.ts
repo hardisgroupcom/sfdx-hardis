@@ -4,6 +4,7 @@ import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
 import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
+import { handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 
 export default class ProjectDeployStart extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy quick** that displays tips to solve deployment errors.
@@ -108,7 +109,10 @@ commandsPostDeploy:
     }
     // Run post deployment commands if defined
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: false, conn: conn });
-    await GitProvider.managePostPullRequestComment();
+    // Post success deployment notifications
+    if (process.exitCode === 0) {
+      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, flags["debug"]);
+    }
     return result;
   }
 }
