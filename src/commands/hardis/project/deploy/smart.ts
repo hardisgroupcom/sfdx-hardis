@@ -244,6 +244,8 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 If you need to increase the deployment waiting time (sf project deploy start --wait arg), you can define env variable SFDX_DEPLOY_WAIT_MINUTES (default: 120)
 
 If you need notifications to be sent using the current Pull Request and not the one just merged ([see use case](https://github.com/hardisgroupcom/sfdx-hardis/issues/637#issuecomment-2230798904)), define env variable SFDX_HARDIS_DEPLOY_BEFORE_MERGE=true
+
+If you want to disable the calculation and display of Flow Visual Git Diff in Pull Request comments, define variable **SFDX_DISABLE_FLOW_DIFF=true**
 `;
 
   public static examples = [
@@ -342,7 +344,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
         const prDataCommitsSummary = {
           commitsSummary: commitsSummary.markdown,
-          flowDiffSummary: commitsSummary.flowDiffMarkdown
+          flowDiffMarkdown: commitsSummary.flowDiffMarkdown
         };
         globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
       } catch (e3) {

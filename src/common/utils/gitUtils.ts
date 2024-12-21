@@ -173,8 +173,8 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   }
 
   // Add Flow diff in Markdown
-  let flowDiffMarkdown = "";
-  if (checkOnly || GitProvider.isDeployBeforeMerge()) {
+  let flowDiffMarkdown: any = {};
+  if (checkOnly || GitProvider.isDeployBeforeMerge() && !(process.env?.SFDX_DISABLE_FLOW_DIFF === "true")) {
     const flowList: string[] = [];
     for (const logResult of logResults) {
       const updatedFiles = await getCommitUpdatedFiles(logResult.hash);
