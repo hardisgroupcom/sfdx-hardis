@@ -184,6 +184,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
       return;
     }
   }
+  /* jscpd:ignore-start */
   // Skip node block if there are no updated lines within
   else if (styledLine.startsWith("### ")) {
     let updatedInBlock = false;
@@ -204,6 +205,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
       return;
     }
   }
+  /* jscpd:ignore-end */
   // Skip table lines that have not been updated
   else if (!isMermaid && styledLine.startsWith("|") && isTableStarted === false) {
     isTableStarted = true;

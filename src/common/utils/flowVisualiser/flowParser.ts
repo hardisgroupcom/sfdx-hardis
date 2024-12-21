@@ -79,11 +79,11 @@ export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = 
 async function createFlowMap(flowObj: any): Promise<FlowMap> {
     const flowMap: FlowMap = {};
     for (const property in flowObj) {
-        // Common first discriptive elements
+        // Common first descriptive elements
         if (['constants', 'description', 'environments', 'formulas', 'interviewLabel', 'label', 'processType', 'status', 'textTemplates'].includes(property)) {
             flowMap[property] = flowObj[property];
         }
-        // Start lement
+        // Start element
         else if (property === 'start') {
             flowMap[property] = flowObj[property];
             flowMap[property].type = property;
