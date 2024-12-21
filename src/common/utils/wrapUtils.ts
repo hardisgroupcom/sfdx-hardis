@@ -43,6 +43,7 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
       debug: debug,
       fail: true,
     });
+    process.exitCode = 0;
   } catch (e) {
     // Add deployment tips in error logs
     const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, { check: endArgs.includes("--checkonly") });

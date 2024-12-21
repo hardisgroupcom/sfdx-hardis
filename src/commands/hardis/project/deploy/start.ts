@@ -9,6 +9,8 @@ import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from
 export default class ProjectDeployStart extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy start** that displays tips to solve deployment errors.
 
+Note: Use **--json** argument to have better results
+
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_start_unified)
@@ -51,6 +53,10 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 \`\`\`
 `;
+
+  public static aliases = [
+    "hardis:deploy:start"
+  ]
 
   public static flags: any = {
     "api-version": Flags.integer({
