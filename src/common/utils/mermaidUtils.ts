@@ -164,12 +164,32 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
   if (styledLine.startsWith("|") && mixedLines.length > 1 && mixedLines[0][1] === '' && mixedLines[1][1].startsWith("|")) {
     mixedLines.shift();
   }
-  // Skip node block if there are no updated lines within
-  if (styledLine.startsWith("###")) {
+  // Skip table block if there are no updated lines within
+  if (styledLine.startsWith("## ") && !styledLine.startsWith("## Flow")) {
     let updatedInBlock = false;
     let nextBlockPos = 0;
     for (const nextLine of mixedLines) {
-      if (nextLine[1].startsWith("###") || nextLine[1].startsWith("_Documentation")) {
+      if (nextLine[1].startsWith("## ") || nextLine[1].startsWith("_Documentation")) {
+        break;
+      }
+      if (nextLine[0] === "removed" || nextLine[0] === "added") {
+        updatedInBlock = true;
+      }
+      nextBlockPos++;
+    }
+    if (!updatedInBlock) {
+      const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
+      // Continue processing next lines
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid);
+      return;
+    }
+  }
+  // Skip node block if there are no updated lines within
+  else if (styledLine.startsWith("### ")) {
+    let updatedInBlock = false;
+    let nextBlockPos = 0;
+    for (const nextLine of mixedLines) {
+      if (nextLine[1].startsWith("### ") || nextLine[1].startsWith("_Documentation")) {
         break;
       }
       if (nextLine[0] === "removed" || nextLine[0] === "added") {
