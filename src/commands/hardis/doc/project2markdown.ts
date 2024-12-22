@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import fs, { ensureDir } from 'fs-extra';
+import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
 import sortArray from 'sort-array';
@@ -8,11 +8,13 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
-import { countPackageXmlItems } from '../../../common/utils/xmlUtils.js';
+import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
+import { listFlowFiles } from '../../../common/utils/projectUtils.js';
+import { generateFlowMarkdownFile, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -29,7 +31,11 @@ export default class Project2Markdown extends SfCommand<any> {
 
 Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
-Generated markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
+Generates markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
+
+This command requires @mermaid-js/mermaid-cli to be installed.
+
+Run \`npm install @mermaid-js/mermaid-cli --global\`
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc.jpg)
 
@@ -58,7 +64,8 @@ Generated markdown files will be written in **docs** folder (except README.md wh
   public static requiresProject = true;
 
   protected packageXmlCandidates: any[];
-  protected outputMarkdownIndexFile = "docs/index.md"
+  protected outputMarkdownRoot = "docs"
+  protected outputMarkdownIndexFile = path.join(this.outputMarkdownRoot, "index.md")
   protected mdLines: string[] = [];
   protected sfdxHardisConfig: any = {};
   protected outputPackageXmlMarkdownFiles: any[] = [];
@@ -96,6 +103,9 @@ Generated markdown files will be written in **docs** folder (except README.md wh
     // List managed packages
     await this.writeInstalledPackages();
 
+    // List flows & generate doc
+    await this.generateFlowsDocumentation();
+
     // Footer
     this.mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
     // Write output index file
@@ -118,6 +128,62 @@ Generated markdown files will be written in **docs** folder (except README.md wh
     WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
 
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
+  }
+
+  private async generateFlowsDocumentation() {
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
+    const packageDirs = this.project?.getPackageDirectories();
+    const flowFiles = await listFlowFiles(packageDirs);
+    const flowErrors: string[] = [];
+    const flowDescriptions: any[] = [];
+    for (const flowFile of flowFiles) {
+      uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
+      const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
+      const flowContent = await parseXmlFile(flowFile);
+      flowDescriptions.push({
+        name: path.basename(flowFile).replace(".flow-meta.xml", ""),
+        description: flowContent?.Flow?.description?.[0] || "",
+        type: flowContent?.Flow?.processType?.[0] === "Flow" ? "ScreenFlow" : flowContent?.Flow?.start?.[0]?.triggerType?.[0] ?? (flowContent?.Flow?.processType?.[0] || "ERROR (Unknown)"),
+        object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || ""
+      });
+      const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
+      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile);
+      if (!genRes) {
+        flowErrors.push(flowFile);
+        continue;
+      }
+      if (this.debugMode) {
+        await fs.copyFile(outputFlowMdFile, outputFlowMdFile + ".mermaid.md");
+      }
+      const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile);
+      if (!gen2res) {
+        flowErrors.push(flowFile);
+        continue;
+      }
+    }
+    uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowErrors.length} Flows documentation`));
+    if (flowErrors.length > 0) {
+      uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${flowErrors.join(", ")}`));
+    }
+
+    await this.writeFlowsTable(flowDescriptions);
+  }
+
+  private async writeFlowsTable(flowDescriptions: any[]) {
+    this.mdLines.push(...[
+      "## Flows",
+      "",
+      "| Object | Name      | Type | Description |",
+      "| :----  | :-------- | :--: | :---------- | "
+    ]);
+    for (const flow of sortArray(flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]) {
+      this.mdLines.push(...[
+        `| ${flow.object} | [${flow.name}](flows/${flow.name}.md) | ${flow.type} | ${flow.description} |`
+      ]);
+    }
+    this.mdLines.push("");
+    this.mdLines.push("___");
+    this.mdLines.push("");
   }
 
   private async writeInstalledPackages() {
@@ -197,7 +263,7 @@ Generated markdown files will be written in **docs** folder (except README.md wh
       for (const packageDir of packageDirs || []) {
         // Generate manifest from package folder
         const packageManifestFile = path.join("manifest", packageDir.name + '-package.xml');
-        await ensureDir(path.dirname(packageManifestFile));
+        await fs.ensureDir(path.dirname(packageManifestFile));
         await execSfdxJson("sf project generate manifest" +
           ` --source-dir ${packageDir.path}` +
           ` --name ${packageManifestFile}`, this,

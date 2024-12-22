@@ -1,6 +1,7 @@
 import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import c from 'chalk';
+import * as path from "path";
 import sortArray from 'sort-array';
 import {
   arrayUniqueByKey,
@@ -16,6 +17,10 @@ import {
 import { GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
+import { flowDiffToMarkdown } from '../gitProvider/utilsMarkdown.js';
+import { MessageAttachment } from '@slack/types';
+import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from './notifUtils.js';
+import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -37,11 +42,11 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       message: c.cyanBright(message),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
-            return {
-              title: branch.includes(',') ? branch.split(',').join(' - ') : branch,
-              value: branch.includes(',') ? branch.split(',')[0] : branch,
-            };
-          })
+          return {
+            title: branch.includes(',') ? branch.split(',').join(' - ') : branch,
+            value: branch.includes(',') ? branch.split(',')[0] : branch,
+          };
+        })
         : [],
       initial: config.developmentBranch || 'integration',
     },
@@ -58,7 +63,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
       this,
       c.gray(
         `[Warning] Unable to fetch target branch ${targetBranch} to prepare call to sfdx-git-delta\n` +
-          JSON.stringify(e)
+        JSON.stringify(e)
       )
     );
   }
@@ -69,7 +74,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
       this,
       c.gray(
         `[Warning] Unable to fetch current branch ${currentBranch} to prepare call to sfdx-git-delta\n` +
-          JSON.stringify(e)
+        JSON.stringify(e)
       )
     );
   }
@@ -170,11 +175,29 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     commitsSummary = ticketsMarkdown + '\n\n' + commitsSummary;
   }
 
+  // Add Flow diff in Markdown
+  let flowDiffMarkdown: any = {};
+  if (checkOnly || GitProvider.isDeployBeforeMerge() && !(process.env?.SFDX_DISABLE_FLOW_DIFF === "true")) {
+    const flowList: string[] = [];
+    for (const logResult of logResults) {
+      const updatedFiles = await getCommitUpdatedFiles(logResult.hash);
+      for (const updatedFile of updatedFiles) {
+        if (updatedFile.endsWith(".flow-meta.xml")) {
+          const flowName = path.basename(updatedFile, ".flow-meta.xml");
+          flowList.push(flowName);
+        }
+      }
+    }
+    const flowListUnique = [...new Set(flowList)].sort();
+    flowDiffMarkdown = await flowDiffToMarkdown(flowListUnique, logResults[0].hash, (logResults.at(-1) || { hash: "" }).hash);
+  }
+
   return {
     markdown: commitsSummary,
     logResults: logResults,
     manualActions: manualActionsSorted,
     tickets: ticketsSorted,
+    flowDiffMarkdown: flowDiffMarkdown
   };
 }
 
@@ -185,4 +208,124 @@ async function collectTicketsAndManualActions(str: string, tickets: Ticket[], ma
   const manualActionsRegex = /MANUAL ACTION:(.*)/gm;
   const manualActionsMatches = await extractRegexMatches(manualActionsRegex, str);
   manualActions.push(...manualActionsMatches);
+}
+
+export async function getCommitUpdatedFiles(commitHash) {
+  const result = await git().show(["--name-only", commitHash]);
+  // Split the result into lines (file paths) and remove empty lines
+  const files = result.split('\n').filter(file => file.trim() !== '');
+  return files;
+}
+
+export async function buildCheckDeployCommitSummary() {
+  try {
+    const pullRequestInfo = await GitProvider.getPullRequestInfo();
+    const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
+    const prDataCommitsSummary = {
+      commitsSummary: commitsSummary.markdown,
+      flowDiffMarkdown: commitsSummary.flowDiffMarkdown
+    };
+    globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
+  } catch (e3) {
+    uxLog(this, c.yellow('Unable to compute git summary:\n' + e3));
+  }
+}
+
+export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean) {
+  const pullRequestInfo = await GitProvider.getPullRequestInfo();
+  const attachments: MessageAttachment[] = [];
+  try {
+    // Build notification attachments & handle ticketing systems comments
+    const commitsSummary = await collectNotifAttachments(attachments, pullRequestInfo);
+    await TicketProvider.postDeploymentActions(
+      commitsSummary.tickets,
+      flags['target-org']?.getConnection()?.instanceUrl || targetUsername || '',
+      pullRequestInfo
+    );
+  } catch (e4: any) {
+    uxLog(
+      this,
+      c.yellow('Unable to handle commit info on TicketProvider post deployment actions:\n' + e4.message) +
+      '\n' +
+      c.gray(e4.stack)
+    );
+  }
+
+  const orgMarkdown = await getOrgMarkdown(
+    flags['target-org']?.getConnection()?.instanceUrl || targetUsername || ''
+  );
+  const branchMarkdown = await getBranchMarkdown();
+  let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
+  notifMessage += quickDeploy
+    ? ' (🚀 quick deployment)'
+    : delta
+      ? ' (🌙 delta deployment)'
+      : ' (🌕 full deployment)';
+
+  const notifButtons = await getNotificationButtons();
+  if (pullRequestInfo) {
+    if (debugMode) {
+      uxLog(this, c.gray('PR info:\n' + JSON.stringify(pullRequestInfo)));
+    }
+    const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+    const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+    notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
+    const prButtonText = 'View Pull Request';
+    notifButtons.push({ text: prButtonText, url: prUrl });
+  } else {
+    uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
+  }
+  globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+  await NotifProvider.postNotifications({
+    type: 'DEPLOYMENT',
+    text: notifMessage,
+    buttons: notifButtons,
+    severity: 'success',
+    attachments: attachments,
+    logElements: [],
+    data: { metric: 0 }, // Todo: if delta used, count the number of items deployed
+    metrics: {
+      DeployedItems: 0,
+    },
+  });
+}
+
+
+async function collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: any) {
+  const commitsSummary = await computeCommitsSummary(false, pullRequestInfo);
+  // Tickets attachment
+  if (commitsSummary.tickets.length > 0) {
+    attachments.push({
+      text: `*Tickets*\n${commitsSummary.tickets
+        .map((ticket) => {
+          if (ticket.foundOnServer) {
+            return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+          } else {
+            return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id);
+          }
+        })
+        .join('\n')}`,
+    });
+  }
+  // Manual actions attachment
+  if (commitsSummary.manualActions.length > 0) {
+    attachments.push({
+      text: `*Manual actions*\n${commitsSummary.manualActions
+        .map((manualAction) => {
+          return '• ' + manualAction;
+        })
+        .join('\n')}`,
+    });
+  }
+  // Commits attachment
+  if (commitsSummary.logResults.length > 0) {
+    attachments.push({
+      text: `*Commits*\n${commitsSummary.logResults
+        .map((logResult) => {
+          return '• ' + logResult.message + ', by ' + logResult.author_name;
+        })
+        .join('\n')}`,
+    });
+  }
+  return commitsSummary;
 }

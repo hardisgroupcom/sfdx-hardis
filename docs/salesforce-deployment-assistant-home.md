@@ -10,9 +10,21 @@ Deployment errors are common and quite boring, right ?
 
 Sfdx-hardis deployment assistant will help you to solve them, even if you are not using sfdx-hardis CI/CD pipelines !
 
-The assistant contain core rules and can be integrated with AI to provide you the best guidance :)
+The assistant contain core rules and can optionally be integrated with AI to provide you the best guidance :)
 
 ![](assets/images/AI-Assistant.gif)
+
+## Flow Visual Git Diff
+
+In addition to deployment tips, comments will be posted with Visual Git Diff for Flows.
+
+🟩 = added
+
+🟥 = removed
+
+🟧 = updated
+
+![](assets/images/flow-visual-git-diff.jpg)
 
 ## Integrations
 

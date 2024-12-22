@@ -30,12 +30,8 @@ import { smartDeploy, removePackageXmlContent } from '../../../../common/utils/d
 import { isProductionOrg, promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
-import { NotifProvider, UtilsNotifs } from '../../../../common/notifProvider/index.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
-import { callSfdxGitDelta, computeCommitsSummary, getGitDeltaScope } from '../../../../common/utils/gitUtils.js';
-import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
-import { MessageAttachment } from '@slack/web-api';
-import { TicketProvider } from '../../../../common/ticketProvider/index.js';
+import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -244,6 +240,8 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
 If you need to increase the deployment waiting time (sf project deploy start --wait arg), you can define env variable SFDX_DEPLOY_WAIT_MINUTES (default: 120)
 
 If you need notifications to be sent using the current Pull Request and not the one just merged ([see use case](https://github.com/hardisgroupcom/sfdx-hardis/issues/637#issuecomment-2230798904)), define env variable SFDX_HARDIS_DEPLOY_BEFORE_MERGE=true
+
+If you want to disable the calculation and display of Flow Visual Git Diff in Pull Request comments, define variable **SFDX_DISABLE_FLOW_DIFF=true**
 `;
 
   public static examples = [
@@ -337,14 +335,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Compute commitsSummary and store it in globalThis.pullRequestData.commitsSummary
     if (this.checkOnly) {
-      try {
-        const pullRequestInfo = await GitProvider.getPullRequestInfo();
-        const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
-        const prDataCommitsSummary = { commitsSummary: commitsSummary.markdown };
-        globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
-      } catch (e3) {
-        uxLog(this, c.yellow('Unable to compute git summary:\n' + e3));
-      }
+      await buildCheckDeployCommitSummary()
     }
 
     // Get package.xml & destructiveChanges.xml
@@ -374,69 +365,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Send notification of deployment success
     if (deployExecuted) {
-      await this.handleNotifications(flags, targetUsername, quickDeploy);
+      await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode);
     }
     // Return result
     return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };
-  }
-
-  private async handleNotifications(flags, targetUsername: any, quickDeploy: any) {
-    const pullRequestInfo = await GitProvider.getPullRequestInfo();
-    const attachments: MessageAttachment[] = [];
-    try {
-      // Build notification attachments & handle ticketing systems comments
-      const commitsSummary = await this.collectNotifAttachments(attachments, pullRequestInfo);
-      await TicketProvider.postDeploymentActions(
-        commitsSummary.tickets,
-        flags['target-org']?.getConnection()?.instanceUrl || targetUsername || '',
-        pullRequestInfo
-      );
-    } catch (e4: any) {
-      uxLog(
-        this,
-        c.yellow('Unable to handle commit info on TicketProvider post deployment actions:\n' + e4.message) +
-        '\n' +
-        c.gray(e4.stack)
-      );
-    }
-
-    const orgMarkdown = await getOrgMarkdown(
-      flags['target-org']?.getConnection()?.instanceUrl || targetUsername || ''
-    );
-    const branchMarkdown = await getBranchMarkdown();
-    let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
-    notifMessage += quickDeploy
-      ? ' (🚀 quick deployment)'
-      : this.delta
-        ? ' (🌙 delta deployment)'
-        : ' (🌕 full deployment)';
-
-    const notifButtons = await getNotificationButtons();
-    if (pullRequestInfo) {
-      if (this.debugMode) {
-        uxLog(this, c.gray('PR info:\n' + JSON.stringify(pullRequestInfo)));
-      }
-      const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-      const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-      notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
-      const prButtonText = 'View Pull Request';
-      notifButtons.push({ text: prButtonText, url: prUrl });
-    } else {
-      uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
-    }
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
-    await NotifProvider.postNotifications({
-      type: 'DEPLOYMENT',
-      text: notifMessage,
-      buttons: notifButtons,
-      severity: 'success',
-      attachments: attachments,
-      logElements: [],
-      data: { metric: 0 }, // Todo: if delta used, count the number of items deployed
-      metrics: {
-        DeployedItems: 0,
-      },
-    });
   }
 
   private async handleDeltaDeployment(deltaFromArgs: any, targetUsername: string, currentGitBranch: string | null) {
@@ -464,11 +396,11 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       uxLog(this, c.cyan('[DeltaDeployment] Generating git delta package.xml and destructiveChanges.xml ...'));
       const tmpDir = await createTempDir();
       await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
-
-      // Update package.xml
       const packageXmlFileDeltaDeploy = path.join(tmpDir, 'package', 'packageDelta.xml');
       await fs.copy(this.packageXmlFile, packageXmlFileDeltaDeploy);
       this.packageXmlFile = packageXmlFileDeltaDeploy;
+
+      // Update package.xml
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
       await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {
         debugMode: this.debugMode,
@@ -628,45 +560,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     if (this.testLevel != 'RunSpecifiedTests') {
       this.testClasses = '';
     }
-  }
-
-  private async collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: any) {
-    const commitsSummary = await computeCommitsSummary(false, pullRequestInfo);
-    // Tickets attachment
-    if (commitsSummary.tickets.length > 0) {
-      attachments.push({
-        text: `*Tickets*\n${commitsSummary.tickets
-          .map((ticket) => {
-            if (ticket.foundOnServer) {
-              return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
-            } else {
-              return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id);
-            }
-          })
-          .join('\n')}`,
-      });
-    }
-    // Manual actions attachment
-    if (commitsSummary.manualActions.length > 0) {
-      attachments.push({
-        text: `*Manual actions*\n${commitsSummary.manualActions
-          .map((manualAction) => {
-            return '• ' + manualAction;
-          })
-          .join('\n')}`,
-      });
-    }
-    // Commits attachment
-    if (commitsSummary.logResults.length > 0) {
-      attachments.push({
-        text: `*Commits*\n${commitsSummary.logResults
-          .map((logResult) => {
-            return '• ' + logResult.message + ', by ' + logResult.author_name;
-          })
-          .join('\n')}`,
-      });
-    }
-    return commitsSummary;
   }
 
   async isDeltaAllowed() {
