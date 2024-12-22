@@ -40,7 +40,7 @@ To generate Flow documentations, this command requires @mermaid-js/mermaid-cli
 
 Both modes will be tried by default, but you can also force one of them by defining environment variable \`MERMAID_MODES=docker\` or \`MERMAID_MODES=cli\`
 
-_sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/puppeteer: if you can help, please sumit a PR !_
+_sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/puppeteer: if you can help, please submit a PR !_
 
 ![Screenshot flow doc](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-flow-doc.jpg)
 
