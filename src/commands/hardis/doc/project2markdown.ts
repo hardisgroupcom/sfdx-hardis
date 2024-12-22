@@ -33,9 +33,12 @@ Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
 Generates markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
 
-This command requires @mermaid-js/mermaid-cli to be installed.
+To generate Flow documentations, this command requires @mermaid-js/mermaid-cli
 
-Run \`npm install @mermaid-js/mermaid-cli --global\`
+- Run \`npm install @mermaid-js/mermaid-cli --global\` if puppeteer works in your environment
+- It can also be run as a docker image
+
+Both modes will be tried by default, but you can also force one of them by defining environment variable \`MERMAID_MODES=docker\` or \`MERMAID_MODES=cli\`
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc.jpg)
 

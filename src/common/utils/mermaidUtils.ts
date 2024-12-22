@@ -48,14 +48,15 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
 }
 
 export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string): Promise<boolean> {
+  const mermaidModes = (process.env.MERMAID_MODES || "cli,docker").split(",");
   const isDockerAvlbl = await isDockerAvailable();
-  if (isDockerAvlbl && !(globalThis.mermaidUnavailableTools || []).includes("docker")) {
+  if (isDockerAvlbl && (!(globalThis.mermaidUnavailableTools || []).includes("docker")) && mermaidModes.includes("docker")) {
     const dockerSuccess = await generateMarkdownFileWithMermaidDocker(outputFlowMdFile);
     if (dockerSuccess) {
       return true;
     }
   }
-  if (!(globalThis.mermaidUnavailableTools || []).includes("cli")) {
+  if ((!(globalThis.mermaidUnavailableTools || []).includes("cli")) && mermaidModes.includes("cli")) {
     const mmCliSuccess = await generateMarkdownFileWithMermaidCli(outputFlowMdFile);
     if (mmCliSuccess) {
       return true;
