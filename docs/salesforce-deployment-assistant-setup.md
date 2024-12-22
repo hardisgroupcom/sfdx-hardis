@@ -37,7 +37,7 @@ Configure your [GitHub](salesforce-ci-cd-setup-integration-github.md), [Gitlab](
 
 _Notes:_
 
-- _sfdx-hardis deployment assistant now works better with **--json** option please use it :)
+- _sfdx-hardis deployment assistant now works better with **--json** option please use it :)_
 
 ### Example
 
