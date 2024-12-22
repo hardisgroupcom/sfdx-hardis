@@ -59,7 +59,7 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string):
   ) {
     const fileDir = path.resolve(path.dirname(outputFlowMdFile));
     const fileName = path.basename(outputFlowMdFile);
-    const dockerCommand = `docker run --rm -v "${fileDir}:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "${fileName}" -o "${outputFlowMdFile}"`;
+    const dockerCommand = `docker run --rm -v "${fileDir}:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "${fileName}" -o "${fileName}"`;
     try {
       await execCommand(dockerCommand, this, { output: false, fail: true, debug: false });
       return true;
