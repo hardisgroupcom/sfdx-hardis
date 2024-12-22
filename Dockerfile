@@ -5,12 +5,24 @@ FROM alpine:3.21
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
 RUN apk add --update --no-cache \
-            chromium \
             coreutils \
             git \
             bash \
             nodejs \
-            npm
+            npm \
+            # Required for docker
+            docker \
+            openrc \
+            # Required for puppeteer
+            chromium \
+            nss \
+            freetype \
+            harfbuzz \
+            ca-certificates \
+            ttf-freefont
+
+# Start docker daemon in case mermaid-cli image is used
+RUN rc-update add docker boot && (rc-service docker start || true)
 
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"

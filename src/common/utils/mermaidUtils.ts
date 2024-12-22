@@ -25,6 +25,16 @@ export async function isMermaidAvailable() {
   return IS_MERMAID_AVAILABLE;
 }
 
+let IS_DOCKER_AVAILABLE: boolean | null = null;
+export async function isDockerAvailable() {
+  if (IS_DOCKER_AVAILABLE !== null) {
+    return IS_DOCKER_AVAILABLE;
+  }
+  const isDockerAvailable1 = await which("docker", { nothrow: true });
+  IS_DOCKER_AVAILABLE = isDockerAvailable1 !== null
+  return IS_DOCKER_AVAILABLE;
+}
+
 export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string): Promise<boolean> {
   try {
     const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
@@ -39,15 +49,49 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
 }
 
 export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string): Promise<boolean> {
-  const isMmdAvailable = await isMermaidAvailable();
-  uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
-  const puppeteerConfigPath = path.join(PACKAGE_ROOT_DIR, 'defaults', 'puppeteer-config.json');
-  const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}" --puppeteerConfigFile "${puppeteerConfigPath}"`;
-  try {
-    await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false });
-    return true;
-  } catch (e: any) {
-    uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+  // Try with docker
+  if (
+    (
+      ((globalThis?.tryMermaidWithDocker === true) || (process?.env?.MERMAID_USE_DOCKER === "true")) ||
+      (process.platform === "linux" && (await isDockerAvailable()))
+    ) &&
+    !(process?.env?.MERMAID_USE_DOCKER === "false")
+  ) {
+    const fileDir = path.resolve(path.dirname(outputFlowMdFile));
+    const fileName = path.basename(outputFlowMdFile);
+    const dockerCommand = `docker run --rm -v "${fileDir}:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "${fileName}" -o "${fileName}"`;
+    try {
+      await execCommand(dockerCommand, this, { output: false, fail: true, debug: false });
+      return true;
+    } catch (e: any) {
+      uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation with Docker: ${e.message}`) + "\n" + c.grey(e.stack));
+      if (JSON.stringify(e).includes("Cannot connect to the Docker daemon")) {
+        process.env.MERMAID_USE_DOCKER = "false";
+        return await generateMarkdownFileWithMermaid(outputFlowMdFile);
+      }
+      return false;
+    }
+  }
+  else if (!(globalThis?.tryMermaidWithDocker === true)) {
+    // Try with NPM package
+    const isMmdAvailable = await isMermaidAvailable();
+    uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
+    const puppeteerConfigPath = path.join(PACKAGE_ROOT_DIR, 'defaults', 'puppeteer-config.json');
+    const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}" --puppeteerConfigFile "${puppeteerConfigPath}"`;
+    try {
+      await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false });
+      return true;
+    } catch (e: any) {
+      uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+      if (((e?.message || "") + (e?.stack || "") + (e?.stderr || "")).includes("Protocol error")) {
+        globalThis.tryMermaidWithDocker = true;
+        return await generateMarkdownFileWithMermaid(outputFlowMdFile);
+      }
+      return false;
+    }
+  }
+  else {
+    uxLog(this, c.yellow("Either mermaid-cli or docker is required to work to generate mermaidJs Graphs. Please install/fix one of them if you want to generate SVG diagrams."));
     return false;
   }
 }

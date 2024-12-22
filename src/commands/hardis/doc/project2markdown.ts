@@ -104,7 +104,9 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     await this.writeInstalledPackages();
 
     // List flows & generate doc
-    await this.generateFlowsDocumentation();
+    if (!(process?.env?.GENERATE_FLOW_DOC === 'false')) {
+      await this.generateFlowsDocumentation();
+    }
 
     // Footer
     this.mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
@@ -131,10 +133,12 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
   }
 
   private async generateFlowsDocumentation() {
+    uxLog(this, c.cyan("Generating Flows Visual documentation... (if you don't want it, define GENERATE_FLOW_DOC=false in your environment variables)"));
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
     const flowFiles = await listFlowFiles(packageDirs);
     const flowErrors: string[] = [];
+    const flowWarnings: string[] = [];
     const flowDescriptions: any[] = [];
     for (const flowFile of flowFiles) {
       uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
@@ -157,11 +161,14 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       }
       const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile);
       if (!gen2res) {
-        flowErrors.push(flowFile);
+        flowWarnings.push(flowFile);
         continue;
       }
     }
-    uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowErrors.length} Flows documentation`));
+    uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowWarnings.length - flowErrors.length} Flows documentation`));
+    if (flowErrors.length > 0) {
+      uxLog(this, c.yellow(`Partially generated documentation (Markdown with mermaidJs but without SVG) for ${flowWarnings.length} Flows: ${flowWarnings.join(", ")}`));
+    }
     if (flowErrors.length > 0) {
       uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${flowErrors.join(", ")}`));
     }
