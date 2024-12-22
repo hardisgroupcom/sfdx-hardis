@@ -226,7 +226,7 @@ export async function smartDeploy(
             ` --job-id ${deploymentCheckId} ` +
             (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
             ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
-            ` --verbose` +
+            (debugMode ? ' --verbose' : '') +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
           const quickDeployRes = await execSfdxJson(quickDeployCommand, commandThis, {
             output: true,
@@ -281,7 +281,7 @@ export async function smartDeploy(
         (options.postDestructiveChanges ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
         (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
-        ' --verbose' +
+        (debugMode ? ' --verbose' : '') +
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
         ` --json`;
@@ -835,7 +835,7 @@ export async function deployMetadatas(
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
     ` --api-version ${options.apiVersion || CONSTANTS.API_VERSION}` +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
-    ' --verbose' +
+    (options.debug ? ' --verbose' : '') +
     ' --json';
   let deployRes;
   try {
