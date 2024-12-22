@@ -166,24 +166,34 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${flowErrors.join(", ")}`));
     }
 
-    await this.writeFlowsTable(flowDescriptions);
+    // Write table on doc index
+    const flowTableLines = await this.buildFlowsTable(flowDescriptions, 'flows/');
+    this.mdLines.push(...flowTableLines);
+    this.mdLines.push(...["___", ""])
+
+    // Write index file for flow folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
+    const flowTableLinesForIndex = await this.buildFlowsTable(flowDescriptions, '');
+    const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
+    await fs.writeFile(flowIndexFile, flowTableLinesForIndex.join("\n") + "\n");
+    uxLog(this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
   }
 
-  private async writeFlowsTable(flowDescriptions: any[]) {
-    this.mdLines.push(...[
+  private async buildFlowsTable(flowDescriptions: any[], prefix: string) {
+    const lines: string[] = [];
+    lines.push(...[
       "## Flows",
       "",
       "| Object | Name      | Type | Description |",
       "| :----  | :-------- | :--: | :---------- | "
     ]);
     for (const flow of sortArray(flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]) {
-      this.mdLines.push(...[
-        `| ${flow.object} | [${flow.name}](flows/${flow.name}.md) | ${flow.type} | ${flow.description} |`
+      lines.push(...[
+        `| ${flow.object} | [${flow.name}](${prefix}${flow.name}.md) | ${flow.type} | ${flow.description} |`
       ]);
     }
-    this.mdLines.push("");
-    this.mdLines.push("___");
-    this.mdLines.push("");
+    lines.push("");
+    return lines;
   }
 
   private async writeInstalledPackages() {
