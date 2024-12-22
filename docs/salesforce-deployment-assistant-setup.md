@@ -45,6 +45,16 @@ Replace:
 
 `sf project:deploy:start -x manifest/package.xml --checkonly`
 
-by
+with:
 
 `sf hardis:project:deploy:start -x manifest/package.xml --checkonly`
+
+### Advanced example
+
+Replace:
+
+`sf project deploy start --dry-run --source-dir force-app --ignore-warnings --ignore-conflicts --test-level RunLocalTests   --coverage-formatters json-summary --verbose --wait 120 --json`
+
+with:
+
+`sf hardis project deploy start --dry-run --source-dir force-app --ignore-warnings --ignore-conflicts --test-level RunLocalTests   --coverage-formatters json-summary --verbose --wait 120 --json`
