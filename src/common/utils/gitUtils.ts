@@ -103,6 +103,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
   uxLog(this, c.cyan('Computing commits summary...'));
   const currentGitBranch = await getCurrentGitBranch();
   let logResults: (DefaultLogFields & ListLogLine)[] = [];
+  let previousTargetBranchCommit = "";
   if (checkOnly || GitProvider.isDeployBeforeMerge()) {
     const prInfo = await GitProvider.getPullRequestInfo();
     const deltaScope = await getGitDeltaScope(
@@ -110,8 +111,10 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
       prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH
     );
     logResults = [...deltaScope.logResult.all];
+    previousTargetBranchCommit = deltaScope.fromCommit;
   } else {
     const logRes = await git().log([`HEAD^..HEAD`]);
+    previousTargetBranchCommit = "HEAD^"
     logResults = [...logRes.all];
   }
   logResults = arrayUniqueByKeys(logResults, ['message', 'body']).reverse();
@@ -189,7 +192,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
       }
     }
     const flowListUnique = [...new Set(flowList)].sort();
-    flowDiffMarkdown = await flowDiffToMarkdown(flowListUnique, logResults[0].hash, (logResults.at(-1) || { hash: "" }).hash);
+    flowDiffMarkdown = await flowDiffToMarkdown(flowListUnique, previousTargetBranchCommit, logResults[0].hash);
   }
 
   return {
