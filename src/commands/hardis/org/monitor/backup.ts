@@ -47,6 +47,10 @@ As we can retrieve only 10000 files by call, the list of all metadatas will be c
 ## In CI/CD
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+
+## Documentation
+
+[Doc generation (including visual flows)](${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/) is triggered at the end of the command.
 `;
 
   public static examples = [
