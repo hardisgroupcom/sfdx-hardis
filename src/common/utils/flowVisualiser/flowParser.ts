@@ -180,7 +180,7 @@ function getFlowType(flowMap: FlowMap): string {
  * M E R M A I D
  *=================================================================*/
 async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<string> {
-    console.log("options", options)
+    // console.log("options", options)
     const title = `# ${flowMap['label']}
 
 - Type: **${getFlowType(flowMap)}**

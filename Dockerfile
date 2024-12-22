@@ -47,6 +47,8 @@ RUN npm install --no-cache yarn -g && \
     sf version --verbose --json && \
     rm -rf /root/.npm/_cacache
 
+ENV MERMAID_MODES="docker"
+
 # Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
 COPY ref/workarounds/dateUtil.js /usr/local/lib/node_modules/@salesforce/cli/node_modules/@salesforce/apex-node/lib/src/utils/dateUtil.js
 COPY ref/workarounds/junitReporter.js /usr/local/lib/node_modules/@salesforce/cli/node_modules/@salesforce/apex-node/lib/src/reporters/junitReporter.js

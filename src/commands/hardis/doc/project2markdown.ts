@@ -33,9 +33,16 @@ Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
 Generates markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
 
-This command requires @mermaid-js/mermaid-cli to be installed.
+To generate Flow documentations, this command requires @mermaid-js/mermaid-cli
 
-Run \`npm install @mermaid-js/mermaid-cli --global\`
+- Run \`npm install @mermaid-js/mermaid-cli --global\` if puppeteer works in your environment
+- It can also be run as a docker image
+
+Both modes will be tried by default, but you can also force one of them by defining environment variable \`MERMAID_MODES=docker\` or \`MERMAID_MODES=cli\`
+
+_sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/puppeteer: if you can help, please submit a PR !_
+
+![Screenshot flow doc](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-flow-doc.jpg)
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc.jpg)
 
@@ -166,7 +173,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       }
     }
     uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowWarnings.length - flowErrors.length} Flows documentation`));
-    if (flowErrors.length > 0) {
+    if (flowWarnings.length > 0) {
       uxLog(this, c.yellow(`Partially generated documentation (Markdown with mermaidJs but without SVG) for ${flowWarnings.length} Flows: ${flowWarnings.join(", ")}`));
     }
     if (flowErrors.length > 0) {
