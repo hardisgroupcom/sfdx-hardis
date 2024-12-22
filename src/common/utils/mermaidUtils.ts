@@ -51,8 +51,11 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
 export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string): Promise<boolean> {
   // Try with docker
   if (
-    (globalThis?.tryMermaidWithDocker === true) || (process?.env?.MERMAID_USE_DOCKER === "true") ||
-    (process.platform === "linux" && (await isDockerAvailable()))
+    (
+      ((globalThis?.tryMermaidWithDocker === true) || (process?.env?.MERMAID_USE_DOCKER === "true")) ||
+      (process.platform === "linux" && (await isDockerAvailable()))
+    ) &&
+    !(process?.env?.MERMAID_USE_DOCKER === "false")
   ) {
     const fileDir = path.resolve(path.dirname(outputFlowMdFile));
     const fileName = path.basename(outputFlowMdFile);
@@ -76,7 +79,7 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string):
       return true;
     } catch (e: any) {
       uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
-      if (e.stack.includes("Network.enable timed out")) {
+      if (((e?.message || "") + (e?.stack || "") + (e?.stderr || "")).includes("Protocol error")) {
         globalThis.tryMermaidWithDocker = true;
         return await generateMarkdownFileWithMermaid(outputFlowMdFile);
       }

@@ -10,6 +10,9 @@ RUN apk add --update --no-cache \
             bash \
             nodejs \
             npm \
+            # Required for docker
+            docker \
+            openrc \
             # Required for puppeteer
             chromium \
             nss \
@@ -17,6 +20,9 @@ RUN apk add --update --no-cache \
             harfbuzz \
             ca-certificates \
             ttf-freefont
+
+# Start docker daemon in case mermaid-cli image is used
+RUN rc-update add docker boot && (rc-service docker start || true)
 
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
