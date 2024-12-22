@@ -48,21 +48,20 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
 }
 
 export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string): Promise<boolean> {
-  const mermaidUnavailableTools = globalThis.mermaidUnavailableTools || [];
   const isDockerAvlbl = await isDockerAvailable();
-  if (isDockerAvlbl && !mermaidUnavailableTools.includes("docker")) {
+  if (isDockerAvlbl && !(globalThis.mermaidUnavailableTools || []).includes("docker")) {
     const dockerSuccess = await generateMarkdownFileWithMermaidDocker(outputFlowMdFile);
     if (dockerSuccess) {
       return true;
     }
   }
-  if (!mermaidUnavailableTools.includes("cli")) {
+  if (!(globalThis.mermaidUnavailableTools || []).includes("cli")) {
     const mmCliSuccess = await generateMarkdownFileWithMermaidCli(outputFlowMdFile);
     if (mmCliSuccess) {
       return true;
     }
   }
-  if (mermaidUnavailableTools.includes("cli") && mermaidUnavailableTools.includes("docker")) {
+  if ((globalThis.mermaidUnavailableTools || []).includes("cli") && (globalThis.mermaidUnavailableTools || []).includes("docker")) {
     uxLog(this, c.yellow("Either mermaid-cli or docker is required to work to generate mermaidJs Graphs. Please install/fix one of them if you want to generate SVG diagrams."));
   }
   return false;
@@ -79,6 +78,7 @@ export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFile: st
     uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation with Docker: ${e.message}`) + "\n" + c.grey(e.stack));
     if (JSON.stringify(e).includes("Cannot connect to the Docker daemon")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("docker");
+      uxLog(this, c.yellow("[Mermaid] Docker unavailable: do not try again"));
     }
     return false;
   }
@@ -93,9 +93,10 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFile: strin
     await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false });
     return true;
   } catch (e: any) {
-    uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
-    if (JSON.stringify(e).includes("Protocol error")) {
+    uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation with CLI: ${e.message}`) + "\n" + c.grey(e.stack));
+    if (JSON.stringify(e).includes("timed out")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("cli");
+      uxLog(this, c.yellow("[Mermaid] CLI unavailable: do not try again"));
     }
     return false;
   }
