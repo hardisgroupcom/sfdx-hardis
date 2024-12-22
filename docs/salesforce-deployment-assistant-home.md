@@ -18,7 +18,13 @@ The assistant contain core rules and can optionally be integrated with AI to pro
 
 In addition to deployment tips, comments will be posted with Visual Git Diff for Flows.
 
-![](assets/images/flow-visual-git-diff.gif)
+🟩 = added
+
+🟥 = removed
+
+🟧 = updated
+
+![](assets/images/flow-visual-git-diff.jpg)
 
 ## Integrations
 
