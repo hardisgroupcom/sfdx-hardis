@@ -65,10 +65,14 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string):
       return true;
     } catch (e: any) {
       uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation with Docker: ${e.message}`) + "\n" + c.grey(e.stack));
+      if (JSON.stringify(e).includes("Cannot connect to the Docker daemon")) {
+        process.env.MERMAID_USE_DOCKER = "false";
+        return await generateMarkdownFileWithMermaid(outputFlowMdFile);
+      }
       return false;
     }
   }
-  else {
+  else if (!(globalThis?.tryMermaidWithDocker === true)) {
     // Try with NPM package
     const isMmdAvailable = await isMermaidAvailable();
     uxLog(this, c.grey(`Generating mermaidJs Graphs in ${outputFlowMdFile}...`));
@@ -85,6 +89,10 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string):
       }
       return false;
     }
+  }
+  else {
+    uxLog(this, c.yellow("Either mermaid-cli or docker is required to work to generate mermaidJs Graphs. Please install/fix one of them if you want to generate SVG diagrams."));
+    return false;
   }
 }
 
