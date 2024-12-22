@@ -104,7 +104,9 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     await this.writeInstalledPackages();
 
     // List flows & generate doc
-    await this.generateFlowsDocumentation();
+    if (!(process?.env?.GENERATE_FLOW_DOC === 'false')) {
+      await this.generateFlowsDocumentation();
+    }
 
     // Footer
     this.mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
@@ -131,6 +133,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
   }
 
   private async generateFlowsDocumentation() {
+    uxLog(this, c.cyan("Generating Flows Visual documentation... (if you don't want it, define GENERATE_FLOW_DOC=false in your environment variables)"));
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
     const flowFiles = await listFlowFiles(packageDirs);
