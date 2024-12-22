@@ -17,33 +17,33 @@ on:
 # Set the Job #
 ###############
 jobs:
-  # deploy:
-  #   name: Deploy alpha
-  #   runs-on: ubuntu-latest
-  #   permissions: read-all
-  #   environment:
-  #     name: alpha
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     # Setup .npmrc file to publish to npm
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 20
-  #         registry-url: 'https://registry.npmjs.org'
-  #         always-auth: true
-  #         # Defaults to the user or organization that owns the workflow file
-  #         scope: 'hardisgroupcom'
-  #     - run: yarn install --frozen-lockfile && yarn run compile
-  #     - run: yarn config set version-git-tag false
-  #     - run: ALPHAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$ALPHAID"
-  #     - run: yarn config set network-timeout 300000
-  #     - run: yarn publish --tag alpha
-  #       env:
-  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  deploy:
+    name: Deploy alpha
+    runs-on: ubuntu-latest
+    permissions: read-all
+    environment:
+      name: alpha
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+          always-auth: true
+          # Defaults to the user or organization that owns the workflow file
+          scope: "hardisgroupcom"
+      - run: yarn install --frozen-lockfile && yarn run compile
+      - run: yarn config set version-git-tag false
+      - run: ALPHAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$ALPHAID"
+      - run: yarn config set network-timeout 300000
+      - run: yarn publish --tag alpha
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_alpha_to_registry:
     name: Push alpha Docker image to Docker Hub
-    # needs: deploy
+    needs: deploy
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -102,7 +102,7 @@ jobs:
 
   push_alpha_to_registry_sfdx_recommended:
     name: Push alpha Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
-    # needs: deploy
+    needs: deploy
     runs-on: ubuntu-latest
     permissions:
       packages: write
