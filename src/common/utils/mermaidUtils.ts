@@ -62,7 +62,9 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string):
       return true;
     }
   }
-  uxLog(this, c.yellow("Either mermaid-cli or docker is required to work to generate mermaidJs Graphs. Please install/fix one of them if you want to generate SVG diagrams."));
+  if (mermaidUnavailableTools.includes("cli") && mermaidUnavailableTools.includes("docker")) {
+    uxLog(this, c.yellow("Either mermaid-cli or docker is required to work to generate mermaidJs Graphs. Please install/fix one of them if you want to generate SVG diagrams."));
+  }
   return false;
 }
 

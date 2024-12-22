@@ -166,7 +166,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       }
     }
     uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowWarnings.length - flowErrors.length} Flows documentation`));
-    if (flowErrors.length > 0) {
+    if (flowWarnings.length > 0) {
       uxLog(this, c.yellow(`Partially generated documentation (Markdown with mermaidJs but without SVG) for ${flowWarnings.length} Flows: ${flowWarnings.join(", ")}`));
     }
     if (flowErrors.length > 0) {
