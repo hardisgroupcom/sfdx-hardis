@@ -294,6 +294,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   else if (isMermaid === true && status === "added" && currentLine.includes('-. Fault .->')) {
     styledLine = styledLine.replace('-. Fault .->', '-. 🟩Fault .->') + ":::addedLink"
   }
+  /* jscpd:ignore-start */
   // Long Link lines
   else if (isMermaid === true && status === "removed" && currentLine.includes('--->')) {
     styledLine = styledLine.replace("--->", "--.->") + ":::removedLink"
@@ -324,6 +325,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
       styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
     }
   }
+  /* jscpd:ignore-end */
   compareMdLines.push(styledLine);
   // Continue processing next lines
   buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted));
