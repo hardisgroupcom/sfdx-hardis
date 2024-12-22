@@ -192,7 +192,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
       }
     }
     const flowListUnique = [...new Set(flowList)].sort();
-    flowDiffMarkdown = await flowDiffToMarkdown(flowListUnique, previousTargetBranchCommit, logResults[0].hash);
+    flowDiffMarkdown = await flowDiffToMarkdown(flowListUnique, previousTargetBranchCommit, (logResults.at(-1) || logResults[0]).hash);
   }
 
   return {
