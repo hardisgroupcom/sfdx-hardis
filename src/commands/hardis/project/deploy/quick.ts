@@ -4,9 +4,12 @@ import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
 import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
+import { handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 
 export default class ProjectDeployStart extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy quick** that displays tips to solve deployment errors.
+
+Note: Use **--json** argument to have better results
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
@@ -50,6 +53,10 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 \`\`\`
 `;
+
+  public static aliases = [
+    "hardis:deploy:quick"
+  ]
 
   public static flags: any = {
     "api-version": Flags.integer({
@@ -108,7 +115,10 @@ commandsPostDeploy:
     }
     // Run post deployment commands if defined
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: false, conn: conn });
-    await GitProvider.managePostPullRequestComment();
+    // Post success deployment notifications
+    if (process.exitCode === 0) {
+      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, flags["debug"]);
+    }
     return result;
   }
 }

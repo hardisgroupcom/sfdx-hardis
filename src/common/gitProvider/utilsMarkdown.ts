@@ -1,3 +1,9 @@
+import c from "chalk";
+import fs from "fs-extra"
+import { MetadataUtils } from "../metadata-utils/index.js";
+import { uxLog } from "../utils/index.js";
+import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
+
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
   for (const err of errorsAndTips) {
@@ -66,6 +72,36 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
     return `❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`;
   } else {
     return `✅ Your code coverage is ok :) **${orgCoverage}%**, while target is **${orgCoverageTarget}%**`;
+  }
+}
+
+export async function flowDiffToMarkdown(flowNames: string[], fromCommit: string, toCommit: string): Promise<any> {
+  if (flowNames.length === 0) {
+    return "";
+  }
+  const flowDiffMarkdownList: any = [];
+  let flowDiffFilesSummary = "## Flow changes\n\n";
+  for (const flowName of flowNames) {
+    flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
+    const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
+    try {
+      const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
+      if (diffMdFile) {
+        const flowDiffMarkdownMermaid = await fs.readFile(diffMdFile + ".mermaid.md", "utf8");
+        flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid });
+      }
+    } catch (e: any) {
+      uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff: ${e.message}`));
+      const flowGenErrorMd = `# ${flowName}
+
+Error while generating Flows visual git diff
+`;
+      flowDiffMarkdownList.push({ name: flowName, markdown: flowGenErrorMd });
+    }
+  }
+  return {
+    markdownSummary: flowDiffFilesSummary,
+    flowDiffMarkdownList: flowDiffMarkdownList
   }
 }
 

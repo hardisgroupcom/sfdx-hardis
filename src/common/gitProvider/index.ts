@@ -119,15 +119,29 @@ export abstract class GitProvider {
       if (prData.commitsSummary) {
         markdownBody += "\n\n" + prData.commitsSummary;
       }
+      if (prData?.flowDiffMarkdown?.markdownSummary) {
+        markdownBody += "\n\n" + prData.flowDiffMarkdown.markdownSummary;
+      }
       const prMessageRequest: PullRequestMessageRequest = {
         title: prData.title,
         message: markdownBody,
         status: prData.status,
         messageKey: prData.messageKey,
       };
+      // Post main message
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
       if (postResult && postResult.posted === true) {
         globalThis.pullRequestCommentSent = true;
+      }
+      // Post additional comments
+      for (const flowDiff of prData?.flowDiffMarkdown?.flowDiffMarkdownList || []) {
+        const prMessageRequestAdditional: PullRequestMessageRequest = {
+          title: `Differences for Flow ${flowDiff.name}`,
+          message: flowDiff.markdown,
+          status: "valid",
+          messageKey: `sfdx-hardis-flow-diff-${flowDiff.name}`,
+        };
+        await gitProvider.tryPostPullRequestMessage(prMessageRequestAdditional);
       }
     } else {
       uxLog(this, c.gray(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
