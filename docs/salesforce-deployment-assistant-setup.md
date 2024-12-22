@@ -6,13 +6,19 @@ description: Learn how to setup Salesforce deployment assistant
 
 # Setup Salesforce Deployment Assistant
 
+## Configure integrations
+
+Make sure to have configured your [GitHub](salesforce-ci-cd-setup-integration-github.md), [Gitlab](salesforce-ci-cd-setup-integration-gitlab.md), [Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md) or [BitBucket](salesforce-ci-cd-setup-integration-bitbucket.md) integration so the deployment assistant can post its help in Pull Request comments.
+
+If you want to **supercharge Salesforce deployment assistant with AI**, process [sfdx-hardis AI setup](salesforce-ai-setup.md).
+
+You can also receive [Slack](salesforce-ci-cd-setup-integration-slack.md), [Ms Teams](salesforce-ci-cd-setup-integration-ms-teams.md) and [Email](salesforce-ci-cd-setup-integration-email.md) notifications in case of successful deployment.
+
+If you configure [JIRA](salesforce-ci-cd-setup-integration-jira.md) or [Generic Ticketing](salesforce-ci-cd-setup-integration-generic-ticketing.md) integrations, ticket numbers will be extracted and displayed in the Pull Request comment.
+
 ## Using sfdx-hardis CI/CD
 
 If you are using [sfdx-hardis CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/), you are already all set !
-
-Just make sure to have configured your [GitHub](salesforce-ci-cd-setup-integration-github.md), [Gitlab](salesforce-ci-cd-setup-integration-gitlab.md), [Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md) or [BitBucket](salesforce-ci-cd-setup-integration-bitbucket.md) integration so the deployment assistant can post its help in Pull Request comments.
-
-If you want to **supercharge Salesforce deployment assistant with AI**, process [sfdx-hardis AI setup](salesforce-ai-setup.md).
 
 ## Using custom CI/CD pipeline
 
@@ -31,15 +37,14 @@ Configure your [GitHub](salesforce-ci-cd-setup-integration-github.md), [Gitlab](
 
 _Notes:_
 
-- _sfdx-hardis deployment assistant currently do not support --json option. If you really need it please request it in sfdx-hardis GitHub issues !_
-- _there is no sfdx-hardis wrapper command yet for `sf project deploy start`. If you really need it please request it in sfdx-hardis GitHub issues !_
+- _sfdx-hardis deployment assistant now works better with **--json** option please use it :)
 
 ### Example
 
 Replace:
 
-`sfdx force:source:deploy -x manifest/package.xml --checkonly`
+`sf project:deploy:start -x manifest/package.xml --checkonly`
 
 by
 
-`sf hardis:source:deploy -x manifest/package.xml --checkonly`
+`sf hardis:project:deploy:start -x manifest/package.xml --checkonly`

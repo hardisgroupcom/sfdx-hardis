@@ -125,7 +125,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   }
   // uxLog(this, JSON.stringify(mixedLines, null, 2));
   const compareMdLines: string[] = [];
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, false);
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false);
 
   // Write markdown with diff in a file
   const reportDir = await getReportDirectory();
@@ -146,7 +146,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   return diffMdFile;
 }
 
-function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid) {
+function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted) {
   if (mixedLines.length === 0) {
     return;
   }
@@ -164,34 +164,112 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
   if (styledLine.startsWith("|") && mixedLines.length > 1 && mixedLines[0][1] === '' && mixedLines[1][1].startsWith("|")) {
     mixedLines.shift();
   }
+  // Skip table block if there are no updated lines within
+  if (styledLine.startsWith("## ") && !styledLine.startsWith("## Flow")) {
+    let updatedInBlock = false;
+    let nextBlockPos = 0;
+    for (const nextLine of mixedLines) {
+      if (nextLine[1].startsWith("## ") || nextLine[1].startsWith("_Documentation")) {
+        break;
+      }
+      if (nextLine[0] === "removed" || nextLine[0] === "added") {
+        updatedInBlock = true;
+      }
+      nextBlockPos++;
+    }
+    if (!updatedInBlock) {
+      const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
+      // Continue processing next lines
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted);
+      return;
+    }
+  }
+  /* jscpd:ignore-start */
+  // Skip node block if there are no updated lines within
+  else if (styledLine.startsWith("### ")) {
+    let updatedInBlock = false;
+    let nextBlockPos = 0;
+    for (const nextLine of mixedLines) {
+      if (nextLine[1].startsWith("### ") || nextLine[1].startsWith("_Documentation")) {
+        break;
+      }
+      if (nextLine[0] === "removed" || nextLine[0] === "added") {
+        updatedInBlock = true;
+      }
+      nextBlockPos++;
+    }
+    if (!updatedInBlock) {
+      const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
+      // Continue processing next lines
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted);
+      return;
+    }
+  }
+  /* jscpd:ignore-end */
+  // Skip table lines that have not been updated
+  else if (!isMermaid && styledLine.startsWith("|") && isTableStarted === false) {
+    isTableStarted = true;
+    const tableFilteredLines: any[] = [];
+    let endTablePos = 0;
+    for (const nextLine of mixedLines) {
+      if (!nextLine[1].startsWith("|") && nextLine[1] !== "") {
+        break;
+      }
+      if (nextLine[0] === "removed" || nextLine[0] === "added" || endTablePos === 0) {
+        tableFilteredLines.push(nextLine);
+      }
+      endTablePos++;
+    }
+    compareMdLines.push(styledLine);
+    const mixedLinesStartingFromEndOfTable = mixedLines.slice(endTablePos);
+    const newMixedLines = [...tableFilteredLines, ...mixedLinesStartingFromEndOfTable];
+    // Continue processing next lines
+    buildFinalCompareMarkdown(newMixedLines, compareMdLines, isMermaid, true);
+    return;
+  }
 
   // Tables lines
-  if (!isMermaid && status === "removed" && styledLine.startsWith("|")) {
-    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: red;">${col}</span>`).join("|") + "|";
+  if (!isMermaid && status === "removed" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
+    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: red;"><i>${col}</i></span>`).join("|") + "|";
   }
-  else if (!isMermaid && status === "added" && styledLine.startsWith("|")) {
-    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: green;">${col}</span>`).join("|") + "|";
+  else if (!isMermaid && status === "added" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
+    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: green;"><b>${col}</b></span>`).join("|") + "|";
+  }
+
+  // Normal lines header 2
+  else if (!isMermaid && status === "removed" && styledLine.startsWith("###")) {
+    styledLine = `### 🟥${styledLine.replace("### ", "")}`;
+  }
+  else if (!isMermaid && status === "added" && styledLine.startsWith("###")) {
+    styledLine = `### 🟩${styledLine.replace("### ", "")}`;
+  }
+  // Normal lines header 3
+  else if (!isMermaid && status === "removed" && styledLine.startsWith("##")) {
+    styledLine = `## 🟥${styledLine.replace("## ", "")}`;
+  }
+  else if (!isMermaid && status === "added" && styledLine.startsWith("##")) {
+    styledLine = `## 🟩${styledLine.replace("## ", "")}`;
   }
   // Normal lines
-  else if (!isMermaid && status === "removed" && styledLine !== "") {
-    styledLine = `<span style="background-color: red;">🟥${styledLine}</span>`;
+  else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-")) {
+    styledLine = `<span style="background-color: red;"><i>🟥${styledLine}</i></span>`;
   }
-  else if (!isMermaid && status === "added" && styledLine !== "") {
-    styledLine = `<span style="background-color: green;">🟩${styledLine}</span>`;
+  else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-")) {
+    styledLine = `<span style="background-color: green;"><b>🟩${styledLine}</b></span>`;
   }
   // Boxes lines
   else if (isMermaid === true && status === "removed" && currentLine.split(":::").length === 2) {
     styledLine = styledLine + "Removed"
     if (styledLine.split('"').length === 3) {
       const splits = styledLine.split('"');
-      styledLine = splits[0] + '"🟥' + splits[1] + '"' + splits[2]
+      styledLine = splits[0] + '"🟥<i>' + splits[1] + '</i>"' + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.split(":::").length === 2) {
     styledLine = styledLine + "Added"
     if (styledLine.split('"').length === 3) {
       const splits = styledLine.split('"');
-      styledLine = splits[0] + '"🟩' + splits[1] + '"' + splits[2]
+      styledLine = splits[0] + '"🟩<b>' + splits[1] + '</b>"' + splits[2]
     }
   }
   else if (isMermaid === true && currentLine.includes(":::")) {
@@ -204,9 +282,31 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
         styledLine = styledLine + "Changed"
         if (styledLine.split('"').length === 3) {
           const splits = styledLine.split('"');
-          styledLine = splits[0] + '"🟧' + splits[1] + '"' + splits[2]
+          styledLine = splits[0] + '"🟧<b>' + splits[1] + '</b>"' + splits[2]
         }
       }
+    }
+  }
+  // Long Link lines
+  else if (isMermaid === true && status === "removed" && currentLine.includes('-. Fault .->')) {
+    styledLine = styledLine.replace('-. Fault .->', '-. 🟥Fault .->') + ":::removedLink"
+  }
+  else if (isMermaid === true && status === "added" && currentLine.includes('-. Fault .->')) {
+    styledLine = styledLine.replace('-. Fault .->', '-. 🟩Fault .->') + ":::addedLink"
+  }
+  // Long Link lines
+  else if (isMermaid === true && status === "removed" && currentLine.includes('--->')) {
+    styledLine = styledLine.replace("--->", "--.->") + ":::removedLink"
+    if (styledLine.split("|").length === 3) {
+      const splits = styledLine.split("|");
+      styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
+    }
+  }
+  else if (isMermaid === true && status === "added" && currentLine.includes('--->')) {
+    styledLine = styledLine.replace("--->", "===>") + ":::addedLink"
+    if (styledLine.split("|").length === 3) {
+      const splits = styledLine.split("|");
+      styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
     }
   }
   // Link lines
@@ -214,19 +314,19 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid)
     styledLine = styledLine.replace("-->", "-.->") + ":::removedLink"
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟥" + splits[1] + "|" + splits[2]
+      styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('-->')) {
     styledLine = styledLine.replace("-->", "==>") + ":::addedLink"
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟩" + splits[1] + "|" + splits[2]
+      styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
     }
   }
   compareMdLines.push(styledLine);
   // Continue processing next lines
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid)
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted));
 }
 
 async function buildMermaidMarkdown(commit, flowFile) {
