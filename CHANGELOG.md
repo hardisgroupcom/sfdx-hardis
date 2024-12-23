@@ -29,6 +29,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Doc
   - Update Microsoft Teams notifications integration User Guide
+  - Add troubleshooting section in Email integration User Guide
 
 ## [5.10.1] 2024-12-12
 

@@ -27,6 +27,14 @@ Examples:
 - `NOTIF_EMAIL_ADDRESS=admin@cloudity.com`
 - `NOTIF_EMAIL_ADDRESS=admin@cloudity.com,another.user@cloudity.com,nico@cloudity.com`
 
+## Troubleshooting
+
+If the emails are not sent, apply the following configuration on the Monitoring / Deployment user settings
+
+- Send through Salesforce
+
+![](assets/images/screenshot-email-config.jpg)
+
 That's all, you're all set !
 
 
