@@ -276,7 +276,7 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
 
 async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
     let nodeDetailMd = "## More details\n\n<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
-    let nodeDefStr = "START(( START ))\n";
+    let nodeDefStr = "START(( START )):::startClass\n";
     for (const property in flowMap) {
         const type = flowMap[property].type;
         let label: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].label : "";
@@ -316,7 +316,7 @@ async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
         }
     }
     return {
-        nodeDefStr: (nodeDefStr + "END(( END ))\n\n"),
+        nodeDefStr: nodeDefStr + "END(( END )):::endClass\n\n",
         nodeDetailMd: nodeDetailMd + "</details>\n\n"
     };
 }

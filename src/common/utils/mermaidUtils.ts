@@ -10,7 +10,6 @@ import moment from "moment";
 import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 
-
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
   if (IS_MERMAID_AVAILABLE !== null) {
@@ -130,21 +129,18 @@ classDef recordUpdatesRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-wid
 classDef screensRemoved fill:#1B96FF,color:white,stroke:#ff0000,stroke-width:12px;
 classDef subflowsRemoved fill:#032D60,color:white,stroke:#ff0000,stroke-width:12px;
 
-classDef actionCallsChanged fill:#344568,color:white,stroke:#edaa18,stroke-width:12px;
-classDef assignmentsChanged fill:#F97924,color:white,stroke:#edaa18,stroke-width:12px;
-classDef collectionProcessorsChanged fill:#DD7A00,color:white,stroke:#edaa18,stroke-width:12px;
-classDef customErrorsChanged fill:#032D60,color:white,stroke:#edaa18,stroke-width:12px;
-classDef decisionsChanged fill:#DD7A00,color:white,stroke:#edaa18,stroke-width:12px;
-classDef loopsChanged fill:#E07D1C,color:undefined,stroke:#edaa18,stroke-width:12px;
-classDef recordCreatesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
-classDef recordDeletesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
-classDef recordLookupsChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
-classDef recordUpdatesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
-classDef screensChanged fill:#1B96FF,color:white,stroke:#edaa18,stroke-width:12px;
-classDef subflowsChanged fill:#032D60,color:white,stroke:#edaa18,stroke-width:12px;
-
-classDef addedLink stroke:#00ff00,stroke-width:3px;
-classDef removedLink stroke:#ff0000,stroke-width:3px;
+classDef actionCallsChanged fill:#344568,color:white,stroke:#FFA500,stroke-width:12px;
+classDef assignmentsChanged fill:#F97924,color:white,stroke:#FFA500,stroke-width:12px;
+classDef collectionProcessorsChanged fill:#DD7A00,color:white,stroke:#FFA500,stroke-width:12px;
+classDef customErrorsChanged fill:#032D60,color:white,stroke:#FFA500,stroke-width:12px;
+classDef decisionsChanged fill:#DD7A00,color:white,stroke:#FFA500,stroke-width:12px;
+classDef loopsChanged fill:#E07D1C,color:undefined,stroke:#FFA500,stroke-width:12px;
+classDef recordCreatesChanged fill:#F9548A,color:white,stroke:#FFA500,stroke-width:12px;
+classDef recordDeletesChanged fill:#F9548A,color:white,stroke:#FFA500,stroke-width:12px;
+classDef recordLookupsChanged fill:#F9548A,color:white,stroke:#FFA500,stroke-width:12px;
+classDef recordUpdatesChanged fill:#F9548A,color:white,stroke:#FFA500,stroke-width:12px;
+classDef screensChanged fill:#1B96FF,color:white,stroke:#FFA500,stroke-width:12px;
+classDef subflowsChanged fill:#032D60,color:white,stroke:#FFA500,stroke-width:12px;
 `
 }
 
@@ -176,7 +172,8 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   }
   // uxLog(this, JSON.stringify(mixedLines, null, 2));
   const compareMdLines: string[] = [];
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false);
+  const linkLines: string[] = [];
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false, linkLines);
 
   // Write markdown with diff in a file
   const reportDir = await getReportDirectory();
@@ -197,7 +194,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   return diffMdFile;
 }
 
-function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted) {
+function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted, linkLines) {
   if (mixedLines.length === 0) {
     return;
   }
@@ -208,7 +205,26 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     isMermaid = true;
   } else if (isMermaid === true && currentLine.includes("```")) {
     compareMdLines.push(...getMermaidExtraClasses().split("\n"));
-    isMermaid = false;
+    // Build link positions
+    let pos = 0;
+    const positions = {
+      added: [],
+      removed: [],
+      unchanged: []
+    }
+    for (const linkType of linkLines) {
+      positions[linkType].push(pos);
+      pos++;
+    }
+    // Build added and removed links styles
+    if (positions.added.length > 0) {
+      compareMdLines.push("linkStyle " + positions.added.join(",") + " stroke:#00ff00,stroke-width:4px,color:green;");
+    }
+    if (positions.removed.length > 0) {
+      compareMdLines.push("linkStyle " + positions.removed.join(",") + " stroke:#ff0000,stroke-width:4px,color:red;");
+    }
+
+    isMermaid = false
   }
   let styledLine = currentLine;
   // Remove next diff line if not relevant
@@ -231,7 +247,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted, linkLines);
       return;
     }
   }
@@ -252,7 +268,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted, linkLines);
       return;
     }
   }
@@ -275,7 +291,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     const mixedLinesStartingFromEndOfTable = mixedLines.slice(endTablePos);
     const newMixedLines = [...tableFilteredLines, ...mixedLinesStartingFromEndOfTable];
     // Continue processing next lines
-    buildFinalCompareMarkdown(newMixedLines, compareMdLines, isMermaid, true);
+    buildFinalCompareMarkdown(newMixedLines, compareMdLines, isMermaid, true, linkLines);
     return;
   }
 
@@ -340,22 +356,26 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   }
   // Long Link lines
   else if (isMermaid === true && status === "removed" && currentLine.includes('-. Fault .->')) {
-    styledLine = styledLine.replace('-. Fault .->', '-. 🟥Fault .->') + ":::removedLink"
+    styledLine = styledLine.replace('-. Fault .->', '-. 🟥Fault .->') //+ ":::removedLink"
+    linkLines.push("removed");
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('-. Fault .->')) {
-    styledLine = styledLine.replace('-. Fault .->', '-. 🟩Fault .->') + ":::addedLink"
+    styledLine = styledLine.replace('-. Fault .->', '-. 🟩Fault .->') // + ":::addedLink"
+    linkLines.push("added");
   }
   /* jscpd:ignore-start */
   // Long Link lines
   else if (isMermaid === true && status === "removed" && currentLine.includes('--->')) {
-    styledLine = styledLine.replace("--->", "--.->") + ":::removedLink"
+    styledLine = styledLine.replace("--->", "--.->");//+ ":::removedLink"
+    linkLines.push("removed");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
       styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('--->')) {
-    styledLine = styledLine.replace("--->", "===>") + ":::addedLink"
+    styledLine = styledLine.replace("--->", "===>"); // + ":::addedLink"
+    linkLines.push("added");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
       styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
@@ -363,23 +383,30 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   }
   // Link lines
   else if (isMermaid === true && status === "removed" && currentLine.includes('-->')) {
-    styledLine = styledLine.replace("-->", "-.->") + ":::removedLink"
+    styledLine = styledLine.replace("-->", "-.->") // + ":::removedLink"
+    linkLines.push("removed");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
       styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('-->')) {
-    styledLine = styledLine.replace("-->", "==>") + ":::addedLink"
+    styledLine = styledLine.replace("-->", "==>") // + ":::addedLink"
+    linkLines.push("added");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
       styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
     }
   }
+  else if (isMermaid === true && !["added", "removed"].includes(status) &&
+    (currentLine.includes('-->') || currentLine.includes('-. Fault .->'))
+  ) {
+    linkLines.push("unchanged");
+  }
   /* jscpd:ignore-end */
   compareMdLines.push(styledLine);
   // Continue processing next lines
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted));
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted), linkLines);
 }
 
 async function buildMermaidMarkdown(commit, flowFile) {

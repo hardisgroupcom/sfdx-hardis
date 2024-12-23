@@ -55,15 +55,15 @@ export const NODE_CONFIG = {
 		label: "Decision",
 		icon: "<&fork>",
 		mermaidIcon: "🔀",
-		mermaidClose: "}}",
-		mermaidOpen: "{{"
+		mermaidClose: "}",
+		mermaidOpen: "{"
 	},
 	'loops': {
 		background: "#E07D1C",
 		label: "Loop",
 		mermaidIcon: "🔁",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "/]",
+		mermaidOpen: "[/"
 	},
 	'recordCreates': {
 		background: "#F9548A",
@@ -71,8 +71,8 @@ export const NODE_CONFIG = {
 		label: "Create Records",
 		icon: "<&medical-cross>",
 		mermaidIcon: "➕",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: ")]",
+		mermaidOpen: "[("
 	},
 	'recordDeletes': {
 		background: "#F9548A",
@@ -80,8 +80,8 @@ export const NODE_CONFIG = {
 		label: "Delete Records",
 		icon: "<&medical-cross>",
 		mermaidIcon: "🗑️",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: ")]",
+		mermaidOpen: "[("
 	},
 	'recordLookups': {
 		background: "#F9548A",
@@ -89,8 +89,8 @@ export const NODE_CONFIG = {
 		label: "Get Records",
 		icon: "<&medical-cross>",
 		mermaidIcon: "🔍",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: ")]",
+		mermaidOpen: "[("
 	},
 	'recordUpdates': {
 		background: "#F9548A",
@@ -98,8 +98,8 @@ export const NODE_CONFIG = {
 		label: "Update Records",
 		icon: "<&pencil>",
 		mermaidIcon: "🛠️",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: ")]",
+		mermaidOpen: "[("
 	},
 	'screens': {
 		background: "#1B96FF",
@@ -116,7 +116,15 @@ export const NODE_CONFIG = {
 		label: "Subflow",
 		icon: "<&pencil>",
 		mermaidIcon: "🔗",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "]]",
+		mermaidOpen: "[["
 	},
+	"startClass": {
+		background: "#0b827c",
+		color: "white"
+	},
+	"endClass": {
+		background: "#ea001e",
+		color: "white"
+	}
 };

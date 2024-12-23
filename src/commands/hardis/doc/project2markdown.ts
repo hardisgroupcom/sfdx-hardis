@@ -192,7 +192,7 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     if (flowSkips.length > 0) {
       uxLog(this, c.yellow(`Skipped generation for ${flowSkips.length} Flows that have not been updated: ${this.humanDisplay(flowSkips)}`));
     }
-    uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowWarnings.length - flowErrors.length} Flows documentation`));
+    uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowSkips.length - flowWarnings.length - flowErrors.length} Flows documentation`));
     if (flowWarnings.length > 0) {
       uxLog(this, c.yellow(`Partially generated documentation (Markdown with mermaidJs but without SVG) for ${flowWarnings.length} Flows: ${this.humanDisplay(flowWarnings)}`));
     }
